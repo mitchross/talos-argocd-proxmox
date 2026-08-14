@@ -5,7 +5,7 @@
 #   omnictl cluster template sync -v -f cluster-template-threadripper-gpu-workers.yaml
 ---
 kind: Cluster
-name: talos-threadripper-gpu-workers-prod
+name: talos-threadripper-gpu-workers
 labels:
   cluster-id: "2"
 kubernetes:

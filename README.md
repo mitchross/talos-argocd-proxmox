@@ -91,7 +91,7 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 >
 > | | Threadripper GPU + workers | Multi-node prod |
 > |---|---|---|
-> | Cluster | `talos-threadripper-gpu-workers-prod` | `talos-prod-cluster` |
+> | Cluster | `talos-threadripper-gpu-workers` | `talos-prod-cluster` |
 > | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` | `omni/cluster-template/cluster-template.yaml` |
 > | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; Dell: 1 regular worker | 3 CP + 3 workers + 1 GPU |
@@ -110,7 +110,7 @@ placeholder commands or omitted flags.
 Skip this step when provisioning for the first time.
 
 ```bash
-omnictl cluster delete talos-threadripper-gpu-workers-prod --destroy-disconnected-machines
+omnictl cluster delete talos-threadripper-gpu-workers --destroy-disconnected-machines
 omnictl get machines
 ```
 
@@ -160,13 +160,13 @@ export OMNI_ENDPOINT=https://omni.vanillax.me:443
 export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
 
 omnictl kubeconfig \
-  --cluster talos-threadripper-gpu-workers-prod \
+  --cluster talos-threadripper-gpu-workers \
   --service-account \
   --user talos-prod-sa \
   --force
 
-talosctl config remove omni-prod-talos-threadripper-gpu-workers-prod -y 2>/dev/null || true
-omnictl talosconfig --cluster talos-threadripper-gpu-workers-prod
+talosctl config remove omni-prod-talos-threadripper-gpu-workers -y 2>/dev/null || true
+omnictl talosconfig --cluster talos-threadripper-gpu-workers
 
 kubectl get nodes -o wide
 ```
@@ -206,7 +206,7 @@ fi
 
 "$CILIUM_CMD" install \
     --version 1.20.0 \
-    --set cluster.name=talos-threadripper-gpu-workers-prod \
+    --set cluster.name=talos-threadripper-gpu-workers \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -343,7 +343,7 @@ omnictl serviceaccount create talos-prod-sa --use-user-role
 # 3. Generate a bearer-token kubeconfig (NOT OIDC)
 OMNI_ENDPOINT=https://omni.vanillax.me:443 \
 OMNI_SERVICE_ACCOUNT_KEY="<key-from-step-2>" \
-omnictl kubeconfig --cluster talos-threadripper-gpu-workers-prod --service-account --user talos-prod-sa --force
+omnictl kubeconfig --cluster talos-threadripper-gpu-workers --service-account --user talos-prod-sa --force
 
 # 4. Verify
 kubectl get nodes
