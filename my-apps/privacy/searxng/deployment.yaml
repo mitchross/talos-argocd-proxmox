@@ -47,7 +47,7 @@ spec:
               memory: 32Mi
       containers:
         - name: searxng
-          image: ghcr.io/searxng/searxng:2026.8.11-e8e710e42
+          image: ghcr.io/searxng/searxng:2026.8.14-094c33d40
           resources:
             requests:
               memory: 100M
