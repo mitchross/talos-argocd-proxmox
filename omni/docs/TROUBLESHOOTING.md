@@ -216,7 +216,9 @@ pvesh get /version --username root@pam
 **Wrong key type**:
 - Ensure you're using an **Infrastructure Provider Key**
 - NOT a service account key
-- Generate in Omni UI: Settings → Infrastructure Providers
+- Generate with the CLI: `omnictl infraprovider create <dns-label-name>`
+- Do NOT generate it in the Omni UI — UI PGP keys fail with
+  `gopenpgp: EdDSA verification failure`
 
 ### VMs Not Being Created
 

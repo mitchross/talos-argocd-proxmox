@@ -126,12 +126,26 @@ uuidgen
 Save this - you'll use it as `OMNI_ACCOUNT_UUID`.
 
 ### Infrastructure Provider Key
-After deploying Omni, you'll need to generate an infrastructure provider key through the Omni UI:
-1. Navigate to **Infrastructure Providers**
-2. Click **Create Provider**
-3. Copy the generated key
+After deploying Omni, generate an infrastructure provider key with **omnictl**:
 
-⚠️ **Important**: This is an **Infrastructure Provider Key**, not a service account key.
+```bash
+omnictl infraprovider create proxmox-dell
+```
+
+This prints an endpoint and a key. The key is **shown exactly once** — copy it
+straight into your secret manager.
+
+⚠️ **Use the CLI, not the Omni UI.** UI-generated PGP keys are incompatible
+with the CLI's gopenpgp library and fail with `EdDSA verification failure`.
+
+⚠️ **Important**: This is an **Infrastructure Provider Key**, not a service
+account key. The two are different: the provider key lets the provider create
+machines, while a service account key (`omnictl serviceaccount create`) is for
+cluster access.
+
+⚠️ Provider IDs must be valid **DNS labels** as of Omni v1.10 — lowercase
+letters, digits, and dashes only. `proxmox-dell` is fine; `Proxmox_Dell` is
+rejected.
 
 ## Storage Considerations
 
