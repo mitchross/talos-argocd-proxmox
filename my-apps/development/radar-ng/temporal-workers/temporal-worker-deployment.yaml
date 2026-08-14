@@ -43,6 +43,16 @@ spec:
       labels:
         app: radar-ng-worker
     spec:
+      # tiles/grids/state are RWO volumes also mounted by tile-server. Follow
+      # the serving pod onto the same node so Longhorn never has to attach the
+      # same block volumes to two nodes after a rebuild or rollout.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: tile-server
+              topologyKey: kubernetes.io/hostname
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
