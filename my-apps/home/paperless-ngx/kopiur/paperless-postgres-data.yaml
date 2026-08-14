@@ -3,8 +3,8 @@
 # copyMethod, populator) injected by ../../common/kopiur-backup. The mover
 # securityContext is per-PVC and stays in THIS stub
 # (docs/domains/storage/kopiur-mover-permissions.md).
-# HOURLY tier: database — caps data loss at ~1h. The CSI snapshot is
-# crash-consistent; Postgres WAL-recovers from it like a power loss.
+# HOURLY tier: database — caps data loss at ~1h. Kopiur's workload hooks put
+# Postgres in backup mode around the CSI capture for application consistency.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -17,6 +17,23 @@ spec:
   identity:
     username: paperless-postgres-data
     hostname: paperless-ngx
+  hooks:
+    beforeSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app: paperless-postgres
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_start('kopiur', true)\""]
+          timeout: 2m
+    afterSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app: paperless-postgres
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_stop()\""]
+          timeout: 2m
   retention:
     keepHourly: 24
     keepDaily: 7
