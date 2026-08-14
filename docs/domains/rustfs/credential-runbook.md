@@ -92,7 +92,6 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 
 | ExternalSecret | Kubernetes Secret |
 | --- | --- |
-| `cloudnative-pg/cnpg-s3-credentials` | `cnpg-s3-credentials` |
 | `loki-stack/loki-s3-credentials` | `loki-s3-credentials` |
 | `monitoring/tempo-s3-credentials` | `tempo-s3-credentials` |
 | `posthog/posthog-secrets` | `posthog-secrets` |
@@ -105,7 +104,6 @@ Force ESO refresh after changing 1Password:
 
 ```bash
 TS="$(date +%s)"
-kubectl annotate externalsecret -n cloudnative-pg cnpg-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n loki-stack loki-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n monitoring tempo-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n posthog posthog-secrets force-sync="$TS" --overwrite
@@ -119,8 +117,6 @@ kubectl annotate clusterexternalsecret kopiur-rustfs force-sync="$TS" --overwrit
 Restart consumers that load S3 credentials from environment variables:
 
 ```bash
-# CNPG re-reads cnpg-s3-credentials automatically via the operator's
-# Secret-watcher — no restart needed for postgres clusters.
 kubectl rollout restart statefulset/loki-backend statefulset/loki-write -n loki-stack
 kubectl rollout restart deploy/loki-read -n loki-stack
 kubectl rollout restart statefulset/tempo -n monitoring

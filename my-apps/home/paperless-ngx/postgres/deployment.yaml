@@ -1,28 +1,25 @@
-# Plain PostgreSQL for gitea — the project-nomad/mysql pattern applied to
-# Postgres. No operator: the DB is an ordinary app whose PVC kopiur backs up
-# (hourly tier) and restores-before-bind on recreate. Postgres treats a
-# restored crash-consistent snapshot like a power loss and WAL-recovers
-# cleanly on boot. Trade-off vs CNPG: restore granularity is the last
-# snapshot, not point-in-time. Migration runbook:
-# docs/domains/cnpg/plain-postgres-migration.md
+# In-app plain Postgres + kopiur (gitea pattern) — replaced the CNPG
+# paperless-database cluster 2026-08-13 as a greenfield cutover (fresh empty
+# database; no dump/restore). Document originals live on the media/data PVCs
+# (kopiur-backed) and can be re-consumed; DB-side tags/metadata start fresh.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gitea-postgres
-  namespace: gitea
+  name: paperless-postgres
+  namespace: paperless-ngx
   labels:
-    app: gitea-postgres
+    app: paperless-postgres
 spec:
   strategy:
     type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
   replicas: 1
   selector:
     matchLabels:
-      app: gitea-postgres
+      app: paperless-postgres
   template:
     metadata:
       labels:
-        app: gitea-postgres
+        app: paperless-postgres
     spec:
       # SIGINT (the image's STOPSIGNAL) triggers Postgres "fast shutdown":
       # it aborts open transactions and flushes cleanly. 60s covers a busy
@@ -34,11 +31,7 @@ spec:
         - name: postgres
           # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
           # need a manual dump/restore (Postgres data dirs are not
-          # major-version compatible). Majors are gated on dependency-
-          # dashboard approval in .github/renovate.json5 after #1621
-          # (17.10->18.4) crashlooped this pod on a stale PG17 data dir.
-          # If merging a major by hand anyway: dump with the OLD major's
-          # image first, wipe/reinit PGDATA, then restore.
+          # major-version compatible; majors are gated in renovate.json5).
           image: postgres:18.4
           securityContext:
             runAsUser: 999
@@ -52,41 +45,51 @@ spec:
               name: postgres
           env:
             # First boot on an EMPTY volume creates this DB + user — the
-            # whole database is declared right here, no admin tool. On a
-            # restored (non-empty) volume these are ignored and the restored
-            # data wins.
+            # whole database is declared right here. User/password come
+            # from the same 1Password-fed secret the app already consumes
+            # (PAPERLESS_DBUSER/PAPERLESS_DBPASS). On a restored
+            # (non-empty) volume these are ignored and the restored data
+            # wins.
             - name: POSTGRES_DB
-              value: "gitea"
+              value: "paperless"
             - name: POSTGRES_USER
-              value: "gitea"
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBUSER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: gitea-db-secret # same 1Password item CNPG used
-                  key: password
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBPASS
             - name: POSTGRES_INITDB_ARGS
               value: "--data-checksums"
             # Subdirectory keeps initdb happy on a fresh PVC (top-level
             # mount contains lost+found).
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
+          # Probes expand $POSTGRES_USER rather than hardcoding it, because
+          # the username lives in the secret (immich pattern).
           # A restored or crash-recovering database can take longer than a
-          # fresh 48 MiB test database. The startup probe suppresses liveness
-          # restarts while PostgreSQL replays WAL after restore.
+          # fresh start; the startup probe suppresses liveness restarts
+          # while PostgreSQL replays WAL after restore.
           startupProbe:
             exec:
-              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 60
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 5
@@ -99,14 +102,11 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
-        # Metrics sidecar — reference implementation for the plain-Postgres
-        # pattern (docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
-        # Scraped via the Service's `metrics` port + servicemonitor.yaml.
+        # Metrics sidecar — same pattern as gitea-postgres (reference:
+        # docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
         - name: postgres-exporter
           image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
           securityContext:
-            # Image default uid (nobody); shares the pod, connects over
-            # localhost so no pg_hba/network exposure changes.
             runAsUser: 65534
             runAsGroup: 65534
             runAsNonRoot: true
@@ -115,14 +115,17 @@ spec:
               drop: ["ALL"]
           env:
             - name: DATA_SOURCE_URI
-              value: "localhost:5432/gitea?sslmode=disable"
+              value: "localhost:5432/paperless?sslmode=disable"
             - name: DATA_SOURCE_USER
-              value: "gitea"
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBUSER
             - name: DATA_SOURCE_PASS
               valueFrom:
                 secretKeyRef:
-                  name: gitea-db-secret
-                  key: password
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBPASS
           ports:
             - containerPort: 9187
               name: metrics
@@ -141,4 +144,4 @@ spec:
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: gitea-postgres-data
+            claimName: paperless-postgres-data

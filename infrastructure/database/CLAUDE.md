@@ -1,208 +1,29 @@
-# Database Guidelines (CNPG CloudNativePG)
+# Database Guidelines
 
-> **Direction (2026-07-09): NEW databases do NOT go here.** They run as plain
-> Postgres + kopiur inside the owning app's directory (reference:
-> `my-apps/development/gitea/postgres/`; pattern + migration runbook:
-> [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)).
-> The three existing CNPG databases migrate off one at a time. Everything below
-> remains **fully in force for the unmigrated databases** — do not relax it early.
+**Databases do NOT live in this directory.** Every database is a plain
+Postgres Deployment inside the owning app's directory, backed up by kopiur:
 
-> **Required reading before performing DR or modifying database backups:**
-> - [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md) — canonical DR runbook, overlay pattern, troubleshooting
+- Pattern + operator guide:
+  [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
+- Reference implementation: `my-apps/development/gitea/postgres/`
+- Two-database example (initdb script + schema-hook sync waves):
+  `my-apps/development/temporal/postgres/`
+- Create one with `/project:new-database <app>`
 
-Databases use **CloudNativePG** with Barman backups to RustFS S3 — a **separate backup path** from the PVC backup path (kopiur).
+CNPG (CloudNativePG) was **fully retired 2026-08-13** — operator, Barman
+plugin, recovery script, and the AppSet manual-sync gates were all deleted
+(history: [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)).
+Do not resurrect it. The old Barman buckets age out via
+`infrastructure/storage/rustfs-lifecycle/`.
 
-- **PVC backups**: kopiur (Kopia-native) → RustFS S3, per-PVC SnapshotPolicy/Restore
-- **Database backups**: Barman to S3 (SQL-aware base backup + WAL archiving for PITR)
+## What IS here
 
-See [`docs/domains/storage/kopiur-backup-architecture.md`](../../docs/domains/storage/kopiur-backup-architecture.md) for why both exist.
+`infrastructure/database/*/*` is discovered by the Database AppSet (Wave 4,
+fully automated: auto-sync + prune, no self-heal):
 
-## Repo layout per DB
+| Directory | Purpose |
+|---|---|
+| `redis/` | Shared Redis instance (backup-exempt disposable data — do not add kopiur CRs) |
 
-Each CNPG DB uses a Kustomize **overlay pattern** where the active bootstrap
-mode is a one-line feature flag in git.
-
-```
-infrastructure/database/cloudnative-pg/<db>/
-├── kustomization.yaml              ← FEATURE FLAG — picks one overlay
-├── externalsecret.yaml             ← 1Password-backed app credentials
-├── scheduled-backup.yaml           ← daily Barman ScheduledBackup
-├── base/
-│   ├── kustomization.yaml
-│   └── cluster.yaml                ← no bootstrap; serverName = current write target
-└── overlays/
-    ├── initdb/
-    │   ├── kustomization.yaml
-    │   └── bootstrap-patch.yaml    ← merge-patch adds bootstrap.initdb
-    └── recovery/
-        ├── kustomization.yaml
-        ├── bootstrap-patch.yaml    ← merge-patch adds bootstrap.recovery + externalClusters
-        └── post-recovery-backup.yaml ← event-specific Backup; pruned on initdb flip
-```
-
-The root `kustomization.yaml`:
-
-```yaml
-resources:
-  - overlays/initdb           # ← normal operation (fresh DB or already-running)
-  # - overlays/recovery       # ← flip here for disaster recovery
-  - externalsecret.yaml
-  - scheduled-backup.yaml
-```
-
-**Why overlays instead of editing `cluster.yaml` in place:**
-- `bootstrap.initdb` and `bootstrap.recovery` are mutually exclusive at the
-  CRD level. Keeping only ONE active in the rendered manifest avoids the
-  CNPG webhook rejection.
-- Feature flag (one commented line) is a clean git diff. Easy to review.
-- No need for `cnpg.io/validation: disabled` annotation.
-
-## Current lineage per DB
-
-The `serverName` values below live in each DB's `base/cluster.yaml` and
-`overlays/recovery/bootstrap-patch.yaml` — bump both when you recover.
-
-| Database  | Next write target (base) | Recovery source | Pinned backup ID |
-|-----------|--------------------------|-----------------|------------------|
-| paperless | `paperless-database-v9`  | `paperless-database-v6` | `20260728T050000` |
-| temporal  | `temporal-database-v11`  | `temporal-database-v8` | `20260728T030000` |
-
-Immich is no longer here: it migrated to plain Postgres + kopiur
-(`my-apps/media/immich/postgres/`). Every immich CNPG lineage (v1–v8) held a
-database with zero users and zero assets, so there was nothing to recover and
-nothing to migrate — see the note below.
-
-The roots are intentionally on `overlays/recovery` for the planned 2026-07-31
-full-cluster rebuild. Their Argo Applications and consumer Applications have
-auto-sync/self-heal explicitly disabled. After bootstrap, run
-`scripts/bootstrap-cnpg-recovery.sh --execute`; it advances each pair only
-after exact lineage, application rows, WAL archiving, and the recovery-only
-`Backup` object are proven. Flip the roots back to `overlays/initdb` only after that
-acceptance succeeds on v9/v9/v11.
-
-2026-08-03: immich left CNPG for plain Postgres + kopiur. A restore of its
-pinned "data-bearing" 2026-07-28 v6 backup came up with the correct
-`system_identifier` but `public.user = 0` and `public.asset = 0` — the ~48 MB
-backup is almost entirely static `geodata_places`. Every immich lineage back to
-v1 (2026-05-31) is the same size, so the database had been empty for months and
-no lineage was worth recovering. Immich needs the `vchord` extension, so its
-plain-Postgres deployment uses `ghcr.io/immich-app/postgres` (a stock postgres
-image cannot run immich). Photo files live on the `library` PVC and were never
-affected; album/face/tag metadata was already gone.
-
-2026-08-03: the 2026-08-01 recovery run silently bootstrapped `initdb` instead
-of recovering. Its v8/v8/v10 lineages carry a different `systemid`, sit on WAL
-timeline 1, and hold empty databases (temporal 5 MB vs v8's 160 MB), so they
-are abandoned and the write targets moved to v9/v9/v11. The reads stay pinned
-to the 2026-07-28 backups — those remain the only data-bearing ones. Verify a
-recovery by comparing `systemid` in the new lineage's `backup.info` against the
-source lineage: a real restore preserves it.
-
-2026-07-31 pre-nuke audit: the July 29 rebuild used `initdb`, so live Immich
-had zero assets/users, Paperless had zero documents, and Temporal had zero
-executions. The clean v7/v7/v9 backups therefore preserve empty databases and
-are abandoned. The data-bearing July 28 backups above were verified directly
-with `barman-cloud-backup-list`. Paperless v6 also contains a newer successful
-backup from the empty replacement PostgreSQL system ID, which is why all three
-recovery overlays pin an exact `backupID` instead of trusting "latest".
-
-2026-06-28 (first kopiur-only full nuke): all four then-existing databases
-recovered from their prior lineage and wrote forward to that event's targets (gitea v9→v10, immich
-v5→v6, paperless v5→v6, temporal v7→v8). After recovery completed and the
-primaries went healthy, all four root kustomizations were **flipped back
-`overlays/recovery` → `overlays/initdb`** (steady state) so a future PVC loss
-can't auto-restore a stale lineage. Recovery is re-enabled per-DB only as an
-explicit DR action.
-
-All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild nuke,
-and again for the same-day re-nuke (SPDK cpu-mask validation run) because the
-aborted first attempt dirtied the fresh prefixes (immich and paperless archived
-WALs before the SPDK wedge stalled the rebuild). Fresh initdb on clean prefixes
-keeps the WAL-archive empty check passing. History: all DBs reset to `-v1` on
-2026-04-19 (S3 wipe); gitea `-v2` 2026-05-02 (GPU node loss, real Barman
-restore); gitea/temporal `-v3` opened around the 2026-06-02 first nuke.
-
-2026-06-23: Paperless `v4→v5`, immich `v4→v5`, temporal `v6→v7` (forward-write
-only, not DR). The 2026-06-22 single-node rebuild's fresh initdb reused each
-DB's prior serverName, whose prefixes still held old WAL, so
-`barman-cloud-check-wal-archive` returned `Expected empty archive` and
-ContinuousArchiving stayed False on all three since 15:57 UTC. (gitea was the
-only one bumped during the rebuild → already healthy on v9.) New clean prefixes;
-abandoned v4/v4/v6 added to the RustFS lifecycle expiration policy.
-
-2026-06-22: Gitea proved the Barman path is usable again. v6 contained the real
-data; v7 was polluted by an aborted restore attempt and failed
-`barman-cloud-check-wal-archive` with `Expected empty archive`. v8 brought the
-successful restore online; v9 is the steady clean forward write target after
-that recovery. Until the next real Gitea DR event: **last restore read v6,
-current writes go to v9**.
-
-## Normal operation (add a new CNPG DB)
-
-1. Copy an existing DB directory (e.g. `paperless/`) to `<newapp>/`.
-2. Update names, owner, image, postInitApplicationSQL, resource sizes in `base/cluster.yaml` and `overlays/initdb/bootstrap-patch.yaml`.
-3. Set `base/cluster.yaml` `spec.plugins[0].parameters.serverName` to `<newapp>-database-v1`.
-4. Set `overlays/recovery/bootstrap-patch.yaml` to reference `<newapp>-database-v1` as the prior lineage (placeholder until a real DR event bumps both).
-5. Commit + push. Database AppSet auto-discovers `infrastructure/database/*/*` — no appset edits needed.
-
-## Disaster recovery (bump lineage + flip to recovery)
-
-See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md#runbook-restore-from-barman-recovery). Short version:
-
-1. Bump `base/cluster.yaml` `serverName` to next `-vN`.
-2. Set `overlays/recovery/bootstrap-patch.yaml` `externalClusters.serverName`
-   to the verified data-bearing lineage and pin `recoveryTarget.backupID` when
-   a lineage contains backups from more than one PostgreSQL system ID.
-3. Flip root `kustomization.yaml` → `overlays/recovery`.
-4. Commit, push.
-5. Delete live Cluster + PVCs so CNPG re-evaluates bootstrap on fresh creation:
-   ```bash
-   kubectl -n cloudnative-pg delete cluster <db>-database
-   kubectl -n cloudnative-pg delete pvc -l cnpg.io/cluster=<db>-database
-   ```
-6. Trigger ArgoCD sync on the `database-<db>` application. For the prepared
-   fresh-cluster rebuild, use `scripts/bootstrap-cnpg-recovery.sh --execute`
-   instead of performing the remaining steps by hand.
-7. Watch `*-full-recovery-*` pod logs for Barman base + WAL replay.
-
-## Critical rules (from prior incidents)
-
-- **Never set `recoveryTarget.targetTime` beyond the last archived WAL.**
-  Postgres FATALs with "recovery ended before configured recovery target was reached." If uncertain, omit the target entirely to restore to latest-WAL.
-- **Always delete PVCs after deleting the Cluster.** CNPG leaves them as
-  data protection. Stale PVCs cause the new Cluster to hang "Setting up primary" forever.
-- **Keep `.spec.bootstrap` and `.spec.externalClusters` OUT of the database
-  AppSet's `ignoreDifferences`.** `RespectIgnoreDifferences=true` + SSA will
-  silently strip those fields during apply, producing a Cluster with no
-  bootstrap → CNPG defaults to initdb → empty DB despite git saying recovery.
-- **Reconcile the consumer after a DB rebuild.** Most apps need a rollout
-  restart. Temporal is different: SQL setup/update is an Argo Sync hook in
-  `my-apps-temporal`, so explicitly sync that Application after a DB-only
-  rebuild; restarting its Deployments does not run the schema hook.
-- **Pin `recoveryTarget.backupID` when a lineage is polluted.** Barman's
-  chronological latest backup can belong to a newer empty PostgreSQL system
-  that reused the same serverName. `DONE` does not mean it contains your data.
-- **Specify `database` + `owner` + `secret` in recovery bootstrap.** CNPG
-  defaults to `database: app, owner: app` if omitted.
-- **Don't add kopiur backup CRs to CNPG PVCs.** They use Barman/S3, not kopiur.
-- **If Barman says `Expected empty archive`, do not reuse that forward
-  `serverName`.** Bump the write target to the next clean lineage and keep the
-  recovery source pointed at the last known-good lineage.
-
-## Deprecation warnings
-
-- **Native `spec.backup.barmanObjectStore` — MIGRATION DONE.** All four DBs use
-  the Barman Cloud Plugin (`infrastructure/database/cnpg-barman-plugin/`):
-  live backup config is `spec.plugins[]` (name `barman-cloud.cloudnative-pg.io`,
-  `isWALArchiver: true`, `parameters.barmanObjectName` → a sibling `ObjectStore`
-  CR + `parameters.serverName`), and recovery is `externalClusters[].plugin`.
-  The in-tree `barmanObjectStore` field is removed in CNPG 1.30.0 — do not
-  reintroduce it. (When adding a NEW DB, set serverName via the plugin
-  `parameters`, not `backup.barmanObjectStore`.)
-- **`spec.monitoring.enablePodMonitor`** — deprecated, replace with manually-
-  managed `PodMonitor` resources per cluster.
-
-## Monitoring
-
-Use `kubectl cnpg status <cluster>` CLI plugin for best single-view health.
-See [`docs/domains/cnpg/disaster-recovery.md` § Monitoring & Tools](../../docs/domains/cnpg/disaster-recovery.md#monitoring--tools) for Grafana dashboards, Headlamp, K8sGPT, and a copy-paste state-check script.
+Use this directory only for shared database *support* services consumed by
+multiple apps. A database owned by one app belongs in that app's directory.

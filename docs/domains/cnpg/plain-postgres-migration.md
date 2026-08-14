@@ -2,8 +2,9 @@
 
 **Decision (2026-07-09):** new databases run as **plain Postgres Deployments
 backed up by kopiur**, and the CNPG databases migrate to that pattern one at
-a time (gitea and immich done; paperless, temporal remaining). The idle
-Crunchy PGO operator was removed the same day (it managed zero databases).
+a time. **Completed 2026-08-13:** all four databases migrated and CNPG
+(operator, Barman plugin, recovery script, manual sync gates) was deleted
+from the repo. The idle Crunchy PGO operator was removed 2026-07-09.
 
 ![Decision between CNPG with Barman and plain PostgreSQL with Kopiur based on the required recovery contract](../../assets/postgres-recovery-choice.svg)
 
@@ -106,29 +107,40 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
 - [x] gitea migrated (2026-07-10: dump/restore verified 112 tables / 5 repos /
       2 users; first populated kopiur snapshot confirmed; CNPG cluster deleted,
       v9/v10 lineages added to rustfs lifecycle)
-- [ ] temporal migrated
-- [ ] paperless migrated
+- [x] temporal migrated (2026-08-13) — greenfield data-zero cutover during the
+      cluster rebuild: fresh empty databases (`temporal` + `temporal_visibility`
+      via an initdb script), workflow history deliberately discarded. Postgres
+      pinned to 17 until Temporal upstream declares PG18 support. The postgres
+      stack carries sync-waves (-3/-2) because the chart's schema Jobs are
+      wave -1 Sync hooks and waves block — see
+      `my-apps/development/temporal/postgres/deployment.yaml`.
+- [x] paperless migrated (2026-08-13) — greenfield data-zero cutover, same
+      rebuild. Document originals live on the kopiur-backed media/data PVCs;
+      DB-side tags/metadata start fresh (re-consume to re-import).
 - [x] immich migrated (2026-08-03) — no dump/restore was needed: every CNPG
       lineage back to v1 held zero users and zero assets, so the cutover was a
       greenfield empty database. Uses `ghcr.io/immich-app/postgres`
       (**not** stock `postgres` — immich requires the `vchord` extension,
       preloaded by that image); pinned to the `17-vectorchord0.4.3` major the
       CNPG cluster ran. Photo files live on the separate `library` PVC.
-- [ ] delete `infrastructure/database/cloudnative-pg/` (operator, global
+- [x] delete `infrastructure/database/cloudnative-pg/` (operator, global
       secrets, per-DB dirs) and `custom-entrypoints/cnpg-barman-plugin-app.yaml`
-      (+ its entry in `apps/kustomization.yaml`)
+      (+ its entry in `apps/kustomization.yaml`) — done 2026-08-13, along with
+      `scripts/bootstrap-cnpg-recovery.sh` and the AppSet manual-sync gates
 - [ ] retire the postgres-backups rustfs lifecycle ConfigMap once the barman
       buckets age out
-- [ ] scrub CNPG rules from CLAUDE.md / infrastructure/database/CLAUDE.md and
+- [x] scrub CNPG rules from CLAUDE.md / infrastructure/database/CLAUDE.md and
       update `docs/domains/cnpg/` + the DR runbook's database section
+      (2026-08-13; the CNPG explainer/DR/beginner docs were pruned — git
+      history retains them)
 
-Until every box is ticked, CNPG remains live for the unmigrated databases —
-none of its repo rules (no kopiur on CNPG PVCs, serverName tracking, lifecycle
-policy) are relaxed early.
+The one open item is retiring the `postgres-backups` lifecycle ConfigMap once
+the abandoned Barman buckets age out (60-day expiration rules cover every
+lineage as of 2026-08-13).
 
 ## Related
 
 - [kopiur backup architecture](../storage/kopiur-backup-architecture.md)
 - [kopiur mover permissions](../storage/kopiur-mover-permissions.md) — why 999:999
-- [CNPG disaster recovery](disaster-recovery.md) — still authoritative for unmigrated DBs
+- [run Postgres here — plain-English operator guide](run-postgres-plain-english.md)
 - [cluster DR runbook](../../disaster-recovery.md)

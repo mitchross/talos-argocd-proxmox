@@ -59,8 +59,6 @@ namespaceExemptions:
     reason: "Bootstrap secret controllers are chart-owned."
   - namespace: cert-manager
     reason: "Bootstrap certificate controllers are chart-owned."
-  - namespace: cloudnative-pg
-    reason: "Database operators own their controller resources."
   - namespace: coroot
     reason: "Disposable Coroot CE trial; workloads are operator-materialized with explicit CR resources."
   - namespace: csi-driver-nfs

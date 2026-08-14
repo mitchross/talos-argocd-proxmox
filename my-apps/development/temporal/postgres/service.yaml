@@ -1,13 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gitea-postgres
-  namespace: gitea
+  name: temporal-postgres
+  namespace: temporal
   labels:
-    app: gitea-postgres
+    app: temporal-postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2" # before the wave -1 schema hook
 spec:
   selector:
-    app: gitea-postgres
+    app: temporal-postgres
   ports:
     - name: postgres
       port: 5432

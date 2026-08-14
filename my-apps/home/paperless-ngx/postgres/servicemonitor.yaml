@@ -1,0 +1,18 @@
+# Scrapes the postgres-exporter sidecar. Prometheus uses empty
+# serviceMonitor*Selectors, so no release label is needed.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: paperless-postgres
+  namespace: paperless-ngx
+  labels:
+    app: paperless-postgres
+spec:
+  selector:
+    matchLabels:
+      app: paperless-postgres
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

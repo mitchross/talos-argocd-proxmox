@@ -7,6 +7,17 @@ resources:
   - httproute.yaml
   - externalsecret.yaml
   - namespace-init-job.yaml
+  # In-app Postgres (plain postgres + kopiur, replacing the CNPG
+  # temporal-database cluster — greenfield cutover 2026-08-13, no data carried)
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+  - postgres/servicemonitor.yaml
+  - kopiur/temporal-postgres-data.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.
+components:
+  - ../../common/kopiur-backup
 
 # Shell script for the namespace-seed Job lives as its own file under
 # scripts/ so it's grep-able, lint-able, and not crammed into a YAML
@@ -20,6 +31,16 @@ configMapGenerator:
       # means no auto-generated hash, so a one-off script tweak doesn't
       # force a Job rename (we restart via BeforeHookCreation anyway).
       disableNameSuffixHash: true
+  # Mounted at /docker-entrypoint-initdb.d — creates temporal_visibility on
+  # the FIRST boot of an empty volume only (restored volumes skip initdb).
+  - name: temporal-postgres-init
+    files:
+      - postgres/init-visibility.sql
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        # Postgres (wave -2) mounts this — must exist before that wave.
+        argocd.argoproj.io/sync-wave: "-3"
 
 helmCharts:
   - name: temporal

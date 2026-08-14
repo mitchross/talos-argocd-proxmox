@@ -154,14 +154,6 @@ run "kopiur snapshots (latest per source)" -- bash -c '
 '
 
 # ─────────────────────────────────────────────
-# Databases
-# ─────────────────────────────────────────────
-run "CNPG clusters" -- bash -c '
-  kubectl get clusters.postgresql.cnpg.io -A 2>/dev/null \
-    || echo "(cnpg CRDs not available)"
-'
-
-# ─────────────────────────────────────────────
 # GPU
 # ─────────────────────────────────────────────
 GPU_NODE=$(kubectl get nodes -l gpu-worker=true -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)

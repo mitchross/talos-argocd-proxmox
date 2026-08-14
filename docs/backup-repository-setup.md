@@ -74,7 +74,7 @@ API port, not the console**).
 2. In the RustFS console, create the buckets:
    - `kopiur` — the Kopia repository for kopiur (this doc; the repo lives at the
      **bucket root**, `prefix: ""`)
-   - `postgres-backups` — CNPG/Barman database backups (separate system)
+   - `postgres-backups` — retired CNPG/Barman bucket, aging out via lifecycle policy
 3. Create one **workload access key** (named `homelab-workload`) for all
    Kubernetes S3 clients, with its allow policy scoped to those buckets —
    exact IAM policy JSON and the root-vs-workload rationale:
@@ -211,5 +211,5 @@ kubectl get snapshot -A
   acceptable on a LAN, see
   [known limitations](storage-architecture.md#known-limitations-and-non-goals).
 - **Rotation:** the per-step rotation procedure (new key on RustFS → update
-  1Password → force ESO refresh → CNPG picks up automatically) lives in the
+  1Password → force ESO refresh → restart env-var consumers) lives in the
   [credential runbook](domains/rustfs/credential-runbook.md).

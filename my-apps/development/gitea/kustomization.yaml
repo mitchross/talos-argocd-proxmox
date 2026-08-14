@@ -12,6 +12,7 @@ resources:
 - postgres/deployment.yaml
 - postgres/service.yaml
 - postgres/pvc.yaml
+- postgres/servicemonitor.yaml
 - kopiur/gitea-postgres-data.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.

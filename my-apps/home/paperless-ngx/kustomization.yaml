@@ -20,6 +20,13 @@ resources:
   - tika-gotenberg.yaml
   - kopiur/data.yaml
   - kopiur/media.yaml
+  # In-app Postgres (plain postgres + kopiur, replacing the CNPG
+  # paperless-database cluster — greenfield cutover 2026-08-13, no data carried)
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+  - postgres/servicemonitor.yaml
+  - kopiur/paperless-postgres-data.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
 components:

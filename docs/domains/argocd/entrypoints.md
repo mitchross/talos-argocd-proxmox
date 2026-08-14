@@ -22,12 +22,11 @@ The review map for everything directly rendered by the root Application from `in
 | `bootstrap/cilium-app.yaml` | Application | 0 | CNI and Gateway API foundation | No, must be healthy before pods and routes |
 | `bootstrap/1passwordconnect.yaml` | Application | 0 | Secret backend for External Secrets | No, secret dependency for later waves |
 | `bootstrap/external-secrets.yaml` | Application | 0 | ExternalSecret CRDs and controller | No, CRDs are required by downstream apps |
-| `core-dependencies/cert-manager-app.yaml` | Application | 1 | Certificate controller required before CNPG Barman plugin | No, required before cert-dependent apps |
+| `core-dependencies/cert-manager-app.yaml` | Application | 1 | Certificate controller required before webhook-cert consumers in later waves | No, required before cert-dependent apps |
 | `core-dependencies/longhorn-app.yaml` | Application | 1 | Storage foundation before PVC consumers | No, required before restore/app PVC flows |
 | `core-dependencies/snapshot-controller-app.yaml` | Application | 1 | VolumeSnapshot CRDs and controller | No, required by backup/restore flows |
 | `core-dependencies/kopiur-operator-app.yaml` | Application | 2 | kopiur operator (Kopia-native backup): CRDs + controller + webhook + volume populator; no monitoring dependency | No, required before managed app PVCs |
 | `core-dependencies/kopiur-config-app.yaml` | Application | 3 | kopiur repo config: `ClusterRepository cluster-kopia` + credential fanout + `VolumeSnapshotClass longhorn-snapclass` | No, required before managed app PVCs |
-| `custom-entrypoints/cnpg-barman-plugin-app.yaml` | Application | 3 | CNPG clusters reference the plugin in wave 4 | No, dependency must precede database AppSet |
 | `custom-entrypoints/keda-app.yaml` | Application | 4 | Standalone to isolate its render from the AppSet generator | Maybe, if AppSet render stays stable |
 | `custom-entrypoints/vertical-pod-autoscaler-app.yaml` | Application | 4 | VPA controller (recommender/updater/admission) | Maybe, if AppSet render stays stable |
 | `custom-entrypoints/vertical-pod-autoscaler-observability-app.yaml` | Application | 6 | Optional VPA PodMonitor and alerts after monitoring CRDs exist | No, keeps observability out of core |
@@ -38,9 +37,9 @@ The review map for everything directly rendered by the root Application from `in
 | `custom-entrypoints/vpa-system-policies-app.yaml` | Application | 6 | VPA policies for the small set of bootstrap/system workloads without a co-located owner | No, ownership exception is explicit |
 | `custom-entrypoints/opentelemetry-operator-observability-app.yaml` | Application | 6 | Optional OpenTelemetry ServiceMonitor after monitoring CRDs exist | No, keeps observability out of core |
 | `appsets/infrastructure-appset.yaml` | ApplicationSet | 4 | Explicit list of core infrastructure directories | N/A |
-| `appsets/database-appset.yaml` | ApplicationSet | 4 | Discovers `infrastructure/database/*/*`; support apps auto-sync, three CNPG clusters are manual DR gates | N/A |
+| `appsets/database-appset.yaml` | ApplicationSet | 4 | Discovers `infrastructure/database/*/*` (Redis + shared DB support); fully automated since the CNPG retirement (2026-08-13) | N/A |
 | `appsets/monitoring-appset.yaml` | ApplicationSet | 5 | Discovers `monitoring/*` after core infra | N/A |
-| `appsets/my-apps-appset.yaml` | ApplicationSet | 6 | Discovers `my-apps/*/*` (excluding Components); the three CNPG consumers are manual until their restores pass | N/A |
+| `appsets/my-apps-appset.yaml` | ApplicationSet | 6 | Discovers `my-apps/*/*` (excluding Components); all automated + self-healing | N/A |
 
 Generated Application identities are domain-prefixed:
 `infrastructure-<component>`, `database-<database>`, `monitoring-<component>`,
@@ -56,8 +55,9 @@ kube-prometheus-stack (Wave 5); an earlier-wave app shipping them fails dry-run 
 App-of-Apps wave gate. Put observability CRs in a **separate optional app that syncs after Wave 5**
 (e.g. `keda-observability` at Wave 6, split out of KEDA's Wave-4 core). Do **not** install Prometheus
 Operator CRDs early — `SkipDryRunOnMissingResource` is an escape hatch / observability-app option only,
-never a core fix. `cert-manager` is at **Wave 1** (not 4) so cert-dependent apps (cnpg-barman-plugin,
-Wave 3) can start. Full detail: [cluster DR nuke restore runbook](../../disaster-recovery.md).
+never a core fix. `cert-manager` is at **Wave 1** (not 4) so early cert-dependent apps can start
+(historically the Wave-3 cnpg-barman-plugin; the deadlock lesson stands even though that app is
+retired). Full detail: [cluster DR nuke restore runbook](../../disaster-recovery.md).
 
 ## Bootstrap guardrail — Application health does not prove webhook reachability
 
@@ -80,7 +80,7 @@ Two rules follow:
   (`nodeSelector: node-role.kubernetes.io/control-plane` plus the matching
   `NoSchedule` toleration). The API server calls them node-locally, so no
   pod-network fault on any other node can break admission. This applies to
-  `cert-manager` and the `cloudnative-pg` operator. Availability is then coupled
+  `cert-manager`. Availability is then coupled
   to the API server's own availability, which is the correct coupling: if the
   control plane is down, admission is moot.
 - **Do not add a custom Lua health check to probe webhook reachability.** Argo CD

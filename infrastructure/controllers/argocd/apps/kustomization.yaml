@@ -9,7 +9,7 @@ resources:
   - bootstrap/external-secrets.yaml
 
   # Core dependencies: storage and restore services required by later waves.
-  - core-dependencies/cert-manager-app.yaml   # Wave 1 — moved out of the Wave-4 infra-appset (cnpg-barman-plugin Wave 3 needs it)
+  - core-dependencies/cert-manager-app.yaml   # Wave 1 — moved out of the Wave-4 infra-appset (webhook-cert consumers in earlier waves need it)
   - core-dependencies/longhorn-app.yaml
   - core-dependencies/snapshot-controller-app.yaml  # kopiur copyMethod=Snapshot needs CSI VolumeSnapshot
   # VolSync + pvc-plumber RETIRED 2026-06-27 — replaced by kopiur (all PVCs
@@ -21,7 +21,6 @@ resources:
   - core-dependencies/kopiur-config-app.yaml
 
   # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.
-  - custom-entrypoints/cnpg-barman-plugin-app.yaml
   - custom-entrypoints/keda-app.yaml
   - custom-entrypoints/vertical-pod-autoscaler-app.yaml
   - custom-entrypoints/vertical-pod-autoscaler-observability-app.yaml   # Wave 6 — VPA metrics and alerts, after monitoring

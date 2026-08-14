@@ -308,11 +308,11 @@
 
     { n:"Lesson 8 of 9", title:"What deliberately does NOT use this path",
       learn:`<p>Two kinds of data skip the snapshot machinery — <strong>on purpose</strong>, and each skip is written down.</p>
-      <p><strong>Databases</strong> (Postgres) are backed up by a database-aware tool instead (<strong>CNPG&nbsp;/&nbsp;Barman</strong> streaming to its own S3 bucket). Copying a database's disk mid-write can capture a torn, half-written state; the database tool archives its own write-ahead log and restores to a consistent point in time.</p>
+      <p><strong>Databases</strong> (Postgres) ride the same kopiur pipeline on an <strong>hourly</strong> schedule: the CSI snapshot is crash-consistent — exactly what Postgres is built to recover from (WAL replay, as after a power cut). The trade, accepted deliberately: restores land on the last snapshot, not an arbitrary point in time. (CNPG/Barman, the old SQL-aware system, was retired 2026-08-13.)</p>
       <p><strong>Disposable data</strong> (caches, analytics, easily-rebuilt files) is marked <code>backup-exempt: "true"</code> — always paired with a written <em>reason</em>, so “not backed up” is a recorded decision, never an accident. A CI check audits every disk: protected, or exempt-with-reason. Nothing in between.</p>
       <div class="goal"><span class="g-ic">✓</span><span>You learned: databases use their own SQL-aware backups, and every unprotected disk carries a written reason.</span></div>`,
       show:`<div class="figframe"><div class="pvc2">
-    <div class="kard keep"><h4>🐘 Databases</h4><p class="tl">CNPG / Barman → own S3 bucket</p><ul><li>SQL-aware, point-in-time</li><li>never raw disk snapshots</li><li>separate restore runbook</li></ul></div>
+    <div class="kard keep"><h4>🐘 Databases</h4><p class="tl">plain Postgres + kopiur, hourly tier</p><ul><li>crash-consistent snapshot + WAL replay</li><li>RPO ≤ 1h, no PITR — accepted trade</li><li>same restore-before-bind as every PVC</li></ul></div>
     <div class="kard"><h4>🏷️ Exempt (on purpose)</h4><p class="tl">backup-exempt + written reason</p><ul><li>caches &amp; analytics (PostHog, Redis)</li><li>rebuildable media/scratch</li><li>CI audits every disk</li></ul></div>
   </div></div>` + cap("Two sanctioned exits — <b>everything else</b> must be protected.") },
 

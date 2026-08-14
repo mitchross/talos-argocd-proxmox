@@ -2,6 +2,31 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
+  name: paperless-postgres
+  namespace: paperless-ngx
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: paperless-postgres
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # Fixed-size metrics sidecar — not VPA-managed.
+      - containerName: postgres-exporter
+        mode: "Off"
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
   name: paperless-ngx
   namespace: paperless-ngx
 spec:

@@ -23,7 +23,7 @@ local volume still restores from S3 through the backup layer.
 |------|---------|-----|
 | **1 — default** | local CSI (OpenEBS/ZFS LocalPV) + kopiur restore-based DR | most non-DB apps |
 | **2 — replicated** | Longhorn replicated | only apps needing live failover (a few config/state PVCs) |
-| **3 — database** | native (CNPG → Barman → S3) | never generic CSI snapshot/restore |
+| **3 — database** | plain Postgres + kopiur hourly tier (CNPG retired 2026-08-13) | crash-consistent snapshot + WAL recovery |
 
 Tier 1 trade-off: if the node hosting a local volume dies, that app is down until
 the PVC is recreated and restored. For most homelab apps that's acceptable, and the

@@ -11,12 +11,10 @@ spec:
   # result" (the template context). The Git generator supplies its matched
   # directory as the `path` object: `.path.basename` is the final directory
   # name, while `.path.path` is the complete repository-relative path.
-  # Example: `infrastructure/database/cloudnative-pg/paperless` produces
-  # `.path.basename = paperless` and `.path.path` equal to that full path, so
-  # the generated Application is named `database-paperless`, targets namespace
-  # `paperless`, and renders manifests from the original directory. The domain
-  # prefix is operationally important: without it, `temporal` (the database)
-  # is indistinguishable from `my-apps-temporal` (the server) in the Argo UI.
+  # Example: `infrastructure/database/redis/redis-instance` produces
+  # `.path.basename = redis-instance` and `.path.path` equal to that full
+  # path, so the generated Application is named `database-redis-instance` and
+  # renders manifests from that directory.
   # `missingkey=error` stops generation when a field is absent instead of
   # silently creating an Application with an empty name, path, or namespace.
   goTemplate: true
@@ -38,43 +36,12 @@ spec:
       revision: main
       directories:
       - path: infrastructure/database/*/*
-  # The remaining stateful CNPG clusters are deliberately manual. A restore is
-  # a transaction, not a background reconciliation: hard-refresh the pinned
-  # recovery render, create the Cluster, prove its PostgreSQL lineage/data,
-  # then reconcile its consumer. Support Applications discovered by this same
-  # generator (CNPG operator, global secrets, and Redis) remain automated.
-  # See scripts/bootstrap-cnpg-recovery.sh.
-  templatePatch: |
-    spec:
-      syncPolicy:
-        automated:
-          {{ if or (eq .path.basename "paperless") (eq .path.basename "temporal") }}
-          enabled: false
-          prune: false
-          selfHeal: false
-          allowEmpty: false
-          {{ else }}
-          enabled: true
-          prune: true
-          selfHeal: false
-          allowEmpty: false
-          {{ end }}
   template:
     metadata:
       name: 'database-{{ .path.basename }}'
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "4"
-        # Server-Side Diff + IncludeMutationWebhook closes the CNPG drift gap.
-        # CNPG operator uses k8s API Update (not Apply) and owns zero fields
-        # under SSA, so managedFieldsManagers below strips nothing. SSD asks
-        # the API server for a dry-run apply and compares predicted-live vs
-        # actual-live — CRD defaults (enablePDB, failoverDelay, encoding, ...)
-        # apply to both sides and disappear from the diff. IncludeMutationWebhook
-        # also pipes through CNPG's mutating admission webhook so webhook-injected
-        # defaults are captured too. Requires controller.diff.server.side=true
-        # in argocd-cmd-params-cm (see ../argocd/values.yaml configs.params).
-        argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
       labels:
         app.kubernetes.io/part-of: database
     spec:
@@ -88,6 +55,11 @@ spec:
         server: https://kubernetes.default.svc
         namespace: '{{ .path.basename }}'
       syncPolicy:
+        automated:
+          enabled: true
+          prune: true
+          selfHeal: false
+          allowEmpty: false
         syncOptions:
         - CreateNamespace=true
         - ServerSideApply=true
@@ -96,41 +68,12 @@ spec:
         retry:
           # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
           # PreSync hook can wedge the entire app-of-apps behind a stale
-          # manifest snapshot (incidents 2026-04-20, 2026-05-01). Automated
-          # support apps get a fresh reconcile; manual CNPG apps are advanced
-          # only by the guarded recovery script/operator.
+          # manifest snapshot (incidents 2026-04-20, 2026-05-01).
           limit: 10
           backoff:
             duration: 10s
             factor: 2
             maxDuration: 10m
-      # NOTE: .status ignored globally by ArgoCD 3.0+ — only non-status fields listed
-      #
-      # DO NOT add .spec.bootstrap or .spec.externalClusters as jsonPointers here.
-      # RespectIgnoreDifferences=true + ServerSideApply STRIPS fields named in
-      # jsonPointers during apply — would block the overlay-based DR flow from
-      # ever reaching the live Cluster. Each DB's root kustomization.yaml
-      # switches between overlays/initdb and overlays/recovery; ArgoCD must
-      # fully apply that. CNPG ignores spec.bootstrap on existing Clusters
-      # semantically (it's creation-time only), so post-recovery drift
-      # between git and live is cosmetic — the extra sync churn is worth it
-      # for correctness. ExternalSecret and PVC restore diff noise is ignored
-      # globally.
-      #
-      # `managedFieldsManagers: [manager]` ignores drift on fields whose SSA
-      # owner is the CNPG operator (manager name `manager`). The operator
-      # injects ~20 spec defaults post-create — affinity, enablePDB,
-      # primaryUpdateStrategy, probes, replicationSlots, postgresql defaults
-      # (archive_mode, max_replication_slots, wal_keep_size, log_*,
-      # ssl_min/max_protocol_version, etc.), smartShutdownTimeout,
-      # postgresGID/UID, storage.resizeInUseVolumes, etc. None of these are
-      # written by ArgoCD (manager `argocd-controller`), so ignoring the
-      # operator's manager clears the drift without enumerating each path.
-      # Fields ArgoCD writes (instances, imageName, plugins, storage size,
-      # postgresql.parameters we set explicitly, monitoring.enablePodMonitor,
-      # bootstrap when present via overlay) remain fully compared. This is
-      # the SSA-native ownership-based diff strategy. Unlike jsonPointers it
-      # does NOT cause SSA strip on apply.
       ignoreDifferences:
       - group: ""
         kind: PersistentVolumeClaim
@@ -138,9 +81,3 @@ spec:
         - /spec/dataSource
         - /spec/dataSourceRef
         - /spec/volumeName
-      - group: postgresql.cnpg.io
-        kind: Cluster
-        managedFieldsManagers:
-        - manager
-        jsonPointers:
-        - /metadata/generation
