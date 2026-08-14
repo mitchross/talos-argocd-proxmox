@@ -33,6 +33,12 @@ is covered by the [migration/pattern doc](plain-postgres-migration.md) and the
 
 ## The mental model (read this once, slowly)
 
+![The cluster dies on a nuke; Git, Kopia snapshots in RustFS S3, and 1Password survive off-cluster and rebuild the new cluster with no manual steps](../../assets/postgres-nuke-lifecycle.svg)
+
+*Everything inside the cluster is disposable because everything it needs to
+rebuild itself lives outside it.
+[Open the full-size lifecycle diagram](../../assets/postgres-nuke-lifecycle.svg).*
+
 Three loops run all the time. Understand them and every weird behavior in this
 page makes sense:
 
@@ -172,6 +178,13 @@ them alone; an OutOfSync-looking PVC that is `Bound` and working is fine.
 When a database PVC is (re)created, it sits `Pending` while kopiur downloads
 the newest snapshot into it. **This is the restore working.** Small DBs take
 under a minute; big ones take as long as the download takes.
+
+![When a PVC is created: snapshot exists means it fills then binds with data; S3 unreachable means it waits Pending and never binds empty; a brand-new database binds empty once and is protected from then on](../../assets/postgres-restore-decision.svg)
+
+*The invariant to remember: an outage delays a restore — it can never fake one.
+"Empty after rebuild" requires a reachable repo with no snapshot, which only
+describes a database that never existed before.
+[Open the full-size decision diagram](../../assets/postgres-restore-decision.svg).*
 
 ```bash
 # Watch the hydration:
