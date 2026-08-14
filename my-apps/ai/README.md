@@ -4,72 +4,36 @@ Local AI infrastructure running on dual RTX 3090s (24 GB each) + 128 GB
 system RAM, 12-core CPU. Time-slicing is OFF; whole-card allocation is
 enforced via the GPU Operator.
 
-The GPU workloads (vLLM, llama-cpp, ComfyUI) are **mutually-exclusive
-whole-card** (`type: Recreate`, no time-slicing) and **scale-swap** — bringing
-one up means scaling the others to `replicas: 0`, never two on the cards at
-once. **The current default app-inference backend is vLLM** (served model
-`qwen3.6-27b`, TP=2 across both 3090s); OpenWebUI, Perplexica, Project NOMAD, and
-Karakeep point there. llama-cpp and ComfyUI are currently scaled to 0 and
-swapped in on demand — llama-cpp for ComfyUI's vision→image workflow and manual
-multi-preset use. The authoritative app→backend table is
-`docs/domains/ai-gpu/model-catalog.md`; see `vllm/README.md` for the scale-swap
-commands.
+The GPU workloads (vLLM, llama-cpp, ComfyUI) use whole-card allocation
+(`type: Recreate`, no time-slicing) and scale-swap by committed replica counts.
+The current temporary state evaluates Qwen 3.8-27B GGUF: vLLM is parked at `0`,
+llama-cpp is `1`, and OpenWebUI points at llama-cpp. The proven Qwen 3.6-27B
+AWQ deployment and its read-only NFS weights remain unchanged for the eventual
+swap back. Other apps still point at vLLM and are unavailable during this test.
 
 ## Architecture
 
 ```
-                        Open WebUI (chat UI)
-                       /        |         \
-                      /         |          \
-              vLLM         ComfyUI      SearXNG
-        (LLM inference,    (image+video) (web search)
-         DEFAULT backend)  port 8188
-         port 8080
-           ┌──────────────┐   ┌──────────────────────┐
-           │ Qwen3.6-27B  │   │ Z-Image-Turbo (t2i)  │
-           │ AWQ, TP=2    │   │ Qwen-Image-Edit (i2i)│
-           │ (multimodal) │   │ Wan 2.2 T2V (video)  │
-           └──────────────┘   │ Wan 2.2 I2V (video)  │
-                              │ Florence-2 (caption) │
-        (swap-in: llama-cpp   │ WD14 Tagger (tags)   │
-         Qwen3.6-35B-A3B GGUF └──────────────────────┘
-         +mmproj, presets)
+OpenWebUI ──► llama-cpp ──► Qwen3.8-27B UD-Q4_K_XL.gguf + vision projector
+                 │
+                 ├── qwen3.8          (thinking chat/vision)
+                 └── qwen3.8-nothink  (strict title/tag tasks)
 
-  Whole-card scale-swap across both 3090s (2×24GB) — never two on the
-  cards at once. vLLM TP=2 pools both cards; llama-cpp / ComfyUI swap in
-  on demand (scale others to replicas:0). Current state: vLLM up.
+vLLM (replicas: 0) ──► Qwen3.6-27B AWQ, TP=2 — parked and unchanged
 ```
 
-## LLM Model (llama-cpp) — on-demand swap-in backend
+## LLM Model (llama-cpp) — Qwen 3.8 evaluation
 
-> Note: llama-cpp is **not** the current default app-inference backend — vLLM is
-> (see the top of this doc and `docs/domains/ai-gpu/model-catalog.md`). llama-cpp
-> is swapped in on demand (scale it to `replicas: 1`, others to `0`) for
-> ComfyUI's vision→image workflow and manual multi-preset use. The presets below
-> apply when llama-cpp is the resident workload.
-
-Multiple presets served via `llama-server` on a whole 3090. Presets hot-swap on
-the same GPU — weights only re-load when you switch between different
-model files (`qwen3.6` ↔ `gemma4` ↔ `uncensored`). Switching between
-`think` / `nothink` variants of the same model is instant (same GGUF,
-different chat template).
-
-Qwen 3.6-35B-A3B is the primary model — it handles chat, coding,
-agentic tool calls, AND vision via the Unsloth `mmproj-BF16.gguf`
-projector. Gemma 4 is kept as a multimodal fallback. A Qwen 3.5
-uncensored fine-tune covers unfiltered / red-team work.
+llama.cpp exposes two API presets over one stored model and projector. The
+separate presets are required because OpenWebUI background tasks need thinking
+disabled for strict output; they do not duplicate weights on NFS.
 
 | Preset | Model | Think | Context | Primary Use |
 |--------|-------|-------|---------|-------------|
-| `qwen3.6 - qwen3.6-35b-a3b`                       | Qwen3.6-35B-A3B UD-Q4_K_XL (multimodal) | ✅ | 64K  | Chat, coding, agentic tool calls, vision |
-| `qwen3.6-nothink - qwen3.6-35b-a3b-nothink`       | (same GGUF + mmproj)                    | ❌ | 64K  | JSON / tool output, short timeouts |
-| `gemma4 - gemma4-26b`                             | Gemma-4-26B-A4B UD-Q4_K_XL              | ✅ | 128K | Multimodal fallback |
-| `gemma4-nothink - gemma4-26b-nothink`             | (same GGUF)                             | ❌ | 128K | Fast multimodal fallback |
-| `uncensored - qwen3.5-uncensored`                 | Qwen3.5-35B-A3B Uncensored Q4_K_M       | ✅ | 32K  | Unfiltered / red-team |
-| `nothink-uncensored - qwen3.5-uncensored-nothink` | (same GGUF)                             | ❌ | 32K  | Bulk unfiltered gen |
+| `qwen3.8 - qwen3.8-27b` | Qwen3.8-27B UD-Q4_K_XL + mmproj | ✅ | 64K | OpenWebUI chat and vision |
+| `qwen3.8-nothink - qwen3.8-27b-nothink` | Same GGUF + mmproj | ❌ | 64K | Titles, tags, and JSON-shaped tasks |
 
-Source of truth: `my-apps/ai/llama-cpp/configmap.yaml` (each preset has
-its own aliases listed there).
+Source of truth: `my-apps/ai/llama-cpp/presets.ini`.
 
 ### Key llama-server Optimizations
 
@@ -92,7 +56,7 @@ llama-server natively supports the Anthropic Messages API at `/v1/messages`. No 
 export ANTHROPIC_BASE_URL="http://llama.vanillax.me"
 export ANTHROPIC_AUTH_TOKEN="no-key-required"
 export ANTHROPIC_API_KEY=""
-claude --model "qwen3.6 - qwen3.6-35b-a3b"
+claude --model "qwen3.8 - qwen3.8-27b"
 ```
 
 ### Using with OpenClaw / Other Tools
@@ -148,12 +112,12 @@ Two options, both pre-installed in the megapak Docker image:
 
 **Workflows**: `workflows/florence2-caption.json`, `workflows/wd14-tagger.json`
 
-For deeper image analysis (visual Q&A, reasoning), use **Qwen 3.6** via Open WebUI chat
+For deeper image analysis (visual Q&A, reasoning), use **Qwen 3.8** via Open WebUI chat
 (upload image → ask questions). This goes through llama-server, not ComfyUI.
 ComfyUI can also call llama-server's vision API directly via the `comfyui-llamacpp-client`
-node (URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`, model:
-`qwen3.6 - qwen3.6-35b-a3b`). See `custom-nodes/image_to_llamacpp_base64.py` and
-`workflows/llamacpp-vision-to-image.json`.
+node (URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`). The
+checked-in ComfyUI workflow is parked with ComfyUI and must be repointed to
+`qwen3.8` before it is used again.
 
 ## Video Generation (ComfyUI)
 
@@ -272,14 +236,14 @@ The job downloads (skips existing):
 | `THREAD_POOL_SIZE` | `500` | Default 40 causes freezes under load |
 | `CHAT_RESPONSE_STREAM_DELTA_CHUNK_SIZE` | `5` | Batch 5 tokens per SSE push -- less overhead |
 | `MODELS_CACHE_TTL` | `300` | Cache model list 5 min -- stops hammering llama-server |
-| `ENABLE_BASE_MODELS_CACHE` | `True` | Faster startup, fewer API calls |
+| `ENABLE_BASE_MODELS_CACHE` | `False` | Avoid retaining a stale model catalog during the evaluation |
 | `AIOHTTP_CLIENT_TIMEOUT` | `1800` | 30 min to match HTTPRoute timeout |
 | `ENABLE_AUTOCOMPLETE_GENERATION` | `False` | Was firing on every keystroke -- high load, low value |
 
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`qwen3.6-nothink - qwen3.6-35b-a3b-nothink` -- same weights as the primary
+`qwen3.8-nothink` -- same weights as the primary
 chat preset, but skips the thinking phase so short structured jobs return
 faster.
 
