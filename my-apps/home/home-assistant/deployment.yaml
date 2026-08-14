@@ -29,23 +29,11 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       # Add restart policy for better reliability
       restartPolicy: Always
-      # Pin to the GPU worker (VM 100) — that is where the SONOFF Zigbee dongle
-      # is USB-passed and where cp210x exposes /dev/ttyUSB0. The hostPath device
-      # mount below only resolves on this node.
+      # Pin to the general worker (VM 101), where the SONOFF Zigbee dongle is
+      # USB-passed and cp210x exposes /dev/ttyUSB0. The hostPath device mount
+      # below only resolves on this node.
       nodeSelector:
-        gpu-worker: "true"
-      # Pod affinity to ensure all home-assistant pods stay on same node (RWO volume requirement)
-      # This prevents Multi-Attach errors if replicas are increased
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app.kubernetes.io/name
-                operator: In
-                values:
-                - home-assistant
-            topologyKey: kubernetes.io/hostname
+        node.vanillax.dev/class: general-worker
       initContainers:
         - name: copy-config
           image: alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
@@ -152,7 +140,7 @@ spec:
         - name: config-files
           configMap:
             name: config
-        # SONOFF Zigbee dongle char device on the gpu-worker node. cp210x must
+        # SONOFF Zigbee dongle char device on the general-worker node. cp210x must
         # be loaded (Talos single-node-gpu.yaml) for this to exist. If the path
         # ever shifts (e.g. a second serial device), switch to the stable
         # /dev/serial/by-id/usb-… symlink target.
