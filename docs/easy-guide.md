@@ -42,6 +42,63 @@ The rest of this page walks each idea from zero.
 
 ---
 
+## Part 0 — What has to exist first
+
+This guide starts the moment you have a working Kubernetes cluster. Getting
+*to* that moment is a separate job, and it is worth being honest about it:
+there are three layers underneath everything below, and each one has to be
+standing before the next makes sense.
+
+```
+Proxmox        the hypervisor — actual machines with CPUs and disks
+   ↓
+Omni           the control plane that turns those machines into Talos nodes
+   ↓
+Talos          minimal Linux that runs only Kubernetes — no SSH, no shell
+   ↓
+[you are here] GitOps, sync waves, kopiur, DR
+```
+
+| Layer | What it is | Where it is set up |
+| --- | --- | --- |
+| **Proxmox** | Your hypervisor. Two hosts here, but one is fine. | Your own hardware |
+| **Omni** | Sidero's control plane. Provisions Talos, manages upgrades, hands you a kubeconfig. Runs as **one Docker container** — a Raspberry Pi 5 with an NVMe is plenty. | [Omni setup guide](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/omni/README.md) |
+| **Proxmox infrastructure provider** | The add-on that lets Omni *create* VMs for you instead of you building them by hand. One container per Proxmox host. | [proxmox-provider/](https://github.com/mitchross/talos-argocd-proxmox/tree/main/omni/proxmox-provider) |
+| **Talos** | The OS on the nodes. You never log into it — Omni and `talosctl` drive it through an API. | Provisioned by Omni |
+
+!!! question "Do I need all of this to use the ideas on this page?"
+    **No.** GitOps, sync waves, and kopiur are not Talos-specific or
+    Omni-specific — they work on any Kubernetes cluster with CSI snapshot
+    support. If you already have a cluster, skip straight to
+    [Part 1](#part-1-gitops-a-directory-is-an-application) and ignore the
+    Proxmox/Omni layers entirely. They are simply *how this particular cluster
+    gets built*, and they are what make "destroy everything and rebuild"
+    a ten-minute operation rather than a weekend.
+
+### The three things that bite people
+
+If you *are* building the Omni layer, these are the ones worth knowing before
+you start rather than after:
+
+1. **Omni has no login of its own.** There is no admin account and no password
+   file — it authenticates entirely against an external identity provider
+   (Auth0, SAML, or OIDC). Sort that out first; it is the step most likely to
+   block you.
+2. **Put etcd on an SSD or NVMe.** Omni runs an embedded etcd that fsyncs
+   constantly. An SD card or USB stick will work for a while, then produce
+   `apply entries took too long`, then corrupt itself. This is the single most
+   common way to end up with a broken Omni.
+3. **Back up `omni.asc` off the box, immediately.** It is the GPG key that
+   decrypts Omni's etcd. Lose it and every cluster Omni manages becomes
+   unrecoverable — no reset, no support ticket. It is the one genuinely
+   irreplaceable file in the whole stack.
+
+The full walkthrough — certificates, GPG, config, first login, provider keys —
+is in the [Omni setup guide](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/omni/README.md), written for someone who
+has never done it before.
+
+---
+
 ## Part 1 — GitOps: a directory *is* an application
 
 There are no hand-written ArgoCD `Application` manifests for apps in this
