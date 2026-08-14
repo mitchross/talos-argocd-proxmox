@@ -34,6 +34,18 @@ spec:
         # ReplicaSet roll on each gitops bump.
         config-rev: "2026-05-10-forecast-ttl-300"
     spec:
+      # Prefer the node already hosting the worker that shares these RWO
+      # volumes. This keeps tile-server replacements co-located while still
+      # allowing tile-server to bootstrap first when no worker exists yet.
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: radar-ng-worker
+                topologyKey: kubernetes.io/hostname
       # Spread replicas across nodes so a single node failure can't take
       # the API offline. ScheduleAnyway lets the second pod schedule even
       # if there's only one matching node available.
