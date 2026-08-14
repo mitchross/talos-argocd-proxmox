@@ -41,7 +41,7 @@ spec:
           # Held at 17 (not gitea's 18) until Temporal upstream declares
           # PG18 support — temporal-sql-tool schema setup is the risk, and
           # a wedged schema hook deadlocks the whole app sync.
-          image: postgres:17.6
+          image: postgres:18.6
           securityContext:
             runAsUser: 999
             runAsGroup: 999
@@ -108,7 +108,7 @@ spec:
         # Metrics sidecar — same pattern as gitea-postgres (reference:
         # docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
         - name: postgres-exporter
-          image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
           securityContext:
             runAsUser: 65534
             runAsGroup: 65534

@@ -29,7 +29,7 @@ spec:
         - name: hindsight
           # Full (non-slim) image: bundled local embedding + reranker models,
           # so only the LLM is external (in-cluster vLLM).
-          image: ghcr.io/vectorize-io/hindsight:0.9.0
+          image: ghcr.io/vectorize-io/hindsight:0.9.1
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_PASSWORD
