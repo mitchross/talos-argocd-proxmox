@@ -39,6 +39,15 @@ is covered by the [migration/pattern doc](plain-postgres-migration.md) and the
 rebuild itself lives outside it.
 [Open the full-size lifecycle diagram](../../assets/postgres-nuke-lifecycle.svg).*
 
+```text
+DIES ON NUKE                 SURVIVES (off-cluster)          REBUILT
+--------------               ----------------------          -------
+The cluster                  Git repo          ── rebuilds objects ──┐
+  every pod & object         RustFS S3 (Kopia) ── refills disks   ──┤→ New cluster
+  every Longhorn disk        1Password         ── recreates secrets ┘  same apps,
+  the databases                                                        same data
+```
+
 Three loops run all the time. Understand them and every weird behavior in this
 page makes sense:
 
@@ -185,6 +194,12 @@ under a minute; big ones take as long as the download takes.
 "Empty after rebuild" requires a reachable repo with no snapshot, which only
 describes a database that never existed before.
 [Open the full-size decision diagram](../../assets/postgres-restore-decision.svg).*
+
+```text
+PVC created ──┬─ snapshot exists  → fills from newest snapshot → binds WITH data
+              ├─ S3 unreachable   → waits Pending + retries — NEVER binds empty
+              └─ brand-new DB     → binds empty once → hourly backups begin
+```
 
 ```bash
 # Watch the hydration:
