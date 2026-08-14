@@ -21,7 +21,7 @@
 ### Task 1: Declare Dell's Longhorn disk unschedulable
 
 **Files:**
-- Modify: `omni/cluster-template/cluster-template-singlenode-gpu.yaml`
+- Modify: `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml`
 
 **Interfaces:**
 - Consumes: Longhorn's `node.longhorn.io/default-disks-config` node annotation.
