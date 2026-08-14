@@ -32,7 +32,7 @@ spec:
           # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
           # need a manual dump/restore (Postgres data dirs are not
           # major-version compatible; majors are gated in renovate.json5).
-          image: postgres:18.4
+          image: postgres:18.6
           securityContext:
             runAsUser: 999
             runAsGroup: 999
