@@ -1,0 +1,31 @@
+# Temporary snapshot clones mounted by kopiur backup movers.
+#
+# Longhorn's default `longhorn` class binds immediately. For a CSI snapshot
+# clone that means Longhorn chooses the clone location before Kubernetes knows
+# where the consuming mover pod will run. Longhorn V1 can then spend minutes
+# handing the completed clone from one node to another (longhorn/longhorn
+# #13335), and a disrupted handoff can leave the backup Job wedged.
+#
+# WaitForFirstConsumer reverses that order: schedule the mover first, then pass
+# its node to Longhorn as the preferred provisioning location. Keep
+# best-effort locality rather than strict-local: the general worker is
+# compute-only, and strict-local plus an unavailable local Longhorn disk can
+# deadlock provisioning.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-kopiur-staging
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  dataEngine: "v1"
+  dataLocality: "best-effort"
+  disableRevisionCounter: "true"
+  unmapMarkSnapChainRemoved: "ignored"
