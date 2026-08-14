@@ -72,8 +72,8 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.10.1` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
-| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
+| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
 | Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
@@ -87,13 +87,13 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 
 ## Rebuild and Bootstrap
 
-> **Two clusters live here.** Everything below uses the **single-node GPU** cluster. For the multi-node prod cluster, swap the names/files:
+> **Two clusters live here.** Everything below uses the **Threadripper GPU + workers** cluster. For the multi-node prod cluster, swap the names/files:
 >
-> | | Single-node GPU | Multi-node prod |
+> | | Threadripper GPU + workers | Multi-node prod |
 > |---|---|---|
-> | Cluster | `talos-singlenode-gpu-prod` | `talos-prod-cluster` |
+> | Cluster | `talos-threadripper-gpu-workers-prod` | `talos-prod-cluster` |
 > | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
-> | Template | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` | `omni/cluster-template/cluster-template.yaml` |
+> | Template | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` | `omni/cluster-template/cluster-template.yaml` |
 > | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; Dell: 1 regular worker | 3 CP + 3 workers + 1 GPU |
 
 The Threadripper classes intentionally allocate 100 GiB total: 12 GiB to the
@@ -110,7 +110,7 @@ placeholder commands or omitted flags.
 Skip this step when provisioning for the first time.
 
 ```bash
-omnictl cluster delete talos-singlenode-gpu-prod --destroy-disconnected-machines
+omnictl cluster delete talos-threadripper-gpu-workers-prod --destroy-disconnected-machines
 omnictl get machines
 ```
 
@@ -133,12 +133,12 @@ omnictl apply -f omni/machine-classes/dell-worker.yaml
 omnictl get machineclasses
 
 omnictl cluster template validate \
-  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
+  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml
 omnictl cluster template sync -v \
-  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml \
+  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml \
   --dry-run
 omnictl cluster template sync -v \
-  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
+  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml
 
 omnictl get machinerequeststatuses -w
 ```
@@ -160,13 +160,13 @@ export OMNI_ENDPOINT=https://omni.vanillax.me:443
 export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
 
 omnictl kubeconfig \
-  --cluster talos-singlenode-gpu-prod \
+  --cluster talos-threadripper-gpu-workers-prod \
   --service-account \
   --user talos-prod-sa \
   --force
 
-talosctl config remove omni-prod-talos-singlenode-gpu-prod -y 2>/dev/null || true
-omnictl talosconfig --cluster talos-singlenode-gpu-prod
+talosctl config remove omni-prod-talos-threadripper-gpu-workers-prod -y 2>/dev/null || true
+omnictl talosconfig --cluster talos-threadripper-gpu-workers-prod
 
 kubectl get nodes -o wide
 ```
@@ -206,7 +206,7 @@ fi
 
 "$CILIUM_CMD" install \
     --version 1.20.0 \
-    --set cluster.name=talos-singlenode-gpu-prod \
+    --set cluster.name=talos-threadripper-gpu-workers-prod \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -290,7 +290,7 @@ successful event-specific base backup before syncing each consumer.
 
 ```bash
 omnictl cluster template status \
-  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml \
+  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml \
   --wait 30m
 
 kubectl get nodes
@@ -343,7 +343,7 @@ omnictl serviceaccount create talos-prod-sa --use-user-role
 # 3. Generate a bearer-token kubeconfig (NOT OIDC)
 OMNI_ENDPOINT=https://omni.vanillax.me:443 \
 OMNI_SERVICE_ACCOUNT_KEY="<key-from-step-2>" \
-omnictl kubeconfig --cluster talos-singlenode-gpu-prod --service-account --user talos-prod-sa --force
+omnictl kubeconfig --cluster talos-threadripper-gpu-workers-prod --service-account --user talos-prod-sa --force
 
 # 4. Verify
 kubectl get nodes
