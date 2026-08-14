@@ -26,8 +26,8 @@ Two things make this safe by construction:
 
 | App | Cards | `replicas` in git (current) | File |
 |---|---|---|---|
-| **vLLM** (default app inference, TP=2) | **2** | `1` | `my-apps/ai/vllm/deployment.yaml` |
-| **llama-cpp** (preset bank, multimodal) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
+| **vLLM** (Qwen 3.6 AWQ, parked during evaluation) | **2** | `0` | `my-apps/ai/vllm/deployment.yaml` |
+| **llama-cpp** (Qwen 3.8 GGUF evaluation) | 1 | `1` | `my-apps/ai/llama-cpp/deployment.yaml` |
 | **ComfyUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | **SwarmUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (batch benchmark **Jobs**, not always-on) | 1 or 2 | n/a | `my-apps/ai/llmfit/` |
