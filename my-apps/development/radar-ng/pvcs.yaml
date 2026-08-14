@@ -17,9 +17,9 @@
 # faster than any NFS/share-manager path and sidesteps the errno-95 O_TMPFILE class
 # of NFS bugs (see openmeteo-data).
 #   MULTI-NODE CAVEAT: RWO-shared-by-many-pods only holds while they co-locate on
-#   one node. Before adding worker nodes, pin radar-ng workers + tile-server +
-#   temporal-worker together with podAffinity (as open-meteo already does), or move
-#   these back to a real RWX class.
+#   one node. The worker has required podAffinity to tile-server, and tile-server
+#   prefers the existing worker's node during replacement. Keep those constraints
+#   in place or move these back to a real RWX class.
 #
 # All three hold backup-exempt REBUILDABLE data, so the immutable storageClass/
 # accessMode change is applied by delete+recreate of the PVCs; tiles regenerate.
