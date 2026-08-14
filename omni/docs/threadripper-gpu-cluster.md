@@ -1,6 +1,6 @@
 # Threadripper GPU Cluster
 
-`talos-singlenode-gpu-prod` runs three VMs on the Threadripper Proxmox host:
+`talos-threadripper-gpu-workers-prod` runs three VMs on the Threadripper Proxmox host:
 
 - `threadripper-control-plane`: 4 vCPU, 12 GiB RAM, 100 GiB disk.
 - `threadripper-worker`: 8 vCPU, 24 GiB RAM, 64 GiB `local-lvm` boot disk.

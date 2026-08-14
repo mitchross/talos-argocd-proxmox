@@ -23,9 +23,10 @@ spec:
   serviceSelector:
     matchLabels: {}
 
-  # Single-node cluster: the only node is a control-plane node, so it must be
-  # eligible to announce LoadBalancer IPs. Excluding control-plane nodes leaves
-  # every VIP allocated but unreachable from the LAN.
+  # Every node is eligible to announce LoadBalancer IPs, control plane included.
+  # This matters: excluding control-plane nodes leaves every VIP allocated but
+  # unreachable from the LAN. Deliberately permissive - do not add a selector
+  # that filters out control-plane nodes.
   nodeSelector:
     matchLabels: {}
     matchExpressions: []
