@@ -39,7 +39,7 @@ spec:
           # (17.10->18.4) crashlooped this pod on a stale PG17 data dir.
           # If merging a major by hand anyway: dump with the OLD major's
           # image first, wipe/reinit PGDATA, then restore.
-          image: postgres:18.4
+          image: postgres:18.6
           securityContext:
             runAsUser: 999
             runAsGroup: 999
