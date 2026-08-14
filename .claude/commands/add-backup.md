@@ -117,7 +117,6 @@ are gone.
 
 Do not back up:
 
-- CNPG database PVCs — CNPG uses native Barman/S3.
 - Redis PVCs — backup-exempt, disposable.
 - PostHog PVCs — backup-exempt, disposable.
 - System-namespace PVCs.

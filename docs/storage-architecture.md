@@ -9,10 +9,9 @@ this cluster — including the cluster itself ceasing to exist.
 recoverable copy outside it. [Open the full-size storage diagram](assets/storage-failure-domains.svg).*
 
 !!! abstract "Scope"
-    Application PVCs (Longhorn → kopiur/Kopia → RustFS S3). **Out of scope:**
-    CloudNativePG database backups (Barman → S3) — see
-    [CNPG disaster recovery](domains/cnpg/disaster-recovery.md). Different
-    tool, different runbook; the two systems never touch each other.
+    Application PVCs (Longhorn → kopiur/Kopia → RustFS S3) — which since the
+    CNPG retirement (2026-08-13) includes every database. The old Barman
+    buckets are aging out under the RustFS lifecycle policy.
 
 !!! info "Related pages"
     - **The story, from zero** — pitch, plain English, talk tracks, the
@@ -167,7 +166,6 @@ The whole behaviour as a flat lookup table:
 | Label a PVC `backup-exempt: "true"` + a fully-qualified reason annotation | You deliberately ship no kopiur bundle. It recreates empty, **by recorded decision**. |
 | Use the bare `backup-exempt-reason` key instead of the fully-qualified one | The bare key records nothing and nothing at runtime enforces it. CI (`validate-kopiur-coverage.py`) **warns** on it. Always use the fully-qualified `storage.vanillax.dev/backup-exempt-reason`. |
 | Add the kopiur label/stub to a system namespace (`kube-system`, `argocd`, `longhorn-system`, `kopiur-system`) | Don't. System namespaces are not opted in. |
-| Add a kopiur bundle to a CNPG database PVC | Don't. Postgres needs SQL-aware backups (Barman → S3), not filesystem snapshots. [Separate system, separate runbook](domains/cnpg/disaster-recovery.md). |
 | Mover fails with `PermissionDenied` | Its `securityContext` UID isn't the data owner. Fix the stub's `mover` UID:GID — [mover permissions](domains/storage/kopiur-mover-permissions.md). |
 
 ---
@@ -296,8 +294,8 @@ recreate an app and the next backup finds every chunk already present
 once; storage grows with unique data, not PVC count.
 
 The repo lives **off-cluster** on RustFS (S3) — the one piece of state that
-must outlive any cluster. It's a **dedicated `kopiur` bucket**, isolated from
-the CNPG/Barman database backups (a different bucket, a different pipeline).
+must outlive any cluster. It's a **dedicated `kopiur` bucket** (the retired
+CNPG/Barman `postgres-backups` bucket is aging out via lifecycle policy).
 
 ---
 
@@ -357,10 +355,9 @@ metadata:
 - An exempt PVC recreates **empty** after DR. That is the contract — write the
   reason like you're explaining it to yourself during an outage.
 
-**Back up:** user content, non-CNPG databases, hard-to-recreate config.
+**Back up:** user content, databases, hard-to-recreate config.
 **Exempt:** caches, brokers, externally-synced data, disposable analytics
-(PostHog and Redis are exempt here; CNPG uses native Barman/S3).
-**Never put a kopiur bundle on:** CNPG database PVCs — Barman owns those.
+(PostHog's ClickHouse/Kafka and Redis are exempt here).
 
 ### Restore drill (prove it)
 
@@ -464,7 +461,7 @@ Longhorn scheduling and any deliberate replica-count changes happen separately.
 | New PVC `Pending`, populator erroring | backend unreachable — RustFS down, wrong endpoint/creds, or the workload key lacks read/write on the `kopiur` bucket. This is the safe state (never binds empty); fix the backend. |
 | `PVC is invalid: Forbidden` ComparisonError | `dataSourceRef` added to a **Bound** PVC (immutable) — harmless; applies on next recreate. The `ServerSide*` annotations + AppSet `ignoreDifferences` mask the live diff. |
 | Mover stuck `Init`/`Pending`, "volume hasn't been attached" with an old VolumeAttachment | stale CSI state — delete the mover pod; its Job retries with a fresh attach. |
-| Pod crashloops on `read-only file system` after a storage disruption | the volume must FULLY detach to drop the stale mount: scale to 0 → wait for Longhorn volume `detached` → scale up (CNPG: `cnpg.io/hibernation=on` → wait → `off`). |
+| Pod crashloops on `read-only file system` after a storage disruption | the volume must FULLY detach to drop the stale mount: scale to 0 → wait for Longhorn volume `detached` → scale up (plain Postgres: scale the Deployment). |
 | Restored volume `degraded` briefly | Longhorn rebuilding its second replica — wait, don't touch. |
 
 ### Quick health commands
@@ -535,9 +532,9 @@ The 0.5.0 breaking changes (copyMethod default flip, `verification.quick`
 reshape, metrics rename) were assessed 2026-07-04 — none affected this repo;
 see the note beside the pin in `infrastructure/controllers/kopiur-operator/kustomization.yaml`.
 
-**RPO is the schedule cadence.** Hourly at best. Anything needing tighter RPO
-or application-consistent quiescing (databases!) uses native tooling — CNPG
-does here.
+**RPO is the schedule cadence.** Hourly at best. Databases accept this
+explicitly: crash-consistent snapshots + Postgres WAL recovery, no
+point-in-time restore (the trade made when CNPG was retired 2026-08-13).
 
 **Restore proof is continuous but narrow.** The
 [restore canary](disaster-recovery.md#the-restore-canary) re-proves the
@@ -560,6 +557,5 @@ mid-transaction garbage — which is why databases don't use this path).
 | Daemon-drop example (uid 999:568) | `my-apps/home/project-nomad/mysql/` |
 | Root-owned example (uid 0) | `my-apps/home/home-assistant/kopiur/` |
 | Restore canary | `my-apps/system/restore-canary/` |
-| CNPG databases (separate system) | `infrastructure/database/cloudnative-pg/` |
 | Operator source | [`home-operations/kopiur`](https://github.com/home-operations/kopiur) |
 | Mechanism docs | [`kopiur backup architecture`](domains/storage/kopiur-backup-architecture.md) · [`mover permissions`](domains/storage/kopiur-mover-permissions.md) · [`evaluation`](domains/storage/kopiur-evaluation.md) · [`trial`](kopiur-trial.md) |

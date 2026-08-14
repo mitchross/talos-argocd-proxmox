@@ -112,8 +112,8 @@ This cluster's waves, and *why* each sits where it does:
 | **0** | Cilium (CNI), ArgoCD itself, 1Password Connect, External Secrets | No network → nothing schedules. No secrets engine → no credentials for anyone. |
 | **1** | cert-manager, Longhorn, Snapshot Controller | Storage + the `VolumeSnapshot` CRDs the backup system snapshots with. |
 | **2** | **kopiur operator** (CRDs + controller + webhook) | The volume populator must exist before any PVC references a `Restore`. |
-| **3** | **kopiur config** (`ClusterRepository`, credential fanout, `VolumeSnapshotClass`) + CNPG Barman plugin | The repo definition + S3 creds must be live before movers run. |
-| **4** | Infrastructure + database AppSets, KEDA, VPA, Temporal worker | The platform layer; CNPG databases restore themselves via Barman here. |
+| **3** | **kopiur config** (`ClusterRepository`, credential fanout, `VolumeSnapshotClass`) | The repo definition + S3 creds must be live before movers run. |
+| **4** | Infrastructure + database AppSets, KEDA, VPA, Temporal worker | The platform layer. Databases are ordinary apps — their PVCs restore like any other. |
 | **5** | Monitoring AppSet (kube-prometheus-stack), OTEL operator | Observability is deliberately **not** a core dependency. |
 | **6** | **my-apps AppSet** — every user app + its per-PVC backup CRs | By now, everything a restoring PVC needs already exists. |
 
@@ -489,7 +489,6 @@ Dies with the cluster:
 Survives (off-cluster):
   - Git repo
   - Kopia repo — RustFS S3
-  - CNPG Barman S3 (databases, separate system)
   - 1Password vault
   - Omni/Talos machine config
 
@@ -502,11 +501,9 @@ The rebuild, end to end:
 1. `omnictl` provisions fresh Talos VMs on Proxmox (machine classes + template).
 2. `./scripts/bootstrap-argocd.sh` installs Argo and starts the dependency waves.
 3. Waves 0–3 walk: network → secrets → storage → kopiur operator → repo config.
-4. `./scripts/bootstrap-cnpg-recovery.sh --execute` advances each CNPG restore,
-   proves its lineage/data/backup, then syncs its consumer.
-5. Other app PVCs hold `Pending` while kopiur hydrates them; apps start on
-   restored data in parallel.
-6. You drink the coffee.
+4. App PVCs (databases included) hold `Pending` while kopiur hydrates them;
+   apps start on restored data in parallel.
+5. You drink the coffee.
 
 A [restore canary](disaster-recovery.md#the-restore-canary) takes daily backups
 and runs weekly quick verification. Its isolated test PVC is where an operator
@@ -514,10 +511,11 @@ can safely re-run the destructive delete→recreate→populate→byte-verify dri
 
 The honest boundaries:
 
-- **Database recovery is an explicit RPO choice** — remaining CNPG databases
-  use Postgres-aware Barman + WAL/PITR. Plain single-instance Postgres uses a
-  single-volume crash-consistent kopiur snapshot and WAL crash recovery, with
-  no PITR. Do not mix both systems on one database PVC.
+- **Database recovery is an explicit RPO choice** — plain single-instance
+  Postgres uses a single-volume crash-consistent kopiur snapshot (hourly tier)
+  and WAL crash recovery. There is **no point-in-time recovery**; the last
+  snapshot is the only stop. That trade was accepted when CNPG was retired
+  (2026-08-13).
 - **One repo copy, on-LAN** — this is not 3-2-1; a NAS-level disaster loses
   the backups. Known, accepted, documented.
 - **RPO = the cron cadence.** You lose at most one interval of data.
@@ -612,12 +610,11 @@ Restores error and retry; PVCs stay `Pending`. Nothing binds empty. Recovery
 is delayed, never corrupted. (Row 3 of the table in Part 5.)
 
 **What about the databases?**
-The CNPG-managed ones use Barman WAL archiving to a separate S3 bucket —
-SQL-aware, point-in-time capable, entirely independent of kopiur
-([CNPG DR](domains/cnpg/disaster-recovery.md)). They are migrating to plain
-Postgres + kopiur so databases follow the exact same restore-before-bind flow
-as every other PVC ([migration doc](domains/cnpg/plain-postgres-migration.md));
-new databases start on that pattern directly.
+Same flow. Every database is a plain Postgres Deployment whose PVC follows
+the exact same restore-before-bind path as every other PVC (CNPG was retired
+2026-08-13 — [pattern + history](domains/cnpg/plain-postgres-migration.md)).
+The operator's guide is
+[run-postgres-plain-english.md](domains/cnpg/run-postgres-plain-english.md).
 
 **How do I add a backup to a new app?**
 Six steps, ~5 minutes: find the data owner's uid:gid → label the namespace →

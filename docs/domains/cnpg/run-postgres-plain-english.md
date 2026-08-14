@@ -3,11 +3,9 @@
 **Purpose:** everything a junior Kubernetes operator needs to run, check,
 restore, and change a Postgres database in this cluster without fighting
 GitOps.
-**Status:** current truth. This is the **default** database pattern
-(plain Postgres + kopiur, decided 2026-07-09). Two legacy databases
-(paperless, temporal) still run on CloudNativePG — they have a
-[separate guide](backup-restore-start-guide.md) and this page tells you when
-you've wandered into their territory.
+**Status:** current truth. This is the **only** database pattern in the
+cluster (plain Postgres + kopiur, default since 2026-07-09; the last two
+CloudNativePG databases were retired 2026-08-13 in a data-zero cutover).
 **Scope:** day-to-day operations and recovery. Creating a brand-new database
 is covered by the [migration/pattern doc](plain-postgres-migration.md) and the
 `/project:new-database` command — this page links there instead of repeating it.
@@ -276,34 +274,21 @@ roll back to their last snapshots.
 
 ### Level 4 — the whole cluster is gone
 
-Not your call solo — but the database part is the easy part:
-plain-Postgres databases need **zero special steps** in a cluster rebuild.
-Bootstrap runs, ArgoCD deploys everything, PVCs hydrate, Postgres recovers.
-The full runbook (pre-nuke checklist included) is
-[docs/disaster-recovery.md](../../disaster-recovery.md). The **only** databases
-with a special path are the two CNPG legacies — next section.
+Not your call solo — but the database part is the easy part: databases need
+**zero special steps** in a cluster rebuild. Bootstrap runs, ArgoCD deploys
+everything, PVCs hydrate, Postgres recovers. The full runbook (pre-nuke
+checklist included) is [docs/disaster-recovery.md](../../disaster-recovery.md).
 
 ---
 
-## The two legacy databases (different rules!)
+## What happened to CloudNativePG?
 
-**paperless** and **temporal** still run on the CloudNativePG operator in the
-`cloudnative-pg` namespace. Everything above **does not apply to them**:
-
-- Their backups are Barman/WAL streaming to S3 — real point-in-time recovery,
-  completely separate from kopiur. **Never** add kopiur backup CRs to a CNPG
-  PVC.
-- Their ArgoCD Applications are deliberately **manual** (no auto-sync,
-  no self-heal) — a recovery safety gate, not a bug. Don't switch them to
-  automated.
-- Cluster-rebuild restore for them is scripted:
-  `scripts/bootstrap-cnpg-recovery.sh --execute`.
-
-Rule of thumb: if the namespace is `cloudnative-pg`, stop and read the
-[CNPG beginner guide](backup-restore-start-guide.md) instead. Both databases
-are queued to migrate to the plain pattern
-([tracker](plain-postgres-migration.md#full-retirement-checklist-after-the-last-db-migrates)),
-after which this section deletes itself.
+Retired 2026-08-13. gitea and immich migrated with their data; paperless and
+temporal were cut over as fresh empty databases (a deliberate data-zero
+decision during a cluster rebuild — their old Barman buckets are aging out
+via the RustFS lifecycle policy). If you find CNPG instructions anywhere,
+they're history — this page is the pattern. Full story:
+[plain-postgres-migration.md](plain-postgres-migration.md).
 
 ---
 
@@ -338,7 +323,6 @@ What to actually look at, and why:
   (level 2) is the only sanctioned live interaction.
 - **Never** "fix" a `Pending` PVC by removing its `dataSourceRef` to make it
   bind empty. You'd be trading a delayed restore for permanent data loss.
-- **Never** apply any of this page to the `cloudnative-pg` namespace.
 
 ## Related
 
@@ -346,4 +330,3 @@ What to actually look at, and why:
 - [kopiur backup architecture](../storage/kopiur-backup-architecture.md) — how loops 2 and 3 work inside
 - [kopiur mover permissions](../storage/kopiur-mover-permissions.md) — the uid/gid gotcha when adding backups
 - [Cluster disaster recovery runbook](../../disaster-recovery.md) — levels 3–4 in full, restore canary
-- [CNPG beginner guide](backup-restore-start-guide.md) — the legacy two

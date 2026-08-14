@@ -32,7 +32,7 @@ A **two-cluster homelab fleet** used to practice heterogeneous multi-cluster Git
 - **Secrets:** single 1Password vault `homelab-prod` via existing ESO + ClusterSecretStore `1password` (refresh 1h, `creationPolicy: Owner`). Never plaintext in Git.
 - **Domains:** Talos → `<app>.vanillax.me`; OpenShift → `<app>.apps.sno-ai-lab.vanillax.xyz` (listener hostnames must be subdomains of the cluster ingress domain).
 - **Ingress = Gateway API `HTTPRoute` everywhere. No OpenShift Routes for user apps** (console/oauth platform Routes are left alone).
-- **AppSet discipline:** cluster-label/directory generators not per-cluster app lists; many purpose-scoped AppSets not one catch-all; **thin generated Applications** (AppSet sets only `path`+`destination`, no `kustomize:`/`helm:` blocks — all config in the overlay so `kustomize build <overlay>` renders standalone); never mix infra with workloads; `main` in `targetRevision`, matching the current repository; auto-sync/self-heal on except at the explicit CNPG restore transaction boundary (`automated.enabled: false` for the three databases and their consumers).
+- **AppSet discipline:** cluster-label/directory generators not per-cluster app lists; many purpose-scoped AppSets not one catch-all; **thin generated Applications** (AppSet sets only `path`+`destination`, no `kustomize:`/`helm:` blocks — all config in the overlay so `kustomize build <overlay>` renders standalone); never mix infra with workloads; `main` in `targetRevision`, matching the current repository; auto-sync/self-heal on everywhere (the old CNPG restore-transaction gates were retired with CNPG on 2026-08-13).
 - **DNS:** OpenShift `*.apps.sno-ai-lab.vanillax.xyz` served to LAN via Firewalla Custom DNS Rule (`→ 192.168.10.10`, subdomains auto-included); Cloudflare holds grey-cloud A records. Reachable only on-LAN / via VPN — acceptable for a lab.
 
 ## Target repository structure
@@ -107,9 +107,9 @@ adoption plan and before/after dry diff.
 unchanged, and `FailOnSharedResource=true` reports no ownership collision.
 
 ### Phase 5 — Second app (stateful) + backup replication
-A single-PVC (maybe CNPG) app: where the hard cross-platform lessons land — `storageClassName` overlay, **SCC friction** (the big one; many upstream images need securityContext adjustment on OpenShift), CNPG on the spoke, and replicating the backup/restore pattern.
+A single-PVC app (plain Postgres included): where the hard cross-platform lessons land — `storageClassName` overlay, **SCC friction** (the big one; many upstream images need securityContext adjustment on OpenShift), and replicating the backup/restore pattern.
 
-**Read the live repo for the current backup design.** Backups are now **kopiur** (Kopia-native, per-PVC `kopiur-backup` component + `dataSourceRef` → `Restore`). Kyverno, pvc-plumber, and VolSync are **retired** — do not port them. The clusters may share the TrueNAS/RustFS service only after repository, hostname, username, and source-path identity is cluster-qualified and CI rejects collisions. CNPG stays native Barman/S3 with the same cluster-qualified lineage rule.
+**Read the live repo for the current backup design.** Backups are now **kopiur** (Kopia-native, per-PVC `kopiur-backup` component + `dataSourceRef` → `Restore`). Kyverno, pvc-plumber, and VolSync are **retired** — do not port them. The clusters may share the TrueNAS/RustFS service only after repository, hostname, username, and source-path identity is cluster-qualified and CI rejects collisions. Databases are plain Postgres + kopiur (CNPG retired 2026-08-13), so they follow the same cluster-qualified identity rule as every other PVC.
 
 **Acceptance:** stateful app runs on both clusters; correct SC per platform; SCC resolved via overlay; each cluster backs up and restores only its own lineage; a test proves that "latest" cannot select the other cluster's snapshot.
 

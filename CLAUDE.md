@@ -44,22 +44,21 @@ Applications deploy in strict order to prevent race conditions:
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller |
 | **2** | kopiur operator | Kopia-native backup operator (8 CRDs + controller + webhook), rendered from the OCI chart `oci://ghcr.io/home-operations/charts/kopiur`. Serves the volume populator for restore-before-bind. |
-| **3** | CNPG Barman Plugin + kopiur config | Database backup plugin before DB clusters; kopiur `ClusterRepository cluster-kopia` + `ClusterExternalSecret` cred fanout + `VolumeSnapshotClass longhorn-snapclass` |
+| **3** | kopiur config | kopiur `ClusterRepository cluster-kopia` + `ClusterExternalSecret` cred fanout + `VolumeSnapshotClass longhorn-snapclass` |
 | **4** | Infrastructure AppSet + custom entrypoints | Explicit path list plus KEDA and Temporal Worker Controller standalone Apps |
-| **4** | Database AppSet | Auto-syncs support services; the three legacy CNPG clusters are manual DR gates |
+| **4** | Database AppSet | Auto-syncs `infrastructure/database/*/*` (Redis + shared DB support); fully automated since the CNPG retirement (2026-08-13) |
 | **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator plus `monitoring/*` |
 | **6** | Observability overlays + My-Apps AppSet | KEDA/OTEL ServiceMonitors after monitoring CRDs exist, plus `my-apps/*/*` |
 
 **Backend-down safety** (kopiur, replacing the retired `wait-for-rustfs` MAP): a backup against an unreachable repo errors — the Snapshot Job fails and retries, nothing garbage is written. A **restore against an unreachable repo leaves the PVC `Pending`**: kopiur raises the backend error *before* the `onMissingSnapshot` decision, so an outage can never bind an empty volume. This preserves the exact guarantee the MAP gave VolSync, with no admission policy. (Source-verified: `crates/controller/src/restore/mod.rs` `resolve_snapshot`; a brand-new PVC with a *reachable* repo but no snapshot still binds empty and backs up forward — `onMissingSnapshot: Continue` = deploy-or-restore.)
 
-**Databases** use a separate AppSet. The CNPG operator, shared secrets, and
-Redis remain automated; Immich, Paperless, and Temporal have
-`automated.enabled: false`, as do their three consumer Applications. Advance
-that restore transaction with `scripts/bootstrap-cnpg-recovery.sh --execute`.
-Do not turn their auto-sync/self-heal back on: the script owns refresh → DB
-sync → lineage/data/archive/backup proof → consumer sync. This is a
-repository-specific recovery safety boundary, not an upstream CNPG
-prescription for Argo CD.
+**Databases** are plain Postgres Deployments inside the owning app's directory
+(reference: `my-apps/development/gitea/postgres/`), backed up by kopiur on the
+hourly tier with restore-before-bind — no operator, no recovery script, no
+manual sync gates. CNPG was fully retired 2026-08-13 (paperless and temporal
+were cut over as fresh empty databases by explicit decision). A separate
+Database AppSet still discovers `infrastructure/database/*/*` (Redis + shared
+DB support), fully automated.
 
 **AppProjects** are intentionally permissive for this single-operator homelab.
 They provide UI grouping and policy intent, not multi-tenant security. Tighten
@@ -125,7 +124,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
 - After adding a backed-up PVC, verify the in-namespace `kopiur-rustfs` Secret (fanned in by the ClusterExternalSecret) and the kopiur CRs: `kubectl -n <ns> get secret kopiur-rustfs; kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (the `Snapshot` should reach `Succeeded` with non-zero files)
 - The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`.
-- For abandoned CNPG backup lineages, update `infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml`; keep the full bucket lifecycle policy there because PUT replaces the whole RustFS lifecycle config
+- Keep the FULL bucket lifecycle policy in `infrastructure/storage/rustfs-lifecycle/lifecycle.json` when editing it — PUT replaces the whole RustFS lifecycle config. (The retired CNPG Barman lineages are all listed there and aging out.)
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 - Add an app-owned `vpa.yaml` for new long-running workloads, using
   `InPlaceOrRecreate`, `minReplicas: 1`, and `RequestsOnly`; record intentional
@@ -147,12 +146,10 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Commit secrets to Git
 - Bypass GitOps workflow for configuration changes
 - Deploy without considering sync wave order
-- Add kopiur backup CRs to CNPG database PVCs (they use Barman to S3, not kopiur)
-- Add active CNPG `serverName` prefixes to RustFS lifecycle expiration rules; only abandoned lineages belong there
 - Add backup CRs to system namespace PVCs (kube-system, argocd, longhorn-system, kopiur-system)
 - Manually create or delete kopiur `SnapshotPolicy`/`SnapshotSchedule`/`Restore` (or `ReplicationSource`/`ReplicationDestination` — those CRDs are gone) out of band. Manage backups through the per-PVC stub + the `kopiur-backup` component in git.
 - Make observability a core dependency or install Prometheus Operator CRDs early just to satisfy bootstrap apps. `kube-prometheus-stack` is the sole owner of `monitoring.coreos.com` CRDs.
-- Generic-migrate CNPG or Redis PVCs. CNPG uses native Barman/S3; Redis and PostHog's ClickHouse/Kafka are backup-exempt disposable data. PostHog's **Postgres** is kopiur-backed (identity layer: API keys, users, dashboards, flag definitions — survives cluster rebuild).
+- Back up Redis or PostHog's ClickHouse/Kafka PVCs — backup-exempt disposable data. PostHog's **Postgres** is kopiur-backed (identity layer: API keys, users, dashboards, flag definitions — survives cluster rebuild).
 - Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
 - Use `RollingUpdate` strategy on Deployments with RWO PVCs (causes Multi-Attach deadlock)
 - Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
@@ -168,7 +165,7 @@ Detailed instructions load automatically when working in these directories:
 |-----------|----------|
 | `infrastructure/` | Essential commands, AppSet rules, ArgoCD/secret debugging |
 | `infrastructure/storage/` | Storage classes, NFS CSI patterns, 10G performance tuning |
-| `infrastructure/database/` | CNPG patterns, database DR procedures, serverName tracking |
+| `infrastructure/database/` | Database AppSet scope (Redis + shared support); plain-Postgres pointer |
 | `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
 | `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
 | `my-apps/ai/` | GPU workload patterns, llama-cpp backend |
@@ -181,7 +178,7 @@ Detailed instructions load automatically when working in these directories:
 |---------|---------|
 | `/project:new-app <category/name>` | Guided workflow for adding a new application |
 | `/project:add-backup <app-path>` | Add automatic backup to PVC(s) |
-| `/project:new-database <app-name>` | Create a database (plain Postgres + kopiur by default; CNPG only when PITR is required) |
+| `/project:new-database <app-name>` | Create a database (plain Postgres + kopiur — the only pattern) |
 
 ## Reference Examples
 
@@ -199,7 +196,7 @@ Detailed instructions load automatically when working in these directories:
 | **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, hourly kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
-| **Database with CNPG** | `infrastructure/database/cloudnative-pg/immich/` |
+| **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development/temporal/postgres/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
@@ -213,9 +210,9 @@ Detailed instructions load automatically when working in these directories:
 1. **[docs/index.md](docs/index.md)** — canonical landing page + doc map.
 2. **[docs/easy-guide.md](docs/easy-guide.md)** — zero-to-hero explainer of the whole stack (GitOps → waves → kopiur → restore-before-bind) with the adoption ladder for porting the pattern elsewhere. **Best first read for humans and new operators.**
 3. **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — the kopiur backup/restore architecture: the pieces, the Kustomize-component pattern, backup + restore flows (diagrams), add-a-backup checklist. **Start here for backups.**
-4. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS/CNPG storage source-of-truth.
+4. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS storage source-of-truth.
 5. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, restore canary. **DR source of truth.**
-6. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
+6. **[docs/domains/](docs/index.md)** — per-domain docs (databases, ArgoCD, networking, storage deep-dives).
 
 New and substantially revised documentation follows
 **[docs/documentation-standard.md](docs/documentation-standard.md)**: distinguish
@@ -226,19 +223,18 @@ of duplicating procedures.
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
 > - **Do NOT add pvc-plumber/VolSync labels, `ReplicationSource`/`ReplicationDestination`, the `wait-for-rustfs` MAP, or `/audit` calls** — that whole stack was retired 2026-06-27. Backups are kopiur (per-PVC stub + `kopiur-backup` component); see `docs/domains/storage/kopiur-backup-architecture.md`.
-> - **Do NOT generic-migrate CNPG or Redis PVCs** — CNPG is Barman-native; Redis and PostHog's ClickHouse/Kafka are backup-exempt. PostHog's Postgres uses the standard kopiur component (do not exempt it again — it carries the API keys).
+> - **Do NOT resurrect CNPG** — retired 2026-08-13 (operator, Barman plugin, recovery script, manual sync gates all deleted; old Barman buckets aging out via lifecycle policy). All Postgres is plain + kopiur. Redis and PostHog's ClickHouse/Kafka stay backup-exempt; PostHog's Postgres uses the standard kopiur component (do not exempt it again — it carries the API keys).
 > - **Do NOT make observability foundational** — core apps bootstrap without Prometheus; do not resurrect an early Prometheus Operator CRD app.
 > - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open Longhorn bugs #13315/#13314: interrupted rebuilds corrupt replica metadata). Forensics in git history; the DR doc carries the short version.
 > - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/research/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files.
 
-- **[docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
 - **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture details
 - **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + kopiur restore-based DR default, Longhorn for availability-critical apps). Do not act on it now.
-- **kopiur is the backup system (since 2026-06-27):** 22 PVCs across 18 namespaces on the `kopiur-backup` component (count verified 2026-07-01; gitea-postgres-data pending as #23); restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; CNPG stays native Barman/S3. PostHog `postgres-data` joined the kopiur component 2026-07-24 (#24 — identity layer survives rebuild; DR drill pending).
-- **Database direction (since 2026-07-09):** new databases default to **plain Postgres + kopiur** (reference: `my-apps/development/gitea/postgres/`); the three remaining CNPG databases (immich, paperless, temporal) migrate one at a time per `docs/domains/cnpg/plain-postgres-migration.md`. Crunchy PGO removed (was idle). ALL CNPG rules in this file stay in force until that doc's retirement checklist is fully ticked — do not relax them early.
+- **kopiur is the backup system (since 2026-06-27):** 22 PVCs across 18 namespaces on the `kopiur-backup` component (count verified 2026-07-01; gitea-postgres-data pending as #23); restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; PostHog `postgres-data` joined the kopiur component 2026-07-24 (#24 — identity layer survives rebuild; DR drill pending). paperless-postgres-data + temporal-postgres-data joined 2026-08-13 (CNPG retirement).
+- **Databases (completed direction):** ALL databases are **plain Postgres + kopiur** (reference: `my-apps/development/gitea/postgres/`; two-DB example: `my-apps/development/temporal/postgres/`). CNPG fully retired 2026-08-13 per `docs/domains/cnpg/plain-postgres-migration.md`; only its Barman-bucket lifecycle cleanup remains. Crunchy PGO removed 2026-07-09 (was idle).
 
 ## Mink capture
 
