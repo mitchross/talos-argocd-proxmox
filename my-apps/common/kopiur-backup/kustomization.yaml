@@ -82,3 +82,10 @@ patches:
         path: /spec/policy
         value:
           onMissingSnapshot: Continue
+      # If the mover can't start within this window, the Restore fails permanently
+      # and must be deleted and recreated. 2h rides out slow infra during a rebuild
+      # (the 300s default is too short and killed a whole restore wave once).
+      - op: add
+        path: /spec/failurePolicy
+        value:
+          podStartupDeadlineSeconds: 7200
