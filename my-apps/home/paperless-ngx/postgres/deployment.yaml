@@ -105,7 +105,7 @@ spec:
         # Metrics sidecar — same pattern as gitea-postgres (reference:
         # docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
         - name: postgres-exporter
-          image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
           securityContext:
             runAsUser: 65534
             runAsGroup: 65534
