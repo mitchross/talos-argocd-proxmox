@@ -1,0 +1,150 @@
+# In-app plain Postgres + kopiur (gitea pattern) — replaced the CNPG
+# temporal-database cluster 2026-08-13 as a greenfield cutover (fresh empty
+# database; no dump/restore — workflow history was deliberately discarded).
+# Temporal's schema Jobs (wave -1 hooks) create both schemas on first boot.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal-postgres
+  namespace: temporal
+  labels:
+    app: temporal-postgres
+  annotations:
+    # The chart's schema Jobs are Sync hooks at wave -1 and waves BLOCK:
+    # the whole postgres stack must be healthy at wave -2 or the schema
+    # hook waits forever for a database that never applies (the old CNPG
+    # DB lived in a separate wave-4 Application, so it never hit this).
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temporal-postgres
+  template:
+    metadata:
+      labels:
+        app: temporal-postgres
+    spec:
+      # SIGINT (the image's STOPSIGNAL) triggers Postgres "fast shutdown":
+      # it aborts open transactions and flushes cleanly. 60s covers a busy
+      # checkpoint before the kubelet escalates to SIGKILL.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+      containers:
+        - name: postgres
+          # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
+          # need a manual dump/restore (Postgres data dirs are not
+          # major-version compatible; majors are gated in renovate.json5).
+          # Held at 17 (not gitea's 18) until Temporal upstream declares
+          # PG18 support — temporal-sql-tool schema setup is the risk, and
+          # a wedged schema hook deadlocks the whole app sync.
+          image: postgres:17.6
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # First boot on an EMPTY volume creates this DB + user; the
+            # init script below adds temporal_visibility (Temporal needs
+            # two databases, chart runs with createDatabase: false). On a
+            # restored (non-empty) volume all of this is skipped and the
+            # restored data wins.
+            - name: POSTGRES_DB
+              value: "temporal"
+            - name: POSTGRES_USER
+              value: "temporal"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: temporal-db-secret # same 1Password item CNPG used
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+            # Subdirectory keeps initdb happy on a fresh PVC (top-level
+            # mount contains lost+found).
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # A restored or crash-recovering database can take longer than a
+          # fresh start. The startup probe suppresses liveness restarts
+          # while PostgreSQL replays WAL after restore.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+        # Metrics sidecar — same pattern as gitea-postgres (reference:
+        # docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/temporal?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              value: "temporal"
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: temporal-db-secret
+                  key: password
+          ports:
+            - containerPort: 9187
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: temporal-postgres-data
+        - name: initdb
+          configMap:
+            name: temporal-postgres-init

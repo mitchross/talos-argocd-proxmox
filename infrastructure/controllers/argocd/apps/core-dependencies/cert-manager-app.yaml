@@ -6,8 +6,9 @@
 # Deployment mounts cert-manager-issued TLS secrets, so it can't go Healthy
 # without cert-manager — which lived at Wave 4, gated BEHIND it. cert-manager
 # has no cluster deps beyond Wave-0 (ESO + 1Password for the cloudflare DNS01
-# secret), so it belongs early. Now every cert consumer (cnpg-barman-plugin
-# Wave 3, future webhook TLS) is satisfied.
+# secret), so it belongs early. Every later-wave cert consumer (historically
+# the since-retired cnpg-barman-plugin at Wave 3; future webhook TLS) is
+# then satisfied.
 #
 # Removed from infrastructure-appset path list in the same change.
 apiVersion: argoproj.io/v1alpha1
