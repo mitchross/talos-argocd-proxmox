@@ -198,36 +198,69 @@ Name                                IP               Node   Endpoints
 the overlay path to pods on that node is not. If both columns were `0/1` this
 would be ordinary L3 loss and a different problem.
 
-### Cause (candidates, unverified)
+### What the evidence actually shows
 
-The bridge passes plain unicast but not the VXLAN-encapsulated pod traffic on
-UDP 8472. Most likely one of:
+Packet capture on both ends (`talosctl pcap -i eth0`, 25 s, taken 2026-08-14)
+disproves the simple "the bridge blocks VXLAN" reading:
 
-1. **MTU.** Cilium derives the tunnel MTU from the device (1500 → 1450). If the
-   Wi-Fi path has a smaller effective MTU, large encapsulated frames vanish
-   silently. Small packets may still get through, which fits DNS sometimes
-   answering and sometimes not.
-2. **The AX86U L3 filter.** Its filter only forwards inbound unicast for
-   *learned* bindings — see the static-address rationale in the
-   `dell-proxmox-worker` patch. VXLAN arriving for the node may not match a
-   learned binding.
-3. **Checksum offload.** The cluster-level `vxlan-inner-checksum` patch sets
-   `tx-checksum-ip-generic: false` on `eth0`. The Dell node *does* use `eth0`,
-   so the patch applies — but it has not been confirmed effective across the
-   bridge.
+```
+DELL eth0 (192.168.10.119) — VXLAN packets
+   109  192.168.10.177 -> 192.168.10.119
+   107  192.168.10.119 -> 192.168.10.177     <- flowing BOTH ways
+     1  192.168.10.166 -> 192.168.10.119
+     1  192.168.10.139 -> 192.168.10.119
+```
+
+VXLAN is on the wire in both directions between the Dell node and `.177`.
+Packets arrive and are still not usable — so the traffic is being dropped
+*after* decapsulation, not filtered on the link.
+
+Two hypotheses are ruled out by this:
+
+- **Not MTU.** DNS queries (~70 bytes) and `cilium-health` probes time out.
+  MTU problems let small packets through and break large ones. A TCP connect
+  timing out on a 60-byte SYN is not an MTU symptom.
+- **Not stale Cilium state.** `cilium-dbg node list` on the Dell node lists all
+  four nodes with correct pod CIDRs and node IPs, identical to the view from a
+  Threadripper node.
+
+### The asymmetry worth chasing
+
+`tx-checksum-ip-generic` on `eth0`, read from `talosctl get ethernetstatus`:
+
+| Node | Setting |
+| --- | --- |
+| `192.168.10.119` (Dell) | **off** |
+| `192.168.10.166` (workers) | **on** |
+| `192.168.10.177` (gpu-workers) | **on** |
+| `192.168.10.139` (control-plane) | **on** |
+
+The cluster-scoped `vxlan-inner-checksum` patch sets this to `false`, so it
+should be **off on all four**. It is off on exactly one. Three nodes are
+transmitting VXLAN under precisely the condition the patch exists to avoid,
+which fits packets arriving and then being discarded.
+
+**Unconfirmed:** why the patch took on one node and not the others. Reading the
+running machine config to prove it (`talosctl get machineconfig`) returned
+nothing in this Talos version, so the delivery path was never verified — only
+the resulting state. Establish that before changing anything.
+
+This also fits the strongest piece of evidence: **the same topology worked
+before the cluster was rebuilt.** That points at configuration drift introduced
+during reprovisioning, not at the Wi-Fi link being fundamentally unsuitable.
 
 ### Options
 
-- **Lower the MTU** cluster-wide or per-node until it fits the Wi-Fi path, and
-  re-check `cilium-health status`. Cheapest thing to try first.
-- **Make the Dell node compute-only** and keep Longhorn replicas off it — the
-  direction already sketched in
-  `docs/superpowers/plans/2026-08-10-dell-longhorn-compute-only.md`. Note this
-  does **not** fix the underlying problem: any pod on the Dell node still cannot
-  reach pods elsewhere, so it only helps if nothing scheduled there needs
-  cross-node pod traffic.
-- **Get the Dell host onto wired Ethernet.** The reliable fix. Everything above
-  is working around a link that was never meant to carry an overlay.
+- **First, explain the asymmetry.** Confirm whether the `EthernetConfig`
+  document reached the three Threadripper nodes at all. If it did not, that is
+  the bug, and it is a config-delivery problem rather than a network one.
+- **Do not reach for an MTU change.** It does not match the symptom, and it is
+  architectural churn against a topology with a working history.
+- **Making the Dell node compute-only does not fix this.** Pods on it still
+  cannot reach pods elsewhere; it only avoids putting Longhorn replicas across
+  Wi-Fi.
+- **Wired Ethernet for the Dell host** remains the durable answer, but the
+  evidence above says something regressed in the rebuild — find that first.
 
 ### Do not
 
