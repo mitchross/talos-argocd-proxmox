@@ -113,6 +113,16 @@ k8sClientRateLimit:
   qps: 20
   burst: 40
 
+# A node/agent restart causes kubelet to recreate many pod sandboxes at once.
+# Cilium's endpoint-create limiter defaults to only 0.5 requests/s with a burst
+# of 4 and returned 429s during the 2026-08-14 rebuild, delaying ArgoCD and every
+# other replacement pod. Start with enough queue/parallel headroom for the
+# bootstrap burst; Cilium's default auto-adjustment remains enabled and tunes
+# these values back toward the observed endpoint-generation time afterward.
+# https://docs.cilium.io/en/stable/configuration/api-rate-limiting/
+extraConfig:
+  api-rate-limit: "endpoint-create=rate-limit:2/s,rate-burst:16,parallel-requests:8,max-wait-duration:30s"
+
 # Gateway API Support
 gatewayAPI:
   enabled: true
