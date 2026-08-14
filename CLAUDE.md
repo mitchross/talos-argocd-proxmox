@@ -12,10 +12,10 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **AI/LLM Backend**: Two OpenAI-compatible local backends, both NOT ollama:
 
-- **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.6-27b` — Qwen3.6-27B dense AWQ, multimodal/vision) is the **default for app inference**. OpenWebUI, Perplexica, Project NOMAD, and Karakeep all point here. Use vLLM / `qwen3.6-27b` when wiring an in-cluster app to chat/vision inference.
-- **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`) serves the **Qwen3.6-35B-A3B** MoE (Unsloth UD-Q4_K_XL + `mmproj-BF16.gguf`) plus Gemma 4 and Qwen 3.5 Uncensored as selectable presets (aliases `qwen3.6` / `qwen3.6-nothink` / `qwen3.6-longctx` / `gemma4*` / `uncensored`; see `my-apps/ai/llama-cpp/presets.ini`). Kept for ComfyUI's vision→image workflow and manual/interactive multi-preset use.
+- **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.6-27b` — Qwen3.6-27B dense AWQ, multimodal/vision) is the normal app-inference backend, but is temporarily parked at `replicas: 0` during the Qwen 3.8 evaluation. Its weights remain on the read-only vLLM NFS share; do not change or delete them.
+- **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`) is temporarily the live OpenWebUI backend for **Qwen3.8-27B** GGUF evaluation. It advertises only `qwen3.8` and `qwen3.8-nothink`, two modes over the same GGUF + vision projector. Other apps remain wired to the parked vLLM service.
 
-GPU topology: the GPU workloads are **mutually exclusive whole-card** (`type: Recreate`, time-slicing disabled — never two pods on the cards at once). They scale-swap: bringing one up means scaling the others to `replicas: 0`. Current state is vLLM `replicas: 1` with llama-cpp and ComfyUI at `0` (so the external `llama.vanillax.me` route reads "no healthy upstream" until llama-cpp is scaled back up). App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
+GPU topology: the GPU workloads are **mutually exclusive whole-card** (`type: Recreate`, time-slicing disabled — never oversubscribe the cards). They scale-swap by committed replica counts. Current evaluation state is vLLM `0`, llama-cpp `1`, and ComfyUI/SwarmUI `0`; llama-cpp consumes one 3090 and the second remains free. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
