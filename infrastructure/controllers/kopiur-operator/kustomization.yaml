@@ -10,6 +10,10 @@ resources:
   # movers to the two workers that actually have Longhorn disks so the
   # strict-local WFFC staging class cannot select the compute-only worker.
   - mover-storage-node-policy.yaml
+  # Longhorn creates its CSI sidecar Deployments dynamically, outside this
+  # repository's rendered manifests. Mutate new attacher pods at admission so
+  # a completed V1 clone is retried promptly after an early attach attempt.
+  - longhorn-csi-attacher-retry-policy.yaml
 
 # kopiur publishes its chart as an OCI artifact (release.yaml: helm push →
 # oci://ghcr.io/home-operations/charts). Render it locally like every other
