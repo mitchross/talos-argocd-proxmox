@@ -264,6 +264,12 @@
       automerge: false,
     },
     {
+      description: 'temporal Postgres: hold at 17.x — Temporal upstream has not declared PG18 support; lifting the hold means a deliberate dump/restore migration (runbook 2026-07-18)',
+      matchPackageNames: ['postgres'],
+      matchFileNames: ['my-apps/development/temporal/postgres/deployment.yaml'],
+      allowedVersions: '<18',
+    },
+    {
       description: 'Pin project-nomad MySQL to 8.x (AdonisJS/Lucid not tested with MySQL 9)',
       matchPackageNames: ['mysql'],
       matchFileNames: ['my-apps/home/project-nomad/**'],
