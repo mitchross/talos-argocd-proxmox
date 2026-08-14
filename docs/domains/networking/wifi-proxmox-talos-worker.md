@@ -139,3 +139,100 @@ replacement; do not combine it into a blind template sync.
 - Roll back by restoring the old MachineSet and machine class from Git, but do
   not restore NVIDIA passthrough unless the extra idle power is intentionally
   accepted.
+
+## Known failure: pod overlay (VXLAN) does not cross the Wi-Fi bridge
+
+**Observed 2026-08-14, on the clean-slate rebuild of `talos-threadripper-gpu-workers`.**
+
+The Dell worker joins the cluster, reports `Ready`, and is reachable at
+`192.168.10.119` — but **no pod on it can talk to a pod on any other node**.
+Node-to-node L3 works; the Cilium VXLAN overlay does not survive the AX86U
+media bridge.
+
+### Symptom
+
+Longhorn never finishes bootstrapping. `longhorn-manager` on the Dell node
+crashloops with:
+
+```
+level=fatal msg="Error starting webhooks: admission webhook service is not
+accessible on cluster after 2m0s sec: timed out waiting for endpoint
+https://longhorn-admission-webhook.longhorn-system.svc:9502/v1/healthz"
+```
+
+and earlier, DNS itself times out from that pod:
+
+```
+dial tcp: lookup longhorn-admission-webhook.longhorn-system.svc on 10.96.0.10:53:
+read udp 10.244.3.201:37863->10.96.0.10:53: i/o timeout
+```
+
+The tell is that this **flips with webhook leadership**. `longhorn-admission-webhook`
+is served by a `longhorn-manager` pod, so:
+
+- webhook lands on the Dell pod → the three Threadripper managers time out
+- webhook lands on a Threadripper pod → the Dell manager times out
+
+Whoever is co-located with the webhook works. That symmetry rules out a
+Longhorn bug and points squarely at cross-node pod networking.
+
+Downstream, every PVC stays `Pending`, so most of the cluster sits unschedulable
+with `pod has unbound immediate PersistentVolumeClaims`.
+
+### Diagnosis (one command)
+
+```bash
+kubectl exec -n kube-system <cilium-pod-on-dell> -c cilium-agent -- cilium-health status
+```
+
+```
+Cluster health:                     1/4 reachable
+Name                                IP               Node   Endpoints
+  ...dell-workers-... (localhost)   192.168.10.119   1/1    1/1
+  ...control-planes-...             192.168.10.139   1/1    0/1
+  ...gpu-workers-...                192.168.10.177   1/1    0/1
+  ...workers-...                    192.168.10.166   1/1    0/1
+```
+
+**`Node 1/1` with `Endpoints 0/1` is the signature.** The node IP is reachable;
+the overlay path to pods on that node is not. If both columns were `0/1` this
+would be ordinary L3 loss and a different problem.
+
+### Cause (candidates, unverified)
+
+The bridge passes plain unicast but not the VXLAN-encapsulated pod traffic on
+UDP 8472. Most likely one of:
+
+1. **MTU.** Cilium derives the tunnel MTU from the device (1500 → 1450). If the
+   Wi-Fi path has a smaller effective MTU, large encapsulated frames vanish
+   silently. Small packets may still get through, which fits DNS sometimes
+   answering and sometimes not.
+2. **The AX86U L3 filter.** Its filter only forwards inbound unicast for
+   *learned* bindings — see the static-address rationale in the
+   `dell-proxmox-worker` patch. VXLAN arriving for the node may not match a
+   learned binding.
+3. **Checksum offload.** The cluster-level `vxlan-inner-checksum` patch sets
+   `tx-checksum-ip-generic: false` on `eth0`. The Dell node *does* use `eth0`,
+   so the patch applies — but it has not been confirmed effective across the
+   bridge.
+
+### Options
+
+- **Lower the MTU** cluster-wide or per-node until it fits the Wi-Fi path, and
+  re-check `cilium-health status`. Cheapest thing to try first.
+- **Make the Dell node compute-only** and keep Longhorn replicas off it — the
+  direction already sketched in
+  `docs/superpowers/plans/2026-08-10-dell-longhorn-compute-only.md`. Note this
+  does **not** fix the underlying problem: any pod on the Dell node still cannot
+  reach pods elsewhere, so it only helps if nothing scheduled there needs
+  cross-node pod traffic.
+- **Get the Dell host onto wired Ethernet.** The reliable fix. Everything above
+  is working around a link that was never meant to carry an overlay.
+
+### Do not
+
+- Do not keep restarting `longhorn-manager`. It will crashloop indefinitely,
+  because the webhook it needs is unreachable by design of the current network.
+- Do not raise Longhorn replica counts to "heal" the volumes. That puts
+  synchronous replication across Wi-Fi, which the rollout notes already warn
+  against.
