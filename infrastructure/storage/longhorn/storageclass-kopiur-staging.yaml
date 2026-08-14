@@ -7,14 +7,16 @@
 # #13335), and a disrupted handoff can leave the backup Job wedged.
 #
 # WaitForFirstConsumer reverses that order: schedule the mover first, then pass
-# its node to Longhorn as the preferred provisioning location. Keep
-# best-effort locality rather than strict-local: the general worker is
-# compute-only, and strict-local plus an unavailable local Longhorn disk can
-# deadlock provisioning.
+# its node to Longhorn. The kopiur-operator application installs an admission
+# policy that restricts mover pods to nodes carrying
+# `node.longhorn.io/create-default-disk=config`, so strict-local can safely put
+# the temporary one-replica clone on the mover's storage-capable node. If no
+# such node can host it, fail closed instead of falling back to a cross-node
+# clone/attachment handoff.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: longhorn-kopiur-staging
+  name: longhorn-kopiur-staging-local
   annotations:
     storageclass.kubernetes.io/is-default-class: "false"
 provisioner: driver.longhorn.io
@@ -26,6 +28,6 @@ parameters:
   staleReplicaTimeout: "30"
   fsType: "ext4"
   dataEngine: "v1"
-  dataLocality: "best-effort"
+  dataLocality: "strict-local"
   disableRevisionCounter: "true"
   unmapMarkSnapChainRemoved: "ignored"

@@ -45,7 +45,7 @@ patches:
       - op: add
         path: /spec/staging
         value:
-          storageClassName: longhorn-kopiur-staging
+          storageClassName: longhorn-kopiur-staging-local
       - op: add
         path: /spec/repository
         value:
