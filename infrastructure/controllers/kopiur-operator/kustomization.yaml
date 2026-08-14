@@ -1,6 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: kopiur-system
+# Do not add a top-level `namespace:` transformer here. The Helm release already
+# renders its namespaced objects into kopiur-system, while Kubernetes 1.36's
+# MutatingAdmissionPolicy kinds below are cluster-scoped and not yet known to
+# the kubectl-bundled Kustomize schema.
+
+resources:
+  # Kopiur does not currently expose mover node affinity. Restrict staged-PVC
+  # movers to the two workers that actually have Longhorn disks so the
+  # strict-local WFFC staging class cannot select the compute-only worker.
+  - mover-storage-node-policy.yaml
 
 # kopiur publishes its chart as an OCI artifact (release.yaml: helm push →
 # oci://ghcr.io/home-operations/charts). Render it locally like every other

@@ -1,0 +1,54 @@
+# Kopiur 0.10.2 exposes mover security/resource overrides but no scheduling
+# affinity. Its snapshot movers consume short-lived `*-src` Longhorn PVCs, so
+# place those pods only on workers that declare Longhorn disk configuration.
+# Together with the strict-local WFFC staging class, this keeps each mover,
+# clone engine, and clone replica on one storage-capable node.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: kopiur-mover-storage-node.vanillax.dev
+spec:
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["pods"]
+  matchConditions:
+    - name: kopiur-staged-pvc-mover
+      expression: >-
+        has(object.metadata.labels) &&
+        "app.kubernetes.io/managed-by" in object.metadata.labels &&
+        object.metadata.labels["app.kubernetes.io/managed-by"] == "kopiur" &&
+        object.spec.volumes.exists(v,
+          has(v.persistentVolumeClaim) &&
+          v.persistentVolumeClaim.claimName.endsWith("-src"))
+    - name: storage-node-selector-not-already-set
+      expression: >-
+        !has(object.spec.nodeSelector) ||
+        !("node.longhorn.io/create-default-disk" in object.spec.nodeSelector)
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          has(object.spec.nodeSelector)
+          ? [JSONPatch{
+              op: "add",
+              path: "/spec/nodeSelector/" +
+                jsonpatch.escapeKey("node.longhorn.io/create-default-disk"),
+              value: "config"
+            }]
+          : [JSONPatch{
+              op: "add",
+              path: "/spec/nodeSelector",
+              value: {"node.longhorn.io/create-default-disk": "config"}
+            }]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: kopiur-mover-storage-node.vanillax.dev
+spec:
+  policyName: kopiur-mover-storage-node.vanillax.dev
