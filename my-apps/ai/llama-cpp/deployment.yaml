@@ -8,9 +8,11 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  # Scaled to 0: vLLM is now the active LLM backend and needs BOTH 3090s (TP=2).
-  # To revert to llama-cpp as daily driver: set this back to 1 and vllm-server to 0.
-  replicas: 0
+  # ACTIVE: temporarily the live backend while Qwen 3.8-27B is evaluated —
+  # it only runs here (no vLLM-compatible 3.8 quant exists for Ampere).
+  # vllm-server is scaled to 0 to free both 3090s. To hand the cards back:
+  # set this to 0 and vllm-server to 1 (one commit).
+  replicas: 1
   selector:
     matchLabels:
       app: llama-cpp-server
