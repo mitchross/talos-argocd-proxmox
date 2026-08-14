@@ -139,3 +139,40 @@ replacement; do not combine it into a blind template sync.
 - Roll back by restoring the old MachineSet and machine class from Git, but do
   not restore NVIDIA passthrough unless the extra idle power is intentionally
   accepted.
+
+## Known failure: nodes are Ready, but pods cannot cross nodes
+
+After a clean rebuild, all four nodes can be `Ready` while Longhorn managers
+crashloop and new PVCs remain `Pending`. `Ready` only proves that the nodes can
+reach Kubernetes; it does not prove that pods can reach pods on other nodes.
+
+Check Cilium from an agent pod:
+
+```bash
+kubectl exec -n kube-system <cilium-pod> -- cilium-health status --probe
+```
+
+`Node 1/1` with `Endpoints 0/1` means the normal network works but the pod
+overlay does not. In the 2026-08-14 rebuild, the cause was a virtio checksum
+offload bug—not the AX86U bridge, MTU, Cilium state, or the Dell's dedicated
+2.5 GbE card.
+
+Keep both offload guards in the cluster-level Talos `EthernetConfig`:
+
+```yaml
+apiVersion: v1alpha1
+kind: EthernetConfig
+name: eth0
+features:
+  tx-checksum-ip-generic: false
+  tx-udp_tnl-csum-segmentation: false
+```
+
+An unchanged template sync may do nothing because Omni already considers the
+config current. Adding the second guard produced a real config change and made
+Talos re-apply the settings. It did not visibly reboot the nodes.
+
+Success means Cilium reports `4/4 reachable`, including every endpoint, and all
+Longhorn managers return to `2/2 Running`. Let existing CrashLoop backoff expire;
+do not keep restarting Longhorn, change MTU, or redesign the bridge for this
+symptom.
