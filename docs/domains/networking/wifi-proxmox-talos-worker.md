@@ -67,12 +67,11 @@ replacement, use the root README's rebuild procedure and satisfy every gate in
 replacement; do not combine it into a blind template sync.
 
 1. Verify every protected PVC has a recent successful off-host kopiur snapshot,
-   the restore canary has a recent passing drill, both CNPG databases have a
+   the restore canary has a recent passing drill, every database has a
    recent completed Barman backup, and every Longhorn volume is healthy:
 
    ```bash
    kubectl get snapshots.kopiur.home-operations.com -A
-   kubectl get backups.postgresql.cnpg.io -A
    kubectl -n longhorn-system get volumes.longhorn.io
    ```
 

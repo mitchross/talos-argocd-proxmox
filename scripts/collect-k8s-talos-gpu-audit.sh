@@ -103,14 +103,6 @@ echo
 kubectl -n longhorn-system get settings.longhorn.io 2>/dev/null || true
 '
 
-run "23-cnpg" '
-kubectl get clusters.postgresql.cnpg.io -A -o wide 2>/dev/null || true
-echo
-kubectl get backups.postgresql.cnpg.io -A -o wide 2>/dev/null || true
-echo
-kubectl get scheduledbackups.postgresql.cnpg.io -A -o wide 2>/dev/null || true
-'
-
 # GPU node discovery
 run "30-gpu-nodes" '
 kubectl get nodes -l nvidia.com/gpu.present=true -o wide

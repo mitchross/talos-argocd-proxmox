@@ -27,7 +27,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
   control-plane + worker VMs share one physical Proxmox failure domain;
   replica count is designed to rise when workers span additional hosts
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
-- **Database**: CloudNativePG (Postgres) with Barman backups to S3
+- **Database**: plain Postgres Deployments backed up by kopiur — hourly snapshots, restore-before-bind (CNPG retired 2026-08-13)
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
 - **AI**: vLLM (Qwen3.6-27B, default app inference) + llama-cpp (Qwen3.6-35B multimodal — vision→image + preset playground) on mutually-exclusive whole-card GPUs ([scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md))
@@ -93,7 +93,7 @@ Backups are **kopiur** (Kopia-native operator).
 
 ### 🗃️ Domains
 
-- **Databases**: [Plain Postgres migration — CNPG exit ramp, new-DB default](domains/cnpg/plain-postgres-migration.md) · [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
+- **Databases**: [Run Postgres here — plain-English operator guide](domains/cnpg/run-postgres-plain-english.md) · [Plain Postgres pattern & CNPG retirement](domains/cnpg/plain-postgres-migration.md)
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
 - **Enterprise multi-cluster planning**: [roadmap](domains/multicluster/enterprise-gitops-roadmap.md) · [concrete fleet PRD](domains/multicluster/prd.md)
 - **Networking**: [topology](domains/networking/topology.md) · [Wi-Fi Proxmox Talos worker](domains/networking/wifi-proxmox-talos-worker.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)

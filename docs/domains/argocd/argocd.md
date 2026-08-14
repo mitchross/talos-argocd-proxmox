@@ -42,14 +42,13 @@ See [ArgoCD entrypoints](entrypoints.md) for the concrete files.
 | `0` | ArgoCD projects/bootstrap, Cilium, 1Password Connect, External Secrets |
 | `1` | cert-manager, Longhorn, snapshot-controller |
 | `2` | kopiur operator (CRDs + controller + webhook; volume populator) |
-| `3` | CNPG Barman plugin, kopiur config (ClusterRepository `cluster-kopia` + credential fanout + VolumeSnapshotClass) |
+| `3` | kopiur config (ClusterRepository `cluster-kopia` + credential fanout + VolumeSnapshotClass) |
 | `4` | KEDA core, Temporal worker, infrastructure and database AppSets |
 | `5` | OpenTelemetry operator core, monitoring AppSet including `kube-prometheus-stack` |
 | `6` | KEDA observability, OpenTelemetry operator observability, workload AppSet |
 
-cert-manager is Wave `1` because the CNPG Barman plugin depends on it. The kopiur operator is Wave `2` (CRDs + controller + webhook), with its repo/credential config at Wave `3`. KEDA and OpenTelemetry ServiceMonitor resources render from Wave `6` observability overlays.
+cert-manager is Wave `1` so webhook-cert consumers in later waves can start. The kopiur operator is Wave `2` (CRDs + controller + webhook), with its repo/credential config at Wave `3`. KEDA and OpenTelemetry ServiceMonitor resources render from Wave `6` observability overlays.
 
-CNPG `enablePodMonitor: true` is an accepted runtime soft-coupling. It can log transient errors before monitoring exists, but it is not an ArgoCD dry-run blocker.
 
 ## How Argo CD Sync Waves and Waiting Work
 

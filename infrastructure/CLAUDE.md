@@ -73,10 +73,11 @@ kubectl get applicationset -n argocd
 ```
 
 Databases are discovered separately by `database-appset.yaml` via the
-`infrastructure/database/*/*` glob. Support Applications auto-sync. The three
-legacy CNPG clusters (`immich`, `paperless`, `temporal`) and their consumer
-Applications are explicit manual gates; run
-`scripts/bootstrap-cnpg-recovery.sh --execute` on a fresh-cluster restore.
+`infrastructure/database/*/*` glob (Redis + shared DB support — fully
+automated). Actual databases are plain Postgres Deployments inside their
+owning app's directory and restore via kopiur like any other PVC; a
+fresh-cluster restore needs no database-specific steps (CNPG and its
+recovery script were retired 2026-08-13).
 
 ## Debugging ArgoCD
 

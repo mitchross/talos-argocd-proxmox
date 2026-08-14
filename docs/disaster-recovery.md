@@ -5,11 +5,10 @@
 > backup/restore engine (**kopiur**) and its exact flows live in
 > [kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
 > and [kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md).
-> Databases recover via a **separate system** — [CNPG/Barman](domains/cnpg/disaster-recovery.md) —
-> while they remain on CNPG. They are migrating to plain Postgres + kopiur
-> (zero-touch, same restore-before-bind as app PVCs) per the
-> [plain Postgres migration doc](domains/cnpg/plain-postgres-migration.md);
-> migrated databases follow the normal kopiur flow in this runbook.
+> Databases are plain Postgres + kopiur (CNPG retired 2026-08-13 — history in
+> the [plain Postgres migration doc](domains/cnpg/plain-postgres-migration.md))
+> and follow the normal kopiur flow in this runbook — no database-specific
+> recovery steps exist anymore.
 
 ![Full-cluster failure, external survivors, Talos rebuild, Argo waves, data restoration, and acceptance](assets/disaster-recovery-sequence.svg)
 
@@ -29,8 +28,8 @@ converge and are verified. [Open the full-size DR sequence](assets/disaster-reco
   -----------------------          -------------------------------
   - Longhorn volumes               - Git repo
   - every Kubernetes object        - Kopia repo (RustFS S3)
-  - exempt data:                   - CNPG Barman (S3 objects)
-      PostHog CH/Kafka/Redis,      - 1Password vault
+  - exempt data:                   - 1Password vault
+      PostHog CH/Kafka/Redis,
       Redis, scratch
                                    - Omni/Talos machine config
 
@@ -61,10 +60,6 @@ Block the nuke until every box checks — **you restore *from* these**:
 - [ ] RustFS/S3 endpoint reachable; access key registered on the external server; Kopia auth works
       (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
 - [ ] Talos secrets / Omni machine configs available off-cluster
-- [ ] CNPG roots render `overlays/recovery`, each recovery source/backupID has
-      been verified against the Barman catalog, and every base `serverName` is
-      a brand-new forward-write lineage. Current prepared matrix:
-      [CNPG cluster-nuke runbook](domains/cnpg/disaster-recovery.md#prepared-recovery-for-the-2026-07-31-rebuild).
 - [ ] **Backups fresh**: each backed-up PVC has a recent `Succeeded` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
       `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`.
       To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
@@ -90,8 +85,8 @@ Block the nuke until every box checks — **you restore *from* these**:
     -> seed 1Password credentials
     -> bootstrap-argocd.sh
     -> sync waves install Cilium management -> Longhorn -> kopiur -> DB support
-    -> bootstrap-cnpg-recovery.sh --execute
-    -> guarded DB restore -> proof -> consumer sync, one database at a time
+    -> wave 6: every backed-up PVC (databases included) hydrates via
+       restore-before-bind — no per-database steps
 ```
 
 > **Manual pre-steps before `bootstrap-argocd.sh`** — the script assumes them.
@@ -276,8 +271,7 @@ State BOTH claims, with live numbers:
    unnoticed because acceptance only quoted the protected counters). PostHog's
    ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage`
    are the expected exempt set (PostHog's `postgres-data` is protected — it
-   carries the API keys/dashboards); CNPG is not in either count — it recovers
-   via Barman/S3 (separate system).
+   carries the API keys/dashboards).
 
 ---
 
@@ -333,9 +327,8 @@ proven,” even when snapshots and quick verification are green. Automating the
 destructive PVC deletion is intentionally deferred until a kopiur-native,
 namespace-contained drill helper has been reviewed.
 
-What it does **not** prove: restores of backups older than its own, CNPG
-recovery (separate system), or app-level data semantics — drill those
-separately when they matter.
+What it does **not** prove: restores of backups older than its own, or
+app-level data semantics — drill those separately when they matter.
 
 ## Failure-mode catalog
 

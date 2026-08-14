@@ -37,7 +37,7 @@ rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
 ### Critical rules
 
 - The app's PVC restore-point is the last snapshot (~1h with the hourly
-  tier) — if the app cannot tolerate that, use the CNPG path below.
+  tier) — restores land on the last snapshot, not a point in time.
 - The password stored inside a restored database is restored state. Never
   rotate only the 1Password item: connect with the current credential, run
   `ALTER ROLE ... PASSWORD ...`, then update 1Password and restart consumers
@@ -45,29 +45,17 @@ rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
 - Special images where needed (e.g. immich requires
   `ghcr.io/immich-app/postgres` with VectorChord).
 
-## Legacy path: CNPG (only when PITR is genuinely required)
+## What about PITR / CNPG?
 
-CNPG buys point-in-time recovery and replicas at the cost of the
-overlay/serverName DR dance. The four existing CNPG databases are migrating
-off per `docs/domains/cnpg/plain-postgres-migration.md`; only create a NEW
-CNPG database if the workload truly needs any-second restore.
-
-1. Create `infrastructure/database/cloudnative-pg/<app-name>/`, copying the
-   pattern from `infrastructure/database/cloudnative-pg/immich/`.
-2. CNPG backs up via the **Barman Cloud Plugin** to S3/RustFS
-   (`spec.plugins[]` + an `ObjectStore` CR), NOT the removed in-tree
-   `barmanObjectStore`. This is a **separate** backup system from kopiur —
-   **never add kopiur CRs to CNPG PVCs**.
-3. Use the **overlay feature-flag** pattern (`overlays/initdb` vs
-   `overlays/recovery`); flip back to initdb after a recovery and bump
-   `serverName` (the S3 lineage) per the runbook.
-4. cert-manager is Wave `1`, the Barman plugin Wave `3` — keep that ordering.
+CNPG was fully retired 2026-08-13 (operator, Barman plugin, and recovery
+script deleted; history in `docs/domains/cnpg/plain-postgres-migration.md`).
+Every database uses the plain pattern above. If a future workload genuinely
+needs point-in-time recovery, that is a new architecture decision — raise it
+explicitly rather than resurrecting the old manifests.
 
 ## Reference
 
 - **Plain Postgres reference:** `my-apps/development/gitea/postgres/`
 - **Migration/pattern doc:** [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)
-- Existing CNPG database: `infrastructure/database/cloudnative-pg/immich/`
-- **CNPG beginner guide:** [`docs/domains/cnpg/backup-restore-start-guide.md`](../../docs/domains/cnpg/backup-restore-start-guide.md)
-- CNPG DR runbook: [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md)
-- Repo rules + current lineage table: [`infrastructure/database/CLAUDE.md`](../../infrastructure/database/CLAUDE.md)
+- **Operator guide (plain English):** [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
+- Two-database example (initdb script + schema-hook sync waves): `my-apps/development/temporal/postgres/`

@@ -292,22 +292,6 @@
       enabled: false,
     },
     {
-      // The in-tree → plugin backup migration is COMPLETE: all three
-      // remaining CNPG clusters (immich, paperless, temporal) run
-      // spec.plugins[] with barman-cloud.cloudnative-pg.io, daily plugin
-      // backups verified completing 2026-07-17. gitea left CNPG for plain
-      // Postgres + kopiur in #1603. The old hard pin (enabled: false) is
-      // retired, but bumps stay manual: a chart bump lands on all
-      // production clusters simultaneously — same review class as argo-cd
-      // and kopiur. Majors are already blocked repo-wide above.
-      description: 'CNPG operator chart bumps require manual review — critical DB infrastructure; one bump lands on all clusters at once. Plugin migration complete; hard pin retired 2026-07-17.',
-      matchDatasources: ['helm'],
-      matchPackageNames: ['cloudnative-pg'],
-      registryUrls: ['https://cloudnative-pg.github.io/charts'],
-      automerge: false,
-      prCreation: 'immediate',
-    },
-    {
       // kopiur is pre-1.0: 0.x MINORS are breaking by convention, and upstream
       // has announced a chart refactor with intentional breaking changes
       // (home-operations/kopiur#203, "maximum breaking changes", 2026-07-05).

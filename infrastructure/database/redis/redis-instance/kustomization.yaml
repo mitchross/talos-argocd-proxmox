@@ -29,7 +29,7 @@ helmCharts:
       # Redis is a disposable broker/cache for Paperless and redis-commander,
       # not a system of record. Keep modules, but do not persist AOF: a corrupt
       # appendonly.aof tail wedged redis-master-0 for 37h and blocked Paperless
-      # startup on 2026-07-09. Durable Paperless data lives in CNPG + kopiur
+      # startup on 2026-07-09. Durable Paperless data lives in kopiur
       # backed PVCs, not here.
       commonConfiguration: |-
         loadmodule /opt/bitnami/redis/lib/redis/modules/redisearch.so

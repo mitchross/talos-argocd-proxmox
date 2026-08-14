@@ -115,11 +115,9 @@ nav:
       - Decision records:
           - kopiur evaluation: domains/storage/kopiur-evaluation.md
           - kopiur trial: kopiur-trial.md
-  - Databases (CloudNativePG):
-      - Backup/restore/start — beginner guide: domains/cnpg/backup-restore-start-guide.md
-      - CNPG explained: domains/cnpg/explained.md
-      - CNPG disaster recovery: domains/cnpg/disaster-recovery.md
-      - Plain Postgres migration (CNPG exit ramp): domains/cnpg/plain-postgres-migration.md
+  - Databases:
+      - Run Postgres here — plain-English guide (start here): domains/cnpg/run-postgres-plain-english.md
+      - Plain Postgres pattern & CNPG retirement: domains/cnpg/plain-postgres-migration.md
   - Networking:
       - Topology: domains/networking/topology.md
       - Wi-Fi Proxmox Talos worker: domains/networking/wifi-proxmox-talos-worker.md
