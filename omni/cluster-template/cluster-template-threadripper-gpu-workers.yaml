@@ -9,9 +9,11 @@ name: talos-threadripper-gpu-workers
 labels:
   cluster-id: "2"
 kubernetes:
-  version: v1.36.3
+  version: v1.37.0-beta.0
 talos:
-  version: v1.13.7
+  # PRE-RELEASE — see the same block in cluster-template.yaml. Omni needs
+  # --enable-talos-pre-release-versions to accept this version.
+  version: v1.14.0-beta.1
 patches:
 - name: disable-default-cni
   inline:
@@ -42,6 +44,18 @@ patches:
     name: eth0
     features:
       tx-checksum-ip-generic: false
+# Talos 1.14 added noexec to EPHEMERAL (/var) on newly provisioned machines.
+# Longhorn V1 execs its engine/replica binaries out of /var/lib/longhorn, so
+# without this the instance-manager comes up dead on any rebuild. `secure:
+# false` also turns off nosuid/nodev; the field is all-or-nothing.
+# Cluster-scope because the mover runs wherever Longhorn schedules it.
+- name: ephemeral-allow-exec
+  inline:
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: EPHEMERAL
+    mount:
+      secure: false
 - file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:

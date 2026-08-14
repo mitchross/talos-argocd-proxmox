@@ -165,7 +165,7 @@ currently in **beta**. Expect some limitations and potential bugs. Please
 report issues to the [upstream
 repository](https://github.com/siderolabs/omni-infra-provider-proxmox).
 
-### Concrete beta limitations (as of Talos 1.13 / Omni 1.9)
+### Concrete beta limitations (as of Talos 1.14 / Omni 1.9)
 
 These are things that hit me in practice — the generic "it's beta" line
 isn't enough to plan around.
@@ -185,11 +185,13 @@ isn't enough to plan around.
   node replacement. This is especially relevant for NVIDIA driver
   swaps (production → OSS), which require rebuilding the Talos image and
   replacing the affected nodes.
-- **`machine.install.disk` is mandatory on Talos 1.13.** Without it,
+- **`machine.install.disk` is mandatory since Talos 1.13.** Without it,
   fresh VMs provision but stay stuck in `UPGRADING` forever (see root
-  README). This is a Talos 1.13 LifecycleService change, not a provider
+  README). This is a Talos LifecycleService change, not a provider
   bug, but it surfaces through the provider first. The patch is already
-  in `omni/cluster-template/cluster-template.yaml`.
+  in `omni/cluster-template/cluster-template.yaml`. 1.14 deprecates
+  `.machine.install` in favour of an `UnattendedInstall` document but
+  still honours the v1alpha1 field.
 - **No VM migration on node failure.** If a Proxmox host dies, its VMs
   don't auto-migrate to another host. You'll need Proxmox HA separately
   (cluster-level, not Omni-level) for that.

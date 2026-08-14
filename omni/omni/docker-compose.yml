@@ -38,4 +38,5 @@ services:
       --sqlite-storage-path=/_out/sqlite/omni.db
       --eula-accept-name=${EULA_ACCEPT_NAME}
       --eula-accept-email=${EULA_ACCEPT_EMAIL}
+      ${VERSION_FLAGS}
       ${AUTH}

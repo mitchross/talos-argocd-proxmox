@@ -2,9 +2,11 @@ services:
   omni-infra-provider-proxmox-dell:
     # Second instance of the Sidero Proxmox provider, pointed at the Dell
     # Proxmox host (192.168.10.16) and registered in Omni as provider id
-    # "proxmox-dell". Same digest-pinning rationale as omni/proxmox-provider/
-    # (Sidero ships :latest only; pin by content digest, Renovate tracks it).
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:latest@sha256:96433a9747ffc2649b5be114bc6bd8034cc59972e21e73297c8b619940bcc5bf
+    # "proxmox-dell". Keep this on the SAME tag+digest as
+    # omni/proxmox-provider/docker-compose.yml — both instances register
+    # against one Omni server, and a version skew between providers has no
+    # upstream compatibility story. See that file for the pinning rationale.
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
     container_name: omni-infra-provider-proxmox-dell
     env_file:
       - .env

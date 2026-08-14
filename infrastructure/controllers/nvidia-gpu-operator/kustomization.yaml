@@ -13,7 +13,7 @@ resources:
 # renders upgrade-crd-hook-sa in the correct release namespace, so our
 # duplicate SA caused a kustomize generator collision).
 
-# Talos 1.13 ships the NVIDIA driver + nvidia-container-toolkit via system
+# Talos ships the NVIDIA driver + nvidia-container-toolkit via system
 # extensions and emits CDI specs to /run/cdi automatically. The gpu-operator
 # Helm chart manages only the device plugin, GFD, and validator on top of that.
 helmCharts:
@@ -34,7 +34,7 @@ helmCharts:
       enabled: false
     toolkit:
       enabled: false
-    # Talos 1.13 writes CDI specs to /run/cdi. CDI is enabled by default in
+    # Talos writes CDI specs to /run/cdi. CDI is enabled by default in
     # gpu-operator v26.3+ (the explicit `cdi.default` field was deprecated),
     # so we just opt in here — no `default: true` needed.
     cdi:
@@ -50,7 +50,7 @@ helmCharts:
     # driver-validation init container try to mkdir a missing directory
     # on Talos' read-only root filesystem and fail with CreateContainerError.
     #
-    # CDI integration (Talos 1.13 auto-writes /run/cdi/nvidia.yaml) handles
+    # CDI integration (Talos auto-writes /run/cdi/nvidia.yaml) handles
     # the actual GPU device injection at container create time; this path
     # is only used by the operator's validator pods.
     hostPaths:

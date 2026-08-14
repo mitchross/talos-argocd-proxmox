@@ -153,7 +153,7 @@ spec:
           configMap:
             name: config
         # SONOFF Zigbee dongle char device on the gpu-worker node. cp210x must
-        # be loaded (Talos single-node-gpu.yaml) for this to exist. If the path
+        # be loaded (Talos threadripper-gpu-workers.yaml) for this to exist. If the path
         # ever shifts (e.g. a second serial device), switch to the stable
         # /dev/serial/by-id/usb-… symlink target.
         - name: zigbee-dongle

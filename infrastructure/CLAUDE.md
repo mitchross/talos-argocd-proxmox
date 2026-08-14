@@ -39,7 +39,9 @@ kubectl delete applications --all -n argocd
 talosctl health --nodes <node-ip>
 talosctl logs -n <node-ip> -k
 talosctl apply-config --nodes <node-ip> --file <config.yaml>
-talosctl upgrade --nodes <node-ip> --image <installer-image>
+# Talos 1.14 stopped publishing ghcr.io/siderolabs/installer; use an Image
+# Factory reference. Omni-driven upgrades resolve the image themselves.
+talosctl upgrade --nodes <node-ip> --image factory.talos.dev/installer/<schematic-id>:<version>
 ```
 
 ### Testing & Verification

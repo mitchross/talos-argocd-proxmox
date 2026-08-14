@@ -1,20 +1,21 @@
 services:
   omni-infra-provider-proxmox:
-    # Sidero ships this provider as a rolling :latest only — there are no
-    # GitHub releases or git tags. The 7-character SHA tags on ghcr (e.g.
-    # da2f853, 410ed22) are commit-SHA refs, not semver. We pin by content
-    # digest so the running version is reproducible regardless of what the
-    # :latest tag points at upstream. Renovate (digest update mode) tracks
-    # new digests against this image.
+    # Upstream now cuts real releases (v0.1.0 2026-05-22, v0.2.0 2026-07-23),
+    # so this is pinned to a release tag rather than the rolling :latest it
+    # used to track. The previous pin was a mid-stream :latest digest from
+    # 2026-06-11 — a build between the two releases, with no changelog to
+    # reason about. The digest is kept alongside the tag so the running
+    # version stays reproducible even if the tag is ever re-pushed.
     #
-    # To bump manually, look up the current digest with:
+    # The 7-character tags on ghcr (e.g. da2f853, 410ed22) are commit-SHA
+    # refs, not semver — do not pin to those. Renovate tracks this image.
+    #
+    # To bump manually, resolve the digest for the tag you want:
     #   docker buildx imagetools inspect \
-    #     ghcr.io/siderolabs/omni-infra-provider-proxmox:latest \
+    #     ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0 \
     #     | grep -i digest
-    # then update the @sha256:... below and `docker compose up -d`.
-    #
-    # Last bumped: 2026-06-11
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:latest@sha256:96433a9747ffc2649b5be114bc6bd8034cc59972e21e73297c8b619940bcc5bf
+    # then update below and `docker compose up -d`.
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
     container_name: omni-infra-provider-proxmox
     env_file:
       - .env
