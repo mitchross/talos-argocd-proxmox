@@ -140,132 +140,39 @@ replacement; do not combine it into a blind template sync.
   not restore NVIDIA passthrough unless the extra idle power is intentionally
   accepted.
 
-## Known failure: pod overlay (VXLAN) does not cross the Wi-Fi bridge
+## Known failure: nodes are Ready, but pods cannot cross nodes
 
-**Observed 2026-08-14, on the clean-slate rebuild of `talos-threadripper-gpu-workers`.**
+After a clean rebuild, all four nodes can be `Ready` while Longhorn managers
+crashloop and new PVCs remain `Pending`. `Ready` only proves that the nodes can
+reach Kubernetes; it does not prove that pods can reach pods on other nodes.
 
-The Dell worker joins the cluster, reports `Ready`, and is reachable at
-`192.168.10.119` — but **no pod on it can talk to a pod on any other node**.
-Node-to-node L3 works; the Cilium VXLAN overlay does not survive the AX86U
-media bridge.
-
-### Symptom
-
-Longhorn never finishes bootstrapping. `longhorn-manager` on the Dell node
-crashloops with:
-
-```
-level=fatal msg="Error starting webhooks: admission webhook service is not
-accessible on cluster after 2m0s sec: timed out waiting for endpoint
-https://longhorn-admission-webhook.longhorn-system.svc:9502/v1/healthz"
-```
-
-and earlier, DNS itself times out from that pod:
-
-```
-dial tcp: lookup longhorn-admission-webhook.longhorn-system.svc on 10.96.0.10:53:
-read udp 10.244.3.201:37863->10.96.0.10:53: i/o timeout
-```
-
-The tell is that this **flips with webhook leadership**. `longhorn-admission-webhook`
-is served by a `longhorn-manager` pod, so:
-
-- webhook lands on the Dell pod → the three Threadripper managers time out
-- webhook lands on a Threadripper pod → the Dell manager times out
-
-Whoever is co-located with the webhook works. That symmetry rules out a
-Longhorn bug and points squarely at cross-node pod networking.
-
-Downstream, every PVC stays `Pending`, so most of the cluster sits unschedulable
-with `pod has unbound immediate PersistentVolumeClaims`.
-
-### Diagnosis (one command)
+Check Cilium from an agent pod:
 
 ```bash
-kubectl exec -n kube-system <cilium-pod-on-dell> -c cilium-agent -- cilium-health status
+kubectl exec -n kube-system <cilium-pod> -- cilium-health status --probe
 ```
 
-```
-Cluster health:                     1/4 reachable
-Name                                IP               Node   Endpoints
-  ...dell-workers-... (localhost)   192.168.10.119   1/1    1/1
-  ...control-planes-...             192.168.10.139   1/1    0/1
-  ...gpu-workers-...                192.168.10.177   1/1    0/1
-  ...workers-...                    192.168.10.166   1/1    0/1
-```
+`Node 1/1` with `Endpoints 0/1` means the normal network works but the pod
+overlay does not. In the 2026-08-14 rebuild, the cause was a virtio checksum
+offload bug—not the AX86U bridge, MTU, Cilium state, or the Dell's dedicated
+2.5 GbE card.
 
-**`Node 1/1` with `Endpoints 0/1` is the signature.** The node IP is reachable;
-the overlay path to pods on that node is not. If both columns were `0/1` this
-would be ordinary L3 loss and a different problem.
+Keep both offload guards in the cluster-level Talos `EthernetConfig`:
 
-### What the evidence actually shows
-
-Packet capture on both ends (`talosctl pcap -i eth0`, 25 s, taken 2026-08-14)
-disproves the simple "the bridge blocks VXLAN" reading:
-
-```
-DELL eth0 (192.168.10.119) — VXLAN packets
-   109  192.168.10.177 -> 192.168.10.119
-   107  192.168.10.119 -> 192.168.10.177     <- flowing BOTH ways
-     1  192.168.10.166 -> 192.168.10.119
-     1  192.168.10.139 -> 192.168.10.119
+```yaml
+apiVersion: v1alpha1
+kind: EthernetConfig
+name: eth0
+features:
+  tx-checksum-ip-generic: false
+  tx-udp_tnl-csum-segmentation: false
 ```
 
-VXLAN is on the wire in both directions between the Dell node and `.177`.
-Packets arrive and are still not usable — so the traffic is being dropped
-*after* decapsulation, not filtered on the link.
+An unchanged template sync may do nothing because Omni already considers the
+config current. Adding the second guard produced a real config change and made
+Talos re-apply the settings. It did not visibly reboot the nodes.
 
-Two hypotheses are ruled out by this:
-
-- **Not MTU.** DNS queries (~70 bytes) and `cilium-health` probes time out.
-  MTU problems let small packets through and break large ones. A TCP connect
-  timing out on a 60-byte SYN is not an MTU symptom.
-- **Not stale Cilium state.** `cilium-dbg node list` on the Dell node lists all
-  four nodes with correct pod CIDRs and node IPs, identical to the view from a
-  Threadripper node.
-
-### The asymmetry worth chasing
-
-`tx-checksum-ip-generic` on `eth0`, read from `talosctl get ethernetstatus`:
-
-| Node | Setting |
-| --- | --- |
-| `192.168.10.119` (Dell) | **off** |
-| `192.168.10.166` (workers) | **on** |
-| `192.168.10.177` (gpu-workers) | **on** |
-| `192.168.10.139` (control-plane) | **on** |
-
-The cluster-scoped `vxlan-inner-checksum` patch sets this to `false`, so it
-should be **off on all four**. It is off on exactly one. Three nodes are
-transmitting VXLAN under precisely the condition the patch exists to avoid,
-which fits packets arriving and then being discarded.
-
-**Unconfirmed:** why the patch took on one node and not the others. Reading the
-running machine config to prove it (`talosctl get machineconfig`) returned
-nothing in this Talos version, so the delivery path was never verified — only
-the resulting state. Establish that before changing anything.
-
-This also fits the strongest piece of evidence: **the same topology worked
-before the cluster was rebuilt.** That points at configuration drift introduced
-during reprovisioning, not at the Wi-Fi link being fundamentally unsuitable.
-
-### Options
-
-- **First, explain the asymmetry.** Confirm whether the `EthernetConfig`
-  document reached the three Threadripper nodes at all. If it did not, that is
-  the bug, and it is a config-delivery problem rather than a network one.
-- **Do not reach for an MTU change.** It does not match the symptom, and it is
-  architectural churn against a topology with a working history.
-- **Making the Dell node compute-only does not fix this.** Pods on it still
-  cannot reach pods elsewhere; it only avoids putting Longhorn replicas across
-  Wi-Fi.
-- **Wired Ethernet for the Dell host** remains the durable answer, but the
-  evidence above says something regressed in the rebuild — find that first.
-
-### Do not
-
-- Do not keep restarting `longhorn-manager`. It will crashloop indefinitely,
-  because the webhook it needs is unreachable by design of the current network.
-- Do not raise Longhorn replica counts to "heal" the volumes. That puts
-  synchronous replication across Wi-Fi, which the rollout notes already warn
-  against.
+Success means Cilium reports `4/4 reachable`, including every endpoint, and all
+Longhorn managers return to `2/2 Running`. Let existing CrashLoop backoff expire;
+do not keep restarting Longhorn, change MTU, or redesign the bridge for this
+symptom.
