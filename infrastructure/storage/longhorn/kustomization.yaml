@@ -9,6 +9,10 @@ resources:
   - node-failure-settings.yaml
   # Fast local flash tier — enterprise-SSD Longhorn disk (tag `flash`).
   - storageclass-flash.yaml
+  # Disposable kopiur snapshot clones. WFFC lets the mover pod choose the
+  # preferred node before Longhorn provisions the clone, avoiding the V1 clone
+  # attachment handoff race seen with the Immediate-binding default class.
+  - storageclass-kopiur-staging.yaml
   # The chart-created `longhorn` StorageClass provisions V1-engine volumes
   # (chart default; the dataEngine:v2 routing was removed 2026-06-12 when the
   # V2/SPDK experiment was retired — see values.yaml header).
@@ -20,4 +24,3 @@ helmCharts:
     namespace: longhorn-system
     valuesFile: values.yaml
     includeCRDs: true
-

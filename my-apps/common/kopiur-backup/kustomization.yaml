@@ -39,6 +39,13 @@ patches:
       - op: add
         path: /spec/volumeSnapshotClassName
         value: longhorn-snapclass
+      # Stage the disposable snapshot clone with WFFC so the mover is scheduled
+      # before Longhorn picks the clone's preferred node. This avoids the V1
+      # Immediate-binding clone handoff race (longhorn/longhorn #13335).
+      - op: add
+        path: /spec/staging
+        value:
+          storageClassName: longhorn-kopiur-staging
       - op: add
         path: /spec/repository
         value:
