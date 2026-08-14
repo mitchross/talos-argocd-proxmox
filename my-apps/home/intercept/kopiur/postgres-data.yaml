@@ -11,6 +11,23 @@ spec:
   identity:
     username: intercept-postgres-data
     hostname: intercept
+  hooks:
+    beforeSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: intercept-postgres
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_start('kopiur', true)\""]
+          timeout: 2m
+    afterSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: intercept-postgres
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_stop()\""]
+          timeout: 2m
   retention:
     keepHourly: 24
     keepDaily: 7
