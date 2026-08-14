@@ -27,7 +27,7 @@ spec:
         - name: postgres
           # Major upgrades require a dump/restore; the data directory is not
           # compatible across PostgreSQL major versions.
-          image: docker.io/library/postgres:18.4
+          image: docker.io/library/postgres:18.6
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 999
