@@ -2,10 +2,10 @@
 # worker VM, plus 1 CPU-only Dell worker VM on the separate Proxmox host.
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
-#   omnictl cluster template sync -v -f cluster-template-singlenode-gpu.yaml
+#   omnictl cluster template sync -v -f cluster-template-threadripper-gpu-workers.yaml
 ---
 kind: Cluster
-name: talos-singlenode-gpu-prod
+name: talos-threadripper-gpu-workers
 labels:
   cluster-id: "2"
 kubernetes:
@@ -243,7 +243,7 @@ patches:
       nodeAnnotations:
         node.longhorn.io/default-disks-config: >-
           [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"nvme1","path":"/var/mnt/longhorn-nvme1","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash"]}]
-- file: patches/single-node-gpu.yaml
+- file: patches/threadripper-gpu-workers.yaml
 - name: kubelet-performance
   inline:
     machine:

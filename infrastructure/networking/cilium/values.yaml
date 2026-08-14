@@ -1,4 +1,4 @@
-# Cilium Helm Values for Talos single-node GPU production cluster
+# Cilium Helm Values for the Talos Threadripper GPU + workers production cluster
 # ArgoCD Sync Wave: 0 (Foundation - must deploy before everything else)
 annotations:
   argocd.argoproj.io/sync-wave: "0"
@@ -7,7 +7,7 @@ annotations:
 # IMPORTANT: cluster.name must match the --set cluster.name used during initial
 # cilium install at bootstrap. Mismatched names break Hubble certificate SANs.
 cluster:
-  name: talos-singlenode-gpu-prod
+  name: talos-threadripper-gpu-workers
   id: 2
 
 # Kubernetes API Configuration (kubePrism via SideroLink)

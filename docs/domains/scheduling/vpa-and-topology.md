@@ -161,4 +161,4 @@ Sources of truth are the controller
 the rendered-policy validator
 [`validate-vpa-policies.py`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/validate-vpa-policies.py),
 and the node labels in
-[`cluster-template-singlenode-gpu.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-singlenode-gpu.yaml).
+[`cluster-template-threadripper-gpu-workers.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml).

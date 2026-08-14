@@ -20,7 +20,7 @@ and the Talos image carries no NVIDIA extensions.
 | Hypervisor | Dell Proxmox VE, `192.168.10.16` | Host-side state |
 | Omni provider | `proxmox-dell`, running on the NUC | `omni/proxmox-provider-dell/` |
 | VM | 4 vCPU, 48 GiB RAM, 64 GiB boot + 400 GiB data disk | `omni/machine-classes/dell-worker.yaml` |
-| Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
 | Node class | `node.vanillax.dev/class=dell-worker` | same cluster template |
 | Longhorn | Unschedulable boot disk + schedulable Samsung SSD | same cluster template |
 
@@ -97,9 +97,9 @@ replacement; do not combine it into a blind template sync.
    omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
    omnictl apply -f omni/machine-classes/dell-worker.yaml
    omnictl cluster template validate \
-     -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
+     -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml
    omnictl cluster template sync -v \
-     -f omni/cluster-template/cluster-template-singlenode-gpu.yaml --dry-run
+     -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml --dry-run
    ```
 
 5. Remember that the dry run updates MachineSet class references but does not

@@ -256,7 +256,7 @@ On this single-worker cluster, `Insufficient cpu` during recovery usually means
 requested CPU is saturated, not that the Proxmox host is busy. Verify with:
 
 ```bash
-kubectl describe node talos-singlenode-gpu-prod-gpu-workers-f7x5ct \
+kubectl describe node talos-threadripper-gpu-workers-gpu-workers-f7x5ct \
   | sed -n '/Allocated resources:/,/Events:/p'
 kubectl top nodes
 ```
