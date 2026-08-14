@@ -256,9 +256,9 @@
       // Minors/patches keep automerging per the repo-wide rule. PG19 GA is
       // ~Sept 2026. Migration runbook captured 2026-07-18 (dump/restore
       // via temp postgres:17 pod on the same PVC).
-      description: 'gitea plain-Postgres image: MAJOR bumps require dependency-dashboard approval — PG data dirs are not major-version compatible; manual dump/restore needed (2026-07-17 incident, PR #1621)',
-      matchPackageNames: ['postgres'],
-      matchFileNames: ['my-apps/development/gitea/postgres/deployment.yaml'],
+      description: 'plain-Postgres images (all apps): MAJOR bumps require dependency-dashboard approval — PG data dirs are not major-version compatible; manual dump/restore needed (2026-07-17 incident PR #1621; repeated 2026-08-14 on temporal, PR #1979)',
+      matchPackageNames: ['postgres', 'docker.io/library/postgres'],
+      matchFileNames: ['**/postgres/deployment.yaml'],
       matchUpdateTypes: ['major'],
       dependencyDashboardApproval: true,
       automerge: false,
