@@ -54,8 +54,8 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller |
 | **2** | kopiur operator | Kopia-native backup operator (CRDs + controller + webhook); serves the volume populator for restore-before-bind |
-| **3** | CNPG Barman Plugin + kopiur config | DB backup plugin before DB clusters; kopiur `ClusterRepository` + credential fanout + `VolumeSnapshotClass` |
-| **4** | Infrastructure AppSet + custom entrypoints + Database AppSet | cert-manager extras, GPU Operators, Gateway, KEDA, VPA, Temporal Worker Controller; DB support auto-syncs, CNPG instances are manual DR gates |
+| **3** | kopiur config | kopiur `ClusterRepository` + credential fanout + `VolumeSnapshotClass` |
+| **4** | Infrastructure AppSet + custom entrypoints + Database AppSet | cert-manager extras, GPU Operators, Gateway, KEDA, VPA, Temporal Worker Controller; Database AppSet (Redis + shared DB support) fully auto-syncs |
 | **5** | OTEL Operator + Monitoring AppSet | OpenTelemetry Operator, Prometheus, Grafana, Loki |
 | **6** | Observability overlays + My-Apps AppSet | KEDA/OTEL ServiceMonitors (after monitoring CRDs exist) and `my-apps/*/*` user apps |
 
@@ -275,18 +275,13 @@ The script pre-flights Cilium, installs ArgoCD via Helm, seeds the `argocd-redis
 
 ### 8. Verify
 
-The three prepared CNPG restores and their consumers intentionally do not
-auto-sync. Once Waves 0–4 have installed the CNPG operator, Barman plugin,
-secrets, and storage, validate the plan and execute the guarded restore:
-
-```bash
-./scripts/bootstrap-cnpg-recovery.sh
-./scripts/bootstrap-cnpg-recovery.sh --execute
-```
-
-Execute mode refuses the wrong live bootstrap lineage and requires the audited
-PostgreSQL system ID, a non-empty application table, WAL archiving, and a
-successful event-specific base backup before syncing each consumer.
+There are no database-specific recovery steps: every database is a plain
+Postgres Deployment whose PVC restores via kopiur restore-before-bind at
+Wave 6, exactly like every other backed-up PVC (CNPG and its guarded
+recovery script were retired 2026-08-13). Backed-up PVCs sit `Pending`
+while they hydrate — that is the restore working, not a fault. Once apps
+are up, confirm each database's first post-rebuild snapshot succeeds:
+`kubectl -n <ns> get snapshot` → newest `Succeeded` with non-zero files.
 
 ```bash
 omnictl cluster template status \
@@ -325,7 +320,7 @@ From here, new applications are discovered automatically — add a directory wit
 
 - **Replica rebuilds are throttled to 1/node in Git** (`infrastructure/storage/longhorn/node-failure-settings.yaml`). Full-cluster restores overload any engine on this hardware — don't raise the limit mid-bootstrap.
 - A mover pod stuck >15 min on `MountVolume … hasn't been attached yet` with an old VolumeAttachment = stale CSI state — delete the mover pod (its Job recreates it, forcing a fresh attach).
-- Pods crashlooping on `read-only file system` after a storage disruption: the volume must FULLY detach (or the pod must land on another node) to drop the stale ro mount — scale to 0, wait for the Longhorn volume to show `detached`, scale back (CNPG: `cnpg.io/hibernation=on` → wait → `off`).
+- Pods crashlooping on `read-only file system` after a storage disruption: the volume must FULLY detach (or the pod must land on another node) to drop the stale ro mount — scale to 0, wait for the Longhorn volume to show `detached`, scale back (databases: scale the postgres Deployment).
 - History: the Longhorn V2/SPDK engine was tried and retired here (2026-06-12, open Longhorn bugs #13315/#13314). Do not re-enable V2 without a fixed release and a passed DR drill — short version in [docs/disaster-recovery.md](docs/disaster-recovery.md).
 
 ## Cluster Access (Omni Service Account)
@@ -370,8 +365,8 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 - **How a PVC opts in**: label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy` + `SnapshotSchedule` + `Restore`) via the shared `my-apps/common/kopiur-backup` Kustomize component, and point the PVC's `dataSourceRef` at `<pvc>-restore`. See [`.claude/commands/add-backup.md`](.claude/commands/add-backup.md).
 - **Restore-before-bind DR**: a restore against an **unreachable** repo leaves the PVC `Pending` (never binds an empty volume); a brand-new PVC against a **reachable** repo with no snapshot binds empty and backs up forward (`onMissingSnapshot: Continue` = deploy-or-restore).
 - **Mover permissions**: the mover runs as the **data owner's uid:gid**, not root — under baseline Pod Security, root can't read non-root data. See [docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md).
-- **Exclusions**: CNPG uses native Barman → S3 (not kopiur). Redis and PostHog are backup-exempt and disposable.
-- **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md).
+- **Databases included**: every Postgres is a plain Deployment on the same kopiur pipeline (hourly tier). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
+- **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md) (the database operator guide).
 
 ## Cluster Upgrades & Talos 1.13 Notes
 
@@ -411,10 +406,6 @@ Run Omni and `omnictl` **on the same release** (currently `v1.10.1`, pinned in `
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.
 3. Upgrade `omnictl` on your workstation to match — mismatched versions fail with obscure gRPC errors.
 4. Regenerate the service-account kubeconfig if it's older than ~30 days (token rotation lags server upgrades).
-
-### CNPG clean-slate baseline (April 2026)
-
-After the RustFS wipe in April 2026, every CNPG database was re-bootstrapped from scratch via `initdb`. Any DR runbook older than 2026-04-18 references the old WAL chain and won't work — use [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md), which is authoritative.
 
 ## Hardware
 
