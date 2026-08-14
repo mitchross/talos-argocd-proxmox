@@ -42,6 +42,7 @@ patches:
     name: eth0
     features:
       tx-checksum-ip-generic: false
+      tx-udp_tnl-csum-segmentation: false
 - file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:

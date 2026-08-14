@@ -434,6 +434,7 @@ Network
 | **ArgoCD not syncing** | `kubectl get applicationsets -n argocd` · `kubectl describe applicationset infrastructure -n argocd` · check for stale operations before reverting Git: `kubectl get application argocd -n argocd -o yaml` |
 | **Cilium issues** | `cilium status` · `kubectl logs -n kube-system -l k8s-app=cilium` · `cilium connectivity test` |
 | **Storage issues** | `kubectl get pvc -A` · `kubectl get pods -n longhorn-system` |
+| **Longhorn manager crashlooping on the webhook / every PVC Pending** | Check cross-node pod networking first: `kubectl exec -n kube-system <cilium-pod> -c cilium-agent -- cilium-health status`. `Node 1/1` with `Endpoints 0/1` means the pod overlay is broken to that node, not Longhorn — see [Wi-Fi worker: VXLAN overlay failure](docs/domains/networking/wifi-proxmox-talos-worker.md#known-failure-pod-overlay-vxlan-does-not-cross-the-wi-fi-bridge) |
 | **Secrets not syncing** | `kubectl get externalsecret -A` · `kubectl get pods -n 1passwordconnect` · `kubectl describe clustersecretstore 1password` |
 | **GPU issues** | `kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true` · `kubectl get pods -n gpu-operator` |
 | **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Succeeded` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |
