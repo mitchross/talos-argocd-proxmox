@@ -72,12 +72,12 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.10.1` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
-| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
+| Talos Linux | `v1.14.0-beta.1` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
+| Kubernetes | `v1.37.0-beta.0` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
 | Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
-| Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
+| Proxmox provider | `v0.2.0@sha256:c0d068…` | `omni/proxmox-provider/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
 
@@ -311,7 +311,7 @@ From here, new applications are discovered automatically — add a directory wit
 > **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
 >
 > ```bash
-> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.7)
+> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.14.0-beta.1)
 > talosctl -n <worker-ip> get disks               # expect a single ~800G sda (sda+sdb = STALE 2-disk layout)
 > kubectl get nodes.longhorn.io -n longhorn-system # expect 4 Ready storage nodes after Longhorn starts
 > ```
@@ -368,13 +368,40 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 - **Databases included**: every Postgres is a plain Deployment on the same kopiur pipeline (hourly tier). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
 - **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md) (the database operator guide).
 
-## Cluster Upgrades & Talos 1.13 Notes
+## Cluster Upgrades & Talos 1.14 Notes
 
-The cluster runs Talos **1.13.7**. A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
+The cluster runs Talos **1.14.0-beta.1** with Kubernetes **1.37.0-beta.0**. Read [docs/domains/talos/talos-1.14-upgrade.md](docs/domains/talos/talos-1.14-upgrade.md) before touching the cluster template — it carries the full 1.13 → 1.14 change list, the pre-flight/verification steps, and the rollback path.
+
+### This is a pre-release pin
+
+Neither 1.14.0 nor Kubernetes 1.37.0 has a GA tag yet (newest builds are `v1.14.0-beta.1`, released 2026-07-31, and `v1.37.0-beta.0`). Two consequences:
+
+- **Omni must allow pre-release versions** or `omnictl cluster template sync` rejects the version as unknown. `omni/omni/omni.env.example` ships `VERSION_FLAGS=--enable-talos-pre-release-versions`; the compose `command:` interpolates it.
+- **No patch-release safety net.** A regression found in beta.1 has no 1.14.x fix to roll forward to — the recovery is rolling *back* to `v1.13.7` / `v1.36.3`, which for Talos means an in-place downgrade through Omni and is not guaranteed clean. Snapshot etcd first; the runbook has the sequence.
+
+Move both templates to the GA tags and empty `VERSION_FLAGS` as soon as they ship.
+
+### The 1.14 change that bites this cluster: `/var` is `noexec`
+
+Talos 1.14 mounts the EPHEMERAL volume (`/var`) `noexec` in addition to the existing `nosuid` + `nodev`. **Longhorn's V1 engine execs its engine/replica binaries out of `/var/lib/longhorn`**, so a machine provisioned under the default comes up with a dead instance-manager — and this cluster runs V1 (the V2/SPDK engine was retired 2026-06-12). Both templates carry the opt-out:
+
+```yaml
+- name: ephemeral-allow-exec
+  inline:
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: EPHEMERAL
+    mount:
+      secure: false
+```
+
+`secure` is all-or-nothing — turning off `noexec` also turns off `nosuid`/`nodev`, which is the 1.13 behaviour this cluster already ran on. The upstream alternative (a dedicated Longhorn disk on a `UserVolumeConfig` at `/var/mnt/longhorn`) is **not** usable on the multi-node prod template: adding a second disk shifts PCIe enumeration on these VMs, which is what left the GPU worker with no NIC and no SideroLink on 2026-06-11.
+
+**Only newly provisioned machines get `noexec`** — nodes upgraded in place keep their existing mount options. So this is a rebuild/DR hazard, not an upgrade-day one, which makes it easy to miss until a destroy-and-restore drill fails.
 
 ### Never pin below Talos 1.13.4
 
-1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args, so 1.13.4 is the floor — use it or a newer 1.13 patch.
+1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args, so 1.13.4 is the floor for any rollback target — the 1.14 pin is above it, but if you drop back, drop back to `v1.13.7`, never to an earlier patch.
 
 **Observed 1.13.2 failure:** freshly provisioned nodes repeatedly failed to create pod sandboxes (`lstat /proc/.../ns/ipc: no such file or directory`, `can't find shim for sandbox`, `ttrpc: closed`). Rebooting and reinstalling Cilium didn't help; moving them to 1.13.4 restored containerd, control-plane pods, and Cilium. For a stuck rollout, reprovision one machine at a time (preserves etcd quorum for control planes):
 
@@ -398,6 +425,8 @@ Talos 1.13 replaced the old install/upgrade flow with the **LifecycleService API
 
 All machine classes (CP / worker / GPU) share the bus layout, so the patch goes at cluster scope. A class with a different disk presentation (e.g. NVMe passthrough → `/dev/nvme0n1`) needs a per-machineset override.
 
+1.14 deprecates `.machine.install` in favour of an `UnattendedInstall` document but still honours the v1alpha1 field. This patch is load-bearing for provisioning, so it stays on v1alpha1 until the migration can be tested on its own — see the deprecation inventory in the [1.14 upgrade runbook](docs/domains/talos/talos-1.14-upgrade.md).
+
 ### Upgrading Omni / omnictl
 
 Run Omni and `omnictl` **on the same release** (currently `v1.10.1`, pinned in `omni/omni/omni.env.example`). When upgrading:
@@ -406,6 +435,17 @@ Run Omni and `omnictl` **on the same release** (currently `v1.10.1`, pinned in `
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.
 3. Upgrade `omnictl` on your workstation to match — mismatched versions fail with obscure gRPC errors.
 4. Regenerate the service-account kubeconfig if it's older than ~30 days (token rotation lags server upgrades).
+
+### Upgrading the Proxmox infrastructure provider
+
+Both provider instances — `omni/proxmox-provider/` (Threadripper) and `omni/proxmox-provider-dell/` (Dell) — must run the **same tag and digest**. They register against one Omni server and upstream publishes no compatibility story for a skew between them.
+
+The pin moved from a rolling `latest@sha256:…` to the release tag `v0.2.0` on 2026-08-14. The old pin was a mid-stream `:latest` digest captured 2026-06-11, between the v0.1.0 and v0.2.0 releases — reproducible, but with no changelog to reason about. v0.2.0 adds Proxmox HA registration, configurable placement strategies, and provider-version reporting to Omni, and fixes scheduler reservation leaks during deprovisioning.
+
+Neither provider instance nor `OMNI_IMG_TAG` was covered by Renovate before 2026-08-14 (the `docker-compose` manager was never enabled, and the Omni tag lives in an env file that no standard manager can see), despite in-repo comments claiming otherwise. That is why the provider digest sat untouched for two months. Both are tracked now — see `.github/renovate.json5`.
+
+To upgrade: bump the tag and digest in **both** compose files, then `docker compose up -d` in each directory. Watch `omnictl get machinerequeststatuses` afterwards; a provider that fails to re-register leaves machine requests stuck in a pending state rather than erroring loudly.
+
 
 ## Hardware
 

@@ -11,8 +11,18 @@
     'argocd',
     'terraform',
     'dockerfile',
+    // Added 2026-08-02. The Omni Proxmox provider composes carried a comment
+    // claiming Renovate tracked their digests, but this list never enabled
+    // the manager — the pin silently sat on a 2026-06-11 :latest digest while
+    // upstream cut v0.1.0 and v0.2.0. Scoped to omni/ below.
+    'docker-compose',
     'custom.regex',
   ],
+  'docker-compose': {
+    managerFilePatterns: [
+      '/^omni/.+/docker-compose\\.yml$/',
+    ],
+  },
   argocd: {
     managerFilePatterns: [
       '/^infra/.+\\.yaml$/',
@@ -362,25 +372,54 @@
       registryUrlTemplate: 'https://argoproj.github.io/argo-helm',
     },
     {
-      description: 'Omni cluster template - Talos version',
+      // The Omni server tag lives in an env file the compose interpolates
+      // (`image: ghcr.io/siderolabs/omni:${OMNI_IMG_TAG}`), so no standard
+      // manager can see it, so nothing proposed a bump while upstream shipped
+      // 1.9.1 through 1.10.x. Keep the operator's local omnictl on whatever
+      // this resolves to — a skew fails with obscure gRPC errors.
+      description: 'Omni server image tag',
       customType: 'regex',
       managerFilePatterns: [
-        '/^omni/cluster-template/cluster-template\\.yaml$/',
+        '/^omni/omni/omni\\.env\\.example$/',
       ],
       matchStrings: [
-        'talos:\\s*\\n\\s+version:\\s*(?<currentValue>v[0-9.]+)',
+        'OMNI_IMG_TAG=(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)',
       ],
-      depNameTemplate: 'ghcr.io/siderolabs/installer',
+      depNameTemplate: 'ghcr.io/siderolabs/omni',
       datasourceTemplate: 'docker',
     },
     {
-      description: 'Omni cluster template - Kubernetes version',
+      // Talos 1.14 stopped publishing ghcr.io/siderolabs/installer (the default
+      // installer moved to Image Factory), so the docker datasource this rule
+      // used to point at is frozen at the last 1.13 tag and would silently stop
+      // proposing updates. Track the git tags instead.
+      //
+      // Both templates are matched, and the version pattern accepts
+      // pre-release suffixes because the cluster is pinned to v1.14.0-beta.1.
+      // Renovate only proposes unstable versions when the current value is
+      // itself unstable, so this rule reverts to stable-only on its own once
+      // the pin moves to 1.14.0 GA.
+      description: 'Omni cluster templates - Talos version',
       customType: 'regex',
       managerFilePatterns: [
         '/^omni/cluster-template/cluster-template\\.yaml$/',
+        '/^omni/cluster-template/cluster-template-threadripper-gpu-workers\\.yaml$/',
       ],
       matchStrings: [
-        'kubernetes:\\s*\\n\\s+version:\\s*(?<currentValue>v[0-9.]+)',
+        'talos:\\s*\\n(?:\\s*#.*\\n)*\\s+version:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z]+\\.[0-9]+)?)',
+      ],
+      depNameTemplate: 'siderolabs/talos',
+      datasourceTemplate: 'github-releases',
+    },
+    {
+      description: 'Omni cluster templates - Kubernetes version',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^omni/cluster-template/cluster-template\\.yaml$/',
+        '/^omni/cluster-template/cluster-template-threadripper-gpu-workers\\.yaml$/',
+      ],
+      matchStrings: [
+        'kubernetes:\\s*\\n(?:\\s*#.*\\n)*\\s+version:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z]+\\.[0-9]+)?)',
       ],
       depNameTemplate: 'ghcr.io/siderolabs/kubelet',
       datasourceTemplate: 'docker',

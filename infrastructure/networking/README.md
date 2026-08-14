@@ -369,32 +369,45 @@ DHCP-excluded block — don't just enlarge the CIDR.
 - CIDR: `192.168.10.0/24`
 - Static IPs configured in Omni machine configs
 
-## Talos 1.13 compatibility notes
+## Talos 1.14 compatibility notes
 
-The cluster runs Talos 1.13 (migrated from 1.12 in April 2026). Key
-networking-adjacent gotchas for that migration:
+The cluster runs Talos 1.14 (1.12 → 1.13 in April 2026, 1.13 → 1.14 in
+August 2026). Full change list and runbook:
+[docs/domains/talos/talos-1.14-upgrade.md](../../docs/domains/talos/talos-1.14-upgrade.md).
+Networking-adjacent gotchas:
 
-- **KubePrism port (`7445`) is unchanged** across 1.12 → 1.13. Existing
-  Cilium values (`k8sServiceHost: localhost`, `k8sServicePort: 7445`)
-  don't need touching.
-- **Cilium 1.19.x** is the tested pairing with Talos 1.13 in this repo
-  (`infrastructure/networking/cilium/kustomization.yaml` pins 1.19.3).
-  Older Cilium 1.17/1.18 may boot, but Hubble TLS behavior changed
-  enough that mixing versions during a rolling upgrade caused cert
-  issues — don't cross-version unless you plan to reinstall Cilium.
-- **`machine.install.disk`** is now mandatory on 1.13 (new
-  LifecycleService API). This is networking-adjacent only because a
-  missing disk patch keeps the LoadBalancer unhealthy forever —
-  symptoms look like "L2 isn't announcing" when the real cause is that
-  nodes never made it out of `UPGRADING`. See the root README for the
-  fix (already applied in `omni/cluster-template/cluster-template.yaml`).
-- **NVIDIA OSS driver migration** (in progress) changes the GPU
-  worker's extension set but doesn't change its networking posture —
-  node IP, L2 membership, and Cilium pod CIDR are unaffected.
+- **KubePrism port (`7445`) is unchanged** across 1.12 → 1.13 → 1.14.
+  Existing Cilium values (`k8sServiceHost: localhost`,
+  `k8sServicePort: 7445`) don't need touching. 1.14 moves KubePrism
+  configuration to a `KubePrismConfig` document but keeps the v1alpha1
+  field working.
+- **Cilium 1.20.x** is the pairing this repo runs
+  (`infrastructure/networking/cilium/kustomization.yaml` pins 1.20.0).
+  Older Cilium may boot, but Hubble TLS behavior changed enough that
+  mixing versions during a rolling upgrade caused cert issues — don't
+  cross-version unless you plan to reinstall Cilium.
+  **Caveat on Talos 1.14:** it ships Kubernetes 1.37, which is beyond
+  Cilium's published compatibility matrix. Run `cilium status` right
+  after any control-plane roll rather than assuming.
+- **DNS is a `ResolverConfig` document**, and 1.14 adds DNS-over-TLS and
+  DNS-over-HTTPS as per-nameserver options there. The cluster templates
+  keep plain UDP/53 to `192.168.10.1` (Technitium) — DoT/DoH to an
+  internal resolver would break split-horizon `vanillax.me` resolution.
+  1.14 also moved `.machine.features.hostDNS` into the same document;
+  this repo never set it.
+- **`machine.install.disk`** is mandatory since 1.13 (LifecycleService
+  API). This is networking-adjacent only because a missing disk patch
+  keeps the LoadBalancer unhealthy forever — symptoms look like "L2
+  isn't announcing" when the real cause is that nodes never made it out
+  of `UPGRADING`. See the root README for the fix (already applied in
+  `omni/cluster-template/cluster-template.yaml`).
+- **NVIDIA driver extensions** change the GPU worker's extension set but
+  not its networking posture — node IP, L2 membership, and Cilium pod
+  CIDR are unaffected.
 
 ## References
 
-- [Talos + Cilium Official Guide](https://www.talos.dev/v1.13/kubernetes-guides/network/cilium/)
+- [Talos + Cilium Official Guide](https://www.talos.dev/v1.14/kubernetes-guides/network/cilium/)
 - [Cilium kube-proxy Replacement](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/)
 - [Gateway API Documentation](https://gateway-api.sigs.k8s.io/)
 - [Cilium L2 Announcements](https://docs.cilium.io/en/stable/network/l2-announcements/)

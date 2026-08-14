@@ -128,6 +128,8 @@ nav:
       - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
       - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
       - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
+  - Cluster OS (Talos):
+      - Talos 1.13 → 1.14 upgrade: domains/talos/talos-1.14-upgrade.md
   - Reference & ops:
       - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
       - RustFS credential runbook: domains/rustfs/credential-runbook.md
