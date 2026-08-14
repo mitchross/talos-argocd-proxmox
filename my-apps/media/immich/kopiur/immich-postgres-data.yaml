@@ -3,8 +3,8 @@
 # immich-postgres-data backup STUB — uniform fields (repository, copyMethod,
 # populator) injected by ../../common/kopiur-backup. The mover securityContext
 # is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
-# HOURLY tier: database — caps data loss at ~1h. Kopiur's workload hooks put
-# Postgres in backup mode around the CSI capture for application consistency.
+# HOURLY tier: database — caps data loss at ~1h. The before-hook
+# CHECKPOINTs Postgres so the CSI capture starts from a flushed state.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -24,15 +24,7 @@ spec:
             matchLabels:
               app: immich-postgres
           container: postgres
-          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_start('kopiur', true)\""]
-          timeout: 2m
-    afterSnapshot:
-      - workloadExec:
-          podSelector:
-            matchLabels:
-              app: immich-postgres
-          container: postgres
-          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_stop()\""]
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
           timeout: 2m
   retention:
     keepHourly: 24

@@ -4,8 +4,8 @@
 # (project/personal API keys, users, dashboards, flag+cohort definitions) that
 # must survive cluster rebuild; ClickHouse/Kafka/Redis stay exempt (event
 # history rebuilds empty). DAILY tier: dashboards/flags edits risk <=24h;
-# API keys effectively never change. Kopiur's workload hooks put Postgres in
-# backup mode around the CSI capture for application consistency.
+# API keys effectively never change. The before-hook
+# CHECKPOINTs Postgres so the CSI capture starts from a flushed state.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -26,16 +26,7 @@ spec:
               app.kubernetes.io/name: posthog
               app.kubernetes.io/component: db
           container: db
-          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_start('kopiur', true)\""]
-          timeout: 2m
-    afterSnapshot:
-      - workloadExec:
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: posthog
-              app.kubernetes.io/component: db
-          container: db
-          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT pg_backup_stop()\""]
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
           timeout: 2m
   retention:
     keepDaily: 14
