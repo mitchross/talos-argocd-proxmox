@@ -6,10 +6,13 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # vLLM is the active in-cluster LLM backend (TP=2 across both 3090s).
-  # llama-cpp and comfyui are scaled to 0 — vLLM's TP=2 takes BOTH cards.
-  # To revert: set this to 0 and llama-cpp-server back to 1 (one commit).
-  replicas: 1
+  # Scaled to 0: llama-cpp temporarily holds both 3090s for Qwen 3.8-27B
+  # evaluation. Qwen 3.8 has no vLLM-servable quant on Ampere — its official
+  # FP8 is block-wise W8A8 (Marlin cannot do block-wise; Ampere has no native
+  # FP8) and no AWQ-INT4 exists yet. Restore vLLM by setting this to 1 and
+  # llama-cpp-server to 0. Consumers still reference `qwen3.6-27b` on this
+  # service, so they stay broken until it is back.
+  replicas: 0
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1
