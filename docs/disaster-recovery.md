@@ -173,6 +173,16 @@ half-converged cluster.
   `Failed`, a `Restore` stuck without ever populating its PVC (PVC `Pending`
   long after the repo is confirmed reachable), or a `Snapshot` stuck in error.
   Watch with `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot`.
+- **A `Failed` Restore is terminal — kopiur never retries it.** A mover pod
+  stuck Unschedulable past `failurePolicy.podStartupDeadlineSeconds` fails the
+  CR with `MoverPodWedged`, and no spec change or Argo sync resets it — an infra
+  outage during the restore wave can fail every Restore at once. Recovery:
+  delete the Failed CRs and let Argo recreate them — each fresh CR pins the
+  then-latest snapshot; the unbound PVC is untouched throughout.
+
+  ```bash
+  kubectl get restore -A --no-headers | awk '$3=="Failed" {system("kubectl -n "$1" delete restore "$2)}'
+  ```
 - **Privileged-mover namespaces may lag a grant race** (upstream kopiur #194):
   in the three root-mover namespaces (home-assistant, tubesync, nginx-example)
   the controller can miss the `privileged-movers` annotation event when the
