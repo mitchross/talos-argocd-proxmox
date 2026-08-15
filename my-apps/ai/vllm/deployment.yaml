@@ -6,13 +6,11 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # Scaled to 0: llama-cpp temporarily holds both 3090s for Qwen 3.8-27B
-  # evaluation. Qwen 3.8 has no vLLM-servable quant on Ampere — its official
-  # FP8 is block-wise W8A8 (Marlin cannot do block-wise; Ampere has no native
-  # FP8) and no AWQ-INT4 exists yet. Restore vLLM by setting this to 1 and
-  # llama-cpp-server to 0. Consumers still reference `qwen3.6-27b` on this
-  # service, so they stay broken until it is back.
-  replicas: 0
+  # ACTIVE: holds both 3090s (TP=2). llama-cpp-server is scaled to 0.
+  # EXPERIMENT IN PROGRESS — serving Qwen3.8-27B-FP8, which is NOT expected to
+  # boot on Ampere (see the model arg below). If it fails, set this to 0 and
+  # llama-cpp-server to 1 to go back to the working Qwen 3.8 GGUF.
+  replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1
@@ -49,12 +47,25 @@ spec:
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
-            - "/models/Qwen3.6-27B-AWQ-BF16-INT4"     # default model (higher quality; fits TP=2 / 48GB)
+            # EXPERIMENT: Qwen3.8-27B-FP8. Expected to FAIL on these cards — it is an
+            # official BLOCK-SCALED FP8 W8A8 checkpoint (weight_block_size 128x128,
+            # activation_scheme dynamic). Ampere (SM 8.6) has no FP8 tensor cores, and
+            # vLLM's Ampere fallback is weight-only FP8 via Marlin, which does not
+            # implement block-wise -> expect "type fp8e4nv not supported in this
+            # architecture". vLLM's own recipe lists only H100/H200/B200/GB200/B300/
+            # GB300/MI300X+ for this variant; no Ampere, no consumer cards.
+            # Second independent risk: the recipe requires transformers>=5.8.0 (the
+            # version that wrote config.json). This image is pinned to June 2026 and may
+            # ship older -> config may fail to parse before any kernel is reached.
+            # KNOWN-WORKING fallback is the Qwen 3.8 GGUF on llama-cpp (presets.ini).
+            - "/models/Qwen3.8-27B-FP8"
             # served-model-name is a LIST (nargs+). Keep a single canonical
             # id so Open WebUI's model selector is not cluttered with aliases.
             # The next token MUST be a flag (--tensor-parallel-size) to end the list.
+            # NOTE: only Open WebUI has been moved to this id. Every other consumer
+            # still asks for `qwen3.6-27b` and will 404 until they are rolled over.
             - "--served-model-name"
-            - "qwen3.6-27b"                                    # canonical
+            - "qwen3.8-27b"                                    # canonical
             - "--tensor-parallel-size"
             - "2"                                      # pool both 3090s (48GB). Needs 2 WHOLE cards.
             - "--distributed-executor-backend"
@@ -63,7 +74,12 @@ spec:
             - "--gpu-memory-utilization"
             - "0.92"
             - "--max-model-len"
-            - "262144"                                 # full 262K native context; fits via fp8 KV + TP=2 paged cache
+            # HALVED for the FP8 experiment (was 262144 with the AWQ-INT4 model).
+            # FP8 weights are ~28.7GB vs the AWQ's ~16GB, so on 48GB at 0.92 util the
+            # KV budget drops by roughly half. 262144 would very likely OOM or shrink
+            # the KV pool to nothing at boot. Raise back toward 262144 only after
+            # reading the actual "GPU KV cache size" line in the startup logs.
+            - "131072"
             - "--max-num-seqs"
             - "2"                                      # 262K = deep single-stream; low concurrency keeps the KV pool sane
             - "--limit-mm-per-prompt"
