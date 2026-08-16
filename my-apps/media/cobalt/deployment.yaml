@@ -32,6 +32,13 @@ spec:
         env:
         - name: API_URL
           value: "https://cobalt.vanillax.me/"
+        # Now that the API is internet-facing, keep browsers on our own frontend
+        # instead of letting any site call it as a free backend. Only a browser
+        # guard — it does not stop scripted clients (see TURNSTILE_* for that).
+        - name: CORS_WILDCARD
+          value: "0"
+        - name: CORS_URL
+          value: "https://dl.vanillax.me"
         ports:
         - name: http
           containerPort: 9000
