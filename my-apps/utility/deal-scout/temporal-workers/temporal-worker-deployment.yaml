@@ -45,7 +45,7 @@ spec:
             - name: DEAL_SCOUT_API
               value: "http://deal-scout:8000"
             - name: CLUSTER_SOURCES
-              value: "ebay,slickdeals,msu,comprenew"
+              value: "ebay,slickdeals,msu,comprenew,lowcostminipcs"
             - name: DEAL_SCOUT_TOKEN
               valueFrom:
                 secretKeyRef:
