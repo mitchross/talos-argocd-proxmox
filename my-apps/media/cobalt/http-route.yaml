@@ -1,10 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  # Renamed from "cobalt" to force a create+prune. Re-parenting this route in
-  # place never took: ArgoCD kept it OutOfSync while reporting a successful
-  # sync, so the gateway swap below silently stayed on the internal gateway.
-  # The name also just reads better now that cobalt-web owns the frontend route.
+  # Renamed from "cobalt": re-parenting an HTTPRoute in place silently no-ops, a rename forces create+prune.
   name: cobalt-api
   namespace: cobalt
   labels:
@@ -12,9 +9,7 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "vanillax.me"
 spec:
-  # External, not internal: cobalt streams the file from the API straight to the
-  # visitor's browser, so the API host has to be reachable by the client — an
-  # internal-only API would break dl.vanillax.me for everyone off the LAN.
+  # Must be external: the browser calls this API directly, so internal-only breaks dl.vanillax.me off-LAN.
   parentRefs:
   - group: gateway.networking.k8s.io
     kind: Gateway
