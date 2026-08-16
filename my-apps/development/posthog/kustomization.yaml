@@ -42,3 +42,31 @@ configMapGenerator:
 
 components:
   - ../../common/kopiur-backup
+
+# Zone `house` IS the Threadripper box, so this pins every workload to its two
+# workers — the AVX2 selector alone also matches the smaller Dell and HP nodes.
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: not-used
+      spec:
+        template:
+          spec:
+            nodeSelector:
+              topology.kubernetes.io/zone: house
+  - target:
+      kind: Job
+    patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: not-used
+      spec:
+        template:
+          spec:
+            nodeSelector:
+              topology.kubernetes.io/zone: house
