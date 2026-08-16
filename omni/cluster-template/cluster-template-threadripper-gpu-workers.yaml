@@ -69,6 +69,15 @@ patches:
       udev:
         rules:
         - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="131072"
+- name: image-gc-thresholds
+  inline:
+    machine:
+      kubelet:
+        # Trim the image cache long before the 10%-free eviction line: a full
+        # nodefs taints the node AND flips every Longhorn disk on it NotReady.
+        extraConfig:
+          imageGCHighThresholdPercent: 70
+          imageGCLowThresholdPercent: 55
 ---
 kind: ControlPlane
 machineClass:
@@ -285,6 +294,37 @@ patches:
           maxPods: 150
       sysctls:
         net.core.bpf_jit_harden: 1
+- name: general-longhorn-disks
+  inline:
+    machine:
+      # All-or-nothing annotation: every disk the node should register must be
+      # listed here. Omitting one leaves the node with zero usable disks.
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      nodeAnnotations:
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"tr-ssd","path":"/var/mnt/longhorn-tr-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]}]
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
+- name: general-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-tr-ssd
+    provisioning:
+      # The only non-system disk is the 140 GiB ssd-ent device. Do NOT add a
+      # `disk.transport == 'scsi'` clause: virtio-scsi never matches it.
+      diskSelector:
+        match: "!system_disk && disk.size >= 100u * GB"
+      minSize: 100GB
+      grow: true
 ---
 kind: Workers
 name: gpu-workers
