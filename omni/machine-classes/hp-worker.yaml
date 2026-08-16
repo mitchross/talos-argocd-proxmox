@@ -18,9 +18,9 @@ spec:
       cores: 4
       sockets: 1
       memory: 12288
-      # Boot/image disk on the NVMe `local-lvm` thin pool (~141 GiB free).
-      # Longhorn data lives on the separate SSD below, never here.
-      disk_size: 64
+      # Boot disk carries Talos + the container image cache; 64 GiB put the peer
+      # workers in DiskPressure. Must stay under the local-lvm thin pool size.
+      disk_size: 128
       storage_selector: name == "local-lvm"
       network_bridge: vmbr0
       disk_ssd: true
