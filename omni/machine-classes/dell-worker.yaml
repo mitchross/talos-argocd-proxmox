@@ -20,9 +20,9 @@ spec:
       # The OptiPlex has 64 GiB physical RAM. Keep 16 GiB for Proxmox and the
       # provider; the live VM was already proven at this 48 GiB allocation.
       memory: 49152
-      # local-lvm on the Dell is only ~137 GiB total. Keep Longhorn data on the
-      # dedicated Samsung disk below; 64 GiB is sufficient for Talos/images.
-      disk_size: 64
+      # Boot disk carries Talos + the container image cache; 64 GiB put this node
+      # in permanent DiskPressure. Must stay under the local-lvm thin pool size.
+      disk_size: 128
       storage_selector: name == "local-lvm"
       network_bridge: vmbr0
       disk_ssd: true
