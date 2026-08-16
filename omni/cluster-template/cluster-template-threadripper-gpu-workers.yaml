@@ -189,6 +189,76 @@ patches:
       grow: true
 ---
 kind: Workers
+name: hp-workers
+machineClass:
+  name: hp-worker
+  size: 1
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+patches:
+- name: hp-worker
+  inline:
+    machine:
+      # Wired LAN, so plain DHCP-on-all-links (the Talos default) is used
+      # rather than the Dell's static address — that pin exists only to give
+      # the media bridge a stable binding to ARP-learn, which does not apply
+      # here. Leaving DHCP alone also means the node survives a PCIe
+      # re-enumeration when disks change; see the removed gpu-network-dhcp
+      # patch below for what pinning an interface name cost last time.
+      nodeLabels:
+        node.vanillax.dev/class: hp-worker
+        # Own failure domain: a separate physical box from the Threadripper
+        # (house) and the Dell (yard). Named after the machine, not the room,
+        # because this mini PC is expected to move.
+        topology.kubernetes.io/zone: hp
+      kubelet:
+        nodeIP:
+          validSubnets:
+          - 192.168.10.0/24
+        extraConfig:
+          serializeImagePulls: false
+      sysctls:
+        net.core.bpf_jit_harden: 1
+- name: hp-longhorn-disks
+  inline:
+    machine:
+      # All-or-nothing annotation: every disk the node should register must be
+      # listed here. Omitting talos-ephemeral does not leave it at defaults —
+      # it leaves the node with zero usable disks.
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      nodeAnnotations:
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-ssd","path":"/var/mnt/longhorn-hp-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-ssd"]}]
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
+- name: hp-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-hp-ssd
+    provisioning:
+      # Size is the only thing distinguishing this 850 GiB scsi1 device from
+      # the 64 GiB boot disk. Do NOT add a `disk.transport == 'scsi'` clause:
+      # Proxmox virtio-scsi disks never match it and the volume silently goes
+      # unprovisioned.
+      diskSelector:
+        match: "!system_disk && disk.size >= 700u * GB"
+      minSize: 700GB
+      grow: true
+---
+kind: Workers
 name: workers
 machineClass:
   name: threadripper-worker
