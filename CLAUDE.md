@@ -103,6 +103,8 @@ Comments earn their place in two ways only:
 
 Do **not** write changelog/jira-style comments: no per-version release-note summaries, no "assessed on date, no impact" entries, no restating upstream changelogs — git history and release pages already record that. A version bump only warrants a comment if it changes how something works or adds a new gotcha. Don't match the legacy comment density in older files; it's accumulated cruft, not the standard.
 
+**Hard cap: one line, two at most — never three.** Earning a comment does not earn a paragraph. Forensics go in the commit message, rationale in a Mink note, procedure in `docs/`. See `.claude/rules/comments.md`.
+
 ## Critical Rules
 
 ### DO:
