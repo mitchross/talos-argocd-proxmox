@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cobalt-web
+  namespace: cobalt
+  labels:
+    app.kubernetes.io/name: cobalt-web
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cobalt-web
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cobalt-web
+    spec:
+      containers:
+      # imputnet publishes no frontend image — this community image ships the
+      # cobalt sources and runs `svelte-kit build` on every container start,
+      # baking the two WEB_* vars below into the static bundle. So: the rootfs
+      # must stay writable, and a cold start is a full SvelteKit build (~1-2 min),
+      # which is what the startupProbe budget below is for.
+      - name: cobalt-web
+        image: ghcr.io/spotdemo4/cobalt-web:11.7@sha256:30392487965b2c96f70f04ec5e3ef24a7804eec6ef0c7b9fd7d1e19ed955d1c9
+        imagePullPolicy: IfNotPresent
+        env:
+        # The browser calls the API directly, so this must be the PUBLIC api
+        # hostname — an in-cluster Service URL would be unreachable from the client.
+        - name: WEB_DEFAULT_API
+          value: "https://cobalt.vanillax.me/"
+        - name: WEB_HOST
+          value: "dl.vanillax.me"
+        ports:
+        - name: http
+          containerPort: 8787
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ "ALL" ]
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            # The startup SvelteKit build is the memory high-water mark, not serving.
+            memory: 3Gi
+        startupProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 10
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 10

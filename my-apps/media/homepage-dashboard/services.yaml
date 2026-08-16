@@ -52,6 +52,10 @@
         icon: mailpit.png
         href: https://mailpit.vanillax.me
         description: Email Testing Server
+    - Cobalt:
+        icon: mdi-download-circle-outline
+        href: https://dl.vanillax.me
+        description: Video & Audio Downloader
 - Public · Privacy:
     - SearXNG:
         icon: searxng.png
