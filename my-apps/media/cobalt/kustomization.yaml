@@ -6,6 +6,9 @@ resources:
 - deployment.yaml
 - service.yaml
 - http-route.yaml
+- web-deployment.yaml
+- web-service.yaml
+- web-http-route.yaml
 - vpa.yaml
 
 namespace: cobalt
