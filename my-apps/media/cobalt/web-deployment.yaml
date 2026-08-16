@@ -18,17 +18,12 @@ spec:
         app.kubernetes.io/name: cobalt-web
     spec:
       containers:
-      # imputnet publishes no frontend image — this community image ships the
-      # cobalt sources and runs `svelte-kit build` on every container start,
-      # baking the two WEB_* vars below into the static bundle. So: the rootfs
-      # must stay writable, and a cold start is a full SvelteKit build (~1-2 min),
-      # which is what the startupProbe budget below is for.
+      # Builds at container start, not image build: rootfs must stay writable, ~1-2 min cold start.
       - name: cobalt-web
         image: ghcr.io/spotdemo4/cobalt-web:11.7@sha256:30392487965b2c96f70f04ec5e3ef24a7804eec6ef0c7b9fd7d1e19ed955d1c9
         imagePullPolicy: IfNotPresent
         env:
-        # The browser calls the API directly, so this must be the PUBLIC api
-        # hostname — an in-cluster Service URL would be unreachable from the client.
+        # Must be the public hostname — the browser calls this, not the cluster.
         - name: WEB_DEFAULT_API
           value: "https://cobalt.vanillax.me/"
         - name: WEB_HOST
@@ -45,7 +40,7 @@ spec:
             cpu: 200m
             memory: 512Mi
           limits:
-            # The startup SvelteKit build is the memory high-water mark, not serving.
+            # Sized by the startup build, not by serving.
             memory: 3Gi
         startupProbe:
           httpGet:
