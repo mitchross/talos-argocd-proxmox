@@ -34,6 +34,13 @@ spec:
           env:
             - name: DATA_DIR
               value: /data
+            # dashboard/app.py defaults this to `qwen3.6-27b`, which the vLLM
+            # endpoint no longer serves — it 404s and the digest silently drops
+            # to facts-only prose. The digest LLM call is best-effort by design,
+            # so nothing errors; it just quietly stops using the model. Pin the
+            # served id explicitly so a backend rename can't fail silently again.
+            - name: DIGEST_LLM_MODEL
+              value: qwen3.8-27b
             - name: INGEST_TOKEN
               valueFrom:
                 secretKeyRef:
