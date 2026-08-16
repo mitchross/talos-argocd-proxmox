@@ -1,16 +1,15 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cobalt
+  # Renamed from "cobalt": re-parenting an HTTPRoute in place silently no-ops, a rename forces create+prune.
+  name: cobalt-api
   namespace: cobalt
   labels:
     external-dns: "true"
   annotations:
     external-dns.alpha.kubernetes.io/target: "vanillax.me"
 spec:
-  # External, not internal: cobalt streams the file from the API straight to the
-  # visitor's browser, so the API host has to be reachable by the client — an
-  # internal-only API would break dl.vanillax.me for everyone off the LAN.
+  # Must be external: the browser calls this API directly, so internal-only breaks dl.vanillax.me off-LAN.
   parentRefs:
   - group: gateway.networking.k8s.io
     kind: Gateway
