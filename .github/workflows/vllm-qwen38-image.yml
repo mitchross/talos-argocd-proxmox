@@ -1,0 +1,150 @@
+# Builds + pushes ghcr.io/mitchross/vllm-qwen38:<VERSION> when the image source
+# changes on main (PRs get a build-only smoke test). The vLLM Deployment pins
+# the same tag, so a release is: bump VERSION + the tag in deployment.yaml in one
+# PR — merge builds the image, ArgoCD syncs the manifest.
+#
+# Tags are immutable by policy: if VERSION already exists on GHCR the push is
+# skipped with a notice — bump VERSION to publish new image content. PRs enforce
+# that build-input changes bump VERSION relative to the base branch.
+#
+# The manifest-tag check tolerates ZERO references on purpose: the image lands
+# before the Baseline B deployment manifest does, and a hard failure would block
+# that ordering. It still errors on >1 reference or on a tag mismatch.
+#
+# NOTE: the vllm-qwen38 package does not exist yet. If the first Actions push
+# 403s, grant this repo write access on the package:
+# github.com/users/mitchross/packages/container/vllm-qwen38/settings
+# → Manage Actions access.
+name: vllm-qwen38 image
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/vllm-qwen38-image.yml'
+      - 'my-apps/ai/vllm/vllm-qwen38-image/**'
+      - 'my-apps/ai/vllm/deployment.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'my-apps/ai/vllm/vllm-qwen38-image/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/vllm-qwen38
+  CONTEXT: my-apps/ai/vllm/vllm-qwen38-image
+  JOB_MANIFEST: my-apps/ai/vllm/deployment.yaml
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read and validate version
+        id: v
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t version_lines < "$CONTEXT/VERSION"
+          if (( ${#version_lines[@]} != 1 )) || [[ ! "${version_lines[0]}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[a-z0-9]+$ ]]; then
+            echo "::error::$CONTEXT/VERSION must contain exactly one vX.Y.Z-<suffix> tag"
+            exit 1
+          fi
+          printf 'tag=%s\n' "${version_lines[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate release invariants
+        id: changes
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # Capture stops at '@' so a digest-pinned reference
+          # (vllm-qwen38:v0.27.1-embed1@sha256:...) still compares equal to VERSION.
+          mapfile -t job_tags < <(
+            sed -n 's|^[[:space:]]*image:[[:space:]]*ghcr.io/mitchross/vllm-qwen38:\([^@[:space:]#]*\).*|\1|p' "$JOB_MANIFEST"
+          )
+          if (( ${#job_tags[@]} > 1 )); then
+            echo "::error::$JOB_MANIFEST must contain at most one vllm-qwen38 image"
+            exit 1
+          fi
+          if (( ${#job_tags[@]} == 0 )); then
+            echo "::notice::$JOB_MANIFEST does not reference $IMAGE yet — skipping tag equality check"
+          elif [[ "${job_tags[0]}" != "$TAG" ]]; then
+            echo "::error::$JOB_MANIFEST uses ${job_tags[0]}, but $CONTEXT/VERSION is $TAG"
+            exit 1
+          fi
+
+          context_changed=true
+          content_changed=true
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            context_changed=false
+            content_changed=false
+            while IFS= read -r path; do
+              [[ -z "$path" ]] && continue
+              context_changed=true
+              [[ "$path" == "$CONTEXT/VERSION" ]] || content_changed=true
+            done < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- "$CONTEXT")
+
+            if [[ "$content_changed" == "true" ]]; then
+              if git cat-file -e "$BASE_SHA:$CONTEXT/VERSION" 2>/dev/null; then
+                base_tag="$(git show "$BASE_SHA:$CONTEXT/VERSION")"
+                if [[ "$base_tag" == "$TAG" ]]; then
+                  echo "::error::vllm-qwen38 build inputs changed without a VERSION bump; update VERSION and the tag in $JOB_MANIFEST"
+                  exit 1
+                fi
+              else
+                echo "::notice::$CONTEXT/VERSION is new on this branch — no bump required"
+              fi
+            fi
+          fi
+
+          printf 'context=%s\n' "$context_changed" >> "$GITHUB_OUTPUT"
+          printf 'content=%s\n' "$content_changed" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether tag is already published
+        if: steps.changes.outputs.context == 'true'
+        id: exists
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # Checked anonymously before login; a public package stays readable even
+          # when GITHUB_TOKEN has no package write access yet.
+          if docker manifest inspect "$IMAGE:$TAG" >/dev/null 2>&1; then
+            if [ "$EVENT_NAME" = "pull_request" ]; then
+              echo "::error::$IMAGE:$TAG is already published; choose a new VERSION and update the tag in $JOB_MANIFEST"
+              exit 1
+            fi
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$IMAGE:$TAG already published — bump VERSION to release new content"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request' && steps.exists.outputs.exists != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build (push on main)
+        if: steps.changes.outputs.context == 'true' && steps.exists.outputs.exists != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.CONTEXT }}
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.IMAGE }}:${{ steps.v.outputs.tag }}
