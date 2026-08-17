@@ -224,6 +224,13 @@ spec:
               value: "redis7"
             - name: COOKIELESS_REDIS_PORT
               value: "6379"
+            # Without this the service cannot decrypt the remote config payload and
+            # serves an all-false fallback — session replay never starts in the SDK.
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-secret
           ports:
             - containerPort: 3001
               name: http
