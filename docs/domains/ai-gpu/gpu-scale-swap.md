@@ -26,15 +26,21 @@ Two things make this safe by construction:
 
 | App | Cards | `replicas` in git (current) | File |
 |---|---|---|---|
-| **vLLM** (Qwen 3.6 AWQ, parked during evaluation) | **2** | `0` | `my-apps/ai/vllm/deployment.yaml` |
-| **llama-cpp** (Qwen 3.8 GGUF evaluation) | 1 | `1` | `my-apps/ai/llama-cpp/deployment.yaml` |
+| **vLLM** (Qwen 3.8 W4A16, active) | **1** | `1` | `my-apps/ai/vllm/deployment.yaml` |
+| **llama-cpp** (Qwen 3.8 GGUF, parked) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
 | **ComfyUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | **SwarmUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (batch benchmark **Jobs**, not always-on) | 1 or 2 | n/a | `my-apps/ai/llmfit/` |
 
 A valid target state is any set of `replicas: 1` rows whose **card total ≤ 2**.
-Working combos: vLLM alone (2 cards) · llama-cpp + one image-gen app (1+1) ·
-llama-cpp alone · one image-gen app alone.
+Working combos: vLLM (1 card) + one other single-card app · vLLM alone ·
+llama-cpp + one image-gen app (1+1) · llama-cpp alone · one image-gen app alone.
+
+vLLM currently requests **one** card, so a second single-card workload fits
+alongside it without a swap. Restoring the two-card vLLM configuration
+(`--tensor-parallel-size 2`, `nvidia.com/gpu: 2`) requires every other GPU app
+to be at `replicas: 0` first — see
+[`single-vs-dual-3090.md`](single-vs-dual-3090.md).
 
 > **Image gen: ComfyUI vs SwarmUI — decision pending.** ComfyUI's manifest is
 > marked *retired, replaced by SwarmUI* (SwarmUI self-starts its own ComfyUI),
@@ -73,9 +79,9 @@ curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
 
 - **Scaling llama-cpp to 0** → the external route `llama.vanillax.me` returns
   "no healthy upstream" until it's scaled back up. Expected, not an outage.
-- **Scaling vLLM to 0** → OpenWebUI, Perplexica, Project NOMAD, and Karakeep
-  lose their inference backend (they all point at vLLM / `qwen3.6-27b`).
-  Treat vLLM-down as "apps degraded" and keep the window short.
+- **Scaling vLLM to 0** → every app pointing at `vllm-service` loses its
+  inference backend, including Open WebUI, Perplexica and Deal Scout. Treat
+  vLLM-down as "apps degraded" and keep the window short.
 - **ComfyUI's vision→image workflow needs llama-cpp too** — it calls the
   llama-cpp multimodal endpoint for vision. Bringing up ComfyUI alone leaves
   its vision/caption nodes failing against a dead service. That combo is a
