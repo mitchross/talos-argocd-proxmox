@@ -7,8 +7,8 @@ kind: Kustomization
 
 resources:
   # Kopiur does not currently expose mover node affinity. Restrict staged-PVC
-  # movers to the two workers that actually have Longhorn disks so the
-  # strict-local WFFC staging class cannot select the compute-only worker.
+  # movers to the workers that actually have Longhorn disks so the WFFC
+  # staging class cannot hint the compute-only worker.
   - mover-storage-node-policy.yaml
   # Longhorn creates its CSI sidecar Deployments dynamically, outside this
   # repository's rendered manifests. Mutate new attacher pods at admission so
