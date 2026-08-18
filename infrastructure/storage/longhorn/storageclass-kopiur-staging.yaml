@@ -1,24 +1,13 @@
-# Temporary snapshot clones mounted by kopiur backup movers.
-#
-# Longhorn's default `longhorn` class binds immediately. For a CSI snapshot
-# clone that means Longhorn chooses the clone location before Kubernetes knows
-# where the consuming mover pod will run. Longhorn V1 can then spend minutes
-# handing the completed clone from one node to another (longhorn/longhorn
-# #13335), and a disrupted handoff can leave the backup Job wedged.
-#
-# WaitForFirstConsumer reverses that order: schedule the mover first, then pass
-# its node to Longhorn. The kopiur-operator application installs an admission
-# policy that restricts mover pods to nodes carrying
-# `node.longhorn.io/create-default-disk=config`, so strict-local can safely put
-# the temporary one-replica clone on the mover's storage-capable node. If no
-# such node can host it, fail closed instead of falling back to a cross-node
-# clone/attachment handoff.
+# Temporary snapshot clones mounted by kopiur backup movers. WFFC schedules the
+# mover first so its node becomes Longhorn's placement hint.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: longhorn-kopiur-staging-local
   annotations:
     storageclass.kubernetes.io/is-default-class: "false"
+    # Longhorn SC parameters are immutable — Replace lets ArgoCD swap the object.
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -28,6 +17,8 @@ parameters:
   staleReplicaTimeout: "30"
   fsType: "ext4"
   dataEngine: "v1"
-  dataLocality: "strict-local"
+  # NEVER strict-local: clone provisioning can ignore the WFFC hint (longhorn#12792)
+  # and strict-local turns that into a permanent attach deadlock + Forbid backup stall.
+  dataLocality: "disabled"
   disableRevisionCounter: "true"
   unmapMarkSnapChainRemoved: "ignored"
