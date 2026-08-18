@@ -7,11 +7,14 @@
 >
 > Last updated: 2026-07-04.
 >
-> ⚠️ **2026-06/07 update:** the "llama.cpp single-card is the steady state"
-> framing below is superseded — **vLLM TP=2 (both 3090s, `qwen3.6-27b` AWQ,
-> 262K) is the live default backend** (see `my-apps/ai/vllm/deployment.yaml`
-> and the model catalog's "Who points at what"). llama-cpp and ComfyUI are
-> scaled to 0. The engine analysis below remains correct per-configuration;
+> ⚠️ **Superseded topology:** the live backend is **vLLM serving
+> `qwen3.8-27b` on a SINGLE 3090** (TP=1, W4A16 + INT8 `lm_head`, 200,826-token
+> measured pool, text-only). Both the "llama.cpp single-card steady state"
+> framing and any `TP=2` / `qwen3.6-27b` / `262K` reference below are stale —
+> see [`model-catalog.md`](model-catalog.md) and
+> [`single-vs-dual-3090.md`](single-vs-dual-3090.md). llama-cpp and the
+> image-gen apps are scaled to 0. The engine analysis below remains correct
+> per-configuration;
 > the MTP "skip" verdict applied to single-card llama.cpp only — under the
 > now-live vLLM TP=2 it IS the documented win (149 → 179 narr / 264 code TPS
 > with MTP-3; club-3090's default dual recipe is AutoRound INT4 + MTP n=3).
