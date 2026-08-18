@@ -118,7 +118,7 @@ def main():
         print("no metric ticks captured — was the collector running?")
         sys.exit(1)
 
-    print(f"BASELINE A — {os.path.basename(run)}")
+    print(f"{ctx.get('label', 'run').upper()} — {os.path.basename(run)}")
     print(f"pod={ctx.get('pod','?')}  node={ctx.get('node','?')}")
     print(f"window={ctx.get('run_started_utc','?')} .. {ctx.get('run_ended_utc','in progress')}")
     print(f"KV capacity ceiling = {cap:,} tokens   [{M}, from engine cache_config_info]")
@@ -138,7 +138,7 @@ def main():
 
     print(f"\n4. PEAK SIMULTANEOUS RESIDENT CONTEXT : {fmt(peak_res)} tokens   [{D}]")
     print(f"   formula: max(vllm:kv_cache_usage_perc) x {cap:,}")
-    print(f"   = {peak_res/cap*100:.1f}% of the dual-3090 pool" if cap else "")
+    print(f"   = {peak_res/cap*100:.1f}% of the measured KV pool" if cap else "")
     print(f"   NOTE: KV occupancy includes blocks retained by the prefix cache,")
     print(f"         so this is an upper bound on live request context.")
 
@@ -190,11 +190,12 @@ def main():
     total_pre = (pre[-1][1] - pre[0][1]) if pre else 0
     print(f"preemptions during run           : {int(total_pre):>4}   [{M}]")
 
-    ever3 = sum(1 for _, v in runq if v >= 3)
-    print(f"ticks with all 3 running         : {ever3:>4} of {len(ticks)}   [{M}]")
-    if ever3 == 0:
-        print("  !! the three workloads never genuinely overlapped — the run does not")
-        print("     test concurrency. Re-run with tighter launch spacing.")
+    peak_conc = int(max((v for _, v in runq), default=0))
+    overlapped = sum(1 for _, v in runq if v >= 2)
+    print(f"ticks with >=2 running           : {overlapped:>4} of {len(ticks)}   [{M}]")
+    if peak_conc < 2:
+        print("  !! the workloads never overlapped — the run does not test concurrency.")
+        print("     Re-run with tighter launch spacing.")
 
     if total_pre > 0:
         print("\n  PREEMPTION FORENSICS (recompute restarts prefill from token 0):")
@@ -271,8 +272,11 @@ def main():
         a, b = sum(per[0]["util"])/len(per[0]["util"]), sum(per[1]["util"])/len(per[1]["util"])
         if max(a, b) > 0:
             print(f"\nutilisation imbalance: {abs(a-b)/max(a,b)*100:.1f}%   [{D}]")
-            print("  TP=2 over PCIe with no NVLink — large sustained imbalance would")
-            print("  point at NCCL/PCIe stalls rather than genuine idle.")
+            if min(a, b) < 1.0:
+                print("  One card is idle — single-card run, so 100% imbalance is expected.")
+            else:
+                print("  TP over PCIe with no NVLink — large sustained imbalance would")
+                print("  point at NCCL/PCIe stalls rather than genuine idle.")
 
     # ---------------- health -------------------------------------------------
     section("POD HEALTH")
