@@ -41,10 +41,10 @@ Currently wired up (see `open-webui-configmap.env`):
 | Role                  | Model / Value                                                  |
 |-----------------------|----------------------------------------------------------------|
 | Chat backend          | `OPENAI_API_BASE_URL=http://vllm-service.vllm.svc.cluster.local:8080/v1` |
-| `DEFAULT_MODELS`      | `qwen3.6-27b` — first `--served-model-name` advertised by vLLM |
-| `VISION_MODELS`       | `qwen3.6-27b` |
-| `TASK_MODEL`          | `qwen3.6-27b` |
-| `TASK_MODEL_EXTERNAL` | `qwen3.6-27b` |
+| `DEFAULT_MODELS`      | `qwen3.8-27b` — first `--served-model-name` advertised by vLLM |
+| `VISION_MODELS`       | `qwen3.8-27b` |
+| `TASK_MODEL`          | `qwen3.8-27b` |
+| `TASK_MODEL_EXTERNAL` | `qwen3.8-27b` |
 | `CONTEXT_WINDOW`      | `65536` (64K) — keep aligned with vLLM `--max-model-len`. If this is smaller, Open WebUI silently trims history / RAG before sending. |
 | Sampling              | `TEMPERATURE=0.6`, `TOP_P=0.95`, `MIN_P=0.0` |
 | Image generation      | ComfyUI — Z-Image-Turbo (text→img, 9 steps), Qwen-Image-Edit-2511 (edit) |
@@ -53,7 +53,7 @@ Currently wired up (see `open-webui-configmap.env`):
 
 vLLM is served from `my-apps/ai/vllm/deployment.yaml`; the Open WebUI model ID
 must match one of that Deployment's `--served-model-name` values. The first
-served name, `qwen3.6-27b`, is the canonical UI default. vLLM deliberately
+served name, `qwen3.8-27b`, is the canonical UI default. vLLM deliberately
 advertises only that one name so Open WebUI's model selector stays clean.
 
 ## Performance tuning (env ConfigMap)

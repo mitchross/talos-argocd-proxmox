@@ -18,9 +18,10 @@ One OpenAI-compatible local backend, **NOT ollama**:
   `qwen3.8` and `qwen3.8-nothink`. Scale it up only if vision is needed, and
   only via the swap procedure.
 
-**Several apps still request the retired `qwen3.6-27b` and will 404** (LiteLLM,
-Presenton, Hindsight, WorldMonitor, Karakeep, Project NOMAD, the news-reader
-Temporal worker, some n8n workflows). Grep for it before assuming an app works.
+All in-cluster consumers request `qwen3.8-27b`. **vLLM is text-only**, so any
+app needing image input must target llama-cpp (`qwen3.8`) instead — Karakeep's
+`INFERENCE_IMAGE_MODEL` is deliberately left pointing at a dead id so it fails
+fast rather than sending images to a text-only endpoint.
 
 **App→backend wiring + capacity rules:
 [`model-catalog.md`](../../docs/domains/ai-gpu/model-catalog.md) ·
