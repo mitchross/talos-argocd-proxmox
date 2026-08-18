@@ -54,9 +54,9 @@ spec:
             - "--gpu-memory-utilization"
             - "0.972"                                  # upstream's measured working value on a headless 3090
             - "--max-model-len"
-            # STAGE 3 PROBE VALUE ONLY. The real ceiling comes from the boot log's
-            # "GPU KV cache size" line — never assume it, always re-read it.
-            - "150000"
+            # 180000 leaves 18,529 tokens of physical KV-pool headroom and
+            # 21,917 tokens above Pi's measured 158,083-token peak.
+            - "180000"
             - "--max-num-seqs"
             # Each slot reserves a GDN recurrent-state set from the same pool that
             # must still admit one full-length request. Matches Baseline A for comparability.
