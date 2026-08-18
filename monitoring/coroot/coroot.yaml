@@ -8,8 +8,8 @@
 # 1 GB/s of disk reads (cluster-agent another 550 MB/s), saturating both the
 # SATA and NVMe thin pools on the Proxmox host — IO pressure stall 57%, load 96.
 # Everything else in the cluster combined reads <30 MB/s.
-# nodeAgent/clusterAgent have no replicas field, so they are parked on an
-# unschedulable nodeSelector — that is the only way to zero a DaemonSet here.
+# operator 1.9.6 reads `replicas: 0` as unset and applies its default (keeper 3,
+# clickhouse 1, coroot 1) — only the unschedulable nodeSelector actually zeroes a component.
 apiVersion: coroot.com/v1
 kind: Coroot
 metadata:
@@ -18,6 +18,8 @@ metadata:
 spec:
   communityEdition: {}
   replicas: 0
+  nodeSelector:
+    coroot.vanillax.dev/enabled: "true"
   metricsRefreshInterval: 30s
   storage:
     size: 10Gi
@@ -31,6 +33,8 @@ spec:
       memory: 1Gi
   prometheus:
     retention: 2d
+    nodeSelector:
+      coroot.vanillax.dev/enabled: "true"
     storage:
       size: 10Gi
       className: longhorn
@@ -43,6 +47,8 @@ spec:
         memory: 1Gi
   clickhouse:
     replicas: 0
+    nodeSelector:
+      coroot.vanillax.dev/enabled: "true"
     storage:
       size: 10Gi
       className: longhorn
@@ -55,6 +61,8 @@ spec:
         memory: 2Gi
     keeper:
       replicas: 0
+      nodeSelector:
+        coroot.vanillax.dev/enabled: "true"
       storage:
         size: 2Gi
         className: longhorn
