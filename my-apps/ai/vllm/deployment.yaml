@@ -54,8 +54,8 @@ spec:
             - "--gpu-memory-utilization"
             - "0.972"                                  # upstream's measured working value on a headless 3090
             - "--max-model-len"
-            # Measured pool on this card is 198,529 tokens (boot log "GPU KV cache size").
-            # 180000 leaves ~18.5K of margin above Pi's measured 158,083-token peak.
+            # 180000 leaves 18,529 tokens of physical KV-pool headroom and
+            # 21,917 tokens above Pi's measured 158,083-token peak.
             - "180000"
             - "--max-num-seqs"
             # Each slot reserves a GDN recurrent-state set from the same pool that
