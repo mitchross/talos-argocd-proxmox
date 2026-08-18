@@ -6,10 +6,8 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # ACTIVE: holds both 3090s (TP=2). llama-cpp-server is scaled to 0.
-  # EXPERIMENT IN PROGRESS — serving Qwen3.8-27B-FP8, which is NOT expected to
-  # boot on Ampere (see the model arg below). If it fails, set this to 0 and
-  # llama-cpp-server to 1 to go back to the working Qwen 3.8 GGUF.
+  # BASELINE B: ONE 3090, TP=1. The second card is free; llama-cpp-server stays 0.
+  # Revert this commit to restore Baseline A (2x3090, TP=2, FP8, 262144, 313,367-token pool).
   replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
@@ -47,77 +45,42 @@ spec:
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
-            # EXPERIMENT: Qwen3.8-27B-FP8. Expected to FAIL on these cards — it is an
-            # official BLOCK-SCALED FP8 W8A8 checkpoint (weight_block_size 128x128,
-            # activation_scheme dynamic). Ampere (SM 8.6) has no FP8 tensor cores, and
-            # vLLM's Ampere fallback is weight-only FP8 via Marlin, which does not
-            # implement block-wise -> expect "type fp8e4nv not supported in this
-            # architecture". vLLM's own recipe lists only H100/H200/B200/GB200/B300/
-            # GB300/MI300X+ for this variant; no Ampere, no consumer cards.
-            # Second independent risk: the recipe requires transformers>=5.8.0 (the
-            # version that wrote config.json). This image is pinned to June 2026 and may
-            # ship older -> config may fail to parse before any kernel is reached.
-            # KNOWN-WORKING fallback is the Qwen 3.8 GGUF on llama-cpp (presets.ini).
-            - "/models/Qwen3.8-27B-FP8"
-            # served-model-name is a LIST (nargs+). Keep a single canonical
-            # id so Open WebUI's model selector is not cluttered with aliases.
-            # The next token MUST be a flag (--tensor-parallel-size) to end the list.
-            # NOTE: only Open WebUI has been moved to this id. Every other consumer
-            # still asks for `qwen3.6-27b` and will 404 until they are rolled over.
+            # Baseline B (Path B): W4A16 body + INT8 g128 lm_head + BF16 embed_tokens.
+            # Stock vLLM serves this unpatched — qwen3_5.py already passes quant_config to ParallelLMHead.
+            - "/models/Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead"
+            # served-model-name is a LIST (nargs+): the next token MUST be a flag to end it.
             - "--served-model-name"
-            - "qwen3.8-27b"                                    # canonical
-            - "--tensor-parallel-size"
-            - "2"                                      # pool both 3090s (48GB). Needs 2 WHOLE cards.
-            - "--distributed-executor-backend"
-            - "mp"                                     # single-node multiprocessing; no Ray
-            - "--disable-custom-all-reduce"            # 3090s have no NVLink/P2P → vLLM uses PYNCCL anyway; makes it explicit + silences the warning
+            - "qwen3.8-27b"
             - "--gpu-memory-utilization"
-            - "0.92"
+            - "0.972"                                  # upstream's measured working value on a headless 3090
             - "--max-model-len"
-            # Native Qwen3.8 context, no YaRN. This costs far less KV than "64
-            # layers" implies: full_attention_interval=4 means only 16 of the 64
-            # layers build a real KV cache (the other 48 are Gated DeltaNet, with
-            # a fixed-size recurrent state instead), so KV works out to
-            #   16 layers x 4 kv-heads x 256 head-dim x 2 (K,V) x 1B fp8 = 32KiB/token.
-            # Raising this does NOT add capacity — the pool is one shared token
-            # budget across all requests; it only raises the per-request ceiling.
-            # Always confirm against the "GPU KV cache size" line in the boot log.
-            - "262144"
+            # STAGE 3 PROBE VALUE ONLY. The real ceiling comes from the boot log's
+            # "GPU KV cache size" line — never assume it, always re-read it.
+            - "150000"
             - "--max-num-seqs"
-            # Three real consumers (Perplexica, pi, Deal Scout) hit this endpoint
-            # at once; at 2 the third ALWAYS queued no matter how much cache was
-            # free. Each slot reserves one GDN recurrent-state set, measured at
-            # ~7.5 blocks (~11.8K tokens) out of a ~303K pool. Don't raise further
-            # without re-reading the boot log: slots come out of the same pool
-            # that still has to admit one full 262144-token request.
+            # Each slot reserves a GDN recurrent-state set from the same pool that
+            # must still admit one full-length request. Matches Baseline A for comparability.
             - "3"
-            - "--limit-mm-per-prompt"
-            - '{"image": 16}'                          # vision-capable; JSON form required (not image=N).
-                                                       # Bumped 4->16: agents (pi/Open WebUI) accumulate screenshots
-                                                       # across a turn and Pi resends the whole convo, so a low cap
-                                                       # wedges chats with "At most N image(s) per prompt". 16 = ample
-                                                       # headroom; still bounded by the 262K context + max-num-seqs=3.
-                                                       # NOTE: vLLM profiles startup mem as limit x max-image-tokens,
-                                                       # which trims KV cache on this 0.92-util/262K box. If the pod
-                                                       # OOMs or KV cache shrinks at boot, drop back toward 8.
-            - "--enable-auto-tool-choice"              # Perplexica sends tool_choice=auto for research/search flows
+            - "--language-model-only"                  # no vision tower (~2.7GB); both A/B workloads are text-only
+            - "--async-scheduling"
+            - "--compilation-config"
+            # capture_size 4 covers max-num-seqs=3; upstream's 64 is dead VRAM at this concurrency.
+            - '{"max_cudagraph_capture_size":4,"custom_ops":["+rms_norm","+silu_and_mul"]}'
+            - "--enable-auto-tool-choice"              # Perplexica sends tool_choice=auto — never drop this
             - "--tool-call-parser"
-            - "qwen3_coder"                            # author-recommended parser for Qwen3.6 (was qwen3_xml)
+            - "qwen3_coder"
             - "--reasoning-parser"
-            - "qwen3"                                  # split <think> out of content into reasoning_content
-                                                       # (keeps thinking quality; tools/UIs get a clean answer)
+            - "qwen3"                                  # splits <think> out of content into reasoning_content
             - "--default-chat-template-kwargs"
-            - '{"enable_thinking": false}'             # default thinking OFF (fast/clean for tools); UIs can re-enable per-request
+            - '{"enable_thinking": false}'             # thinking OFF by default; UIs re-enable per-request
             - "--kv-cache-dtype"
-            - "fp8_e4m3"                               # halves KV — required to fit 262K on 48GB. MUST be e4m3 (scaled): this
-                                                       # compressed-tensors checkpoint ships calibrated fp8 KV scales, and vLLM
-                                                       # rejects fp8_e5m2 (unscaled) against fp8 checkpoints — server fails to boot.
-            - "--enable-prefix-caching"                # reuse KV across shared system prompts (open-webui/k8sgpt/perplexica)
-            - "--enable-chunked-prefill"               # required to prefill 262K prompts without OOM/stall
+            - "fp8_e4m3"                               # halves KV bytes/token; scales uncalibrated (1.0)
+            - "--enable-prefix-caching"                # the metric the single-vs-dual comparison turns on
+            - "--enable-chunked-prefill"
             - "--max-num-batched-tokens"
-            - "8192"                                   # chunked-prefill chunk size (262K prompt -> 32 chunks)
+            - "2048"                                   # 8192 inflates the profiled activation peak and shrinks the pool
             - "--override-generation-config"
-            - '{"temperature":0.7,"top_p":0.8,"top_k":20,"presence_penalty":1.5}'  # Qwen3.6 nothink sampling defaults
+            - '{"temperature":0.7,"top_p":0.8,"top_k":20,"presence_penalty":1.5}'
             - "--host"
             - "0.0.0.0"
             - "--port"
@@ -135,16 +98,12 @@ spec:
               value: "1"
             - name: VLLM_USE_FLASHINFER_SAMPLER   # faster top-p/top-k sampling on sm_86
               value: "1"
-            - name: VLLM_WORKER_MULTIPROC_METHOD
-              value: "spawn"
             - name: OMP_NUM_THREADS         # silences the 16->1 thread warning; matches club-3090 recipe
               value: "1"
-            - name: NCCL_P2P_DISABLE        # 3090s have no NVLink/P2P
-              value: "1"
-            - name: NCCL_CUMEM_ENABLE
-              value: "0"
-            - name: PYTORCH_CUDA_ALLOC_CONF # cut fragmentation / OOM on 24GB activation peaks
-              value: "expandable_segments:True,max_split_size_mb:512"
+            # Non-optional at high util: the DeltaNet prefill kernels allocate transient
+            # workspace and fragment the allocator without expandable segments.
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "expandable_segments:True"
           ports:
             - name: http
               containerPort: 8000
@@ -172,20 +131,20 @@ spec:
             # reservation. Keep it low (bursts to the 14-core limit) so the
             # single 32-vCPU worker has headroom for the rest of the fleet.
             requests:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               cpu: "1"
               # Weights live in GPU VRAM; host RAM steady-state is ~1.2Gi.
               # Request 8Gi (headroom for load spikes); 64Gi limit allows burst.
               memory: 8Gi
             limits:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               memory: 64Gi
           volumeMounts:
             - name: models
               mountPath: /models
               readOnly: true
             - name: dshm
-              mountPath: /dev/shm        # TP workers IPC over shared memory — size it generously
+              mountPath: /dev/shm        # kept: torch still uses it; default 64Mi is too small
             # Both paths must persist or the engine recompiles every boot.
             - name: compile-cache
               mountPath: /root/.cache/vllm/torch_compile_cache
