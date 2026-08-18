@@ -1,5 +1,14 @@
 # Pi Agent — Claude-Code-Grade Local Dev on the Dual-3090 Backend
 
+> ⚠️ **Model id and topology below are out of date.** The live backend is
+> **`qwen3.8-27b`** on a **single** RTX 3090 (TP=1), W4A16 + INT8 `lm_head`,
+> a measured **200,826-token** KV pool with a 180000 ceiling, and
+> **text-only** (`--language-model-only`, no vision). Every `qwen3.6-27b`,
+> `TP=2` and `262K` reference on this page is stale — substitute the current
+> values. See [`model-catalog.md`](model-catalog.md) and
+> [`single-vs-dual-3090.md`](single-vs-dual-3090.md); the surrounding technique
+> is still sound.
+
 > Goal: fully local coding agents that match the Claude Code *capability set*
 > — tools, repo context, skills, research — without using Claude Code. The
 > toolchain is **[pi](https://github.com/badlogic/pi-mono) (primary) +
