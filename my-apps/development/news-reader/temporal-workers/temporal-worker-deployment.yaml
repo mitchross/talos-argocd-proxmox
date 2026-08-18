@@ -115,7 +115,7 @@ spec:
             - name: LLM_URL
               value: "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions"
             - name: LLM_MODEL
-              value: "qwen3.6-27b"
+              value: "qwen3.8-27b"
             - name: REDDIT_FRONTEND
               value: "https://redlib.vanillax.me"
           securityContext:

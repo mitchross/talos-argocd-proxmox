@@ -84,7 +84,7 @@ spec:
           # based result filtering + chunked context management that keeps
           # prompts bounded.
           #
-          # Backend model: this app selects the canonical vLLM `qwen3.6-27b`
+          # Backend model: this app selects the canonical vLLM `qwen3.8-27b`
           # served-model-name from config.json. vLLM currently caps context at
           # 64K via --max-model-len; the embedding result-filter keeps prompts
           # under that ceiling.
