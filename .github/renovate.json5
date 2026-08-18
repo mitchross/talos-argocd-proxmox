@@ -94,6 +94,14 @@
       prCreation: 'immediate',
     },
     {
+      description: 'Cilium pinned to 1.20.0-rc.0: 1.20.0 final has two CNI-breaking xDS bugs (ADS livelock cilium/cilium#47624, split-mode stale NetworkPolicy NACK that wedged the hp node 2026-08-16). Hold every update until a 1.20.x fixes BOTH; cilium never automerges — a CNI minor is major-risk.',
+      matchPackageNames: [
+        'cilium',
+      ],
+      allowedVersions: '<1.20.0',
+      automerge: false,
+    },
+    {
       description: 'Enable container digest updates',
       matchDatasources: [
         'docker',

@@ -123,6 +123,11 @@ k8sClientRateLimit:
 extraConfig:
   api-rate-limit: "endpoint-create=rate-limit:2/s,rate-burst:16,parallel-requests:8,max-wait-duration:30s"
 
+# 1.20 ADS mode livelocks after the last L7 listener drains (cilium/cilium#47624,
+# Gateways all 403) — stay on split xDS for the whole 1.20 line.
+envoy:
+  xdsMode: split
+
 # Gateway API Support
 gatewayAPI:
   enabled: true
@@ -132,12 +137,6 @@ gatewayAPI:
   # Enable session affinity for consistent routing
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
-
-# Cilium 1.20.0 ADS can livelock after its last L7 listener drains, publishing
-# an empty policy snapshot that makes every Gateway return 403 "Access denied".
-# Split xDS is unaffected; keep it until cilium/cilium#47624 ships in a release.
-envoy:
-  xdsMode: split
 
 # Cilium agent resources (VPA-optimized 2026-02-28; mem limit raised 2026-05-04)
 # Capacity baseline 2026-05-04 showed cilium-* daemonset pods observed
