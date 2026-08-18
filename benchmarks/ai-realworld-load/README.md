@@ -1,8 +1,12 @@
 # Real-world AI load baseline (dual vs single RTX 3090)
 
-Answers one question: **can ONE RTX 3090 serve Perplexica + Pi + Deal Scout
-without materially losing usable context?** Context capacity is the criterion,
-not tokens/sec.
+Answered one question: **can ONE RTX 3090 serve the real workload without
+materially losing usable context?** Context capacity was the criterion, not
+tokens/sec. **It can** — see Results below.
+
+The Deal Scout digest is excluded from both baselines: it 500s on an
+application bug, so it contributed no load and would have made the comparison
+uneven.
 
 Not ArgoCD-managed — `benchmarks/` sits outside every AppSet glob. Nothing here
 deploys; the collector only reads. Runs land in `runs/` (git-ignored).
@@ -11,10 +15,49 @@ deploys; the collector only reads. Runs land in `runs/` (git-ignored).
 
 | | Hardware | Model | Status |
 |---|---|---|---|
-| **A** | 2x RTX 3090, TP=2, PCIe/no NVLink | Qwen3.8-27B-**FP8** (Marlin weight-only) | this doc |
-| **B** | 1x RTX 3090, TP=1 | Qwen3.8-27B W4A16 AutoRound (INT8 `lm_head`/`embed_tokens`, ~14.26 GiB) | later |
+| **A** | 2x RTX 3090, TP=2, PCIe/no NVLink | Qwen3.8-27B-**FP8** (Marlin weight-only) | measured |
+| **B** | 1x RTX 3090, TP=1 | Qwen3.8-27B W4A16 AutoRound, INT8 `lm_head`, BF16 `embed_tokens` | measured |
 
-B must reuse the **verbatim prompts in this file** or the comparison is void.
+Both used the **verbatim prompts in this file**. Any re-run must too, or the
+comparison is void.
+
+## Results
+
+| | A — 2x3090 | **B — 1x3090** |
+|---|---:|---:|
+| KV pool | 313,367 | **200,826** |
+| Peak resident context | 160,468 (51.2%) | **152,867 (76.1%)** |
+| Preemptions | 0 | **0** |
+| Prefix-cache hit rate | 97.5% | **96.3%** |
+| Truncation / abort / error | 0 / 0 / 0 | **0 / 0 / 0** |
+| TTFT mean | 3.808s | 4.564s |
+| Prefill mean | 3.012s | 4.242s |
+| TPOT mean | 0.036s | 0.038s |
+| Completed requests | 122 | 141 |
+
+**One 3090 is sufficient for this workload.** The penalty is prefill and TTFT
+latency, not usable context. Full analysis and the rules that follow:
+[`docs/domains/ai-gpu/single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
+
+Caveat kept deliberately: the agent workload converged near 146K tokens of
+context in B, so the pool was measured to ~76% utilisation. Behaviour nearer the
+ceiling is extrapolated.
+
+### Baseline B configuration
+
+```
+vLLM 0.27.1 (STOCK image) · Qwen3.8-27B W4A16 + INT8 g128 lm_head · TP=1 · 1 card
+--max-model-len 180000        --gpu-memory-utilization 0.972
+--max-num-seqs 3              --max-num-batched-tokens 2048
+--kv-cache-dtype fp8_e4m3     --language-model-only  (text-only, no vision)
+--async-scheduling            max_cudagraph_capture_size 4
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+200W/card power limit
+
+KV capacity ceiling : 200,826 tokens   <- read from the boot log, never predicted
+Max concurrency     : 1.12x @ 180,000
+Weights             : 15.43 GiB   activation: 0.75  CUDA graphs: 0.45  KV: 6.50 GiB
+```
 
 ### Baseline A configuration (measured at boot, not assumed)
 
@@ -78,6 +121,17 @@ behaviour) — both out of scope. Per-request counts are never invented from
 aggregate counters.
 
 ## Run sequence
+
+Two traps that invalidate a run, both hit in practice:
+
+- **Restart vLLM first and verify the prefix cache is cold**
+  (`prefix_cache_queries_total` and `hits` both 0). A warm cache contaminates
+  exactly the metric under test.
+- **Drive long HTTP workloads from inside the cluster.** The external gateway
+  terminates connections at 300s, killing a research query mid-flight.
+  `kubectl port-forward` does not work for Perplexica — it binds the pod IP, so
+  forwarding to localhost is refused. A detached Job calling the service DNS is
+  immune to both.
 
 ```bash
 cd benchmarks/ai-realworld-load
