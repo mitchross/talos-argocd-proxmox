@@ -30,7 +30,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **Database**: plain Postgres Deployments backed up by kopiur — hourly snapshots, restore-before-bind (CNPG retired 2026-08-13)
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
-- **AI**: vLLM (Qwen3.6-27B, default app inference) + llama-cpp (Qwen3.6-35B multimodal — vision→image + preset playground) on mutually-exclusive whole-card GPUs ([scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md))
+- **AI**: vLLM serving Qwen3.8-27B (`qwen3.8-27b`, W4A16 + INT8 lm_head) on a **single** RTX 3090; the second card is free. llama-cpp and the image-gen apps are parked ([scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) · [one vs two 3090s](domains/ai-gpu/single-vs-dual-3090.md))
 
 ## Documentation
 
@@ -101,7 +101,7 @@ Backups are **kopiur** (Kopia-native operator).
 - **Observability**: [radar-ng](domains/observability/radar-ng.md)
 - **Scheduling**: [VPA policy ownership and topology](domains/scheduling/vpa-and-topology.md)
 - **Apps**: [Self-hosting PostHog on Kubernetes](posthog-self-host-k8s.md) — the full recipe (topology, single-node ClickHouse, routing, upgrade checklist), portable to any cluster
-- **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md) · [pi agent local-dev guide](domains/ai-gpu/pi-agent-local-dev.md)
+- **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [one vs two 3090s](domains/ai-gpu/single-vs-dual-3090.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md) · [pi agent local-dev guide](domains/ai-gpu/pi-agent-local-dev.md)
 
 ## Adopting any of this
 
