@@ -8,20 +8,19 @@ One OpenAI-compatible local backend, **NOT ollama**:
 - Endpoint: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
 - Served model: **`qwen3.8-27b`** — Qwen3.8-27B W4A16 AutoRound with INT8
   group-128 `lm_head`, BF16 `embed_tokens`, FP8 KV, on **one** RTX 3090 (TP=1).
-- **Text-only**: runs `--language-model-only`, so the vision tower is not
-  loaded. Do not wire image input to this endpoint.
+- **Multimodal**: the vision tower is enabled, with one image and no video
+  allowed per prompt to bound one-card VRAM use.
 - **Use vLLM / `qwen3.8-27b` when wiring an in-cluster app to chat inference.**
 
 ### llama-cpp — parked
 - `replicas: 0`. Endpoint `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`.
 - Serves Qwen3.8-27B GGUF plus a vision projector when scaled up; advertises
-  `qwen3.8` and `qwen3.8-nothink`. Scale it up only if vision is needed, and
-  only via the swap procedure.
+  `qwen3.8` and `qwen3.8-nothink`. It is an alternate GGUF backend and may be
+  scaled up only via the swap procedure.
 
-All in-cluster consumers request `qwen3.8-27b`. **vLLM is text-only**, so any
-app needing image input must target llama-cpp (`qwen3.8`) instead — Karakeep's
-`INFERENCE_IMAGE_MODEL` is deliberately left pointing at a dead id so it fails
-fast rather than sending images to a text-only endpoint.
+All in-cluster vLLM consumers request `qwen3.8-27b`, including Karakeep text and
+image inference. ComfyUI's dedicated llama.cpp-client workflow still requests
+`qwen3.8` because that integration calls the parked llama.cpp Service directly.
 
 **App→backend wiring + capacity rules:
 [`model-catalog.md`](../../docs/domains/ai-gpu/model-catalog.md) ·
@@ -32,16 +31,17 @@ fast rather than sending images to a text-only endpoint.
   Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
   Qwen3-Coder docs' q8-K/q4-V suggestion.
 - **Context limit = `min(model max, VRAM-affordable KV)`.** The live MTP profile
-  uses a 131072 ceiling at 0.90 utilization; read `GPU KV cache size` from the
+  uses a 65536 ceiling at 0.90 utilization with vision enabled; read `GPU KV cache size` from the
   boot log after every restart rather than predicting it. Historical non-MTP
   measurements are in
   [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
 - **Engine choice:** Qwen 3.8 runs on vLLM via W4A16 AutoRound with an INT8
-  `lm_head`, which stock vLLM loads unpatched. llama.cpp GGUF is the fallback
-  when vision is required.
+  `lm_head`, which stock vLLM loads unpatched, including its vision tower.
+  llama.cpp GGUF is the alternate backend.
 - **MTP/spec-decode gives NO net speedup** on Ampere + 35B-A3B under llama.cpp
-  (same-hw benchmark) — only helps under vLLM TP=2. Don't bother on single-card.
+  (same-hw benchmark). The live single-card vLLM profile enables MTP-2, but its
+  acceptance and throughput must be verified from metrics and two warm runs.
 - **TurboQuant `turbo3` KV** (≈5x smaller) is coming to mainline llama.cpp
   (PR #21089) — adopt it then for cheap big context.
 

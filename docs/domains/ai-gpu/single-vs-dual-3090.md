@@ -74,10 +74,12 @@ from cache rather than re-prefilled. A capacity change that preserves peak
 context but collapses the hit rate is a regression, and it will present as
 multi-minute stalls rather than a gentle slowdown.
 
-## Scope of the result
+## Scope of the historical result
 
-The measurement covers **two concurrent text workloads** at `--max-num-seqs 3`.
-It does not cover:
+The measurement used the former **text-only** profile and covers two concurrent
+text workloads at `--max-num-seqs 3`. The active production profile now enables
+vision and conservatively caps requests at 65,536 tokens; re-measure its cache
+pool rather than applying the values below to it. This benchmark did not cover:
 
 - **Vision.** The single-card configuration runs `--language-model-only`, which
   drops the vision tower (~2.7 GB). Image input is unavailable in this mode.

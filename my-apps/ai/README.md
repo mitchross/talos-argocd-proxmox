@@ -6,23 +6,20 @@ enforced via the GPU Operator.
 
 The GPU workloads (vLLM, llama-cpp, ComfyUI) use whole-card allocation
 (`type: Recreate`, no time-slicing) and scale-swap by committed replica counts.
-The current temporary state evaluates Qwen 3.8-27B GGUF: vLLM is parked at `0`,
-llama-cpp is `1`, and OpenWebUI points at llama-cpp. The proven Qwen 3.6-27B
-AWQ deployment and its read-only NFS weights remain unchanged for the eventual
-swap back. Other apps still point at vLLM and are unavailable during this test.
+vLLM is active on one RTX 3090 with multimodal Qwen3.8-27B W4A16; llama-cpp,
+ComfyUI, and SwarmUI are parked. The second 3090 remains free for another
+whole-card workload.
 
 ## Architecture
 
 ```
-OpenWebUI ──► llama-cpp ──► Qwen3.8-27B UD-Q4_K_XL.gguf + vision projector
-                 │
-                 ├── qwen3.8          (thinking chat/vision)
-                 └── qwen3.8-nothink  (strict title/tag tasks)
+Apps / OpenWebUI ──► vLLM (replicas: 1, one 3090)
+                         └── qwen3.8-27b (chat, tools, and vision; 65,536 tokens)
 
-vLLM (replicas: 0) ──► Qwen3.6-27B AWQ, TP=2 — parked and unchanged
+llama-cpp (replicas: 0) ──► Qwen3.8-27B GGUF + vision projector — alternate
 ```
 
-## LLM Model (llama-cpp) — Qwen 3.8 evaluation
+## Alternate LLM Model (llama-cpp) — parked
 
 llama.cpp exposes two API presets over one stored model and projector. The
 separate presets are required because OpenWebUI background tasks need thinking
@@ -113,11 +110,11 @@ Two options, both pre-installed in the megapak Docker image:
 **Workflows**: `workflows/florence2-caption.json`, `workflows/wd14-tagger.json`
 
 For deeper image analysis (visual Q&A, reasoning), use **Qwen 3.8** via Open WebUI chat
-(upload image → ask questions). This goes through llama-server, not ComfyUI.
+(upload image → ask questions). This goes through the active vLLM backend, not ComfyUI.
 ComfyUI can also call llama-server's vision API directly via the `comfyui-llamacpp-client`
 node (URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`). The
-checked-in ComfyUI workflow is parked with ComfyUI and must be repointed to
-`qwen3.8` before it is used again.
+checked-in ComfyUI workflow is parked with ComfyUI and already requests the
+llama.cpp-specific `qwen3.8` id.
 
 ## Video Generation (ComfyUI)
 
