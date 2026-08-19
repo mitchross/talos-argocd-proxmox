@@ -12,10 +12,10 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **AI/LLM Backend**: Two OpenAI-compatible local backends, both NOT ollama:
 
-- **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.6-27b` — Qwen3.6-27B dense AWQ, multimodal/vision) is the normal app-inference backend, but is temporarily parked at `replicas: 0` during the Qwen 3.8 evaluation. Its weights remain on the read-only vLLM NFS share; do not change or delete them.
-- **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`) is temporarily the live OpenWebUI backend for **Qwen3.8-27B** GGUF evaluation. It advertises only `qwen3.8` and `qwen3.8-nothink`, two modes over the same GGUF + vision projector. Other apps remain wired to the parked vLLM service.
+- **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.8-27b`) is the active app-inference backend. It serves the multimodal Qwen3.8-27B W4A16 AutoRound checkpoint with vision enabled on one RTX 3090.
+- **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`) is the parked alternate GGUF backend. When scaled up it advertises `qwen3.8` and `qwen3.8-nothink` over one GGUF + vision projector.
 
-GPU topology: the GPU workloads are **mutually exclusive whole-card** (`type: Recreate`, time-slicing disabled — never oversubscribe the cards). They scale-swap by committed replica counts. Current evaluation state is vLLM `0`, llama-cpp `1`, and ComfyUI/SwarmUI `0`; llama-cpp consumes one 3090 and the second remains free. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
+GPU topology: the GPU workloads use **mutually exclusive whole-card** allocations (`type: Recreate`, time-slicing disabled — never oversubscribe the cards). They scale-swap by committed replica counts. Current state is vLLM `1`, llama-cpp `0`, and ComfyUI/SwarmUI `0`; vLLM consumes one 3090 and the second remains free. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
@@ -120,7 +120,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
-- Use **vLLM** (`qwen3.6-27b`, the default for app inference) or llama-cpp for in-cluster AI backends — **never ollama**
+- Use **vLLM** (`qwen3.8-27b`, the default for app inference) or llama-cpp for in-cluster AI backends — **never ollama**
 - Use sync waves when adding infrastructure components
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)

@@ -28,12 +28,11 @@ and `embed_tokens` left BF16. That combination loads on **stock** vLLM:
 `ParallelLMHead` is routed to the linear WNA16 path, which supports 8 bits.
 Only quantizing `embed_tokens` would require a patched image.
 
-Text-only. The deployment runs `--language-model-only`, so the vision tower is
-not loaded and image input is unavailable.
-
-> A patched image that also wires the quantized-embedding path exists at
-> `ghcr.io/mitchross/vllm-qwen38` and is **parked**. It buys roughly 7K more
-> cache tokens. Use it only if a workload demonstrably needs that margin.
+The checkpoint is natively multimodal and the vision tower is enabled. The
+single-card profile allows one image and no video per prompt and caps requests
+at 65,536 tokens to leave room for the roughly 2.7 GiB vision tower. This is a
+conservative boot profile, not a measured maximum; use the startup cache-pool
+log and live image/long-context tests before raising it.
 
 ## Storage boundaries
 
@@ -69,15 +68,10 @@ and points at `vllm-service` with `qwen3.8-27b` for default, vision and task
 models. `ENABLE_PERSISTENT_CONFIG=False` prevents stale database settings from
 overriding GitOps configuration.
 
-Because vLLM is text-only in the current configuration, `VISION_MODELS` will not
-produce image understanding until either the vision tower is re-enabled or
-llama.cpp is scaled up for that purpose.
-
-> **Known gap:** several consumers still request the retired id `qwen3.6-27b`
-> and will 404 — including LiteLLM, Presenton, Hindsight, WorldMonitor,
-> Karakeep, Project NOMAD, the news-reader Temporal worker, and some n8n
-> workflows. Grep for `qwen3.6-27b` under `my-apps/` before assuming an app
-> works. Rolling these to `qwen3.8-27b` is outstanding.
+`VISION_MODELS=qwen3.8-27b` therefore uses the same active vLLM endpoint for
+image understanding. Karakeep also uses `qwen3.8-27b` for both text and image
+inference. Consumer model ids are rolled together with serving-id changes so a
+retired id cannot silently 404.
 
 ## Changing the served model
 
