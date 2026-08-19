@@ -2,8 +2,8 @@
 
 > ⚠️ **Model id and topology below are out of date.** The live backend is
 > **`qwen3.8-27b`** on a **single** RTX 3090 (TP=1), W4A16 + INT8 `lm_head`,
-> a **131072-token** request ceiling with MTP-2 at 0.90 utilization, and
-> **text-only** (`--language-model-only`, no vision). Every `qwen3.6-27b`,
+> a **65,536-token** request ceiling with MTP-2 at 0.90 utilization, and
+> vision enabled for one image per prompt. Every `qwen3.6-27b`,
 > `TP=2` and `262K` reference on this page is stale — substitute the current
 > values. See [`model-catalog.md`](model-catalog.md) and
 > [`single-vs-dual-3090.md`](single-vs-dual-3090.md); the surrounding technique
@@ -21,7 +21,8 @@
 > Stack targets: Kubernetes/Talos GitOps (this repo), JavaScript/Node/
 > TypeScript, Python, React Native, Temporal.io.
 >
-> Last updated: 2026-07-24 (added §9 — LiteLLM proxy + PostHog LLM Analytics,
+> Last updated: 2026-08-19 (current-state banner; body last revised 2026-07-24,
+> including §9 — LiteLLM proxy + PostHog LLM Analytics,
 > and the `kimi-consult` subagent; §4a's pi-subagents status corrected —
 > it's back, for one targeted reason).
 

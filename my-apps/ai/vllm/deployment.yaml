@@ -54,12 +54,13 @@ spec:
             - "--gpu-memory-utilization"
             - "0.90"                                   # MTP needs headroom for DeltaNet decode workspace
             - "--max-model-len"
-            - "131072"
+            - "65536"                                  # vision tower trades context for image understanding on 24 GiB
             - "--max-num-seqs"
             # MTP reserves recurrent state for target and draft positions; three
             # slots keeps one full-length request affordable on a 24 GiB card.
             - "3"
-            - "--language-model-only"                  # no vision tower (~2.7GB); both A/B workloads are text-only
+            - "--limit-mm-per-prompt"
+            - '{"image":1,"video":0}'                   # bound multimodal profiling and VRAM to one image per request
             - "--async-scheduling"
             - "--compilation-config"
             # capture_size 4 covers max-num-seqs=3; upstream's 64 is dead VRAM at this concurrency.
