@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image
 
 _DEFAULT_SERVER = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
-_DEFAULT_MODEL = "qwen3.6-27b"
+_DEFAULT_MODEL = "qwen3.8"
 
 
 def _image_to_base64(image_tensor):

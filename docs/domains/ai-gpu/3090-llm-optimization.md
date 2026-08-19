@@ -5,11 +5,11 @@
 > [`noonghunna/club-3090`](https://github.com/noonghunna/club-3090) recipe repo,
 > which this cluster's hardware (2× RTX 3090) directly matches.
 >
-> Last updated: 2026-07-04.
+> Last updated: 2026-08-19 (current-state banner; historical analysis retained).
 >
 > ⚠️ **Superseded topology:** the live backend is **vLLM serving
-> `qwen3.8-27b` on a SINGLE 3090** (TP=1, W4A16 + INT8 `lm_head`, 131K request
-> ceiling with MTP-2, text-only). Both the "llama.cpp single-card steady state"
+> `qwen3.8-27b` on a SINGLE 3090** (TP=1, W4A16 + INT8 `lm_head`, 65,536-token
+> request ceiling with MTP-2 and vision enabled for one image). Both the "llama.cpp single-card steady state"
 > framing and any `TP=2` / `qwen3.6-27b` / `262K` reference below are stale —
 > see [`model-catalog.md`](model-catalog.md) and
 > [`single-vs-dual-3090.md`](single-vs-dual-3090.md). llama-cpp and the

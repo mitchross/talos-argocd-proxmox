@@ -6,9 +6,9 @@ metadata:
 data:
   config.yaml: |
     model_list:
-      - model_name: qwen3.6-27b
+      - model_name: qwen3.8-27b
         litellm_params:
-          model: hosted_vllm/qwen3.6-27b
+          model: hosted_vllm/qwen3.8-27b
           api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
           api_key: "vllm-no-key-required"
         model_info:

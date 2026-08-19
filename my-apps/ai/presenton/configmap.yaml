@@ -4,11 +4,11 @@ metadata:
   name: presenton-config
   namespace: presenton
 data:
-  # LLM: point at in-cluster vLLM (qwen3.6-27b)
+  # LLM: point at in-cluster vLLM (qwen3.8-27b)
   LLM: "custom"
   CUSTOM_LLM_URL: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
   CUSTOM_LLM_API_KEY: "sk-no-key-required"
-  CUSTOM_MODEL: "qwen3.6-27b"
+  CUSTOM_MODEL: "qwen3.8-27b"
 
   # Image generation
   DISABLE_IMAGE_GENERATION: "false"
@@ -22,7 +22,7 @@ data:
 
   # Mem0 (presentation memory) — point at vLLM too
   MEM0_ENABLED: "true"
-  MEM0_LLM_MODEL: "qwen3.6-27b"
+  MEM0_LLM_MODEL: "qwen3.8-27b"
   MEM0_LLM_API_KEY: "ollama"
   MEM0_LLM_BASE_URL: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
   MEM0_DIR: "/app_data/mem0"

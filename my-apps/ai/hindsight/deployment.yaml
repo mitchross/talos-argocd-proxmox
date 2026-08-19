@@ -47,7 +47,7 @@ spec:
             - name: HINDSIGHT_API_LLM_BASE_URL
               value: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
             - name: HINDSIGHT_API_LLM_MODEL
-              value: "qwen3.6-27b"
+              value: "qwen3.8-27b"
             - name: HINDSIGHT_API_LLM_API_KEY
               value: "vllm" # vLLM ignores auth; SDK requires a non-empty key
             - name: HINDSIGHT_API_TENANT_API_KEY
