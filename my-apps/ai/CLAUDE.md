@@ -30,10 +30,10 @@ Temporal worker, some n8n workflows). Grep for it before assuming an app works.
 - **KV cache must be SYMMETRIC** — `q8_0/q8_0` or `q4_0/q4_0`, never mixed.
   Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
   Qwen3-Coder docs' q8-K/q4-V suggestion.
-- **Context limit = `min(model max, VRAM-affordable KV)`.** Measured on one
-  3090 with the W4A16 + INT8-lm_head checkpoint: a **200,826-token** pool, set
-  to a 180000 ceiling. Read `GPU KV cache size` from the boot log; never predict
-  it. Details in
+- **Context limit = `min(model max, VRAM-affordable KV)`.** The live MTP profile
+  uses a 131072 ceiling at 0.90 utilization; read `GPU KV cache size` from the
+  boot log after every restart rather than predicting it. Historical non-MTP
+  measurements are in
   [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
 - **Engine choice:** Qwen 3.8 runs on vLLM via W4A16 AutoRound with an INT8

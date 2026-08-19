@@ -8,8 +8,8 @@
 > Last updated: 2026-07-04.
 >
 > ⚠️ **Superseded topology:** the live backend is **vLLM serving
-> `qwen3.8-27b` on a SINGLE 3090** (TP=1, W4A16 + INT8 `lm_head`, 200,826-token
-> measured pool, text-only). Both the "llama.cpp single-card steady state"
+> `qwen3.8-27b` on a SINGLE 3090** (TP=1, W4A16 + INT8 `lm_head`, 131K request
+> ceiling with MTP-2, text-only). Both the "llama.cpp single-card steady state"
 > framing and any `TP=2` / `qwen3.6-27b` / `262K` reference below are stale —
 > see [`model-catalog.md`](model-catalog.md) and
 > [`single-vs-dual-3090.md`](single-vs-dual-3090.md). llama-cpp and the
