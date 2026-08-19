@@ -52,14 +52,12 @@ spec:
             - "--served-model-name"
             - "qwen3.8-27b"
             - "--gpu-memory-utilization"
-            - "0.972"                                  # upstream's measured working value on a headless 3090
+            - "0.90"                                   # MTP needs headroom for DeltaNet decode workspace
             - "--max-model-len"
-            # 180000 leaves 18,529 tokens of physical KV-pool headroom and
-            # 21,917 tokens above Pi's measured 158,083-token peak.
-            - "180000"
+            - "131072"
             - "--max-num-seqs"
-            # Each slot reserves a GDN recurrent-state set from the same pool that
-            # must still admit one full-length request. Matches Baseline A for comparability.
+            # MTP reserves recurrent state for target and draft positions; three
+            # slots keeps one full-length request affordable on a 24 GiB card.
             - "3"
             - "--language-model-only"                  # no vision tower (~2.7GB); both A/B workloads are text-only
             - "--async-scheduling"
@@ -75,10 +73,14 @@ spec:
             - '{"enable_thinking": false}'             # thinking OFF by default; UIs re-enable per-request
             - "--kv-cache-dtype"
             - "fp8_e4m3"                               # halves KV bytes/token; scales uncalibrated (1.0)
+            - "--mamba-ssm-cache-dtype"
+            - "float16"                                # halves per-sequence DeltaNet recurrent state
             - "--enable-prefix-caching"                # the metric the single-vs-dual comparison turns on
             - "--enable-chunked-prefill"
             - "--max-num-batched-tokens"
             - "2048"                                   # 8192 inflates the profiled activation peak and shrinks the pool
+            - "--speculative-config"
+            - '{"method":"mtp","num_speculative_tokens":2}'
             - "--override-generation-config"
             - '{"temperature":0.7,"top_p":0.8,"top_k":20,"presence_penalty":1.5}'
             - "--host"
@@ -95,8 +97,6 @@ spec:
             - name: TRANSFORMERS_OFFLINE
               value: "1"
             - name: VLLM_NO_USAGE_STATS     # no phone-home
-              value: "1"
-            - name: VLLM_USE_FLASHINFER_SAMPLER   # faster top-p/top-k sampling on sm_86
               value: "1"
             - name: OMP_NUM_THREADS         # silences the 16->1 thread warning; matches club-3090 recipe
               value: "1"
