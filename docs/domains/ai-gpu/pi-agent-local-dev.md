@@ -2,7 +2,7 @@
 
 > ⚠️ **Model id and topology below are out of date.** The live backend is
 > **`qwen3.8-27b`** on a **single** RTX 3090 (TP=1), W4A16 + INT8 `lm_head`,
-> a measured **200,826-token** KV pool with a 180000 ceiling, and
+> a **131072-token** request ceiling with MTP-2 at 0.90 utilization, and
 > **text-only** (`--language-model-only`, no vision). Every `qwen3.6-27b`,
 > `TP=2` and `262K` reference on this page is stale — substitute the current
 > values. See [`model-catalog.md`](model-catalog.md) and
