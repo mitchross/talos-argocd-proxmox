@@ -20,6 +20,7 @@ resources:
   - app-performance-dashboard.yaml # Two-selector workload investigation with correlated Loki errors
   - posthog-performance-dashboard.yaml # PostHog web/Postgres/Kafka/ClickHouse root-cause decoder
   - gpu-dashboard.yaml # Grafana dashboard
+  - vllm-dashboard.yaml # vLLM tokens/s + latency + KV cache + MTP acceptance
   - vpa-recommendations-dashboard.yaml # Active VPA policy and recommendation dashboard
   - trivy-dashboard.yaml # Trivy Operator vulnerability dashboard (Grafana 17813; pairs with monitoring/trivy-operator)
   - trivy-alerts.yaml # Trivy critical-vuln alerting (high per-image critical count)

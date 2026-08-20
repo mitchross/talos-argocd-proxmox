@@ -24,6 +24,11 @@ configMapGenerator:
   - har-analyzer-function.py
   options:
     disableNameSuffixHash: true
+- name: tokens-per-second-function
+  files:
+  - tokens-per-second-function.py
+  options:
+    disableNameSuffixHash: true
 - name: open-webui-configmap
   envs:
   - open-webui-configmap.env
