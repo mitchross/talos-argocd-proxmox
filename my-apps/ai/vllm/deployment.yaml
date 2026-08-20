@@ -52,7 +52,7 @@ spec:
             - "--served-model-name"
             - "qwen3.8-27b"
             - "--gpu-memory-utilization"
-            - "0.90"                                   # MTP needs headroom for DeltaNet decode workspace
+            - "0.93"                                   # 0.90 left only 1.9 GiB KV (2.45 needed for 65536) — boot-verified floor; keep ≥1 GiB free for DeltaNet workspace
             - "--max-model-len"
             - "65536"                                  # vision tower trades context for image understanding on 24 GiB
             - "--max-num-seqs"
@@ -84,6 +84,7 @@ spec:
             - '{"method":"mtp","num_speculative_tokens":2}'
             - "--override-generation-config"
             - '{"temperature":0.7,"top_p":0.8,"top_k":20,"presence_penalty":1.5}'
+            - "--enable-force-include-usage"             # usage on every stream chunk final — Open WebUI shows token stats without per-model DB config
             - "--host"
             - "0.0.0.0"
             - "--port"
