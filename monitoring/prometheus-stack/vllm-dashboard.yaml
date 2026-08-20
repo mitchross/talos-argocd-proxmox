@@ -1,0 +1,150 @@
+# vLLM Inference Dashboard (Grafana)
+#
+# Grafana auto-discovers this ConfigMap via the sidecar (grafana_dashboard: "1" label).
+# Data source: Prometheus scraping vLLM's native /metrics (my-apps/ai/vllm/servicemonitor.yaml).
+#
+# Layout answers "how fast is the model serving right now?" in five rows:
+#   Row 1 - At-a-glance stats: gen tok/s, prompt tok/s, running, waiting
+#   Row 2 - Tokens/s over time: aggregate throughput + single-stream decode speed
+#   Row 3 - Latency: TTFT + end-to-end quantiles
+#   Row 4 - KV / prefix cache utilization and hit rate
+#   Row 5 - Speculative decoding (MTP-2): acceptance rate, draft vs accepted
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vllm-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  vllm-inference.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "schemaVersion": 39,
+      "title": "vLLM Inference",
+      "uid": "vllm-inference",
+      "tags": ["vllm", "llm", "ai"],
+      "time": { "from": "now-3h", "to": "now" },
+      "refresh": "30s",
+      "templating": { "list": [] },
+      "panels": [
+        { "type": "row", "id": 100, "title": "At a glance", "gridPos": {"x":0,"y":0,"w":24,"h":1}, "collapsed": false },
+
+        { "type": "stat", "id": 1, "title": "Generation tok/s",
+          "gridPos": {"x":0,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [{"expr":"sum(rate(vllm:generation_tokens_total[$__rate_interval]))","refId":"A"}],
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"value","graphMode":"area"},
+          "fieldConfig":{"defaults":{"unit":"none","decimals":1,"color":{"mode":"thresholds"},"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]}}}
+        },
+
+        { "type": "stat", "id": 2, "title": "Prompt (prefill) tok/s",
+          "gridPos": {"x":6,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [{"expr":"sum(rate(vllm:prompt_tokens_total[$__rate_interval]))","refId":"A"}],
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"value","graphMode":"area"},
+          "fieldConfig":{"defaults":{"unit":"none","decimals":1,"color":{"mode":"thresholds"},"thresholds":{"mode":"absolute","steps":[{"color":"blue","value":null}]}}}
+        },
+
+        { "type": "stat", "id": 3, "title": "Requests running",
+          "gridPos": {"x":12,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [{"expr":"sum(vllm:num_requests_running)","refId":"A"}],
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"value","graphMode":"area"},
+          "fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":3}]}}}
+        },
+
+        { "type": "stat", "id": 4, "title": "Requests waiting",
+          "gridPos": {"x":18,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [{"expr":"sum(vllm:num_requests_waiting)","refId":"A"}],
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"value","graphMode":"area"},
+          "fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":1},{"color":"red","value":3}]}}}
+        },
+
+        { "type": "row", "id": 101, "title": "Tokens per second", "gridPos": {"x":0,"y":5,"w":24,"h":1}, "collapsed": false },
+
+        { "type": "timeseries", "id": 10, "title": "Throughput (all requests)",
+          "gridPos": {"x":0,"y":6,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [
+            {"expr":"sum(rate(vllm:generation_tokens_total[$__rate_interval]))","legendFormat":"generation tok/s","refId":"A"},
+            {"expr":"sum(rate(vllm:prompt_tokens_total[$__rate_interval]))","legendFormat":"prompt tok/s","refId":"B"}
+          ],
+          "fieldConfig":{"defaults":{"unit":"none","decimals":1,"min":0}}
+        },
+
+        { "type": "timeseries", "id": 11, "title": "Single-stream decode speed (1 / mean time-per-output-token)",
+          "gridPos": {"x":12,"y":6,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [
+            {"expr":"1 / (sum(rate(vllm:time_per_output_token_seconds_sum[$__rate_interval])) / sum(rate(vllm:time_per_output_token_seconds_count[$__rate_interval])))","legendFormat":"tok/s per stream","refId":"A"}
+          ],
+          "fieldConfig":{"defaults":{"unit":"none","decimals":1,"min":0}}
+        },
+
+        { "type": "row", "id": 102, "title": "Latency", "gridPos": {"x":0,"y":14,"w":24,"h":1}, "collapsed": false },
+
+        { "type": "timeseries", "id": 20, "title": "Time to first token",
+          "gridPos": {"x":0,"y":15,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [
+            {"expr":"histogram_quantile(0.50, sum(rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])) by (le))","legendFormat":"p50","refId":"A"},
+            {"expr":"histogram_quantile(0.95, sum(rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])) by (le))","legendFormat":"p95","refId":"B"}
+          ],
+          "fieldConfig":{"defaults":{"unit":"s","min":0}}
+        },
+
+        { "type": "timeseries", "id": 21, "title": "End-to-end request latency",
+          "gridPos": {"x":12,"y":15,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [
+            {"expr":"histogram_quantile(0.50, sum(rate(vllm:e2e_request_latency_seconds_bucket[$__rate_interval])) by (le))","legendFormat":"p50","refId":"A"},
+            {"expr":"histogram_quantile(0.95, sum(rate(vllm:e2e_request_latency_seconds_bucket[$__rate_interval])) by (le))","legendFormat":"p95","refId":"B"}
+          ],
+          "fieldConfig":{"defaults":{"unit":"s","min":0}}
+        },
+
+        { "type": "row", "id": 103, "title": "KV / prefix cache", "gridPos": {"x":0,"y":23,"w":24,"h":1}, "collapsed": false },
+
+        { "type": "timeseries", "id": 30, "title": "KV cache usage",
+          "gridPos": {"x":0,"y":24,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [{"expr":"sum(vllm:gpu_cache_usage_perc) * 100","legendFormat":"KV cache used %","refId":"A"}],
+          "fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":80},{"color":"red","value":95}]}}}
+        },
+
+        { "type": "timeseries", "id": 31, "title": "Prefix cache hit rate",
+          "gridPos": {"x":12,"y":24,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [
+            {"expr":"100 * sum(rate(vllm:gpu_prefix_cache_hits_total[$__rate_interval])) / sum(rate(vllm:gpu_prefix_cache_queries_total[$__rate_interval]))","legendFormat":"hit %","refId":"A"}
+          ],
+          "fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}}
+        },
+
+        { "type": "row", "id": 104, "title": "Speculative decoding (MTP)", "gridPos": {"x":0,"y":32,"w":24,"h":1}, "collapsed": false },
+
+        { "type": "timeseries", "id": 40, "title": "Draft token acceptance rate",
+          "gridPos": {"x":0,"y":33,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [
+            {"expr":"100 * sum(rate(vllm:spec_decode_num_accepted_tokens_total[$__rate_interval])) / sum(rate(vllm:spec_decode_num_draft_tokens_total[$__rate_interval]))","legendFormat":"accepted %","refId":"A"}
+          ],
+          "fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}}
+        },
+
+        { "type": "timeseries", "id": 41, "title": "Draft vs accepted tok/s",
+          "gridPos": {"x":12,"y":33,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"prometheus"},
+          "targets": [
+            {"expr":"sum(rate(vllm:spec_decode_num_draft_tokens_total[$__rate_interval]))","legendFormat":"drafted","refId":"A"},
+            {"expr":"sum(rate(vllm:spec_decode_num_accepted_tokens_total[$__rate_interval]))","legendFormat":"accepted","refId":"B"}
+          ],
+          "fieldConfig":{"defaults":{"unit":"none","decimals":1,"min":0}}
+        }
+      ]
+    }

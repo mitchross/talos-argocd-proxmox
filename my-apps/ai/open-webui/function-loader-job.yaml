@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: load-har-analyzer-v6
+  name: load-functions-v7
   namespace: open-webui
   annotations:
     argocd.argoproj.io/hook: PostSync
@@ -38,8 +38,20 @@ spec:
           sys.path.insert(0, "/app/backend")
           os.environ.setdefault("DATA_DIR", "/app/backend/data")
 
-          with open("/functions/har-analyzer-function.py") as f:
-              code = f.read()
+          FUNCTIONS = [
+              {
+                  "id": "har_forensics_analyzer",
+                  "name": "HAR Forensics Analyzer",
+                  "path": "/functions/har-analyzer-function.py",
+                  "description": "Filter: preprocesses uploaded .har files into forensic reports for LLM analysis",
+              },
+              {
+                  "id": "tokens_per_second",
+                  "name": "Tokens Per Second",
+                  "path": "/functions/tokens-per-second-function.py",
+                  "description": "Filter: injects response_token/s + prompt_token/s into streamed usage stats",
+              },
+          ]
 
           from open_webui.models.functions import Functions, FunctionForm, FunctionMeta
           from open_webui.models.users import Users
@@ -71,6 +83,60 @@ spec:
               return []
 
 
+          async def load_function(admin_id, spec):
+              with open(spec["path"]) as f:
+                  code = f.read()
+
+              existing = await _maybe_await(Functions.get_function_by_id(spec["id"]))
+
+              if existing:
+                  result = await _maybe_await(
+                      Functions.update_function_by_id(
+                          spec["id"],
+                          {
+                              "name": spec["name"],
+                              "type": "filter",
+                              "content": code,
+                              "meta": {"description": spec["description"]},
+                              "is_active": True,
+                              "is_global": True,
+                          },
+                      )
+                  )
+                  if result is None:
+                      print(f"ERROR: Failed to update function {spec['id']}")
+                      sys.exit(1)
+                  print(f"Updated function: {result.id}")
+              else:
+                  form = FunctionForm(
+                      id=spec["id"],
+                      name=spec["name"],
+                      type="filter",
+                      content=code,
+                      meta=FunctionMeta(description=spec["description"]),
+                  )
+                  result = await _maybe_await(
+                      Functions.insert_new_function(admin_id, "filter", form)
+                  )
+                  if result is None:
+                      print(f"ERROR: Failed to create function {spec['id']}")
+                      sys.exit(1)
+                  await _maybe_await(
+                      Functions.update_function_by_id(
+                          spec["id"], {"is_active": True, "is_global": True}
+                      )
+                  )
+                  print(f"Created function: {result.id}")
+
+              # Re-read to confirm the active/global flags actually stuck.
+              final = await _maybe_await(Functions.get_function_by_id(spec["id"]))
+              if final is not None:
+                  print(
+                      f"{spec['id']} Active: {getattr(final, 'is_active', '?')}, "
+                      f"Global: {getattr(final, 'is_global', '?')}"
+                  )
+
+
           async def main():
               # Find first admin user
               users_data = await _maybe_await(Users.get_users())
@@ -84,64 +150,9 @@ spec:
                   print("WARNING: No admin user found, using placeholder ID")
                   admin_id = "system"
 
-              form = FunctionForm(
-                  id="har_forensics_analyzer",
-                  name="HAR Forensics Analyzer",
-                  type="filter",
-                  content=code,
-                  meta=FunctionMeta(
-                      description="Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"
-                  ),
-              )
+              for spec in FUNCTIONS:
+                  await load_function(admin_id, spec)
 
-              existing = await _maybe_await(
-                  Functions.get_function_by_id("har_forensics_analyzer")
-              )
-
-              if existing:
-                  result = await _maybe_await(
-                      Functions.update_function_by_id(
-                          "har_forensics_analyzer",
-                          {
-                              "name": "HAR Forensics Analyzer",
-                              "type": "filter",
-                              "content": code,
-                              "meta": {
-                                  "description": "Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"
-                              },
-                              "is_active": True,
-                              "is_global": True,
-                          },
-                      )
-                  )
-                  if result is None:
-                      print("ERROR: Failed to update function")
-                      sys.exit(1)
-                  print(f"Updated function: {result.id}")
-              else:
-                  result = await _maybe_await(
-                      Functions.insert_new_function(admin_id, "filter", form)
-                  )
-                  if result is None:
-                      print("ERROR: Failed to create function")
-                      sys.exit(1)
-                  await _maybe_await(
-                      Functions.update_function_by_id(
-                          "har_forensics_analyzer",
-                          {"is_active": True, "is_global": True},
-                      )
-                  )
-                  print(f"Created function: {result.id}")
-
-              # Re-read to confirm the active/global flags actually stuck.
-              final = await _maybe_await(
-                  Functions.get_function_by_id("har_forensics_analyzer")
-              )
-              if final is not None:
-                  print(
-                      f"Active: {getattr(final, 'is_active', '?')}, "
-                      f"Global: {getattr(final, 'is_global', '?')}"
-                  )
               print("Done!")
 
 
@@ -150,14 +161,21 @@ spec:
         - configMapRef:
             name: open-webui-configmap
         volumeMounts:
-        - name: functions
-          mountPath: /functions
+        - name: har-function
+          mountPath: /functions/har-analyzer-function.py
+          subPath: har-analyzer-function.py
+        - name: tps-function
+          mountPath: /functions/tokens-per-second-function.py
+          subPath: tokens-per-second-function.py
         - name: data
           mountPath: /app/backend/data
       volumes:
-      - name: functions
+      - name: har-function
         configMap:
           name: har-analyzer-function
+      - name: tps-function
+        configMap:
+          name: tokens-per-second-function
       - name: data
         persistentVolumeClaim:
           claimName: storage
