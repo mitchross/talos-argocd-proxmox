@@ -9,18 +9,24 @@
 #   warm  — the cold prompt repeated verbatim => prefix reuse SHOULD hit
 #
 # Client-side numbers (ttft/decode_tps/e2e) come from the same probe code for
-# both engines. Engine-side numbers come from each engine's own run collector
-# (collect.sh for vLLM, collect-ninfer.sh for NInfer) started around this script.
+# both engines. Engine-side numbers come from collect.sh started around this
+# script (BENCH_NS/BENCH_APP/BENCH_DEPLOY/BENCH_PORT select the backend; both
+# current engines expose vLLM-style or llama.cpp /metrics — check semantics
+# before comparing server-side numbers across engines).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 PROMPT="$ROOT/workloads/ab-6k-prompt.txt"
 MAX_TOKENS=700
 
-CONTROL_URL="${CONTROL_URL:-https://vllm.vanillax.me/v1}"
+# control = the active production backend (llama.cpp); candidate = whatever is
+# brought up in its swap window (e.g. the parked vLLM rollback). Both hostnames
+# resolve to whichever engine currently holds the card, so URL choice is naming,
+# not routing — record which engine actually served each half in the run notes.
+CONTROL_URL="${CONTROL_URL:-https://llama.vanillax.me/v1}"
 CONTROL_MODEL="${CONTROL_MODEL:-qwen3.8-27b}"
-CANDIDATE_URL="${CANDIDATE_URL:-https://ninfer.vanillax.me/v1}"
-CANDIDATE_MODEL="${CANDIDATE_MODEL:-qwen3.8-ninfer}"
+CANDIDATE_URL="${CANDIDATE_URL:-https://vllm.vanillax.me/v1}"
+CANDIDATE_MODEL="${CANDIDATE_MODEL:-qwen3.8-27b}"
 
 # Single-card cluster: the engines are swapped, never co-resident, so run this
 # once per engine window: `ab-smallload.sh control` while vLLM holds the card,

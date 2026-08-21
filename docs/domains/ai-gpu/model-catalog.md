@@ -10,7 +10,6 @@ inference. The GPU swap procedure lives in
 |---|---:|---:|---|---|
 | llama.cpp | `1` | **1** | `qwen3.8-27b` | Active backend for every app |
 | vLLM | `0` | 1 | `qwen3.8-27b` | Parked rollback |
-| NInfer | `0` | 1 | `qwen3.8-ninfer` | Parked evaluation |
 | ComfyUI / SwarmUI | `0` | 1 | Image generation | Parked |
 
 The chassis has one RTX 3090. Exactly one GPU Deployment may have
@@ -43,9 +42,7 @@ Hugging Face revision, verifies their SHA-256 digests, and writes them to
 `192.168.10.133:/mnt/ai-pool/llama-cpp`. The wave-1 server mounts that share
 read-only.
 
-The vLLM model share and compile cache remain intact for rollback. The retired
-syv-ai `qwen38-3090` application was removed; ArgoCD prunes its namespace and
-Longhorn compile-cache PVC, while the shared NFS model store remains retained.
+The vLLM model share and compile cache remain intact for rollback.
 
 ## App wiring
 

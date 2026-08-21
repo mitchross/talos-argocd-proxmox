@@ -268,87 +268,31 @@ contributed no load.
 
 ---
 
-## Historical engine A/B — vLLM control vs NInfer-3090 candidate
+## Engine A/B on the single card
 
-The active backend is now the club-3090 single-card llama.cpp profile. This
-section preserves the earlier vLLM/NInfer method and results; it is not the
-current serving topology.
+The chassis holds one RTX 3090 (permanent), so engines are compared
+**sequentially on the identical card** via scale-swap windows
+(`docs/domains/ai-gpu/gpu-scale-swap.md`): production **llama.cpp** is the
+control; the parked **stock-vLLM rollback** (or any future candidate app) is
+brought up in a window with one replica-flip commit and swapped back after.
+Same silicon, same 200 W cap — do not change the cap between windows without
+recording it — and every swap restarts the engine, so each window starts with a
+provably cold cache. Any run must use the **verbatim Workload A/B prompts
+above** or the comparison is void.
 
-The candidate is `my-apps/ai/ninfer/` (NInfer-3090 `v0.6.0-rtx3090`, commit
-`2ae51915225d`, official `qwen3_8_27b.ninfer` artifact, SHA-pinned). The
-chassis holds **one RTX 3090 — permanently** — so the engines are compared
-**sequentially on the identical card** by scale-swapping committed replicas
-(`vllm-server: 1/ninfer-server: 0` ↔ `0/1`, one commit each way — see
-`docs/domains/ai-gpu/gpu-scale-swap.md`). Same silicon, same 200 W cap, and
-every swap restarts the engine, so each window starts with a provably cold
-prefix cache. The vLLM control config and everything above this line is
-UNCHANGED — control runs still use `collect.sh` + `report.py` and the verbatim
-Workload A/B prompts. Workload C (Deal Scout digest) stays excluded while its
-application bug stands.
+Tooling (engine-neutral):
 
-The card is power-limited to 200 W by the powerlimit DaemonSet; do not change
-that between the two windows of an A/B without recording it in `context.env`.
-
-### Candidate tooling (parallel, not replacing)
-
-| | Control (vLLM) | Candidate (NInfer) |
-|---|---|---|
-| Collector | `tools/collect.sh` | `tools/collect-ninfer.sh` |
-| Report | `tools/report.py` | `tools/report-ninfer.py` |
-| Server-side source | Prometheus `/metrics` | schema-v8 request-log JSONL (`/logs/serve.requests.jsonl`, emptyDir — collect DURING the run; lost on pod restart) |
-| Endpoint | `https://vllm.vanillax.me/v1`, model `qwen3.8-27b` | `https://ninfer.vanillax.me/v1`, model `qwen3.8-ninfer` |
-
-`tools/openai_probe.py` is the shared streamed client — the same code times
-both engines, so client-side TTFT/decode/E2E are comparable by construction.
-Client-side and server-side numbers are reported separately and never mixed.
-
-### Metric semantics — what is and is not comparable
-
-| Concept | vLLM | NInfer | Comparable? |
-|---|---|---|---|
-| TTFT / prefill / decode | histogram sums (server) | `request_done.timings_seconds` (server) | yes (both server-side) |
-| Decode tok/s | derived from inter-token latency | derived: completion / decode_s | yes (derived, per engine) |
-| Prefix reuse | `prefix_cache_{hits,queries}_total` | per-request `cache_tokens` / `prefix_reuse_path` | approximately (rate vs per-request) |
-| Spec decode acceptance | `spec_decode_num_{accepted,draft}_tokens_total` (MTP2) | `speculative.{accepted,drafted}_tokens` (MTP3) | yes, but draft counts differ (2 vs 3) — compare acceptance %, state the mode |
-| KV usage over time | `kv_cache_usage_perc` gauge | **N/A** — startup KV ledger only | no; report NInfer's ledger + admission behavior |
-| Preemption | recompute preemption counter | **N/A** — concept absent (FIFO full-entitlement admission; overload → 429/503) | no; count queue rejections/timeouts instead |
-| Peak VRAM / util / power | nvidia-smi (powerlimit DS) | nvidia-smi (powerlimit DS) | yes |
-
-Known control/candidate config differences to state with any result: vLLM runs
-MTP2 + FP8 KV + 65,536 context; NInfer starts at MTP3 + INT8 KV + 32,768
-context (the fork's only tested vision profile). These are each engine's
-recommended shapes — the comparison is engine-vs-engine as operated, not
-knob-for-knob identical.
-
-### Order of operations
-
-Every candidate step below happens inside a **NInfer window** (committed swap:
-`ninfer-server: 1`, `vllm-server: 0`); control steps happen inside a **vLLM
-window** (the normal production state). One engine at a time, always.
-
-1. **Control window — baseline A/B half:** with production vLLM up,
-   `collect.sh start ab-control`, then `tools/ab-smallload.sh control`
-   (6,055-token fixed prompt — counted by the live Qwen tokenizer — ~600-token
-   answer, cold then warm, C1). Stop the collector. Note the printed `RUN=` dir.
-2. **Swap to NInfer** (one commit), then **smoke (correctness before speed):**
-   `tools/smoke-ninfer.sh all <image.jpg>` — text stream, thinking on/off,
-   tools (`tool_choice=auto` is the Perplexica-compatibility gate), vision
-   (judge the description content), 16K-context needle. Vision must name
-   details actually present in the image; HTTP 200 is not a pass.
-3. **Candidate A/B half, same window:** `collect-ninfer.sh start ab-candidate`,
-   then `AB_RUN=<dir-from-step-1> tools/ab-smallload.sh candidate`. Stop the
-   collector; run both reports. Then the **real workload**: Workload A
-   (Perplexica: point its custom-OpenAI provider at the NInfer endpoint in its
-   settings UI — config-only, revert after) and Workload B (Pi: add a
-   `vanillax-ninfer` provider to `~/.pi/agent/models.json`,
-   `pi --model qwen3.8-ninfer`) with the VERBATIM prompts above. Note that
-   in-cluster consumers (Open WebUI etc.) are down during a NInfer window —
-   that is inherent to single-card swap. Swap back to vLLM when done.
-4. **Long-context gate (only after 1–3 pass):** raise `--max-context`/
-   `--kv-capacity` through git one step at a time — 65,536 → 131,072 → 153,600
-   → 163,840 — and at each step run `tools/smoke-ninfer.sh context <N>` plus a
-   real Pi session, watching VRAM, TTFT, prefill, decode, MTP acceptance, and
-   the retrieval sanity check from step 6 above. Success is the ~150K-class Pi
-   working set served without truncation/OOM/corruption at acceptable latency —
-   not "server started". A startup KV allocation at some size proves nothing
-   about sustained serving at that size.
+- `tools/openai_probe.py` — one streamed OpenAI client times every engine, so
+  client-side TTFT/decode/E2E are comparable by construction. Also does vision
+  (`--image`), tool-call (`--tools-demo`), reasoning, and synthetic
+  needle-retrieval context tests (`--synthetic-tokens N`).
+- `tools/ab-smallload.sh control|candidate` — fixed 6,055-token prompt
+  (`workloads/ab-6k-prompt.txt`, counted by the Qwen tokenizer), ~600-token
+  answer, cold-then-warm per engine; `AB_RUN=<dir>` joins both windows into one
+  run dir.
+- `tools/collect.sh` — server-side collector; `BENCH_NS/BENCH_APP/BENCH_DEPLOY/
+  BENCH_PORT` select the backend (defaults remain the vLLM app). llama.cpp
+  serves its own `/metrics` with **different metric names and semantics** than
+  vLLM — never compare server-side numbers across engines by name; client-side
+  probe numbers and nvidia-smi are the cross-engine comparables, everything
+  else is per-engine context.
