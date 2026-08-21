@@ -43,9 +43,11 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 128Mi
+            memory: 256Mi
           limits:
-            memory: 512Mi
+            # NFS page cache counts against the cgroup: at 512Mi the container was
+            # repeatedly killed mid-download (~2-3 GiB per attempt, resume proved it).
+            memory: 4Gi
         volumeMounts:
         - name: models
           mountPath: /models
