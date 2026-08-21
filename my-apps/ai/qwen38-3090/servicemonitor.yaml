@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: qwen38-3090
+  namespace: qwen38-3090
+  labels:
+    app: qwen38-3090-server
+spec:
+  selector:
+    matchLabels:
+      app: qwen38-3090-server
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
