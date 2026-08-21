@@ -28,7 +28,7 @@ spec:
       containers:
         - name: hindsight
           # Full (non-slim) image: bundled local embedding + reranker models,
-          # so only the LLM is external (in-cluster vLLM).
+          # so only the LLM is external (in-cluster llama.cpp).
           image: ghcr.io/vectorize-io/hindsight:0.9.1
           imagePullPolicy: IfNotPresent
           env:
@@ -41,15 +41,15 @@ spec:
               value: "postgresql://hindsight:$(POSTGRES_PASSWORD)@hindsight-db:5432/hindsight"
             - name: HINDSIGHT_API_VECTOR_EXTENSION
               value: "pgvector"
-            # Memory-processing LLM: in-cluster vLLM (OpenAI-compatible, free tokens)
+            # Memory-processing LLM: in-cluster llama.cpp (OpenAI-compatible, free tokens)
             - name: HINDSIGHT_API_LLM_PROVIDER
               value: "openai"
             - name: HINDSIGHT_API_LLM_BASE_URL
-              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
+              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
             - name: HINDSIGHT_API_LLM_MODEL
               value: "qwen3.8-27b"
             - name: HINDSIGHT_API_LLM_API_KEY
-              value: "vllm" # vLLM ignores auth; SDK requires a non-empty key
+              value: "llama-cpp" # Server ignores auth; SDK requires a non-empty key
             - name: HINDSIGHT_API_TENANT_API_KEY
               valueFrom:
                 secretKeyRef:

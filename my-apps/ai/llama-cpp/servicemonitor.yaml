@@ -1,14 +1,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: qwen38-3090
-  namespace: qwen38-3090
+  name: llama-cpp
+  namespace: llama-cpp
   labels:
-    app: qwen38-3090-server
+    app: llama-cpp-server
 spec:
   selector:
     matchLabels:
-      app: qwen38-3090-server
+      app: llama-cpp-server
   endpoints:
     - port: http
       path: /metrics
