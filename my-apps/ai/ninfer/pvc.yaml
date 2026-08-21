@@ -1,0 +1,48 @@
+# Static PV — mounts the SAME TrueNAS ai-pool/llama-cpp share as llama-cpp (the
+# RWX model tier with the established in-cluster download pattern), under its own
+# volumeHandle. The 17 GiB .ninfer artifact lives at ninfer/qwen3_8_27b.ninfer on
+# that share; nothing is duplicated into Longhorn.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ninfer-nfs-pv
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+    - nconnect=16
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: ninfer-nfs-pv
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/ai-pool/llama-cpp"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ninfer-models-pvc
+  namespace: ninfer
+  labels:
+    backup-exempt: "true"
+  annotations:
+    # MUST be the fully-qualified key — bare `backup-exempt-reason` is silently ignored.
+    storage.vanillax.dev/backup-exempt-reason: "NFS-backed NInfer model artifact; non-snapshottable, re-downloadable from huggingface.co/neroued/Qwen3.8-27B-NInfer (SHA-pinned download Job)"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 150Gi
+  storageClassName: ""
+  volumeName: ninfer-nfs-pv

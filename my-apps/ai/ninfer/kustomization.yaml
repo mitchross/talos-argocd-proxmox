@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ninfer
+
+resources:
+- namespace.yaml
+- pvc.yaml
+- download-model-job.yaml
+- deployment.yaml
+- service.yaml
+- httproute.yaml
+- vpa.yaml
