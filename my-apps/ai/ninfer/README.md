@@ -1,8 +1,12 @@
-# NInfer-3090 — experimental candidate backend
+# NInfer-3090 — experimental candidate backend (parked, scale-swap)
 
-Side-by-side evaluation of [Don-Chad/ninfer-3090](https://github.com/Don-Chad/ninfer-3090)
-against the production vLLM control, on the second (otherwise free) RTX 3090.
-The vLLM Deployment (`my-apps/ai/vllm/`) is the control and is not touched.
+Evaluation of [Don-Chad/ninfer-3090](https://github.com/Don-Chad/ninfer-3090)
+against the production vLLM control on **the single RTX 3090** (one card is a
+permanent decision). Both engines are measured **sequentially on the identical
+card** by scale-swapping per
+[`gpu-scale-swap.md`](../../../docs/domains/ai-gpu/gpu-scale-swap.md): for a
+test window set this Deployment to `replicas: 1` and `vllm-server` to `0` in
+one commit; reverse it to end the window. Committed default here is `0`.
 **Rollback = revert/delete this directory.** Nothing else references it.
 
 ## Pinned versions

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # First controlled A/B: ~6K-token fixed prompt (workloads/ab-6k-prompt.txt,
 # 6,055 tokens by the live Qwen tokenizer), ~550-600 generated tokens, C1,
-# one GPU per engine, vision LOADED on both servers (request itself is text).
+# both engines on THE SAME single 3090 (sequential swap windows), vision
+# LOADED on both servers (the request itself is text).
 #
 # Per engine, two passes with the byte-identical prompt:
 #   cold  — unique run-id first line => prefix reuse CANNOT hit
@@ -21,10 +22,16 @@ CONTROL_MODEL="${CONTROL_MODEL:-qwen3.8-27b}"
 CANDIDATE_URL="${CANDIDATE_URL:-https://ninfer.vanillax.me/v1}"
 CANDIDATE_MODEL="${CANDIDATE_MODEL:-qwen3.8-ninfer}"
 
+# Single-card cluster: the engines are swapped, never co-resident, so run this
+# once per engine window: `ab-smallload.sh control` while vLLM holds the card,
+# `ab-smallload.sh candidate` while NInfer does. Pass an existing RUN dir as
+# AB_RUN=... for the second window so both engines land in one run dir.
+ENGINES="${1:-control candidate}"
+
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
-OUT="$ROOT/runs/${TS}_ab-smallload"
+OUT="${AB_RUN:-$ROOT/runs/${TS}_ab-smallload}"
 mkdir -p "$OUT"
-TAG="ab-$TS"
+TAG="ab-$(basename "$OUT")"
 
 run_pair() { # engine base_url model
   local engine="$1" url="$2" model="$3"
@@ -38,12 +45,18 @@ run_pair() { # engine base_url model
     > "$OUT/${engine}-warm.json" || true
 }
 
-run_pair control   "$CONTROL_URL"   "$CONTROL_MODEL"
-run_pair candidate "$CANDIDATE_URL" "$CANDIDATE_MODEL"
+for e in $ENGINES; do
+  case "$e" in
+    control)   run_pair control   "$CONTROL_URL"   "$CONTROL_MODEL" ;;
+    candidate) run_pair candidate "$CANDIDATE_URL" "$CANDIDATE_MODEL" ;;
+    *) echo "unknown engine: $e"; exit 1 ;;
+  esac
+done
 
 echo
 printf "%-18s %8s %8s %10s %10s %8s %8s\n" run prompt compl ttft_s decode_tps e2e_s status
 for f in control-cold control-warm candidate-cold candidate-warm; do
+  [ -f "$OUT/$f.json" ] || continue
   python3 - "$OUT/$f.json" "$f" <<'EOF'
 import json, sys
 d = json.load(open(sys.argv[1])); u = d.get("usage") or {}
