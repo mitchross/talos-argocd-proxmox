@@ -125,6 +125,7 @@ Applied by ArgoCD automatically (directory = Application). Files:
 | `namespace.yaml`          | `open-webui` namespace                                           |
 | `open-webui-configmap.env`| **All** env-based config. Source of truth for behavior.          |
 | `deployment.yaml`         | Open WebUI main Deployment (stateful via PVC below)              |
+| `loader.js`               | Formats llama.cpp usage telemetry for the response tooltip       |
 | `pvc.yaml`                | SQLite + uploaded files persist here                             |
 | `service.yaml`            | ClusterIP for HTTPRoute                                          |
 | `httproute.yaml`          | External HTTPRoute to `open-webui.vanillax.me`                   |
