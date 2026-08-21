@@ -6,7 +6,9 @@ metadata:
   annotations:
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    argocd.argoproj.io/sync-wave: "-1"    # artifact must exist before the server pod starts
+    # Wave 0 WITH the PV/PVC (a -1 hook deadlocks: it runs before the PVC exists).
+    # The server Deployment sits at wave 1, so the artifact still lands first.
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   ttlSecondsAfterFinished: 600
   backoffLimit: 4
