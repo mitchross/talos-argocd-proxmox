@@ -4,8 +4,7 @@
 # take the multi-GB layers — RustFS s3aws append limitation).
 #
 # The repo has no release tags and moves fast: this pins a raw commit. Bumping
-# it is a deliberate act — update COMMIT here AND the image tag in
-# deployment.yaml together.
+# it is a deliberate act — update COMMIT here and both manifest image pins.
 set -euo pipefail
 
 COMMIT="e00bc1b7301faed3737783379cace5fa37416e8a"
@@ -20,4 +19,4 @@ git -C "$WORK/src" checkout "$COMMIT"
 docker build -t "$IMAGE" "$WORK/src"
 docker push "$IMAGE"
 docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE"
-echo "Pin the printed digest into deployment.yaml (image: ...@sha256:...)."
+echo "Pin the printed digest into deployment.yaml and model-prep-job.yaml."

@@ -1,6 +1,5 @@
 # Static PV — same TrueNAS ai-pool/llama-cpp RWX model share the other AI apps
-# use, own volumeHandle. The prepare initContainer downloads + requantizes
-# ~22 GB into qwen38-3090/models on this share (CPU-only, idempotent).
+# use, own volumeHandle. The prep Job writes uniquely named model directories.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

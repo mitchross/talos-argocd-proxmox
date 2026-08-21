@@ -14,13 +14,13 @@ and tuned single-user/batch launch profiles for one RTX 3090. Evaluated
 | What | Value |
 |---|---|
 | Upstream commit | `e00bc1b7301faed3737783379cace5fa37416e8a` (no release tags; repo moves daily — bumps are deliberate, via `build.sh` + the image tag together) |
-| Image | `ghcr.io/mitchross/qwen38-27b-3090:e00bc1b7` (built by `build.sh` from the repo's Dockerfile: CUDA 13.0.1-base, vLLM 0.27.1/torch 2.13 cu130, patches applied at build) |
+| Image | `ghcr.io/mitchross/qwen38-27b-3090:e00bc1b7@sha256:b27437a66e1870a8b9caec7cc148eaad52a127f815a6222d3d032e0c71da35a8` (built and published by `build.sh` from the pinned source) |
 | Base model | `dbirks/Qwen3.8-27B-W4A16-AutoRound` (~19.5 GB) — same checkpoint lineage as production; the CPU-only `prepare` step requantizes lm_head/embed/MTP to int8, builds the 40k draft vocab, and fetches the int4 `-fast` variant + the W4A16 DFlash2 drafter (~1 GB each) |
 
 ## Verified facts (read from the pinned commit, not the README hype)
 
-- `prepare` is **CPU-only and idempotent** — it runs as an initContainer here;
-  no GPU window needed to stage the model.
+- `prepare` is **CPU-only and idempotent**. A wave-0 Sync hook Job stages the
+  model before the wave-1 Deployment, without reserving the only GPU.
 - The serve command hardcodes **`--language-model-only`: this candidate is
   text-only.** Vision comparisons vs the control are N/A — state that in every
   result.
@@ -30,6 +30,8 @@ and tuned single-user/batch launch profiles for one RTX 3090. Evaluated
 - It exposes normal vLLM Prometheus `/metrics` on the serve port, so the
   benchmark harness's **control tooling works on it** (`collect.sh` with
   `BENCH_NS/BENCH_APP/BENCH_PORT` overrides).
+- `EXTRA_ARGS` restores the production API contract: `qwen3_coder` automatic
+  tools, thinking off by default, Qwen's non-thinking sampling, and stream usage.
 - Upstream documents the trap for exactly our topology: **under VM GPU
   passthrough, uncaptured (PIECEWISE) verify steps cost 2–3×** (launch-bound).
   The initial profile below stays on captured paths. Also their gotcha 37:
@@ -47,6 +49,11 @@ probabilistic drafts — speculation is exact), **CTX=fast** (bf16 KV,
 runs prefix caching), GPU_UTIL 0.93, 8 slots, port 18020. `verify.sh` gates
 startup. The `-fast` model variant (int4 lm_head/MTP + own-output draft vocab)
 is auto-selected once `prepare` has staged it.
+
+The prep Job mounts the established RWX llama.cpp model share at `/app/models`;
+upstream's uniquely named directories live at that share root. The serving
+container mounts the same PVC read-only. Do not move preparation back into an
+init container: a scaled-up pod reserves the GPU while init containers run.
 
 Later ladder steps (one git change at a time, measured before the next):
 `CTX=long` (fp8 KV, 150k — the Pi working-set test), `SPEC=dflash2`
