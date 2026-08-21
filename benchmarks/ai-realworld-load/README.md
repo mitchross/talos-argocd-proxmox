@@ -265,3 +265,74 @@ optional LLM leg. It is **best-effort by design** — that is exactly why the de
 `qwen3.6-27b` id produced no error for months, just silently factual digests. If
 `.model` in the response is null, the LLM leg did not run and Workload C
 contributed no load.
+
+---
+
+## Engine A/B — vLLM control vs NInfer-3090 candidate
+
+The candidate is `my-apps/ai/ninfer/` (NInfer-3090 `v0.6.0-rtx3090`, commit
+`2ae51915225d`, official `qwen3_8_27b.ninfer` artifact, SHA-pinned) on the
+second 3090. The vLLM control and everything above this line is UNCHANGED —
+control runs still use `collect.sh` + `report.py` and the verbatim Workload A/B
+prompts. Workload C (Deal Scout digest) stays excluded while its application
+bug stands.
+
+Both cards are power-limited to 200 W by the powerlimit DaemonSet; do not
+change that during an A/B without recording it in `context.env`.
+
+### Candidate tooling (parallel, not replacing)
+
+| | Control (vLLM) | Candidate (NInfer) |
+|---|---|---|
+| Collector | `tools/collect.sh` | `tools/collect-ninfer.sh` |
+| Report | `tools/report.py` | `tools/report-ninfer.py` |
+| Server-side source | Prometheus `/metrics` | schema-v8 request-log JSONL (`/logs/serve.requests.jsonl`, emptyDir — collect DURING the run; lost on pod restart) |
+| Endpoint | `https://vllm.vanillax.me/v1`, model `qwen3.8-27b` | `https://ninfer.vanillax.me/v1`, model `qwen3.8-ninfer` |
+
+`tools/openai_probe.py` is the shared streamed client — the same code times
+both engines, so client-side TTFT/decode/E2E are comparable by construction.
+Client-side and server-side numbers are reported separately and never mixed.
+
+### Metric semantics — what is and is not comparable
+
+| Concept | vLLM | NInfer | Comparable? |
+|---|---|---|---|
+| TTFT / prefill / decode | histogram sums (server) | `request_done.timings_seconds` (server) | yes (both server-side) |
+| Decode tok/s | derived from inter-token latency | derived: completion / decode_s | yes (derived, per engine) |
+| Prefix reuse | `prefix_cache_{hits,queries}_total` | per-request `cache_tokens` / `prefix_reuse_path` | approximately (rate vs per-request) |
+| Spec decode acceptance | `spec_decode_num_{accepted,draft}_tokens_total` (MTP2) | `speculative.{accepted,drafted}_tokens` (MTP3) | yes, but draft counts differ (2 vs 3) — compare acceptance %, state the mode |
+| KV usage over time | `kv_cache_usage_perc` gauge | **N/A** — startup KV ledger only | no; report NInfer's ledger + admission behavior |
+| Preemption | recompute preemption counter | **N/A** — concept absent (FIFO full-entitlement admission; overload → 429/503) | no; count queue rejections/timeouts instead |
+| Peak VRAM / util / power | nvidia-smi (powerlimit DS) | nvidia-smi (powerlimit DS) | yes |
+
+Known control/candidate config differences to state with any result: vLLM runs
+MTP2 + FP8 KV + 65,536 context; NInfer starts at MTP3 + INT8 KV + 32,768
+context (the fork's only tested vision profile). These are each engine's
+recommended shapes — the comparison is engine-vs-engine as operated, not
+knob-for-knob identical.
+
+### Order of operations
+
+1. **Smoke (correctness before speed):** `tools/smoke-ninfer.sh all <image.jpg>`
+   — text stream, thinking on/off, tools (`tool_choice=auto` is the
+   Perplexica-compatibility gate), vision (judge the description content),
+   16K-context needle. Vision must name details actually present in the image;
+   HTTP 200 is not a pass.
+2. **First controlled A/B:** start `collect.sh start ab-control` and
+   `collect-ninfer.sh start ab-candidate`, then `tools/ab-smallload.sh`
+   (6,055-token fixed prompt — counted by the live Qwen tokenizer — ~600-token
+   answer, cold then warm, C1, vision loaded on both servers). Stop both
+   collectors; run both reports.
+3. **Real workload on the candidate:** re-run Workload A (Perplexica: point its
+   custom-OpenAI provider at the NInfer endpoint in Perplexica's settings UI —
+   config-only, revert after) and Workload B (Pi: add a `vanillax-ninfer`
+   provider to `~/.pi/agent/models.json`, `pi --model qwen3.8-ninfer`) with the
+   VERBATIM prompts above. Restart the ninfer pod first for a cold prefix store.
+4. **Long-context gate (only after 1–3 pass):** raise `--max-context`/
+   `--kv-capacity` through git one step at a time — 65,536 → 131,072 → 153,600
+   → 163,840 — and at each step run `tools/smoke-ninfer.sh context <N>` plus a
+   real Pi session, watching VRAM, TTFT, prefill, decode, MTP acceptance, and
+   the retrieval sanity check from step 6 above. Success is the ~150K-class Pi
+   working set served without truncation/OOM/corruption at acceptable latency —
+   not "server started". A startup KV allocation at some size proves nothing
+   about sustained serving at that size.
