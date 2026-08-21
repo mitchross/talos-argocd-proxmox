@@ -285,6 +285,23 @@ application bug stands.
 The card is power-limited to 200 W by the powerlimit DaemonSet; do not change
 that between the two windows of an A/B without recording it in `context.env`.
 
+### Candidate #2 — qwen38-3090 (syv-ai patched vLLM)
+
+`my-apps/ai/qwen38-3090/` (pinned commit `e00bc1b7`) is **vLLM 0.27.1 with
+upstream patches** — so unlike NInfer it speaks normal vLLM Prometheus, and the
+CONTROL tooling collects it directly:
+
+```bash
+BENCH_NS=qwen38-3090 BENCH_APP=qwen38-3090-server \
+BENCH_DEPLOY=qwen38-3090-server BENCH_PORT=18020 ./tools/collect.sh start qwen38-window
+```
+
+Same swap-window procedure as below with `CANDIDATE_URL=https://qwen38.vanillax.me/v1
+CANDIDATE_MODEL=qwen3.8-27b` for `ab-smallload.sh candidate`. Two comparison
+caveats stated up front: this candidate is **text-only** (`--language-model-only`
+is hardcoded upstream — vision rows are N/A), and upstream's published numbers
+were measured at **250 W** against our 200 W cap.
+
 ### Candidate tooling (parallel, not replacing)
 
 | | Control (vLLM) | Candidate (NInfer) |
