@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ns.yaml
   - coral-tpu-rule.yaml
+  - zigbee-dongle-rule.yaml
   # The Intel-specific rules are not needed for NVIDIA GPU discovery
   # and have been removed. NFD's default PCI source handles NVIDIA.
 # https://kubernetes-sigs.github.io/node-feature-discovery/v0.16/deployment/helm.html

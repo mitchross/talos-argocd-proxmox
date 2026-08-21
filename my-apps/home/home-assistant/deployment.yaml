@@ -29,11 +29,10 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       # Add restart policy for better reliability
       restartPolicy: Always
-      # Pin to the general worker (VM 101), where the SONOFF Zigbee dongle is
-      # USB-passed and cp210x exposes /dev/ttyUSB0. The hostPath device mount
-      # below only resolves on this node.
+      # Follow the Zigbee dongle: NFD labels whichever node it is USB-passed to
+      # (zigbee-dongle-rule). A hardcoded node class breaks when the dongle moves VMs.
       nodeSelector:
-        node.vanillax.dev/class: general-worker
+        feature.node.kubernetes.io/custom-usb.zigbee-coordinator: "true"
       initContainers:
         - name: copy-config
           image: alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
@@ -140,10 +139,8 @@ spec:
         - name: config-files
           configMap:
             name: config
-        # SONOFF Zigbee dongle char device on the general-worker node. cp210x must
-        # be loaded (Talos single-node-gpu.yaml) for this to exist. If the path
-        # ever shifts (e.g. a second serial device), switch to the stable
-        # /dev/serial/by-id/usb-… symlink target.
+        # SONOFF Zigbee dongle char device (cp210x). If a second serial device ever
+        # appears, switch to the stable /dev/serial/by-id/usb-… symlink target.
         - name: zigbee-dongle
           hostPath:
             path: /dev/ttyUSB0
