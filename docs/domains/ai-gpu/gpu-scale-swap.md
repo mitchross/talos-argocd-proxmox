@@ -1,6 +1,6 @@
 # GPU scale-swap runbook
 
-How to change which workload owns the two RTX 3090s — safely, via git, in one
+How to change which workload owns the sole RTX 3090 — safely, via git, in one
 commit. This is the canonical procedure; the one-liners scattered in the
 manifests all point here.
 
@@ -26,27 +26,18 @@ Two things make this safe by construction:
 
 | App | Cards | `replicas` in git (current) | File |
 |---|---|---|---|
-| **vLLM** (Qwen 3.8 W4A16, active) | **1** | `1` | `my-apps/ai/vllm/deployment.yaml` |
-| **llama-cpp** (Qwen 3.8 GGUF, parked) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
+| **llama-cpp** (Qwen 3.8 UD-IQ4_XS, active) | **1** | `1` | `my-apps/ai/llama-cpp/deployment.yaml` |
+| **vLLM** (Qwen 3.8 W4A16, rollback) | 1 | `0` | `my-apps/ai/vllm/deployment.yaml` |
 | **NInfer-3090** (Qwen 3.8 .ninfer, parked candidate) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
-| **qwen38-3090** (syv-ai patched-vLLM stack, parked candidate under evaluation) | 1 | `0` | `my-apps/ai/qwen38-3090/deployment.yaml` |
 | **ComfyUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | **SwarmUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (batch benchmark **Jobs**, not always-on) | 1 or 2 | n/a | `my-apps/ai/llmfit/` |
 
-> **Single-card reality (2026-08-21, permanent):** the chassis now holds ONE
-> RTX 3090 — the second card is not coming back. Until the table below is
-> rewritten, read every "≤ 2 cards" rule as **exactly one `replicas: 1` row**.
+> **Single-card reality (2026-08-21, permanent):** the chassis holds one RTX
+> 3090. A valid state has exactly one `replicas: 1` GPU Deployment.
 
-A valid target state is any set of `replicas: 1` rows whose **card total ≤ 2**.
-Working combos: vLLM (1 card) + one other single-card app · vLLM alone ·
-llama-cpp + one image-gen app (1+1) · llama-cpp alone · one image-gen app alone.
-
-vLLM currently requests **one** card, so a second single-card workload fits
-alongside it without a swap. Restoring the two-card vLLM configuration
-(`--tensor-parallel-size 2`, `nvidia.com/gpu: 2`) requires every other GPU app
-to be at `replicas: 0` first — see
-[`single-vs-dual-3090.md`](single-vs-dual-3090.md).
+There are no valid two-workload combinations. The dual-GPU llmfit Job cannot
+run on this chassis.
 
 > **Image gen: ComfyUI vs SwarmUI — decision pending.** ComfyUI's manifest is
 > marked *retired, replaced by SwarmUI* (SwarmUI self-starts its own ComfyUI),
@@ -57,7 +48,7 @@ to be at `replicas: 0` first — see
 
 ## The procedure
 
-1. **Pick the target state** from the truth table (card total ≤ 2).
+1. **Pick the target state** from the truth table (exactly one active row).
 2. **Edit the `replicas:` values in ONE commit** — outgoing app(s) to `0`,
    incoming app(s) to `1`, in their `deployment.yaml` files. One commit means
    ArgoCD applies both sides together and the scheduler sequences the rest.
@@ -70,7 +61,7 @@ to be at `replicas: 0` first — see
 
 ```bash
 # Old pod gone, new pod Running
-kubectl -n vllm get pods; kubectl -n llama-cpp get pods
+kubectl -n llama-cpp get pods; kubectl -n vllm get pods
 kubectl -n comfyui get pods; kubectl -n swarmui get pods
 
 # Who actually holds the cards (run inside the power-limit admin DaemonSet,
@@ -78,22 +69,18 @@ kubectl -n comfyui get pods; kubectl -n swarmui get pods
 kubectl -n gpu-operator exec ds/nvidia-powerlimit -- nvidia-smi
 
 # Endpoint answers (from any in-cluster pod)
-curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
+curl -s http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/models
 ```
 
 ## Side effects to expect
 
-- **Scaling llama-cpp to 0** → the external route `llama.vanillax.me` returns
-  "no healthy upstream" until it's scaled back up. Expected, not an outage.
-- **Scaling vLLM to 0** → every app pointing at `vllm-service` loses its
-  inference backend, including Open WebUI, Perplexica and Deal Scout. Treat
-  vLLM-down as "apps degraded" and keep the window short.
+- **Scaling llama-cpp to 0** → every Qwen consumer loses inference, including
+  Open WebUI, Perplexica, and Deal Scout. Treat it as an app-degraded window.
 - **ComfyUI's vision→image workflow needs llama-cpp too** — it calls the
   llama-cpp multimodal endpoint for vision. Bringing up ComfyUI alone leaves
-  its vision/caption nodes failing against a dead service. That combo is a
-  **two-app bring-up**: ComfyUI (1 card) + llama-cpp (1 card) = both cards.
-- **llmfit Jobs** need free cards to schedule; the dual-GPU job can only run
-  when everything else is at 0.
+  its vision/caption nodes failing against a dead Service. With one card, that
+  combined workflow cannot run concurrently.
+- **llmfit Jobs** need the active server parked first; only single-GPU Jobs fit.
 
 ## Don'ts
 
@@ -110,5 +97,5 @@ curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
   raising it needs an electrical decision, not just a performance one.
 
 Related: [model catalog](model-catalog.md) (who points at what) ·
-[3090 LLM optimization](3090-llm-optimization.md) (why vLLM TP=2 is the
-default) · `my-apps/ai/CLAUDE.md` (GPU workload pattern).
+[3090 LLM optimization](3090-llm-optimization.md) · `my-apps/ai/CLAUDE.md`
+(GPU workload pattern).

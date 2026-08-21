@@ -1,12 +1,14 @@
-# vLLM — Qwen3.8-27B on one RTX 3090
+# vLLM — parked Qwen3.8-27B rollback
 
-This ArgoCD-discovered app serves `qwen3.8-27b` from one 24 GiB RTX 3090 at:
+This ArgoCD-discovered app is retained at `replicas: 0` as a rollback backend.
+The active `qwen3.8-27b` service is llama.cpp; no consumer or HTTPRoute points
+at this Deployment.
 
 - in cluster: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- on the LAN: `https://vllm.vanillax.me/v1`
+- no direct LAN route; `vllm.vanillax.me` is a compatibility hostname on the active llama.cpp route
 
-The second 3090 remains available for another whole-card workload. GPU
-time-slicing is disabled, and both the request and limit are exactly one GPU.
+The chassis has one RTX 3090. Scale llama.cpp to zero in the same commit before
+restoring this Deployment to one replica.
 
 ## Model and storage
 

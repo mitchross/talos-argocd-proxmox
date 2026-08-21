@@ -1,8 +1,8 @@
 # One 3090 vs two for Qwen3.8-27B
 
-vLLM serves Qwen3.8-27B on a **single RTX 3090**. The second card is free.
-This page records what that costs, what it does not cost, and the rules that
-follow.
+The active backend is now the club-3090 llama.cpp single-card route. This page
+preserves the earlier stock-vLLM one-vs-two-card benchmark; it is historical
+evidence, not the current serving profile.
 
 The swap procedure lives in [`gpu-scale-swap.md`](gpu-scale-swap.md); model
 inventory and app wiring live in [`model-catalog.md`](model-catalog.md).

@@ -1,81 +1,67 @@
 # AI model catalog
 
-Current model inventory, runtime ownership, and app wiring for the local
-chat-model paths. The GPU swap procedure lives in
-[`gpu-scale-swap.md`](gpu-scale-swap.md); the single-card capacity result lives
-in [`single-vs-dual-3090.md`](single-vs-dual-3090.md).
+Current model inventory, runtime ownership, and app wiring for local chat
+inference. The GPU swap procedure lives in
+[`gpu-scale-swap.md`](gpu-scale-swap.md).
 
 ## Current state
 
 | Backend | Replicas | Cards | Served model | Status |
 |---|---:|---:|---|---|
-| vLLM | `1` | **1** | `qwen3.8-27b` | Active backend for every app |
-| llama.cpp | `0` | 1 | Qwen 3.8-27B GGUF | Parked |
-| ComfyUI / SwarmUI | `0` | 1 | Image-generation models on SMB | Parked |
+| llama.cpp | `1` | **1** | `qwen3.8-27b` | Active backend for every app |
+| vLLM | `0` | 1 | `qwen3.8-27b` | Parked rollback |
+| NInfer | `0` | 1 | `qwen3.8-ninfer` | Parked evaluation |
+| ComfyUI / SwarmUI | `0` | 1 | Image generation | Parked |
 
-vLLM holds **one** RTX 3090. The second card is unallocated and available for
-another whole-card workload.
+The chassis has one RTX 3090. Exactly one GPU Deployment may have
+`replicas: 1`.
 
-## vLLM
+## Active Qwen3.8 backend
 
-Serves a single canonical model id, `qwen3.8-27b`, from
-`Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead` on the read-only
-`192.168.10.133:/mnt/ai-pool/vllm` share at `/models`.
+llama.cpp follows `club-3090/docs/SINGLE_CARD.md` at commit `4e6c3363` and
+serves one canonical id, `qwen3.8-27b`:
 
-The checkpoint is W4A16 AutoRound with `lm_head` requantized to INT8 group-128
-and `embed_tokens` left BF16. That combination loads on **stock** vLLM:
-`qwen3_5.py` already passes `quant_config` to `ParallelLMHead`, and
-`ParallelLMHead` is routed to the linear WNA16 path, which supports 8 bits.
-Only quantizing `embed_tokens` would require a patched image.
+| Property | Value |
+|---|---|
+| Engine | mainline llama.cpp `server-cuda-b10236` |
+| Weights | Unsloth `Qwen3.8-27B-UD-IQ4_XS.gguf` |
+| Vision | `mmproj-F16.gguf` |
+| KV | symmetric q8_0 K/V |
+| Context allocation | 131,072 tokens |
+| Concurrency | one parallel slot |
+| Speculation | embedded MTP head, depth 2 |
+| Default mode | reasoning off; temp 0.7, top-p 0.8, top-k 20 |
 
-The checkpoint is natively multimodal and the vision tower is enabled. The
-single-card profile allows one image and no video per prompt and caps requests
-at 65,536 tokens to leave room for the roughly 2.7 GiB vision tower. This is a
-conservative boot profile, not a measured maximum; use the startup cache-pool
-log and live image/long-context tests before raising it.
+The club-3090 slug defaults to q4_0 KV at 262K as a maximum-context exhibit.
+This cluster uses the guide's serving-grade q8_0 / 131K override. The 200 W
+power cap remains mandatory.
 
-## Storage boundaries
+## Storage and staging
 
-The model stores are intentionally separate:
+The wave-0 Sync hook downloads the GGUF and F16 projector from the pinned
+Hugging Face revision, verifies their SHA-256 digests, and writes them to
+`192.168.10.133:/mnt/ai-pool/llama-cpp`. The wave-1 server mounts that share
+read-only.
 
-- vLLM mounts `192.168.10.133:/mnt/ai-pool/vllm` **read-only** at `/models`.
-  Writing to it requires a separate read-write mount; the share is exported to
-  the cluster subnet.
-- llama.cpp mounts `192.168.10.133:/mnt/ai-pool/llama-cpp` at `/models`.
-- SMB `//192.168.10.133/comfyui` is image-generation storage, unrelated to the
-  chat-model catalog.
-
-Do not delete unused NAS files as part of API-catalog cleanup. A llama.cpp model
-is selectable only when it has a preset in `my-apps/ai/llama-cpp/presets.ini`.
-
-## llama.cpp API catalog (parked)
-
-When scaled up, llama.cpp advertises two presets over one GGUF and projector:
-
-| API model | Thinking | Sampling | Use |
-|---|---|---|---|
-| `qwen3.8` | Enabled | `temp=1.0`, `top_p=0.95`, `top_k=20` | Chat and vision |
-| `qwen3.8-nothink` | Disabled | `temp=0.7`, `top_p=0.8`, `top_k=20`, `presence_penalty=1.5` | Title/tag tasks |
-
-`--models-max 1` keeps one preset process resident. Switching between the two
-can reload the same weights even though both point at one file, so keep
-interactive traffic on `qwen3.8`.
+The vLLM model share and compile cache remain intact for rollback. The retired
+syv-ai `qwen38-3090` application was removed; ArgoCD prunes its namespace and
+Longhorn compile-cache PVC, while the shared NFS model store remains retained.
 
 ## App wiring
 
-`my-apps/ai/open-webui/open-webui-configmap.env` is authoritative for Open WebUI
-and points at `vllm-service` with `qwen3.8-27b` for default, vision and task
-models. `ENABLE_PERSISTENT_CONFIG=False` prevents stale database settings from
-overriding GitOps configuration.
+All deployed consumers use:
 
-`VISION_MODELS=qwen3.8-27b` therefore uses the same active vLLM endpoint for
-image understanding. Karakeep also uses `qwen3.8-27b` for both text and image
-inference. Consumer model ids are rolled together with serving-id changes so a
-retired id cannot silently 404.
+- endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
+- model: `qwen3.8-27b`
+
+This includes Open WebUI, Perplexica, LiteLLM, Hindsight, Presenton, HolmesGPT,
+Keep, Karakeep, World Monitor, Project NOMAD, News Reader, Deal Scout, and the
+n8n Qwen workflows. The compatibility hostname `https://vllm.vanillax.me/v1`
+now routes to the same llama.cpp Service so external clients do not need an
+immediate endpoint migration.
 
 ## Changing the served model
 
-The served id is `--served-model-name` in `my-apps/ai/vllm/deployment.yaml`.
-Keep it to a single canonical id so model selectors are not cluttered with
-aliases, and roll every consumer in the same change — a renamed id silently
-404s for anything left behind.
+The served id is `--alias` in `my-apps/ai/llama-cpp/deployment.yaml`. Roll every
+consumer in the same change if it changes: several background jobs treat LLM
+failures as best-effort and otherwise fail silently.

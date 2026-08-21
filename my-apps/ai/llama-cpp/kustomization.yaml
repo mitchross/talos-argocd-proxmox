@@ -6,15 +6,9 @@ namespace: llama-cpp
 resources:
   - namespace.yaml
   - pvc.yaml
+  - download-model-job.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
-
-# Hash-suffixed ConfigMap so any presets.ini change forces a Deployment
-# rollout (Kustomize rewrites the volume reference in deployment.yaml to
-# the new hashed name). llama-server reads presets.ini once at startup
-# and won't pick up changes without a restart.
-configMapGenerator:
-  - name: llama-cpp-config
-    files:
-      - presets.ini
+  - servicemonitor.yaml
+  - vpa.yaml

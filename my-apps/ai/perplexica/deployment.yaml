@@ -84,9 +84,8 @@ spec:
           # based result filtering + chunked context management that keeps
           # prompts bounded.
           #
-          # Backend model: this app selects the canonical vLLM `qwen3.8-27b`
-          # served-model-name from config.json. vLLM currently caps context at
-          # 64K via --max-model-len; the embedding result-filter keeps prompts
+          # Backend model: this app selects llama.cpp's canonical `qwen3.8-27b`
+          # alias from config.json. The server caps context at 131K; the filter keeps prompts
           # under that ceiling.
           image: itzcrazykns1337/vane:slim-v1.12.2@sha256:d2878cf9c91962aa3fc053b59bc9b89adcbdcaeb7ee36b54906e853464b2c190
           ports:
@@ -97,7 +96,7 @@ spec:
             - name: SEARXNG_API_URL
               value: "http://searxng.searxng.svc.cluster.local:8080"
             - name: OPENAI_BASE_URL
-              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
+              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
             - name: OPENAI_API_KEY
               value: "sk-no-key-required"
           volumeMounts:

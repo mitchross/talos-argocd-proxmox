@@ -11,9 +11,9 @@ import numpy as np
 from PIL import Image
 
 _DEFAULT_SERVER = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
-# Qwen 3.8 multimodal (UD-Q4_K_XL + mmproj-BF16) — one model for both
+# Qwen 3.8 multimodal (UD-IQ4_XS + mmproj-F16) — one model for both
 # image-to-prompt captioning and any tool/text chain that follows.
-_DEFAULT_MODEL = "qwen3.8"
+_DEFAULT_MODEL = "qwen3.8-27b"
 
 
 def _image_to_base64(image_tensor):

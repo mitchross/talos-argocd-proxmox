@@ -63,7 +63,7 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 | **Prometheus** | `monitoring/prometheus-stack/` | Metrics storage, alerting, Grafana |
 | **Loki** | `monitoring/loki-stack/` | Log storage (S3 on RustFS) |
 | **Tempo** | `monitoring/tempo/` | Trace storage (S3 on RustFS) |
-| **k8sgpt** | `monitoring/k8sgpt/` | AI cluster diagnostics via vLLM (`qwen3.6-27b`) |
+| **HolmesGPT** | `monitoring/holmesgpt/` | AI cluster diagnostics via llama.cpp (`qwen3.8-27b`) |
 | **Trivy Operator** | `monitoring/trivy-operator/` | Conservative vulnerability + exposed-secret scanning |
 | **pod-cleanup** | `monitoring/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
 

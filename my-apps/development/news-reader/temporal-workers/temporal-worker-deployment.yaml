@@ -113,7 +113,7 @@ spec:
           # code only provides defaults for local/standalone execution.
           env:
             - name: LLM_URL
-              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions"
+              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions"
             - name: LLM_MODEL
               value: "qwen3.8-27b"
             - name: REDDIT_FRONTEND
