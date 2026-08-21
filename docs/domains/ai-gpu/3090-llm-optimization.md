@@ -1,25 +1,16 @@
 # 3090 LLM Optimization — Topology, Models, and Context Strategy
 
-> **Status:** design + staged config. Authoritative for local-LLM serving
-> decisions on the dual-RTX-3090 GPU node. Cross-references the community
+> **Status:** historical analysis. Current serving truth is in
+> [`model-catalog.md`](model-catalog.md). This page cross-references the community
 > [`noonghunna/club-3090`](https://github.com/noonghunna/club-3090) recipe repo,
-> which this cluster's hardware (2× RTX 3090) directly matches.
+> recipe used for the active single-card configuration.
 >
-> Last updated: 2026-08-19 (current-state banner; historical analysis retained).
+> Last updated: 2026-08-21 (current-state banner; historical analysis retained).
 >
-> ⚠️ **Superseded topology:** the live backend is **vLLM serving
-> `qwen3.8-27b` on a SINGLE 3090** (TP=1, W4A16 + INT8 `lm_head`, 65,536-token
-> request ceiling with MTP-2 and vision enabled for one image). Both the "llama.cpp single-card steady state"
-> framing and any `TP=2` / `qwen3.6-27b` / `262K` reference below are stale —
-> see [`model-catalog.md`](model-catalog.md) and
-> [`single-vs-dual-3090.md`](single-vs-dual-3090.md). llama-cpp and the
-> image-gen apps are scaled to 0. The engine analysis below remains correct
-> per-configuration;
-> the MTP "skip" verdict applied to single-card llama.cpp only — under the
-> now-live vLLM TP=2 it IS the documented win (149 → 179 narr / 264 code TPS
-> with MTP-3; club-3090's default dual recipe is AutoRound INT4 + MTP n=3).
-> See also the power section at the bottom: this node is now on a measured
-> wind-down roadmap.
+> ⚠️ **Current topology:** llama.cpp serves `qwen3.8-27b` on the sole RTX 3090
+> using UD-IQ4_XS, F16 vision, q8_0 KV at 131K, and embedded MTP-2. vLLM and
+> image generation are parked. Any dual-card, Qwen3.6, or old preset statement
+> below is historical unless repeated in the model catalog.
 
 ## TL;DR
 

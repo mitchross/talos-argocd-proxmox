@@ -2,25 +2,20 @@
 
 ## LLM Backend
 
-One OpenAI-compatible local backend, **NOT ollama**:
+One active OpenAI-compatible local backend, **NOT ollama**:
 
-### vLLM — active, single card
-- Endpoint: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- Served model: **`qwen3.8-27b`** — Qwen3.8-27B W4A16 AutoRound with INT8
-  group-128 `lm_head`, BF16 `embed_tokens`, FP8 KV, on **one** RTX 3090 (TP=1).
-- **Multimodal**: the vision tower is enabled, with one image and no video
-  allowed per prompt to bound one-card VRAM use.
-- **Use vLLM / `qwen3.8-27b` when wiring an in-cluster app to chat inference.**
+### llama.cpp — active, single card
+- Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
+- Served model: **`qwen3.8-27b`** — Qwen3.8-27B UD-IQ4_XS with F16 vision,
+  symmetric q8_0 KV at 131K, and MTP-2 on **one** RTX 3090.
+- **Use llama.cpp / `qwen3.8-27b` when wiring an in-cluster app to chat inference.**
 
-### llama-cpp — parked
-- `replicas: 0`. Endpoint `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`.
-- Serves Qwen3.8-27B GGUF plus a vision projector when scaled up; advertises
-  `qwen3.8` and `qwen3.8-nothink`. It is an alternate GGUF backend and may be
-  scaled up only via the swap procedure.
+### vLLM — parked rollback
+- `replicas: 0`; do not point consumers at `vllm-service` while parked.
 
-All in-cluster vLLM consumers request `qwen3.8-27b`, including Karakeep text and
-image inference. ComfyUI's dedicated llama.cpp-client workflow still requests
-`qwen3.8` because that integration calls the parked llama.cpp Service directly.
+All in-cluster consumers request `qwen3.8-27b`, including Karakeep text and
+image inference. ComfyUI's dedicated llama.cpp-client workflow also uses this
+active Service.
 
 **App→backend wiring + capacity rules:
 [`model-catalog.md`](../../docs/domains/ai-gpu/model-catalog.md) ·
@@ -31,17 +26,14 @@ image inference. ComfyUI's dedicated llama.cpp-client workflow still requests
   Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
   Qwen3-Coder docs' q8-K/q4-V suggestion.
 - **Context limit = `min(model max, VRAM-affordable KV)`.** The live MTP profile
-  uses a 65536 ceiling at 0.90 utilization with vision enabled; read `GPU KV cache size` from the
-  boot log after every restart rather than predicting it. Historical non-MTP
-  measurements are in
+  allocates 131072 tokens with q8_0 KV and vision; confirm `n_ctx_slot` and loaded
+  VRAM after every restart. Historical vLLM measurements are in
   [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
-- **Engine choice:** Qwen 3.8 runs on vLLM via W4A16 AutoRound with an INT8
-  `lm_head`, which stock vLLM loads unpatched, including its vision tower.
-  llama.cpp GGUF is the alternate backend.
-- **MTP/spec-decode gives NO net speedup** on Ampere + 35B-A3B under llama.cpp
-  (same-hw benchmark). The live single-card vLLM profile enables MTP-2, but its
-  acceptance and throughput must be verified from metrics and two warm runs.
+- **Engine choice:** Qwen 3.8 runs on llama.cpp via UD-IQ4_XS GGUF and the F16
+  projector. The stock-vLLM W4A16 deployment is a parked rollback.
+- **MTP-2 is inherited from the club-3090 profile.** Verify acceptance and
+  throughput from metrics and two warm runs before tuning its depth.
 - **TurboQuant `turbo3` KV** (≈5x smaller) is coming to mainline llama.cpp
   (PR #21089) — adopt it then for cheap big context.
 
@@ -58,8 +50,8 @@ The production AI workloads are pinned to the existing `gpu-worker=true`
 label. The Wi-Fi Dell worker is CPU-only and deliberately does not carry that
 label, so it cannot receive these 24/48-GiB model workloads.
 
-- **Current state:** vLLM `replicas: 1` holding **one** card; llama-cpp,
-  ComfyUI and SwarmUI `0`. One 3090 is free for a second single-card workload.
+- **Current state:** llama-cpp `replicas: 1` holding the **sole** card; vLLM,
+  ComfyUI and SwarmUI are `0`.
   (Current, not permanent — flip the committed replica counts to swap which
   workload owns the cards. Full procedure + card truth table:
   [`docs/domains/ai-gpu/gpu-scale-swap.md`](../../docs/domains/ai-gpu/gpu-scale-swap.md).)

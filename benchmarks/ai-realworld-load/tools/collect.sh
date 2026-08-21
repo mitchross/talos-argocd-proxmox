@@ -20,10 +20,8 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNS="$ROOT/runs"
 STATE="$ROOT/.current-run"
-# Defaults target the production vLLM control. The qwen38-3090 candidate is
-# ALSO vLLM (syv-ai patched stack, same /metrics), so candidate runs reuse this
-# collector via: BENCH_NS=qwen38-3090 BENCH_APP=qwen38-3090-server \
-#   BENCH_DEPLOY=qwen38-3090-server BENCH_PORT=18020 collect.sh start <label>
+# Defaults preserve the historical vLLM control. BENCH_* overrides can target
+# another backend only when it exposes the same vLLM metrics contract.
 NS=${BENCH_NS:-vllm}
 APP=${BENCH_APP:-vllm-server}
 DEPLOY=${BENCH_DEPLOY:-vllm-server}

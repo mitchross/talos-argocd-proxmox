@@ -60,10 +60,10 @@ backend:
       memory: 1Gi
   provision:
     providers:
-      vllm-local:
+      llama-cpp-local:
         type: vllm
         authentication:
-          api_url: http://vllm-service.vllm.svc.cluster.local:8080/v1
+          api_url: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
           api_key: none
     workflows:
       - id: holmes-rca

@@ -1,9 +1,8 @@
 # Pi Agent — Claude-Code-Grade Local Dev on the Dual-3090 Backend
 
 > ⚠️ **Model id and topology below are out of date.** The live backend is
-> **`qwen3.8-27b`** on a **single** RTX 3090 (TP=1), W4A16 + INT8 `lm_head`,
-> a **65,536-token** request ceiling with MTP-2 at 0.90 utilization, and
-> vision enabled for one image per prompt. Every `qwen3.6-27b`,
+> **`qwen3.8-27b`** on the **sole** RTX 3090 via llama.cpp, UD-IQ4_XS,
+> symmetric q8_0 KV at **131,072 tokens**, F16 vision, and MTP-2. Every `qwen3.6-27b`,
 > `TP=2` and `262K` reference on this page is stale — substitute the current
 > values. See [`model-catalog.md`](model-catalog.md) and
 > [`single-vs-dual-3090.md`](single-vs-dual-3090.md); the surrounding technique
@@ -13,8 +12,8 @@
 > — tools, repo context, skills, research — without using Claude Code. The
 > toolchain is **[pi](https://github.com/badlogic/pi-mono) (primary) +
 > [OpenCode](https://opencode.ai) (companion, §7)**, both backed by the
-> cluster's tuned vLLM endpoint (`qwen3.6-27b`, TP=2 across both 3090s, 262K
-> context, vision, tool calling). Free unlimited *volume*; keep paid frontier
+> cluster's tuned llama.cpp endpoint (`qwen3.8-27b`, one 3090, 131K context,
+> vision, tool calling). Free unlimited *volume*; keep paid frontier
 > **APIs** (Anthropic/OpenAI/Google keys in the agents' provider lists) for
 > the hardest 10%.
 >

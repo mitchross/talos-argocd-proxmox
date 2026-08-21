@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: llama-cpp-download-qwen38
+  namespace: llama-cpp
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 4
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: download
+          image: alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              BASE=/models/qwen3.8-27b-gguf
+              REV=4ca720788d1e01f1bff70c033e0d0028fd02e502
+              REPO=https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/$REV
+              mkdir -p "$BASE/unsloth-iq4xs"
+              apk add --no-cache curl
+
+              fetch() {
+                name="$1" dest="$2" size="$3" expected="$4"
+                part="$dest.part"
+                if [ -f "$dest" ] && [ "$(stat -c %s "$dest")" = "$size" ] && \
+                   [ "$(sha256sum "$dest" | cut -d' ' -f1)" = "$expected" ]; then
+                  echo "verified: $name"
+                  return
+                fi
+                curl -fL -C - --retry 5 -o "$part" "$REPO/$name"
+                actual="$(sha256sum "$part" | cut -d' ' -f1)"
+                [ "$actual" = "$expected" ] || { echo "SHA MISMATCH: $name: $actual"; rm -f "$part"; exit 1; }
+                [ "$(stat -c %s "$part")" = "$size" ] || { echo "SIZE MISMATCH: $name"; rm -f "$part"; exit 1; }
+                mv "$part" "$dest"
+                echo "downloaded and verified: $name"
+              }
+
+              fetch Qwen3.8-27B-UD-IQ4_XS.gguf \
+                "$BASE/unsloth-iq4xs/Qwen3.8-27B-UD-IQ4_XS.gguf" \
+                14252845984 40fac4050e940397dbf13087afd50f4734a11805bf9d65ef8ddd7483470e6199
+              fetch mmproj-F16.gguf "$BASE/mmproj-F16.gguf" \
+                927607488 cbb841a9ee0636b2ec172f5bb8df2ea8dfeb01e90fe7c6126581d662a0b4e43e
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: llama-cpp-models-pvc

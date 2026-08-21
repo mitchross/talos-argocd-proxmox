@@ -10,5 +10,4 @@ resources:
   - pvc.yaml
   - deployment.yaml
   - service.yaml
-  - httproute.yaml
   - servicemonitor.yaml
