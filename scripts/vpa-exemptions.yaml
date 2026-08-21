@@ -9,11 +9,6 @@ coverageExemptions:
     reason: "Scale-swap GPU workload is intentionally kept at replicas=0."
   - apiVersion: apps/v1
     kind: Deployment
-    namespace: llama-cpp
-    name: llama-cpp-server
-    reason: "Scale-swap GPU workload is intentionally kept at replicas=0."
-  - apiVersion: apps/v1
-    kind: Deployment
     namespace: swarmui
     name: swarmui
     reason: "Scale-swap GPU workload is intentionally kept at replicas=0."

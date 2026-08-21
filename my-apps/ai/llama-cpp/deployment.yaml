@@ -5,88 +5,95 @@ metadata:
   namespace: llama-cpp
   labels:
     app: llama-cpp-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
+  replicas: 1
   strategy:
     type: Recreate
-  # Scaled to 0: vLLM holds both 3090s while Qwen3.8-27B-FP8 is tested there.
-  # The Qwen 3.8 GGUF presets stay in presets.ini and remain the KNOWN-WORKING
-  # path on these cards — set this back to 1 (and vllm-server to 0) to return.
-  replicas: 0
+  revisionHistoryLimit: 1
   selector:
     matchLabels:
       app: llama-cpp-server
-  revisionHistoryLimit: 1
   template:
     metadata:
       labels:
         app: llama-cpp-server
     spec:
+      enableServiceLinks: false
       restartPolicy: Always
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
-      terminationGracePeriodSeconds: 300 # Model unload + KV cache cleanup time
+      terminationGracePeriodSeconds: 300
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
       tolerations:
-        - key: "nvidia.com/gpu"
-          operator: "Exists"
-          effect: "NoSchedule"
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
       securityContext:
         fsGroup: 10001
-        fsGroupChangePolicy: "OnRootMismatch"
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: llama-cpp-server
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b10423
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10236@sha256:fd68d13013141833e8214ecad6e1fbefb532db6a00b980cdecfe33603dbf2675
           imagePullPolicy: IfNotPresent
           command: ["/app/llama-server"]
           args:
-            - "--models-max"
-            - "1"               # Pure swap (one model resident at a time). Safe with the all-large bank. Bump to 2-3 ONLY after small models (e.g. Qwen3-4B) are on NFS AND the co-resident VRAM budget is verified — three ~20GB models would OOM a 24GB card. See docs/3090-llm-optimization.md.
-            - "--models-preset"
-            - "/config/presets.ini"
-            - "-c"
-            - "65536"            # Default ctx when a preset doesn't override. 64K = ~2GB KV spill on a 24GB 3090, tolerable on 128GB RAM + downclocked CPU.
-            - "-ngl"
+            - --model
+            - /models/qwen3.8-27b-gguf/unsloth-iq4xs/Qwen3.8-27B-UD-IQ4_XS.gguf
+            - --mmproj
+            - /models/qwen3.8-27b-gguf/mmproj-F16.gguf
+            - --alias
+            - qwen3.8-27b
+            - --ctx-size
+            - "131072"
+            - --batch-size
+            - "4096"
+            - --ubatch-size
+            - "512"
+            - --n-gpu-layers
             - "99"
-            - "-fa"
-            - "on"        # Explicitly set to 'on' so --jinja is read correctly
-            - "--jinja"
-            - "--fit"           # Auto-fit dense layers to available VRAM
-            - "on"
-            - "--no-mmap"       # Prevent page fault stalls - load model fully into memory
-            # context-shift enabled: allows graceful degradation when Perplexica search payloads exceed context
-            # KV cache MUST be symmetric (K and V the same quant type). Mixing
-            # q8_0/q4_0 forces the KV cache onto the CPU — 44x slower — per
-            # llama.cpp #20866. This overrides the Qwen3-Coder docs (which
-            # suggest q8 K + q4 V). Use q8_0/q8_0 (here) or q4_0/q4_0; never mix.
-            - "--cache-type-k"
-            - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
-            - "--cache-type-v"
-            - "q8_0"            # MUST match cache-type-k (symmetric) — see #20866 note above
-            - "-t"
-            - "4"               # Low thread count for fully GPU-offloaded model (auto-detect picks too many in K8s)
-            - "-b"
-            - "4096"            # Logical batch for prompt processing (larger = faster prefill)
-            - "-ub"
-            - "512"             # Physical batch for GPU saturation
-            - "--parallel"
-            - "1"               # Single-user coding assistant - maximize context per request
-            - "--host"
-            - "0.0.0.0"
-            - "--port"
+            - --flash-attn
+            - on
+            - --cache-type-k
+            - q8_0
+            - --cache-type-v
+            - q8_0
+            - --parallel
+            - "1"
+            - --spec-type
+            - draft-mtp
+            - --spec-draft-n-max
+            - "2"
+            - --jinja
+            - --reasoning
+            - off
+            - --reasoning-format
+            - deepseek
+            - --temp
+            - "0.7"
+            - --top-p
+            - "0.8"
+            - --top-k
+            - "20"
+            - --min-p
+            - "0.0"
+            - --presence-penalty
+            - "1.5"
+            - --repeat-penalty
+            - "1.0"
+            - --metrics
+            - --host
+            - 0.0.0.0
+            - --port
             - "8080"
           env:
-            # GPU selection is handled by the device plugin + CDI.
-            # Under whole-card allocation (time-slicing disabled) the plugin
-            # mounts exactly one physical GPU into this pod, and that card
-            # appears as device 0 inside the container. Do NOT set
-            # NVIDIA_VISIBLE_DEVICES or CUDA_VISIBLE_DEVICES — either one
-            # overrides the plugin's injection and causes the app to run
-            # on a different card than the one the scheduler allocated.
             - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
-            - name: LLAMA_SET_ROWS
-              value: "1"          # Split KV cache mode - eliminates cross-sequence attention waste
-            - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
-              value: "1" # Spill to system RAM if VRAM is tight with Q4_K_XL + KV cache
+              value: compute,utility
+            - name: LLAMA_ARG_CHAT_TEMPLATE_KWARGS
+              value: '{"reasoning_effort":"low"}'
           ports:
             - name: http
               containerPort: 8080
@@ -116,38 +123,24 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
-            limits:
-              memory: 64Gi
-              nvidia.com/gpu: "1"
-              ephemeral-storage: "50Gi"
             requests:
-              # User prefers higher reserved CPU for llama.cpp responsiveness.
+              nvidia.com/gpu: "1"
               cpu: "6"
               memory: 32Gi
+            limits:
               nvidia.com/gpu: "1"
-              ephemeral-storage: "10Gi"
+              memory: 64Gi
           volumeMounts:
-            - name: models-storage
+            - name: models
               mountPath: /models
-            - name: config-volume
-              mountPath: /config
               readOnly: true
             - name: dshm
               mountPath: /dev/shm
       volumes:
-        - name: models-storage
+        - name: models
           persistentVolumeClaim:
             claimName: llama-cpp-models-pvc
-        - name: config-volume
-          configMap:
-            name: llama-cpp-config
-            items:
-              - key: presets.ini
-                path: presets.ini
         - name: dshm
           emptyDir:
             medium: Memory
             sizeLimit: 8Gi
-      nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true"
-        gpu-worker: "true"

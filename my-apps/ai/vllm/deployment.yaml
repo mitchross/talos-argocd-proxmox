@@ -6,9 +6,8 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # BASELINE B: ONE 3090, TP=1. The second card is free; llama-cpp-server stays 0.
-  # Revert this commit to restore Baseline A (2x3090, TP=2, FP8, 262144, 313,367-token pool).
-  replicas: 1
+  # Parked rollback backend; llama-cpp owns the sole RTX 3090.
+  replicas: 0
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1

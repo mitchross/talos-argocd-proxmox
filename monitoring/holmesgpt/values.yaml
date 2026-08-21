@@ -15,11 +15,11 @@ resources:
   limits:
     memory: 2Gi
 
-# In-cluster vLLM is unauthenticated; "none" is the documented sentinel key.
+# In-cluster llama.cpp is unauthenticated; "none" is the documented sentinel key.
 modelList:
   local-qwen:
-    model: openai/qwen3.6-27b
-    api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+    model: openai/qwen3.8-27b
+    api_base: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
     api_key: none
 
 toolsets:
@@ -64,7 +64,7 @@ customSkills:
         Application sync/health before suspecting runtime issues.
       - GPU workloads (vllm, llama-cpp, comfyui, swarmui) are mutually
         exclusive whole-card and scale-swapped: some at replicas=0 is NORMAL,
-        not an outage. Current default: vllm=1, others 0.
+        not an outage. Current default: llama-cpp=1, others 0.
       - Storage: Longhorn for RWO PVCs; a Deployment with an RWO PVC uses
         Recreate strategy — brief downtime during updates is expected.
       - Backups: kopiur (SnapshotPolicy/SnapshotSchedule/Restore CRs per PVC).
