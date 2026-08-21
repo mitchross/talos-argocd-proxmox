@@ -14,6 +14,16 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - talos-threadripper-gpu-workers-hp-workers-gkfrw8
+                      - talos-threadripper-gpu-workers-workers-97cs4s
       containers:
         - name: download
           image: alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce
