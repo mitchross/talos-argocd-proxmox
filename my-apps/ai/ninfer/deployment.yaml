@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ninfer-server
+  namespace: ninfer
+  labels:
+    app: ninfer-server
+spec:
+  # Experimental candidate backend (side-by-side vs the vLLM control). Consumes
+  # the second, currently free 3090; delete/revert this app to roll back.
+  replicas: 1
+  strategy:
+    type: Recreate            # whole-card GPU workload; never two pods on the cards at once
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: ninfer-server
+  template:
+    metadata:
+      labels:
+        app: ninfer-server
+    spec:
+      restartPolicy: Always
+      runtimeClassName: nvidia
+      # Experiment loses to production vLLM (gpu-workload-high) if cards are ever contested.
+      priorityClassName: gpu-workload-preemptible
+      terminationGracePeriodSeconds: 120
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: ninfer-server
+          # Built from Don-Chad/ninfer-3090 tag v0.6.0-rtx3090 (commit 2ae51915225d,
+          # CMake hard-enforces sm_86) via the repo's own Dockerfile — see build.sh.
+          # ghcr, not registry.vanillax.me: RustFS rejects the multi-GB CUDA layers (s3aws append unsupported).
+          image: ghcr.io/mitchross/ninfer-3090:v0.6.0-rtx3090
+          imagePullPolicy: IfNotPresent
+          command: ["ninfer-serve"]
+          args:
+            - "/models/ninfer/qwen3_8_27b.ninfer"
+            # Distinct public model id so clients deliberately pick the engine;
+            # the artifact's own identity is `qwen3.8-27b` (same as vLLM's alias).
+            - "--model-id"
+            - "qwen3.8-ninfer"
+            # Initial profile = the fork's TESTED RTX 3090 vision profile (Windows-
+            # validated: C1, 32K, INT8 KV, ReplaySSM, MTP3). Context ladder
+            # (64K/128K/150K/160K) is a deliberate later step — see README.md.
+            - "--max-context"
+            - "32768"
+            - "--kv-capacity"
+            - "32768"
+            - "--max-concurrency"
+            - "1"
+            - "--max-pending-requests"
+            - "8"
+            - "--prefill-chunk"
+            - "512"
+            - "--kv-dtype"
+            - "int8"
+            - "--vision"
+            - "--spec"
+            - "mtp"
+            - "--draft-tokens"
+            - "3"
+            - "--lm-head-draft"
+            # Parity with the vLLM control's enable_thinking=false default; requests re-enable per call.
+            - "--no-thinking"
+            # Schema-v8 measurement log — the benchmark harness's authoritative source
+            # (NInfer has no Prometheus endpoint). emptyDir: collected live during runs.
+            - "--request-log-jsonl"
+            - "/logs/serve.requests.jsonl"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8080"
+          env:
+            # GPU selection is handled by the device plugin + CDI (whole-card).
+            # Do NOT set NVIDIA_VISIBLE_DEVICES / CUDA_VISIBLE_DEVICES.
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 120        # 17 GiB artifact load from NFS + graph capture
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              nvidia.com/gpu: "1"
+              cpu: "2"
+              memory: 8Gi
+            limits:
+              nvidia.com/gpu: "1"
+              memory: 32Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+              readOnly: true
+            - name: logs
+              mountPath: /logs
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ninfer-models-pvc
+        - name: logs
+          emptyDir:
+            sizeLimit: 2Gi
