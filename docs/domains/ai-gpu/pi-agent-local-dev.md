@@ -1,4 +1,4 @@
-# Pi Agent — Claude-Code-Grade Local Dev on the Dual-3090 Backend
+# Pi Agent — Claude-Code-Grade Local Dev on the Single-3090 llama.cpp Backend
 
 > ⚠️ **Model id and topology below are out of date.** The live backend is
 > **`qwen3.8-27b`** on the **sole** RTX 3090 via llama.cpp, UD-IQ4_XS,

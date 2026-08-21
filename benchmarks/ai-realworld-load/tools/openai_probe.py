@@ -14,7 +14,7 @@ Server-side TTFT/prefill/decode come from each engine's own instrumentation
 and server numbers are never mixed.
 
 Examples:
-  openai_probe.py --base-url https://ninfer.vanillax.me/v1 --model qwen3.8-ninfer \
+  openai_probe.py --base-url https://llama.vanillax.me/v1 --model qwen3.8-27b \
       --prompt "say hi in five words"
   openai_probe.py ... --prompt-file w.txt --cold-tag run7 --max-tokens 700
   openai_probe.py ... --image photo.jpg --prompt "Describe every object you see."
