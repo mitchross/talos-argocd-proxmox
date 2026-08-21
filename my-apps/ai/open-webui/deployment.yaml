@@ -15,9 +15,8 @@ spec:
       labels:
         app: open-webui
     spec:
-      # Open WebUI delegates LLM inference to vLLM; RAG embeddings run locally
-      # on CPU in-pod. PREFER a non-GPU node (keeps 3090s vLLM-only) but soft so
-      # it still schedules on the GPU node when it's the only worker available.
+      # RAG embeddings run in-pod on CPU; inference stays in llama.cpp.
+      # Prefer non-GPU nodes to reserve the sole 3090, but allow fallback.
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -49,8 +48,15 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /app/backend/data
+        - name: frontend-loader
+          mountPath: /app/build/static/loader.js
+          subPath: loader.js
+          readOnly: true
         # Health probes disabled - backend model loading can take several minutes
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: storage
+      - name: frontend-loader
+        configMap:
+          name: open-webui-loader

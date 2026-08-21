@@ -19,6 +19,9 @@ components:
   - ../../common/kopiur-backup
 
 configMapGenerator:
+- name: open-webui-loader
+  files:
+  - loader.js
 - name: har-analyzer-function
   files:
   - har-analyzer-function.py
