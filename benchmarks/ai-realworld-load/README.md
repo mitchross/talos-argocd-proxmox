@@ -271,14 +271,19 @@ contributed no load.
 ## Engine A/B — vLLM control vs NInfer-3090 candidate
 
 The candidate is `my-apps/ai/ninfer/` (NInfer-3090 `v0.6.0-rtx3090`, commit
-`2ae51915225d`, official `qwen3_8_27b.ninfer` artifact, SHA-pinned) on the
-second 3090. The vLLM control and everything above this line is UNCHANGED —
-control runs still use `collect.sh` + `report.py` and the verbatim Workload A/B
-prompts. Workload C (Deal Scout digest) stays excluded while its application
-bug stands.
+`2ae51915225d`, official `qwen3_8_27b.ninfer` artifact, SHA-pinned). The
+chassis holds **one RTX 3090 — permanently** — so the engines are compared
+**sequentially on the identical card** by scale-swapping committed replicas
+(`vllm-server: 1/ninfer-server: 0` ↔ `0/1`, one commit each way — see
+`docs/domains/ai-gpu/gpu-scale-swap.md`). Same silicon, same 200 W cap, and
+every swap restarts the engine, so each window starts with a provably cold
+prefix cache. The vLLM control config and everything above this line is
+UNCHANGED — control runs still use `collect.sh` + `report.py` and the verbatim
+Workload A/B prompts. Workload C (Deal Scout digest) stays excluded while its
+application bug stands.
 
-Both cards are power-limited to 200 W by the powerlimit DaemonSet; do not
-change that during an A/B without recording it in `context.env`.
+The card is power-limited to 200 W by the powerlimit DaemonSet; do not change
+that between the two windows of an A/B without recording it in `context.env`.
 
 ### Candidate tooling (parallel, not replacing)
 
@@ -313,21 +318,28 @@ knob-for-knob identical.
 
 ### Order of operations
 
-1. **Smoke (correctness before speed):** `tools/smoke-ninfer.sh all <image.jpg>`
-   — text stream, thinking on/off, tools (`tool_choice=auto` is the
-   Perplexica-compatibility gate), vision (judge the description content),
-   16K-context needle. Vision must name details actually present in the image;
-   HTTP 200 is not a pass.
-2. **First controlled A/B:** start `collect.sh start ab-control` and
-   `collect-ninfer.sh start ab-candidate`, then `tools/ab-smallload.sh`
+Every candidate step below happens inside a **NInfer window** (committed swap:
+`ninfer-server: 1`, `vllm-server: 0`); control steps happen inside a **vLLM
+window** (the normal production state). One engine at a time, always.
+
+1. **Control window — baseline A/B half:** with production vLLM up,
+   `collect.sh start ab-control`, then `tools/ab-smallload.sh control`
    (6,055-token fixed prompt — counted by the live Qwen tokenizer — ~600-token
-   answer, cold then warm, C1, vision loaded on both servers). Stop both
-   collectors; run both reports.
-3. **Real workload on the candidate:** re-run Workload A (Perplexica: point its
-   custom-OpenAI provider at the NInfer endpoint in Perplexica's settings UI —
-   config-only, revert after) and Workload B (Pi: add a `vanillax-ninfer`
-   provider to `~/.pi/agent/models.json`, `pi --model qwen3.8-ninfer`) with the
-   VERBATIM prompts above. Restart the ninfer pod first for a cold prefix store.
+   answer, cold then warm, C1). Stop the collector. Note the printed `RUN=` dir.
+2. **Swap to NInfer** (one commit), then **smoke (correctness before speed):**
+   `tools/smoke-ninfer.sh all <image.jpg>` — text stream, thinking on/off,
+   tools (`tool_choice=auto` is the Perplexica-compatibility gate), vision
+   (judge the description content), 16K-context needle. Vision must name
+   details actually present in the image; HTTP 200 is not a pass.
+3. **Candidate A/B half, same window:** `collect-ninfer.sh start ab-candidate`,
+   then `AB_RUN=<dir-from-step-1> tools/ab-smallload.sh candidate`. Stop the
+   collector; run both reports. Then the **real workload**: Workload A
+   (Perplexica: point its custom-OpenAI provider at the NInfer endpoint in its
+   settings UI — config-only, revert after) and Workload B (Pi: add a
+   `vanillax-ninfer` provider to `~/.pi/agent/models.json`,
+   `pi --model qwen3.8-ninfer`) with the VERBATIM prompts above. Note that
+   in-cluster consumers (Open WebUI etc.) are down during a NInfer window —
+   that is inherent to single-card swap. Swap back to vLLM when done.
 4. **Long-context gate (only after 1–3 pass):** raise `--max-context`/
    `--kv-capacity` through git one step at a time — 65,536 → 131,072 → 153,600
    → 163,840 — and at each step run `tools/smoke-ninfer.sh context <N>` plus a
