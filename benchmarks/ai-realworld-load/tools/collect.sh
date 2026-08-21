@@ -20,12 +20,19 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNS="$ROOT/runs"
 STATE="$ROOT/.current-run"
-NS=vllm
+# Defaults target the production vLLM control. The qwen38-3090 candidate is
+# ALSO vLLM (syv-ai patched stack, same /metrics), so candidate runs reuse this
+# collector via: BENCH_NS=qwen38-3090 BENCH_APP=qwen38-3090-server \
+#   BENCH_DEPLOY=qwen38-3090-server BENCH_PORT=18020 collect.sh start <label>
+NS=${BENCH_NS:-vllm}
+APP=${BENCH_APP:-vllm-server}
+DEPLOY=${BENCH_DEPLOY:-vllm-server}
+PORT=${BENCH_PORT:-8000}
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 vllm_pod() {
-  kubectl -n "$NS" get pod -l app=vllm-server \
+  kubectl -n "$NS" get pod -l app=$APP \
     -o jsonpath='{.items[0].metadata.name}' 2>/dev/null
 }
 
@@ -35,7 +42,7 @@ cmd_start() {
 
   local pod; pod="$(vllm_pod)"
   [ -n "$pod" ] || die "no vllm-server pod found"
-  kubectl -n "$NS" exec "$pod" -- curl -sf -o /dev/null http://localhost:8000/health \
+  kubectl -n "$NS" exec "$pod" -- curl -sf -o /dev/null http://localhost:$PORT/health \
     || die "vLLM /health not OK — refusing to start a run against an unhealthy server"
 
   local ts run
@@ -54,13 +61,13 @@ cmd_start() {
     echo "git_head=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null)"
   } > "$run/context.env"
 
-  kubectl -n "$NS" get deploy vllm-server -o jsonpath='{.spec.template.spec.containers[0].args}' \
+  kubectl -n "$NS" get deploy "$DEPLOY" -o jsonpath='{.spec.template.spec.containers[0].args}' \
     > "$run/vllm-args.json" 2>/dev/null
-  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:8000/v1/models \
+  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:$PORT/v1/models \
     > "$run/models.json" 2>/dev/null
   # KV capacity ceiling is read from the live engine, never hardcoded — the
   # report divides by this to turn kv_cache_usage_perc into resident tokens.
-  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:8000/metrics 2>/dev/null \
+  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:$PORT/metrics 2>/dev/null \
     | grep 'cache_config_info' > "$run/cache-config.txt"
 
   # ---- Stream 1: vLLM metrics, 2s, filtered inside the pod ------------------
@@ -70,7 +77,7 @@ cmd_start() {
   nohup kubectl -n "$NS" exec "$pod" -- sh -c '
     while true; do
       echo "===TICK $(date -u +%Y-%m-%dT%H:%M:%SZ) $(date +%s)"
-      curl -s http://localhost:8000/metrics | grep -E "^vllm:" | grep -vE "_created|estimated_"
+      curl -s http://localhost:'$PORT'/metrics | grep -E "^vllm:" | grep -vE "_created|estimated_"
       sleep 2
     done' > "$run/metrics.stream" 2>"$run/metrics.err" &
   echo $! > "$run/.pid.metrics"
@@ -131,13 +138,13 @@ cmd_stop() {
     rm -f "$f"
   done
   sleep 1
-  pkill -f "kubectl -n $NS exec.*8000/metrics" 2>/dev/null
+  pkill -f "kubectl -n $NS exec.*$PORT/metrics" 2>/dev/null
   pkill -f "nvidia-smi --query-gpu=timestamp" 2>/dev/null
 
   local pod; pod="$(vllm_pod)"
   echo "run_ended_utc=$(date -u +%Y%m%dT%H%M%SZ)" >> "$run/context.env"
   # Final absolute counters — the run's totals are (final - first tick).
-  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:8000/metrics 2>/dev/null \
+  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:$PORT/metrics 2>/dev/null \
     | grep -E '^vllm:' > "$run/metrics.final"
   kubectl -n "$NS" get events --sort-by=.lastTimestamp > "$run/events.txt" 2>/dev/null
 
