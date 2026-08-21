@@ -28,9 +28,14 @@ Two things make this safe by construction:
 |---|---|---|---|
 | **vLLM** (Qwen 3.8 W4A16, active) | **1** | `1` | `my-apps/ai/vllm/deployment.yaml` |
 | **llama-cpp** (Qwen 3.8 GGUF, parked) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
+| **NInfer-3090** (Qwen 3.8 .ninfer, parked candidate under evaluation) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
 | **ComfyUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | **SwarmUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (batch benchmark **Jobs**, not always-on) | 1 or 2 | n/a | `my-apps/ai/llmfit/` |
+
+> **Single-card reality (2026-08-21, permanent):** the chassis now holds ONE
+> RTX 3090 — the second card is not coming back. Until the table below is
+> rewritten, read every "≤ 2 cards" rule as **exactly one `replicas: 1` row**.
 
 A valid target state is any set of `replicas: 1` rows whose **card total ≤ 2**.
 Working combos: vLLM (1 card) + one other single-card app · vLLM alone ·
