@@ -32,7 +32,7 @@ PORT=${BENCH_PORT:-8000}
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 vllm_pod() {
-  kubectl -n "$NS" get pod -l app=$APP \
+  kubectl -n "$NS" get pod -l "app=$APP" \
     -o jsonpath='{.items[0].metadata.name}' 2>/dev/null
 }
 
@@ -41,8 +41,8 @@ cmd_start() {
   [ -f "$STATE" ] && die "a run is already active ($(cat "$STATE")). Run: collect.sh stop"
 
   local pod; pod="$(vllm_pod)"
-  [ -n "$pod" ] || die "no vllm-server pod found"
-  kubectl -n "$NS" exec "$pod" -- curl -sf -o /dev/null http://localhost:$PORT/health \
+  [ -n "$pod" ] || die "no $APP pod found in $NS"
+  kubectl -n "$NS" exec "$pod" -- curl -sf -o /dev/null "http://localhost:$PORT/health" \
     || die "vLLM /health not OK — refusing to start a run against an unhealthy server"
 
   local ts run
@@ -55,29 +55,37 @@ cmd_start() {
   {
     echo "run_started_utc=$ts"
     echo "label=$label"
+    echo "bench_ns=$NS"
+    echo "bench_app=$APP"
+    echo "bench_deploy=$DEPLOY"
+    echo "bench_port=$PORT"
     echo "pod=$pod"
-    echo "image=$(kubectl -n $NS get pod "$pod" -o jsonpath='{.spec.containers[0].image}')"
-    echo "node=$(kubectl -n $NS get pod "$pod" -o jsonpath='{.spec.nodeName}')"
+    echo "image=$(kubectl -n "$NS" get pod "$pod" -o jsonpath='{.spec.containers[0].image}')"
+    echo "image_id=$(kubectl -n "$NS" get pod "$pod" -o jsonpath='{.status.containerStatuses[0].imageID}')"
+    echo "node=$(kubectl -n "$NS" get pod "$pod" -o jsonpath='{.spec.nodeName}')"
     echo "git_head=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null)"
   } > "$run/context.env"
 
   kubectl -n "$NS" get deploy "$DEPLOY" -o jsonpath='{.spec.template.spec.containers[0].args}' \
     > "$run/vllm-args.json" 2>/dev/null
-  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:$PORT/v1/models \
+  kubectl -n "$NS" get deploy "$DEPLOY" -o jsonpath='{.spec.template.spec.containers[0].env}' \
+    > "$run/vllm-env.json" 2>/dev/null
+  kubectl -n "$NS" exec "$pod" -- curl -s "http://localhost:$PORT/v1/models" \
     > "$run/models.json" 2>/dev/null
   # KV capacity ceiling is read from the live engine, never hardcoded — the
   # report divides by this to turn kv_cache_usage_perc into resident tokens.
-  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:$PORT/metrics 2>/dev/null \
+  kubectl -n "$NS" exec "$pod" -- curl -s "http://localhost:$PORT/metrics" 2>/dev/null \
     | grep 'cache_config_info' > "$run/cache-config.txt"
 
   # ---- Stream 1: vLLM metrics, 2s, filtered inside the pod ------------------
   # Full /metrics is ~40KB; grepping pod-side keeps this to a few hundred bytes
   # per tick. Histogram *buckets* are kept in full: when a request finishes,
   # exactly one bucket increments, which is how per-request sizes get attributed.
+  # shellcheck disable=SC2016
   nohup kubectl -n "$NS" exec "$pod" -- sh -c '
     while true; do
       echo "===TICK $(date -u +%Y-%m-%dT%H:%M:%SZ) $(date +%s)"
-      curl -s http://localhost:'$PORT'/metrics | grep -E "^vllm:" | grep -vE "_created|estimated_"
+      curl -s "http://localhost:'"$PORT"'/metrics" | grep -E "^vllm:" | grep -vE "_created|estimated_"
       sleep 2
     done' > "$run/metrics.stream" 2>"$run/metrics.err" &
   echo $! > "$run/.pid.metrics"
@@ -114,6 +122,7 @@ cmd_start() {
   echo $! > "$run/.pid.logs"
 
   # ---- Stream 4: pod resource + restart state, 10s ------------------------
+  # shellcheck disable=SC2016
   nohup bash -c '
     while true; do
       printf "%s," "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -131,6 +140,12 @@ cmd_start() {
 cmd_stop() {
   [ -f "$STATE" ] || die "no active run"
   local run; run="$(cat "$STATE")"
+  NS="$(sed -n 's/^bench_ns=//p' "$run/context.env")"
+  APP="$(sed -n 's/^bench_app=//p' "$run/context.env")"
+  DEPLOY="$(sed -n 's/^bench_deploy=//p' "$run/context.env")"
+  PORT="$(sed -n 's/^bench_port=//p' "$run/context.env")"
+  [ -n "$NS" ] && [ -n "$APP" ] && [ -n "$DEPLOY" ] && [ -n "$PORT" ] \
+    || die "active run is missing its target identity: $run/context.env"
 
   for f in "$run"/.pid.*; do
     [ -e "$f" ] || continue
@@ -144,7 +159,7 @@ cmd_stop() {
   local pod; pod="$(vllm_pod)"
   echo "run_ended_utc=$(date -u +%Y%m%dT%H%M%SZ)" >> "$run/context.env"
   # Final absolute counters — the run's totals are (final - first tick).
-  kubectl -n "$NS" exec "$pod" -- curl -s http://localhost:$PORT/metrics 2>/dev/null \
+  kubectl -n "$NS" exec "$pod" -- curl -s "http://localhost:$PORT/metrics" 2>/dev/null \
     | grep -E '^vllm:' > "$run/metrics.final"
   kubectl -n "$NS" get events --sort-by=.lastTimestamp > "$run/events.txt" 2>/dev/null
 

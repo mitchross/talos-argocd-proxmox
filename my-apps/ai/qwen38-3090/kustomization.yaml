@@ -5,7 +5,9 @@ namespace: qwen38-3090
 resources:
 - namespace.yaml
 - pvc.yaml
+- model-prep-job.yaml
 - deployment.yaml
 - service.yaml
 - httproute.yaml
+- servicemonitor.yaml
 - vpa.yaml

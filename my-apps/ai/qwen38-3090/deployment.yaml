@@ -5,6 +5,8 @@ metadata:
   namespace: qwen38-3090
   labels:
     app: qwen38-3090-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   # Parked candidate (syv-ai patched-vLLM stack). Single-card chassis: evaluate
   # by scale-swapping with vllm-server per gpu-scale-swap.md — set this to 1 AND
@@ -34,33 +36,9 @@ spec:
         - key: "nvidia.com/gpu"
           operator: "Exists"
           effect: "NoSchedule"
-      initContainers:
-        # CPU-only download (~19.5 GB, resumable) + requantization into
-        # /app/models; idempotent — fast no-op once the artifacts exist.
-        - name: prepare
-          image: ghcr.io/mitchross/qwen38-27b-3090:e00bc1b7
-          imagePullPolicy: IfNotPresent
-          args: ["prepare"]
-          env:
-            - name: HOME
-              value: /cache
-          resources:
-            requests:
-              cpu: "2"
-              memory: 2Gi
-            limits:
-              # NFS write page cache is charged to the cgroup (learned the hard
-              # way on the ninfer download Job) — keep real headroom.
-              memory: 16Gi
-          volumeMounts:
-            - name: models
-              mountPath: /app/models
-              subPath: qwen38-3090/models
-            - name: cache
-              mountPath: /cache
       containers:
         - name: qwen38-3090-server
-          image: ghcr.io/mitchross/qwen38-27b-3090:e00bc1b7
+          image: ghcr.io/mitchross/qwen38-27b-3090:e00bc1b7@sha256:b27437a66e1870a8b9caec7cc148eaad52a127f815a6222d3d032e0c71da35a8
           imagePullPolicy: IfNotPresent
           # entrypoint mode: single-user (MTP speculative decoding). verify.sh
           # gates startup unless VERIFY=0.
@@ -82,6 +60,13 @@ spec:
               value: "fast"
             - name: PREFIX_CACHE
               value: "1"
+            - name: EXTRA_ARGS
+              value: >-
+                --enable-auto-tool-choice
+                --tool-call-parser qwen3_coder
+                --default-chat-template-kwargs {"enable_thinking":false}
+                --override-generation-config {"temperature":0.7,"top_p":0.8,"top_k":20,"presence_penalty":1.5}
+                --enable-force-include-usage
             - name: PORT
               value: "18020"
           ports:
@@ -123,7 +108,7 @@ spec:
           volumeMounts:
             - name: models
               mountPath: /app/models
-              subPath: qwen38-3090/models
+              readOnly: true
             - name: cache
               mountPath: /cache
             - name: dshm
