@@ -5,6 +5,8 @@ metadata:
   namespace: ninfer
   labels:
     app: ninfer-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"   # after the wave-0 download hook completes
 spec:
   # Experimental candidate backend (side-by-side vs the vLLM control). Consumes
   # the second, currently free 3090; delete/revert this app to roll back.
