@@ -1,0 +1,65 @@
+# Static PV — same TrueNAS ai-pool/llama-cpp RWX model share the other AI apps
+# use, own volumeHandle. The prep Job writes uniquely named model directories.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qwen38-3090-nfs-pv
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+    - nconnect=16
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: qwen38-3090-nfs-pv
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/ai-pool/llama-cpp"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen38-3090-models-pvc
+  namespace: qwen38-3090
+  labels:
+    backup-exempt: "true"
+  annotations:
+    # MUST be the fully-qualified key — bare `backup-exempt-reason` is silently ignored.
+    storage.vanillax.dev/backup-exempt-reason: "NFS-backed model + requant artifacts; non-snapshottable, rebuilt by the idempotent prepare step (hf download + requant scripts)"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 150Gi
+  storageClassName: ""
+  volumeName: qwen38-3090-nfs-pv
+---
+# torch.compile + FlashInfer/Triton JIT caches — without this every boot repeats
+# the ~15 min first-start compile (compose start_period is 900s for this reason).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen38-3090-compile-cache
+  namespace: qwen38-3090
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Regenerable torch.compile/JIT kernel cache; rebuilt automatically on first boot after loss"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: longhorn

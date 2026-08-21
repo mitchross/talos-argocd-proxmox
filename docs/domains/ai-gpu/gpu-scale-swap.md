@@ -28,7 +28,8 @@ Two things make this safe by construction:
 |---|---|---|---|
 | **vLLM** (Qwen 3.8 W4A16, active) | **1** | `1` | `my-apps/ai/vllm/deployment.yaml` |
 | **llama-cpp** (Qwen 3.8 GGUF, parked) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
-| **NInfer-3090** (Qwen 3.8 .ninfer, parked candidate under evaluation) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
+| **NInfer-3090** (Qwen 3.8 .ninfer, parked candidate) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
+| **qwen38-3090** (syv-ai patched-vLLM stack, parked candidate under evaluation) | 1 | `0` | `my-apps/ai/qwen38-3090/deployment.yaml` |
 | **ComfyUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | **SwarmUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (batch benchmark **Jobs**, not always-on) | 1 or 2 | n/a | `my-apps/ai/llmfit/` |
