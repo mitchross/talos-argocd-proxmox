@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:8b07f51be1a8983c4d171b443a58c0deb3ab1e6e15202729cde85c3fa280b3e5
+          image: ghcr.io/posthog/posthog/capture:master@sha256:8dfdcf9e7b7ef2122beb6797df24bc42ba8bb23f79b67aa536a120d60d21cfaf
           # No envFrom on purpose: events mode needs no S3/shared config, and skipping
           # the ConfigMap keeps env edits from rolling the hot ingest path.
           env:
@@ -86,7 +86,7 @@ spec:
     spec:
       containers:
         - name: replay-capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:8b07f51be1a8983c4d171b443a58c0deb3ab1e6e15202729cde85c3fa280b3e5
+          image: ghcr.io/posthog/posthog/capture:master@sha256:8dfdcf9e7b7ef2122beb6797df24bc42ba8bb23f79b67aa536a120d60d21cfaf
           envFrom:
             - configMapRef:
                 name: posthog-env
@@ -185,7 +185,7 @@ spec:
               mountPath: /share
       containers:
         - name: feature-flags
-          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:5682bf4ebccc3f0214890d3844ea3cd92b0fb6ee75f002ac4b64d2651f1001c2
+          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:a931d8a2132511e025a7a5eac3aad37a5703f979e528999d780b08d8c3b717b8
           env:
             - name: PGPASSWORD
               valueFrom:

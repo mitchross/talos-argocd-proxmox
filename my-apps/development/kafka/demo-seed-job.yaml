@@ -29,7 +29,7 @@ spec:
         - name: seed-and-verify
           # Match the broker's Kafka CLI version. Digest pin keeps the demo
           # reproducible while the readable tag documents operator/Kafka ABI.
-          image: quay.io/strimzi/kafka:1.1.0-kafka-4.3.0@sha256:b6848a53c01eec98b37866450a1227c3a41707785ec65b37063d2733a105bf36
+          image: quay.io/strimzi/kafka:1.2.0-kafka-4.3.0@sha256:e90a1a74af4226f3ca4d1ebef3ab13bdb09754ae17ca4c1444f7fcbb0ca8ea9a
           imagePullPolicy: IfNotPresent
           command:
             - /bin/bash
