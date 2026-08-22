@@ -268,6 +268,68 @@ patches:
       grow: true
 ---
 kind: Workers
+name: hp-prodesk-workers
+machineClass:
+  name: hp-prodesk-worker
+  size: 1
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+patches:
+- name: hp-prodesk-worker
+  inline:
+    machine:
+      # Wired LAN: plain DHCP-on-all-links, same as hp-workers. Never pin a
+      # NIC name here; see hp-workers for what that cost last time.
+      nodeLabels:
+        node.vanillax.dev/class: hp-prodesk-worker
+        # Own failure domain, named after the machine like hp-workers.
+        topology.kubernetes.io/zone: hp-prodesk
+      kubelet:
+        nodeIP:
+          validSubnets:
+          - 192.168.10.0/24
+        extraConfig:
+          serializeImagePulls: false
+      sysctls:
+        net.core.bpf_jit_harden: 1
+- name: hp-prodesk-longhorn-disks
+  inline:
+    machine:
+      # All-or-nothing annotation: every disk the node should register must be
+      # listed here. Omitting talos-ephemeral does not leave it at defaults —
+      # it leaves the node with zero usable disks.
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      nodeAnnotations:
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-prodesk-ssd","path":"/var/mnt/longhorn-hp-prodesk-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-prodesk-ssd"]}]
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
+- name: hp-prodesk-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-hp-prodesk-ssd
+    provisioning:
+      # Size alone distinguishes the 690 GiB scsi1 device from the 128 GiB boot
+      # disk. No `disk.transport` clause: virtio-scsi never matches it.
+      diskSelector:
+        match: "!system_disk && disk.size >= 600u * GB"
+      minSize: 600GB
+      grow: true
+---
+kind: Workers
 name: workers
 machineClass:
   name: threadripper-worker
