@@ -4,8 +4,14 @@ namespace: argocd
 resources:
   - ns.yaml
   - externalsecret-webhook.yaml
-  # http-route.yaml lives in infrastructure/networking/gateway/ (wave 4): listed here at wave 0 it deadlocks bootstrap with no Gateway.
-  # root.yaml is NOT listed: bootstrap-applied once by scripts/bootstrap-argocd.sh; listing it creates a circular SSA-ownership / cascade-delete hazard.
+  # NOTE: http-route.yaml moved to infrastructure/networking/gateway/ so it deploys
+  # at wave 4 with the Gateway. Including it here (wave 0) causes a bootstrap deadlock:
+  # HTTPRoute stays Progressing with no Gateway, blocking all subsequent sync waves.
+  # NOTE: root.yaml is NOT listed here. It is applied once by the bootstrap script
+  # (scripts/bootstrap-argocd.sh). Including it here would create a circular
+  # dependency: root.yaml creates argocd.yaml (via apps/), argocd.yaml manages
+  # this directory which would include root.yaml, causing SSA ownership conflicts
+  # and potential cascade-delete if root.yaml is ever removed from this file.
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm

@@ -8,29 +8,75 @@ configs:
     controller.operation.processors: "25"
     # Performance: limit concurrent manifest generations to prevent OOM
     reposerver.parallelism.limit: "5"
-    # 1h (not default 24h) bounds repo-server manifest-cache poisoning (argo-cd#26530);
-    # hard refresh can't clear a poisoned entry — only restarting argocd-repo-server + argocd-redis does.
+    # Redis manifest-cache TTL (default 24h). 2026-07-19: repo-server cached
+    # manifests rendered from a STALE checkout under the NEW revision's cache
+    # key — apps reported Synced at HEAD while the cluster ran a prior commit
+    # (versatiles configmap never rolled, worldmonitor image bump ignored).
+    # Even hard refresh kept logging "manifest cache hit" for the poisoned
+    # entry; the hourly timeout.hard.reconciliation (below) could not clear it
+    # either. Only restarting argocd-repo-server + argocd-redis recovered.
+    # Upstream (argoproj/argo-cd#26530) is open with no fixed release, so
+    # bound the poison window to 1h instead of 24h.
     reposerver.repo.cache.expiration: "1h"
     # Performance: increase repo-server timeout for large Helm charts like prometheus-stack
     controller.repo.server.timeout.seconds: "300"
-    # Server-side diff must be set HERE (argocd-cmd-params-cm); the argocd-cm key `resource.server-side-diff` is a no-op.
-    # Per-app `compare-options: ServerSideDiff=true,IncludeMutationWebhook=true` adds mutating-webhook passthrough.
+    # Server-Side Diff — controller asks the API server for a dry-run apply
+    # result and compares predicted-live vs actual-live. CRD defaults get
+    # applied to both sides, eliminating drift on operator-defaulted fields
+    # (CNPG enablePDB/failoverDelay/etc., cert-manager, KEDA, …). Required
+    # to be in argocd-cmd-params-cm (this block); the argocd-cm key
+    # `resource.server-side-diff` is a no-op for the controller.
+    # Combine with per-app annotation
+    #   argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
+    # to also pipe through mutating admission webhooks (CNPG ships one).
     controller.diff.server.side: "true"
   cm:
     url: "https://argocd.vanillax.me"
-    # Keep --enable-helm; Kustomize's load restrictor stays on (no app may reference files outside its root).
+    # Keep Helm inflation enabled for upstream charts. Kustomize's default
+    # load restrictor remains active; no app should reference files outside
+    # its own kustomization root.
     kustomize.buildOptions: "--enable-helm"
-    # 'annotation' alone gets stripped by operator reconciles (cert-manager/ESO/KEDA) → perma-OutOfSync;
-    # the app.kubernetes.io/instance label is the durable half. Do not revert to plain 'annotation'.
+    # Resource tracking — annotation+label survives operator reconciles.
+    # Default 'annotation' alone gets stripped by CNPG/cert-manager/ESO/KEDA,
+    # causing perma-OutOfSync flap on managed CRs even when Healthy.
+    # 'annotation+label' writes app.kubernetes.io/instance (durable) AND keeps
+    # the informational tracking-id annotation. See mink:
+    # argocd-cnpg-permanent-outofsync-tracking-method-fix.md
     application.resourceTrackingMethod: "annotation+label"
+    # NOTE: The legacy `resource.server-side-diff: "true"` key was a no-op —
+    # the controller reads its diff mode from argocd-cmd-params-cm key
+    # `controller.diff.server.side` (set in configs.params above), exposed
+    # via env var ARGOCD_APPLICATION_CONTROLLER_SERVER_SIDE_DIFF.
     # Default ArgoCD polling interval (180s) with modest jitter
     timeout.reconciliation: "180s"
     timeout.reconciliation.jitter: "60s"
-    # Hard refresh invalidates BOTH manifest + cluster live-state caches (soft timeout.reconciliation does not).
-    # "0" lets stale live-state persist indefinitely (Synced+Healthy while live lags git); 1h bounds it.
+    # Periodic HARD refresh. Unlike timeout.reconciliation (soft refresh, which
+    # compares cached manifests + cached cluster live-state), a hard refresh
+    # INVALIDATES BOTH the manifest cache AND the controller's cluster live-state
+    # cache before re-comparing. This is the scheduled equivalent of the UI
+    # "Hard Refresh" button.
+    #
+    # Why this is non-zero: 2026-05-29 the controller reported my-apps-llama-cpp
+    # Synced+Healthy while the live Deployment was still the old image and pointed
+    # at a dangling ConfigMap hash. server-side diff (controller.diff.server.side)
+    # had compared the new desired spec against a STALE live-state cache, saw "no
+    # change", and skipped the Deployment apply — selfHeal can't help because the
+    # controller perceives no drift. A manual hard refresh fixed it instantly.
+    # "0" (disabled) let that stale state persist indefinitely (cluster cache is
+    # watch-based with no resync-duration knob in this version). 1h bounds the
+    # worst-case staleness window to one hour. Raise toward 2h-4h if the hourly
+    # all-apps manifest regeneration pressures the repo-servers.
     timeout.hard.reconciliation: "1h"
-    # parentRefs: ignore ONLY the defaulted group/kind subfields. Ignoring the whole array or whole entries
-    # silently blocks Gateway re-parenting while ArgoCD reports Synced — name/namespace/sectionName must stay diffable.
+    # Global diff noise cleanup for resources normalized by their controllers.
+    # Keep these system-level so AppSets only carry app-specific rules.
+    #
+    # parentRefs: normalize ONLY the defaulted `group`/`kind` subfields that the
+    # API server fills in (gateway.networking.k8s.io / Gateway). Do NOT ignore the
+    # whole `/spec/parentRefs` array, and do NOT ignore whole parentRef entries
+    # via `select(.group == null or .kind == null)` — both silently swallow
+    # Gateway re-parenting (e.g. the gateway-internal -> gateway-internal-technitium
+    # split-DNS migration) while ArgoCD still reports Synced. `name`/`namespace`/
+    # `sectionName` MUST stay diffable so re-parenting actually syncs to live.
     resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
       jqPathExpressions:
       - .spec.parentRefs[].group
@@ -68,8 +114,17 @@ configs:
       managedFieldsManagers:
       - kube-controller-manager
       - kube-scheduler
-    # Custom health keys are `<API group>_<Kind>`. Modern Argo CD does not assess child Application health
-    # automatically — without this, root's sync waves advance before children are Healthy.
+    # Custom health keys use `<API group>_<Kind>`. Argo runs the Lua block with
+    # the live Kubernetes object in `obj`; the script returns `hs.status` and
+    # `hs.message`. `Progressing` holds the parent Application's next sync wave,
+    # `Healthy` releases it, and `Degraded` surfaces a failure. Lua uses `~=` for
+    # "not equal", `..` to join strings, and `or` to choose the first non-nil
+    # value. The nil checks matter because a new CR often has no `.status` until
+    # its controller performs the first reconciliation.
+    #
+    # Child Application health is not assessed automatically by modern Argo CD.
+    # Copy the child's `.status.health` into Argo's health result so the root
+    # app-of-apps waits for each child before advancing to its next sync wave.
     resource.customizations.health.argoproj.io_Application: |
       hs = {}
       hs.status = "Progressing"
@@ -83,7 +138,11 @@ configs:
         end
       end
       return hs
-    # Strimzi Kafka has no built-in Argo health; stays Progressing until Ready/NotReady so KafkaTopic (wave 1) waits for the broker.
+    # Strimzi Kafka has no built-in Argo health assessment. Walk (`ipairs`) its
+    # condition list and translate Ready=True to Healthy or NotReady=True to
+    # Degraded. Until either condition exists, remain Progressing. Because the
+    # Kafka CR is wave 0 and KafkaTopic is wave 1, this prevents topics from
+    # landing before the broker is actually ready.
     resource.customizations.health.kafka.strimzi.io_Kafka: |
       hs = {}
       hs.status = "Progressing"
@@ -116,6 +175,9 @@ server:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-28)
+  # VPA target: cpu 23m, memory 175Mi — server below lowerBound for memory
+  # Previous: memory 256Mi → 512Mi (VPA lowerBound exceeded)
   resources:
     requests:
       cpu: 50m
@@ -130,13 +192,20 @@ applicationSet:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 49m, memory 100Mi
+  # Previous: cpu 250m (5x over-provisioned), memory 256Mi
+  # ApplicationSet is lightweight (watches directories, creates apps)
   resources:
     requests:
       cpu: 100m  # 2x VPA target for safety margin
       memory: 128Mi
     limits:
       memory: 512Mi  # Reduced from 1Gi
-# Do not enable the redis-ha subchart until ≥3 schedulable nodes span real failure domains (single host today).
+# Current topology has one schedulable workload worker and one physical
+# Proxmox failure domain. Do not enable the redis-ha subchart until at least
+# three schedulable nodes span real failure domains; extra replicas on the
+# same host add machinery without adding availability.
 redis:
   resources:
     requests:
@@ -155,7 +224,9 @@ controller:
     # Performance: split large app trees across Redis keys
     - name: ARGOCD_APPLICATION_TREE_SHARD_SIZE
       value: "100"
-    # ~90% of resources.limits.memory — keep in sync; GC pressure beats OOM-kill during comparison spikes.
+    # Go GC ceiling ~90% of the 6Gi memory limit: the GC works harder as the
+    # heap approaches this instead of letting the kernel OOM-kill the pod
+    # during comparison spikes. Keep in sync with resources.limits.memory.
     - name: GOMEMLIMIT
       value: "5500MiB"
   metrics:
@@ -166,6 +237,9 @@ controller:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-28)
+  # VPA target: cpu 2048m, memory 3.5Gi — memory below lowerBound
+  # Previous: memory 1536Mi → 4Gi (VPA lowerBound exceeded)
   resources:
     requests:
       cpu: 2000m
@@ -179,7 +253,9 @@ repoServer:
   env:
     - name: ARGOCD_EXEC_TIMEOUT
       value: "3m"
-    # ~90% of resources.limits.memory — keep in sync; big Helm renders (kube-prometheus-stack) spike the heap.
+    # Go GC ceiling ~90% of the 4Gi memory limit — big Helm renders
+    # (kube-prometheus-stack) spike the heap; GC pressure beats OOM-kill.
+    # Keep in sync with resources.limits.memory.
     - name: GOMEMLIMIT
       value: "3600MiB"
   metrics:
@@ -188,6 +264,11 @@ repoServer:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 2975m, memory 523Mi
+  # Previous: cpu 1000m (UNDER-PROVISIONED 3x), memory 1Gi (OVER-PROVISIONED 2x)
+  # Repo-server does heavy lifting: Helm template rendering, Kustomize builds
+  # CPU-bound (manifest generation) but low memory (template processing)
   resources:
     requests:
       cpu: 1000m   # low steady reservation; bursts to 4000m on big renders
@@ -202,7 +283,13 @@ notifications:
   # No triggers, subscriptions, or delivery services are configured. Enable
   # this only when a concrete notification destination is added.
   enabled: false
-# The chart's redis-secret-init PreSync hook Job races Argo's operationState tracking on upgrades and wedges
-# the sync; the argocd-redis Secret already exists, so the bootstrapper stays off.
+# Disable the redis-secret-init PreSync hook. The Job creates the redis
+# auth secret on first install; once created, it persists in the cluster
+# and the chart re-runs the Job on every sync as a hook. On chart
+# upgrades the Job's hook-delete-policy can race with Argo's
+# operationState tracking and wedge the sync indefinitely. The actual
+# `argocd-redis` Secret already exists (Argo Redis HA is Healthy), so
+# disabling the bootstrapper is safe and idempotent. Bit us on 2026-05-01
+# when Renovate PR #1259 bumped argo-cd to v9.5.9.
 redisSecretInit:
   enabled: false

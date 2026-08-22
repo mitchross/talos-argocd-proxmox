@@ -6,8 +6,17 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
-  # Git generator: `.path.basename` = last dir name (app name + namespace), `.path.path` = repo-relative path.
-  # missingkey=error fails generation instead of silently creating an Application with an empty name/path/namespace.
+  # Render each generated Application with Go templates. In an expression such
+  # as `{{ .path.basename }}`, the leading `.` means "the current generator
+  # result" (the template context). The Git generator supplies its matched
+  # directory as the `path` object: `.path.basename` is the final directory
+  # name, while `.path.path` is the complete repository-relative path.
+  # Example: `infrastructure/database/redis/redis-instance` produces
+  # `.path.basename = redis-instance` and `.path.path` equal to that full
+  # path, so the generated Application is named `database-redis-instance` and
+  # renders manifests from that directory.
+  # `missingkey=error` stops generation when a field is absent instead of
+  # silently creating an Application with an empty name, path, or namespace.
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
@@ -16,7 +25,10 @@ spec:
   ignoreApplicationDifferences:
   - jsonPointers:
     - /metadata/annotations/argocd.argoproj.io~1skip-reconcile
-    # Preserve a manual ServerSideDiff=false while redis-instance's Bound PVC still carries its old immutable dataSourceRef; removable once that PVC is recreated.
+    # Immutable-dataSourceRef escape hatch (VolSync-era, redis-instance):
+    # preserve a manual ServerSideDiff=false annotation while its Bound PVC
+    # still carries the old immutable dataSourceRef. Removable once that PVC
+    # is recreated without it (redis is backup-exempt going forward).
     - /metadata/annotations/argocd.argoproj.io~1compare-options
   generators:
   - git:
@@ -54,7 +66,9 @@ spec:
         - RespectIgnoreDifferences=true
         - FailOnSharedResource=true
         retry:
-          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving PreSync hook wedges the app-of-apps.
+          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
+          # PreSync hook can wedge the entire app-of-apps behind a stale
+          # manifest snapshot (incidents 2026-04-20, 2026-05-01).
           limit: 10
           backoff:
             duration: 10s

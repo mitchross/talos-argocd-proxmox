@@ -4,16 +4,32 @@ metadata:
   name: root
   namespace: argocd
   annotations:
-    # Cache hint: without this, any commit anywhere in the repo re-renders the root app-of-apps tree.
+    # Manifest-generate-paths cache hint: only invalidate root's manifest cache
+    # when files under apps/ change. Without this, any commit anywhere in the
+    # repo forces the repo-server to re-render the root app-of-apps tree.
     argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/argocd/apps
-    # Must stay client-side diff: the SSA dry-run rejects child Application/ApplicationSet objects on required
-    # status fields → root wedges in ComparisonError. ignoreDifferences on /status does NOT help.
+    # Force CLIENT-side diff for the app-of-apps. The global
+    # controller.diff.server.side: "true" (argocd-cmd-params-cm) does a dry-run
+    # server-side apply of every managed resource against the API server. For
+    # the child Application/ApplicationSet objects root manages, the apiserver
+    # validates them against the Application CRD's structural schema and rejects
+    # the dry-run with `status.operationState.startedAt: Required value` /
+    # `syncResult.revision: Required value` — wedging root in ComparisonError
+    # (broke 2026-06-18 after the argo-cd v9.5.21 bump tightened SSA dry-run
+    # validation on Application resources). ignoreDifferences on /status does NOT
+    # help: it filters the computed diff, not the dry-run round-trip. Server-side
+    # diff only buys operator-defaulted-field drift suppression, which
+    # Applications/ApplicationSets don't have — so client-side diff is correct
+    # here while the global flag stays on for everything else (CNPG, KEDA, …).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
-  # MUST stay `default`: the named AppProjects are created BY this app via projects.yaml,
-  # so pointing root at one of them deadlocks a fresh bootstrap.
+  # project MUST stay `default` (which always exists). The named AppProjects
+  # (infrastructure/my-apps/monitoring) are created BY this app via
+  # projects.yaml — pointing root at one of them would deadlock a fresh
+  # bootstrap: root can't sync until the project exists, and the project
+  # only exists once root syncs.
   project: default
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
@@ -31,8 +47,14 @@ spec:
     - ServerSideApply=true
     - RespectIgnoreDifferences=true
     retry:
-      # Bounded retry: an unbounded -1 op holds a frozen manifest snapshot forever and wedges every new push
-      # behind it; with a limit the op fails and selfHeal starts a FRESH op against current git.
+      # Bounded retry on root (children keep `limit: -1`). A stuck sync op
+      # holds a frozen manifest snapshot; while `limit: -1` is infinite, a
+      # failed child (e.g. otel's CrashLoopBackOff on 2026-04-20) keeps
+      # the op alive forever and wedges every new git push behind the
+      # stale snapshot. With `limit: 10`, the op fails cleanly after
+      # ~10×3m = ~30 min ceiling; `selfHeal: true` then triggers a FRESH
+      # sync op on the next reconcile with CURRENT git — functionally
+      # still infinite, just with manifest-refresh between ops.
       limit: 10
       backoff:
         duration: 5s

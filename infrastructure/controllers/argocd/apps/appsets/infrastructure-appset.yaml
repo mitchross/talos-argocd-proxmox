@@ -6,8 +6,19 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
-  # Git generator: `.path.basename` = last dir name (app name + namespace), `.path.path` = repo-relative path.
-  # missingkey=error fails generation instead of silently creating an Application with an empty name/path/namespace.
+  # Render each generated Application with Go templates. In an expression such
+  # as `{{ .path.basename }}`, the leading `.` means "the current generator
+  # result" (the template context). The Git generator supplies its matched
+  # directory as the `path` object: `.path.basename` is the final directory
+  # name, while `.path.path` is the complete repository-relative path.
+  # Example: `infrastructure/networking/gateway` produces
+  # `.path.basename = gateway` and `.path.path = infrastructure/networking/gateway`,
+  # so Argo creates the `infrastructure-gateway` Application, targets namespace
+  # `gateway`, and renders that folder. Generated Application names are always
+  # domain-prefixed so the Argo UI never relies on project/path inspection to
+  # distinguish similarly named components.
+  # `missingkey=error` stops generation when a field is absent instead of
+  # silently creating an Application with an empty name, path, or namespace.
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
@@ -16,15 +27,28 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      # cert-manager is a standalone Wave-1 app (core-dependencies/cert-manager-app.yaml) — do NOT re-add it here or it is double-managed.
+      # cert-manager moved to a standalone Wave-1 core-dependency app
+      # (core-dependencies/cert-manager-app.yaml) — the Wave-4 appset placement
+      # caused a circular deadlock with a Wave-3 webhook-cert consumer (the
+      # since-retired cnpg-barman-plugin). Do NOT re-add it here or it will
+      # be double-managed.
       - path: infrastructure/controllers/external-dns
       - path: infrastructure/controllers/gpu-priority-classes
       - path: infrastructure/controllers/node-feature-discovery
-      # No nvidia-device-plugin: on Talos 1.13 the gpu-operator chart owns the device plugin over the CDI driver/toolkit system extensions.
+      # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
+      # (in nvidia-gpu-operator) now owns the device plugin on top of the
+      # CDI-based driver/toolkit shipped by Talos system extensions.
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/metrics-server
-      # keda + temporal-worker-controller (Wave 4) and opentelemetry-operator (Wave 5) are standalone apps, NOT listed here:
-      # adding generator paths via this AppSet hit a repo-server render-cache loop that kept reverting them.
+      # NOTE: keda and temporal-worker-controller are NOT listed here.
+      # They have dedicated standalone Applications at Wave 4
+      # (keda-app.yaml, temporal-worker-controller-app.yaml) because
+      # adding them via this AppSet hit a repo-server render-cache loop
+      # where Argo kept reverting the new generator paths (see git log
+      # around 2026-04-20). Standalone Applications dodge that entirely.
+      # NOTE: opentelemetry-operator is NOT listed here
+      # It has a dedicated standalone Application at Wave 5 (opentelemetry-operator-app.yaml)
+      # to ensure cert-manager (Wave 4) is ready for webhook certificates
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/gateway
       - path: infrastructure/storage/container-registry
@@ -35,7 +59,10 @@ spec:
       - path: infrastructure/storage/truenas-csi
       - path: infrastructure/storage/local-storage
       - path: infrastructure/storage/talos-fstrim
-      # longhorn and snapshot-controller are standalone Wave-1 apps so storage is healthy before the kopiur operator (Wave 2).
+      # NOTE: longhorn and snapshot-controller are NOT listed here.
+      # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
+      # snapshot-controller-app.yaml) so storage is healthy before the
+      # kopiur operator (Wave 2).
       - path: infrastructure/storage/rustfs-lifecycle
   template:
     metadata:
@@ -66,7 +93,10 @@ spec:
         - RespectIgnoreDifferences=true
         - FailOnSharedResource=true
         retry:
-          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving PreSync hook wedges the app-of-apps.
+          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
+          # PreSync hook can wedge the entire app-of-apps behind a stale
+          # manifest snapshot (incidents 2026-04-20, 2026-05-01). selfHeal: true
+          # kicks a fresh sync against current git on the next reconcile.
           limit: 10
           backoff:
             duration: 10s

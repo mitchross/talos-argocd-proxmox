@@ -1,5 +1,11 @@
-# ServiceMonitors split out of the KEDA core app (Wave 4): monitoring.coreos.com CRDs don't exist until
-# kube-prometheus-stack (Wave 5), so these sync at Wave 6. Core apps must never render monitoring CRs.
+# KEDA observability (OPTIONAL) — ServiceMonitors split out of the KEDA core app.
+#
+# Bootstrap principle: a bootstrap-critical app (keda, Wave 4) must NOT render
+# monitoring.coreos.com CRs, because those CRDs don't exist until
+# kube-prometheus-stack (Wave 5). This app carries KEDA's ServiceMonitors and
+# syncs at Wave 6 — strictly AFTER monitoring — so it never gates storage /
+# controller / restore bootstrap. SkipDryRunOnMissingResource is acceptable
+# HERE (observability only) as a safety net; KEDA core does not need it.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
