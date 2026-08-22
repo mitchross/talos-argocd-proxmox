@@ -1,7 +1,5 @@
 ---
-# Presenton app_data backup stub — uniform fields injected by ../../common/kopiur-backup.
-# Data is root-owned (container runs as root), so mover uses runAsUser: 0.
-# Namespace has kopiur.home-operations.com/privileged-movers: "true" annotation.
+# Backup stub; data is root-owned so the mover runs as uid 0 — needs the namespace privileged-movers annotation.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:

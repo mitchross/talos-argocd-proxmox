@@ -1,8 +1,5 @@
-# VPA policies for bootstrap and infrastructure workloads whose applications
-# reconcile at the VPA CRD's wave or otherwise lack a safe post-CRD owner.
-# Keeping these policies central avoids cold-bootstrap dry-run failures.
-# Preserve names during moves so recommender checkpoints and in-memory
-# histories can reattach.
+# Central VPAs for workloads that reconcile at or before the VPA CRD's wave (avoids cold-bootstrap dry-run failures).
+# Preserve names when moving so recommender checkpoints reattach.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:

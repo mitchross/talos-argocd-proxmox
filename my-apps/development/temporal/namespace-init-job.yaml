@@ -1,16 +1,5 @@
-# Seeds Temporal user namespaces at deploy time via GitOps, so a rebuild
-# of Temporal (or a fresh PGDATA restore) doesn't leave the cluster with
-# only `temporal-system`.
-#
-# The shell script lives in scripts/seed-namespaces.sh and is loaded into
-# a ConfigMap by the `configMapGenerator` in kustomization.yaml. Mounted
-# here at /scripts/seed-namespaces.sh.
-#
-# Hook mechanics:
-#   - PostSync: runs AFTER the server Deployments are applied so the
-#     frontend is reachable when the script probes it.
-#   - BeforeHookCreation: prior attempts are deleted on re-sync (K8s Jobs
-#     are immutable).
+# Seeds Temporal user namespaces so a rebuild/PGDATA restore doesn't leave only `temporal-system`.
+# PostSync: the frontend must be reachable when scripts/seed-namespaces.sh (ConfigMap via configMapGenerator) probes it.
 apiVersion: batch/v1
 kind: Job
 metadata:

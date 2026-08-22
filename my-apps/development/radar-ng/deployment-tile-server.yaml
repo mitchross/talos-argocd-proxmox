@@ -1,8 +1,4 @@
-# Tile-server — Caddy + FastAPI. Serves:
-#   /tiles/*          rendered radar/HRRR/etc PNG tiles (from PVC)
-#   /basemap/tiles/*  proxied to basemap service (go-pmtiles)
-#   /basemap/styles/* Protomaps style JSONs baked into the image
-#   /api/*            FastAPI endpoints (manifest, wind-field, storms, etc.)
+# Caddy + FastAPI: /tiles/* from the PVC, /basemap/* proxied to basemap, /api/* FastAPI.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,9 +10,7 @@ spec:
   # Replicas are managed by the HPA, currently pinned to one because the API
   # mounts Longhorn RWO publication volumes.
   replicas: 1
-  # tiles/grids/state are Longhorn RWO volumes. Recreate prevents a rollout
-  # from scheduling the replacement on another node while the old pod still
-  # holds the attachment.
+  # RWO Longhorn volumes — Recreate, or the replacement pod deadlocks on Multi-Attach.
   strategy:
     type: Recreate
   selector:
@@ -27,16 +21,10 @@ spec:
       labels:
         app: tile-server
       annotations:
-        # Bump to force pod template change when only env-var changes are
-        # made — ArgoCD's SSA was masking the FORECAST_TTL_S addition due
-        # to an old kubectl-rollout field-manager owning the env array.
-        # Annotation diffs can't be silently squashed; this guarantees a
-        # ReplicaSet roll on each gitops bump.
+        # Bump to force a ReplicaSet roll when only env changes — a stale field-manager can mask env diffs under SSA.
         config-rev: "2026-05-10-forecast-ttl-300"
     spec:
-      # Prefer the node already hosting the worker that shares these RWO
-      # volumes. This keeps tile-server replacements co-located while still
-      # allowing tile-server to bootstrap first when no worker exists yet.
+      # Prefer the node holding the worker that shares these RWO volumes (preferred, so tile-server can bootstrap first).
       affinity:
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -46,9 +34,7 @@ spec:
                   matchLabels:
                     app: radar-ng-worker
                 topologyKey: kubernetes.io/hostname
-      # Spread replicas across nodes so a single node failure can't take
-      # the API offline. ScheduleAnyway lets the second pod schedule even
-      # if there's only one matching node available.
+      # ScheduleAnyway so the pod still schedules when only one node matches.
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -56,17 +42,12 @@ spec:
           labelSelector:
             matchLabels:
               app: tile-server
-      # Pod-level securityContext satisfies the radar-ng namespace
-      # PodSecurity "restricted" profile (currently warn-only). Image
-      # creates UID 1000 'app' user; ports 8000/8080 don't need
-      # NET_BIND_SERVICE so all caps can be dropped.
+      # Satisfies the namespace's PodSecurity "restricted" profile; the image runs as UID 1000.
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-        # fsGroup for the longhorn-flash RWO tiles/grids/state volumes (see
-        # temporal-worker-deployment.yaml) — non-root pods need it to read the
-        # group-owned files the worker writes.
+        # fsGroup so this non-root pod can read the group-owned files the worker writes on the RWO volumes.
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
@@ -95,11 +76,7 @@ spec:
               value: http://open-meteo:8080/v1/forecast
             - name: MRMS_MAX_AGE_S
               value: "600"
-            # 2026-05-10: dropped from default 900s → 300s. Pull-to-refresh
-            # on the home tab refetches client-side, but the response was
-            # still served from this in-process cache for up to 15 min so
-            # the user-visible data didn't change. 5 min keeps us polite to
-            # Open-Meteo upstream while making refresh feel responsive.
+            # 5 min: polite to Open-Meteo upstream, short enough that pull-to-refresh shows new data.
             - name: FORECAST_TTL_S
               value: "300"
             - name: FORECAST_CACHE_MAX_ENTRIES
@@ -120,12 +97,8 @@ spec:
               value: temporal-frontend.temporal.svc.cluster.local:7233
             - name: TEMPORAL_NAMESPACE
               value: default
-          # /api/livez is 200 iff the FastAPI process answers, probed through
-          # Caddy:8080 so it exercises both processes in the pod. start.sh
-          # backgrounds uvicorn — without a liveness probe a dead uvicorn
-          # leaves the pod Ready and 502ing /api/* forever. Do NOT probe
-          # /api/health: it reports degraded on stale NOAA data, a condition
-          # shared by every replica, and would restart/drain the whole fleet.
+          # Probe /api/livez through Caddy so a dead backgrounded uvicorn restarts the pod.
+          # Do NOT probe /api/health: it degrades on stale NOAA data fleet-wide and would restart every replica.
           livenessProbe:
             httpGet:
               path: /api/livez
@@ -150,11 +123,7 @@ spec:
           resources:
             requests:
               cpu: 250m
-              # Idle steady-state is ~56Mi but three generations of pods
-              # OOMKilled (exit 137) at the 1Gi limit across 2026-05-20→22,
-              # so the burst path needs more headroom than the prior cap
-              # provided. Bumping requests to 512Mi gives the scheduler a
-              # truthful floor and the 2Gi limit absorbs render/tile bursts.
+              # Burst path OOMKilled at a 1Gi limit; keep request >=512Mi with the 2Gi limit.
               memory: 512Mi
             limits:
               cpu: "1"

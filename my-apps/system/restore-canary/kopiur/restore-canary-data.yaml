@@ -1,10 +1,6 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
-# restore-canary-data backup STUB — uniform fields (repository, copyMethod,
-# populator) injected by ../../common/kopiur-backup. The mover securityContext
-# is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
-# DR-drill canary: kept on a normal DAILY schedule (the old pvc-plumber
-# manual tier had no cron) so snapshots always exist for the drill.
+# restore-canary-data backup STUB — uniform fields from ../../common/kopiur-backup; mover uid:gid stays HERE (docs/domains/storage/kopiur-mover-permissions.md).
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -21,9 +17,7 @@ spec:
     keepDaily: 14
     keepWeekly: 6
     keepMonthly: 3
-  # Weekly repository/blob verification complements the daily backup. This is
-  # non-destructive; the full PVC delete-and-restore drill remains an explicit
-  # operator action documented in the canary README.
+  # Weekly non-destructive repo/blob verification; the full delete-and-restore drill stays a manual operator action (README).
   verification:
     quick:
       schedule:

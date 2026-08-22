@@ -1,7 +1,4 @@
-# In-app plain Postgres + kopiur (gitea pattern) — replaced the CNPG
-# paperless-database cluster 2026-08-13 as a greenfield cutover (fresh empty
-# database; no dump/restore). Document originals live on the media/data PVCs
-# (kopiur-backed) and can be re-consumed; DB-side tags/metadata start fresh.
+# In-app plain Postgres + kopiur (gitea pattern).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,17 +18,13 @@ spec:
       labels:
         app: paperless-postgres
     spec:
-      # SIGINT (the image's STOPSIGNAL) triggers Postgres "fast shutdown":
-      # it aborts open transactions and flushes cleanly. 60s covers a busy
-      # checkpoint before the kubelet escalates to SIGKILL.
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before the kubelet SIGKILLs.
       terminationGracePeriodSeconds: 60
       securityContext:
         fsGroup: 999 # postgres uid:gid in the official image
       containers:
         - name: postgres
-          # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
-          # need a manual dump/restore (Postgres data dirs are not
-          # major-version compatible; majors are gated in renovate.json5).
+          # Pin MAJOR.MINOR — a major upgrade needs a manual dump/restore (majors gated in renovate.json5).
           image: postgres:18.6
           securityContext:
             runAsUser: 999
@@ -44,12 +37,7 @@ spec:
             - containerPort: 5432
               name: postgres
           env:
-            # First boot on an EMPTY volume creates this DB + user — the
-            # whole database is declared right here. User/password come
-            # from the same 1Password-fed secret the app already consumes
-            # (PAPERLESS_DBUSER/PAPERLESS_DBPASS). On a restored
-            # (non-empty) volume these are ignored and the restored data
-            # wins.
+            # Only consumed on first boot of an EMPTY volume (initdb); a restored volume ignores these.
             - name: POSTGRES_DB
               value: "paperless"
             - name: POSTGRES_USER
@@ -68,11 +56,8 @@ spec:
             # mount contains lost+found).
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-          # Probes expand $POSTGRES_USER rather than hardcoding it, because
-          # the username lives in the secret (immich pattern).
-          # A restored or crash-recovering database can take longer than a
-          # fresh start; the startup probe suppresses liveness restarts
-          # while PostgreSQL replays WAL after restore.
+          # Probes expand $POSTGRES_USER because the username lives in the secret.
+          # Generous startup probe: WAL replay after a restore takes far longer than a fresh start.
           startupProbe:
             exec:
               command:

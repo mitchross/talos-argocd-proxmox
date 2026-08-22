@@ -18,12 +18,8 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  # kopiur restore-before-bind: on recreate this binds Pending until the
-  # Restore populator hydrates it from the latest kopia snapshot. No-op while
-  # Bound. Backup/restore CRs in kopiur/storage.yaml; uniform fields come from
-  # the ../../common/kopiur-backup component; the
-  # root mover (runAsUser: 0 — nginx data is root-owned) is set in the stub
-  # and gated by the namespace privileged-movers annotation.
+  # kopiur restore-before-bind (CRs in kopiur/storage.yaml). Data is root-owned, so the stub's
+  # runAsUser: 0 mover depends on the namespace privileged-movers annotation.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

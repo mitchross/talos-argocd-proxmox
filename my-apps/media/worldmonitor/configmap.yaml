@@ -14,7 +14,5 @@ data:
   # LLM — in-cluster llama.cpp (qwen3.8-27b)
   LLM_API_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions"
   LLM_MODEL: "qwen3.8-27b"
-  # Must be non-empty: the generic LLM provider is skipped entirely when
-  # LLM_API_KEY is unset/empty (server/_shared/llm.ts). llama.cpp runs without
-  # --api-key so any value passes.
+  # Must be non-empty: the generic LLM provider is skipped when LLM_API_KEY is empty; llama.cpp accepts any value.
   LLM_API_KEY: "not-needed"

@@ -88,9 +88,4 @@ spec:
       # Shrunk 10Gi -> 4Gi for the single-node rebuild (2026-06-19). Valkey cache
       # (allkeys-lru, no RDB/AOF) — nothing persisted, 4Gi is plenty. Backup-exempt.
       storage: 4Gi
-  # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
-  # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
-  # Inline RS/redis7-data + RD/redis7-data-dst were REMOVED 2026-05-31 to stop
-  # backups. dataSourceRef omitted to match the live PVC (empty); Valkey is a
-  # pure LRU cache (no persistence) so there is nothing to restore. Do not
-  # re-add RS/RD.
+  # Intentionally NO dataSourceRef — backup-exempt LRU cache; do not re-add backup CRs.

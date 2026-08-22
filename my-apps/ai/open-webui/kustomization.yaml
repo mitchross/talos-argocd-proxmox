@@ -35,10 +35,7 @@ configMapGenerator:
 - name: open-webui-configmap
   envs:
   - open-webui-configmap.env
-# Hash-suffixed mcp-config.json for the multi-tool MCP server (mcpo-multi
-# Deployment in mcp-config.yaml). Renaming `config.json` → `mcp-config.json`
-# would require changing the Deployment's volume mount + container args, so
-# we keep the in-cluster filename `config.json` via the renamed key.
+# Key renamed to config.json so the mcpo-multi Deployment's volume mount + args stay unchanged.
 - name: mcp-config
   files:
   - config.json=mcp-config.json

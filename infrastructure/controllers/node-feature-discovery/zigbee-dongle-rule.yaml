@@ -1,6 +1,5 @@
-# SONOFF Zigbee coordinator (CP2102N bridge, USB 10c4:ea60). Labels whichever
-# node the dongle is USB-passed to; home-assistant schedules on this label.
-# Creates label: feature.node.kubernetes.io/custom-usb.zigbee-coordinator=true
+# SONOFF Zigbee coordinator (CP2102N, USB 10c4:ea60) -> feature.node.kubernetes.io/custom-usb.zigbee-coordinator=true.
+# Labels whichever node the dongle is USB-passed to; home-assistant schedules on it.
 apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeatureRule
 metadata:

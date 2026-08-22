@@ -36,9 +36,3 @@ resources:
 # You can enable ingress if needed
 ingress:
   enabled: false
-  # Configure for your environment if enabled
-  # hosts:
-  #   - host: headlamp.yourdomain.com
-  #     paths:
-  #       - path: /
-  #         pathType: Prefix 

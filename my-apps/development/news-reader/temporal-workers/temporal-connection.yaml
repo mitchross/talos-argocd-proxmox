@@ -1,33 +1,4 @@
-# Connection — Temporal Worker Controller CRD.
-#
-# (Renamed from TemporalConnection. The v1.7.0 controller deprecated the
-# `Temporal*` kinds; its `deprecated-tc` handler only logs and does NOT
-# reconcile spec changes. Must be `kind: Connection` to be live.)
-#
-# Describes "how to reach our Temporal server" as a reusable resource that
-# any WorkerDeployment in this namespace can reference by name.
-# Pure config — applying or re-applying it never restarts anything.
-#
-# Why it's a separate object from WorkerDeployment:
-#   - Many worker deployments in the same namespace can share one
-#     connection. If you ever flip to mTLS or change the frontend
-#     hostport, you edit this file once instead of N.
-#   - Some Temporal Cloud setups put the API key here too, and the rest
-#     of the cluster references it without seeing the secret.
-#
-# Field reference:
-#   spec.hostPort           — gRPC endpoint of the Temporal frontend. For
-#                             in-cluster self-hosted it's the headless
-#                             ClusterIP Service of the chart's frontend.
-#   spec.mutualTLSSecretRef — Optional. Points at a Kubernetes Secret that
-#                             contains tls.crt + tls.key (+ ca.crt for
-#                             server cert verification). Required for
-#                             Temporal Cloud and recommended for any
-#                             multi-tenant homelab.
-#   spec.apiKey             — Optional. References a Secret carrying a
-#                             Temporal Cloud API key. Unused here.
-#
-# This resource is always safe to apply — it describes a target, not a workload.
+# Must be `kind: Connection` — the controller's deprecated `TemporalConnection` handler only logs, never reconciles.
 apiVersion: temporal.io/v1alpha1
 kind: Connection
 metadata:
@@ -35,8 +6,4 @@ metadata:
   namespace: news-reader
 spec:
   hostPort: "temporal-frontend.temporal.svc.cluster.local:7233"
-  # No mutualTLSSecretRef — our self-hosted frontend has no auth configured.
-  # If you later add mTLS (recommended for production), create a Secret with
-  # tls.crt + tls.key + ca.crt and set:
-  #   mutualTLSSecretRef:
-  #     name: temporal-cluster-mtls
+  # No mTLS on the self-hosted frontend. To add it, create a Secret with tls.crt/tls.key/ca.crt and set mutualTLSSecretRef.

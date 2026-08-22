@@ -2,9 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: redis
 labels:
-  # includeSelectors: true == the old commonLabels behavior (labels stamped on
-  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
-  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  # includeSelectors: true == old commonLabels (labels on selectors + pod templates).
+  # Keep true: live selectors are immutable; flipping forces delete/recreate.
   - includeSelectors: true
     pairs:
       app.kubernetes.io/name: redis-commander

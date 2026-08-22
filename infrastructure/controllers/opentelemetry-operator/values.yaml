@@ -5,14 +5,8 @@ manager:
       memory: 128Mi
     limits:
       memory: 256Mi
-  # Bootstrap principle: a bootstrap-critical app must NOT render
-  # monitoring.coreos.com CRs. The OTel operator syncs at Wave 5 — the SAME
-  # wave as kube-prometheus-stack (the monitoring.coreos.com CRD owner) — so a
-  # chart-rendered ServiceMonitor races the CRD install and can SyncFailed on a
-  # fresh nuke. The operator's ServiceMonitor now lives in the separate
-  # post-monitoring app `opentelemetry-operator-observability` (Wave 6); see
-  # infrastructure/controllers/opentelemetry-operator-observability/.
-  # Do NOT re-enable this here.
+  # A chart-rendered ServiceMonitor races the kube-prometheus-stack CRD install (both wave 5) on a fresh nuke.
+  # It lives in opentelemetry-operator-observability (wave 6) instead. Do NOT re-enable here.
   serviceMonitor:
     enabled: false
 

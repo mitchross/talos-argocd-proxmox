@@ -1,14 +1,5 @@
-# OpenTelemetry Operator observability (OPTIONAL) — ServiceMonitor split out of
-# the OTel operator core app.
-#
-# Bootstrap principle: a bootstrap-critical app (opentelemetry-operator, Wave 5)
-# must NOT render monitoring.coreos.com CRs. The OTel operator and
-# kube-prometheus-stack (the monitoring.coreos.com CRD owner) are BOTH Wave 5,
-# so a chart-rendered ServiceMonitor raced the CRD install. This app carries the
-# operator's ServiceMonitor and syncs at Wave 6 — strictly AFTER monitoring — so
-# it never gates storage / controller / restore bootstrap.
-# SkipDryRunOnMissingResource is acceptable HERE (observability only) as a
-# safety net; OTel operator core does not need it.
+# ServiceMonitor split out of the OTel operator core app: both it and kube-prometheus-stack (CRD owner) are Wave 5,
+# so a chart-rendered ServiceMonitor raced the CRD install. Wave 6 keeps this strictly after monitoring.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

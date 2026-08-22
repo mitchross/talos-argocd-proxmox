@@ -2,9 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: redis-instance
 labels:
-  # includeSelectors: true == the old commonLabels behavior (labels stamped on
-  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
-  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  # includeSelectors: true == old commonLabels (labels on selectors + pod templates).
+  # Keep true: live selectors are immutable; flipping forces delete/recreate.
   - includeSelectors: true
     pairs:
       app.kubernetes.io/name: redis
@@ -26,11 +25,8 @@ helmCharts:
         enabled: true
         existingSecret: redis-auth
         existingSecretPasswordKey: redis-password
-      # Redis is a disposable broker/cache for Paperless and redis-commander,
-      # not a system of record. Keep modules, but do not persist AOF: a corrupt
-      # appendonly.aof tail wedged redis-master-0 for 37h and blocked Paperless
-      # startup on 2026-07-09. Durable Paperless data lives in kopiur
-      # backed PVCs, not here.
+      # Disposable cache, not a system of record. Keep modules but never persist AOF:
+      # a corrupt appendonly.aof tail wedged redis-master-0 and blocked Paperless startup.
       commonConfiguration: |-
         loadmodule /opt/bitnami/redis/lib/redis/modules/redisearch.so
         loadmodule /opt/bitnami/redis/lib/redis/modules/rejson.so

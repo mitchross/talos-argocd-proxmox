@@ -6,16 +6,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
-  # Render each generated Application with Go templates. In an expression such
-  # as `{{ .path.basename }}`, the leading `.` means "the current generator
-  # result" (the template context). The Git generator supplies its matched
-  # directory as the `path` object: `.path.basename` is the final directory
-  # name, while `.path.path` is the complete repository-relative path.
-  # Example: `monitoring/prometheus-stack` produces
-  # `.path.basename = prometheus-stack` and `.path.path = monitoring/prometheus-stack`,
-  # so Argo creates `monitoring-prometheus-stack` in namespace `prometheus-stack`.
-  # `missingkey=error` stops generation when a field is absent instead of
-  # silently creating an Application with an empty name, path, or namespace.
+  # Git generator: `.path.basename` = last dir name (app name + namespace), `.path.path` = repo-relative path.
+  # missingkey=error fails generation instead of silently creating an Application with an empty name/path/namespace.
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
@@ -52,10 +44,7 @@ spec:
         - RespectIgnoreDifferences=true
         - FailOnSharedResource=true
         retry:
-          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
-          # PreSync hook can wedge the entire app-of-apps behind a stale
-          # manifest snapshot (incidents 2026-04-20, 2026-05-01). selfHeal: true
-          # kicks a fresh sync against current git on the next reconcile.
+          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving PreSync hook wedges the app-of-apps.
           limit: 10
           backoff:
             duration: 10s

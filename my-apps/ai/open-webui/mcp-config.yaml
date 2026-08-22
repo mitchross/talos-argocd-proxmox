@@ -15,9 +15,8 @@ spec:
       labels:
         app: mcpo-multi
     spec:
-      # Pure-HTTP tool proxy (no GPU). PREFER a non-GPU node so the 3090s stay
-      # exclusive to vLLM, but soft so it still schedules on the GPU node when
-      # it's the only worker. NFD adds pci-0300_10de.present only to GPU nodes.
+      # No GPU: soft-prefer non-GPU nodes (pci-0300_10de.present is NFD's GPU label) so the 3090 stays exclusive to inference;
+      # soft so it still schedules when the GPU node is the only worker.
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

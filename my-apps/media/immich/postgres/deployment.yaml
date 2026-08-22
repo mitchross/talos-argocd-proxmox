@@ -1,9 +1,4 @@
-# Plain PostgreSQL for immich — the gitea/postgres pattern. No operator: the
-# DB is an ordinary app whose PVC kopiur backs up (hourly tier) and
-# restores-before-bind on recreate. Postgres treats a restored
-# crash-consistent snapshot like a power loss and WAL-recovers on boot.
-# Trade-off vs CNPG: restore granularity is the last snapshot, not
-# point-in-time. Runbook: docs/domains/cnpg/plain-postgres-migration.md
+# Plain Postgres + kopiur hourly tier (gitea/postgres pattern); runbook: docs/domains/cnpg/plain-postgres-migration.md
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,20 +18,14 @@ spec:
       labels:
         app: immich-postgres
     spec:
-      # SIGINT (the image's STOPSIGNAL) triggers Postgres "fast shutdown":
-      # it aborts open transactions and flushes cleanly. 60s covers a busy
-      # checkpoint before the kubelet escalates to SIGKILL.
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
       terminationGracePeriodSeconds: 60
       securityContext:
         fsGroup: 999 # postgres uid:gid in the official image
       containers:
         - name: postgres
-          # Immich's own Postgres image: it ships and preloads the vchord
-          # vector extension (shared_preload_libraries) that immich-server
-          # requires — a stock postgres image CANNOT run immich. Keep the
-          # vectorchord version aligned with what immich-server expects.
-          # Pin MAJOR — a MAJOR bump needs a manual dump/restore because
-          # Postgres data directories are not major-version compatible.
+          # Immich's own image preloads vchord — a stock postgres image CANNOT run immich; keep vectorchord aligned with immich-server.
+          # Pin MAJOR: a major bump needs a manual dump/restore (data dirs are not major-version compatible).
           image: ghcr.io/immich-app/postgres:17-vectorchord0.4.3@sha256:79b95b795f0911e95ffa4d092a2162c4d81a984d5629bc8f786afe0bc0657671
           securityContext:
             runAsUser: 999
@@ -49,11 +38,8 @@ spec:
             - containerPort: 5432
               name: postgres
           env:
-            # First boot on an EMPTY volume creates this DB + user — the whole
-            # database is declared right here, no admin tool. On a restored
-            # (non-empty) volume these are ignored and the restored data wins.
-            # User/password come from the SAME secret immich-server reads, so
-            # the role and the client credential can never drift apart.
+            # First boot on an EMPTY volume creates DB + user; on a restored volume these are ignored.
+            # Same secret immich-server reads, so role and client credential cannot drift apart.
             - name: POSTGRES_DB
               value: "immich"
             - name: POSTGRES_USER
@@ -72,9 +58,7 @@ spec:
             # contains lost+found).
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-          # Probes expand $POSTGRES_USER rather than hardcoding it, because the
-          # username is secret-sourced — a literal here would silently break if
-          # the 1Password item ever differs.
+          # Probes expand $POSTGRES_USER — the username is secret-sourced; a literal would silently break.
           startupProbe:
             exec:
               command:

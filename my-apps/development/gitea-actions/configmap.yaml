@@ -1,10 +1,4 @@
-# act_runner config. Mounted at /etc/act_runner/config.yaml in the runner
-# container. CONFIG_FILE env var points act_runner at this path.
-#
-# The container.options field is the escape hatch for `--gpus all` — by
-# default act adds it when starting job containers, which fails on a
-# dockerd with no nvidia runtime. Empty `--gpus=` overrides it (last
-# value wins in docker's flag parsing).
+# Mounted at /etc/act_runner/config.yaml (CONFIG_FILE env in deployment.yaml).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -17,11 +11,7 @@ data:
 
     runner:
       file: /data/.runner
-      # 1 job at a time. Higher capacity actually slowed cold runs:
-      # concurrent `docker pull` of the same base image hit containerd's
-      # content-store lock and serialized anyway, while quadrupling
-      # peak RAM. Layer-cache hits from the dind PVC mean serial jobs
-      # are fast enough that parallelism doesn't pay.
+      # Keep at 1: parallel jobs serialize on containerd's content-store lock anyway and quadruple peak RAM.
       capacity: 1
       timeout: 1h
       shutdown_timeout: 5m
@@ -32,13 +22,8 @@ data:
       enabled: true
 
     container:
-      # No --gpus override. `--gpus=0` and `--gpus=` both still leave
-      # Capabilities:[[gpu]] in the HostConfig DeviceRequests, which
-      # makes dockerd refuse to start the container ("could not select
-      # device driver"). The only way to avoid the gpu cap entirely is
-      # to NOT pass any --gpus flag. act_runner only adds it when the
-      # user puts it here, so leaving options empty yields a clean
-      # docker create with no DeviceRequests.
+      # Must stay empty: any --gpus value (even `--gpus=`) leaves a gpu DeviceRequest and
+      # dockerd without an nvidia runtime refuses the container ("could not select device driver").
       options: ""
       # buildx + DinD need privileged step containers.
       privileged: true

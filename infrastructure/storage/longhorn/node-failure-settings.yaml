@@ -1,17 +1,8 @@
-# Longhorn Node Failure and Recovery Settings
-# These settings prevent the issues you experienced with faulted volumes
-# when nodes were removed from the cluster.
-#
-# ONLY settings absent from values.yaml defaultSettings belong here. Longhorn's
-# ConfigMap controller reconciles Setting CRs from longhorn-default-setting, so
-# anything declared in both places has its CR silently overwritten — declare a
-# setting in exactly one file.
+# ONLY settings absent from values.yaml defaultSettings belong here: anything declared in
+# both places has its Setting CR silently overwritten by the longhorn-default-setting ConfigMap.
 
 ---
-# CRITICAL: Automatically delete pods when a node goes down
-# This allows Longhorn to reschedule replicas to healthy nodes
-# Current: do-nothing (causes volumes to stay faulted)
-# Options: do-nothing, delete-deployment-pod, delete-statefulset-pod, delete-both-statefulset-and-deployment-pod
+# Delete pods on a down node so volumes reattach elsewhere instead of staying faulted.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -20,10 +11,7 @@ metadata:
 value: "delete-both-statefulset-and-deployment-pod"
 
 ---
-# Automatically delete orphaned resources when all replicas are lost
-# This prevents PVCs from getting stuck in Terminating state
-# Format: semicolon-separated list of resource types
-# Valid types: replica-data (replica data store), instance (engine and replica runtime)
+# Without this, PVCs whose replicas are all lost stick in Terminating.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -32,9 +20,6 @@ metadata:
 value: "replica-data;instance"
 
 ---
-# Block node drain if it contains the last healthy replica
-# This prevents accidental data loss when draining nodes
-# Current: already set to block-if-contains-last-replica ✓
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -43,17 +28,8 @@ metadata:
 value: "block-if-contains-last-replica"
 
 ---
-# Concurrent replica rebuilds per node — INTENTIONALLY 1 (2026-06-12 incident).
-# During the post-nuke mass restore, 5 concurrent rebuilds per node saturated
-# the then-active v2 (SPDK) data engine: NVMe-TCP keep-alive timeouts killed
-# engine frontends, faulting volumes faster than rebuilds drained them — a
-# self-sustaining storm (restores stuck at 16/25 for 30+ min; nodes were at
-# ~22% CPU, so this was SPDK contention, not resources). Dropping to 1 broke
-# the loop within minutes. The V2 engine was retired the same day, but the
-# throttle STAYS at 1 on V1: mass-restore bootstraps overload any engine on
-# this hardware (two consumer NVMe-backed LVM-thin stores), and slow
-# redundancy recovery is an acceptable price. Raise to 2-3 only after a
-# passed DR drill shows headroom.
+# INTENTIONALLY 1: a mass-restore bootstrap overloads any engine on this hardware and faults
+# volumes faster than rebuilds drain them. Raise to 2-3 only after a passed DR drill shows headroom.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -62,9 +38,6 @@ metadata:
 value: "1"
 
 ---
-# Disable scheduling on cordoned nodes
-# Prevents new replicas from being placed on nodes being drained
-# Current: true ✓
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -93,19 +66,8 @@ metadata:
 value: "true"
 
 ---
-# V2 (SPDK) reactor cores per node: default {"v2":"0x3"} (2 cores) -> 4 cores.
-# Added 2026-06-11 after the first V2 nuke-restore wedged: 25 concurrent
-# VolSync restores + ~40 app PVC attaches drove both SPDK targets into
-# stuck teardown loops ("NVMe path still exists after delete", engines
-# desire=running stuck stopped) that survived instance-manager restarts.
-# 2 busy-poll cores could not drain the attach/detach churn on 32-core
-# nodes — the setting's own upstream description warns single/low core
-# counts cause "timeout events and operational instability" under heavy IO.
-# Setting name is the consolidated `data-engine-cpu-mask` (engine-keyed
-# JSON; `v2-data-engine-cpu-mask` is a legacy constant that 1.12.0 does
-# not accept as a definition). DANGER-ZONE: on a LIVE cluster it only
-# applies once all V2 volumes are detached — in practice it lands at the
-# next nuke/rebuild bootstrap, which is exactly when it matters.
+# V2 (SPDK) reactor cores; inert on V1 but the 2-core default wedges a rebuild under restore churn.
+# Name must be the consolidated `data-engine-cpu-mask` — the legacy `v2-data-engine-cpu-mask` is rejected.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:

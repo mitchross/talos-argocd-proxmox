@@ -16,11 +16,8 @@ resources:
   - httproute-viewer.yaml
 
 configMapGenerator:
-  # Hash-suffixed names are the update mechanism: editing DATASET_URL below
-  # (or config.yaml) changes the generated name, which changes the consuming
-  # pod spec, which re-runs the bootstrap hook / restarts the server on the
-  # next sync. To refresh the planet: point DATASET_URL (+ sha256) at a newer
-  # osm.YYYYMMDD snapshot from https://download.versatiles.org/ — see README.
+  # Hash suffix is the update mechanism: changing DATASET_URL (+ sha256) or config.yaml re-runs the bootstrap hook.
+  # Newer planet snapshots: https://download.versatiles.org/ (see README).
   - name: versatiles-config
     files:
       - config.yaml
@@ -29,9 +26,7 @@ configMapGenerator:
       - DATASET_URL=https://download.versatiles.org/osm.20260608.versatiles
       - DATASET_SHA256_URL=https://download.versatiles.org/osm.20260608.versatiles.sha256
       - TARGET_FILE=osm.versatiles
-  # map-styles static server: the nginx config + the two pre-generated style
-  # JSONs. Editing a style (re-run styles/generate.mjs) or the config changes
-  # the hash-suffixed name → rolls the map-styles Deployment.
+  # Editing a style (re-run styles/generate.mjs) or the nginx config rolls the map-styles Deployment via the hash suffix.
   - name: map-styles-nginx
     files:
       - default.conf=nginx-styles.conf

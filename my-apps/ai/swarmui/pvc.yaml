@@ -1,18 +1,5 @@
-# SwarmUI persistent storage.
-#
-# Layout rationale:
-#   - swarmui-data       : Settings.fds, Backends.fds, sessions, users, install
-#                          state. Small + precious -> Longhorn + daily backup.
-#   - swarmui-dlbackend  : SwarmUI auto-installs its own ComfyUI + Python/torch
-#                          venv here on first run. Large + fully reinstallable
-#                          -> Longhorn, NO backup label.
-#   - swarmui-output     : Generated images (user content) -> Longhorn + backup.
-#   - swarmui-models     : Reuses the EXISTING ComfyUI NFS share so no models
-#                          need re-downloading. SwarmUI replaces the standalone
-#                          comfyui app (scaled to replicas:0), so RWX RW mount
-#                          is safe — no concurrent writer.
-#
-# All Longhorn PVCs are RWO -> Deployment MUST use strategy.type: Recreate.
+# All Longhorn PVCs are RWO -> the Deployment MUST use strategy.type: Recreate.
+# swarmui-comfyui-models reuses the ComfyUI NFS share: RWX write is only safe while comfyui stays at replicas:0.
 ---
 ---
 apiVersion: v1
@@ -59,11 +46,6 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    # Regenerable SwarmUI image-output dir. Longhorn volume faulted 2026-06-27
-    # (single replica failed under snapshot load on the scaled-to-0 GPU app);
-    # a faulted volume can't be snapshotted. Salvage via Longhorn UI and
-    # re-add the kopiur backup (stub + dataSourceRef) if the outputs are worth
-    # protecting.
     storage.vanillax.dev/backup-exempt-reason: "SwarmUI generated-image output dir; regenerable. Longhorn volume faulted 2026-06-27, salvage + re-enable backup if desired."
 spec:
   accessModes:
@@ -74,11 +56,8 @@ spec:
   storageClassName: longhorn
 ---
 ---
-# Static PV pointing at the SAME TrueNAS share ComfyUI used (/mnt/ai-pool/comfyui).
-# Models live under <share>/ComfyUI/models — set SwarmUI's ModelRoot to
-# /comfyui-models/ComfyUI/models with SDModelFolder: checkpoints during the
-# one-time install wizard (see README).
-# Must use CSI driver (not legacy nfs:) for mountOptions like nconnect to work.
+# Same TrueNAS share ComfyUI used; set ModelRoot to /comfyui-models/ComfyUI/models in the install wizard.
+# CSI driver (not legacy nfs:) — mountOptions like nconnect are silently ignored otherwise.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -124,10 +103,5 @@ spec:
   storageClassName: nfs-comfyui-10g
   volumeName: swarmui-comfyui-models-nfs-pv
 
-# NOTE: swarmui is currently unused — ALL of its PVCs are backup-exempt
-# (see the backup-exempt label + reason on each PVC above); no kopiur stubs
-# exist and the kopiur-backup component is NOT wired into this app. To start
-# backing up swarmui-data / swarmui-output, add per-PVC stubs under kopiur/,
-# pull in ../../common/kopiur-backup, and point each PVC dataSourceRef at its
-# Restore (see my-apps/CLAUDE.md). swarmui-dlbackend + swarmui-comfyui-models
-# stay backup-exempt by design (reinstallable / shared NFS).
+# swarmui is unused: every PVC is backup-exempt and the kopiur-backup component is not wired in.
+# To back up data/output: add kopiur/ stubs, the ../../common/kopiur-backup component, and PVC dataSourceRefs.

@@ -20,17 +20,11 @@ spec:
       annotations:
         instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
-      # Seed /data/config.json on every start from the ConfigMap. If the
-      # file is missing (fresh PVC) we write the seed verbatim. If it
-      # exists we merge just `modelProviders` in-place so user UI
-      # preferences (theme, personalization) aren't stomped on each
-      # deploy — model-provider list is authoritative from git, everything
-      # else stays user-controlled.
+      # Seeds /data/config.json from the ConfigMap; on an existing file only modelProviders +
+      # search are overwritten so user UI preferences survive each deploy.
       initContainers:
         - name: seed-config
-          # Alpine with inline `apk add jq` because the upstream jq image
-          # (ghcr.io/jqlang/jq) is distroless and has no shell — we need
-          # /bin/sh for the merge logic below.
+          # ghcr.io/jqlang/jq is distroless (no shell); alpine + apk jq gives us /bin/sh for the merge.
           image: alpine:3.24
           command:
             - /bin/sh
@@ -71,22 +65,8 @@ spec:
             seccompProfile: { type: RuntimeDefault }
       containers:
         - name: perplexica
-          # Upstream renamed the project Perplexica -> Vane. The old
-          # `itzcrazykns1337/perplexica` repo is frozen at v1.12.0; all new
-          # releases ship from `itzcrazykns1337/vane`. The Dockerfile also
-          # moved WORKDIR from /home/perplexica -> /home/vane, so the PVC
-          # mountPath below had to follow.
-          #
-          # Why the bump: v1.12.0 has no guard against stuffing scraped page
-          # content into the agent's tool-message history across iterations,
-          # so a single "quality" search could push the prompt past 2M tokens
-          # and explode llama-cpp's 64K ctx window. v1.12.2 adds embedding-
-          # based result filtering + chunked context management that keeps
-          # prompts bounded.
-          #
-          # Backend model: this app selects llama.cpp's canonical `qwen3.8-27b`
-          # alias from config.json. The server caps context at 131K; the filter keeps prompts
-          # under that ceiling.
+          # Upstream renamed Perplexica -> Vane; the old perplexica repo is frozen at v1.12.0.
+          # WORKDIR moved to /home/vane, so the PVC mountPath below follows it.
           image: itzcrazykns1337/vane:slim-v1.12.2@sha256:d2878cf9c91962aa3fc053b59bc9b89adcbdcaeb7ee36b54906e853464b2c190
           ports:
             - name: http
@@ -102,13 +82,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /home/vane/data
-          # `/` is Next.js SSR — under load (embedding filter over 50+ search
-          # results + Playwright/Chromium scraping + LLM streaming) it can
-          # easily exceed the 1s default probe timeout. Observed: kubelet
-          # killed the container mid-research with "context deadline
-          # exceeded" on v1.12.2. Give it 10s per probe and 6 failures before
-          # declaring the container dead (~3m of blocking tolerated) so a
-          # long-running search doesn't self-destruct.
+          # `/` is Next.js SSR and blocks well past 1s during a heavy search; 10s timeout x 6 failures
+          # so a long-running search isn't killed mid-research.
           livenessProbe:
             httpGet:
               path: /
@@ -125,20 +100,8 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 4
-          # v1.12.2 bundles Playwright + Chromium for the new scraper and
-          # runs @xenova/transformers in-process for the embedding-based
-          # result filter. Chromium alone wants 300-500MiB resident; add
-          # Node + embedding inference for N chunks and 512Mi gets wiped
-          # out fast.
-          #
-          # Bumped from 2 CPU / 2Gi: the in-process embedding rerank over
-          # 50+ scraped results is CPU-bound and is the main retrieval-quality
-          # bottleneck (model size is not — we're already on the best model).
-          # The GPU node has 12 cores / 128Gi, so give the rerank real CPU and
-          # headroom for Chromium rather than starving the event loop (which
-          # previously tripped the liveness probe mid-search). For a bigger
-          # win, point Vane's embeddings at an external endpoint instead of
-          # in-process xenova — see docs/3090-llm-optimization.md.
+          # Bundles Chromium (Playwright) + an in-process xenova embedding rerank: starving CPU
+          # stalls the event loop and trips the liveness probe mid-search.
           resources:
             requests:
               cpu: 500m

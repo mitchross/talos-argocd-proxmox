@@ -8,9 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"   # after the wave-0 download hook completes
 spec:
-  # Parked candidate backend. The chassis holds ONE 3090 (permanent decision) —
-  # NInfer is evaluated by scale-swapping with vLLM per gpu-scale-swap.md:
-  # set this to 1 AND vllm-server to 0 in the same commit for a test window.
+  # Parked candidate: one 3090 only — set this to 1 AND vllm-server to 0 in the same commit (gpu-scale-swap.md).
   replicas: 0
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
@@ -37,9 +35,8 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: ninfer-server
-          # Built from Don-Chad/ninfer-3090 tag v0.6.0-rtx3090 (commit 2ae51915225d,
-          # CMake hard-enforces sm_86) via the repo's own Dockerfile — see build.sh.
-          # ghcr, not registry.vanillax.me: RustFS rejects the multi-GB CUDA layers (s3aws append unsupported).
+          # Built via build.sh from Don-Chad/ninfer-3090 v0.6.0-rtx3090 (CMake hard-enforces sm_86).
+          # ghcr, not registry.vanillax.me: RustFS rejects the multi-GB CUDA layers.
           image: ghcr.io/mitchross/ninfer-3090:v0.6.0-rtx3090
           imagePullPolicy: IfNotPresent
           command: ["ninfer-serve"]
@@ -49,9 +46,7 @@ spec:
             # the artifact's own identity is `qwen3.8-27b` (same as vLLM's alias).
             - "--model-id"
             - "qwen3.8-ninfer"
-            # Initial profile = the fork's TESTED RTX 3090 vision profile (Windows-
-            # validated: C1, 32K, INT8 KV, ReplaySSM, MTP3). Context ladder
-            # (64K/128K/150K/160K) is a deliberate later step — see README.md.
+            # The fork's tested RTX 3090 vision profile (C1, 32K, INT8 KV, ReplaySSM, MTP3); context ladder is a later step — see README.md.
             - "--max-context"
             - "32768"
             - "--kv-capacity"

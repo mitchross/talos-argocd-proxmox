@@ -1,44 +1,18 @@
-# Exposes the OTEL Collector Gateway's OTLP/HTTP receiver publicly at
-# https://otel.vanillax.me/v1/{traces,logs,metrics} via gateway-external
-# (Cloudflare Tunnel). Required so the radar-ng mobile app can ship
-# telemetry from anywhere — cellular, away from home, etc., which is when
-# the most interesting crash/latency data happens.
-#
-# Security posture (intentional): no auth, public write-only endpoint.
-# - Write-only: reads (Grafana/Tempo/Loki) are on gateway-internal, so
-#   attackers cannot exfiltrate telemetry.
-# - DoS hardened: collector-gateway.yaml enforces max_request_body_size
-#   and memory_limiter — spam can't OOM the collector or fill storage
-#   unbounded.
-# - No secrets in payloads: traces record lat/lon + HTTP status; there's
-#   no PII or auth token in the telemetry.
-#
-# Service name convention: the OpenTelemetryCollector operator creates
-# <collector-name>-collector with a port per receiver. For `otel-gateway`
-# in mode: deployment, OTLP/HTTP is 4318 on service otel-gateway-collector.
-# OTLP/gRPC (4317) stays cluster-local.
+# Public, unauthenticated, write-only OTLP/HTTP ingest for the radar-ng mobile app; reads stay on gateway-internal.
+# The backend Service otel-gateway-collector (4318) is created by the operator from OpenTelemetryCollector/otel-gateway.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: otel-gateway
   namespace: opentelemetry
   labels:
-    # Required by external-dns (see infrastructure/controllers/external-dns/values.yaml:
-    # --label-filter=external-dns=true). Without this label, external-dns
-    # silently ignores the route and no CNAME is created in Cloudflare.
+    # external-dns filters on this label (--label-filter); without it no CNAME is created.
     external-dns: "true"
   annotations:
-    # MUST sync after the collectors (wave 1). Its backendRef Service
-    # otel-gateway-collector is created by the operator only once
-    # OpenTelemetryCollector/otel-gateway exists, so at the default wave 0 this
-    # route can never go Healthy — and ArgoCD will not advance to wave 1 until
-    # it does. That deadlocked the app from 2026-07-29 until 07-30: the
-    # collectors were never created, otel sat Degraded, and the failing child
-    # burned root's sync retries.
+    # MUST sync after the collectors (wave 1): the backendRef Service only exists once the operator
+    # reconciles the collector CR, so at wave 0 this route never goes Healthy and the app deadlocks.
     argocd.argoproj.io/sync-wave: "2"
-    # Inherited from gateway-external's own target annotation when unset
-    # (verified live), but the repo rule requires it per-route: keeps the
-    # CNAME pinned to the tunnel if the Gateway annotation ever moves.
+    # Repo rule: set per-route so the CNAME stays pinned to the tunnel if the Gateway annotation ever moves.
     external-dns.alpha.kubernetes.io/target: vanillax.me
 spec:
   parentRefs:

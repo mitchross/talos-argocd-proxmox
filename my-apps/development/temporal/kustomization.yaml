@@ -19,17 +19,13 @@ resources:
 components:
   - ../../common/kopiur-backup
 
-# Shell script for the namespace-seed Job lives as its own file under
-# scripts/ so it's grep-able, lint-able, and not crammed into a YAML
-# multiline. Kustomize turns it into a ConfigMap at render time.
+# Kustomize turns scripts/seed-namespaces.sh into a ConfigMap at render time.
 configMapGenerator:
   - name: temporal-seed-scripts
     files:
       - scripts/seed-namespaces.sh
     options:
-      # Stable name — the Job mounts this by name. `disableNameSuffixHash`
-      # means no auto-generated hash, so a one-off script tweak doesn't
-      # force a Job rename (we restart via BeforeHookCreation anyway).
+      # Stable name — the Job mounts it by name; BeforeHookCreation already restarts the Job.
       disableNameSuffixHash: true
   # Mounted at /docker-entrypoint-initdb.d — creates temporal_visibility on
   # the FIRST boot of an empty volume only (restored volumes skip initdb).
@@ -52,12 +48,8 @@ helmCharts:
     valuesFile: values.yaml
 
 patches:
-  # Scoped to Helm-rendered Jobs only (they carry `helm.sh/chart`).
-  # Without this scope, the patch stomps annotations on our own
-  # `temporal-namespace-seed` Job and turns its PostSync hook into Sync.
-  # The schema job must run in an earlier Sync wave than the server
-  # Deployments, otherwise a Temporal image bump can roll pods before SQL
-  # schema migrations have completed.
+  # Scoped to Helm-rendered Jobs only — unscoped, it turns our seed Job's PostSync hook into Sync.
+  # Schema job must run in an earlier wave than the server Deployments or an image bump rolls pods before migrations finish.
   - target:
       kind: Job
       labelSelector: helm.sh/chart
@@ -71,10 +63,7 @@ patches:
       - op: add
         path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
         value: BeforeHookCreation
-  # frontend + matching serve gRPC long-polls (60s+ by design), which
-  # Coroot's L7 latency SLI reads as permanently slow — its histogram tops
-  # out at 10s, so no threshold can fit. Disable latency SLO; availability
-  # SLO stays active.
+  # gRPC long-polls (60s+) read as permanently slow to Coroot's latency SLI (10s histogram cap) — latency SLO off, availability stays.
   - target:
       kind: Deployment
       name: temporal-frontend

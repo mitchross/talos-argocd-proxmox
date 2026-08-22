@@ -1,6 +1,5 @@
-# Proxmox discard=on only passes through discard requests that the guest sends,
-# while Talos does not schedule fstrim itself. Keep the targets explicit:
-# fstrim --all would also walk kubelet-mounted Longhorn workload filesystems.
+# Talos does not schedule fstrim itself; Proxmox discard=on only passes through what the guest sends.
+# Keep targets explicit: fstrim --all would also walk kubelet-mounted Longhorn workload filesystems.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

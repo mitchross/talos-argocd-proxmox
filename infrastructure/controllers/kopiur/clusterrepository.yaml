@@ -1,25 +1,5 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/clusterrepository_v1alpha1.json
-# Cluster-wide kopia repository for kopiur — the engine equivalent of the
-# VolSync `volsync-kopia-repository` secret, but as a first-class CR.
-#
-# ISOLATION: dedicated `kopiur` bucket on RustFS (created 2026-06-26).
-# This is a FRESH kopia repo (create.enabled: true) — it does NOT read the
-# VolSync repo at s3://volsync-kopia/cluster. So the proven backup path is
-# untouched, and karakeep's first kopiur snapshot captures its CURRENT data.
-#
-# ACCESS: the rustfs workload key has full head/list/put/delete on the `kopiur`
-# bucket — verified against the live endpoint, so do NOT re-litigate bucket
-# policy when this repo misbehaves. A slow or hanging connect here is index-blob
-# bloat (see bootstrap.failurePolicy below), never a 403.
-# Endpoint is the S3 API port :30292 (NOT the console :30293).
-#
-# Field shapes confirmed vs deploy/examples/backends/s3-minio-http.yaml:
-#   - TLS-off for plain-HTTP RustFS is `tls.disableTls: true`.
-#   - endpoint is a BARE host:port (no scheme, no trailing slash).
-#   - the creds Secret carries AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
-#     KOPIA_PASSWORD (exactly what externalsecret.yaml writes).
-#   - cluster-scoped secretRef MUST carry an explicit `namespace` (webhook-enforced).
-# Still verify against the INSTALLED chart: kubectl explain clusterrepository.spec
+# Endpoint is the bare host:port of the S3 API (:30292, NOT the console :30293); cluster-scoped secretRefs MUST carry a namespace.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: ClusterRepository
 metadata:
@@ -46,30 +26,17 @@ spec:
     enabled: true
   parameters:
     epoch:
-      # Maintenance runs on schedule and reclaims 0 bytes because compaction is
-      # gated on epoch advance: an epoch cannot close before minDuration, and
-      # compaction trails two epochs behind — 48h at kopia's 24h default. This
-      # repo generates index blobs faster than that, so the count only ever
-      # grows (2045 and climbing). 6h puts compaction ~12h behind instead.
+      # Compaction trails two epochs behind; at kopia's 24h default this repo's index blobs only ever grow.
       minDuration: 6h
-  # Opening this repo takes ~90s — kopia merges ~2000 content-index blobs on
-  # every connect — against the 120s default deadline. A connect that crosses
-  # the deadline is killed, which fails the health probe, trips the circuit
-  # breaker, and moves the repo to Degraded; Degraded then blocks the very
-  # maintenance that would compact the index, so each cycle makes the next
-  # connect slower. Keep this headroom until maintenance has the index down.
+  # Opening this repo takes ~90s (index-blob merge); the 120s default deadline kills the connect,
+  # marks the repo Degraded, and Degraded blocks the very maintenance that would compact the index.
   bootstrap:
     failurePolicy:
       activeDeadlineSeconds: 600
-  # No credentialProjection: the kopiur-rustfs Secret is delivered to every
-  # consumer namespace by the ClusterExternalSecret (see externalsecret.yaml),
-  # so the operator needs no cluster-wide secrets-write RBAC.
+  # No credentialProjection: the ClusterExternalSecret fans kopiur-rustfs into every consumer namespace.
   allowedNamespaces:
-    # Label-driven tenancy (the pvc-plumber `managed-namespace` analog): any
-    # namespace labeled kopiur.home-operations.com/repo=cluster-kopia may use this
-    # repo. The SAME label drives the ESO cred fanout (externalsecret.yaml), so
-    # onboarding an app = one namespace label. kopiur-system carries it too, so
-    # the managed Maintenance CR is permitted (else webhook tenancy_denied).
+    # The same label drives the ESO cred fanout (externalsecret.yaml) — onboarding an app = one namespace label.
+    # kopiur-system must carry it too, else the managed Maintenance CR hits webhook tenancy_denied.
     selector:
       matchLabels:
         kopiur.home-operations.com/repo: cluster-kopia

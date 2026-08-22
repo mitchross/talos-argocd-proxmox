@@ -1,8 +1,4 @@
-# Scrapes vLLM's native Prometheus metrics (exposed on the OpenAI port at /metrics)
-# into kube-prometheus-stack. Prometheus here uses empty serviceMonitor*Selectors,
-# so this is discovered automatically — no special release label required.
-# Metrics surface as vllm:* series (e.g. vllm:generation_tokens_total,
-# vllm:num_requests_waiting, vllm:gpu_cache_usage_perc, vllm:time_to_first_token_seconds_*).
+# Prometheus here uses empty serviceMonitor*Selectors — discovered automatically, no release label needed.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

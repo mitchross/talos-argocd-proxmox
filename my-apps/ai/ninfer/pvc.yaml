@@ -1,7 +1,4 @@
-# Static PV — mounts the SAME TrueNAS ai-pool/llama-cpp share as llama-cpp (the
-# RWX model tier with the established in-cluster download pattern), under its own
-# volumeHandle. The 17 GiB .ninfer artifact lives at ninfer/qwen3_8_27b.ninfer on
-# that share; nothing is duplicated into Longhorn.
+# Static PV on the SAME TrueNAS ai-pool/llama-cpp share as llama-cpp, own volumeHandle; artifact at ninfer/qwen3_8_27b.ninfer.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

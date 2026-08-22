@@ -1,10 +1,4 @@
-# kopiur backup health — the follow-up promised in kustomization.yaml when
-# VolSync/pvc-plumber alerts were retired (2026-06-27). The kopiur controller
-# exposes per-policy backup metrics on kopiur-controller-metrics:8081
-# (scraped via the kopiur ServiceMonitor in custom-servicemonitors.yaml).
-#
-# Motivating incident (2026-07-06): karakeep data-pvc hourly backups failed
-# silently for 4 days after its Longhorn volume faulted — nothing alerted.
+# Backup health from kopiur-controller-metrics:8081 (ServiceMonitor in custom-servicemonitors.yaml).
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -57,10 +51,7 @@ spec:
               1. kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshotschedule,snapshot
               2. Check SnapshotSchedule is not suspended and Snapshots' failure status
         - alert: KopiurCascadeDeletedSnapshots
-          # onPolicyDelete: Retain is pinned in the kopiur-backup component, so a
-          # policy deletion must only RETAIN. A mode="delete" cascade means the pin
-          # was bypassed and backup history is being destroyed. (metric name,
-          # _total suffix, and mode label verified against kopiur 0.8.0.)
+          # onPolicyDelete: Retain is pinned in the kopiur-backup component — a mode="delete" cascade means the pin was bypassed and history is being destroyed.
           expr: increase(kopiur_policy_cascade_children_deleted_total{mode="delete"}[15m]) > 0
           for: 0m
           labels:

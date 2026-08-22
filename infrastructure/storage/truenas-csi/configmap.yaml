@@ -3,22 +3,15 @@ kind: ConfigMap
 metadata:
   name: truenas-csi-config
 data:
-  # Keys ARE the driver's env-var names: both the controller Deployment and the
-  # node DaemonSet consume this whole ConfigMap via envFrom (single source —
-  # adding a var here reaches both without touching driver.yaml).
+  # Keys ARE the driver's env-var names; controller and node DaemonSet both envFrom this whole ConfigMap.
   # TrueNAS SCALE 26 JSON-RPC 2.0 WebSocket API.
   TRUENAS_URL: "wss://192.168.10.133/api/current"
   # TrueNAS currently uses a private/self-signed certificate on this endpoint.
   TRUENAS_INSECURE_SKIP_VERIFY: "true"
   TRUENAS_DEFAULT_POOL: "BigTank"
   TRUENAS_NFS_SERVER: "192.168.10.133"
-  # Required by the shared upstream driver config even though this rollout does
-  # not create an iSCSI StorageClass or permit TCP 3260 through Cilium.
-  # IQN base MUST equal the appliance's actual Target Global "Base Name" — this box
-  # still carries the FreeNAS-era value. Upstream never reads iscsi.global.basename
-  # (truenas-csi#41), and a mismatch fails every stage with
-  # `failed to find device path: []`, baking the wrong IQN into the PV at provision
-  # time. Kept correct so a future iSCSI SC does not inherit a silent landmine.
+  # Required by the driver even with no iSCSI StorageClass. IQN base MUST equal the appliance's
+  # Target Global Base Name (still FreeNAS-era) — a mismatch bakes a wrong IQN into every PV.
   TRUENAS_ISCSI_PORTAL: "192.168.10.133:3260"
   TRUENAS_ISCSI_IQN_BASE: "iqn.2005-10.org.freenas.ctl"
 

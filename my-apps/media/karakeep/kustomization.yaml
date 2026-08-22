@@ -21,10 +21,7 @@ resources:
 - kopiur/data-pvc.yaml
 - kopiur/meilisearch-pvc.yaml
 
-# Injects the uniform kopiur fields (repository, copyMethod, populator) into
-# the per-PVC stubs above. See my-apps/common/kopiur-backup. The mover
-# securityContext (uid 1001) is per-PVC and lives in each stub — the component
-# never injects a mover.
+# Injects the uniform kopiur fields into the stubs above; the mover securityContext is per-PVC and stays in each stub.
 components:
   - ../../common/kopiur-backup
 

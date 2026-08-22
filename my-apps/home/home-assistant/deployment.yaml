@@ -91,10 +91,7 @@ spec:
           securityContext:
             runAsNonRoot: false
             runAsUser: 0
-            # privileged so the container can open the hostPath char device
-            # /dev/ttyUSB0 (the SONOFF Zigbee coordinator). Without this the
-            # device-cgroup controller denies access even though we run as root.
-            # Requires the namespace PSS enforce=privileged (see namespace.yaml).
+            # Needed to open the hostPath Zigbee device /dev/ttyUSB0; namespace PSS must stay enforce=privileged.
             privileged: true
           env:
             - name: TZ

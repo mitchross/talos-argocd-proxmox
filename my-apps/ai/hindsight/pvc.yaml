@@ -15,11 +15,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  # kopiur restore-before-bind: on recreate this binds Pending until the
-  # Restore populator hydrates it from the latest kopia snapshot. No-op while
-  # Bound. Backup/restore CRs in kopiur/hindsight-db.yaml; uniform fields come
-  # from the ../../common/kopiur-backup component; the mover uid:gid lives in
-  # the stub.
+  # kopiur restore-before-bind: Pending until the Restore populator hydrates it; CRs in kopiur/hindsight-db.yaml.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

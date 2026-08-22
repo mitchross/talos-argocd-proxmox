@@ -1,12 +1,4 @@
-# Grafana dashboard for the radar-ng mobile app — driven entirely by data
-# the React Native client emits via OpenTelemetry to otel.vanillax.me.
-#
-# Sources:
-#   - Tempo (traces) — span name = api.fetch* / map.fetchStyle / api.inspectPoint
-#   - Loki  (logs)   — service_name="radar-ng-mobile", error sink wired in
-#                      _layout.tsx (QueryCache/MutationCache + ErrorUtils)
-#
-# Auto-imported via the `grafana_dashboard: "1"` label.
+# radar-ng mobile app: Tempo spans (api.fetch*/map.fetchStyle/api.inspectPoint) + Loki service_name="radar-ng-mobile".
 apiVersion: v1
 kind: ConfigMap
 metadata:

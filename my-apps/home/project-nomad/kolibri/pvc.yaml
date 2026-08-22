@@ -1,12 +1,5 @@
-# argocd-inactive: kolibri Khan Academy app intentionally disabled.
-# Upstream image (treehouses/kolibri:0.12.8) is broken on Python 2.7.
-# See my-apps/home/project-nomad/kustomization.yaml (kolibri block commented out).
-# Source file is kept so this app can be re-enabled cleanly later.
-#
-# Backup wiring removed 2026-06-27 (VolSync retired, replaced by kopiur). When
-# re-enabling, add a kopiur backup per docs/domains/storage/kopiur-backup-architecture.md:
-# a kopiur/<pvc>.yaml stub + the ../../common/kopiur-backup component + a
-# dataSourceRef -> Restore/kolibri-data-restore (mover uid = kolibri's data owner, was 568).
+# argocd-inactive: disabled (treehouses/kolibri:0.12.8 is broken on Python 2.7); commented out in ../kustomization.yaml.
+# When re-enabling, add a kopiur stub + component + dataSourceRef (mover uid = data owner, was 568).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

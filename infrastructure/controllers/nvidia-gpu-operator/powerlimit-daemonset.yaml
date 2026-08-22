@@ -1,22 +1,5 @@
-# GPU Power-Limit DaemonSet
-#
-# The NVIDIA GPU Operator does NOT manage per-card power limits.
-# Without this DS, the RTX 3090s run at their default limit of 420W each
-# (~840W total across both cards on this node).
-#
-# This DaemonSet runs only on the dual-RTX-3090 worker and reapplies
-# `nvidia-smi -pl <watts>` every five minutes. CPU-only workers do not carry
-# the `gpu-worker=true` label and must never receive the 3090's cap.
-#
-# Valid range on RTX 3090: ~100W (min) .. 450W (max). Default is 420W.
-# We cap at 200W to keep the whole box inside its house circuit — see the
-# POWER_LIMIT_WATTS comment below. Expect roughly 15-20% less throughput than
-# the 290W efficiency knee; that is a deliberate trade for electrical headroom.
-#
-# Requires:
-#   - privileged container (nvidia-smi -pl needs root + driver write)
-#   - hostPID (persistence-mode write is per-driver, not per-namespace)
-#   - runtimeClassName: nvidia (so CDI injects GPU devices)
+# The GPU Operator does not manage power limits; this reapplies `nvidia-smi -pl` every 5 min (survives driver reloads).
+# Only gpu-worker=true nodes get it — CPU-only workers must never receive the 3090's cap.
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -56,10 +39,7 @@ spec:
       containers:
         - name: nvidia-powerlimit
           # renovate: ignore
-          # CUDA userspace base; the NVIDIA runtime injects nvidia-smi and the
-          # host driver libraries. Pin a specific SHA to make this immutable.
-          # Source from NVIDIA's own registry (nvcr.io) to dodge Docker Hub
-          # rate limits — same byte-identical image as docker.io/nvidia/cuda.
+          # nvcr.io is byte-identical to docker.io/nvidia/cuda and dodges Docker Hub rate limits.
           image: nvcr.io/nvidia/cuda:12.8.1-base-ubuntu22.04
           command:
             - /bin/bash
@@ -96,10 +76,8 @@ spec:
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "utility"
-            # 200W is a HOUSE-CIRCUIT constraint, not an efficiency choice: two
-            # 3090s at the old 290W cap put the Threadripper box near 900W at
-            # the wall and made basement lights flicker. Do not raise this back
-            # toward the 290W efficiency knee without confirming the circuit.
+            # 200W is a HOUSE-CIRCUIT constraint, not an efficiency choice (290W flickered the basement lights).
+            # Do not raise toward the 290W efficiency knee without confirming the circuit.
             - name: POWER_LIMIT_WATTS
               value: "200"
             - name: REAPPLY_SECONDS

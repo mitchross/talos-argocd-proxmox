@@ -1,7 +1,4 @@
-# Toolbox - debug pod for running manage.py commands
-# Scale to 1 replica when needed: kubectl scale deploy toolbox -n posthog --replicas=1
-# Then exec in: kubectl exec -it deploy/toolbox -n posthog -- bash
-# Example: python manage.py shell, python manage.py migrate --check
+# Debug pod for manage.py: kubectl scale deploy toolbox -n posthog --replicas=1, then exec in.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

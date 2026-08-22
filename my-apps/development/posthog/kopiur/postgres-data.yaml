@@ -1,11 +1,5 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
-# postgres-data backup STUB — uniform fields (repository, copyMethod, populator)
-# injected by ../../common/kopiur-backup. Postgres holds the identity layer
-# (project/personal API keys, users, dashboards, flag+cohort definitions) that
-# must survive cluster rebuild; ClickHouse/Kafka/Redis stay exempt (event
-# history rebuilds empty). DAILY tier: dashboards/flags edits risk <=24h;
-# API keys effectively never change. The before-hook
-# CHECKPOINTs Postgres so the CSI capture starts from a flushed state.
+# Per-PVC stub (uniform fields from ../../common/kopiur-backup); identity layer — never exempt. Before-hook CHECKPOINTs Postgres.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:

@@ -1,34 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
-# Reusable kopiur backup layer implemented as a pure Kustomize Component.
-#
-# Include from an app kustomization with:
-#   components:
-#     - ../../common/kopiur-backup
-# then add a per-PVC stub (SnapshotPolicy + SnapshotSchedule + Restore). The
-# stub carries the per-PVC VARYING bits — name, sources.pvc.name, identity,
-# schedule.cron, AND the mover securityContext (run the mover as the DATA owner
-# uid:gid + supplementalGroups[gid]). Plus `dataSourceRef -> <pvc>-restore` on
-# the app's PVC.
-#
-# WHY the mover UID is per-PVC, not injected here: under baseline Pod Security
-# the mover can't use capabilities (no CAP_DAC_READ_SEARCH), and kopiur's
-# privilegedMode does NOT add caps — so a root mover cannot read non-root /
-# mode-600/700 data. The mover MUST run as the data's owner (proven 2026-06-26:
-# n8n 1000, gitea 700-dir 1000, mysql 999:568). Ownership also varies within a
-# namespace (project-nomad: 1000 / 999:568 / 568), so it can't be uniform here.
-# This component injects only the truly-uniform, non-mover fields by kind.
-#
-# Prereqs (once per namespace): label `kopiur.home-operations.com/repo:
-# cluster-kopia` (ESO cred fanout + repo tenancy via the ClusterRepository
-# allowedNamespaces selector). The privileged-movers namespace annotation is
-# only needed for stubs whose mover runs as root (uid 0).
+# Injects only the uniform non-mover fields into each per-PVC stub (SnapshotPolicy + SnapshotSchedule + Restore).
+# Mover securityContext is NOT injected: it must be the data owner uid:gid per PVC (docs/domains/storage/kopiur-mover-permissions.md).
 patches:
-  # --- SnapshotPolicy: uniform backup config (mover lives in the stub) ------
-  # copyMethod is upstream's default since kopiur 0.5.0, but KEEP injecting it
-  # explicitly: upstream warns a server-defaulted field has no SSA field owner,
-  # so GitOps re-applies of manifests that omit it can silently flip on CRD
-  # upgrades. Explicit value = owned field = no re-defaulting hazard.
+  # copyMethod is upstream's default but KEEP it explicit: a server-defaulted field has no SSA owner and can silently flip on CRD upgrades.
   - target:
       kind: SnapshotPolicy
       group: kopiur.home-operations.com
@@ -39,9 +14,7 @@ patches:
       - op: add
         path: /spec/volumeSnapshotClassName
         value: longhorn-snapclass
-      # Stage the disposable snapshot clone with WFFC so the mover is scheduled
-      # before Longhorn picks the clone's preferred node. This avoids the V1
-      # Immediate-binding clone handoff race (longhorn/longhorn #13335).
+      # WFFC staging: mover is scheduled before Longhorn picks the clone's node (longhorn/longhorn #13335 handoff race).
       - op: add
         path: /spec/staging
         value:
@@ -51,16 +24,11 @@ patches:
         value:
           kind: ClusterRepository
           name: cluster-kopia
-      # onPolicyDelete (kopiur 0.8.0): Retain keeps the kopia repo snapshots when
-      # a SnapshotPolicy is pruned — only Snapshot CRs are GC'd. Retain is the
-      # upstream default, but pin it like copyMethod: a server-defaulted field has
-      # no SSA owner, so a future default flip (→Delete) could silently let an
-      # ArgoCD prune cascade-delete backup history.
+      # Retain is upstream's default but pin it: an unowned default flipping to Delete would let an ArgoCD prune cascade-delete backup history.
       - op: add
         path: /spec/deletion
         value:
           onPolicyDelete: Retain
-  # --- SnapshotSchedule: uniform scheduling --------------------------------
   - target:
       kind: SnapshotSchedule
       group: kopiur.home-operations.com
@@ -71,7 +39,6 @@ patches:
       - op: add
         path: /spec/schedule/runOnCreate
         value: false
-  # --- Restore: uniform passive-populator config (mover lives in the stub) --
   - target:
       kind: Restore
       group: kopiur.home-operations.com

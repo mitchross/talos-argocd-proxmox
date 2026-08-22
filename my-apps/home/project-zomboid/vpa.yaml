@@ -17,10 +17,7 @@ spec:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        # Zomboid's honest recommendation is ~13Gi; reserving that on paper
-        # starved the scheduler (node hit 107% requested). It ran fine for
-        # months with a small request — cap the reservation, let the limit
-        # absorb the real usage.
+        # The honest ~13Gi recommendation starved the scheduler as a request; cap the reservation, let the limit absorb usage.
         maxAllowed:
           cpu: "4"
           memory: 6Gi

@@ -9,22 +9,12 @@ metadata:
     app.kubernetes.io/component: clickhouse
     backup-exempt: "true"
   annotations:
-    # 100Gi ClickHouse data PVC is intentionally backup-exempt.
-    # Data is regenerable from PostHog ingest, and the long Kopia upload
-    # window (~30+ min @ S3) consistently collided with RustFS IAM flap
-    # events on 2026-05-19/20, making the backup unreliable in practice.
-    # PostHog Postgres + Redis ARE backed up; ClickHouse is rebuilt by
-    # re-running clickhouse-init + replaying ingest if needed.
     storage.vanillax.dev/backup-exempt-reason: "regenerable from PostHog ingest; 100Gi too large for current Kopia/RustFS S3 path"
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-flash
   resources:
     requests:
-      # Shrunk 100Gi -> 40Gi for the single-node 2950X rebuild (2026-06-19).
-      # Backup-exempt + rebuilt from ingest on nuke, so it starts empty; 40Gi is
-      # ample for homelab ClickHouse retention and reclaims Longhorn budget on the
-      # worker storage. Raise retention/size later if analytics volume grows.
       storage: 40Gi
 ---
 apiVersion: apps/v1
@@ -89,10 +79,6 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 5
         resources:
-          # Capacity baseline 2026-05-04 showed ClickHouse pod observed
-          # 1.0 GiB / 0.36 cores. 8 GiB request was ~8x over-allocated.
-          # Lowered to 4 GiB; mark cache + merges can still spike, but
-          # the 16 GiB limit absorbs the burst.
           requests:
             cpu: 500m
             memory: 4Gi
