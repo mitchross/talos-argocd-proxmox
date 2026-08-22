@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: chrome
-          image: docker.io/zenika/alpine-chrome:124@sha256:20cddfa693fe823aa45c93739ed3b4f500dcb81c559d71fd67e2a5a786ac24be
+          image: docker.io/zenika/alpine-chrome:124@sha256:e3048875b6f75d0332085b093d55a82009fb8e688a1394106800397b534b9b23
           imagePullPolicy: IfNotPresent
           command:
             - chromium-browser
