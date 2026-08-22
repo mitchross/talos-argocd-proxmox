@@ -48,6 +48,3 @@ spec:
       bios: seabios
       vga: std
       balloon: false
-      # USB resource mappings are intentionally absent: the upstream provider
-      # schema has no USB passthrough field. After replacement, manually add
-      # mappings SDR1 and SDR-BLOGv4 with usb3=1 before starting Intercept.
