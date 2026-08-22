@@ -1,6 +1,7 @@
 ---
 # omnictl apply -f omni/machine-classes/hp-worker.yaml
-# CPU worker on the HP 600 G4 mini (192.168.10.20), wired LAN.
+# CPU worker on the HP 600 G4 mini (192.168.10.20), in the shed behind the
+# AX86U wifi media bridge. Carries the USB radios (zigbee, sdr-adsb, sdr-blogv4).
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -45,3 +46,5 @@ spec:
       bios: seabios
       vga: std
       balloon: false
+      # No USB field in the provider schema: after a VM replacement re-add the
+      # zigbee, sdr-adsb and sdr-blogv4 mappings by hand (qm set ... usb3=1).

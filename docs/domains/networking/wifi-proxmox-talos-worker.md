@@ -48,11 +48,14 @@ over only after Omni applies the machine configuration.
 
 ## Hardware-bound workload
 
-Intercept uses two RTL-SDR USB devices through `/dev/bus/usb` and selects
-`node.vanillax.dev/class=dell-worker`. Before destroying the old VM, record
-the Dell Proxmox VM's USB mappings: `SDR1` and `SDR-BLOGv4`, both with
-`usb3=1`. The upstream provider schema has no USB field, so reattach both
-mappings to the replacement VM before expecting Intercept to become Ready.
+The Dell VM carries no USB devices. Intercept's two RTL-SDRs (`0bda:2838`)
+and the Zigbee coordinator are USB-passed to the HP 600 G4 shed VM
+(`hp-workers`, `omni/machine-classes/hp-worker.yaml`); Intercept and
+Home Assistant follow the NFD labels
+`feature.node.kubernetes.io/custom-usb.rtl-sdr` and
+`custom-usb.zigbee-coordinator` rather than a node class. The provider schema
+has no USB field, so those mappings are re-added by hand after a VM
+replacement of that host.
 
 Frigate is currently scaled to zero. Its manifest remains pinned to the Dell,
 but now uses CPU software decode and OpenVINO CPU detection. It no longer has
@@ -84,8 +87,8 @@ replacement; do not combine it into a blind template sync.
    enabled. Do not choose **LVM-Thin**. Stop if `/dev/sda` is no longer unused
    or does not match the Samsung serial shown in the disk audit.
 
-3. Record the old VM's `SDR1` and `SDR-BLOGv4` mappings (`usb3=1`). Remove the
-   GTX 1050 Ti mapping and remove or power down the physical card as intended.
+3. Remove the GTX 1050 Ti mapping and remove or power down the physical card
+   as intended.
 
 4. Apply all changed machine classes, validate the template, and inspect the
    dry run:
@@ -105,8 +108,7 @@ replacement; do not combine it into a blind template sync.
    replace existing allocations. For an incremental rollout, provision the
    24 GiB general worker first and allow ordinary workloads to move there.
 
-6. Replace the Dell with `dell-workers`, then reattach both RTL-SDR mappings.
-   For an incremental GPU change, only after the general and Dell CPU workers
+6. Replace the Dell with `dell-workers`. For an incremental GPU change, only after the general and Dell CPU workers
    are Ready should the existing RTX VM be shut down and cold-resized. For a
    full rebuild, the provider recreates its disks and application data must
    return from the verified off-host backups.
@@ -123,8 +125,7 @@ replacement; do not combine it into a blind template sync.
    ```
 
    Expected: four Ready nodes total; only the RTX node advertises NVIDIA GPUs;
-   the Dell has no NVIDIA extensions or GPU labels; Intercept sees both SDRs;
-   Longhorn reports `dell-ssd` schedulable at
+   the Dell has no NVIDIA extensions or GPU labels; Longhorn reports `dell-ssd` schedulable at
    `/var/mnt/longhorn-dell-ssd`; and every volume remains healthy.
 
 ## Rollback and stop conditions
@@ -134,8 +135,6 @@ replacement; do not combine it into a blind template sync.
   incremental rollout.
 - If the new Dell cannot register, verify DHCP, the media bridge, and that
   `kernelargs` remains empty.
-- If Intercept cannot see radios, restore the recorded USB mappings on the
-  replacement VM; do not move its pod to a node without the devices.
 - Roll back by restoring the old MachineSet and machine class from Git, but do
   not restore NVIDIA passthrough unless the extra idle power is intentionally
   accepted.
