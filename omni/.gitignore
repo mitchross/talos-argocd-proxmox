@@ -12,6 +12,8 @@ proxmox-provider-dell/.env
 proxmox-provider-dell/config.yaml
 proxmox-provider-hp/.env
 proxmox-provider-hp/config.yaml
+proxmox-provider-hp-prodesk/.env
+proxmox-provider-hp-prodesk/config.yaml
 
 # GPG keys (encryption keys for etcd)
 *.asc
