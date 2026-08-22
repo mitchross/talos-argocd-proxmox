@@ -1,6 +1,4 @@
-# INTERNAL route (local network only, via gateway-internal) — mirrors vllm.
-# Hermes on the desktop hits https://hindsight.vanillax.me with the tenant
-# API key (Authorization: Bearer). Memory data stays off the Cloudflare tunnel.
+# INTERNAL route only (gateway-internal): memory data stays off the Cloudflare tunnel.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

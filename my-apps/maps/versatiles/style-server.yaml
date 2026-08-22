@@ -1,11 +1,5 @@
-# map-styles — a tiny nginx serving the pre-generated MapLibre style JSONs at
-# maps.vanillax.me/styles/{light,dark}.json. Kept SEPARATE from the versatiles
-# Deployment on purpose: VersaTiles v4.6's frontend builds styles client-side
-# and serves no static style.json, and the serving pod runs readOnlyRootFilesystem
-# off a read-only PVC — bolting static files onto it would mean touching the
-# live map server's args. An isolated 16Mi nginx is safer and lets styles roll
-# independently. The styles + this nginx config come from configMapGenerators in
-# kustomization.yaml (hash suffix = the rollout trigger when styles change).
+# Separate nginx for the pre-generated MapLibre style JSONs — the versatiles pod is readOnlyRootFilesystem off a read-only PVC.
+# Styles + nginx config come from configMapGenerators in kustomization.yaml (hash suffix = rollout trigger).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

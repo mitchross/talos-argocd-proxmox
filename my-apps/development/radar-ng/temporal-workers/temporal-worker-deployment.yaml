@@ -1,18 +1,5 @@
-# radar-ng Temporal worker — WorkerDeployment CR (migrated from
-# TemporalWorkerDeployment, which the v1.7.0 controller no longer
-# reconciles — its `deprecated-twd` handler is a no-op).
-#
-# Lives in the radar-ng namespace (NOT a separate worker namespace, the way
-# news-reader-temporal-worker does it) because the worker needs to mount the
-# same Longhorn PVCs the API + legacy ingestors already use. PVCs are
-# namespace-scoped; sharing a namespace is the simplest answer.
-#
-# The Temporal Worker Controller injects TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE,
-# TEMPORAL_DEPLOYMENT_NAME, TEMPORAL_WORKER_BUILD_ID into every Pod — do not
-# set them via env here.
-#
-# Image is built by .github/workflows/ghcr-temporal-worker.yml. Renovate
-# auto-PRs bumps. Each tag bump becomes a new build_id + progressive rollout.
+# Must be `kind: WorkerDeployment`: the controller's deprecated `Temporal*` handlers no-op, so image bumps never roll.
+# Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them via env.
 apiVersion: temporal.io/v1alpha1
 kind: WorkerDeployment
 metadata:
@@ -43,9 +30,7 @@ spec:
       labels:
         app: radar-ng-worker
     spec:
-      # tiles/grids/state are RWO volumes also mounted by tile-server. Follow
-      # the serving pod onto the same node so Longhorn never has to attach the
-      # same block volumes to two nodes after a rebuild or rollout.
+      # Shares RWO tiles/grids/state with tile-server — must land on the same node or Longhorn Multi-Attach fails.
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -57,11 +42,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-        # fsGroup REQUIRED: tiles/grids/state moved to longhorn-flash RWO (ext4)
-        # on 2026-07-15. Fresh Longhorn block volumes mount root:root, so a
-        # non-root (uid 1000) worker cannot write — unlike the previous
-        # truenas-nfs class, which mapped all access to root and masked this.
-        # fsGroup makes the kubelet chown the volume group-writable to gid 1000.
+        # fsGroup REQUIRED: fresh Longhorn block volumes mount root:root; uid 1000 cannot write without it.
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
@@ -74,17 +55,8 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           env:
-            # OTEL collector is not deployed in the cluster — leaving the
-            # endpoint set caused continuous "UNAVAILABLE" gRPC retries from
-            # BatchSpanProcessor, swamping logs. The bootstrap in
-            # temporal/shared/otel.py installs the OTLP exporter only when
-            # this env is set, so omitting it gives a no-op tracer.
-            #
-            # CONFIG_REV is a no-op env var; bumping its value forces the
-            # Temporal Worker Controller to compute a new build_id and roll
-            # the pods, which is what we need to pick up envFrom'd
-            # ConfigMap changes. (Pod template annotations are excluded
-            # from the controller's hash, so they don't trigger a roll.)
+            # No OTEL endpoint on purpose — set, the worker spams UNAVAILABLE gRPC retries; unset = no-op tracer.
+            # CONFIG_REV is a no-op; bump it to roll pods on ConfigMap changes (pod annotations aren't in the controller's hash).
             - name: CONFIG_REV
               value: "2026-05-10-backlog1"
             - name: TILE_DIR
@@ -93,16 +65,10 @@ spec:
               value: /data/state
             - name: GRID_DIR
               value: /data/grids
-            # Push notifications are disabled by default — the
-            # `send_push_notification` activity logs+returns without
-            # touching APNS/FCM. Re-enable by setting PUSH_DISABLED=0
-            # AND mounting the push-keys secret (see git history of this
-            # file for the secret/volume blocks that were removed).
+            # Re-enable with PUSH_DISABLED=0 AND the push-keys secret mount (see git history of this file).
             - name: PUSH_DISABLED
               value: "1"
-            # Compatibility gate for the role-aware worker release. The
-            # single WorkerDeployment remains on the legacy queue until the
-            # isolated pools are rolled out in the documented order.
+            # Stays on the legacy queue until the isolated worker pools are rolled out in the documented order.
             - name: WORKER_ROLE
               value: legacy
             - name: USE_ISOLATED_TASK_QUEUES
@@ -114,21 +80,7 @@ spec:
             - { name: grids,  mountPath: /data/grids }
             - { name: state,  mountPath: /data/state }
           resources:
-            # Capacity baseline 2026-05-04 showed each replica observed
-            # 1.91-1.93 cores, saturating the old 2-core limit. On
-            # 2026-05-10 Temporal was down for ~3h, then radar-ng needed
-            # enough worker capacity to catch up MRMS + nowcast without
-            # starving schedule seeding or API traffic. Keep CPU request
-            # at 1 core so progressive rollouts can overlap old+new
-            # ReplicaSets without hitting cluster scheduling limits.
-            #
-            # 2026-06-18: bumped limit 4->12. After the TrueNAS special-vdev
-            # was removed (storage I/O restored), all 3 replicas sat pinned at
-            # exactly the 4-core limit for hours while MRMS frames still took
-            # ~3min and nowcast_run timed out — i.e. now CPU-bound on the
-            # pysteps nowcast + MRMS reproject, not I/O-bound. Nodes were only
-            # ~25% utilized (~24 cores free each), so open the ceiling wide to
-            # let render work burst and the 2-min MRMS/nowcast cadence catch up.
+            # CPU-bound (pysteps nowcast + MRMS reproject) — a tight CPU limit makes nowcast_run time out.
             requests: { cpu: "1", memory: "3Gi" }   # single-node: 1 replica; request low, bursts to 12-core limit
             limits:   { cpu: "12", memory: "12Gi" }
       volumes:

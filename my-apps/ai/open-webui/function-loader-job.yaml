@@ -12,10 +12,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      # Pure-Python DB loader — no GPU. It mounts the same RWO `storage` PVC as
-      # the Open WebUI Deployment, so it MUST land on the same node or the
-      # ReadWriteOnce volume can't attach (Multi-Attach deadlock). Co-locate
-      # with the running Open WebUI pod via podAffinity.
+      # Shares the RWO storage PVC with Open WebUI — MUST co-locate on the same node or the volume can't attach.
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

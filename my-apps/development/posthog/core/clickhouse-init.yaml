@@ -70,27 +70,8 @@ spec:
 
           echo "ClickHouse migration tables initialized successfully"
 
-          # Create `sharded_events` as a real local table mirroring `events` columns.
-          # ---------------------------------------------------------------
-          # PostHog's `posthog.events` is a Distributed engine that fans out
-          # to a local `sharded_events` table on each shard. Single-node
-          # self-hosted CH was bootstrapped without `sharded_events` ever
-          # being created — INSERTs from `events_json_mv` → `writable_events`
-          # (Distributed) → no shard target → silently dropped. Migrations
-          # 0026-0030 only used `IF EXISTS` ALTERs so an earlier stub got
-          # them through, but migration 0031 (`event_properties_zstd`) does
-          # `ALTER TABLE sharded_events MODIFY COLUMN properties` which fails
-          # with `NOT_FOUND_COLUMN_IN_BLOCK` against a single-column stub.
-          #
-          # Proper fix: recreate sharded_events as a local ReplicatedReplacingMergeTree
-          # whose column list is cloned (`AS posthog.events`) from the existing
-          # Distributed view. This matches PostHog upstream's
-          # `posthog/clickhouse/sharded_events.py` schema (PARTITION BY
-          # toYYYYMM(timestamp), ORDER BY (team_id, toDate(timestamp), event,
-          # cityHash64(distinct_id), cityHash64(uuid)), _timestamp as the
-          # ReplacingMergeTree version column). Now `ALTER ... MODIFY COLUMN`
-          # has a real target and ingest from kafka_events_json → events_json_mv
-          # → writable_events (Distributed) → sharded_events actually persists.
+          # sharded_events must be a real local table cloned from posthog.events: migration 0031 ALTERs it, and
+          # ingest (writable_events Distributed -> sharded_events) silently drops rows without it.
           echo "Creating sharded_events local table mirroring events columns..."
           clickhouse-client --host=clickhouse --port=9000 --query "
           CREATE TABLE IF NOT EXISTS posthog.sharded_events ON CLUSTER 'posthog'

@@ -5,18 +5,9 @@ namespace: temporal-worker-controller
 resources:
   - namespace.yaml
 
-# Temporal ships two OCI charts: one for CRDs (upgradeable independently)
-# and one for the controller itself. We declare both here.
-#
-# CRDs:
-#   - temporal.io/v1alpha1 / TemporalWorkerDeployment
-#   - temporal.io/v1alpha1 / WorkerResourceTemplate
-#
-# Chart repo is docker.io OCI — Kustomize supports `oci://` in helmCharts.
+# Two OCI charts: CRDs (upgradeable independently) and the controller itself.
 helmCharts:
-  # Chart version (0.24.x) is separate from controller app version (v1.5.x).
-  # These are the CHART tags — the controller image itself is pinned inside
-  # the chart values.
+  # Chart versions (0.x) are separate from the controller image version (v1.x), which is pinned in chart values.
   - name: temporal-worker-controller-crds
     repo: oci://docker.io/temporalio
     # renovate: datasource=docker depName=docker.io/temporalio/temporal-worker-controller-crds
@@ -27,13 +18,8 @@ helmCharts:
     # CRDs chart ships no values.yaml but kustomize insists on reading
     # one; crds-values.yaml is an empty stub to satisfy the pipeline.
     valuesFile: crds-values.yaml
-  # The Helm CHART and the controller IMAGE both publish to the same OCI
-  # repo (docker.io/temporalio/temporal-worker-controller). Tags like
-  # v1.5.x are the IMAGE; the CHART uses a separate 0.24.x stream. A
-  # plain `datasource=docker` lookup picks the highest tag and lands on
-  # the image, breaking `helm pull` (PR #1224 did exactly that, broke CI
-  # repo-wide for ~9 days). The packageRules entry in renovate.json5
-  # constrains future bumps here to chart-style versions only.
+  # Chart and controller IMAGE share this OCI repo (v1.x tags = image, 0.x = chart); a plain datasource=docker
+  # bump lands on the image and breaks `helm pull`. renovate.json5 packageRules constrain it to chart tags.
   - name: temporal-worker-controller
     repo: oci://docker.io/temporalio
     # renovate: datasource=docker depName=docker.io/temporalio/temporal-worker-controller

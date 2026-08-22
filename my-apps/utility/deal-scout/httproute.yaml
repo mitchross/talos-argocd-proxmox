@@ -1,7 +1,4 @@
-# INTERNAL route (local network only, via gateway-internal).
-# Dashboard read endpoints are unauthenticated, so keep this off the
-# Cloudflare tunnel. Flip to the gateway-external + external-dns pattern
-# later if remote access is wanted (add auth first).
+# Internal-only: dashboard read endpoints are unauthenticated — add auth before moving to gateway-external.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

@@ -1,7 +1,5 @@
 connect:
-  # Every ExternalSecret resolves through this. At 1 replica it kept landing on
-  # the solar-powered shed node, so a cloudy day stalled secret refresh
-  # cluster-wide. No shared state between replicas, so this scales freely.
+  # Every ExternalSecret resolves through this; a single replica parked on the shed node stalled refresh cluster-wide.
   replicas: 2
   # `preferred`, not `required`: a required rule would wedge the 2nd replica
   # Pending forever if the cluster ever drops to one worker.
@@ -37,11 +35,7 @@ connect:
 
 operator:
   create: true
-  # Stays at 1 — do NOT scale to match connect above. Chart 2.4.1 gives the
-  # operator no leader election and no `leases` RBAC, so a 2nd replica is an
-  # uncoordinated reconciler racing the first (and racing to autoRestart the same
-  # Deployments). It's also off the ExternalSecret path — that hits the connect API.
-  # This is the correct parameter for the operator token
+  # Operator stays at 1 — do NOT scale with connect: the chart has no leader election, so a 2nd replica races the first.
   token:
     name: "1password-operator-token"    # This sets the secret name for the operator token
     key: "token"                        # The key within the secret

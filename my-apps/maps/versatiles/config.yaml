@@ -1,12 +1,5 @@
-# versatiles server config (passed via `serve -c`). ONLY the cors section
-# lives here on purpose — sources, static frontend, and port stay on CLI args
-# because upstream documents config.yaml support as still maturing; keeping
-# this file single-purpose limits the blast radius if a future version changes
-# the schema.
-#
-# v4.6.0 schema (from `versatiles help config`): allowed_origins entries are
-# exact origins, domain globs, or /slash-enclosed/ regexes. Origins not in the
-# list are blocked — there is no separate default_policy field.
+# ONLY cors lives here; sources/static frontend/port stay on CLI args (upstream config.yaml schema still maturing).
+# allowed_origins: exact origins, domain globs, or /regex/; anything not listed is blocked — there is no default_policy field.
 cors:
   allowed_origins:
     # any https vanillax.me subdomain (maps itself, radar, home-assistant, ...)

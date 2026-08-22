@@ -1,9 +1,5 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
-# gitea-postgres-data backup STUB — uniform fields (repository, copyMethod,
-# populator) injected by ../../common/kopiur-backup. The mover securityContext
-# is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
-# HOURLY tier: database — caps data loss at ~1h. The before-hook
-# CHECKPOINTs Postgres so the CSI capture starts from a flushed state.
+# Uniform fields come from ../../common/kopiur-backup; the mover securityContext is per-PVC and stays here.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:

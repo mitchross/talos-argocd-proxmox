@@ -38,9 +38,7 @@ spec:
       interval: 30s
       scrapeTimeout: 10s
 ---
-# Redpanda publishes consumer offsets and topic high-water marks at
-# /public_metrics. The dashboard computes lag using Redpanda's documented
-# PromQL so the exact delayed group/topic is visible.
+# Redpanda /public_metrics carries consumer offsets + high-water marks; the dashboard computes lag from them.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

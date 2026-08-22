@@ -1,6 +1,4 @@
-# The API currently mounts three RWO publication volumes. Keep it single-pod
-# until immutable tiles move to object storage; claiming 8 replicas here made
-# the autoscaler promise a multi-node topology Kubernetes could not attach.
+# Keep maxReplicas 1: the API mounts three RWO volumes, so a higher cap promises a topology k8s can't attach.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

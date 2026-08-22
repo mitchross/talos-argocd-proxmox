@@ -32,11 +32,7 @@ spec:
                 app.kubernetes.io/component: machine-learning
             topologyKey: kubernetes.io/hostname
       initContainers:
-      # After the 2026-05-31 disposable library reset the volume is empty;
-      # immich's system-integrity folder check fails without its .immich marker
-      # files (the CNPG DB still has asset records, so immich does folder CHECKS
-      # not fresh-init). Idempotently ensure the media subdirs + markers so
-      # immich-server starts. Self-heals future empty recreates / DR.
+      # An empty library fails immich's integrity check (missing .immich markers); idempotently seed subdirs + markers.
       - name: init-library-markers
         image: alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
         imagePullPolicy: IfNotPresent

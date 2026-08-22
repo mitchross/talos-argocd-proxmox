@@ -36,10 +36,7 @@ patches:
     kind: PersistentVolumeClaim
     name: gitea-shared-storage
   patch: |
-    # kopiur backup of the chart-generated PVC: backup CRs live in
-    # kopiur/gitea-shared-storage.yaml; uniform fields from the
-    # ../../common/kopiur-backup component (mover securityContext in the stub). dataSourceRef -> the kopiur
-    # Restore so a recreate restores-before-bind.
+    # dataSourceRef -> kopiur Restore so a recreate restores-before-bind (CRs in kopiur/gitea-shared-storage.yaml).
     - op: add
       path: /metadata/annotations/argocd.argoproj.io~1compare-options
       value: ServerSideDiff=false

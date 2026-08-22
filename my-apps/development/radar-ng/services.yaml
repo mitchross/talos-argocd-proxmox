@@ -1,7 +1,4 @@
-# Three ClusterIP services:
-#   tile-server  (8080) — exposed publicly via HTTPRoute
-#   basemap      (8081) — reached by tile-server Caddy only
-#   open-meteo   (8080) — reached by tile-server FastAPI only
+# tile-server is exposed via HTTPRoute; basemap and open-meteo are reached only by tile-server.
 ---
 apiVersion: v1
 kind: Service

@@ -10,9 +10,7 @@ resources:
 - service.yaml
 - httproute.yaml
 - externalsecret.yaml
-# NOTE: download-models-job.yaml is intentionally excluded.
-# It's a one-time job applied manually: kubectl apply -f download-models-job.yaml
-# Including it would re-run on every ArgoCD sync.
+# download-models-job.yaml is intentionally excluded — one-time manual kubectl apply; listing it would re-run every sync.
 
 configMapGenerator:
   - name: comfyui-manager-config
@@ -26,9 +24,7 @@ configMapGenerator:
       - image_to_llamacpp_base64.py
 
 labels:
-  # includeSelectors: true == the old commonLabels behavior (labels stamped on
-  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
-  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  # Keep true: selectors are immutable on live Deployments; flipping to false forces delete/recreate.
   - includeSelectors: true
     pairs:
       app: comfyui

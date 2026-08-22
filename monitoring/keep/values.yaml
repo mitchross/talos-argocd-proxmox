@@ -1,6 +1,4 @@
-# Keep is the web alert console: Alertmanager webhooks land here, and a
-# provisioned workflow asks HolmesGPT to investigate criticals, attaching the
-# RCA to the alert (visible in the UI). No chat/text receivers by design.
+# Alertmanager webhooks land here; a provisioned workflow asks HolmesGPT to RCA criticals. No chat/text receivers by design.
 global:
   # Chart only ships nginx/haproxy/traefik Ingress; this cluster is Gateway
   # API. httproute.yaml replicates the prefix-strip the nginx template does.
@@ -22,9 +20,8 @@ backend:
     enabled: true
     secretName: keep-db-secret
     secretKey: connection-string
-  # This list REPLACES the chart default wholesale — DATABASE_CONNECTION_STRING
-  # must stay absent (injected from the secret above; a duplicate env wins
-  # unpredictably).
+  # REPLACES the chart default wholesale — DATABASE_CONNECTION_STRING must stay absent
+  # (injected from the secret above; a duplicate env wins unpredictably).
   env:
     - name: DATABASE_NAME
       value: keep-postgres

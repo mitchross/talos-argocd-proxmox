@@ -1,18 +1,5 @@
-# The canary PVC. Deliberately tiny; holds only the drill sentinel file.
-#
-# kopiur daily schedule (kopiur/restore-canary-data.yaml): the old
-# pvc-plumber manual tier had no cron, so snapshots only existed when the
-# drill bumped the trigger. Under kopiur the canary runs a normal DAILY
-# SnapshotSchedule so a fresh snapshot always exists for the drill to
-# restore from, with no manual trigger plumbing.
-#
-# DAY-ONE NOTE: a brand-new PVC carrying dataSourceRef binds only once the
-# Restore populator has a snapshot to hydrate from. The kopia mover
-# completes as a SUCCESSFUL NO-OP when the repo identity has no snapshots,
-# so a first restore can bind EMPTY — content is not guaranteed by the ref
-# alone. The drill therefore always requires the latest snapshot to ADVANCE
-# past the fresh sentinel backup before any delete. Full procedure:
-# docs/disaster-recovery.md.
+# Canary PVC: holds only the drill sentinel. With no snapshot in the repo a first restore binds EMPTY (mover no-op),
+# so the drill must ADVANCE the latest snapshot past the fresh sentinel before any delete (docs/disaster-recovery.md).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -33,11 +20,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  # kopiur restore-before-bind: on recreate (the drill, DR, namespace
-  # recreate) this binds Pending until the Restore populator hydrates it
-  # from the latest kopia snapshot. No-op while Bound. Backup/restore CRs in
-  # kopiur/restore-canary-data.yaml; uniform fields come from the
-  # ../../common/kopiur-backup component; the mover uid:gid lives in the stub.
+  # kopiur restore-before-bind: on recreate binds Pending until the Restore populator hydrates it; no-op while Bound. CRs in kopiur/restore-canary-data.yaml.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

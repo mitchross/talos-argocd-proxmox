@@ -1,12 +1,5 @@
-# KEDA ServiceMonitors — OPTIONAL observability, split out of the KEDA core app.
-#
-# These were previously rendered by the keda Helm chart (Wave 4) via
-# prometheus.*.serviceMonitor.enabled=true, which coupled KEDA's bootstrap to
-# the monitoring.coreos.com CRDs (kube-prometheus-stack, Wave 5) and deadlocked
-# the 2026-06-01 full-cluster nuke/rebuild. They now live here and sync AFTER
-# monitoring exists (see keda-observability-app.yaml, wave 6). Specs mirror the
-# chart output (port `metrics`, path `/metrics`); KEDA core still exposes the
-# metrics services (prometheus.*.enabled=true) so these scrape them.
+# Split out of the KEDA core app (wave 6) so bootstrap never depends on the monitoring.coreos.com CRDs (wave 5).
+# Specs mirror the chart's ServiceMonitors; KEDA core keeps prometheus.*.enabled=true so these have targets.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

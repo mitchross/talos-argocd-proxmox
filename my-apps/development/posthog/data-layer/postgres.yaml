@@ -71,37 +71,23 @@ spec:
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
-      # Read-only Prometheus view of Postgres health. Keep query text disabled:
-      # queryid is enough to find expensive statements without putting SQL or
-      # values into a high-cardinality metric label.
+      # Keep query text disabled: queryid suffices and SQL/values would become high-cardinality labels.
       - name: postgres-exporter
         image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
         imagePullPolicy: IfNotPresent
-        # Non-default collectors disabled — they crashlooped the exporter
-        # (exit 2, nothing logged). Re-add one at a time.
-        # args:
-        # - --collector.long_running_transactions
-        # - --collector.stat_statements
-        # - --collector.stat_statements.limit=25
+        # Non-default collectors (long_running_transactions, stat_statements) crashloop the exporter (exit 2, silent) — re-add one at a time.
         env:
         - name: DATA_SOURCE_NAME
           valueFrom:
             secretKeyRef:
               name: posthog-secrets
-              # The exporter is a sidecar. Using the db Service here creates a
-              # readiness deadlock because the Service does not publish this
-              # pod as an endpoint until every container is ready.
+              # Must not use the db Service: the sidecar isn't an endpoint until every container is ready (deadlock).
               key: posthog-exporter-db-url
         ports:
         - containerPort: 9187
           name: metrics
-        # NEVER give this sidecar a readinessProbe. A not-ready container makes
-        # the whole pod not-ready, which drops this pod from the `db` Service
-        # endpoints and black-holes Postgres for every PostHog consumer — the
-        # database stays up and nothing can reach it. The DSN comment above
-        # avoids the same deadlock from the other direction.
-        # timeoutSeconds must exceed a real scrape: /metrics queries Postgres
-        # and measured ~1.65s here, against the 1s default.
+        # NEVER add a readinessProbe: a not-ready sidecar drops the pod from the `db` Service and black-holes Postgres.
+        # timeoutSeconds must exceed a real scrape (~1.65s measured vs the 1s default).
         livenessProbe:
           httpGet:
             path: /metrics
@@ -159,9 +145,7 @@ spec:
     requests:
       # PostHog's Postgres holds identity metadata (small); 8Gi is ample.
       storage: 8Gi
-  # Restore-before-bind: on rebuild this PVC hydrates from the latest kopiur
-  # snapshot — API keys, users, dashboards, flag/cohort definitions survive.
-  # ClickHouse/Kafka/Redis stay backup-exempt; event history rebuilds empty.
+  # Restore-before-bind from the latest kopiur snapshot — the identity layer (API keys, users, dashboards) survives rebuild.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

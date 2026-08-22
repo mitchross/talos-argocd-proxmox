@@ -1,11 +1,4 @@
-# Grafana dashboard for radar-ng.
-#
-# Sources:
-#   - Loki   (logs)    — uses OTEL labels: k8s_namespace_name, k8s_container_name
-#   - Prometheus (metrics) — scraped from tile-server's /api/metrics via
-#     my-apps/development/radar-ng/servicemonitor.yaml
-#
-# The dashboard is auto-imported via the `grafana_dashboard: "1"` label.
+# Loki panels use OTEL labels (k8s_namespace_name, k8s_container_name); metrics come from the radar-ng tile-server ServiceMonitor.
 apiVersion: v1
 kind: ConfigMap
 metadata:

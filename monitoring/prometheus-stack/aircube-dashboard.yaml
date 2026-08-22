@@ -1,27 +1,5 @@
-# Grafana dashboard for the StuckAtPrototype AirCube Zigbee air-quality monitor
-# (paired to Home Assistant via ZHA, exported through HA's /api/prometheus
-# endpoint scraped by the home-assistant-metrics ServiceMonitor).
-#
-# Metric names follow HA's prometheus integration convention:
-#   - temperature device_class -> homeassistant_sensor_temperature_celsius (ALWAYS °C; we convert to °F)
-#   - humidity device_class    -> homeassistant_sensor_humidity_percent
-#   - eCO2 (no device_class)   -> homeassistant_sensor_unit_ppm
-#   - tVOC (volatile_organic_compounds_parts device_class)
-#                              -> homeassistant_sensor_volatile_organic_compounds_parts_ppb
-#   - VOC Level (unitless AQI index, no device_class)
-#                              -> homeassistant_sensor_state (generic metric shared by ALL
-#                                 unitless sensors — the entity= matcher is what isolates it)
-# rssi/lqi are NOT charted: ZHA exposes them as diagnostic entities that are
-# disabled by default, so they emit no value metric until enabled in the HA UI.
-# (metric names verified live against /api/prometheus on 2026-07-15)
-#
-# Every query is wrapped in `max by (entity)` and the stat panels use
-# `instant: true`. The `entity` label is stable, but HA's Prometheus target
-# label (instance/pod) changes on each HA pod restart, so Prometheus keeps the
-# old pod's series (frozen at their last value) for the retention window —
-# without dedup each metric would show 2-3x (once per pod generation). Requires
-# the matching `sensor.stuckatprototype_aircube_*` include glob in the HA
-# prometheus filter (my-apps/home/home-assistant/configuration.yaml).
+# HA /api/prometheus: temperature is ALWAYS °C (converted to °F here); unitless sensors share homeassistant_sensor_state — the entity= matcher isolates them.
+# max by (entity) + instant: true dedup stale series from previous HA pods; needs the sensor.stuckatprototype_aircube_* glob in the HA prometheus filter.
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -1,21 +1,4 @@
-# GPU Monitoring Dashboard (Grafana)
-#
-# Grafana auto-discovers this ConfigMap via the sidecar (grafana_dashboard: "1" label)
-# and imports the JSON at data."gpu-overview.json".
-#
-# Data source: Prometheus, scraping dcgm-exporter (monitoring/prometheus-stack/dcgm-exporter.yaml).
-# The dcgm-exporter ServiceMonitor causes Prometheus to relabel colliding labels:
-#   pod                 -> the dcgm-exporter pod (scrape target)
-#   exported_pod        -> the GPU-using pod (what we actually care about)
-#   exported_namespace  -> GPU-user's namespace
-#   exported_container  -> GPU-user's container name
-# Always use exported_* in queries, never the bare label.
-#
-# Layout answers "what's happening on my GPUs right now?" in three rows:
-#   Row 1 - At-a-glance stats: pods with GPUs, total VRAM, total power, avg util
-#   Row 2 - Pod Task Manager table: pod -> card -> VRAM/power/util/temp (THE main view)
-#   Row 3 - Per-card time series: util %, VRAM MiB, power W, temp C
-#   Row 4 - Reliability: XID errors, total energy kWh, clocks
+# dcgm-exporter ServiceMonitor relabels collisions: bare pod/namespace = the exporter, exported_* = the GPU-using pod. Always query exported_*.
 apiVersion: v1
 kind: ConfigMap
 metadata:

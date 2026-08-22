@@ -5,11 +5,7 @@ metadata:
   namespace: karakeep
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    # Immutable-dataSourceRef masking: a Bound PVC's live spec.dataSourceRef
-    # can lag Git (it only converges on recreate). SSA dry-run compares are
-    # rejected by the apiserver on the immutable field → app-wide
-    # ComparisonError, so this PVC compares client-side and the my-apps
-    # AppSet ignoreDifferences mask hides /spec/dataSourceRef drift.
+    # Immutable dataSourceRef on a Bound PVC — SSA dry-run compare fails app-wide, so compare client-side (AppSet ignoreDifferences masks drift).
     argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: karakeep
@@ -24,13 +20,8 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # kopiur populator: on PVC re-creation, kopiur's Restore/data-pvc-restore
-  # holds this PVC in Pending and restores the latest snapshot for identity
-  # karakeep/data-pvc before binding. No-op while already Bound.
-  #
-  # ⚠️ dataSourceRef is IMMUTABLE — it only takes effect on RECREATE (proven
-  # by the 2026-06-27 full-namespace DR drill). The masking annotations above
-  # + the AppSet ignoreDifferences handle any interim diff.
+  # kopiur restore-before-bind: on recreate binds Pending until the Restore populator hydrates it; no-op while Bound.
+  # dataSourceRef is IMMUTABLE — it only takes effect on RECREATE; the masking annotations above hide interim diff.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

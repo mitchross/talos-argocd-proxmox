@@ -1,15 +1,5 @@
-# Gitea Actions runner — two-container pattern.
-#
-# `runner` runs act_runner (no docker baked in) and talks to a sidecar
-# `dind` over a shared unix socket in /var/run. This sidesteps the bugs
-# in the gitea/act_runner:*-dind image family:
-#   • s6 readiness race that left act_runner blocked on s6-svwait
-#   • dockerd-entrypoint.sh auto-passing --gpus=all to job containers
-#   • dind's bundled server cert having incompatible TLS key usage
-#
-# The dind container is privileged (required for any DinD); the runner
-# container is unprivileged. Workflow files stay byte-identical to a
-# .github/workflows/ file — `runs-on: ubuntu-latest` still works.
+# Runner + separate dind sidecar over a shared /var/run socket. Do not switch to the
+# gitea/act_runner:*-dind image: s6 readiness race, forced --gpus=all, broken TLS key usage.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,10 +21,7 @@ spec:
     spec:
       containers:
         - name: runner
-          # Keep the runner image outside Gitea's own registry so a fresh
-          # Gitea rebuild can still start CI. With container.options empty,
-          # act_runner skips the Docker CLI option parser and does not add a
-          # GPU DeviceRequest.
+          # Keep off Gitea's own registry: a fresh Gitea rebuild must still be able to start CI.
           image: docker.io/gitea/act_runner:0.6.1
           env:
             # Talk to the dind sidecar via the shared /var/run socket.
@@ -64,12 +51,7 @@ spec:
             limits:
               memory: 1Gi
 
-        # Plain Docker-in-Docker. Privileged is required (the gitea-actions
-        # namespace is PSA-exempt). TLS disabled because the socket is
-        # only reachable from sibling containers in the same pod — no
-        # network exposure. Layer cache lives in /var/lib/docker on
-        # emptyDir; persistent caching is via the registry buildcache tag
-        # the workflows already use.
+        # Privileged is required for DinD (namespace is PSA-exempt); TLS off is safe, the socket is pod-local.
         - name: dind
           image: docker:29-dind
           args:
@@ -102,10 +84,7 @@ spec:
             periodSeconds: 30
             timeoutSeconds: 10
 
-        # Prune sidecar — keeps the dind PVC from filling up. Runs every
-        # 6h; bounds buildkit cache to 20Gi and removes stopped
-        # containers + images older than 72h. Without this, the layer
-        # cache grows indefinitely as new image versions keep landing.
+        # Without periodic pruning the /var/lib/docker PVC fills as new image versions land.
         - name: prune
           image: docker:29-cli
           env:
@@ -139,10 +118,7 @@ spec:
       volumes:
         - { name: var-run, emptyDir: {} }
         - { name: data,    emptyDir: {} }
-        # /var/lib/docker is a PVC so the catthehacker image (3 GB) and
-        # every base image we pull stay warm across pod restarts. See
-        # pvc.yaml. Was emptyDir — every restart wiped the cache and the
-        # next build re-pulled everything (≈2 min cold-start tax).
+        # PVC, not emptyDir: keeps the 3 GB catthehacker image + base layers warm across restarts (pvc.yaml).
         - name: docker-storage
           persistentVolumeClaim:
             claimName: act-runner-docker-cache

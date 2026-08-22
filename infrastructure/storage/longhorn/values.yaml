@@ -1,75 +1,28 @@
-# It's recommended to manage all Longhorn settings via this file
-# to maintain a declarative GitOps workflow.
-# Settings applied manually via the UI will not be reflected here and can be
-# overwritten during a Helm upgrade.
-#
-# V1 (default) data engine — restored 2026-06-12 after the V2/SPDK experiment
-# failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314:
-# interrupted rebuilds permanently poison replica metadata; re-crash after
-# auto-reattach). V1 is upstream's default engine, still actively maintained,
-# and ran this cluster stably for months before the V2 rebuild. Data path is
-# filesystem paths declared by the active cluster template. The Threadripper
-# worker provides /var/lib/longhorn (scsi0), /var/mnt/longhorn-nvme1 (scsi1),
-# and the flash-tagged /var/mnt/longhorn-ssd-flash. The Dell CPU worker adds a
-# dedicated Samsung-backed disk at /var/mnt/longhorn-dell-ssd; its boot disk
-# and the Threadripper general worker remain outside replica scheduling.
-# Engines cannot be
-# flipped on a live cluster with attached volumes — this config is applied via
-# nuke + rebuild with restore-from-backup (the proven DR flow).
-# History: V2 forensics in git history; short version in docs/disaster-recovery.md.
+# UI-applied settings are overwritten on Helm upgrade — manage every setting here.
+# V1 data engine only (V2 retired, see docs/disaster-recovery.md); engines can't be flipped on a live cluster.
 defaultSettings:
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
   defaultDataPath: "/var/lib/longhorn"
   storageMinimalAvailablePercentage: "10"
-  # Honor the node.longhorn.io/default-disks-config annotation set in the Talos
-  # cluster template, so Longhorn registers BOTH disks on fresh bootstrap. Without
-  # this, Longhorn ignores the annotation and only creates defaultDataPath.
+  # Without this Longhorn ignores the node default-disks-config annotation and only creates defaultDataPath.
   createDefaultDiskLabeledNodes: "true"
-  # Disk annotations own their reservations: Threadripper disks use 0, while
-  # the Dell system disk reserves 16 GiB and its data SSD uses 0. Keep the
-  # global percentage at 0 so it
-  # does not add a second, implicit reservation on top of those declarations.
+  # Disk annotations own reservations; a non-zero global % would add a second, implicit reservation.
   storageReservedPercentageForDefaultDisk: "0"
-  # Budget per disk = storageMaximum * this %, against DECLARED PVC size. At 600%
-  # the Dell reached 206 GiB scheduled on a 97 GiB disk; at 200% its budget falls
-  # below what it already held during the 2026-08-10 incident. Dell is now
-  # explicitly unschedulable; over-committed disks refuse new replicas but do
-  # not evict existing ones on their own.
-  # Do NOT drop to 100% — a DR restore doubles declared demand via `prime-*` PVCs
-  # and would deadlock the rebuild. Mirrored in node-failure-settings.yaml.
+  # Budget = disk size * this % against DECLARED PVC size. Never drop to 100%:
+  # a DR restore doubles declared demand via `prime-*` PVCs and deadlocks the rebuild.
   storageOverProvisioningPercentage: "200"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
-  # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
-  # These avoid parse errors like strconv.ParseBool/Int seen in manager logs when JSON strings are provided.
-  # Note: Use plain values, not JSON format - JSON causes "mismatched data engines" errors
+  # Plain scalars only — per-engine JSON strings trip "mismatched data engines" errors.
   fastReplicaRebuildEnabled: "true"
   engineReplicaTimeout: "8"
-  # Percentage of allocatable CPU reserved per instance-manager pod (NOT cores).
-  # Chart default is 12; "8" is the proven homelab value from the V1 era.
-  # V1 instance managers do NOT busy-poll (that was V2/SPDK's reactor model,
-  # which burned ~4-5 cores per node at 100% even when idle — one of the
-  # reasons V2 was retired on 2026-06-12). 8% of a 32-core worker ≈ 2.5 cores
-  # reserved, plenty for V1's interrupt-driven engines.
-  # Avoid per-engine JSON strings — they trip "mismatched data engines" errors.
+  # Percent of allocatable CPU per instance-manager pod (NOT cores); chart default is 12.
   guaranteedInstanceManagerCPU: "8"
-  # NOTE 2026-06-09: a previous `guaranteedInstanceManagerMemory: "1Gi"` was
-  # removed here — Longhorn has NO instance-manager memory-guarantee setting
-  # (only the CPU one above exists in the chart/setting schema), so the key was
-  # a silent no-op: it rendered into the longhorn-default-setting ConfigMap but
-  # longhorn-manager ignored it, and instance-manager pods never received the
-  # intended memory requests. The 2026-05-04 scheduler-math concern it tried to
-  # address (IM/share-manager pods with zero memory requests) is therefore still
-  # open and must be solved another way (node sizing / IM pod overhead), not via
-  # a Longhorn setting.
+  # No guaranteedInstanceManagerMemory setting exists — the key renders into the ConfigMap but is silently ignored.
   # Performance: prefer local disk for reads when replica is on same node
   defaultDataLocality: "best-effort"
-  # Cleanup: limit snapshot accumulation per volume. Headroom matters here:
-  # a failed kopiur backup leaves its Longhorn snapshot behind, so each failure
-  # permanently burns a slot. At "10" a two-day backend outage filled five
-  # volumes and wedged their backups indefinitely — a full volume cannot
-  # snapshot, so it can never back up again without a manual purge.
+  # Each failed kopiur backup burns a snapshot slot; a full volume can never back up again without a manual purge.
   snapshotMaxCount: "30"
   autoCleanupSystemGeneratedSnapshot: "true"
   # Allow Longhorn to auto-upgrade volume engines after manager upgrades
@@ -77,31 +30,16 @@ defaultSettings:
   # Allow detached volumes to rebuild replicas (fixes VolSync clone volumes
   # stuck in VolumeCloneCopyCompleteAwaitingHealthy with replica count > 1)
   offlineReplicaRebuilding: "true"
-  # V1 data engine is the chart default — no v1DataEngine/v2DataEngine keys
-  # needed. REMOVED 2026-06-12: v2DataEngine "true" + v1DataEngine "false" +
-  # createDefaultDiskLabeledNodes + storageReservedPercentageForDefaultDisk
-  # (all V2-block-disk plumbing). With V1, Longhorn auto-creates its default
-  # filesystem disk at defaultDataPath (/var/lib/longhorn) on every labeled
-  # node. Per-node annotations declare each worker's paths and reservations;
-  # the 10% minimal-available guard above remains the final free-space stop.
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
   jobEnabled: false
 persistence:
-  # -- The chart-created `longhorn` StorageClass, cluster default. The class
-  # KEEPS the name `longhorn` deliberately — 40+ PVCs across my-apps/
-  # monitoring/infrastructure, the inline VolSync ReplicationSource/
-  # Destination configs, the pvc-plumber backup contract, and the CLAUDE.md /
-  # add-backup guidance all reference `storageClassName: longhorn` explicitly.
-  # With no dataEngine override the class provisions V1 volumes (chart
-  # default) — the `dataEngine: v2` routing was removed 2026-06-12.
+  # -- The chart-created `longhorn` StorageClass, cluster default. NEVER rename it —
+  # 40+ PVCs, the kopiur backup contract and CLAUDE.md reference `storageClassName: longhorn`.
   defaultClass: true
-  # -- Default number of replicas for volumes.
-  # Keep new volumes at one replica. Dell is not a replica target, and a second
-  # trustworthy wired storage worker does not yet exist. Promote selected
-  # volumes/classes to two only after adding and measuring that failure domain.
-  # Off-cluster durability remains kopiur/Kopia backups to RustFS S3.
+  # -- Default replica count. Stay at 1 until a second trustworthy wired storage
+  # worker exists and is measured; off-cluster durability is kopiur backups to RustFS.
   defaultClassReplicaCount: 1
   # -- Default filesystem type.
   defaultFsType: ext4

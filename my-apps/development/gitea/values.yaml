@@ -4,11 +4,8 @@ persistence:
   enabled: true
   size: 10Gi
   storageClass: longhorn
-  # Placeholder label so the chart renders a non-empty metadata.labels
-  # map. kustomization.yaml's JSONPatch then adds `restore-policy: strict`
-  # and the static `dataSourceRef` under this map; an empty `labels:`
-  # collapses to null and the add-op fails with "doc is missing path
-  # /metadata/labels/...". Do not remove without rewriting the patch.
+  # Do not remove: kustomization.yaml's JSONPatch adds under /metadata/labels, and an empty
+  # labels map collapses to null so the add-op fails ("doc is missing path").
   labels:
     app.kubernetes.io/managed-by: argocd
 
@@ -49,7 +46,7 @@ gitea:
           name: gitea-db-secret
           key: password
 
-# Disable bundled databases - using external CNPG
+# Bundled DBs off — uses the plain Postgres in ./postgres/
 postgresql-ha:
   enabled: false
 
@@ -64,17 +61,8 @@ valkey:
   enabled: true
   architecture: standalone
   primary:
-    # Cache-only workload: emptyDir is the right home. The previous StatefulSet
-    # PVC made every cache restart drag along Longhorn block storage and a
-    # backup-restore policy decision (backup or backup-exempt?), neither of
-    # which adds value for ephemeral session/queue/cache data. Pod restarts
-    # cost users a re-login, in-flight queue jobs replay on next reconciliation
-    # — both fine for a homelab gitea.
+    # Cache-only data, emptyDir on purpose: a restart costs a re-login and in-flight queue jobs replay.
     persistence:
       enabled: false
 
-# Backups are kopiur now (2026-06-26): the chart-generated PVC's dataSourceRef
-# and its SnapshotPolicy/SnapshotSchedule/Restore live in the kustomization PVC
-# patch + kopiur/gitea-shared-storage.yaml (uniform fields from the
-# ../../common/kopiur-backup component). Do not add inline RS/RD or extraDeploy
-# backup objects here.
+# Backup CRs live in the kustomization PVC patch + kopiur/gitea-shared-storage.yaml; add none here.

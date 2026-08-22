@@ -1,22 +1,5 @@
-# Trivy vulnerability alerting — pairs with monitoring/trivy-operator (phase-1
-# vuln + exposed-secret scanning). Metrics come from the trivy-operator
-# ServiceMonitor; the gauge is trivy_image_vulnerabilities{severity,namespace,
-# image_repository,image_tag,...} = current count per workload image.
-#
-# Design note: alerting on any critical would be an instant storm. Instead we
-# alert only when a SINGLE active image has accumulated a large critical count
-# — the signal that an image is badly out of date and worth a tag bump / base
-# rebuild. Trivy retains reports for old Deployment ReplicaSets, so the query
-# joins ReplicaSet reports to kube-state-metrics and excludes scaled-to-zero
-# revisions. Aggregated with max by(image) so shared images don't multi-fire.
-#
-# Deliberately NOT alerting on trivy_image_exposedsecrets yet: the only current
-# hits are upstream test fixtures inside Ruby gems (false positives). Add a
-# .trivyignore for those first, then an exposed-secret alert becomes meaningful.
-#
-# Exposure-scoped alerting (only internet-facing apps) was considered but the
-# metric carries no exposure label; a hand-maintained namespace allowlist is
-# brittle homelab busywork, so we key on severity volume instead.
+# Alerts only when a single ACTIVE image accumulates many criticals (any-critical would storm); ReplicaSet reports join kube-state-metrics to drop scaled-to-zero revisions.
+# trivy_image_exposedsecrets is deliberately not alerted: current hits are Ruby gem test fixtures — add a .trivyignore first.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -33,9 +16,7 @@ spec:
     - name: trivy.vulnerabilities
       rules:
         - alert: TrivyImageHighCriticalCount
-          # Tunable threshold. >15 surfaces the handful of badly outdated
-          # active images without flagging every image. Non-ReplicaSet reports
-          # pass through; ReplicaSet reports must have at least one live replica.
+          # Tunable threshold; non-ReplicaSet reports pass through, ReplicaSet reports need a live replica.
           expr: >-
             max by (namespace, image_repository, image_tag) (
               trivy_image_vulnerabilities{

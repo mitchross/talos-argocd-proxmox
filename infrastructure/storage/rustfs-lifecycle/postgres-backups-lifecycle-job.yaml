@@ -4,17 +4,13 @@ metadata:
   name: postgres-backups-lifecycle-apply
   namespace: rustfs-lifecycle
   annotations:
-    # ArgoCD-hook so re-applies on every Sync without "field is immutable"
-    # errors when the ConfigMap content changes. PUT bucket-lifecycle is
-    # idempotent so re-running on every sync is safe.
+    # Hook so it re-applies on every Sync without "field is immutable" errors; PUT bucket-lifecycle is idempotent.
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   ttlSecondsAfterFinished: 86400
   backoffLimit: 3
-  # Bound the hook's wall-clock so a stuck aws call (RustFS down, network
-  # blackhole, missing creds) cannot wedge the Application's sync. 5 min is
-  # generous for a single PUT/GET round-trip.
+  # Bound wall-clock so a stuck aws call (RustFS down, missing creds) cannot wedge the Application's sync.
   activeDeadlineSeconds: 300
   template:
     metadata:

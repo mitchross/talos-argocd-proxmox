@@ -23,12 +23,7 @@ spec:
 # ArgoCD metrics are handled by the argo-cd Helm chart's built-in ServiceMonitors
 # (enabled via per-component metrics.serviceMonitor.enabled in ArgoCD values.yaml)
 ---
-# ServiceMonitor for kopiur (backup controller). Scrapes
-# kopiur-controller-metrics:8081 (kopiur_snapshot_*/kopiur_policy_* backup
-# health metrics) — consumed by kopiur-alerts.yaml.
-# (The old nvidia-device-plugin ServiceMonitor that lived here matched
-# nothing: wrong namespace, and the gpu-operator exposes no device-plugin
-# metrics Service on this cluster. Removed 2026-07-06.)
+# kopiur-controller-metrics:8081 (kopiur_snapshot_*/kopiur_policy_*) — consumed by kopiur-alerts.yaml.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

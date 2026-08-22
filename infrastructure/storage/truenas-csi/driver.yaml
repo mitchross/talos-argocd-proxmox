@@ -44,9 +44,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-          # All TRUENAS_* config comes from envFrom — single source shared by
-          # the controller Deployment and node DaemonSet. The ConfigMap/Secret
-          # keys ARE the env-var names; add new driver vars there, not here.
+          # All TRUENAS_* config comes from envFrom (shared with the node DaemonSet); ConfigMap/Secret keys ARE the env-var names.
           envFrom:
             - configMapRef:
                 name: truenas-csi-config
@@ -161,11 +159,8 @@ spec:
           # renovate: datasource=docker depName=ghcr.io/truenas/truenas-csi
           image: ghcr.io/truenas/truenas-csi:v1.1.2@sha256:72bc60182c3eb22b524f52c7693ffb2fcd8e8f75ac47c0a2ce0239e78af6bf83
           imagePullPolicy: IfNotPresent
-          # NFS-only on Talos: no iSCSI host integration. Talos has no iscsiadm
-          # and no /etc/iscsi (would require the siderolabs/iscsi-tools system
-          # extension). The iscsiadm nsenter shim postStart hook and the
-          # /etc/iscsi // /var/lib/iscsi host mounts are intentionally removed so
-          # the node plugin starts for the truenas-nfs StorageClass.
+          # NFS-only on Talos: no iscsiadm or /etc/iscsi on the host. The upstream iscsiadm postStart
+          # shim and /etc/iscsi + /var/lib/iscsi host mounts are intentionally removed so the plugin starts.
           securityContext:
             privileged: true
           args:
@@ -180,9 +175,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-          # All TRUENAS_* config comes from envFrom — single source shared by
-          # the controller Deployment and node DaemonSet. The ConfigMap/Secret
-          # keys ARE the env-var names; add new driver vars there, not here.
+          # All TRUENAS_* config comes from envFrom (shared with the controller); ConfigMap/Secret keys ARE the env-var names.
           envFrom:
             - configMapRef:
                 name: truenas-csi-config

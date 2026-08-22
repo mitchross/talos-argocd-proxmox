@@ -53,9 +53,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: kubectl
-              # bitnami moved their free images to the bitnamilegacy namespace
-              # on Docker Hub in Aug 2025; `bitnami/kubectl:1.33.1` no longer
-              # resolves. bitnamilegacy/kubectl:1.33.1 is the same bits.
+              # bitnami free images moved to bitnamilegacy on Docker Hub; bitnami/kubectl no longer resolves.
               image: bitnamilegacy/kubectl:1.33.4
               command:
                 - kubectl

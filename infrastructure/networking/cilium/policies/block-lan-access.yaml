@@ -6,10 +6,6 @@ spec:
   description: "Block pods from accessing LAN - allow internet, cluster, and whitelisted storage"
   endpointSelector: {}  # Applies to ALL pods
 
-  # ============================================
-  # INGRESS: Allow all legitimate traffic
-  # (cluster, host, and external via gateway)
-  # ============================================
   ingress:
     - fromEntities:
         - cluster
@@ -17,9 +13,7 @@ spec:
         - world
 
   egress:
-    # ============================================
-    # ALLOW: Internet (everything EXCEPT RFC1918)
-    # ============================================
+    # Internet: everything EXCEPT RFC1918
     - toCIDRSet:
         - cidr: 0.0.0.0/0
           except:
@@ -27,30 +21,18 @@ spec:
             - 172.16.0.0/12
             - 192.168.0.0/16
 
-    # ============================================
-    # ALLOW: All cluster-internal traffic
-    # (pods, services, nodes, kube-apiserver)
-    # ============================================
     - toEntities:
         - cluster
         - host
         - kube-apiserver
 
-    # ============================================
-    # ALLOW: LoadBalancer IP Pool (Cilium L2)
-    # Needed for pod-to-service via external IPs
-    # ============================================
+    # LoadBalancer IP pool (Cilium L2): pod-to-service via external IPs
     - toCIDR:
         - 192.168.10.32/27
 
-    # NOTE: Gateway (192.168.10.1) NOT whitelisted
-    # Internet works via toEntities:host, no direct gateway access needed
-    # This prevents pods from accessing router admin/SSH
+    # Gateway 192.168.10.1 deliberately NOT whitelisted: keeps pods off router admin/SSH; internet works via toEntities:host.
 
-    # ============================================
-    # ALLOW: TrueNAS - API + NFS + SMB + RustFS Storage
-    # (WebSocket API for TrueNAS CSI, NFS/SMB, RustFS for VolSync backups)
-    # ============================================
+    # TrueNAS: API (CSI websocket) + NFS + SMB + RustFS
     - toCIDR:
         - 192.168.10.133/32
       toPorts:
@@ -72,9 +54,7 @@ spec:
             - port: "9000"
               protocol: TCP
 
-    # ============================================
-    # ALLOW: Wyze Bridge RTSP (for Frigate)
-    # ============================================
+    # Wyze Bridge RTSP (Frigate)
     - toCIDR:
         - 192.168.10.46/32
       toPorts:
@@ -82,10 +62,7 @@ spec:
             - port: "8554"
               protocol: TCP
 
-    # ============================================
-    # ALLOW: Proxmox API (for Omni provider)
-    # Remove if not using Omni/Terraform in-cluster
-    # ============================================
+    # Proxmox API (Omni provider)
     - toCIDR:
         - 192.168.10.14/32
       toPorts:
@@ -93,9 +70,7 @@ spec:
             - port: "8006"
               protocol: TCP
 
-    # ============================================
-    # ALLOW: RPi4 Solar MPPT Monitor (Prometheus scrape)
-    # ============================================
+    # RPi4 solar MPPT monitor (Prometheus scrape)
     - toCIDR:
         - 192.168.10.174/32
       toPorts:
@@ -105,9 +80,7 @@ spec:
             - port: "9812"
               protocol: TCP
 
-    # ============================================
-    # ALLOW: IoT VLAN Egress (Tapo Smart Plugs)
-    # ============================================
+    # IoT VLAN (Tapo smart plugs)
     - toCIDR:
         - 192.168.101.0/24
       toPorts:

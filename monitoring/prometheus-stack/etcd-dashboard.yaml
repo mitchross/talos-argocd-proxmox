@@ -1,17 +1,4 @@
-# etcd Cluster Dashboard (Grafana)
-#
-# Standard etcd monitoring dashboard from grafana.com/dashboards/3070
-# (revision 3). Auto-discovered by the Grafana sidecar via the
-# grafana_dashboard=1 label.
-#
-# Pairs with the kube-etcd scrape job in values.yaml additionalScrapeConfigs
-# and the etcd metrics endpoint exposed by the Talos machineconfig patch
-# in omni/cluster-template/cluster-template.yaml.
-#
-# kube-prometheus-stack does not ship an etcd dashboard out of the box when
-# kubeEtcd.enabled=false (which it must be in our setup, since the chart's
-# kubeEtcd path uses static IP endpoints incompatible with our destroy/
-# recreate cluster workflow).
+# grafana.com/dashboards/3070 rev 3; pairs with the kube-etcd scrape job in values.yaml (kubeEtcd.enabled=false — the chart path needs static IPs).
 apiVersion: v1
 kind: ConfigMap
 metadata:
