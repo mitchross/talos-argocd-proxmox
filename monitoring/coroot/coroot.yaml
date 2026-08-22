@@ -1,15 +1,5 @@
-# Coroot CE trial: embedded Prometheus (2d) keeps its high-cardinality eBPF
-# metrics out of the main prometheus-stack instance, and every volume is
-# reclaimPolicy Delete — removing this directory leaves zero residue.
-# AI RCA is enterprise-only and intentionally absent; CE inspections only.
-#
-# SCALED TO ZERO. The node-agent's eBPF profiler symbolizes stacks by re-reading
-# every container binary each cycle; on the GPU worker that was a sustained
-# 1 GB/s of disk reads (cluster-agent another 550 MB/s), saturating both the
-# SATA and NVMe thin pools on the Proxmox host — IO pressure stall 57%, load 96.
-# Everything else in the cluster combined reads <30 MB/s.
-# operator 1.9.6 reads `replicas: 0` as unset and applies its default (keeper 3,
-# clickhouse 1, coroot 1) — only the unschedulable nodeSelector actually zeroes a component.
+# SCALED TO ZERO: the node-agent eBPF profiler re-reads every container binary each cycle (~1 GB/s disk reads, IO-stalled the Proxmox host).
+# Operator 1.9.6 treats replicas: 0 as unset — only the unschedulable nodeSelector actually zeroes the components.
 apiVersion: coroot.com/v1
 kind: Coroot
 metadata:

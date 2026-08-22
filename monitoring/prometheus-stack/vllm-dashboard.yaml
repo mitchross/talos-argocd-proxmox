@@ -1,14 +1,4 @@
-# vLLM Inference Dashboard (Grafana)
-#
-# Grafana auto-discovers this ConfigMap via the sidecar (grafana_dashboard: "1" label).
 # Data source: Prometheus scraping vLLM's native /metrics (my-apps/ai/vllm/servicemonitor.yaml).
-#
-# Layout answers "how fast is the model serving right now?" in five rows:
-#   Row 1 - At-a-glance stats: gen tok/s, prompt tok/s, running, waiting
-#   Row 2 - Tokens/s over time: aggregate throughput + single-stream decode speed
-#   Row 3 - Latency: TTFT + end-to-end quantiles
-#   Row 4 - KV / prefix cache utilization and hit rate
-#   Row 5 - Speculative decoding (MTP-2): acceptance rate, draft vs accepted
 apiVersion: v1
 kind: ConfigMap
 metadata:

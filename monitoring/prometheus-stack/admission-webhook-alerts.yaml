@@ -10,29 +10,12 @@ metadata:
     prometheus: kube-prometheus-stack-prometheus
     role: alert-rules
 spec:
-  # Admission-webhook reachability, measured from the API server's own metrics
-  # (job="apiserver") rather than from pod health.
-  #
-  # WHY THIS EXISTS: sync waves gate on ArgoCD Application health, and for a
-  # webhook Deployment that means "ready replicas == desired". A webhook pod can
-  # be Running and Ready — its kubelet probe succeeds because kubelet probes it
-  # locally on the same node — while the API server cannot reach it across the
-  # pod network. Nothing in the wave model observes that gap, so every later wave
-  # marches into a webhook that cannot be called. These rules close it by asking
-  # the only component whose opinion matters: the API server.
-  #
-  # The `code` label is what makes this precise:
-  #   503 = the API server could not reach/complete the call (the failure mode)
-  #   4xx = the webhook was reached and deliberately rejected (normal policy)
-  # Alerting on rejected="true" alone would fire on every legitimate rejection.
+  # Measured from the API server (job="apiserver"), not pod health: a webhook pod can be Ready (kubelet probes locally) while the API server cannot reach it.
+  # code=503 = unreachable (the failure); 4xx = reached and rejected (normal policy) — never alert on rejected="true" alone.
   groups:
     - name: admission.webhooks
       rules:
-        # A failurePolicy: Fail webhook the API server cannot reach. Every write
-        # matching its rules is now failing cluster-wide. For cluster-scoped
-        # webhooks (cert-manager, CNPG, Longhorn) this blocks ArgoCD syncs, and
-        # any sync that aborts applies NONE of its resources — so unrelated
-        # components stall waiting on Secrets that were never created.
+        # failurePolicy: Fail webhook unreachable — every matching write fails cluster-wide; an aborted ArgoCD sync applies NONE of its resources.
         - alert: AdmissionWebhookUnreachable
           expr: |
             sum by (name, type) (
@@ -68,10 +51,7 @@ spec:
                  Node reachable + Endpoints 0/1 means the pod network is broken to
                  that node, not the pod.
 
-        # failurePolicy: Ignore webhooks that the API server gave up on. These
-        # fail SILENTLY — the request is admitted with the webhook skipped, so
-        # defaulting/mutation quietly does not happen and nothing surfaces an
-        # error. Warning rather than critical because writes still succeed.
+        # failurePolicy: Ignore webhooks fail SILENTLY (request admitted, mutation skipped) — warning only, writes still succeed.
         - alert: AdmissionWebhookFailingOpen
           expr: |
             sum by (name) (

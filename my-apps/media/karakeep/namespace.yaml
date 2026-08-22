@@ -3,7 +3,5 @@ kind: Namespace
 metadata:
   name: karakeep
   labels:
-    # kopiur-managed namespace: drives the ClusterExternalSecret cred fanout AND
-    # ClusterRepository tenancy (allowedNamespaces selector). Replaces the
-    # pvc-plumber managed-namespace + volsync privileged-movers labels.
+    # Drives the kopiur ClusterExternalSecret cred fanout and ClusterRepository tenancy.
     kopiur.home-operations.com/repo: cluster-kopia

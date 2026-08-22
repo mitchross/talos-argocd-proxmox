@@ -12,9 +12,7 @@ resources:
 # No kopiur backup — swarmui is unused; all its PVCs are backup-exempt.
 
 labels:
-  # includeSelectors: true == the old commonLabels behavior (labels stamped on
-  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
-  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  # Keep true: selectors are immutable on live Deployments; flipping to false forces delete/recreate.
   - includeSelectors: true
     pairs:
       app: swarmui

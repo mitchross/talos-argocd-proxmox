@@ -1,13 +1,5 @@
-# kopiur operator Helm values (production backup system since 2026-06-27).
-# Rendered locally via Kustomize helmCharts from the upstream OCI chart — see
-# kustomization.yaml.
-#
-# Image tags are deliberately NOT set here: empty tag defaults to
-# .Chart.AppVersion, and the OCI chart is packaged with appVersion == chart
-# version — so all three images (controller/webhook/mover) track the single
-# chart pin in kustomization.yaml. Explicit tags here drifted on Renovate
-# chart bumps (nothing updated them). Pin image.*.digest before trusting
-# this for anything real.
+# Image tags deliberately unset: empty tag = .Chart.AppVersion == chart version, so all three images track the chart pin.
+# Explicit tags here drifted on Renovate chart bumps.
 installScope: cluster # ClusterRole + ClusterRepository reconciliation
 webhook:
   failurePolicy: Ignore # deliberate (DR-safety): a kopiur outage must never gate CR creation

@@ -1,12 +1,6 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
-# hindsight database backup STUB — uniform fields (repository, copyMethod,
-# populator) injected by ../../common/kopiur-backup. The mover securityContext
-# is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
-#
-# pgvector/pgvector:pg16 running as a plain Deployment, NOT CloudNativePG --
-# so it gets no CNPG backup and needs this. Runs as uid/gid 999 (the postgres
-# user in that image), which is what the mover securityContext below matches.
+# Uniform fields come from ../../common/kopiur-backup; mover securityContext stays per-PVC here (999 = postgres in the pgvector image).
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:

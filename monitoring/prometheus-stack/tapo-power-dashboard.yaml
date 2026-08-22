@@ -6,15 +6,8 @@ metadata:
   labels:
     grafana_dashboard: "1"
     app.kubernetes.io/name: grafana-dashboards
-# Every query is deduped with `max by (entity)` and the stat panels use
-# `instant: true`. Home Assistant's Prometheus target label changes on each HA
-# pod restart, so Prometheus keeps the old pod's series (frozen at their last
-# value) for the retention window; without dedup a plug appears 2-3x. Legends
-# use label_replace(entity) instead of friendly_name because the friendly_name
-# can change across pod generations (a device rename), which would defeat
-# grouping. The gpu_psu entity_id is kept (preserves history) but the device is
-# now "threadripper-gpus" — the second label_replace remaps just that prefix.
-# (Proxmox was removed — that plug was relocated.)
+# max by (entity) + instant: true dedup stale series from previous HA pods (target label changes per restart → each plug appears 2-3x).
+# Legends use label_replace(entity), not friendly_name (renames break grouping); the gpu_psu entity is remapped to "threadripper-gpus".
 data:
   tapo-power-monitoring.json: |
     {

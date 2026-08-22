@@ -1,7 +1,4 @@
-# Mosquitto broker for Frigate's MQTT events. The mosquitto.conf is
-# delivered via a kustomize-generated ConfigMap (see kustomization.yaml
-# for the configMapGenerator entry); editing mosquitto.conf will
-# auto-roll this Deployment on next sync.
+# mosquitto.conf ships via the configMapGenerator in kustomization.yaml; editing it auto-rolls this Deployment.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

@@ -1,13 +1,5 @@
-# VersaTiles tile server + bundled upstream frontend, serving the planet
-# archive from the map-data PVC at maps.vanillax.me.
-#
-# The versatiles-frontend image's ENTRYPOINT is
-#   versatiles serve --static /app/frontend-dev.br.tar
-# so the k8s `args` APPEND to it — the effective command is
-#   versatiles serve --static /app/frontend-dev.br.tar -c /config/config.yaml /data/osm.versatiles
-# (verified against versatiles-docker's versatiles-frontend/Dockerfile).
-# Don't set `command:` — that would replace the entrypoint and drop the
-# bundled frontend.
+# Image ENTRYPOINT is `versatiles serve --static /app/frontend-dev.br.tar`; k8s `args` APPEND to it.
+# Never set `command:` — it replaces the entrypoint and drops the bundled frontend.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,9 +27,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       initContainers:
-        # Block pod start until the map-bootstrap hook Job has populated the
-        # PVC, so a fresh deploy waits (~15-60min first download) instead of
-        # crashlooping on a missing archive.
+        # Block pod start until the map-bootstrap hook Job has populated the PVC instead of crashlooping on a missing archive.
         - name: wait-for-map
           image: busybox:1.38
           command:

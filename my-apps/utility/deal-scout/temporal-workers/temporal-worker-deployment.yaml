@@ -1,8 +1,4 @@
-# One cluster worker owns both schedules. Cluster-capable sources run as
-# isolated activities here; eBay uses its application-only Browse API token.
-# The Facebook schedule writes a durable job to the
-# Deal Scout API for the outbound-only CachyOS runner. Temporal's unauthenticated
-# frontend remains cluster-internal.
+# One worker owns both schedules; the Facebook schedule hands off to the outbound-only CachyOS runner via the API.
 apiVersion: temporal.io/v1alpha1
 kind: WorkerDeployment
 metadata:

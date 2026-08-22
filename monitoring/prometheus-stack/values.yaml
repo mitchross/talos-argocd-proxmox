@@ -10,9 +10,7 @@ crds:
   enabled: true
 defaultRules:
   disabled:
-    # Effectively a single-worker cluster: these fire when requests exceed
-    # N-1 nodes' capacity, i.e. they demand failover headroom that cannot
-    # exist here. Actual utilization alerts (NodeMemoryRequestsHigh) remain.
+    # Single-worker cluster: these demand N-1 failover headroom that cannot exist here.
     KubeCPUOvercommit: true
     KubeMemoryOvercommit: true
 # Prometheus Configuration
@@ -29,11 +27,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         metadata:
-          # Intentionally backup-exempt. Prometheus metrics are re-scrapeable
-          # within retention; restoring 15d of historical metrics from a backup
-          # snapshot is not worth the I/O. The 2026-05-03 backup-label
-          # migration was reverted same-day after explicit decision that
-          # monitoring data does not warrant the backup pipeline overhead.
+          # Intentionally backup-exempt: metrics are re-scrapeable within retention.
           labels:
             backup-exempt: "true"
           annotations:
@@ -45,11 +39,6 @@ prometheus:
           resources:
             requests:
               storage: 50Gi
-    # Resource allocation (memory bumped 2026-05-04)
-    # Capacity baseline 2026-05-04 showed Prometheus pod at 2.0 GiB observed
-    # against the 4 GiB limit ceiling (request=2 Gi was at limit-of-use).
-    # Retention 15d + WAL + chunk caches will keep growing; raising headroom
-    # to avoid OOM as series count grows.
     resources:
       requests:
         cpu: 500m
@@ -69,24 +58,8 @@ prometheus:
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
-    # Additional scrape configs for custom monitoring
-    #
-    # Control plane scraping (etcd / kube-controller-manager / kube-scheduler)
-    # uses kubernetes_sd_configs role:node + relabeling to discover CP nodes
-    # by label rather than hardcoding IPs. This is intentional: the cluster
-    # is regularly destroyed/recreated via Omni machine classes, so any
-    # static IP list (chart's `kubeEtcd.endpoints:` field, DHCP reservations,
-    # static machineconfig IPs) would break on every rebuild.
-    #
-    # Requires the matching Talos machineconfig patch in
-    # omni/cluster-template/cluster-template.yaml control-plane-performance:
-    #   etcd.listen-metrics-urls: http://0.0.0.0:2381
-    #   controllerManager.bind-address: 0.0.0.0   (port 10257)
-    #   scheduler.bind-address: 0.0.0.0           (port 10259)
-    #
-    # Job names match what the chart's default PrometheusRules and Grafana
-    # dashboards expect, so KubeControllerManagerDown / KubeSchedulerDown /
-    # etcd* alerts and the standard etcd dashboard "just work".
+    # Control-plane jobs discover CP nodes via kubernetes_sd role:node, never static IPs (cluster is destroyed/recreated via Omni).
+    # Needs the control-plane-performance machineconfig patch (etcd 2381, controller-manager 10257, scheduler 10259 on 0.0.0.0); job names must match the chart's default rules/dashboards.
     additionalScrapeConfigs:
       - job_name: 'epever-solar'
         metrics_path: /metrics
@@ -102,9 +75,7 @@ prometheus:
         kubernetes_sd_configs:
           - role: node
         relabel_configs:
-          # Keep only control-plane nodes. Talos applies the standard
-          # node-role.kubernetes.io/control-plane label automatically; using
-          # `labelpresent` is more robust than matching the (empty-string) value.
+          # labelpresent is more robust than matching the empty-string value of node-role.kubernetes.io/control-plane.
           - source_labels: [__meta_kubernetes_node_labelpresent_node_role_kubernetes_io_control_plane]
             action: keep
             regex: "true"
@@ -153,9 +124,7 @@ prometheus:
         - namespace: prometheus-stack
           name: kube-prometheus-stack-alertmanager
           port: 9093
-    # Accept OTLP metrics on /api/v1/otlp — the OTEL gateway collector exports
-    # its metrics pipeline (k8s_cluster, kubeletstats, app OTLP) here and was
-    # getting 404s while this was off (chart default is false).
+    # The OTEL gateway exports metrics to /api/v1/otlp — 404s while this is off (chart default false).
     enableOTLPReceiver: true
 # Alertmanager Configuration
 alertmanager:
@@ -167,9 +136,7 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         metadata:
-          # Intentionally backup-exempt. Alertmanager state (silences,
-          # inhibitions, notification log) is operator-set and trivially
-          # recreated; not worth backup pipeline overhead.
+          # Intentionally backup-exempt: Alertmanager silences are operator-set and trivially recreated.
           labels:
             backup-exempt: "true"
           annotations:
@@ -196,9 +163,7 @@ alertmanager:
     # Retention
     retention: 72h
     configSecret: ""
-  # Delivery destination is the Keep console (keep.vanillax.me) — web UI, not
-  # chat/email. Watchdog and InfoInhibitor are Alertmanager-internal plumbing
-  # and route to null; everything else lands in the Keep feed.
+  # Keep console (keep.vanillax.me) is the delivery destination; Watchdog and InfoInhibitor route to null.
   config:
     route:
       receiver: "keep"
@@ -206,9 +171,7 @@ alertmanager:
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h
-      # This list REPLACES the chart's default child routes, so Watchdog->null
-      # must be restated here. InfoInhibitor is a routing artifact (it exists
-      # only to inhibit info-severity alerts) — never deliver it.
+      # This list REPLACES the chart's default child routes — Watchdog->null must be restated; never deliver InfoInhibitor.
       routes:
         - receiver: "null"
           matchers:
@@ -217,10 +180,7 @@ alertmanager:
           matchers:
             - alertname = "InfoInhibitor"
     receivers:
-      # The chart merges its default Watchdog->null child route into this
-      # config, but this receivers list REPLACES the chart's — omitting
-      # "null" fails operator validation ("undefined receiver") and the old
-      # config silently stays live.
+      # This receivers list REPLACES the chart's — omitting "null" fails operator validation and the old config silently stays live.
       - name: "null"
       - name: "keep"
         webhook_configs:
@@ -248,11 +208,8 @@ grafana:
     size: 10Gi
     accessModes:
       - ReadWriteOnce
-    # Intentionally backup-exempt. Grafana dashboards and datasource
-    # configs are GitOps-managed; only user prefs / unsaved drafts live
-    # in the PVC. Not worth backup pipeline overhead.
-    # NOTE: the grafana chart ignores `persistence.labels`; PVC labels
-    # must go under `extraPvcLabels` (verified against grafana-12.4.2).
+    # Intentionally backup-exempt: dashboards/datasources are GitOps-managed.
+    # The grafana chart ignores persistence.labels — PVC labels must go under extraPvcLabels.
     extraPvcLabels:
       backup-exempt: "true"
     annotations:
@@ -278,9 +235,7 @@ grafana:
       searchNamespace: ALL
       label: grafana_dashboard
       labelValue: "1"
-  # Community dashboards are downloaded onto Grafana's persistent data volume.
-  # Removing a gnetId from values does not remove the old JSON file, so prune
-  # only the retired dashboard files before Grafana's downloader runs.
+  # Removing a gnetId does not remove its JSON from the data volume — prune retired files before the downloader runs.
   extraInitContainers:
     - name: prune-retired-dashboards
       image: docker.io/library/busybox:1.38.0@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
@@ -303,10 +258,7 @@ grafana:
       volumeMounts:
         - name: storage
           mountPath: /var/lib/grafana
-  # The chart's stock dashboard bundle is intentionally disabled. It added
-  # two dozen overlapping Kubernetes boards and made incident triage a search
-  # problem. The GitOps-managed performance cockpit is the starting point;
-  # specialist boards stay available when the cockpit links to them.
+  # Stock dashboard bundle disabled: two dozen overlapping boards made triage a search problem.
   defaultDashboardsEnabled: false
   defaultDashboardsTimezone: UTC
   # Community dashboards - auto-provisioned from grafana.com
@@ -339,13 +291,8 @@ grafana:
         options:
           path: /var/lib/grafana/dashboards/logging
   dashboards:
-    # The broad community Kubernetes boards duplicated the same signals across
-    # global/namespace/node/pod screens. The performance cockpit plus its
-    # workload investigator replace that maze.
     kubernetes: {}
-    # Loki dashboards moved to custom ConfigMaps (loki-logs-dashboard.yaml)
-    # because community dashboards use Promtail's 'job' label but we use OTEL
-    # which sends logs with 'service_name' label instead
+    # Community Loki dashboards key on Promtail's 'job' label; OTEL logs carry 'service_name' — see loki-logs-dashboard.yaml.
     logging: {}
     infrastructure:
       argocd:
@@ -424,16 +371,10 @@ kubeStateMetrics:
       memory: 256Mi
     limits:
       memory: 512Mi
-# kube-state-metrics sub-chart values. Expose PVC backup labels so alerts
-# and dashboards can distinguish backup-exempt and CNPG-managed PVCs.
-# (The ProtectedPVCSkipRestoreStale alert this originally served was retired
-# with pvc-plumber 2026-06-27; kopiur backup health is alerted via
-# kopiur-alerts.yaml instead.)
+# Expose PVC backup labels so alerts/dashboards can distinguish backup-exempt PVCs.
 kube-state-metrics:
   metricLabelsAllowlist:
-    # backup-exempt surfaces explicitly-exempt PVCs; cnpg.io/cluster distinguishes
-    # CNPG-managed PVCs (Barman to S3, not kopiur). kube-state-metrics sanitizes
-    # the label name to label_cnpg_io_cluster.
+    # kube-state-metrics sanitizes cnpg.io/cluster to label_cnpg_io_cluster.
     - persistentvolumeclaims=[backup-exempt,cnpg.io/cluster]
   rbac:
     extraRules:
@@ -571,11 +512,7 @@ kube-state-metrics:
 # Prometheus Operator Configuration
 prometheusOperator:
   enabled: true
-  # Use cert-manager for webhook certs instead of Helm hook Jobs.
-  # The default hook Jobs (admission-create/admission-patch) create a
-  # ServiceAccount as a hook resource, then Jobs that depend on it.
-  # ArgoCD can delete the SA before the patch Job runs, causing a
-  # permanent stuck sync that cascades into API server overload.
+  # cert-manager for webhook certs: the chart's Helm hook Jobs lose their SA under ArgoCD and wedge the sync permanently.
   admissionWebhooks:
     certManager:
       enabled: true

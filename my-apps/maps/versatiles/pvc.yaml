@@ -1,24 +1,5 @@
-# NAS-backed (TrueNAS SMB) storage for the planet archive — chosen for
-# NUKE-SURVIVAL, not speed: the cluster gets rebuilt often, and the archive +
-# bootstrap marker living on the NAS means a fresh cluster's bootstrap Job
-# sees them and exits in seconds instead of re-downloading 62GB. The NAS copy
-# IS the durable copy; no kopiur backup needed.
-#
-# Perf tradeoff (accepted, "start slow then move fast"): tile serving is
-# random byte-range reads, the slow case on HDD-backed SMB
-# (docs/domains/storage/storage-tiers.md). Personal-traffic tile loads +
-# cache=loose + OS page cache make it tolerable; if it ever feels slow the
-# upgrade path is a local NVMe cache/copy tier in front — NOT moving the
-# durable copy off the NAS.
-#
-# Static PV with a FIXED share path (comfyui pattern), NOT a dynamic *-smb
-# class: dynamic provisioning creates a fresh pvc-<uuid> subdir per PVC, so a
-# rebuilt cluster would get an empty new folder and silently re-download —
-# defeating the survival goal.
-#
-# PREREQ (one-time, manual): the folder must exist on TrueNAS before the
-# mount succeeds — create `versatiles` inside the `k8s` SMB share
-# (Finder: smb://192.168.10.133/k8s → New Folder "versatiles").
+# Static PV on a FIXED TrueNAS SMB path (comfyui pattern): the NAS copy is the durable copy that survives cluster rebuilds.
+# NOT a dynamic *-smb class — that gives a rebuilt cluster an empty pvc-<uuid> subdir and a silent 62GB re-download. Folder must pre-exist on the NAS (README.md).
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -57,10 +38,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  # -smb suffix: renamed from the original longhorn `map-data` when storage
-  # moved local→NAS. PVC spec (volumeName/storageClass) is immutable, so a
-  # rename lets ArgoCD create/prune cleanly instead of wedging on an
-  # in-place patch (same lesson as comfyui's NFS→SMB move).
+  # -smb suffix: PVC volumeName/storageClass are immutable, so a storage move is a rename (create/prune), not an in-place patch.
   name: map-data-smb
   namespace: versatiles
   labels:

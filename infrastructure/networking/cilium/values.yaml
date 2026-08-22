@@ -3,7 +3,6 @@
 annotations:
   argocd.argoproj.io/sync-wave: "0"
 
-# Cluster Configuration
 # IMPORTANT: cluster.name must match the --set cluster.name used during initial
 # cilium install at bootstrap. Mismatched names break Hubble certificate SANs.
 cluster:
@@ -43,16 +42,8 @@ cgroup:
     enabled: false
   hostRoot: /sys/fs/cgroup
 
-# Routing Configuration
-# Tunnel (VXLAN) instead of native routing: the Wi-Fi worker sits behind an
-# ASUS media bridge whose L3-aware forwarding drops inbound-first frames for
-# any IP it has never seen ARP for — which is every pod IP. Encapsulating
-# cross-node pod traffic between node IPs (which the bridge forwards
-# reliably in both directions) removes the entire class of problem, for any
-# transport and any future rebuild. VXLAN overhead applies to cross-node
-# traffic addressed to pod IPs, including Longhorn instance-manager/replica
-# flows when they cross nodes. Direct node/LAN traffic (NFS to TrueNAS, node
-# endpoints, API) is untouched. UDP 8472 must pass between node IPs.
+# Tunnel, not native routing: the Wi-Fi worker's media bridge drops inbound-first frames for
+# unknown pod IPs, so cross-node pod traffic must stay encapsulated. UDP 8472 must pass between nodes.
 routingMode: tunnel
 tunnelProtocol: vxlan
 
@@ -96,30 +87,18 @@ l2announcements:
   leaseRenewDeadline: "5s"
   leaseRetryPeriod: "2s"
 
-# Enable XDP acceleration (REQUIRED for Talos L2 announcements)
-# Fixes kernel ARP dropping issue between XDP and TC in Talos 1.9+
-# See: https://github.com/cilium/cilium/discussions/36829
-# CAUTION under VXLAN: XDP acceleration is unsupported with tunneling, so
-# best-effort silently degrades to the tc path. If L2-announced LoadBalancer
-# IPs stop answering ARP after the tunnel migration, this is the suspect —
-# verify external gateway reachability explicitly after any routing change.
+# XDP is REQUIRED for Talos L2 announcements (cilium/cilium#36829) but unsupported under VXLAN —
+# best-effort silently falls back to tc. Verify LB IPs still answer ARP after any routing change.
 loadBalancer:
   acceleration: best-effort
 
-# Increase API rate limits for L2 announcer lease management
-# Formula: QPS = #services * (1 / leaseRenewDeadline)
-# With 15 services: 15 * (1/5) = 3 QPS, so 20 QPS gives headroom
+# L2 announcer lease load: QPS = #services / leaseRenewDeadline; 20 leaves headroom.
 k8sClientRateLimit:
   qps: 20
   burst: 40
 
-# A node/agent restart causes kubelet to recreate many pod sandboxes at once.
-# Cilium's endpoint-create limiter defaults to only 0.5 requests/s with a burst
-# of 4 and returned 429s during the 2026-08-14 rebuild, delaying ArgoCD and every
-# other replacement pod. Start with enough queue/parallel headroom for the
-# bootstrap burst; Cilium's default auto-adjustment remains enabled and tunes
-# these values back toward the observed endpoint-generation time afterward.
-# https://docs.cilium.io/en/stable/configuration/api-rate-limiting/
+# Cilium's default endpoint-create limit (0.5/s, burst 4) 429s the sandbox storm after a node
+# restart; auto-adjust stays on and tunes these back toward observed endpoint-generation time.
 extraConfig:
   api-rate-limit: "endpoint-create=rate-limit:2/s,rate-burst:16,parallel-requests:8,max-wait-duration:30s"
 
@@ -138,10 +117,7 @@ gatewayAPI:
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
-# Cilium agent resources (VPA-optimized 2026-02-28; mem limit raised 2026-05-04)
-# Capacity baseline 2026-05-04 showed cilium-* daemonset pods observed
-# 0.8-1.2 GiB at the 2 GiB limit boundary. Endpoint maps grow with churn.
-# Bumping limit to 3 GiB to give headroom; request unchanged (VPA target).
+# Agent memory limit keeps headroom on purpose — endpoint maps grow with churn and pods hit the old 2Gi limit.
 resources:
   requests:
     cpu: 500m
@@ -161,11 +137,8 @@ hubble:
 
 # Operator Configuration
 operator:
-  # One per worker, via the required hostname anti-affinity below. At 1 replica
-  # this kept landing on the solar-powered shed node, putting IPAM and identity
-  # management behind that node's uptime.
-  # Drop back to 1 if the cluster ever has a single schedulable worker — the
-  # required anti-affinity would leave the 2nd replica Pending and hang the app.
+  # Required hostname anti-affinity below spreads the two replicas. Drop to 1 if only one
+  # worker is schedulable — the 2nd replica would stay Pending and hang the app.
   replicas: 2
   resources:
     requests:

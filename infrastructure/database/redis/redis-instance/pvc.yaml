@@ -11,11 +11,6 @@ metadata:
     # Kept defensively so any future immutable-field SSA dry-run on this bound,
     # chart-referenced PVC can't wedge the app's comparison.
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    # backup-exempt (2026-06-01): this Redis is paperless-ngx's Celery broker
-    # (PAPERLESS_REDIS) plus a redis-commander UI — a cache/broker, NOT a system
-    # of record. Paperless's durable data lives in its data/media PVCs and
-    # paperless-postgres, all kopiur-backed. Redis persistence is disposable
-    # here; do NOT back up.
     storage.vanillax.dev/backup-exempt-reason: "Redis persistence is disposable/cache-like in this homelab (paperless Celery broker + redis-commander UI; system-of-record is paperless data/media PVCs + paperless-postgres, all kopiur-backed); do not back up."
 spec:
   accessModes:
@@ -24,10 +19,3 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-
-# NOTE: the PVC `dataSourceRef`, the inline `ReplicationSource/redis-master-0`,
-# the `ReplicationDestination/redis-master-0-dst`, and the vestigial
-# `longhorn.io/recurring-job-*` "critical tier" annotations were REMOVED
-# 2026-06-01 — redis is now backup-exempt (disposable). No VolSync RS/RD; the PVC
-# recreates EMPTY by design. Argo prunes the old (argocd-managed) RS/RD on sync.
-# This is NOT a pvc-plumber migration; do not add pvc-plumber.io/* labels.

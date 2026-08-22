@@ -28,9 +28,7 @@ data:
     litellm_settings:
       success_callback: ["posthog"]
       failure_callback: ["posthog"]
-      # Kimi K3 fixes temperature/top_p/n/presence_penalty/frequency_penalty
-      # server-side and rejects overrides — drop rather than error if a
-      # client sends them.
+      # Kimi K3 rejects sampling-param overrides (temperature/top_p/etc.) — drop rather than error.
       drop_params: true
 
     general_settings:

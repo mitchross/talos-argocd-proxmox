@@ -1,10 +1,4 @@
-# Temporal cluster connection used by the radar-ng workers. Mirrors the
-# news-reader-temporal-worker / temporal-connection.yaml pattern.
-#
-# Self-hosted, no mTLS. If you later add mTLS to the Temporal frontend,
-# create a Secret with tls.crt + tls.key + ca.crt and add:
-#   mutualTLSSecretRef:
-#     name: temporal-cluster-mtls
+# Self-hosted, no mTLS. To add it, create a Secret with tls.crt/tls.key/ca.crt and set spec.mutualTLSSecretRef.
 apiVersion: temporal.io/v1alpha1
 kind: Connection
 metadata:

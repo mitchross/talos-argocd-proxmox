@@ -1,7 +1,4 @@
-# LLM-analytics capture (upstream `capture-ai`): same rust capture binary as
-# core/capture.yaml, pointed at ai_events_ingestion with large prompt/completion
-# bodies offloaded to S3 (AI_S3_*). Basic $ai_* events also flow via the normal
-# /e path; this serves the dedicated /i/v0/ai blob-offload path.
+# Same rust capture binary as capture.yaml, pointed at ai_events_ingestion; serves the /i/v0/ai blob-offload path (AI_S3_*).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

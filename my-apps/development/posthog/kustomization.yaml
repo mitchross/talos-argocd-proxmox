@@ -29,12 +29,7 @@ resources:
   - core/toolbox.yaml
   - core/servicemonitor.yaml
 
-# Hash-suffixed env configmap. Consumed via envFrom by 11+ posthog
-# workloads (web, capture, ingestion, recording-api, plugins, workers,
-# temporal-worker, toolbox, jobs, etc.) — Kustomize rewrites every
-# `configMapRef.name: posthog-env` to the hashed name, so any env edit
-# rolls *all* of them automatically. (Previously, an env change required
-# manually `kubectl rollout restart` on each Deployment.)
+# Hash-suffixed: Kustomize rewrites every configMapRef.name, so any env edit rolls all consumers.
 configMapGenerator:
   - name: posthog-env
     envs:

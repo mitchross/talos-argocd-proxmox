@@ -1,7 +1,5 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
-# Single-volume Kafka/KRaft backup. Broker logs and KRaft metadata share this
-# volume, so the CSI snapshot has the same crash-consistency boundary as sudden
-# power loss. A restore drill is still required before treating this as proven.
+# Broker logs and KRaft metadata share this volume, so the snapshot is only crash-consistent (power-loss equivalent).
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -9,10 +7,7 @@ metadata:
   namespace: kafka
   annotations:
     argocd.argoproj.io/sync-wave: "-3"
-    # Strimzi creates this PVC from the Kafka CR's storage block, so it is never
-    # rendered and cannot carry a dataSourceRef. Combined with the deliberate
-    # "no Restore CR" decision below, that tripped the [dsr] hard failure and
-    # blocked every PR in the repo. Declared rather than silenced.
+    # Strimzi renders this PVC from the Kafka CR, so it can't carry a dataSourceRef; declared so the [dsr] CI check passes.
     storage.vanillax.dev/operator-owned-pvc: "true"
     storage.vanillax.dev/no-restore-before-bind-reason: >-
       Strimzi owns the claim; this dev log is disposable, so a rebuild starts on
@@ -57,8 +52,5 @@ spec:
     # Daily is intentional: this high-churn learning log needs nuke recovery,
     # not a one-hour RPO or 24 snapshots of constantly rolling segments.
     cron: "11 3 * * *"
-# No Restore CR: this dev cluster's log is treated as disposable, so a rebuild
-# starts Strimzi on an empty volume rather than gating wave 0 on a restore.
-# Backups still run — re-adding restore-before-bind means adding a Restore here
-# whose mover can WRITE the archived tree (the 1001:0 mover could read it for
-# backup but not recreate it, which is what wedged the old restore gate).
+# No Restore CR on purpose: the dev log is disposable, a rebuild starts empty.
+# Re-adding one needs a mover that can WRITE the archived tree (the 1001:0 mover could only read it).

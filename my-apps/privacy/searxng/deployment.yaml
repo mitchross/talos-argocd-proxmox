@@ -6,12 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: searxng
 spec:
-  # 1 replica on purpose: all pods NAT out the same egress IP, so extra replicas
-  # add no IP diversity — they just triple the request volume hitting upstream
-  # engines AND fragment engine-suspension state (it's per-pod in memory, NOT
-  # shared via valkey), so a blocked engine gets re-hammered by each pod before
-  # all of them bench it → faster/harder 403/429/CAPTCHA bans. Query volume for a
-  # personal Perplexica/Vane backend is trivial; one replica is plenty.
+  # 1 replica on purpose: all pods share one egress IP and engine-suspension state is per-pod (NOT in valkey),
+  # so extra replicas only multiply upstream hits and speed up 403/429/CAPTCHA bans.
   replicas: 1
   selector:
     matchLabels:

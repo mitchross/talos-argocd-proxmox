@@ -9,7 +9,4 @@ resources:
   - pvc.yaml
   - deployment.yaml
 
-# act-runner-token is sourced from 1Password item `gitea`, field
-# `act_runner_token` (single consolidated gitea item). Gitea mints the token via
-# `gitea actions generate-runner-token`; it persists across nukes in the restored
-# gitea DB, so the stored value stays valid.
+# act-runner-token: 1Password item `gitea` field `act_runner_token`; it survives nukes via the restored gitea DB.

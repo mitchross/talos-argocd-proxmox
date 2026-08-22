@@ -17,10 +17,7 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # kopiur restore-before-bind: on recreate this binds Pending until the
-  # Restore populator hydrates it from the latest kopia snapshot. No-op while
-  # Bound. Backup/restore CRs in kopiur/gitea-postgres-data.yaml; uniform
-  # fields come from the ../../common/kopiur-backup component.
+  # kopiur restore-before-bind: binds Pending until the Restore populator hydrates it; no-op while Bound.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

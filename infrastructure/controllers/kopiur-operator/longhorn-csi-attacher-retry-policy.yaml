@@ -1,9 +1,5 @@
-# Longhorn V1 clone PVCs bind before their clone is ready for workloads. The
-# external-attacher may attempt too early and then use its upstream 5-minute
-# maximum backoff, making an otherwise-complete kopiur backup appear stuck.
-# Longhorn creates this Deployment dynamically, so mutate its pods rather than
-# trying to patch a resource absent from the rendered Helm chart.
-# https://github.com/longhorn/longhorn/issues/13335
+# Longhorn V1 clone PVCs bind before they're attachable; the attacher's 5-min max backoff makes a done kopiur backup look stuck.
+# Longhorn creates the attacher Deployment dynamically, so mutate its pods at admission. longhorn/longhorn#13335
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicy
 metadata:

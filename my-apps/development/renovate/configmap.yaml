@@ -4,21 +4,8 @@ metadata:
   name: renovate-config
   namespace: renovate
 data:
-  # Global (bot) config for the self-hosted in-cluster Renovate.
-  #
-  # SCOPE SPLIT (see .github/renovate.json5 header note):
-  #   - The hosted Mend GitHub App owns every PUBLIC dependency via the
-  #     repo config at .github/renovate.json5.
-  #   - THIS instance owns only the LAN-only registry.vanillax.me images,
-  #     which the GitHub App physically cannot reach.
-  #
-  # Mechanism: the repo config is read by BOTH instances after clone, so
-  # per-instance scoping lives here under `force`. Renovate applies `force`
-  # last (after defaults < global < repo), and packageRules concatenate, so
-  # force.packageRules win every per-field conflict — including repo rules
-  # that set `enabled: true` (e.g. the "enable container digest updates"
-  # rule). force.customManagers/customDatasources also replace the repo's
-  # arrays here, so this instance extracts ONLY the gitea-vanillax deps.
+  # This instance owns ONLY registry.vanillax.me images; the Mend GitHub App owns public deps via .github/renovate.json5.
+  # Scoping lives under `force` because both instances read the repo config and `force` is applied last, winning conflicts.
   config.json: |
     {
       "platform": "github",

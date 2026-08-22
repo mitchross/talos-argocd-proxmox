@@ -1,11 +1,6 @@
 server:
   enabled: true
-  # Override chart 1.1.1's default tag (1.30.3) → 1.30.4 (Docker Hub
-  # 2026-04-10). Temporal cuts patch images more often than helm-chart
-  # releases, so the chart can lag the server by weeks. Bump this line
-  # whenever a relevant fix lands; a chart-level bump (1.1.x → 1.2.x)
-  # will reset our override only if the chart's own default goes ABOVE
-  # this value.
+  # Chart default tag lags Temporal server patches by weeks; bump here. A chart bump only wins if its default exceeds this.
   image:
     repository: temporalio/server
     tag: 1.31.2
@@ -32,10 +27,7 @@ server:
             driverName: postgres12
             databaseName: temporal
             connectAddr: "temporal-postgres.temporal.svc.cluster.local:5432"
-            # Temporal server 1.28+ refuses to boot without this —
-            # chart v1.1.1 doesn't set it by default, which is why every
-            # frontend/history/matching/worker pod was CrashLooping with
-            # `Persistence.DataStores[...].SQL.ConnectProtocol: zero value`.
+            # Temporal 1.28+ refuses to boot without this and the chart doesn't set it (ConnectProtocol: zero value crashloop).
             connectProtocol: "tcp"
             user: temporal
             existingSecret: temporal-db-secret
@@ -81,16 +73,7 @@ server:
       limits:
         memory: 2Gi
 
-# The chart ships "shims" — wrapper scripts in a `temporal-shims` ConfigMap —
-# purely for backward-compat with Temporal 1.29 images, and defaults both ON.
-# We run 1.31.x (see server.image.tag), so the shims are dead weight: the
-# schema Job mounts the shim ConfigMap, and on 1.30+ images the native
-# `temporal-sql-tool` binary is already on PATH. Leaving them on rendered a
-# `temporal-shims` ConfigMap at the default wave 0 that the wave -1 schema
-# hook could never mount → schema pod stuck `Init` forever → whole sync
-# deadlocked "waiting for completion of hook". Disabling both stops the
-# ConfigMap (and its mounts) from rendering at all — the dependency, and the
-# ordering problem, simply vanish. Upstream docs say set false for 1.30+.
+# Keep OFF on 1.30+ images: shims render a wave-0 ConfigMap the wave -1 schema hook can never mount → sync deadlock.
 shims:
   dockerize: false
   elasticsearchTool: false

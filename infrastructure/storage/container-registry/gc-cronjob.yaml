@@ -1,16 +1,5 @@
-# Weekly registry GC. Reclaims blobs left over from deleted manifests
-# (`:buildcache`, retired `:vX.Y.Z`, etc.). Without this, the registry PVC
-# fills silently — pushes start failing once it's full.
-#
-# Flow:
-#   1. Flip the registry deploy to read-only. Concurrent pushes during GC can
-#      corrupt the store (in-flight blob upload + GC sweep = lost data).
-#   2. Wait for the rolled pod to be Ready.
-#   3. Exec `registry garbage-collect -m` inside the pod. `-m` is
-#      mark-and-sweep (the safe variant introduced in distribution 2.x).
-#   4. Unset the env var, wait for rollout (EXIT trap — always runs).
-#
-# Schedule is Sunday 04:00 UTC — off-peak for this cluster's CI bursts.
+# Weekly registry GC; without it the PVC fills silently and pushes fail. The registry is
+# flipped read-only first because a push during the sweep corrupts the store.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -33,11 +22,7 @@ spec:
           serviceAccountName: registry-gc
           containers:
             - name: gc
-              # NOT registry.k8s.io/kubectl: that image is distroless (no
-              # /bin/bash, no /bin/sh) so this script dies in seconds with
-              # StartError — every weekly run failed silently after the
-              # Bitnami-purge switch. alpine/k8s ships kubectl + bash.
-              # (bitnami/kubectl itself was purged from Docker Hub in 2025.)
+              # NOT registry.k8s.io/kubectl: it is distroless (no bash), so this script dies with StartError.
               image: docker.io/alpine/k8s:1.36.2@sha256:44ef4942e171939b9c665a4a84beb80e2dcdb9a24330d4651cfdfd2e9deecc47
               command: [/bin/bash, -euo, pipefail, -c]
               args:
@@ -52,10 +37,8 @@ spec:
                   }
                   trap restore_writes EXIT
 
-                  # Override the whole maintenance map, not the leaf. On
-                  # registry:3 REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED
-                  # either panics the process at boot or is dropped with
-                  # "map with non-string keys" — never applied.
+                  # Set the whole maintenance map: on registry:3 the leaf var
+                  # REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED panics at boot or is silently dropped.
                   echo "[gc] flipping registry to read-only"
                   kubectl -n kube-system set env deploy/registry \
                     'REGISTRY_STORAGE_MAINTENANCE={readonly: {enabled: true}}'

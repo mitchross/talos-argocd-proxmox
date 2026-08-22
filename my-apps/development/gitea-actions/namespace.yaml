@@ -1,8 +1,4 @@
-# act_runner is rootless DinD which still needs privileged: true for
-# user namespace setup. The runner namespace is therefore exempted from
-# PodSecurity restricted enforcement — every other namespace in the
-# cluster keeps the lock-down. If we ever swap to standalone buildkitd,
-# this exemption can come off.
+# Rootless DinD act_runner still needs privileged: true, so this namespace is exempt from PSS restricted.
 apiVersion: v1
 kind: Namespace
 metadata:

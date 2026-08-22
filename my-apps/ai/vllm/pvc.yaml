@@ -1,8 +1,4 @@
-# Static PV — mounts the TrueNAS ai-pool/vllm NFS share root directly via the NFS CSI
-# driver (NOT legacy nfs:, so mountOptions like nconnect are honored). Read-only:
-# the vLLM pod only loads model weights; downloads happen from the desktop over SMB.
-# Mirrors the llama-cpp static-PV pattern but ReadOnlyMany + empty storageClassName
-# (self-contained static binding, no separate StorageClass object needed).
+# Static NFS CSI PV (NOT legacy nfs:, so mountOptions are honored); ReadOnlyMany + empty storageClassName = self-contained static binding.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

@@ -1,15 +1,5 @@
-# OpenTelemetry Operator ServiceMonitor — OPTIONAL observability, split out of
-# the OTel operator core app.
-#
-# This was previously rendered by the opentelemetry-operator Helm chart (Wave 5)
-# via manager.serviceMonitor.enabled=true. Because the OTel operator and
-# kube-prometheus-stack (the monitoring.coreos.com CRD owner) are BOTH Wave 5,
-# the chart-rendered ServiceMonitor raced the CRD install and could SyncFailed
-# on a fresh nuke. It now lives here and syncs at Wave 6 — strictly AFTER
-# monitoring exists (see opentelemetry-operator-observability-app.yaml). The
-# spec mirrors the chart output exactly (https metrics port on the operator's
-# controller-manager Service). `release: kube-prometheus-stack` matches the
-# kube-prometheus-stack serviceMonitorSelector.
+# Split out of the OTel operator core app (wave 6): a chart-rendered ServiceMonitor races the CRD install (both wave 5).
+# Spec mirrors the chart output; `release: kube-prometheus-stack` matches the serviceMonitorSelector.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

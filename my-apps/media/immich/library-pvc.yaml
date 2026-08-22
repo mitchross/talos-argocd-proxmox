@@ -16,20 +16,11 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      # Shrunk 300Gi -> 50Gi for the single-node 2950X rebuild (2026-06-19).
-      # The library volume holds only immich's working set (thumbnails/transcodes/
-      # new uploads) ~6Gi actual — originals live on the read-only nfs-photos
-      # external library. 50Gi keeps generous headroom while reclaiming ~250Gi of
-      # Longhorn scheduling budget across the worker's two 450GiB filesystems.
+      # Working set only (thumbnails/transcodes/new uploads, ~6Gi actual); originals live on the read-only nfs-photos external library.
       storage: 50Gi
   storageClassName: longhorn
-  # kopiur restore-before-bind: on recreate this binds Pending until the
-  # Restore populator hydrates it from the latest kopia snapshot. No-op while
-  # Bound. Backup/restore CRs in kopiur/library.yaml; uniform fields come from the
-  # ../../common/kopiur-backup component; the mover uid:gid lives in the stub.
-  # NOTE: originals remain on exempt NFS nfs-photos; the immich CNPG DB (Barman/
-  # S3, untouched) still references pre-reset assets, so this restores the
-  # CURRENT library working set only.
+  # kopiur restore-before-bind: on recreate binds Pending until the Restore populator hydrates it; no-op while Bound. CRs in kopiur/library.yaml.
+  # Restores the library working set only — originals stay on the exempt nfs-photos NFS.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
