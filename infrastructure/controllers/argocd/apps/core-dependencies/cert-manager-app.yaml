@@ -1,5 +1,16 @@
-# Wave 1 on purpose: later-wave cert consumers deadlock if cert-manager sits behind them in the Wave-4 AppSet.
-# Deliberately absent from infrastructure-appset.yaml — do not list it there too.
+# cert-manager — pulled forward to Wave 1 (foundational cert provider).
+#
+# Was previously discovered by the Wave-4 infrastructure-appset, but the
+# 2026-06-01 full-cluster nuke/rebuild drill exposed a circular ordering
+# deadlock: cnpg-barman-plugin (Wave 3) ships Certificates/Issuer and its
+# Deployment mounts cert-manager-issued TLS secrets, so it can't go Healthy
+# without cert-manager — which lived at Wave 4, gated BEHIND it. cert-manager
+# has no cluster deps beyond Wave-0 (ESO + 1Password for the cloudflare DNS01
+# secret), so it belongs early. Every later-wave cert consumer (historically
+# the since-retired cnpg-barman-plugin at Wave 3; future webhook TLS) is
+# then satisfied.
+#
+# Removed from infrastructure-appset path list in the same change.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -28,7 +39,9 @@ spec:
     - CreateNamespace=true
     - ServerSideApply=true
     - RespectIgnoreDifferences=true
-    # Same render installs the CRDs and a ClusterIssuer CR — skip dry-run so the first bootstrap sync passes validation.
+    # The Helm chart installs the cert-manager CRDs and the same render carries
+    # a ClusterIssuer CR — skip dry-run on the not-yet-known CRD so the first
+    # bootstrap sync doesn't fail validation.
     - SkipDryRunOnMissingResource=true
     retry:
       limit: 10

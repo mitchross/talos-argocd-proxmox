@@ -12,7 +12,11 @@ resources:
   - core-dependencies/cert-manager-app.yaml   # Wave 1 — moved out of the Wave-4 infra-appset (webhook-cert consumers in earlier waves need it)
   - core-dependencies/longhorn-app.yaml
   - core-dependencies/snapshot-controller-app.yaml  # kopiur copyMethod=Snapshot needs CSI VolumeSnapshot
-  # kopiur: Wave 2 operator, Wave 3 config.
+  # VolSync + pvc-plumber RETIRED 2026-06-27 — replaced by kopiur (all PVCs
+  # migrated; see docs/kopiur-trial.md). Removed: volsync-app,
+  # volsync-backup-cluster-app, pvc-plumber-app + their dirs.
+  # kopiur — THE production backup system since 2026-06-27 (Wave 2 operator,
+  # Wave 3 config). Trial history: docs/kopiur-trial.md.
   - core-dependencies/kopiur-operator-app.yaml
   - core-dependencies/kopiur-config-app.yaml
 
