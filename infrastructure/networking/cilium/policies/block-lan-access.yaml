@@ -13,7 +13,7 @@ spec:
         - world
 
   egress:
-    # Internet: everything EXCEPT RFC1918
+    # ALLOW: Internet (everything EXCEPT RFC1918)
     - toCIDRSet:
         - cidr: 0.0.0.0/0
           except:
@@ -21,18 +21,19 @@ spec:
             - 172.16.0.0/12
             - 192.168.0.0/16
 
+    # ALLOW: All cluster-internal traffic
     - toEntities:
         - cluster
         - host
         - kube-apiserver
 
-    # LoadBalancer IP pool (Cilium L2): pod-to-service via external IPs
+    # ALLOW: LoadBalancer IP Pool (Cilium L2) — pod-to-service via external IPs
     - toCIDR:
         - 192.168.10.32/27
 
     # Gateway 192.168.10.1 deliberately NOT whitelisted: keeps pods off router admin/SSH; internet works via toEntities:host.
 
-    # TrueNAS: API (CSI websocket) + NFS + SMB + RustFS
+    # ALLOW: TrueNAS - API (CSI websocket) + NFS + SMB + RustFS
     - toCIDR:
         - 192.168.10.133/32
       toPorts:
@@ -54,7 +55,7 @@ spec:
             - port: "9000"
               protocol: TCP
 
-    # Wyze Bridge RTSP (Frigate)
+    # ALLOW: Wyze Bridge RTSP (Frigate)
     - toCIDR:
         - 192.168.10.46/32
       toPorts:
@@ -62,7 +63,7 @@ spec:
             - port: "8554"
               protocol: TCP
 
-    # Proxmox API (Omni provider)
+    # ALLOW: Proxmox API (Omni provider)
     - toCIDR:
         - 192.168.10.14/32
       toPorts:
@@ -70,7 +71,7 @@ spec:
             - port: "8006"
               protocol: TCP
 
-    # RPi4 solar MPPT monitor (Prometheus scrape)
+    # ALLOW: RPi4 Solar MPPT Monitor (Prometheus scrape)
     - toCIDR:
         - 192.168.10.174/32
       toPorts:
@@ -80,7 +81,7 @@ spec:
             - port: "9812"
               protocol: TCP
 
-    # IoT VLAN (Tapo smart plugs)
+    # ALLOW: IoT VLAN Egress (Tapo Smart Plugs)
     - toCIDR:
         - 192.168.101.0/24
       toPorts:
