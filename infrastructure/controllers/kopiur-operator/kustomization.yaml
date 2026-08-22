@@ -1,69 +1,32 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# Do not add a top-level `namespace:` transformer here. The Helm release already
-# renders its namespaced objects into kopiur-system, while Kubernetes 1.36's
-# MutatingAdmissionPolicy kinds below are cluster-scoped and not yet known to
-# the kubectl-bundled Kustomize schema.
+# Do NOT add a top-level `namespace:` transformer: the MutatingAdmissionPolicy kinds below are
+# cluster-scoped and unknown to the kubectl-bundled Kustomize schema.
 
 resources:
-  # Kopiur does not currently expose mover node affinity. Restrict staged-PVC
-  # movers to the workers that actually have Longhorn disks so the WFFC
-  # staging class cannot hint the compute-only worker.
+  # kopiur has no mover node affinity; restrict staged-PVC movers to workers that actually have Longhorn disks.
   - mover-storage-node-policy.yaml
-  # Longhorn creates its CSI sidecar Deployments dynamically, outside this
-  # repository's rendered manifests. Mutate new attacher pods at admission so
-  # a completed V1 clone is retried promptly after an early attach attempt.
+  # Longhorn's CSI attacher Deployment is created dynamically, so its pods are patched at admission.
   - longhorn-csi-attacher-retry-policy.yaml
 
-# kopiur publishes its chart as an OCI artifact (release.yaml: helm push →
-# oci://ghcr.io/home-operations/charts). Render it locally like every other
-# chart in this repo so the manifests are served from our own git source — no
-# AppProject sourceRepos exception needed (cf. temporal-worker-controller).
+# OCI chart rendered locally like every other chart here — no AppProject sourceRepos exception needed.
 helmCharts:
   - name: kopiur
     repo: oci://ghcr.io/home-operations/charts
     # renovate: datasource=docker depName=ghcr.io/home-operations/charts/kopiur
-    # CHART version == app version (release.yaml packages with --app-version=VERSION).
-    # Pre-1.0/alpha: re-verify CRDs on every bump.
-    # 0.5.0 breaking changes assessed 2026-07-04 (upstream #190/#191/#192):
-    #   - copyMethod default flipped Direct→Snapshot — no impact, the
-    #     kopiur-backup component pins copyMethod: Snapshot explicitly (and must
-    #     keep pinning it: SSA re-defaulting hazard on implicit values).
-    #   - verification.quick reshaped to { schedule: {...} } — unused here.
-    #   - metrics renamed (kopiur_snapshot_* → kopiur_policy_last_backup_*) —
-    #     chart ServiceMonitor/PrometheusRule/dashboard all disabled; nothing
-    #     in monitoring/ scrapes kopiur metric names.
-    # 0.5.2 (2026-07-05): one fix — transient VolumeSnapshot errors no longer
-    # terminally fail backups (#201). Directly relevant: Longhorn under load
-    # throws exactly those (DR doc "attach conflicts"); pre-0.5.2 they burned
-    # the whole run until the next cron.
-    # 0.6.0 (2026-07-06): the breaking chart refactor (#206) — pre-verified
-    # 2026-07-06 before release: our values keys keep their paths; CRDs moved
-    # from templated resources to Helm's native crds/ dir. That move DELETED
-    # CRDs (and every kopiur CR with them) for Flux HelmRelease users on
-    # upgrade — helm doesn't manage crds/ on upgrade. Our path is immune:
-    # helm template --include-crds (this includeCRDs: true) emits the same 8
-    # CRDs before and after, so ArgoCD never sees them leave the manifest.
-    # NEVER remove includeCRDs: true — it IS the CRD lifecycle here.
-    # 0.8.0: adds a SnapshotPolicy deletion cascade. onPolicyDelete: Retain is
-    # pinned in the kopiur-backup component so an ArgoCD prune of a policy can't
-    # delete its backup history. CRDs unchanged (still 8) — stubs render as-is.
+    # Chart version == app version. Pre-1.0: re-verify the 8 CRDs on every bump.
     version: 0.10.3
     releaseName: kopiur
     namespace: kopiur-system
+    # NEVER remove includeCRDs: true — it IS the CRD lifecycle here (helm doesn't manage crds/ on upgrade).
     includeCRDs: true
     valuesFile: values.yaml
-    # 0.6.0 raised the chart's kubeVersion floor to >=1.32.0-0. Without this
-    # field, `kustomize build --enable-helm` (CI AND the ArgoCD repo-server)
-    # templates with helm's DEFAULT capabilities (v1.31) and the render fails
-    # "chart requires kubeVersion >=1.32.0-0". Keep loosely in step with the
-    # real cluster version (omni/cluster-template/cluster-template.yaml).
+    # Chart kubeVersion floor is >=1.32; without this, helm templates with default capabilities (v1.31) and the render fails.
+    # Keep loosely in step with the real cluster version (omni/cluster-template/cluster-template.yaml).
     kubeVersion: "1.36.3"
 
-# Upstream RBAC gap (chart 0.8.1): kopiur-mover has get+patch on the `*/status`
-# subresources but not the parents, which RBAC treats as distinct. Movers 403 and
-# stop reporting progress, so a Restore sits in "Restoring" with no status — that
-# masked a hung gitea restore for 24h on 2026-07-29. Drop once upstream fixes it.
+# Upstream RBAC gap: kopiur-mover gets `*/status` but not the parent resources, so movers 403 and a
+# Restore sits in "Restoring" with no status. Drop once upstream fixes it.
 patches:
   - target:
       kind: ClusterRole

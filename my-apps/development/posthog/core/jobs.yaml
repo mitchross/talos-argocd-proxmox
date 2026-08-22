@@ -106,14 +106,7 @@ spec:
           wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
           echo "Running Django migrations..."
           python manage.py migrate --noinput
-          # Self-hosted schema guard MUST run AFTER manage.py migrate. On a fresh
-          # empty DB, public.posthog_person does not exist until migrate creates
-          # it, so an ALTER-before-migrate fails with "relation posthog_person
-          # does not exist" and the whole job dies before ever migrating (hit
-          # 2026-07-15 when the posthog DB was wiped during a storage migration —
-          # the guard was previously ordered before migrate and only ever worked
-          # because the schema already existed). ADD COLUMN IF NOT EXISTS keeps it
-          # idempotent on an already-migrated DB.
+          # MUST run AFTER manage.py migrate: posthog_person doesn't exist on a fresh DB. IF NOT EXISTS keeps it idempotent.
           echo "Applying self-hosted Postgres schema guards..."
           python - <<'PY'
           import os
@@ -137,12 +130,8 @@ spec:
           PY
           echo "Running ClickHouse migrations..."
           python manage.py migrate_clickhouse
-          # Async ClickHouse migrations gate worker startup (worker entrypoint
-          # hardcodes SKIP_ASYNC_MIGRATIONS_SETUP=0). Best-effort run, then
-          # --check is the gate: any required migration still pending → Job
-          # fails → ArgoCD sync fails. Beats a silent worker CrashLoop.
-          # Single-node CH gotcha: 0007* queries posthog.sharded_events; if
-          # hit, mark Complete via the PostHog admin and re-sync.
+          # --check is the gate: a pending required migration fails the Job and the sync (beats a silent worker CrashLoop). Never remove.
+          # Single-node CH gotcha: 0007* queries posthog.sharded_events; if hit, mark Complete in the PostHog admin and re-sync.
           echo "Running async ClickHouse migrations..."
           python manage.py run_async_migrations || true
           python manage.py run_async_migrations --check
@@ -222,11 +211,7 @@ spec:
             sleep 2; ELAPSED=$((ELAPSED + 2))
             [ $ELAPSED -ge $TIMEOUT ] && echo "Redis timeout" && exit 1
           done
-          # RemoteConfig.sync() diffs against Postgres, never against Redis, so a
-          # wiped Redis is NEVER repaired by the normal path — it logs "unchanged"
-          # and writes nothing. The flags service then serves an all-false fallback
-          # config and session replay silently stops in every browser. force=True
-          # is what actually rewrites the cache; there is no celery beat here.
+          # RemoteConfig.sync() diffs against Postgres, not Redis — a wiped Redis is never repaired without force=True (flags go all-false, replay stops).
           echo "Force-syncing RemoteConfig to Redis..."
           python - <<'PY'
           import os

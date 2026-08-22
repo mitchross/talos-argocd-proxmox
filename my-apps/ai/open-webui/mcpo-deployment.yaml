@@ -15,9 +15,7 @@ spec:
       labels:
         app: mcpo
     spec:
-      # MCPO is a pure-HTTP tool proxy (no GPU). PREFER a non-GPU node so the
-      # 3090s stay exclusive to vLLM, but soft so it still schedules on the GPU
-      # node when it's the only worker. Reaches Open WebUI via Service DNS.
+      # No GPU: soft-prefer non-GPU nodes so the 3090 stays exclusive to inference; soft so it still schedules on the lone GPU worker.
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

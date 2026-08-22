@@ -11,20 +11,11 @@ metadata:
     role: alert-rules
 spec:
   groups:
-    # Volume + node health. The old longhorn.backup group (backup target,
-    # backup jobs, recurring jobs) was deleted 2026-07-06: PVC backups moved
-    # to kopiur (see kopiur-alerts.yaml) and no Longhorn backupstore is
-    # configured, so longhorn_backup_*/longhorn_recurring_* metrics are absent.
+    # No longhorn.backup group: PVC backups are kopiur (kopiur-alerts.yaml) and no Longhorn backupstore exists, so longhorn_backup_* metrics are absent.
     - name: longhorn.volume
       rules:
-        # longhorn_volume_robustness is one-hot encoded with a `state` label
-        # (healthy/degraded/faulted/unknown), NOT `robustness`. The previous
-        # exprs matched on robustness="..." and could never fire — verified
-        # 2026-07-06 when a faulted volume (karakeep data-pvc) alerted nothing
-        # for 4 days.
-        # max_over_time makes this flap-proof: a faulted volume cycles through
-        # attaching/detaching/salvage every ~2m, briefly leaving the faulted
-        # state, which would reset a plain `for:` timer.
+        # longhorn_volume_robustness is one-hot on a `state` label, NOT `robustness` — matching robustness="..." never fires.
+        # max_over_time is the flap guard: a faulted volume briefly leaves the state every ~2m, which resets a plain `for:`.
         - alert: LonghornVolumeFaulted
           expr: max_over_time(longhorn_volume_robustness{state="faulted"}[10m]) == 1
           for: 2m

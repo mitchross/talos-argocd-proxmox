@@ -37,22 +37,12 @@ loki:
   limits_config:
     allow_structured_metadata: true
     volume_enabled: true
-    # OTel can flush several MiB after a collector/Loki outage. The chart
-    # default 4 MiB/s tenant limit makes those catch-up batches fail with 429,
-    # which backs pressure into the collectors. Keep this high enough for
-    # recovery bursts on the homelab log volume.
+    # Chart default 4 MiB/s 429s OTel catch-up bursts after an outage; keep headroom for recovery.
     ingestion_rate_mb: 32
     ingestion_burst_size_mb: 64
-    # Homelab retention: 24h. With ~165k objects sitting in the loki S3 bucket
-    # under the prior 30d retention (and compactor.retention_enabled=false default,
-    # meaning chunks were NEVER actually deleted), the chunk count was overwhelming
-    # RustFS alpha. 24h + enabled compactor retention below = sustainable object
-    # churn for a homelab. Bump if you ever need longer log lookback.
+    # 24h + compactor retention below: longer retention buried RustFS in S3 objects.
     retention_period: 24h
-  # Enable the compactor's retention-driven deletion. Without retention_enabled
-  # and a delete_request_store, the retention_period above is a SOFT mark only —
-  # Loki marks chunks expired but never actually issues S3 deletes, so the
-  # bucket grows forever. This block makes the compactor actually prune.
+  # Without retention_enabled + delete_request_store, retention_period is a soft mark — chunks are never deleted.
   compactor:
     retention_enabled: true
     retention_delete_delay: 2h
@@ -61,9 +51,7 @@ loki:
 deploymentMode: SimpleScalable
 backend:
   replicas: 1
-  # Local write-path state (WAL / boltdb-shipper cache) on the flash isolation
-  # tier — Loki's actual log data lives on S3 (RustFS). Keeps log-ingest IO off
-  # the shared NVMe disk the databases use. Backup-exempt; rebuilds from S3.
+  # Write-path WAL/cache only; log data lives on S3. Backup-exempt, rebuilds from S3.
   persistence:
     storageClass: longhorn-flash
   resources:
@@ -104,20 +92,13 @@ write:
 # This saves ~200Gi of Longhorn storage
 minio:
   enabled: false
-# Homelab right-sizing: chart defaults reserve chunksCache 8192Mi (req ~9830Mi)
-# and resultsCache 1024Mi (req ~1229Mi) — ~11Gi of memory *requests* to cache a
-# trickle of logs. Actual usage is <50Mi. Cap allocatedMemory low to free node
-# request pressure. allocatedMemory is the memcached -m value; the pod request
-# is round(allocatedMemory * 1.2).
+# Chart defaults request ~11Gi of memcached for a trickle of logs; pod request = round(allocatedMemory * 1.2).
 chunksCache:
   allocatedMemory: 512
 resultsCache:
   allocatedMemory: 256
 gateway:
-  # Single node: Recreate avoids the RollingUpdate surge pod, which can't
-  # co-schedule with the old one under the chart's required gateway
-  # podAntiAffinity (one gateway per host) — otherwise the rollout wedges
-  # with a permanently-Pending new pod (seen 2026-06-23, stuck ~6h).
+  # Single node: the RollingUpdate surge pod can't co-schedule under the gateway's required podAntiAffinity — rollout wedges Pending.
   deploymentStrategy:
     type: Recreate
   service:

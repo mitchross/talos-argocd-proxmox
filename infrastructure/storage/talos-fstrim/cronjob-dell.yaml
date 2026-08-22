@@ -1,6 +1,5 @@
-# The Dell worker has Talos EPHEMERAL data under /var plus a dedicated Samsung
-# SSD at /var/mnt/longhorn-dell-ssd. Schedule it after the dual-RTX worker to
-# avoid simultaneous Longhorn maintenance I/O across both nodes.
+# Dell worker: Talos EPHEMERAL /var plus the dedicated SSD at /var/mnt/longhorn-dell-ssd.
+# Scheduled after the dual-RTX worker so Longhorn maintenance I/O never overlaps on both nodes.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

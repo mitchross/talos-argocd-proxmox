@@ -19,9 +19,7 @@ helmCharts:
     valuesFile: values.yaml
     includeCRDs: true
 
-# The chart's pre-delete hook Job (no disable flag) deletes every keep-*
-# secret in the namespace. ArgoCD has no pre-delete phase, so it would apply
-# as a normal resource and nuke the ESO-managed keep-db-secret on every sync.
+# Chart's pre-delete hook Job deletes every keep-* secret; ArgoCD would run it on every sync and nuke keep-db-secret.
 patches:
   - target:
       kind: Job

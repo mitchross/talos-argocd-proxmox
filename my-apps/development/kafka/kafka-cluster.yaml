@@ -8,9 +8,7 @@ metadata:
   labels:
     strimzi.io/cluster: dev-kafka
 spec:
-  # One broker/controller fits today's single schedulable worker. Scale to
-  # three only after adding real worker/failure-domain capacity, then raise the
-  # replication settings in the Kafka resource below.
+  # Single broker fits the one schedulable worker; scaling to 3 also needs the replication settings below raised.
   replicas: 1
   roles:
     - broker
@@ -56,9 +54,7 @@ spec:
         type: internal
         tls: true
     config:
-      # Kafka defaults its general replication/min-ISR settings to one. The
-      # internal offsets and transaction topics default to 3/3/2, so these
-      # three overrides are load-bearing on a single broker.
+      # Internal offsets/transaction topics default to 3/3/2; these overrides are load-bearing on a single broker.
       offsets.topic.replication.factor: 1
       transaction.state.log.replication.factor: 1
       transaction.state.log.min.isr: 1

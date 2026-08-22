@@ -19,11 +19,7 @@ spec:
       labels:
         app: open-meteo
     spec:
-      # Upstream open-meteo image already runs as UID 999 ("openmeteo").
-      # Don't override runAsUser — let the image's USER directive apply
-      # so file paths the binary writes (PVC at /app/data) match the UID
-      # the cronjobs sync as. fsGroup matches so writes from the deploy
-      # interleave cleanly with cronjob-written files.
+      # Keep UID 999 (the image's "openmeteo" user) so PVC writes match the files the sync worker writes.
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
@@ -34,9 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: open-meteo
-          # 1.5.3 ships without libparquet-glib.so.2400 (same break as the
-          # sync-worker's old 1.5.3 base) — pin tag@digest of a verified
-          # build; a bare tag re-pulls broken rebuilds via pullPolicy Always.
+          # Pin tag@digest of a verified build: 1.5.3 shipped without libparquet-glib.so.2400 and a bare tag re-pulls broken rebuilds.
           image: ghcr.io/open-meteo/open-meteo:1.5.5@sha256:99978696b7def9d4851d2b9e85ea7a8ba08bd824f6fa6779edd733a164434694
           securityContext:
             allowPrivilegeEscalation: false
@@ -56,18 +50,10 @@ spec:
             limits:
               cpu: 2000m
               memory: 2Gi
-        # Sync worker co-located as a sidecar (was a standalone Temporal
-        # WorkerDeployment). It must share the openmeteo-data RWO Longhorn
-        # volume with the serve container, and RWO = single node. The
-        # Temporal WorkerController STRIPS podAffinity from its pod template,
-        # so a standalone worker could not be pinned to the serve pod's node —
-        # making it a sidecar guarantees co-location. Runs non-versioned
-        # (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env → versioning off).
+        # Sidecar, not a standalone WorkerDeployment: the WorkerController strips podAffinity and this RWO volume needs co-location.
+        # Runs non-versioned (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env).
         - name: sync-worker
-          # v1.1.2 was built on the 1.5.3 base, which ships without
-          # libparquet-glib.so.2400 → HRRR sync activity crashed rc=127 and
-          # OpenMeteoSyncWorkflow failed. v1.1.3 (radar-ng 144dcb9) pins the
-          # base to 1.5.2, matching the serve container.
+          # Base image must match the serve container's (1.5.3 base lacks libparquet-glib.so.2400 -> HRRR sync rc=127).
           image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.7
           imagePullPolicy: Always
           securityContext:

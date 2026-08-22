@@ -1,7 +1,5 @@
-# Trivy Operator vulnerability dashboard — grafana.com dashboard 17813.
-# Datasource refs rewritten from ${DS_PROMETHEUS} to the cluster's default
-# Prometheus datasource (uid: prometheus) so the sidecar provisions it with no
-# import prompt. Backing metrics come from monitoring/trivy-operator (ServiceMonitor).
+# grafana.com dashboard 17813 with ${DS_PROMETHEUS} rewritten to datasource uid "prometheus"
+# so the sidecar provisions it with no import prompt.
 apiVersion: v1
 kind: ConfigMap
 metadata:

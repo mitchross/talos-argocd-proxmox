@@ -1,28 +1,5 @@
-# radar-ng backend PVCs.
-#
-# tiles/grids/state moved off `truenas-nfs` (BigTank = spinning HDD, RWX) onto
-# `longhorn-flash` (enterprise SATA SSD, RWO) on 2026-07-15. This is a SMALL-BLOCK
-# RANDOM-IO workload — the tile renderer reads MRMS grids and writes thousands of
-# small PNG/MVT tiles — and on HDD-backed NFS it thrashed: measured 102 IOPS @
-# 310ms on BigTank. On local SSD that is thousands of IOPS at sub-ms latency, and
-# putting it on the separate `flash` spindle keeps that thrashing OFF the shared
-# NVMe disk the databases live on. (Large SEQUENTIAL media — jellyfin, frigate —
-# stays on HDD-NFS; HDD is fine for streaming. Small-block RANDOM is the thing HDD
-# is terrible at, and that is radar-ng.)
-#
-# RWX -> RWO: these were RWX only to allow multiple writer pods. Kubernetes RWO is
-# "once per NODE" (not per pod), so on this single-node cluster all radar-ng pods
-# (workers + tile-server + temporal-worker) share one RWO volume fine — the exact
-# pattern openmeteo-data below already proves in production. RWO ext4 is also
-# faster than any NFS/share-manager path and sidesteps the errno-95 O_TMPFILE class
-# of NFS bugs (see openmeteo-data).
-#   MULTI-NODE CAVEAT: RWO-shared-by-many-pods only holds while they co-locate on
-#   one node. The worker has required podAffinity to tile-server, and tile-server
-#   prefers the existing worker's node during replacement. Keep those constraints
-#   in place or move these back to a real RWX class.
-#
-# All three hold backup-exempt REBUILDABLE data, so the immutable storageClass/
-# accessMode change is applied by delete+recreate of the PVCs; tiles regenerate.
+# tiles/grids/state: small-block random IO — keep on longhorn-flash RWO, not HDD NFS (thrashed at ~100 IOPS).
+# RWO shared by several pods only works while they co-locate on one node (worker podAffinity → tile-server); keep that or use real RWX.
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -82,16 +59,8 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Open-Meteo numerical weather data cache; re-fetchable from open-meteo.com API"
 spec:
-  # RWO on Longhorn (NOT NFS) — deliberate exception to the truenas-nfs default
-  # above. Open-Meteo's .om writer uses a POSIX file op (O_TMPFILE/fallocate-
-  # class) that NFS-on-ZFS rejects with errno 95 EOPNOTSUPP, so every sync write
-  # failed and the cached data froze -> all-null forecast (app showed 0°).
-  # Verified 2026-06-17: truenas-nfs RWX *and* Longhorn RWX (NFS-ganesha) both
-  # fail identically; only Longhorn RWO (direct ext4 block) writes .om files
-  # cleanly. RWO = single-node attach, so the open-meteo serve Deployment and
-  # the open-meteo-worker must co-locate — enforced by podAffinity on the worker
-  # (-> app=open-meteo). Data is rebuildable, so the immutable storageClass/
-  # accessMode change is applied by delete+recreate of this PVC.
+  # Must be Longhorn RWO (ext4): Open-Meteo's .om writer fails with errno 95 on NFS (truenas-nfs and Longhorn RWX alike).
+  # RWO = single-node attach, so the sync worker runs as a sidecar in the serve pod.
   accessModes: [ReadWriteOnce]
   storageClassName: longhorn
   resources:
@@ -108,22 +77,8 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
 spec:
-  # RWO on longhorn-flash (was RWX on truenas-nfs HDD). basemap mmap-reads this
-  # protomaps extract for map tile serving — small-block RANDOM reads, which on
-  # spinning HDD-over-NFS (102 IOPS @ 310ms) is exactly the thrash that hurt
-  # radar-ng. On the enterprise-SSD flash spindle it is thousands of IOPS at
-  # sub-ms, and off the shared NVMe disk the databases use.
-  #
-  # The old "RWO = permanent Multi-Attach" concern (basemap 24/7 reader vs the
-  # one-shot basemap-bootstrap writer Job) was Longhorn RWO behaving as single-POD
-  # attach. Current Longhorn does RWO multi-pod-same-NODE — proven in this same
-  # namespace: tiles/grids/state now run RWO with 4 co-located pods sharing them.
-  # basemap + the bootstrap Job co-locate on the single worker node, so both
-  # attach fine. (Multi-node caveat as with tiles: pin them together with
-  # podAffinity, or use a real RWX class, before adding worker nodes.)
-  #
-  # Rebuildable: after this PVC is recreated empty, re-run the basemap-bootstrap
-  # Job to re-download the extract from build.protomaps.com.
+  # longhorn-flash RWO: pmtiles mmap random reads thrash on HDD-over-NFS.
+  # basemap (reader) + basemap-bootstrap Job (writer) share this RWO volume — they must co-locate on one node (podAffinity).
   accessModes: [ReadWriteOnce]
   storageClassName: longhorn-flash
   resources:

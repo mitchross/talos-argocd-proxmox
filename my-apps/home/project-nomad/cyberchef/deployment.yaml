@@ -14,9 +14,7 @@ spec:
     metadata:
       labels:
         app: project-nomad-cyberchef
-      # No OTEL injection: CyberChef is a static SPA served by nginx — there
-      # is no Node.js runtime, so inject-nodejs only added an init container
-      # gating pod start on an image pull for zero telemetry.
+      # No OTEL injection: static SPA on nginx, inject-nodejs only gated pod start for zero telemetry.
     spec:
       containers:
         - name: cyberchef

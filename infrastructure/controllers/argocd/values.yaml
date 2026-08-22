@@ -161,28 +161,6 @@ configs:
         end
       end
       return hs
-    # ExternalSecret otherwise reports no useful Argo health. Translate its
-    # Ready condition so a successful secret fetch is Healthy, a rejected or
-    # failed fetch is Degraded, and a brand-new object remains Progressing until
-    # external-secrets has attempted its first synchronization.
-    resource.customizations.health.external-secrets.io_ExternalSecret: |
-      hs = {}
-      if obj.status ~= nil and obj.status.conditions ~= nil then
-        for _, c in ipairs(obj.status.conditions) do
-          if c.type == "Ready" then
-            if c.status == "True" then
-              hs.status = "Healthy"
-            else
-              hs.status = "Degraded"
-            end
-            hs.message = c.reason or c.message or ""
-            return hs
-          end
-        end
-      end
-      hs.status = "Progressing"
-      hs.message = "Waiting for first sync"
-      return hs
 # Argo CD server settings
 server:
   # One schedulable worker / one physical failure domain: extra replicas do

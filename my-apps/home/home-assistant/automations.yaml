@@ -1,13 +1,5 @@
-# Power-off lockout for the homelab plugs.
-#
-# Hiding the switch via customize.yaml only removes it from the default UI;
-# the entity is still toggleable via API, the Tapo phone app, or any other
-# Lovelace card. This automation is the actual enforcement — if any of the
-# three homelab plugs flips to "off" we immediately turn it back on and fire
-# a persistent notification so it's visible in HA + on the bell icon.
-#
-# If you *intentionally* need to power-cycle one of these plugs, disable this
-# automation from Settings > Automations first.
+# Hiding the switch in customize.yaml is UI-only; this automation is the real lockout.
+# To intentionally power-cycle a plug, disable this automation first.
 - id: homelab_plug_poweroff_lockout
   alias: Homelab plug power-off lockout
   description: Prevents accidental shutdown of Threadripper GPUs / NAS PSU / TrueNAS Tapo plugs.
@@ -33,13 +25,8 @@
           Disable the "Homelab plug power-off lockout" automation if this
           was intentional.
 
-# AirCube air-quality alerts.
-#
-# Fire a persistent notification when air quality crosses a "take action"
-# threshold, sustained for 5 min so a transient spike (cooking, a spray) does
-# not nag. Each uses a fixed notification_id so repeat triggers UPDATE the same
-# notification instead of stacking. Thresholds match the aircube-dashboard.yaml
-# bands: eCO2 1000 ppm = ventilate; tVOC 500 ppb = elevated.
+# 5-min sustain avoids nagging on transient spikes; the fixed notification_id makes repeats update
+# instead of stack. Thresholds match the aircube-dashboard.yaml bands.
 - id: aircube_eco2_high
   alias: AirCube eCO2 high — ventilate
   description: Notifies when AirCube eCO2 exceeds 1000 ppm for 5 minutes.

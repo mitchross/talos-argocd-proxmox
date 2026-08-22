@@ -1,6 +1,4 @@
-# Ingestion General - consumes from events_plugin_ingestion, processes events,
-# writes to clickhouse_events_json for ClickHouse Kafka engine tables to consume.
-# This is the missing bridge between capture and ClickHouse.
+# Bridge between capture and ClickHouse: consumes events_plugin_ingestion, writes clickhouse_events_json.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

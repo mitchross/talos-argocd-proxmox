@@ -9,16 +9,7 @@ resources:
   - collector-gateway-httproute.yaml
   - instrumentation.yaml
 
-# Cold-start deadlock guard. This app ships the operator, its two
-# failurePolicy: Fail webhook configurations, AND the CRs those webhooks must
-# admit. Applied in one pass, the webhook configs register instantly while the
-# operator is still starting, so admitting Instrumentation/OpenTelemetryCollector
-# calls a webhook with zero endpoints -> sync aborts -> the operator's
-# Certificate never applies -> the operator never starts. Permanently.
-#
-# A resource-level sync wave splits the apply: Argo CD applies wave 0 (operator,
-# Certificate, webhook configs) and waits for the Deployment to report Healthy
-# before applying wave 1, by which point the webhook has endpoints.
+# Cold-start deadlock guard: the Fail webhooks register before the operator is up, so CRs applied in the same pass abort the sync forever.
 # NEVER ship an operator and the CRs its own webhook admits in the same wave.
 patches:
   - target:

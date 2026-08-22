@@ -1,12 +1,6 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
-# deal-scout data backup STUB — uniform fields (repository, copyMethod,
-# populator) injected by ../../common/kopiur-backup. The mover securityContext
-# is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
-#
-# Holds deals.db, a SQLite database: scraped listings plus the feedback and
-# learned reject signals that are NOT reproducible by re-scraping. Backed up
-# per the "non-CNPG databases" rule in docs/storage-architecture.md.
+# deal-scout-data backup STUB (deals.db SQLite: feedback + learned reject signals are NOT re-scrapable) — uniform fields from ../../common/kopiur-backup; mover uid:gid stays HERE.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:

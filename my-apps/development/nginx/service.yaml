@@ -4,16 +4,11 @@ kind: Service
 metadata:
   name: nginx
   annotations:
-    # Request a specific IP from the Cilium IPAM pool
-    #this is only required if you want to request a specific IP from the Cilium IPAM pool
-    #ie you want a static IP for the service
-    #Optional: if you want to use L2 announcements for the LoadBalancer
+    # Optional: pin a static IP from the Cilium IPAM pool.
     lbipam.cilium.io/ips: "192.168.10.43"
 spec:
   type: LoadBalancer
-  # Use L2 announcements for the LoadBalancer
-  #See comment above about lbipam.cilium.io/ips
-  #OPTIONAL: if you want to use L2 announcements for the LoadBalancer
+  # Optional: L2 announcements for the LoadBalancer.
   loadBalancerClass: io.cilium/l2-announcer
   selector:
     app: nginx

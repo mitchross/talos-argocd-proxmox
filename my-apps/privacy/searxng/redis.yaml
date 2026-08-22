@@ -68,9 +68,6 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    # Intentionally backup-exempt; ephemeral search cache. Dead
-    # longhorn.io/recurring-job-* annotations from the retired Longhorn-direct
-    # backup system were removed 2026-05-03.
     storage.vanillax.dev/backup-exempt-reason: "SearxNG Redis cache for query results; ephemeral by design"
 spec:
   accessModes:

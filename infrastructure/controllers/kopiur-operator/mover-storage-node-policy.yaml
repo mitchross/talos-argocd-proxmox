@@ -1,8 +1,5 @@
-# Kopiur 0.10.2 exposes mover security/resource overrides but no scheduling
-# affinity. Its snapshot movers consume short-lived `*-src` Longhorn PVCs, so
-# place those pods only on workers that declare Longhorn disk configuration.
-# Together with the WFFC staging class, this steers mover, clone engine, and
-# clone replica toward one storage-capable node (best effort; see the class).
+# kopiur offers no mover scheduling affinity: pin movers consuming `*-src` Longhorn PVCs to Longhorn-disk workers
+# so mover, clone engine, and clone replica land on one storage node (best effort, with the WFFC staging class).
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicy
 metadata:

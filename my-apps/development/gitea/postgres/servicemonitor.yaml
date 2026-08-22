@@ -1,7 +1,4 @@
-# Scrapes the postgres-exporter sidecar (pg_stat_activity_count,
-# pg_database_size_bytes, pg_up, ...). Prometheus uses empty
-# serviceMonitor*Selectors, so no release label is needed — same as
-# my-apps/ai/vllm/servicemonitor.yaml.
+# Scrapes the postgres-exporter sidecar; Prometheus uses empty serviceMonitor*Selectors, so no release label needed.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

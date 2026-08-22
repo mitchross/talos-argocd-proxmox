@@ -1,19 +1,5 @@
-# Per-entity overrides for the Tapo homelab plugs and the AirCube air-quality
-# monitor.
-#
-# - Friendly names flow into the `friendly_name` Prometheus label and HA's UI
-#   (Energy dashboard, Developer Tools).
-# - `hidden: true` on the switch entity removes the on/off control from the
-#   default Lovelace view. The automation in automations.yaml ("Homelab plug
-#   power-off lockout") is the actual enforcement — even if the switch is
-#   toggled via API or the Tapo app it gets restored within seconds.
-#
-# The GPU plug's entity_id is kept as gpu_psu_* (preserves history), but its
-# device was renamed to "threadripper-gpus" — so the derived sensors below are
-# relabelled to "Threadripper GPUs …" to match. The Tapo integration's own
-# power/voltage/current sensors already display "threadripper-gpus …" from the
-# device rename, so only the derived (integration/utility_meter/template)
-# entities need an override here.
+# `hidden: true` only removes a switch from the default view; the power-off lockout automation
+# in automations.yaml is the real enforcement. gpu_psu_* entity_ids are kept to preserve history.
 
 # ---------- Threadripper GPUs (entity_id kept as gpu_psu_* for history) ----------
 sensor.gpu_psu_energy:
@@ -43,9 +29,7 @@ sensor.gpu_psu_cost_monthly:
 sensor.gpu_psu_cost_yearly:
   friendly_name: Threadripper GPUs Cost Yearly
 
-# Switch entities keep the `_smart_plug` suffix (unlike the sensors). Hide the
-# read-only controls from the default view; the power-off lockout automation is
-# the real enforcement.
+# Switches keep the `_smart_plug` suffix (unlike the sensors).
 switch.gpu_psu_smart_plug:
   friendly_name: Threadripper GPUs (read-only)
   hidden: true
@@ -56,20 +40,10 @@ switch.truenas_server_smart_plug:
   friendly_name: TrueNAS Server (read-only)
   hidden: true
 
-# ---------- NAS external HDD PSU ----------
-# (The Tapo integration displays "Nas psu …" from the device name; the derived
-# sensors keep their "NAS PSU …" names from configuration.yaml.)
-
-# ---------- TrueNAS host ----------
-# (Displays "Truenas Server …" from the device name; derived sensors keep their
-# "TrueNAS Server …" names.)
+# NAS PSU / TrueNAS host need no overrides — their Tapo device names already display correctly.
 
 # ---------- StuckAtPrototype AirCube (Zigbee air-quality, ZHA quirk) ----------
-# ZHA's auto-derived friendly names are verbose ("StuckAtPrototype AirCube
-# Volatile organic compounds parts"); shorten them. These names flow into the
-# `friendly_name` Prometheus label, but the Grafana dashboard matches on the
-# stable `entity` label (not friendly_name), so renaming here is display-only
-# and does NOT break aircube-dashboard.yaml.
+# Display-only: Grafana matches on the `entity` label, not friendly_name, so renames can't break aircube-dashboard.yaml.
 sensor.stuckatprototype_aircube_temperature:
   friendly_name: AirCube Temperature
 sensor.stuckatprototype_aircube_humidity:
@@ -83,11 +57,8 @@ sensor.stuckatprototype_aircube_voc_level:
 number.stuckatprototype_aircube_brightness:
   friendly_name: AirCube Brightness
 
-# Declutter the default dashboard: rssi/lqi are Zigbee link diagnostics, and
-# `number.stuckatprototype_aircube` is a DUPLICATE of the brightness slider —
-# it's ZHA's raw AnalogOutput present_value, controlling the same thing as
-# number.stuckatprototype_aircube_brightness (the quirk's v2 .number()). The
-# identify button is a commissioning aid, not a daily control.
+# Hidden: rssi/lqi are link diagnostics, `number.stuckatprototype_aircube` is ZHA's raw duplicate
+# of the brightness slider, and identify is a commissioning aid.
 sensor.stuckatprototype_aircube_rssi:
   friendly_name: AirCube RSSI
   hidden: true

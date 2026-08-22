@@ -19,9 +19,7 @@ spec:
       labels:
         app: vllm-server
     spec:
-      # Don't inject legacy Docker-link service env vars (VLLM_SERVICE_*, etc.).
-      # The Service is named `vllm-service`, so those collide with vLLM's own
-      # VLLM_* env scan and spam "Unknown vLLM environment variable" warnings.
+      # Service name vllm-service makes Docker-link env vars collide with vLLM's VLLM_* env scan (spams warnings).
       enableServiceLinks: false
       restartPolicy: Always
       runtimeClassName: nvidia
@@ -128,9 +126,7 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
-            # Inference runs on the GPU; CPU request is just a scheduling
-            # reservation. Keep it low (bursts to the 14-core limit) so the
-            # single 32-vCPU worker has headroom for the rest of the fleet.
+            # GPU does the work; keep the CPU request low so the single 32-vCPU worker has headroom.
             requests:
               nvidia.com/gpu: "1"
               cpu: "1"

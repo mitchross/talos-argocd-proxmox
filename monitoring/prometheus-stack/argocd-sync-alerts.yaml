@@ -10,29 +10,12 @@ metadata:
     prometheus: kube-prometheus-stack-prometheus
     role: alert-rules
 spec:
-  # ArgoCD-layer alerting. The cluster had ZERO PrometheusRules for ArgoCD even
-  # though all components are scraped (ServiceMonitors exist). Generic Deployment
-  # rollout health (KubeDeploymentGenerationMismatch / KubeDeploymentReplicasMismatch
-  # / KubeDeploymentRolloutStuck) is ALREADY shipped by kube-prometheus-stack — do
-  # NOT duplicate it here. These rules cover the ArgoCD control-plane gap only.
-  #
-  # HONEST LIMITATION — the exact incident that motivated this file (2026-05-29:
-  # app reported Synced+Healthy while the live Deployment ran a stale image because
-  # server-side diff compared against a stale cluster-state cache) is NOT directly
-  # alertable: ArgoCD reported green AND kube-state-metrics saw a self-consistent
-  # (old-but-rolled-out) Deployment object. Nothing exported "wrong". That specific
-  # masquerade is mitigated structurally by the periodic hard reconciliation
-  # re-enabled in infrastructure/controllers/argocd/values.yaml
-  # (timeout.hard.reconciliation: 1h), which busts the stale cache on a schedule.
-  # The closest observable systemic proxy is ArgoCDControllerReconcileStalled below.
-  # The remaining rules catch the broad, genuinely-detectable failure classes.
+  # ArgoCD control-plane gap only — Deployment rollout health is already shipped by kube-prometheus-stack; do NOT duplicate it here.
+  # The stale-cluster-cache masquerade (Synced+Healthy, stale live image) is NOT alertable; timeout.hard.reconciliation in the argocd values covers it.
   groups:
     - name: argocd.controlplane
       rules:
-        # Any ArgoCD component scrape target down (controller, repo-server, server,
-        # applicationset). If the controller is down, NOTHING syncs. The
-        # notifications controller is intentionally disabled until a delivery
-        # service is configured, so it is not an expected scrape target.
+        # If the controller is down, NOTHING syncs. The notifications controller is intentionally disabled — not an expected target.
         - alert: ArgoCDComponentDown
           expr: up{namespace="argocd"} == 0
           for: 5m
@@ -53,11 +36,7 @@ spec:
               2. kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller
               3. kubectl describe pod -n argocd <pod>
 
-        # The application-controller is up but has stopped reconciling ANY app.
-        # This is the closest observable proxy to the stale-cache class: a wedged
-        # controller keeps reporting the last-known (possibly stale) status while
-        # doing no real work. Healthy steady-state always shows a non-zero rate
-        # because of the periodic soft reconcile (timeout.reconciliation: 180s).
+        # Controller up but reconciling nothing — closest proxy for the stale-cache class. Steady state is non-zero (soft reconcile every 180s).
         - alert: ArgoCDControllerReconcileStalled
           expr: sum(rate(argocd_app_reconcile_count[15m])) == 0
           for: 15m
@@ -83,11 +62,7 @@ spec:
 
     - name: argocd.appstate
       rules:
-        # Drift ArgoCD sees in an Application with automated sync enabled.
-        # Database Applications also export autosync_enabled="true": their
-        # selfHeal=false setting disables live-drift correction, not automated
-        # sync of new Git revisions. Silence this alert during a deliberate DR
-        # operation rather than pretending those Applications are excluded.
+        # Database Apps also export autosync_enabled="true" (selfHeal=false only disables drift correction) — silence during DR, do not exclude them.
         - alert: ArgoCDAppOutOfSync
           expr: argocd_app_info{sync_status="OutOfSync", autosync_enabled="true"} == 1
           for: 15m
@@ -111,9 +86,7 @@ spec:
                  kubectl annotate application {{ $labels.name }} -n argocd \
                    argocd.argoproj.io/refresh=hard --overwrite
 
-        # ComparisonError and similar failures export sync_status=Unknown, not
-        # OutOfSync. Without this rule a broken repo-server render can disappear
-        # from alerting even though Argo cannot determine desired state.
+        # ComparisonError exports sync_status=Unknown, not OutOfSync — without this a broken render vanishes from alerting.
         - alert: ArgoCDAppSyncUnknown
           expr: argocd_app_info{sync_status="Unknown"} == 1
           for: 10m
@@ -154,9 +127,7 @@ spec:
                  | jq '.status.resources[] | select(.health.status=="Degraded")'
               2. Inspect the degraded workload in dest ns {{ $labels.dest_namespace }}.
 
-        # Missing, Unknown, and Suspended are unhealthy but were not covered by
-        # the narrower Degraded rule. Missing commonly means a pruned/deleted
-        # resource; Unknown can mean Argo lacks a health assessment.
+        # Missing/Unknown/Suspended are unhealthy but not covered by the Degraded rule.
         - alert: ArgoCDAppHealthAbnormal
           expr: argocd_app_info{health_status=~"Missing|Unknown|Suspended"} == 1
           for: 15m
@@ -176,12 +147,7 @@ spec:
               1. kubectl describe application {{ $labels.name }} -n argocd
               2. Inspect .status.resources and .status.conditions.
 
-        # Rollout that never settles. A healthy deploy passes through Progressing
-        # briefly; 30m of Progressing means a stuck rollout (image pull, probe
-        # failures, Multi-Attach on an RWO PVC, etc.). NOTE: this would have fired
-        # for the 2026-05-29 incident only AFTER the hard refresh kicked the roll —
-        # before that, the app sat Healthy, which is the masquerade these alerts
-        # cannot see (see file header).
+        # 30m of Progressing = stuck rollout (image pull, probes, Multi-Attach on an RWO PVC).
         - alert: ArgoCDAppStuckProgressing
           expr: argocd_app_info{health_status="Progressing"} == 1
           for: 30m
@@ -201,9 +167,7 @@ spec:
               2. kubectl rollout status deploy -n {{ $labels.dest_namespace }} <name>
               3. Check events for ImagePullBackOff / probe failures / Multi-Attach.
 
-        # Repeated failed sync operations (retry backoff burning down). The
-        # automated retry policy is limit:10 backoff up to 10m — sustained Failed
-        # syncs mean it is not self-resolving.
+        # Automated retry is limit:10 backoff up to 10m — sustained Failed means it is not self-resolving.
         - alert: ArgoCDAppSyncFailing
           expr: increase(argocd_app_sync_total{phase=~"Failed|Error"}[15m]) > 0
           for: 5m

@@ -6,19 +6,8 @@ metadata:
   labels:
     grafana_dashboard: "1"
     app.kubernetes.io/name: grafana-dashboards
-# NOTE on the max by (entity) + instant queries below:
-# Home Assistant's Prometheus target label (instance/pod) changes on every HA
-# pod restart, so Prometheus keeps the OLD pod's series (frozen at their last
-# value) for the full retention window. Without dedup, "last value over range"
-# panels sum the live series AND every stale one (e.g. a plug appears 2-3x and
-# the pie total balloons). `max by (entity)` collapses duplicates to one series
-# per entity; `instant: true` on the current-value panels evaluates at now, so
-# frozen (stale) series with no recent sample drop out entirely.
-#
-# Three plugs: gpu_psu, nas_psu, truenas_server. The gpu_psu entity_id is kept
-# (preserves history) but the device is now "threadripper-gpus" — the nested
-# label_replace(..., "plug", "threadripper-gpus", "plug", "gpu_psu") remaps just
-# that legend. (Proxmox was removed — that plug was relocated.)
+# max by (entity) + instant: true dedup stale series from previous HA pods (target label changes per restart; range panels would sum live + frozen series).
+# gpu_psu entity_id kept for history; the nested label_replace remaps its legend to "threadripper-gpus".
 data:
   homelab-power.json: |
     {

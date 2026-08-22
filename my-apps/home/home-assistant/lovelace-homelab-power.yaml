@@ -1,13 +1,5 @@
-# YAML-mode dashboard surfaced in the sidebar as "Homelab Power".
-# Wired via lovelace.dashboards.homelab-power in configuration.yaml.
-#
-# Cost model: all-in time-of-use marginal rate (Consumers Energy Rate 1001).
-# The live rate = (season/peak energy rate + delivery riders) * (1 + sales tax);
-# see the input_number.rate_* helpers + sensor.current_electricity_rate.
-# Long-term (monthly/yearly) trends come from HA Long-Term Statistics, which
-# outlives Prometheus's 15-day retention.
-#
-# Three plugs: Threadripper GPUs (entity_id gpu_psu_*), NAS PSU, TrueNAS Server.
+# YAML-mode dashboard, wired via lovelace.dashboards.homelab-power in configuration.yaml.
+# Cost = the all-in TOU rate from sensor.current_electricity_rate; long-term trends come from HA LTS.
 title: Homelab Power
 views:
   - title: Overview

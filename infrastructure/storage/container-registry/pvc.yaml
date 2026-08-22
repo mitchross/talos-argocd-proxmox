@@ -7,9 +7,7 @@ metadata:
     app.kubernetes.io/name: container-registry
     app.kubernetes.io/component: infrastructure
   annotations:
-    # Longhorn backup settings - Critical tier for infrastructure
-    # Intentionally not managed by the VolSync chart: this PVC lives in
-    # kube-system, and system-namespace PVCs must stay out of the restore path.
+    # Longhorn recurring-job backup (critical tier): kube-system PVCs stay out of the kopiur restore path.
     longhorn.io/recurring-job-source: enabled
     longhorn.io/recurring-job-group: critical
 spec:

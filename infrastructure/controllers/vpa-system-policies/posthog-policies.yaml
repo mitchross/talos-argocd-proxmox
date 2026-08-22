@@ -1,7 +1,5 @@
-# Temporary central ownership: the PostHog Application is currently blocked on
-# its migration hook and cannot safely adopt these policies during this
-# one-PR handoff. Move this file back beside PostHog only after that
-# Application is sync-healthy; preserve every VPA namespace/name.
+# Parked here while the PostHog Application is blocked on its migration hook; move back beside PostHog once sync-healthy.
+# Preserve every VPA namespace/name when moving.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -39,9 +37,7 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      # Fixed-size sidecar: leave it alone. VPA scaled it to 35m CPU, which
-      # stretched the /metrics scrape past its probe timeout and restart-looped
-      # the exporter, taking the whole pod out of the `db` Service endpoints.
+      # Fixed-size sidecar: VPA shrinking its CPU restart-looped the exporter and dropped the pod from the db Service.
       - containerName: postgres-exporter
         mode: "Off"
       - containerName: db

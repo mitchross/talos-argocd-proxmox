@@ -25,7 +25,6 @@ spec:
             - name: http
               containerPort: 24153
           env:
-            # Uncomment to force GPU vendor detection if needed
             # - name: VERTD_FORCE_GPU
             #   value: nvidia # or amd, intel
           resources:
@@ -43,7 +42,6 @@ spec:
           hostPath:
             path: /dev/dri
             type: DirectoryOrCreate
-      # For NVIDIA GPU nodes, set runtimeClassName and tolerations if using GPU runtime
       # runtimeClassName: nvidia
       # tolerations:
       #   - key: nvidia.com/gpu

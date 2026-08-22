@@ -17,10 +17,7 @@ namespace: frigate
 components:
   - ../../common/kopiur-backup
 
-# Hash-suffixed ConfigMaps so any data change forces a Deployment rollout
-# (Kustomize rewrites the volume reference to the new hashed name). Was
-# previously `generatorOptions: disableNameSuffixHash: true` — that meant
-# editing config.yml or mosquitto.conf would NOT restart the consumer.
+# Hash-suffixed ConfigMaps roll the consumer on data change; do not set disableNameSuffixHash.
 configMapGenerator:
   - name: frigate-configmap
     files:

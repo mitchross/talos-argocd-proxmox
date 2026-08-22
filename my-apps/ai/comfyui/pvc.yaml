@@ -1,15 +1,5 @@
-# Static PV — mounts the TrueNAS comfyui share root via the SMB CSI driver.
-# SMB (not NFS) on purpose: the share authenticates with the smbcreds
-# username/password (csi-driver-smb ns), so access is credential-gated
-# instead of NFS's IP-based trust. Same share + creds the CachyOS desktop
-# mounts at /mnt/nas/comfyui.
-#
-# Share layout (2026-07 restructure):
-#   <share>/models/    ← shared model repo (Desktop + k8s), standard ComfyUI
-#                        per-type folders. Mounted over ComfyUI/models via
-#                        subPath in deployment.yaml so auto-downloads land here.
-#   <share>/ComfyUI/   ← legacy app tree from the old NFS-era install (its
-#                        models/ type-folders were emptied into <share>/models).
+# SMB (not NFS) on purpose: access is gated by the smbcreds secret rather than NFS IP trust.
+# <share>/models is the shared model repo (mounted over ComfyUI/models via subPath); <share>/ComfyUI is the legacy tree.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -49,9 +39,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  # Renamed from comfyui-storage when the PV moved NFS→SMB: PVC spec
-  # (volumeName) is immutable, so a rename lets ArgoCD create/prune
-  # cleanly instead of wedging on an in-place patch.
+  # PVC volumeName is immutable: renamed on the NFS->SMB move so ArgoCD could create/prune instead of wedging.
   name: comfyui-storage-smb
   namespace: comfyui
   labels:

@@ -16,9 +16,7 @@ spec:
       labels:
         app: swarmui
     spec:
-      # Same GPU pattern as the (now retired) comfyui app — SwarmUI self-starts
-      # its own ComfyUI which needs the whole card. GPU 1 is freed because
-      # comfyui is scaled to replicas:0.
+      # Whole-card GPU pattern; SwarmUI's embedded ComfyUI needs comfyui scaled to replicas:0 to free the card.
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
         gpu-worker: "true"
@@ -38,19 +36,11 @@ spec:
         runAsUser: 0
         runAsGroup: 0
         fsGroup: 0
-        # Without this, kubelet recursively chowns the entire shared NFS
-        # models volume (60k+ files) to fsGroup on EVERY pod start — observed
-        # 6+ min stuck in ContainerCreating ("processed 60092 files",
-        # VolumePermissionChangeInProgress). OnRootMismatch chowns only when
-        # the top-level dir's owner is wrong, so after the first start the
-        # 60k-file walk is skipped entirely. Same pattern as llama-cpp.
+        # Without this, kubelet chowns the whole 60k-file NFS models volume on EVERY start (6+ min ContainerCreating).
         fsGroupChangePolicy: OnRootMismatch
       containers:
       - name: swarmui
-        # No official SwarmUI image upstream. jasonacox/swarmui is a clean,
-        # unmodified build of SwarmUI's own launchtools/StandardDockerfile.docker
-        # and the only community image that is both current and actively tracked.
-        # Entrypoint already runs: launch-linux.sh --launch_mode none --host 0.0.0.0
+        # No official image; jasonacox/swarmui is an unmodified build of upstream's StandardDockerfile.
         # renovate: datasource=docker depName=jasonacox/swarmui
         image: jasonacox/swarmui:0.9.7@sha256:4ca43a2c9c98217e699577c92019bae7aa48ae9049f5e84b6c182c13abae2530
         imagePullPolicy: IfNotPresent
@@ -80,10 +70,7 @@ spec:
           mountPath: /SwarmUI/Output
         - name: comfyui-models
           mountPath: /comfyui-models
-        # First boot serves the install wizard at / quickly once .NET is up;
-        # the multi-GB ComfyUI/torch install happens AFTER the operator completes
-        # the wizard, with the app still serving. Generous startup window covers
-        # image pull + .NET cold start.
+        # Window covers image pull + .NET cold start; the multi-GB ComfyUI install runs after the wizard, app still serving.
         startupProbe:
           tcpSocket:
             port: 7801

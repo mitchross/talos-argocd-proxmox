@@ -1,7 +1,4 @@
-# In-app plain Postgres + kopiur (gitea pattern) — replaced the CNPG
-# temporal-database cluster 2026-08-13 as a greenfield cutover (fresh empty
-# database; no dump/restore — workflow history was deliberately discarded).
-# Temporal's schema Jobs (wave -1 hooks) create both schemas on first boot.
+# Plain Postgres + kopiur (gitea pattern). The chart's schema hooks (wave -1) create both schemas on first boot.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,10 +7,7 @@ metadata:
   labels:
     app: temporal-postgres
   annotations:
-    # The chart's schema Jobs are Sync hooks at wave -1 and waves BLOCK:
-    # the whole postgres stack must be healthy at wave -2 or the schema
-    # hook waits forever for a database that never applies (the old CNPG
-    # DB lived in a separate wave-4 Application, so it never hit this).
+    # Schema Jobs are wave -1 Sync hooks and waves block: Postgres must be healthy at wave -2 or the hook waits forever.
     argocd.argoproj.io/sync-wave: "-2"
 spec:
   strategy:
@@ -27,20 +21,14 @@ spec:
       labels:
         app: temporal-postgres
     spec:
-      # SIGINT (the image's STOPSIGNAL) triggers Postgres "fast shutdown":
-      # it aborts open transactions and flushes cleanly. 60s covers a busy
-      # checkpoint before the kubelet escalates to SIGKILL.
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
       terminationGracePeriodSeconds: 60
       securityContext:
         fsGroup: 999 # postgres uid:gid in the official image
       containers:
         - name: postgres
-          # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
-          # need a manual dump/restore (Postgres data dirs are not
-          # major-version compatible; majors are gated in renovate.json5).
-          # Held at 17 (not gitea's 18) until Temporal upstream declares
-          # PG18 support — temporal-sql-tool schema setup is the risk, and
-          # a wedged schema hook deadlocks the whole app sync.
+          # Pin MAJOR.MINOR; majors need a manual dump/restore (gated in renovate.json5).
+          # Held at 17 until Temporal declares PG18 support — a wedged schema hook deadlocks the whole app sync.
           image: postgres:17.11
           securityContext:
             runAsUser: 999
@@ -53,11 +41,7 @@ spec:
             - containerPort: 5432
               name: postgres
           env:
-            # First boot on an EMPTY volume creates this DB + user; the
-            # init script below adds temporal_visibility (Temporal needs
-            # two databases, chart runs with createDatabase: false). On a
-            # restored (non-empty) volume all of this is skipped and the
-            # restored data wins.
+            # Only used on first boot of an EMPTY volume; a restored volume skips init and its data wins.
             - name: POSTGRES_DB
               value: "temporal"
             - name: POSTGRES_USER
@@ -73,9 +57,7 @@ spec:
             # mount contains lost+found).
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-          # A restored or crash-recovering database can take longer than a
-          # fresh start. The startup probe suppresses liveness restarts
-          # while PostgreSQL replays WAL after restore.
+          # Suppresses liveness restarts while a restored DB replays WAL.
           startupProbe:
             exec:
               command: ["pg_isready", "-U", "temporal", "-d", "temporal"]

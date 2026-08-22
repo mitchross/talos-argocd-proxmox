@@ -55,12 +55,7 @@ spec:
               size_gb = os.path.getsize(dest) / (1024**3)
               print(f'  DONE ({size_gb:.1f}GB): {dest_name}')
 
-          # ==========================================================
-          # NOTE: Main diffusion models (Z-Image-Turbo, Wan 2.2 T2V/I2V,
-          # Qwen-Image-Edit) are already in the shared SMB repo. This job only
-          # downloads auxiliary files (text encoders, VAEs, CLIP vision) if
-          # missing.
-          # ==========================================================
+          # Main diffusion models already live in the shared SMB repo; this only fetches missing auxiliary files.
 
           # FLUX text encoders (for Z-Image-Turbo)
           print('\n=== FLUX text encoders (for Z-Image-Turbo) ===')
@@ -98,9 +93,7 @@ spec:
                    f'{BASE}/clip_vision',
                    'clip_vision_h.safetensors')
 
-          # ==========================================================
           # Cleanup and summary
-          # ==========================================================
           shutil.rmtree(TMP, ignore_errors=True)
 
           print('\n=== All downloads complete ===')

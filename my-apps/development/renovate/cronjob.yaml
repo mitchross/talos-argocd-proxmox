@@ -37,15 +37,6 @@ spec:
               image: ghcr.io/renovatebot/renovate:44.39.2
               imagePullPolicy: IfNotPresent
               env:
-                # The "customManager only extracts 1 of N" symptom that put
-                # this at debug was NOT a regex bug — runs were aborting in
-                # the dependency-lookup phase on Docker Hub 429s
-                # (external-host-error) before extraction completed. The
-                # 2026-05-17 two-instance split removes all public/Docker Hub
-                # deps from this self-hosted instance (it now resolves only
-                # registry.vanillax.me via the configmap `force` block), so
-                # runs complete and all gitea-vanillax deps extract. Back to
-                # info.
                 - name: LOG_LEVEL
                   value: info
                 - name: RENOVATE_CONFIG_FILE
@@ -57,11 +48,7 @@ spec:
                     secretKeyRef:
                       name: renovate-secrets
                       key: RENOVATE_TOKEN
-                # JSON array of host rules — currently just Docker Hub auth
-                # so Renovate's docker datasource lookups don't share the
-                # 100/6h anonymous quota with the rest of the cluster.
-                # Populated from 1Password item `renovate-dockerhub` →
-                # field `host_rules`. See externalsecret.yaml.
+                # JSON host rules (Docker Hub auth) from 1Password `renovate-dockerhub`/`host_rules`; see externalsecret.yaml.
                 - name: RENOVATE_HOST_RULES
                   valueFrom:
                     secretKeyRef:

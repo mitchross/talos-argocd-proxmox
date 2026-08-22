@@ -21,11 +21,7 @@ extraArgs:
   - "--dns01-check-retry-period=10s"
   - "--max-concurrent-challenges=60"
   - "--enable-certificate-owner-ref=true"
-# Pin to the control plane. `webhook.cert-manager.io` is a cluster-scoped
-# failurePolicy: Fail webhook, so if the API server cannot reach it, EVERY
-# cert-manager.io write fails and every sync wave that creates a Certificate
-# stalls. Co-locating with the API server makes that call node-local, so it
-# cannot be broken by a pod-network fault on another node.
+# Pin to the control plane: the failurePolicy=Fail webhook must stay reachable node-locally from the API server.
 # NEVER remove the toleration: control plane nodes carry a NoSchedule taint.
 nodeSelector:
   kubernetes.io/os: linux
@@ -90,15 +86,3 @@ cainjector:
     requests:
       cpu: 20m
       memory: 192Mi
-# Prometheus monitoring - This section is well-configured
-# prometheus:
-#   enabled: true
-#   servicemonitor:
-#     enabled: true
-#     prometheusInstance: default
-#     targetPort: 9402
-#     path: /metrics
-#     interval: 60s
-#     scrapeTimeout: 30s
-#     labels:
-#       release: kube-prometheus-stack

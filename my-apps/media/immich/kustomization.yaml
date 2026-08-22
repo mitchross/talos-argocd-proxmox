@@ -24,9 +24,6 @@ resources:
   - kopiur/library.yaml
   - kopiur/immich-postgres-data.yaml
 
-# Uniform kopiur backup fields (repository, copyMethod, populator) for the
-# per-PVC stubs in kopiur/. Backs up `library` (daily) and the plain-Postgres
-# `immich-postgres-data` (hourly). Immich left CNPG/Barman for this pattern —
-# see docs/domains/cnpg/plain-postgres-migration.md.
+# Injects the uniform kopiur fields (repository, copyMethod, populator) into the per-PVC stubs in kopiur/.
 components:
   - ../../common/kopiur-backup

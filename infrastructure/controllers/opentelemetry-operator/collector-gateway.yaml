@@ -21,15 +21,9 @@ spec:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
-            # Cap per-request body at 4 MiB — protects the public
-            # otel.vanillax.me endpoint from fill-storage floods. A normal
-            # OTLP batch is well under 1 MiB; 4 MiB is generous for big
-            # span/log batches from the mobile app.
+            # 4 MiB cap protects the public otel.vanillax.me endpoint from fill-storage floods; normal batches are <1 MiB.
             max_request_body_size: 4194304
-            # CORS is needed for OTLP/HTTP from browser / Expo-web debug
-            # builds. Native RN doesn't enforce CORS. "*" is safe here
-            # because the endpoint is write-only (reads are on the
-            # internal Grafana).
+            # CORS "*" is safe because the endpoint is write-only (reads are on internal Grafana); needed for Expo-web builds.
             cors:
               allowed_origins:
                 - "*"
@@ -51,10 +45,7 @@ spec:
         - nvidia.com/gpu
 
     processors:
-      # Refuses new data if the collector is approaching its memory limit.
-      # MUST be first in every pipeline so backpressure happens BEFORE
-      # k8sattributes / batch allocate more memory on a malformed or
-      # flood-sized payload. Tuned for the 1Gi pod limit above.
+      # MUST be first in every pipeline so backpressure happens before k8sattributes/batch allocate. Tuned for the 1Gi limit.
       memory_limiter:
         check_interval: 1s
         limit_mib: 800
@@ -107,9 +98,7 @@ spec:
       # Batch for efficient export
       batch:
         timeout: 10s
-        # Keep OTLP->Loki requests comfortably under Loki's tenant burst limit.
-        # Large catch-up batches after an outage were ~6 MiB and hit 429s,
-        # backing pressure into the node agents.
+        # Keep OTLP->Loki requests under Loki's tenant burst limit; ~6 MiB catch-up batches hit 429s.
         send_batch_size: 1024
         send_batch_max_size: 2048
 
@@ -137,14 +126,7 @@ spec:
     service:
       pipelines:
         logs:
-          # `k8sobjects` removed 2026-04-20 when VPA was ripped out —
-          # that receiver was watching VerticalPodAutoscaler CRs, which
-          # no longer exist. Leaving its reference in the pipeline made
-          # the collector refuse to boot for 9h with
-          # "invalid configuration: references receiver k8sobjects
-          # which is not configured". If you re-add CR-event ingestion,
-          # define the k8sobjects receiver in the receivers: block above
-          # THEN add it here.
+          # Every receiver listed here must be defined under receivers: above, or the collector refuses to boot.
           receivers: [otlp]
           processors: [memory_limiter, k8sattributes, resource, batch]
           exporters: [otlphttp/loki]

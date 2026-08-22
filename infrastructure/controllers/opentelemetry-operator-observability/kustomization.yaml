@@ -1,8 +1,5 @@
-# OTel operator observability overlay — optional, post-monitoring.
-# Deployed by infrastructure/controllers/argocd/apps/custom-entrypoints/opentelemetry-operator-observability-app.yaml
-# at a wave AFTER kube-prometheus-stack so the monitoring.coreos.com CRDs exist.
-# Bootstrap-critical OTel operator lives in infrastructure/controllers/opentelemetry-operator
-# and renders ZERO monitoring CRs.
+# Deployed via custom-entrypoints/opentelemetry-operator-observability-app.yaml at a wave AFTER kube-prometheus-stack.
+# The bootstrap OTel operator app must keep rendering ZERO monitoring.coreos.com CRs.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: opentelemetry

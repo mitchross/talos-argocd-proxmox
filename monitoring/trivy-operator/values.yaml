@@ -1,17 +1,10 @@
-# Trivy Operator — conservative first rollout.
-# Goal: prove vulnerability + exposed-secret scanning is useful before turning on
-# the noisier compliance / RBAC / infra / config-audit scanners. Keep concurrency
-# and metric cardinality low so it can't hammer the cluster or blow up Prometheus.
+# Conservative rollout: vuln + exposed-secret scanning only; keep concurrency and metric cardinality low.
 
-# All-namespaces mode (blank targetNamespaces) with a denylist.
-# dvwa is Damn Vulnerable Web App — intentionally vulnerable — so scanning it
-# would permanently drown the dashboard in expected criticals. Exclude it.
+# All namespaces with a denylist; dvwa is intentionally vulnerable and would drown the dashboard.
 targetNamespaces: ""
 excludeNamespaces: "dvwa"
 
-# Redpanda (docker.redpanda.com) rate-limits unauthenticated pulls and has no
-# local runtime socket for the scanner to inspect — every scan attempt fails
-# identically. Exclude it to stop the endless retry cycle.
+# Redpanda images rate-limit unauthenticated pulls — every scan fails; excluded to stop the retry loop.
 trivyOperator:
   excludeImages: "docker.redpanda.com/*/*"
 
@@ -22,15 +15,9 @@ operator:
   # Default 30s retry creates a tight loop of OOMKilled/error scans. Back off
   # to 15m so failed jobs don't hammer the node on every reconcile.
   scanJobsRetryDelay: 15m
-  # Standalone mode is broken for multi-container workloads: the operator runs
-  # one Trivy process per workload container in the same scan pod and all share
-  # /tmp/trivy/.cache, so sibling containers hit BoltDB/cache flock timeouts.
-  # Built-in server mode centralizes the cache in one long-running server and
-  # turns scan jobs into clients, which is the current upstream workaround.
+  # Standalone mode: multi-container workloads share /tmp/trivy/.cache and hit BoltDB flock timeouts; server mode centralizes the cache.
   builtInTrivyServer: true
-  # Do not grant cluster-wide Secret/ServiceAccount reads just to discover image
-  # pull credentials. Current registries are public or anonymously readable
-  # inside the cluster; revisit only if scans fail on private images.
+  # Registries are public; don't grant cluster-wide Secret/SA reads just for pull creds.
   accessGlobalSecretsAndServiceAccount: false
 
   # --- Phase 1 scanners: ON ---
@@ -48,15 +35,11 @@ operator:
   vulnerabilityScannerScanOnlyCurrentRevisions: true
   configAuditScannerScanOnlyCurrentRevisions: true
 
-  # Metrics: aggregate per-resource severity counts are fine and drive the
-  # dashboard. Per-CVE-id metrics (metricsVulnIdEnabled) are a cardinality bomb
-  # — one series per CVE per image — keep them OFF.
+  # Per-CVE-id metrics (metricsVulnIdEnabled) are a cardinality bomb — keep OFF.
   metricsFindingsEnabled: true
   metricsVulnIdEnabled: false
 
-# Emit a ServiceMonitor so kube-prometheus-stack scrapes the operator.
-# serviceMonitorSelectorNilUsesHelmValues:false means any SM is selected, but
-# match the repo convention label for consistency with custom-servicemonitors.yaml.
+# Any ServiceMonitor is selected (nil selectors); label matches the custom-servicemonitors.yaml convention.
 serviceMonitor:
   enabled: true
   labels:
@@ -93,13 +76,9 @@ resources:
 
 trivy:
   image:
-    # Keep the scanner current while the chart default is still 0.71.1. The
-    # multi-container Standalone cache-lock bug still requires built-in server
-    # mode above; this tag alone is not enough.
+    # A newer tag alone does not fix the Standalone cache-lock bug; builtInTrivyServer above is still required.
     tag: 0.72.0
-  # Server cache is disposable vulnerability DB/artifact cache. Use emptyDir so
-  # Trivy does not create a Longhorn PVC that would then need backup/exemption
-  # policy for data we can redownload.
+  # Cache is disposable; emptyDir avoids a Longhorn PVC that would need a backup exemption.
   storageClassEnabled: false
   # Hide vulnerabilities with no available fix — pure noise you can't action.
   ignoreUnfixed: true
@@ -138,8 +117,6 @@ trivy:
       # Bump to 1Gi to avoid OOMKilled retry loops.
       memory: 1Gi
 
-# The chart renders default ClusterComplianceReport specs unless this list is
-# empty. Keep compliance explicitly off in phase 1 so the app does not look like
-# it is running CIS/NSA/PSS checks when the scanner is disabled above.
+# Chart renders default ClusterComplianceReports unless this list is empty — keep off while the scanner is disabled above.
 compliance:
   specs: []

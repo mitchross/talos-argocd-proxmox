@@ -8,7 +8,5 @@ metadata:
     pod-security.kubernetes.io/warn: privileged
     kopiur.home-operations.com/repo: cluster-kopia
   annotations:
-    # Intercept and its data-PVC mover run as root: the upstream image owns its
-    # SQLite database and capture output as uid 0. The Postgres mover remains
-    # non-root with its own uid:gid in kopiur/postgres-data.yaml.
+    # Data-PVC mover must run as root (upstream image owns its data as uid 0); the Postgres mover stays non-root.
     kopiur.home-operations.com/privileged-movers: "true"
