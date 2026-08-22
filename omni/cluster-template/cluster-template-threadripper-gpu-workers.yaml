@@ -212,18 +212,14 @@ patches:
 - name: hp-worker
   inline:
     machine:
-      # Wired LAN, so plain DHCP-on-all-links (the Talos default) is used
-      # rather than the Dell's static address — that pin exists only to give
-      # the media bridge a stable binding to ARP-learn, which does not apply
-      # here. Leaving DHCP alone also means the node survives a PCIe
-      # re-enumeration when disks change; see the removed gpu-network-dhcp
-      # patch below for what pinning an interface name cost last time.
+      # Shed, behind the AX86U wifi media bridge. Plain DHCP-on-all-links is
+      # kept (it works through the bridge); never pin a NIC name — see the
+      # removed gpu-network-dhcp note under gpu-workers.
       nodeLabels:
         node.vanillax.dev/class: hp-worker
-        # Own failure domain: a separate physical box from the Threadripper
-        # (house) and the Dell (yard). Named after the machine, not the room,
-        # because this mini PC is expected to move.
-        topology.kubernetes.io/zone: hp
+        # Own failure domain: the shed's wifi link, shared with nothing else.
+        topology.kubernetes.io/zone: shed
+        node.vanillax.dev/link: wifi
       kubelet:
         nodeIP:
           validSubnets:
@@ -282,12 +278,13 @@ patches:
 - name: hp-prodesk-worker
   inline:
     machine:
-      # Wired LAN: plain DHCP-on-all-links, same as hp-workers. Never pin a
-      # NIC name here; see hp-workers for what that cost last time.
+      # House, wired 2.5GbE. Plain DHCP-on-all-links; never pin a NIC name —
+      # see the removed gpu-network-dhcp note under gpu-workers.
       nodeLabels:
         node.vanillax.dev/class: hp-prodesk-worker
-        # Own failure domain, named after the machine like hp-workers.
+        # Own failure domain: a separate box from the Threadripper (house).
         topology.kubernetes.io/zone: hp-prodesk
+        node.vanillax.dev/link: wired
       kubelet:
         nodeIP:
           validSubnets:
