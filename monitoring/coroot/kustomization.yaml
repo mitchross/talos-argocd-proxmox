@@ -10,6 +10,6 @@ resources:
 helmCharts:
   - name: coroot-operator
     repo: https://coroot.github.io/helm-charts
-    version: 0.9.8
+    version: 0.9.9
     releaseName: coroot-operator
     includeCRDs: true

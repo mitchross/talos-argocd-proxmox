@@ -19,7 +19,7 @@ components:
 helmCharts:
   - name: n8n
     repo: oci://8gears.container-registry.com/library
-    version: 2.0.1
+    version: 2.1.0
     releaseName: n8n
     namespace: n8n
     valuesFile: values.yaml

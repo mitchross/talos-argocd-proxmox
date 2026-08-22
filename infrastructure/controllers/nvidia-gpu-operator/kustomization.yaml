@@ -20,7 +20,7 @@ helmCharts:
 - name: gpu-operator
   repo: https://helm.ngc.nvidia.com/nvidia
   # renovate: datasource=helm depName=gpu-operator registryUrl=https://helm.ngc.nvidia.com/nvidia
-  version: v26.3.3
+  version: v26.7.0
   releaseName: gpu-operator
   namespace: gpu-operator
   includeCRDs: true
@@ -107,3 +107,12 @@ helmCharts:
         operator: Equal
         value: "true"
         effect: NoSchedule
+
+patches:
+# The bundled CRD supports this field, but our disabled DCGM exporter does not use it and the external-schema CI catalog lags v26.7.
+- target:
+    kind: ClusterPolicy
+    name: cluster-policy
+  patch: |-
+    - op: remove
+      path: /spec/dcgmExporter/serviceMonitor/scrapeTimeout
