@@ -1,0 +1,22 @@
+# RTL-SDR dongles (RTL2838, USB 0bda:2838) -> feature.node.kubernetes.io/custom-usb.rtl-sdr=true.
+# Labels whichever node the radios are USB-passed to; intercept schedules on it.
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: rtl-sdr-rule
+spec:
+  rules:
+  - name: "rtl-sdr-usb"
+    labels:
+      "custom-usb.rtl-sdr": "true"
+    matchFeatures:
+    - feature: usb.device
+      matchExpressions:
+        vendor:
+          op: In
+          value:
+          - "0bda"
+        device:
+          op: In
+          value:
+          - "2838"

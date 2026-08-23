@@ -4,6 +4,7 @@ resources:
   - ns.yaml
   - coral-tpu-rule.yaml
   - zigbee-dongle-rule.yaml
+  - rtl-sdr-rule.yaml
 # https://kubernetes-sigs.github.io/node-feature-discovery/v0.16/deployment/helm.html
 helmCharts:
   - name: node-feature-discovery
@@ -14,6 +15,12 @@ helmCharts:
     namespace: node-feature-discovery
     valuesInline:
       worker:
+        # The shed node is tainted; without this NFD never labels its USB devices.
+        tolerations:
+          - key: node.vanillax.dev/link
+            operator: Equal
+            value: wifi
+            effect: NoSchedule
         config:
           core:
             # Run NFD periodically to catch any changes
