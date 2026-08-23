@@ -54,7 +54,7 @@ out before you start — it is the step most likely to block you.
 
 ### Version
 
-Pinned in `omni.env` via `OMNI_IMG_TAG` (currently `v1.10.1`). Always read the
+Pinned in `omni.env` via `OMNI_IMG_TAG` (currently `v1.10.4`). Always read the
 [release notes](https://github.com/siderolabs/omni/releases) before upgrading —
 Omni moves fast and deprecates flags between minors.
 
