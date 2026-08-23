@@ -72,8 +72,8 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.10.4` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
-| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Talos Linux | `v1.13.9` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Kubernetes | `v1.36.4` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
@@ -207,7 +207,7 @@ else
 fi
 
 "$CILIUM_CMD" install \
-    --version 1.20.0 \
+    --version 1.20.0-rc.0 \
     --set cluster.name=talos-prod-cluster-v2 \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -232,7 +232,7 @@ what ArgoCD renders at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0
 will immediately reconfigure the seed install:
 
 > - **Routing mode matches by default**: the CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
-> - **`--version 1.20.0`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
+> - **`--version 1.20.0-rc.0`** must match `infrastructure/networking/cilium/kustomization.yaml` (rc.0 is pinned on purpose: 1.20.0 final and 1.20.1 still carry the split-xDS stale-policy replay, see that file). A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
 > - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Run without it and certs are issued for `default`/`kind-kind` → TLS failures.
 > - **Hubble stays disabled at bootstrap on purpose** — ArgoCD enables it at Wave 0 so it's the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
 
@@ -313,7 +313,7 @@ From here, new applications are discovered automatically — add a directory wit
 > **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
 >
 > ```bash
-> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.7)
+> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.9)
 > talosctl -n <worker-ip> get disks               # expect a single ~800G sda (sda+sdb = STALE 2-disk layout)
 > kubectl get nodes.longhorn.io -n longhorn-system # expect 4 Ready storage nodes after Longhorn starts
 > ```
@@ -372,7 +372,7 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 
 ## Cluster Upgrades & Talos 1.13 Notes
 
-The cluster runs Talos **1.13.7**. A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
+The cluster runs Talos **1.13.9**. A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
 
 ### Never pin below Talos 1.13.4
 
