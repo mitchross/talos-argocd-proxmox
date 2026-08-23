@@ -15,6 +15,12 @@ helmCharts:
     namespace: node-feature-discovery
     valuesInline:
       worker:
+        # The shed node is tainted; without this NFD never labels its USB devices.
+        tolerations:
+          - key: node.vanillax.dev/link
+            operator: Equal
+            value: wifi
+            effect: NoSchedule
         config:
           core:
             # Run NFD periodically to catch any changes
