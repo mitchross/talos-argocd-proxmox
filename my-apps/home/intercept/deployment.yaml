@@ -21,10 +21,15 @@ spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
       terminationGracePeriodSeconds: 30
-      # Both Proxmox RTL-SDR mappings terminate on this Talos VM. The hostPath
-      # below is node-local, so the pod must never move to another worker.
+      # Both RTL-SDRs are USB-passed to one VM; NFD labels whichever node
+      # enumerates them (rtl-sdr-rule). Never pin this to a node class.
       nodeSelector:
-        node.vanillax.dev/class: dell-worker
+        feature.node.kubernetes.io/custom-usb.rtl-sdr: "true"
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       initContainers:
         - name: initialize-data
           image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b

@@ -41,7 +41,7 @@ A complete, production-ready starter kit for deploying self-hosted Sidero Omni w
 
 1. **Prerequisites** - See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
 2. **Deploy Omni** - Follow [omni/README.md](omni/README.md)
-3. **Setup Provider** - Follow [proxmox-provider/](proxmox-provider/)
+3. **Setup Providers** - Follow [proxmox-providers/](proxmox-providers/)
 4. **Apply Machine Classes** - `omnictl apply -f omni/machine-classes/`
 5. **Validate Template** - `omnictl cluster template validate -f omni/cluster-template/cluster-template.yaml`
 6. **Preview Provisioning** - `omnictl cluster template sync -f omni/cluster-template/cluster-template.yaml --dry-run`
@@ -59,7 +59,7 @@ plane and worker MachineSets; do not create MachineSets separately.
 │   ├── docker-compose.yml
 │   ├── omni.env.example
 │   └── scripts/               # SSL and GPG setup automation
-├── proxmox-provider/          # Proxmox infrastructure provider
+├── proxmox-providers/         # Proxmox infrastructure providers (one compose, one service per host)
 │   ├── docker-compose.yml
 │   ├── .env.example
 │   └── config.yaml.example

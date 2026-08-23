@@ -1,4 +1,4 @@
-# Copy to config.yaml and fill in credentials. config.yaml is gitignored.
+# Copy to hp-sff.config.yaml and fill in credentials. *.config.yaml is gitignored.
 proxmox:
   # HP ProDesk SFF host (wired LAN).
   url: "https://192.168.10.21:8006/api2/json"

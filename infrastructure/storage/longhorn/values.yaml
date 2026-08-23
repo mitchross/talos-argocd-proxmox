@@ -1,6 +1,15 @@
 # UI-applied settings are overwritten on Helm upgrade — manage every setting here.
 # V1 data engine only (V2 retired, see docs/disaster-recovery.md); engines can't be flipped on a live cluster.
+# Shed node is tainted node.vanillax.dev/link=wifi:NoSchedule; Longhorn must still run there
+# (manager, CSI, instance-manager) so the node and its disk register.
+global:
+  tolerations:
+    - key: node.vanillax.dev/link
+      operator: Equal
+      value: wifi
+      effect: NoSchedule
 defaultSettings:
+  taintToleration: "node.vanillax.dev/link=wifi:NoSchedule"
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
   defaultDataPath: "/var/lib/longhorn"

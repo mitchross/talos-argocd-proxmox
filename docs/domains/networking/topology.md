@@ -2,9 +2,9 @@
 
 ## Overview
 
-The cluster (`talos-threadripper-gpu-workers`) runs a wired control plane, general
+The cluster (`talos-prod-cluster-v2`) runs a wired control plane, general
 worker, and RTX 3090 GPU worker on a flat LAN with 10G switch infrastructure,
-plus a Wi-Fi-bridged Dell Proxmox CPU worker; all node
+plus an HP SFF wired worker and a Wi-Fi-bridged HP micro worker in the shed (the Dell worker is currently out of the template); all node
 addresses are on the same `192.168.10.0/24`:
 
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
@@ -78,7 +78,7 @@ instance-manager or replica flows, uses VXLAN.
 | Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
 | Proxmox | 192.168.10.14 | Hypervisor |
 | Dell Proxmox | 192.168.10.16 | Wi-Fi-site CPU-only hypervisor |
-| Technitium / Omni (NUC) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
+| Technitium / Omni (rpi5) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
 | ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the Dell |
 | Control Plane | DHCP | K8s control-plane node; verify live address with `kubectl` |
 | Dell CPU Worker | 192.168.10.119 | K8s CPU worker VM (static, bridged via AX86U) |

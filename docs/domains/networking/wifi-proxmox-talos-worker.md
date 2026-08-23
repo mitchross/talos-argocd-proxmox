@@ -1,5 +1,10 @@
 # Wi-Fi Proxmox Talos CPU worker
 
+> **Status:** the `dell-workers` machine set is currently removed from
+> `omni/cluster-template/cluster-template-prod-v2.yaml` while the Dell host is
+> offline. The `dell-worker` class and `proxmox-dell` provider files remain; add
+> the Workers block back when the host returns.
+
 The solar-powered Dell OptiPlex with an Intel i5-8500 and 64 GiB physical RAM
 behind the ASUS RT-AX86U media bridge is a CPU-only Talos worker managed by
 Omni's `proxmox-dell` provider. The retired GTX 1050 Ti is not passed through
@@ -18,9 +23,9 @@ and the Talos image carries no NVIDIA extensions.
 |---|---|---|
 | Media bridge | ASUS RT-AX86U, Media Bridge mode | Host-side state |
 | Hypervisor | Dell Proxmox VE, `192.168.10.16` | Host-side state |
-| Omni provider | `proxmox-dell`, running on the NUC | `omni/proxmox-provider-dell/` |
+| Omni provider | `proxmox-dell`, running on the rpi5 | `omni/proxmox-providers/` (`dell` service) |
 | VM | 4 vCPU, 48 GiB RAM, 64 GiB boot + 400 GiB data disk | `omni/machine-classes/dell-worker.yaml` |
-| Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
+| Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Node class | `node.vanillax.dev/class=dell-worker` | same cluster template |
 | Longhorn | Unschedulable boot disk + schedulable Samsung SSD | same cluster template |
 
@@ -48,11 +53,14 @@ over only after Omni applies the machine configuration.
 
 ## Hardware-bound workload
 
-Intercept uses two RTL-SDR USB devices through `/dev/bus/usb` and selects
-`node.vanillax.dev/class=dell-worker`. Before destroying the old VM, record
-the Dell Proxmox VM's USB mappings: `SDR1` and `SDR-BLOGv4`, both with
-`usb3=1`. The upstream provider schema has no USB field, so reattach both
-mappings to the replacement VM before expecting Intercept to become Ready.
+The Dell VM carries no USB devices. Intercept's two RTL-SDRs (`0bda:2838`)
+and the Zigbee coordinator are USB-passed to the HP 600 G4 shed VM
+(`hp-micro-workers`, `omni/machine-classes/hp-micro-worker.yaml`); Intercept and
+Home Assistant follow the NFD labels
+`feature.node.kubernetes.io/custom-usb.rtl-sdr` and
+`custom-usb.zigbee-coordinator` rather than a node class. The provider schema
+has no USB field, so those mappings are re-added by hand after a VM
+replacement of that host.
 
 Frigate is currently scaled to zero. Its manifest remains pinned to the Dell,
 but now uses CPU software decode and OpenVINO CPU detection. It no longer has
@@ -84,8 +92,8 @@ replacement; do not combine it into a blind template sync.
    enabled. Do not choose **LVM-Thin**. Stop if `/dev/sda` is no longer unused
    or does not match the Samsung serial shown in the disk audit.
 
-3. Record the old VM's `SDR1` and `SDR-BLOGv4` mappings (`usb3=1`). Remove the
-   GTX 1050 Ti mapping and remove or power down the physical card as intended.
+3. Remove the GTX 1050 Ti mapping and remove or power down the physical card
+   as intended.
 
 4. Apply all changed machine classes, validate the template, and inspect the
    dry run:
@@ -96,17 +104,16 @@ replacement; do not combine it into a blind template sync.
    omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
    omnictl apply -f omni/machine-classes/dell-worker.yaml
    omnictl cluster template validate \
-     -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml
+     -f omni/cluster-template/cluster-template-prod-v2.yaml
    omnictl cluster template sync -v \
-     -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml --dry-run
+     -f omni/cluster-template/cluster-template-prod-v2.yaml --dry-run
    ```
 
 5. Remember that the dry run updates MachineSet class references but does not
    replace existing allocations. For an incremental rollout, provision the
    24 GiB general worker first and allow ordinary workloads to move there.
 
-6. Replace the Dell with `dell-workers`, then reattach both RTL-SDR mappings.
-   For an incremental GPU change, only after the general and Dell CPU workers
+6. Replace the Dell with `dell-workers`. For an incremental GPU change, only after the general and Dell CPU workers
    are Ready should the existing RTX VM be shut down and cold-resized. For a
    full rebuild, the provider recreates its disks and application data must
    return from the verified off-host backups.
@@ -123,8 +130,7 @@ replacement; do not combine it into a blind template sync.
    ```
 
    Expected: four Ready nodes total; only the RTX node advertises NVIDIA GPUs;
-   the Dell has no NVIDIA extensions or GPU labels; Intercept sees both SDRs;
-   Longhorn reports `dell-ssd` schedulable at
+   the Dell has no NVIDIA extensions or GPU labels; Longhorn reports `dell-ssd` schedulable at
    `/var/mnt/longhorn-dell-ssd`; and every volume remains healthy.
 
 ## Rollback and stop conditions
@@ -134,8 +140,6 @@ replacement; do not combine it into a blind template sync.
   incremental rollout.
 - If the new Dell cannot register, verify DHCP, the media bridge, and that
   `kernelargs` remains empty.
-- If Intercept cannot see radios, restore the recorded USB mappings on the
-  replacement VM; do not move its pod to a node without the devices.
 - Roll back by restoring the old MachineSet and machine class from Git, but do
   not restore NVIDIA passthrough unless the extra idle power is intentionally
   accepted.
