@@ -145,6 +145,9 @@ patches:
         # Own failure domain: the shed's wifi link, shared with nothing else.
         topology.kubernetes.io/zone: shed
         node.vanillax.dev/link: wifi
+      # Bad wifi: only pods that tolerate this land here (USB-bound apps, DaemonSets).
+      nodeTaints:
+        node.vanillax.dev/link: wifi:NoSchedule
       kubelet:
         nodeIP:
           validSubnets:
@@ -161,9 +164,11 @@ patches:
       # it leaves the node with zero usable disks.
       nodeLabels:
         node.longhorn.io/create-default-disk: "config"
+      # hp-micro-ssd stays unschedulable: a replica here puts app data behind the shed wifi
+      # (the Dell collected 32 single replicas that way). Opt in later via a tagged StorageClass.
       nodeAnnotations:
         node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-micro-ssd","path":"/var/mnt/longhorn-hp-micro-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-micro-ssd"]}]
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-micro-ssd","path":"/var/mnt/longhorn-hp-micro-ssd","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":["hp-micro-ssd"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
