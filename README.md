@@ -71,7 +71,7 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
-| Omni server + `omnictl` | `v1.10.1` | `omni/omni/omni.env.example` |
+| Omni server + `omnictl` | `v1.10.4` | `omni/omni/omni.env.example` |
 | Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
@@ -402,7 +402,7 @@ All machine classes (CP / worker / GPU) share the bus layout, so the patch goes 
 
 ### Upgrading Omni / omnictl
 
-Run Omni and `omnictl` **on the same release** (currently `v1.10.1`, pinned in `omni/omni/omni.env.example`). When upgrading:
+Run Omni and `omnictl` **on the same release** (currently `v1.10.4`, pinned in `omni/omni/omni.env.example`). When upgrading:
 
 1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.
