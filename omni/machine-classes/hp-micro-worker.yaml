@@ -1,15 +1,15 @@
 ---
-# omnictl apply -f omni/machine-classes/hp-worker.yaml
-# CPU worker on the HP 600 G4 mini (192.168.10.20), in the shed behind the
+# omnictl apply -f omni/machine-classes/hp-micro-worker.yaml
+# CPU worker on the HP 600 G4 micro (192.168.10.20), in the shed behind the
 # AX86U wifi media bridge. Carries the USB radios (zigbee, sdr-adsb, sdr-blogv4).
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
-  id: hp-worker
+  id: hp-micro-worker
 spec:
   matchlabels: []
   autoprovision:
-    providerid: proxmox-hp
+    providerid: proxmox-hp-micro
     kernelargs: []
     metavalues: []
     providerdata: |
