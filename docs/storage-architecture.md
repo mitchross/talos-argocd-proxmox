@@ -400,7 +400,7 @@ volume is healthy, its target disks have scheduling headroom, and protected
 PVCs have recent successful Kopiur snapshots:
 
 ```bash
-DELL_STORAGE_NODE=talos-threadripper-gpu-workers-dell-gpu-workers-kf5x8m
+DELL_STORAGE_NODE=talos-prod-cluster-v2-dell-gpu-workers-kf5x8m
 
 kubectl get nodes "$DELL_STORAGE_NODE"
 kubectl -n longhorn-system get nodes.longhorn.io "$DELL_STORAGE_NODE" -o yaml
