@@ -1,7 +1,7 @@
-# Copy to config.yaml and fill in credentials. config.yaml is gitignored.
+# Copy to hp-micro.config.yaml and fill in credentials. *.config.yaml is gitignored.
 proxmox:
-  # HP ProDesk SFF host (wired LAN).
-  url: "https://192.168.10.21:8006/api2/json"
+  # HP 600 G4 micro host (shed, wifi media bridge).
+  url: "https://192.168.10.20:8006/api2/json"
   insecureSkipVerify: true
 
   # Dedicated omni@pve account with the Administrator role at `/`, same as the

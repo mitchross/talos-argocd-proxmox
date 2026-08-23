@@ -1,4 +1,4 @@
-# Copy to config.yaml and fill in credentials. config.yaml is gitignored.
+# Copy to dell.config.yaml and fill in credentials. *.config.yaml is gitignored.
 proxmox:
   # Dell Proxmox host (behind the AX86U media bridge)
   url: "https://192.168.10.16:8006/api2/json"

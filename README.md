@@ -63,7 +63,7 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 
 ## Prerequisites
 
-1. **Omni + the Proxmox provider are running** and reachable — see [Omni Setup Guide](omni/omni/README.md) and [proxmox-provider/](omni/proxmox-provider/)
+1. **Omni + the Proxmox provider are running** and reachable — see [Omni Setup Guide](omni/omni/README.md) and [proxmox-providers/](omni/proxmox-providers/)
 2. **An Omni service-account key** stored in 1Password (item `talos-prod-sa`) — see [Cluster Access](#cluster-access-omni-service-account) to create one
 3. **Local tools**: `omnictl`, `talosctl`, `kubectl`, `kustomize`, Cilium CLI (`cilium` or `cilium-cli`), 1Password CLI (`op`), and `helm`
 
@@ -77,7 +77,7 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
-| Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
+| Proxmox provider | `v0.2.0@sha256:c0d068…` | `omni/proxmox-providers/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
 
