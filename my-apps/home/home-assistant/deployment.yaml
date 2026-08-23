@@ -33,6 +33,11 @@ spec:
       # (zigbee-dongle-rule). A hardcoded node class breaks when the dongle moves VMs.
       nodeSelector:
         feature.node.kubernetes.io/custom-usb.zigbee-coordinator: "true"
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       initContainers:
         - name: copy-config
           image: alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
