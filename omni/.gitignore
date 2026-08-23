@@ -10,10 +10,10 @@ proxmox-provider/.env
 proxmox-provider/config.yaml
 proxmox-provider-dell/.env
 proxmox-provider-dell/config.yaml
-proxmox-provider-hp/.env
-proxmox-provider-hp/config.yaml
-proxmox-provider-hp-prodesk/.env
-proxmox-provider-hp-prodesk/config.yaml
+proxmox-provider-hp-micro/.env
+proxmox-provider-hp-micro/config.yaml
+proxmox-provider-hp-sff/.env
+proxmox-provider-hp-sff/config.yaml
 
 # GPG keys (encryption keys for etcd)
 *.asc

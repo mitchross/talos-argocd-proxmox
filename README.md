@@ -72,8 +72,8 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.10.1` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
-| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
+| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
@@ -91,15 +91,16 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 >
 > | | Threadripper GPU + workers | Multi-node prod |
 > |---|---|---|
-> | Cluster | `talos-threadripper-gpu-workers` | `talos-prod-cluster` |
-> | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
-> | Template | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; Dell: 1 regular worker | 3 CP + 3 workers + 1 GPU |
+> | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
+> | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` + `hp-sff-worker.yaml` (`dell-worker.yaml` when the Dell returns) | `omni/machine-classes/` |
+> | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
+> | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; HP micro (shed, wifi): 1 worker; HP SFF (house, wired): 1 worker | 3 CP + 3 workers + 1 GPU |
 
 The Threadripper classes intentionally allocate 100 GiB total: 12 GiB to the
 control plane, 24 GiB to the regular worker, and 64 GiB to the GPU worker. This
 leaves roughly 25.67 GiB of the host's 125.67 GiB usable RAM for Proxmox and
-QEMU overhead. The Dell worker receives 48 GiB of its host's 64 GiB.
+QEMU overhead. The HP micro worker receives 12 GiB of its host's 16 GiB and the
+HP SFF worker 40 GiB of its host's 48 GiB.
 
 This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
@@ -110,7 +111,7 @@ placeholder commands or omitted flags.
 Skip this step when provisioning for the first time.
 
 ```bash
-omnictl cluster delete talos-threadripper-gpu-workers --destroy-disconnected-machines
+omnictl cluster delete talos-prod-cluster-v2 --destroy-disconnected-machines
 omnictl get machines
 ```
 
@@ -120,7 +121,7 @@ disappear from Proxmox.
 ### 2. Apply the machine classes and provision Talos
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
-Apply all four classes before syncing the template; template sync owns the
+Apply all five classes before syncing the template; template sync owns the
 MachineSets. Applying a class does not mutate an existing VM: CPU, RAM, disks,
 and the visible machine identity change only when Omni provisions a replacement
 from that class.
@@ -129,21 +130,22 @@ from that class.
 omnictl apply -f omni/machine-classes/threadripper-control-plane.yaml
 omnictl apply -f omni/machine-classes/threadripper-worker.yaml
 omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
-omnictl apply -f omni/machine-classes/dell-worker.yaml
+omnictl apply -f omni/machine-classes/hp-micro-worker.yaml
+omnictl apply -f omni/machine-classes/hp-sff-worker.yaml
 omnictl get machineclasses
 
 omnictl cluster template validate \
-  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml
+  -f omni/cluster-template/cluster-template-prod-v2.yaml
 omnictl cluster template sync -v \
-  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml \
+  -f omni/cluster-template/cluster-template-prod-v2.yaml \
   --dry-run
 omnictl cluster template sync -v \
-  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml
+  -f omni/cluster-template/cluster-template-prod-v2.yaml
 
 omnictl get machinerequeststatuses -w
 ```
 
-Stop the watch with `Ctrl-C` after all four requests show
+Stop the watch with `Ctrl-C` after all five requests show
 `Provision Complete`. Do not use `cluster template status --wait` here: the
 cluster cannot become healthy until Cilium is installed in step 5.
 
@@ -160,13 +162,13 @@ export OMNI_ENDPOINT=https://omni.vanillax.me:443
 export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
 
 omnictl kubeconfig \
-  --cluster talos-threadripper-gpu-workers \
+  --cluster talos-prod-cluster-v2 \
   --service-account \
   --user talos-prod-sa \
   --force
 
-talosctl config remove omni-prod-talos-threadripper-gpu-workers -y 2>/dev/null || true
-omnictl talosconfig --cluster talos-threadripper-gpu-workers
+talosctl config remove omni-prod-talos-prod-cluster-v2 -y 2>/dev/null || true
+omnictl talosconfig --cluster talos-prod-cluster-v2
 
 kubectl get nodes -o wide
 ```
@@ -206,7 +208,7 @@ fi
 
 "$CILIUM_CMD" install \
     --version 1.20.0 \
-    --set cluster.name=talos-threadripper-gpu-workers \
+    --set cluster.name=talos-prod-cluster-v2 \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -285,7 +287,7 @@ are up, confirm each database's first post-rebuild snapshot succeeds:
 
 ```bash
 omnictl cluster template status \
-  -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml \
+  -f omni/cluster-template/cluster-template-prod-v2.yaml \
   --wait 30m
 
 kubectl get nodes
@@ -338,7 +340,7 @@ omnictl serviceaccount create talos-prod-sa --use-user-role
 # 3. Generate a bearer-token kubeconfig (NOT OIDC)
 OMNI_ENDPOINT=https://omni.vanillax.me:443 \
 OMNI_SERVICE_ACCOUNT_KEY="<key-from-step-2>" \
-omnictl kubeconfig --cluster talos-threadripper-gpu-workers --service-account --user talos-prod-sa --force
+omnictl kubeconfig --cluster talos-prod-cluster-v2 --service-account --user talos-prod-sa --force
 
 # 4. Verify
 kubectl get nodes
