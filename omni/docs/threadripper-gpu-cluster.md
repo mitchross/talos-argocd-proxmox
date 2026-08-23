@@ -5,7 +5,7 @@
 - `threadripper-control-plane`: 4 vCPU, 12 GiB RAM, 100 GiB disk.
 - `threadripper-worker`: 8 vCPU, 24 GiB RAM, 64 GiB `local-lvm` boot disk.
 - `threadripper-gpu-worker`: 24 vCPU, 64 GiB RAM, two 450 GiB disks, one
-  300 GiB flash disk, and two RTX 3090s.
+  300 GiB flash disk, and one RTX 3090 (mapping `gpu-1`).
 
 The split keeps Kubernetes control-plane services away from GPU and app
 workloads. It improves stability and scheduler headroom, but it is still not HA
