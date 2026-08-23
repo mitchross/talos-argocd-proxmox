@@ -1,8 +1,8 @@
 # ==============================================================================
 # PROXMOX INFRASTRUCTURE PROVIDER CONFIGURATION
 # ==============================================================================
-# Copy this file to config.yaml and fill in your Proxmox details
-# DO NOT commit config.yaml to version control - it contains credentials!
+# Copy this file to threadripper.config.yaml and fill in your Proxmox details.
+# *.config.yaml is gitignored - it contains credentials.
 
 proxmox:
   # Proxmox API endpoint
@@ -151,7 +151,7 @@ proxmox:
 # If you encounter issues:
 #
 # 1. Check provider logs:
-#    docker compose logs -f omni-infra-provider-proxmox
+#    docker compose logs -f threadripper
 #
 # 2. Verify Proxmox API access:
 #    curl -k https://proxmox-host:8006/api2/json/version

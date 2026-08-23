@@ -23,7 +23,7 @@ and the Talos image carries no NVIDIA extensions.
 |---|---|---|
 | Media bridge | ASUS RT-AX86U, Media Bridge mode | Host-side state |
 | Hypervisor | Dell Proxmox VE, `192.168.10.16` | Host-side state |
-| Omni provider | `proxmox-dell`, running on the NUC | `omni/proxmox-provider-dell/` |
+| Omni provider | `proxmox-dell`, running on the rpi5 | `omni/proxmox-providers/` (`dell` service) |
 | VM | 4 vCPU, 48 GiB RAM, 64 GiB boot + 400 GiB data disk | `omni/machine-classes/dell-worker.yaml` |
 | Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Node class | `node.vanillax.dev/class=dell-worker` | same cluster template |

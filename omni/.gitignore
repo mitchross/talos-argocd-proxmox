@@ -6,14 +6,8 @@
 # DO NOT commit these files - they contain sensitive information
 omni/omni.env
 omni/.env
-proxmox-provider/.env
-proxmox-provider/config.yaml
-proxmox-provider-dell/.env
-proxmox-provider-dell/config.yaml
-proxmox-provider-hp-micro/.env
-proxmox-provider-hp-micro/config.yaml
-proxmox-provider-hp-sff/.env
-proxmox-provider-hp-sff/config.yaml
+proxmox-providers/.env
+proxmox-providers/*.config.yaml
 
 # GPG keys (encryption keys for etcd)
 *.asc
@@ -67,6 +61,6 @@ local/
 # Files that SHOULD be committed (override above rules if needed)
 # ==============================================================================
 !omni/omni.env.example
-!proxmox-provider/.env.example
-!proxmox-provider/config.yaml.example
+!proxmox-providers/.env.example
+!proxmox-providers/*.config.yaml.example
 !talos-configs/*.yaml
