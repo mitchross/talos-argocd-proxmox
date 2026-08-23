@@ -1,14 +1,14 @@
 ---
-# omnictl apply -f omni/machine-classes/hp-prodesk-worker.yaml
+# omnictl apply -f omni/machine-classes/hp-sff-worker.yaml
 # CPU worker on the HP ProDesk SFF (192.168.10.21), wired LAN.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
-  id: hp-prodesk-worker
+  id: hp-sff-worker
 spec:
   matchlabels: []
   autoprovision:
-    providerid: proxmox-hp-prodesk
+    providerid: proxmox-hp-sff
     kernelargs: []
     metavalues: []
     providerdata: |

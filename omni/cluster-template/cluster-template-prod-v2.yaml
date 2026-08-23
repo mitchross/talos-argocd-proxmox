@@ -1,11 +1,12 @@
-# Threadripper GPU cluster: 1 control-plane VM + 1 general worker VM + 1 GPU
-# worker VM, plus 1 CPU-only Dell worker VM on the separate Proxmox host.
+# talos-prod-cluster-v2: Threadripper (1 CP + 1 general worker + 1 GPU worker),
+# HP micro in the shed (wifi, USB radios) and HP SFF in the house (wired).
+# The Dell worker is out of the template while that host is offline.
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
-#   omnictl cluster template sync -v -f cluster-template-threadripper-gpu-workers.yaml
+#   omnictl cluster template sync -v -f cluster-template-prod-v2.yaml
 ---
 kind: Cluster
-name: talos-threadripper-gpu-workers
+name: talos-prod-cluster-v2
 labels:
   cluster-id: "2"
 kubernetes:
@@ -122,9 +123,9 @@ patches:
           bind-address: "0.0.0.0"
 ---
 kind: Workers
-name: dell-workers
+name: hp-micro-workers
 machineClass:
-  name: dell-worker
+  name: hp-micro-worker
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
@@ -133,90 +134,14 @@ systemExtensions:
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
 patches:
-- name: dell-proxmox-worker
-  inline:
-    machine:
-      # Static-in-git address: survives VM replacement (new MAC, same address)
-      # and gives the AX86U media bridge one stable IP to ARP-learn — its L3
-      # filter only forwards inbound unicast for learned bindings. (DHCP does
-      # work through the bridge — the ISO registration phase relies on it —
-      # but a DHCP-leased node address would move on every reprovision.)
-      network:
-        interfaces:
-        - deviceSelector:
-            physical: true
-          dhcp: false
-          addresses:
-          - 192.168.10.119/24
-          routes:
-          - network: 0.0.0.0/0
-            gateway: 192.168.10.1
-      nodeLabels:
-        node.vanillax.dev/class: dell-worker
-        topology.kubernetes.io/zone: yard
-- name: dell-worker-network-and-hardening
-  inline:
-    machine:
-      kubelet:
-        nodeIP:
-          validSubnets:
-          - 192.168.10.0/24
-      sysctls:
-        net.core.bpf_jit_harden: 1
-- name: dell-longhorn-disks
-  inline:
-    machine:
-      # The 64 GiB system disk is never a replica target. The separate Samsung
-      # SSD is schedulable Longhorn capacity; it remains a single Wi-Fi failure
-      # domain, not HA by itself.
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]}]
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
-- name: dell-longhorn-ssd-volume
-  inline:
-    apiVersion: v1alpha1
-    kind: UserVolumeConfig
-    name: longhorn-dell-ssd
-    provisioning:
-      # The only non-system disk is the 400 GiB scsi1 device. Keep the lower
-      # bound well above the 64 GiB boot disk so enumeration order cannot make
-      # Talos format the wrong device.
-      diskSelector:
-        match: "!system_disk && disk.size >= 350u * GB"
-      minSize: 350GB
-      grow: true
----
-kind: Workers
-name: hp-workers
-machineClass:
-  name: hp-worker
-  size: 1
-systemExtensions:
-- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
-- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
-- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
-- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-patches:
-- name: hp-worker
+- name: hp-micro-worker
   inline:
     machine:
       # Shed, behind the AX86U wifi media bridge. Plain DHCP-on-all-links is
       # kept (it works through the bridge); never pin a NIC name — see the
       # removed gpu-network-dhcp note under gpu-workers.
       nodeLabels:
-        node.vanillax.dev/class: hp-worker
+        node.vanillax.dev/class: hp-micro-worker
         # Own failure domain: the shed's wifi link, shared with nothing else.
         topology.kubernetes.io/zone: shed
         node.vanillax.dev/link: wifi
@@ -228,7 +153,7 @@ patches:
           serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
-- name: hp-longhorn-disks
+- name: hp-micro-longhorn-disks
   inline:
     machine:
       # All-or-nothing annotation: every disk the node should register must be
@@ -238,7 +163,7 @@ patches:
         node.longhorn.io/create-default-disk: "config"
       nodeAnnotations:
         node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-ssd","path":"/var/mnt/longhorn-hp-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-ssd"]}]
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-micro-ssd","path":"/var/mnt/longhorn-hp-micro-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-micro-ssd"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
@@ -248,11 +173,11 @@ patches:
           - bind
           - rshared
           - rw
-- name: hp-longhorn-ssd-volume
+- name: hp-micro-longhorn-ssd-volume
   inline:
     apiVersion: v1alpha1
     kind: UserVolumeConfig
-    name: longhorn-hp-ssd
+    name: longhorn-hp-micro-ssd
     provisioning:
       # Size is the only thing distinguishing this 850 GiB scsi1 device from
       # the 64 GiB boot disk. Do NOT add a `disk.transport == 'scsi'` clause:
@@ -264,9 +189,9 @@ patches:
       grow: true
 ---
 kind: Workers
-name: hp-prodesk-workers
+name: hp-sff-workers
 machineClass:
-  name: hp-prodesk-worker
+  name: hp-sff-worker
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
@@ -275,15 +200,15 @@ systemExtensions:
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
 patches:
-- name: hp-prodesk-worker
+- name: hp-sff-worker
   inline:
     machine:
       # House, wired 2.5GbE. Plain DHCP-on-all-links; never pin a NIC name —
       # see the removed gpu-network-dhcp note under gpu-workers.
       nodeLabels:
-        node.vanillax.dev/class: hp-prodesk-worker
+        node.vanillax.dev/class: hp-sff-worker
         # Own failure domain: a separate box from the Threadripper (house).
-        topology.kubernetes.io/zone: hp-prodesk
+        topology.kubernetes.io/zone: hp-sff
         node.vanillax.dev/link: wired
       kubelet:
         nodeIP:
@@ -293,7 +218,7 @@ patches:
           serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
-- name: hp-prodesk-longhorn-disks
+- name: hp-sff-longhorn-disks
   inline:
     machine:
       # All-or-nothing annotation: every disk the node should register must be
@@ -303,7 +228,7 @@ patches:
         node.longhorn.io/create-default-disk: "config"
       nodeAnnotations:
         node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-prodesk-ssd","path":"/var/mnt/longhorn-hp-prodesk-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-prodesk-ssd"]}]
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
@@ -313,11 +238,11 @@ patches:
           - bind
           - rshared
           - rw
-- name: hp-prodesk-longhorn-ssd-volume
+- name: hp-sff-longhorn-ssd-volume
   inline:
     apiVersion: v1alpha1
     kind: UserVolumeConfig
-    name: longhorn-hp-prodesk-ssd
+    name: longhorn-hp-sff-ssd
     provisioning:
       # Size alone distinguishes the 690 GiB scsi1 device from the 128 GiB boot
       # disk. No `disk.transport` clause: virtio-scsi never matches it.

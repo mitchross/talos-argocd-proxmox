@@ -1,5 +1,10 @@
 # Wi-Fi Proxmox Talos CPU worker
 
+> **Status:** the `dell-workers` machine set is currently removed from
+> `omni/cluster-template/cluster-template-prod-v2.yaml` while the Dell host is
+> offline. The `dell-worker` class and `proxmox-dell` provider files remain; add
+> the Workers block back when the host returns.
+
 The solar-powered Dell OptiPlex with an Intel i5-8500 and 64 GiB physical RAM
 behind the ASUS RT-AX86U media bridge is a CPU-only Talos worker managed by
 Omni's `proxmox-dell` provider. The retired GTX 1050 Ti is not passed through
@@ -20,7 +25,7 @@ and the Talos image carries no NVIDIA extensions.
 | Hypervisor | Dell Proxmox VE, `192.168.10.16` | Host-side state |
 | Omni provider | `proxmox-dell`, running on the NUC | `omni/proxmox-provider-dell/` |
 | VM | 4 vCPU, 48 GiB RAM, 64 GiB boot + 400 GiB data disk | `omni/machine-classes/dell-worker.yaml` |
-| Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml` |
+| Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Node class | `node.vanillax.dev/class=dell-worker` | same cluster template |
 | Longhorn | Unschedulable boot disk + schedulable Samsung SSD | same cluster template |
 
@@ -50,7 +55,7 @@ over only after Omni applies the machine configuration.
 
 The Dell VM carries no USB devices. Intercept's two RTL-SDRs (`0bda:2838`)
 and the Zigbee coordinator are USB-passed to the HP 600 G4 shed VM
-(`hp-workers`, `omni/machine-classes/hp-worker.yaml`); Intercept and
+(`hp-micro-workers`, `omni/machine-classes/hp-micro-worker.yaml`); Intercept and
 Home Assistant follow the NFD labels
 `feature.node.kubernetes.io/custom-usb.rtl-sdr` and
 `custom-usb.zigbee-coordinator` rather than a node class. The provider schema
@@ -99,9 +104,9 @@ replacement; do not combine it into a blind template sync.
    omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
    omnictl apply -f omni/machine-classes/dell-worker.yaml
    omnictl cluster template validate \
-     -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml
+     -f omni/cluster-template/cluster-template-prod-v2.yaml
    omnictl cluster template sync -v \
-     -f omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml --dry-run
+     -f omni/cluster-template/cluster-template-prod-v2.yaml --dry-run
    ```
 
 5. Remember that the dry run updates MachineSet class references but does not

@@ -1,6 +1,6 @@
 # Copy to config.yaml and fill in credentials. config.yaml is gitignored.
 proxmox:
-  # HP 600 G4 mini host (wired LAN).
+  # HP 600 G4 micro host (shed, wifi media bridge).
   url: "https://192.168.10.20:8006/api2/json"
   insecureSkipVerify: true
 

@@ -2,9 +2,9 @@
 
 ## Overview
 
-The cluster (`talos-threadripper-gpu-workers`) runs a wired control plane, general
+The cluster (`talos-prod-cluster-v2`) runs a wired control plane, general
 worker, and RTX 3090 GPU worker on a flat LAN with 10G switch infrastructure,
-plus a Wi-Fi-bridged Dell Proxmox CPU worker; all node
+plus an HP SFF wired worker and a Wi-Fi-bridged HP micro worker in the shed (the Dell worker is currently out of the template); all node
 addresses are on the same `192.168.10.0/24`:
 
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the

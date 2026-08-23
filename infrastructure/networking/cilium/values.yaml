@@ -6,7 +6,7 @@ annotations:
 # IMPORTANT: cluster.name must match the --set cluster.name used during initial
 # cilium install at bootstrap. Mismatched names break Hubble certificate SANs.
 cluster:
-  name: talos-threadripper-gpu-workers
+  name: talos-prod-cluster-v2
   id: 2
 
 # Kubernetes API Configuration (kubePrism via SideroLink)
