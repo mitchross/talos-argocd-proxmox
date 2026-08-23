@@ -321,7 +321,7 @@ restart handling.)
 
 ## Next Steps
 
-1. [Set up the Proxmox provider](../proxmox-provider/)
+1. [Set up the Proxmox providers](../proxmox-providers/)
 2. Create an infrastructure provider service account (see below)
 3. Apply machine classes and provision a cluster
 

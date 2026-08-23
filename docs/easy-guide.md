@@ -63,7 +63,7 @@ Talos          minimal Linux that runs only Kubernetes — no SSH, no shell
 | --- | --- | --- |
 | **Proxmox** | Your hypervisor. Two hosts here, but one is fine. | Your own hardware |
 | **Omni** | Sidero's control plane. Provisions Talos, manages upgrades, hands you a kubeconfig. Runs as **one Docker container** — a Raspberry Pi 5 with an NVMe is plenty. | [Omni setup guide](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/omni/README.md) |
-| **Proxmox infrastructure provider** | The add-on that lets Omni *create* VMs for you instead of you building them by hand. One container per Proxmox host. | [proxmox-provider/](https://github.com/mitchross/talos-argocd-proxmox/tree/main/omni/proxmox-provider) |
+| **Proxmox infrastructure provider** | The add-on that lets Omni *create* VMs for you instead of you building them by hand. One container per Proxmox host, one compose project. | [proxmox-providers/](https://github.com/mitchross/talos-argocd-proxmox/tree/main/omni/proxmox-providers) |
 | **Talos** | The OS on the nodes. You never log into it — Omni and `talosctl` drive it through an API. | Provisioned by Omni |
 
 !!! question "Do I need all of this to use the ideas on this page?"
