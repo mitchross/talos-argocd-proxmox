@@ -10,7 +10,7 @@ talos:
   # Stable 1.13 GA line — no pre-release flag needed on the Omni server for
   # Talos itself (leave --enable-talos-pre-release-versions in place only if
   # other pre-release components still need it).
-  version: v1.13.7
+  version: v1.13.9
 patches:
 - name: disable-default-cni
   inline:
