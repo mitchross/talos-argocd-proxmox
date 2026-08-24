@@ -1,5 +1,5 @@
-# SCALED TO ZERO: the node-agent eBPF profiler re-reads every container binary each cycle (~1 GB/s disk reads, IO-stalled the Proxmox host).
-# Operator 1.9.6 treats replicas: 0 as unset — only the unschedulable nodeSelector actually zeroes the components.
+# Pinned to nodes labeled coroot.vanillax.dev/enabled (hp-sff via the omni template) — its own
+# box absorbs any IO surprise. Profiler/tracer/log collection stay OFF (~1 GB/s read storm).
 apiVersion: coroot.com/v1
 kind: Coroot
 metadata:
@@ -7,7 +7,6 @@ metadata:
   namespace: coroot
 spec:
   communityEdition: {}
-  replicas: 0
   nodeSelector:
     coroot.vanillax.dev/enabled: "true"
   metricsRefreshInterval: 30s
@@ -36,7 +35,6 @@ spec:
       limits:
         memory: 1Gi
   clickhouse:
-    replicas: 0
     nodeSelector:
       coroot.vanillax.dev/enabled: "true"
     storage:
@@ -50,7 +48,6 @@ spec:
       limits:
         memory: 2Gi
     keeper:
-      replicas: 0
       nodeSelector:
         coroot.vanillax.dev/enabled: "true"
       storage:
