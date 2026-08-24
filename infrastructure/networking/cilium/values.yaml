@@ -102,8 +102,7 @@ k8sClientRateLimit:
 extraConfig:
   api-rate-limit: "endpoint-create=rate-limit:2/s,rate-burst:16,parallel-requests:8,max-wait-duration:30s"
 
-# Stay on split: the stale-policy replay NACK is mode-agnostic and unfixed, so we keep the
-# mode with a proven recovery; revisit at 1.21 (delta-split). Must match the README seed flag.
+# Must match the README seed flag, or a fresh bootstrap leaves envoy holding zero listeners.
 envoy:
   xdsMode: split
 

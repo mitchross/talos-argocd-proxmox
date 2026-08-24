@@ -94,11 +94,10 @@
       prCreation: 'immediate',
     },
     {
-      description: 'Cilium: 1.20.x patches allowed (1.20.1 fixed the ADS livelock cilium/cilium#47624). The split-xDS stale NetworkPolicy NACK is still unfixed upstream — hold 1.21 until final ships delta-split. Cilium never automerges: a CNI bump is major-risk.',
+      description: 'Cilium never automerges — read the release notes and roll it deliberately.',
       matchPackageNames: [
         'cilium',
       ],
-      allowedVersions: '<1.21.0',
       automerge: false,
     },
     {
