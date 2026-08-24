@@ -207,7 +207,7 @@ else
 fi
 
 "$CILIUM_CMD" install \
-    --version 1.20.0-rc.0 \
+    --version 1.20.1 \
     --set cluster.name=talos-prod-cluster-v2 \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -222,7 +222,8 @@ fi
     --set hubble.ui.enabled=false \
     --set gatewayAPI.enabled=true \
     --set gatewayAPI.enableAlpn=true \
-    --set gatewayAPI.enableAppProtocol=true
+    --set gatewayAPI.enableAppProtocol=true \
+    --set envoy.xdsMode=split
 "$CILIUM_CMD" status --wait --wait-duration 5m
 kubectl get nodes
 ```
@@ -232,7 +233,8 @@ what ArgoCD renders at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0
 will immediately reconfigure the seed install:
 
 > - **Routing mode matches by default**: the CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
-> - **`--version 1.20.0-rc.0`** must match `infrastructure/networking/cilium/kustomization.yaml` (rc.0 is pinned on purpose: 1.20.0 final and 1.20.1 still carry the split-xDS stale-policy replay, see that file). A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
+> - **`--version 1.20.1`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
+> - **`--set envoy.xdsMode=split`** must match `values.yaml`. Seeding without it leaves envoy on the ADS default while Wave 0 flips the agents to split — envoy then holds zero listeners (every Gateway VIP refuses TCP) until `cilium-envoy` is restarted (2026-08-24 rebuild outage).
 > - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Run without it and certs are issued for `default`/`kind-kind` → TLS failures.
 > - **Hubble stays disabled at bootstrap on purpose** — ArgoCD enables it at Wave 0 so it's the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
 
