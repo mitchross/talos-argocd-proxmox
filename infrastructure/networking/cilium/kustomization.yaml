@@ -15,9 +15,8 @@ resources:
 helmCharts:
 - name: cilium
   repo: https://helm.cilium.io
-  # Pinned to rc.0: 1.20.0 final split-xDS replays stale NetworkPolicy resources on new
-  # streams (Envoy NACK wedged hp's CNI 2026-08-16); betting the regression landed after rc.0.
-  version: 1.20.0-rc.0
+  # If a node 403s after a roll: restart cilium-agent first, then that node's cilium-envoy.
+  version: 1.20.1
   releaseName: cilium
   includeCRDs: true
   namespace: kube-system
