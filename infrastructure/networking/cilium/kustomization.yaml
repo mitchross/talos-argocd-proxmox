@@ -15,8 +15,7 @@ resources:
 helmCharts:
 - name: cilium
   repo: https://helm.cilium.io
-  # Split-xDS stale-policy replay (Envoy NACK on new stream) is unfixed in ALL 1.20.x incl.
-  # rc.0 — recovery: restart cilium-agent FIRST, then that node's cilium-envoy.
+  # If a node 403s after a roll: restart cilium-agent first, then that node's cilium-envoy.
   version: 1.20.1
   releaseName: cilium
   includeCRDs: true
