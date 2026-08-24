@@ -102,11 +102,6 @@ k8sClientRateLimit:
 extraConfig:
   api-rate-limit: "endpoint-create=rate-limit:2/s,rate-burst:16,parallel-requests:8,max-wait-duration:30s"
 
-# 1.20 ADS mode livelocks after the last L7 listener drains (cilium/cilium#47624,
-# Gateways all 403) — stay on split xDS for the whole 1.20 line.
-envoy:
-  xdsMode: split
-
 # Gateway API Support
 gatewayAPI:
   enabled: true
