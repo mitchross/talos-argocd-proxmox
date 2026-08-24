@@ -215,6 +215,8 @@ patches:
         # Own failure domain: a separate box from the Threadripper (house).
         topology.kubernetes.io/zone: hp-sff
         node.vanillax.dev/link: wired
+        # Coroot backend + agents pin here (monitoring/coroot nodeSelector).
+        coroot.vanillax.dev/enabled: "true"
       kubelet:
         nodeIP:
           validSubnets:
