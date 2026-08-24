@@ -7,6 +7,8 @@ metadata:
   namespace: coroot
 spec:
   communityEdition: {}
+  # LAN-internal route only — no login wall.
+  authAnonymousRole: Admin
   nodeSelector:
     coroot.vanillax.dev/enabled: "true"
   metricsRefreshInterval: 30s
