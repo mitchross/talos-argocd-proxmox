@@ -32,16 +32,6 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
-# HTTP configuration for reverse proxy
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-    - 10.0.0.0/8
-    - 172.16.0.0/12
-    - 192.168.0.0/16
-    - 192.168.10.32/27 # Cilium IP Pool
-    - 192.168.10.50 # Gateway IP
-
 # rssi/lqi excluded: they churn every update and bloat SQLite; long-term statistics are unaffected.
 recorder:
   db_url: sqlite:////config/home-assistant_v2.db
