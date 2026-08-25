@@ -30,7 +30,7 @@ spec:
       containers:
         - name: csi-controller
           # renovate: datasource=docker depName=ghcr.io/truenas/truenas-csi
-          image: ghcr.io/truenas/truenas-csi:v1.1.2@sha256:72bc60182c3eb22b524f52c7693ffb2fcd8e8f75ac47c0a2ce0239e78af6bf83
+          image: ghcr.io/truenas/truenas-csi:v1.2.0@sha256:ebb180986823a31110be926d8f14a6cc669540a6c58947220a16de802d852f38
           imagePullPolicy: IfNotPresent
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -157,7 +157,7 @@ spec:
       containers:
         - name: csi-node
           # renovate: datasource=docker depName=ghcr.io/truenas/truenas-csi
-          image: ghcr.io/truenas/truenas-csi:v1.1.2@sha256:72bc60182c3eb22b524f52c7693ffb2fcd8e8f75ac47c0a2ce0239e78af6bf83
+          image: ghcr.io/truenas/truenas-csi:v1.2.0@sha256:ebb180986823a31110be926d8f14a6cc669540a6c58947220a16de802d852f38
           imagePullPolicy: IfNotPresent
           # NFS-only on Talos: no iscsiadm or /etc/iscsi on the host. The upstream iscsiadm postStart
           # shim and /etc/iscsi + /var/lib/iscsi host mounts are intentionally removed so the plugin starts.
