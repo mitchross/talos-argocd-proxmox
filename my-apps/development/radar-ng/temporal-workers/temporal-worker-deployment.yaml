@@ -81,7 +81,8 @@ spec:
             - { name: state,  mountPath: /data/state }
           resources:
             # CPU-bound (pysteps nowcast + MRMS reproject) — a tight CPU limit makes nowcast_run time out.
-            requests: { cpu: "1", memory: "3Gi" }   # single-node: 1 replica; request low, bursts to 12-core limit
+            # 250m: Progressive rollout runs old+new side by side on tile-server's node (RWO affinity); 2×1-CPU requests can't schedule there.
+            requests: { cpu: "250m", memory: "3Gi" }
             limits:   { cpu: "12", memory: "12Gi" }
       volumes:
         - name: tiles
