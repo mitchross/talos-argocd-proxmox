@@ -83,6 +83,9 @@ function editNewText(input) {
   return input.newText ?? input.new_string ?? input.replacement ?? "";
 }
 
+const BINARY_RE =
+  /\.(png|jpe?g|gif|webp|bmp|svg|avif|heic|tiff?|ico|pdf|zip|gz|tar|wasm|mp[34]|mov|woff2?)$/i;
+
 // Resolve Pi's tool name + arguments to Mink's canonical operation. Only the
 // three file operations matter; anything else returns null and is ignored.
 function toolInfo(event) {
@@ -90,6 +93,9 @@ function toolInfo(event) {
   const input = event?.input ?? event?.arguments ?? {};
   const filePath = input.path ?? input.file_path ?? input.filePath;
   if (!filePath) return null;
+  // LOCAL PATCH (mink#112, reverted by `mink init`): binary reads get compressed to
+  // mojibake and buildResult then drops Pi's image block, so images never reach the model.
+  if (name === "read" && BINARY_RE.test(String(filePath))) return null;
   if (name === "read") return { op: "read", filePath };
   if (name === "write") return { op: "write", filePath, content: input.content ?? input.text ?? "" };
   if (name === "edit") return { op: "edit", filePath, newString: editNewText(input) };
@@ -211,9 +217,14 @@ export default function (pi) {
   const buildResult = (event, replacement, advisoryParts) => {
     const advisory = advisoryParts.filter(Boolean).join("\n");
     if (replacement == null && !advisory) return undefined;
+    // LOCAL PATCH (mink#112): a replacement substitutes the TEXT only — image and
+    // other non-text blocks pass through instead of being discarded.
+    const passthrough = Array.isArray(event.content)
+      ? event.content.filter((b) => b?.type && b.type !== "text")
+      : [];
     const base =
       replacement != null
-        ? [{ type: "text", text: replacement }]
+        ? [{ type: "text", text: replacement }, ...passthrough]
         : Array.isArray(event.content)
           ? event.content
           : typeof event.content === "string"
