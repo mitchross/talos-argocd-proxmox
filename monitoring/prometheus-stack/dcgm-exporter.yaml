@@ -70,18 +70,21 @@ spec:
               memory: 128Mi
             limits:
               memory: 512Mi
+          # DCGM /health stalls past the 1s default while the GPU is under load; 1s probes = restart loops.
           livenessProbe:
             httpGet:
               path: /health
               port: 9400
             initialDelaySeconds: 45
             periodSeconds: 30
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /health
               port: 9400
             initialDelaySeconds: 15
             periodSeconds: 15
+            timeoutSeconds: 5
       volumes:
         - name: proc
           hostPath:
