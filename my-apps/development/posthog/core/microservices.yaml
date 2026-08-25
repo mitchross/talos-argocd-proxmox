@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
         - name: property-defs-rs
-          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:25dbb29efa0d153f488db660a4af2ff05737adb370337d4f40de70c8468ff1c9
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:49810d5ebc5e7f604811a275fd53947336a7a212b3204233478e41b949cd282e
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -181,7 +181,7 @@ spec:
     spec:
       containers:
         - name: cymbal
-          image: ghcr.io/posthog/posthog/cymbal:master@sha256:1329119d012b68f57dae42ccb9743a8c1557efd2390f74aabe22489083ca084c
+          image: ghcr.io/posthog/posthog/cymbal:master@sha256:8acbaed5ac95ab5be59d8f8f906504663f09e77ccceb8c51a8dcd524f2981d0a
           env:
             - name: PGPASSWORD
               valueFrom:
