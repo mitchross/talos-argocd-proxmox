@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: worldmonitor
-          image: ghcr.io/mitchross/worldmonitor:sha-7f0ba26
+          image: ghcr.io/mitchross/worldmonitor:sha-c08ffcf
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -37,6 +37,11 @@ spec:
                 secretKeyRef:
                   name: worldmonitor-secrets
                   key: REDIS_TOKEN
+            - name: WM_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: WM_SESSION_SECRET
           ports:
             - name: http
               containerPort: 8080
