@@ -79,7 +79,7 @@ spec:
             # 200W is a HOUSE-CIRCUIT constraint, not an efficiency choice (290W flickered the basement lights).
             # Do not raise toward the 290W efficiency knee without confirming the circuit.
             - name: POWER_LIMIT_WATTS
-              value: "200"
+              value: "220"
             - name: REAPPLY_SECONDS
               value: "300"
           resources:
