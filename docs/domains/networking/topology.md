@@ -4,8 +4,8 @@
 
 The cluster (`talos-prod-cluster-v2`) runs a wired control plane, general
 worker, and RTX 3090 GPU worker on a flat LAN with 10G switch infrastructure,
-plus an HP SFF wired worker and a Wi-Fi-bridged HP micro worker in the shed (the Dell worker is currently out of the template); all node
-addresses are on the same `192.168.10.0/24`:
+plus a wired HP SFF worker, a wired Dell worker, and a Wi-Fi-bridged HP micro
+worker in the shed; all node addresses are on the same `192.168.10.0/24`:
 
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
   10G switch.
@@ -14,9 +14,12 @@ addresses are on the same `192.168.10.0/24`:
   the bare-metal X399/2950X host).
 - **General worker VM** — DHCP on the wired LAN; 8 vCPU and 24 GiB RAM for
   CPU-only compute.
-- **Dell CPU worker VM** — `192.168.10.119` (static, in git), bridged over Wi-Fi through an
-  ASUS RT-AX86U media bridge; see the
-  [Wi-Fi Proxmox Talos worker runbook](wifi-proxmox-talos-worker.md).
+- **Dell CPU worker VM** — DHCP on the wired LAN (2.5 GbE add-in card on the
+  Dell host); see the
+  [Dell Proxmox Talos worker runbook](dell-proxmox-talos-worker.md).
+- **HP micro worker VM** — DHCP, in the shed behind an ASUS RT-AX86U media
+  bridge; carries the USB radios and is tainted `node.vanillax.dev/link=wifi`.
+- **HP SFF worker VM** — DHCP on the wired LAN.
 - **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
 
 Verify live node addresses with `kubectl get nodes -o wide`.
@@ -24,10 +27,9 @@ Verify live node addresses with `kubectl get nodes -o wide`.
 Cross-node pod traffic rides a **Cilium VXLAN tunnel between node IPs**
 (`routingMode: tunnel`) — **no pod routes exist anywhere** (not on Firewalla,
 not in machine config, not on any host), and no device between nodes ever
-sees a pod IP on the wire. Tunnel mode was adopted because the Wi-Fi
-site's media bridge silently drops inbound-first frames for IPs without an
-ARP-learned binding — i.e. every pod IP (see the
-[Wi-Fi Proxmox Talos worker runbook](wifi-proxmox-talos-worker.md)). Direct node/LAN traffic
+sees a pod IP on the wire. Tunnel mode was adopted because the shed's
+media bridge silently drops inbound-first frames for IPs without an
+ARP-learned binding — i.e. every pod IP. Direct node/LAN traffic
 such as NFS to TrueNAS and API node endpoints is not encapsulated. Traffic
 whose remote endpoint is a pod IP, including cross-node Longhorn
 instance-manager or replica flows, uses VXLAN.
@@ -60,11 +62,16 @@ instance-manager or replica flows, uses VXLAN.
 │                                     └──────────────────────────────────┘    │
 │                                                                              │
 │   Wi-Fi ┌──────────────────┐  eth  ┌────────────────┐ vmbr0 ┌────────────┐  │
-│   ~~~~~▶│  ASUS RT-AX86U   │──────▶│ Dell Proxmox   │──────▶│ Dell CPU   │  │
-│         │  media bridge    │       │ host (.16)     │       │ Worker VM  │  │
-│         │  192.168.10.70   │       │ CPU-only       │       │ .119 static│  │
+│   ~~~~~▶│  ASUS RT-AX86U   │──────▶│ HP micro (.20) │──────▶│ HP micro   │  │
+│         │  media bridge    │       │ shed, USB      │       │ Worker VM  │  │
+│         │  192.168.10.70   │       │ radios         │       │ DHCP       │  │
 │         └──────────────────┘       └────────────────┘       └────────────┘  │
-│          (all three nodes appear directly on 192.168.10.0/24)                 │
+│                                                                              │
+│   2.5G   ┌────────────────┐ vmbr0 ┌────────────┐    ┌────────────────────┐  │
+│   ──────▶│ Dell Proxmox   │──────▶│ Dell CPU   │    │ HP SFF host (.21)  │  │
+│          │ host (.16)     │       │ Worker VM  │    │ → HP SFF Worker VM │  │
+│          └────────────────┘       └────────────┘    └────────────────────┘  │
+│          (every node appears directly on 192.168.10.0/24)                    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -77,11 +84,13 @@ instance-manager or replica flows, uses VXLAN.
 |--------|-----|---------|
 | Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
 | Proxmox | 192.168.10.14 | Hypervisor |
-| Dell Proxmox | 192.168.10.16 | Wi-Fi-site CPU-only hypervisor |
+| Dell Proxmox | 192.168.10.16 | CPU-only hypervisor (wired 2.5 GbE) |
+| HP micro Proxmox | 192.168.10.20 | Shed hypervisor behind the media bridge; USB radios |
+| HP SFF Proxmox | 192.168.10.21 | CPU-only hypervisor (wired) |
 | Technitium / Omni (rpi5) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
-| ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the Dell |
+| ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the shed |
 | Control Plane | DHCP | K8s control-plane node; verify live address with `kubectl` |
-| Dell CPU Worker | 192.168.10.119 | K8s CPU worker VM (static, bridged via AX86U) |
+| Dell CPU Worker | DHCP | K8s CPU worker node; verify live address with `kubectl` |
 | TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
 | GPU Worker | DHCP | K8s GPU worker node; verify live address with `kubectl` |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |
@@ -106,7 +115,7 @@ machine:
 | Bridge | Physical NIC | CIDR | Purpose |
 |--------|--------------|------|---------|
 | vmbr0 | ens2 | 192.168.10.14/24 | Main LAN (10G) |
-| vmbr0 (Dell) | enp0s31f6 (`nic0`) | 192.168.10.16/24 | Media-bridge LAN path |
+| vmbr0 (Dell) | `uplink25g` (RTL8125B) | 192.168.10.16/24 | Wired 2.5 GbE; the onboard I219 `nic0` is unused (e1000e hang bug) |
 
 ## TrueNAS Network Configuration
 

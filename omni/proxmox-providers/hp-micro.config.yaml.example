@@ -5,7 +5,7 @@ proxmox:
   insecureSkipVerify: true
 
   # Dedicated omni@pve account with the Administrator role at `/`, same as the
-  # Dell host. API tokens are NOT used: they have had insufficient permissions
+  # other hosts. API tokens are NOT used: they have had insufficient permissions
   # AND the user@realm!tokenid secret format breaks on special characters.
   username: "omni"
   password: "CHANGE_ME"
