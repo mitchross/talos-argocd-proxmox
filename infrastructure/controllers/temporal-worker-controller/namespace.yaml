@@ -5,19 +5,6 @@ metadata:
   labels:
     app.kubernetes.io/name: temporal-worker-controller
   annotations:
-    # DO NOT let this namespace be pruned and recreated. Since chart 0.27.1
-    # (appVersion 1.8.1) the controller builds its Temporal ManagerIdentity as
-    # "<release>/<namespace>/<namespace UID>" — the suffix comes from a `get` on
-    # this very namespace (see the identity-suffix grant in the chart's
-    # rbac.yaml). Temporal persists that identity on every Worker Deployment and
-    # refuses ramps from any other identity:
-    #
-    #   Plan execution failed: unable to set ramping deployment version:
-    #   ManagerIdentity '<old>' is set and does not match user identity '<new>'
-    #
-    # A recreated namespace gets a NEW UID, which silently invalidates the
-    # identity stored for deal-scout, news-reader and radar-ng at once. Each
-    # then wedges on its next rollout and has to be cleared by hand with
-    # `temporal worker deployment manager-identity unset`. Pinning the object
-    # keeps the UID — and therefore the identity — stable for the cluster's life.
+    # This namespace's UID is the controller's Temporal ManagerIdentity suffix.
+    # Recreating it rotates the UID and wedges every WorkerDeployment at once.
     argocd.argoproj.io/sync-options: Prune=false,Delete=false
