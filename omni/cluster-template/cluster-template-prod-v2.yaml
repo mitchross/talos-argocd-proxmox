@@ -1,6 +1,5 @@
 # talos-prod-cluster-v2: Threadripper (1 CP + 1 general worker + 1 GPU worker),
-# HP micro in the shed (wifi, USB radios) and HP SFF in the house (wired).
-# The Dell worker is out of the template while that host is offline.
+# HP micro in the shed (wifi, USB radios), HP SFF (wired) and Dell (wired).
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
 #   omnictl cluster template sync -v -f cluster-template-prod-v2.yaml
@@ -94,7 +93,7 @@ patches:
   inline:
     machine:
       # Control plane and RTX 3090 worker share the Threadripper/Proxmox
-      # failure domain. The Dell worker is the separate `yard` domain.
+      # failure domain; each other box carries its own zone.
       nodeLabels:
         topology.kubernetes.io/zone: house
 - name: control-plane-performance
@@ -256,6 +255,69 @@ patches:
       diskSelector:
         match: "!system_disk && disk.size >= 600u * GB"
       minSize: 600GB
+      grow: true
+---
+kind: Workers
+name: dell-workers
+machineClass:
+  name: dell-worker
+  size: 1
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+patches:
+- name: dell-worker
+  inline:
+    machine:
+      # Wired 2.5GbE (rtl8125b); the onboard I219 is unused after its e1000e
+      # hang bug. Plain DHCP-on-all-links; never pin a NIC name.
+      nodeLabels:
+        node.vanillax.dev/class: dell-worker
+        # Own failure domain: a separate box from the Threadripper and the HPs.
+        topology.kubernetes.io/zone: dell
+        node.vanillax.dev/link: wired
+      kubelet:
+        nodeIP:
+          validSubnets:
+          - 192.168.10.0/24
+        extraConfig:
+          serializeImagePulls: false
+      sysctls:
+        net.core.bpf_jit_harden: 1
+- name: dell-longhorn-disks
+  inline:
+    machine:
+      # All-or-nothing annotation: every disk the node should register must be
+      # listed here. Omitting talos-ephemeral does not leave it at defaults —
+      # it leaves the node with zero usable disks.
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      nodeAnnotations:
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]}]
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
+- name: dell-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-dell-ssd
+    provisioning:
+      # Size alone distinguishes the 400 GiB scsi1 device from the 128 GiB boot
+      # disk. No `disk.transport` clause: virtio-scsi never matches it.
+      diskSelector:
+        match: "!system_disk && disk.size >= 350u * GB"
+      minSize: 350GB
       grow: true
 ---
 kind: Workers

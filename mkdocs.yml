@@ -120,7 +120,7 @@ nav:
       - Plain Postgres pattern & CNPG retirement: domains/cnpg/plain-postgres-migration.md
   - Networking:
       - Topology: domains/networking/topology.md
-      - Wi-Fi Proxmox Talos worker: domains/networking/wifi-proxmox-talos-worker.md
+      - Dell Proxmox Talos worker: domains/networking/dell-proxmox-talos-worker.md
       - Cilium policies: domains/networking/policy.md
       - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
   - AI / GPU:
