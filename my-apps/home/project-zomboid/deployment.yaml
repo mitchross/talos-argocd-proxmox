@@ -18,7 +18,7 @@ spec:
       terminationGracePeriodSeconds: 180
       initContainers:
         - name: steamcmd-update
-          image: indifferentbroccoli/projectzomboid-server-docker:latest
+          image: indifferentbroccoli/projectzomboid-server-docker:latest@sha256:8e13816b92fdd3e1fac3044b8b9228b255e6deb4d28b268f93a911fbd58ca6e8
           imagePullPolicy: Always
           command:
             - /bin/bash
@@ -32,7 +32,7 @@ spec:
             - name: steam-cache
               mountPath: /steam-cache
         - name: copy-config
-          image: busybox:1.38
+          image: busybox:1.38@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
           command:
             - sh
             - -c
@@ -48,7 +48,7 @@ spec:
               mountPath: /config
       containers:
         - name: project-zomboid
-          image: indifferentbroccoli/projectzomboid-server-docker:latest
+          image: indifferentbroccoli/projectzomboid-server-docker:latest@sha256:8e13816b92fdd3e1fac3044b8b9228b255e6deb4d28b268f93a911fbd58ca6e8
           imagePullPolicy: Always
           env:
             - name: PUID
