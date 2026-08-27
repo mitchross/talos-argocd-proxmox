@@ -9,17 +9,20 @@ webhookCertificate:
   certManager:
     enabled: true
 
-controller:
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+# TOP-LEVEL KEYS. The chart has no `controller:` block — it reads `replicas`
+# and `resources` at the root. This file used to nest both under `controller:`,
+# where Helm silently ignored them: the chart default of replicas: 2 stayed in
+# effect and the pods ran with the chart's resource numbers, not ours. Two
+# managers is not a redundancy win here, it is the cause of the recurring
+# ManagerIdentity wedge — see the note on namespace.yaml.
+replicas: 1
 
-# Leader election is on by default; leave single-replica since this is
-# a homelab and the controller is idempotent on restart.
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
 
 metrics:
   enabled: true
