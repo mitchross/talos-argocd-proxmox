@@ -52,3 +52,17 @@ services:
       --id proxmox-hp-sff
       --provider-name "Proxmox HP SFF"
       --provider-description "HP ProDesk SFF host (192.168.10.21), house, wired"
+
+  dell:
+    <<: *provider
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
+    container_name: omni-infra-provider-proxmox-dell
+    volumes:
+      - ./dell.config.yaml:/config.yaml:ro
+    command: >
+      --config-file /config.yaml
+      --omni-api-endpoint ${OMNI_API_ENDPOINT}
+      --omni-service-account-key ${OMNI_INFRA_PROVIDER_KEY_DELL}
+      --id proxmox-dell
+      --provider-name "Proxmox Dell"
+      --provider-description "Dell OptiPlex 7060 host (192.168.10.16), wired 2.5GbE, CPU worker"

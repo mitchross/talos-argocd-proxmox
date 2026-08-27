@@ -1,7 +1,6 @@
 ---
 # omnictl apply -f omni/machine-classes/dell-worker.yaml
-# CPU-only Dell worker behind the AX86U media bridge (192.168.10.16).
-# See docs/domains/networking/wifi-proxmox-talos-worker.md.
+# CPU-only worker on the Dell OptiPlex 7060 (192.168.10.16), wired 2.5GbE.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -10,18 +9,19 @@ spec:
   matchlabels: []
   autoprovision:
     providerid: proxmox-dell
-    # DHCP is required for ISO registration; the Talos machine config takes
-    # over with static 192.168.10.119 after installation.
+    # Keep empty: a static `ip=` arg binds to Talos bond0 and blackholes the
+    # guest. DHCP registers the ISO; the machine config takes over after.
     kernelargs: []
     metavalues: []
     providerdata: |
-      cores: 4
+      # i5-8500, 6 physical cores / 54.7 GiB usable (56 GB installed, iGPU
+      # reserved). All six cores and 46 GiB leave ~8 GiB for Proxmox, the
+      # provider agent, and qemu overhead.
+      cores: 6
       sockets: 1
-      # The OptiPlex has 64 GiB physical RAM. Keep 16 GiB for Proxmox and the
-      # provider; the live VM was already proven at this 48 GiB allocation.
-      memory: 49152
+      memory: 47104
       # Boot disk carries Talos + the container image cache; 64 GiB put this node
-      # in permanent DiskPressure. Must stay under the local-lvm thin pool size.
+      # in permanent DiskPressure. Must stay under the 151 GiB local-lvm pool.
       disk_size: 128
       storage_selector: name == "local-lvm"
       network_bridge: vmbr0
@@ -30,11 +30,11 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # Dedicated Longhorn disk on the added Samsung 500 GB SSD. Before
-      # applying this class, create a Proxmox thick-LVM storage named
-      # `dell-ssd-vmstore` on the currently unused /dev/sda. 400 GiB leaves
-      # about 66 GiB of device headroom. Do not use LVM-thin: this repo has
-      # measured its metadata commits collapsing fsync performance.
+      # Longhorn disk on the Samsung 500 GB SSD (/dev/sda), a different spindle
+      # from the boot pool: replica writes never contend with image pulls. Needs
+      # a thick-LVM Proxmox storage `dell-ssd-vmstore`; 400 GiB of 465 leaves
+      # ~65 GiB headroom. Do not use LVM-thin: this repo has measured its
+      # metadata commits collapsing fsync performance.
       additional_disks:
         - storage_selector: name == "dell-ssd-vmstore"
           disk_size: 400
