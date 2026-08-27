@@ -1,11 +1,11 @@
-# Copy to hp-sff.config.yaml and fill in credentials. *.config.yaml is gitignored.
+# Copy to dell.config.yaml and fill in credentials. *.config.yaml is gitignored.
 proxmox:
-  # HP ProDesk SFF host (wired LAN).
-  url: "https://192.168.10.21:8006/api2/json"
+  # Dell OptiPlex 7060 host (wired 2.5GbE).
+  url: "https://192.168.10.16:8006/api2/json"
   insecureSkipVerify: true
 
   # Dedicated omni@pve account with the Administrator role at `/`, same as the
-  # other hosts. API tokens are NOT used: they have had insufficient permissions
+  # HP hosts. API tokens are NOT used: they have had insufficient permissions
   # AND the user@realm!tokenid secret format breaks on special characters.
   username: "omni"
   password: "CHANGE_ME"

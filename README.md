@@ -92,7 +92,7 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | | Threadripper GPU + workers | Multi-node prod |
 > |---|---|---|
 > | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
-> | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` + `hp-sff-worker.yaml` (`dell-worker.yaml` when the Dell returns) | `omni/machine-classes/` |
+> | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` + `hp-sff-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
 > | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; HP micro (shed, wifi): 1 worker; HP SFF (house, wired): 1 worker | 3 CP + 3 workers + 1 GPU |
 
@@ -438,7 +438,7 @@ Network
 | **ArgoCD not syncing** | `kubectl get applicationsets -n argocd` · `kubectl describe applicationset infrastructure -n argocd` · check for stale operations before reverting Git: `kubectl get application argocd -n argocd -o yaml` |
 | **Cilium issues** | `cilium status` · `kubectl logs -n kube-system -l k8s-app=cilium` · `cilium connectivity test` |
 | **Storage issues** | `kubectl get pvc -A` · `kubectl get pods -n longhorn-system` |
-| **Longhorn manager crashlooping on the webhook / every PVC Pending** | Check cross-node pod networking first: `kubectl exec -n kube-system <cilium-pod> -c cilium-agent -- cilium-health status`. `Node 1/1` with `Endpoints 0/1` means the pod overlay is broken to that node, not Longhorn — see [Wi-Fi worker: VXLAN overlay failure](docs/domains/networking/wifi-proxmox-talos-worker.md#known-failure-pod-overlay-vxlan-does-not-cross-the-wi-fi-bridge) |
+| **Longhorn manager crashlooping on the webhook / every PVC Pending** | Check cross-node pod networking first: `kubectl exec -n kube-system <cilium-pod> -c cilium-agent -- cilium-health status`. `Node 1/1` with `Endpoints 0/1` means the pod overlay is broken to that node, not Longhorn — see [Dell worker: nodes Ready but pods cannot cross nodes](docs/domains/networking/dell-proxmox-talos-worker.md#known-failure-nodes-are-ready-but-pods-cannot-cross-nodes) |
 | **Secrets not syncing** | `kubectl get externalsecret -A` · `kubectl get pods -n 1passwordconnect` · `kubectl describe clustersecretstore 1password` |
 | **GPU issues** | `kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true` · `kubectl get pods -n gpu-operator` |
 | **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Succeeded` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |
