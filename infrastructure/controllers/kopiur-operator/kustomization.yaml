@@ -15,7 +15,7 @@ helmCharts:
     repo: oci://ghcr.io/home-operations/charts
     # renovate: datasource=docker depName=ghcr.io/home-operations/charts/kopiur
     # Chart version == app version. Pre-1.0: re-verify the 8 CRDs on every bump.
-    version: 0.10.3
+    version: 0.10.4
     releaseName: kopiur
     namespace: kopiur-system
     # NEVER remove includeCRDs: true — it IS the CRD lifecycle here (helm doesn't manage crds/ on upgrade).
