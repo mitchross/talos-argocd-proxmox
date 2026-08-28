@@ -58,7 +58,7 @@ spec:
             - --fit
             - "off"
             - --override-tensor
-            - '^per_layer_token_embd\.weight$=CPU,blk\.(([0123][0123456789]|40|41|42|43|44|45|46))\.ffn_.*=CPU'
+            - '^per_layer_token_embd\.weight$=CPU,blk\.((9|[123][0123456789]|40|41|42|43|44|45|46))\.ffn_.*=CPU'
             - --load-mode
             - mmap
             - --tensor-read-lazy
