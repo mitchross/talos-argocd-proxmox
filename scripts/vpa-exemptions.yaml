@@ -4,6 +4,54 @@
 coverageExemptions:
   - apiVersion: apps/v1
     kind: Deployment
+    namespace: litellm
+    name: litellm
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: hindsight
+    name: hindsight
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: ninfer
+    name: ninfer-server
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: llama-cpp
+    name: llama-cpp-server
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: open-webui
+    name: open-webui
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: perplexica
+    name: perplexica
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: vllm
+    name: vllm-server
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: presenton
+    name: presenton
+    reason: >-
+      AI workload on the dedicated GPU node: memory is sized to the Threadripper's fixed VFIO-pinned allocation, not to observed usage. A VPA recommendation that climbs above that allocation cannot be satisfied and crashed the host once.
+  - apiVersion: apps/v1
+    kind: Deployment
     namespace: comfyui
     name: comfyui
     reason: "Scale-swap GPU workload is intentionally kept at replicas=0."
