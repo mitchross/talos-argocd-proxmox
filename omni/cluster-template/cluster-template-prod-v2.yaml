@@ -9,7 +9,9 @@ name: talos-prod-cluster-v2
 labels:
   cluster-id: "2"
 kubernetes:
-  version: v1.37.0
+  # Ceiling, not a preference: Omni rejects anything above this against Talos
+  # 1.13.9. Kubernetes 1.37 needs Talos 1.14, which is not GA.
+  version: v1.36.4
 talos:
   version: v1.13.9
 patches:
