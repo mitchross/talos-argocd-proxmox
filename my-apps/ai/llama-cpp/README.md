@@ -15,18 +15,15 @@ Karakeep, and other consumers do not need a coordinated rename for this trial.
 
 | Input | Pin |
 |---|---|
-| Engine source | upstream llama.cpp `ca3d5a3e10d53f7ea672cb9b6178faca3e2807bc` |
-| Engine image | `ghcr.io/mitchross/llama.cpp:server-cuda-qwen4exp-ca3d5a3e@sha256:d65024550d73e4746f0147cb877f6b98fb7885258b1e88d6dcd761a69964d029` |
+| Engine source | upstream llama.cpp `4e97ac86ebe2c4cb8212d98d2641ad6768810896` (`b10666`) |
+| Engine image | `ghcr.io/ggml-org/llama.cpp:server-cuda-b10666@sha256:a2d04d1d1c2b2abe287fef9a22a3700a7fa20aec4c4ab56135e0099f38119848` (amd64) |
 | Model repository | `unsloth/Qwen3.8-Flash-Next-GGUF` revision `c8b5954a88c2775c546b92593eda40ea041d3176` |
 | Weights | `Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf` through `00004-of-00004.gguf` |
 | Vision projector | `mmproj-F16.gguf`, SHA-256 `1f7b7f0b984cf065c604360c29c8098362ed61b290db0ff12c6f360bb1a8a980` |
 
-The newest official image available during this migration, `b10644`, predates
-the qwen4exp merge commit `6c84c7d5d8833c6e0df69628f75a0f599797934e`.
-`build-qwen4exp-image.sh` therefore reproduces the temporary CUDA 12.8,
-Ampere-only server image from the pinned post-merge source commit.
-The temporary image lives in the public `mitchross/llama.cpp` GHCR package so
-Talos can pull it anonymously. The Deployment also pins its manifest digest.
+Official build `b10666` is produced from a commit after the qwen4exp merge
+commit `6c84c7d5d8833c6e0df69628f75a0f599797934e`. The Deployment pins the
+official tag and its linux/amd64 manifest digest; do not use pre-merge `b10236`.
 
 The wave-0 Sync hook downloads and verifies all four Q4 shards and the public
 F16 projector on the existing RWX model share. It resumes `.part` files,
