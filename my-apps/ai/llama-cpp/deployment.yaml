@@ -131,9 +131,12 @@ spec:
             requests:
               nvidia.com/gpu: "1"
               cpu: "20"
-              memory: 56Gi
+              # Dedicated AI node: reserve generously and cap near node
+              # allocatable. VFIO pins the whole guest, so the ceiling is the
+              # Threadripper's RAM, not this number -- see omni docs.
+              memory: 72Gi
             limits:
-              memory: 76Gi
+              memory: 88Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: models
