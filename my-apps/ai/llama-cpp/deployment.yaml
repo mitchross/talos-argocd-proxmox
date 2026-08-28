@@ -47,7 +47,7 @@ spec:
             - /models/qwen3.8-flash-next-gguf/mmproj-BF16.gguf
             - --no-mmproj-offload
             - --alias
-            - qwen3.8-27b
+            - Qwen3.8-Flash-Next Q4
             - --ctx-size
             - "131072"
             - --batch-size
