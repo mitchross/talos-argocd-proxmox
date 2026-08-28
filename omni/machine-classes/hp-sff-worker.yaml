@@ -12,8 +12,8 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      # i5-8500, 6 physical cores / 48 GiB on the host. All six cores and 40 GiB
-      # leave ~8 GiB for Proxmox, the provider agent, and qemu overhead.
+      # i5-8500, 6 physical cores / 62 GiB on the host, shared with the
+      # control-plane VM: 40 + 12 GiB leaves ~10 GiB for Proxmox and qemu.
       cores: 6
       sockets: 1
       memory: 40960

@@ -1,0 +1,38 @@
+---
+# omnictl apply -f omni/machine-classes/hp-sff-control-plane.yaml
+# Control plane on the HP ProDesk SFF (192.168.10.21), wired LAN.
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: hp-sff-control-plane
+spec:
+  matchlabels: []
+  autoprovision:
+    providerid: proxmox-hp-sff
+    kernelargs: []
+    metavalues: []
+    providerdata: |
+      # 4 vCPU alongside the worker's 6 on a 6-core i5-8500. CPU is not the
+      # constraint here; disk latency under etcd is.
+      cores: 4
+      sockets: 1
+      # Steady state is ~7.5 GiB; 12 GiB keeps etcd headroom. With the worker's
+      # 40 GiB that leaves ~10 GiB of the host's 62 GiB for Proxmox and qemu.
+      memory: 12288
+      disk_size: 100
+      # A dedicated second SSD, thick LVM. Keeping etcd off hp-prodesk-vmstore
+      # is the point: that disk also carries Proxmox root and ~27 Longhorn
+      # replicas, and etcd is fsync-latency-bound. Never lvmthin here -- thin
+      # metadata commits collapse fsync, which is the one thing etcd needs.
+      storage_selector: name == "hp-sff-cp-vmstore"
+      network_bridge: vmbr0
+      disk_ssd: true
+      disk_discard: true
+      disk_iothread: true
+      disk_cache: none
+      disk_aio: io_uring
+      cpu_type: host
+      machine_type: q35
+      bios: seabios
+      vga: std
+      balloon: false
