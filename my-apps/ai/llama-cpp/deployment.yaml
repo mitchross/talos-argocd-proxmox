@@ -131,9 +131,9 @@ spec:
             requests:
               nvidia.com/gpu: "1"
               cpu: "20"
-              memory: 80Gi
+              memory: 56Gi
             limits:
-              memory: 94Gi
+              memory: 76Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: models

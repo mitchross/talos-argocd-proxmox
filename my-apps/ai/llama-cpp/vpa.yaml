@@ -16,6 +16,12 @@ spec:
       - containerName: llama-cpp-server
         controlledResources: [cpu, memory]
         controlledValues: RequestsOnly
+        # Without maxAllowed the recommendation only ever climbs: it reached
+        # 95 GiB against a 58 GiB working set, drove node requests to 99%, and
+        # the host was resized past what VFIO can pin -- which crashed it.
         minAllowed:
           cpu: "20"
-          memory: 80Gi
+          memory: 56Gi
+        maxAllowed:
+          cpu: "28"
+          memory: 72Gi
