@@ -35,6 +35,7 @@ wave-1 Deployment mounts the share read-only and starts after the hook succeeds.
 - one whole RTX 3090 and one parallel slot
 - 131,072-token context with symmetric q8_0 K/V cache
 - Flash Attention and native Jinja; reasoning enabled at low effort
+- BF16 vision enabled with the projector on CPU to preserve the 131K GPU KV budget
 - MTP disabled because the merged Flash-Next path does not include final MTP support
 - automatic fit disabled; PLE and blocks 9-46 FFN tensors explicitly placed on CPU
 - `--load-mode mmap --tensor-read-lazy auto`; no mlock, so tensors larger than
