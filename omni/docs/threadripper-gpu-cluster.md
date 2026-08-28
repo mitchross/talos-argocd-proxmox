@@ -16,32 +16,67 @@ Kubernetes API until it returns.
 
 ## Storage controllers
 
-Measure the host in front of you; do not reason from a controller's reputation.
+**The X399 chipset on this host is failing. Never put a disk on it.**
 
-The Threadripper's onboard AMD X399 SATA controller is the one that misbehaves
-here. Its boot SSD accumulated **442 SATA CRC errors** — link-layer, so cabling
-or the port rather than the flash — and the drives on it threw full-queue NCQ
-timeouts with hard link resets, a handful every boot. Moving all three disks to
-a 4-port Marvell 88SE9215 add-in card stopped both: zero ATA exceptions and zero
-new CRC errors since, with host IO pressure dropping from 10-21% to under 3%.
+Its internal PCIe bridge latches a fatal error within minutes of every boot, and
+the correctable-error counters overflow in the same window:
 
-The cost is real and worth knowing: that card negotiates PCIe 2.0 **x1**
-(`LnkSta: Speed 5GT/s, Width x1`), so every disk behind it shares roughly
-400 MB/s. It shows up in RAID resyncs and the `ssd-ent` flash tier, not in
-ordinary VM IO. Check what a card actually negotiates before trusting its port
-count:
+```
+uplink 00:01.1   CESta: BadTLP+ BadDLLP+ Rollover+ Timeout+
+bridge 01:00.2   DevSta: CorrErr+ FatalErr+ UnsupReq+
+```
+
+All five of the chipset's downstream PCIe ports are dead (`LnkCap` x4 against
+`LnkSta: Width x0`), which is why both onboard Intel NICs and the WiFi no longer
+appear in `lspci` at all. One of its USB ports fails to enumerate. Everything
+CPU-attached on this board works perfectly.
+
+Disks on the chipset controller read at **51-66 MB/s with zero ATA errors** on a
+`8GT/s x4` link that offers ~3.9 GB/s. A clean SATA link delivering a tenth of
+its rate means the corruption is above SATA, where retries never surface as ATA
+errors. **Throughput is the diagnostic that error counters miss.**
+
+### Where the disks belong
+
+An ASMedia ASM1166 in an **M.2 socket**. M.2 on this board is CPU-attached with
+PCIe 3.0 lanes, so it negotiates `8GT/s x2` (~1.97 GB/s) and never touches the
+chipset. Measured across the same three SSDs and the same cables:
+
+| Controller | PCIe link | Single disk | All three concurrent |
+|---|---|---|---|
+| Onboard X399 chipset | 8GT/s x4 | 51-66 MB/s | hung |
+| Marvell 88SE9215 (PCIe card) | 5GT/s **x1** | 381 MB/s | 506 MB/s total |
+| **ASM1166 (M.2 adapter)** | 8GT/s **x2** | **482-516 MB/s** | **1,526 MB/s total** |
+
+Each disk holds ~510 MB/s while all three run — the SATA III link itself is now
+the limit, not the controller.
+
+Cheap 4-port PCIe SATA cards are hard-wired to PCIe 2.0 x1: `LnkCap` equals
+`LnkSta`, so no slot improves them. Roughly 500 MB/s shared across every port,
+which a single SATA SSD can saturate. Check before buying a slot card:
 
 ```bash
 lspci -vv -s <bdf> | grep -E 'LnkCap:|LnkSta:'
 ```
 
+### Cabling is a separate fault from the controller
+
+The boot SSD carries 442 SATA CRC errors — link-layer, so cable or connector,
+not flash. Replacing the cables stopped them accumulating and ended the NCQ
+timeouts, independently of which controller the disks were on. Both faults were
+real, and each needed its own fix. When two variables change together, swap one
+at a time and measure; the intermediate configuration that looks like a complete
+fix can easily be hiding a second fault.
+
 ## Why etcd is not on the Threadripper
 
 The Threadripper hard-locks — no panic, no oops, nothing written to disk, the
-journal simply stops mid-line. Its SATA path is the leading suspect: `ata5`
-throws full-queue NCQ timeouts with hard link resets, and the boot SSD has
-accumulated hundreds of SATA CRC errors. That host must never carry etcd or any
-single-replica data that cannot be rebuilt.
+journal simply stops mid-line. The boot disk sat on the failing X399 chipset
+described above, and when that link wedges the root filesystem disappears
+instantly, which is exactly that signature. Moving the disks off the chipset
+ended the ATA errors, but a board whose chipset latches fatal PCIe errors every
+boot has not earned back the cluster's only etcd member. That host must not
+carry etcd or any single-replica data that cannot be rebuilt.
 
 It keeps the GPU worker because the RTX 3090 is physically in it, and because a
 GPU node is the cheapest thing to lose: the workloads are stateless inference
