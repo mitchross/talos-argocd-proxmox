@@ -5,11 +5,11 @@ This is the active OpenAI-compatible chat, tool, and vision backend:
 - in cluster: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - on the LAN: `https://llama.vanillax.me/v1` and the compatibility hostname
   `https://vllm.vanillax.me/v1`
-- API model: `qwen3.8-27b`
+- API model: `Qwen3.8-Flash-Next Q4`
 
-`qwen3.8-27b` is temporarily a compatibility alias. The physical model is
-Qwen3.8-Flash-Next UD-Q4_K_XL, so existing Pi, Perplexica, Deal Scout,
-Karakeep, and other consumers do not need a coordinated rename for this trial.
+The API model name identifies the physical Qwen3.8-Flash-Next UD-Q4_K_XL
+checkpoint. Do not use `qwen3.8-27b` for this model; that name belongs to the
+separate 27B checkpoint.
 
 ## Pinned inputs
 
