@@ -1,44 +1,76 @@
-# llama.cpp — Qwen3.8-27B on one RTX 3090
+# llama.cpp — Qwen3.8-Flash-Next Q4 on one RTX 3090
 
-This is the active OpenAI-compatible chat and vision backend:
+This is the active OpenAI-compatible chat, tool, and vision backend:
 
 - in cluster: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - on the LAN: `https://llama.vanillax.me/v1` and the compatibility hostname
   `https://vllm.vanillax.me/v1`
-- served model: `qwen3.8-27b`
+- API model: `Qwen3.8-Flash-Next Q4`
 
-The runtime follows `club-3090/docs/SINGLE_CARD.md` at commit `4e6c3363` and
-its `llamacpp/qwen38-27b-single-iq4xs` compose. The Kubernetes profile uses
-the guide's serving-grade override: symmetric `q8_0` KV at 131,072 context,
-rather than the incubating `q4_0` KV / 262K exhibit.
+The API model name identifies the physical Qwen3.8-Flash-Next UD-Q4_K_XL
+checkpoint. Do not use `qwen3.8-27b` for this model; that name belongs to the
+separate 27B checkpoint.
 
 ## Pinned inputs
 
 | Input | Pin |
 |---|---|
-| Engine | `ghcr.io/ggml-org/llama.cpp:server-cuda-b10236@sha256:fd68d13013141833e8214ecad6e1fbefb532db6a00b980cdecfe33603dbf2675` |
-| Model repository | `unsloth/Qwen3.8-27B-GGUF` revision `4ca720788d1e01f1bff70c033e0d0028fd02e502` |
-| Weights | `Qwen3.8-27B-UD-IQ4_XS.gguf`, SHA-256 `40fac4050e940397dbf13087afd50f4734a11805bf9d65ef8ddd7483470e6199` |
-| Vision projector | `mmproj-F16.gguf`, SHA-256 `cbb841a9ee0636b2ec172f5bb8df2ea8dfeb01e90fe7c6126581d662a0b4e43e` |
+| Engine source | upstream llama.cpp `4e97ac86ebe2c4cb8212d98d2641ad6768810896` (`b10666`) |
+| Engine image | `ghcr.io/ggml-org/llama.cpp:server-cuda-b10666@sha256:a2d04d1d1c2b2abe287fef9a22a3700a7fa20aec4c4ab56135e0099f38119848` (amd64) |
+| Model repository | `unsloth/Qwen3.8-Flash-Next-GGUF` revision `c8b5954a88c2775c546b92593eda40ea041d3176` |
+| Weights | `Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf` through `00004-of-00004.gguf` |
+| Vision projector | `mmproj-BF16.gguf`, SHA-256 `2e788f8c511d8093c7b43cb87b2fd7e14228340318057f8fb20c86df2efe2355` |
 
-The wave-0 Sync hook downloads and verifies both public artifacts on the
-existing RWX model share. The wave-1 Deployment mounts the share read-only and
-starts only after the hook succeeds.
+Official build `b10666` is produced from a commit after the qwen4exp merge
+commit `6c84c7d5d8833c6e0df69628f75a0f599797934e`. The Deployment pins the
+official tag and its linux/amd64 manifest digest; do not use pre-merge `b10236`.
+
+The wave-0 Sync hook downloads and verifies all four Q4 shards and the public
+BF16 projector on the existing RWX model share. It resumes `.part` files,
+checks byte size and SHA-256, and atomically renames verified artifacts. The
+wave-1 Deployment mounts the share read-only and starts after the hook succeeds.
 
 ## Runtime profile
 
-- one whole RTX 3090, one parallel slot
-- UD-IQ4_XS weights plus the F16 vision projector
-- symmetric q8_0 K/V cache, 131,072-token allocation
-- built-in MTP drafter at depth 2
-- Flash Attention, 4,096 batch and 512 micro-batch
-- native Jinja template, reasoning off by default
-- non-thinking sampling: temperature 0.7, top-p 0.8, top-k 20,
-  presence penalty 1.5
+- one whole RTX 3090 and one parallel slot
+- 131,072-token context with symmetric q8_0 K/V cache
+- Flash Attention and native Jinja; reasoning enabled at low effort
+- BF16 vision enabled with the projector on CPU to preserve the 131K GPU KV budget
+- MTP disabled because the merged Flash-Next path does not include final MTP support
+- automatic fit disabled; PLE and blocks 9-46 FFN tensors explicitly placed on CPU
+- `--load-mode mmap --tensor-read-lazy auto`; no mlock, so tensors larger than
+  4 GiB (including PLE/ngram) are demand-paged instead of being forced resident
+- 20 CPU / 80 GiB requests, no CPU limit, and a 94 GiB memory limit; the 100
+  GiB Talos VM keeps roughly 6 GiB outside the pod for Talos and node services
+  while allowing useful mmap page cache. The sole GPU remains limit=request=1.
 
-The guide measured its `q4_0` / 262K profile at a different power envelope.
-This cluster remains capped at 200 W; do not raise the cap to chase those
-numbers. Validate long-context, vision, tools, and sustained load locally.
+The NFS export reported 728 GiB free before download, so no existing model was
+deleted. The PVC's 150 GiB capacity is a static Kubernetes declaration, not an
+export quota.
+
+## First successful baseline — 2026-08-28
+
+- llama.cpp `b10666` / `4e97ac86e`; GGUF architecture `qwen4exp`
+- model plus CPU-resident BF16 projector loaded in 3m51.26s from NFS
+- one slot with `n_ctx_slot = 131072`; zero container restarts after rollout
+- RTX 3090 used 24,074 MiB idle and 24,114 MiB after smoke tests
+- cgroup memory was 79.4 GiB after tests and peaked at 80.6 GiB; process RSS
+  was 76.1 GiB (73.0 GiB file-backed, 2.9 GiB anonymous). This confirms the
+  PLE/model mapping is mixed mmap + page cache rather than fully resident anon
+  memory. `kubectl top` working set was 35.5 GiB for the pod and 47.5 GiB for
+  the node after testing.
+- text smoke test: 10.46 prompt tok/s, 4.95 generation tok/s, 11.77s total
+- warm streaming TTFT: 0.218s; 13.60 prompt tok/s and 6.29 generation tok/s
+- tool smoke test: valid `get_weather({"city":"Detroit"})` call; 25.77 prompt
+  tok/s and 5.67 generation tok/s
+- vision smoke test: correctly answered `Bright red` for a 224x224 red PNG;
+  14.01 prompt tok/s and 7.19 generation tok/s
+
+The initial blocks 10-46 placement left 21,954 MiB allocated and failed a
+612.01 MiB q8_0 KV allocation. Moving only block 9 FFN to CPU reduced model
+placement to 20,444 MiB and allowed the 131K KV cache to initialize. The BF16
+projector then needed another 865.48 MiB on CUDA, so it remains enabled but
+uses `--no-mmproj-offload`.
 
 ## Rollback
 
