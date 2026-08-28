@@ -48,6 +48,30 @@ The NFS export reported 728 GiB free before download, so no existing model was
 deleted. The PVC's 150 GiB capacity is a static Kubernetes declaration, not an
 export quota.
 
+## First successful baseline — 2026-08-28
+
+- llama.cpp `b10666` / `4e97ac86e`; GGUF architecture `qwen4exp`
+- model plus CPU-resident BF16 projector loaded in 3m51.26s from NFS
+- one slot with `n_ctx_slot = 131072`; zero container restarts after rollout
+- RTX 3090 used 24,074 MiB idle and 24,114 MiB after smoke tests
+- cgroup memory was 79.4 GiB after tests and peaked at 80.6 GiB; process RSS
+  was 76.1 GiB (73.0 GiB file-backed, 2.9 GiB anonymous). This confirms the
+  PLE/model mapping is mixed mmap + page cache rather than fully resident anon
+  memory. `kubectl top` working set was 35.5 GiB for the pod and 47.5 GiB for
+  the node after testing.
+- text smoke test: 10.46 prompt tok/s, 4.95 generation tok/s, 11.77s total
+- warm streaming TTFT: 0.218s; 13.60 prompt tok/s and 6.29 generation tok/s
+- tool smoke test: valid `get_weather({"city":"Detroit"})` call; 25.77 prompt
+  tok/s and 5.67 generation tok/s
+- vision smoke test: correctly answered `Bright red` for a 224x224 red PNG;
+  14.01 prompt tok/s and 7.19 generation tok/s
+
+The initial blocks 10-46 placement left 21,954 MiB allocated and failed a
+612.01 MiB q8_0 KV allocation. Moving only block 9 FFN to CPU reduced model
+placement to 20,444 MiB and allowed the 131K KV cache to initialize. The BF16
+projector then needed another 865.48 MiB on CUDA, so it remains enabled but
+uses `--no-mmproj-offload`.
+
 ## Rollback
 
 Set llama.cpp to `replicas: 0`, set `my-apps/ai/vllm/deployment.yaml` to
