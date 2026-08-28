@@ -4,3 +4,7 @@ metadata:
   name: temporal-worker-controller
   labels:
     app.kubernetes.io/name: temporal-worker-controller
+  annotations:
+    # This namespace's UID is the controller's Temporal ManagerIdentity suffix.
+    # Recreating it rotates the UID and wedges every WorkerDeployment at once.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
