@@ -6,17 +6,16 @@ One active OpenAI-compatible local backend, **NOT ollama**:
 
 ### llama.cpp — active, single card
 - Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
-- Served API model: **`qwen3.8-27b`** — temporary compatibility alias for
-  Qwen3.8-Flash-Next UD-Q4_K_XL with BF16 vision and symmetric q8_0 KV at 131K
+- Served API model: **`Qwen3.8-Flash-Next Q4`** — Qwen3.8-Flash-Next
+  UD-Q4_K_XL with BF16 vision and symmetric q8_0 KV at 131K
   on **one** RTX 3090.
-- **Use llama.cpp / `qwen3.8-27b` when wiring an in-cluster app to chat inference.**
+- **Use llama.cpp / `Qwen3.8-Flash-Next Q4` when wiring an in-cluster app to chat inference.**
 
 ### vLLM — parked rollback
 - `replicas: 0`; do not point consumers at `vllm-service` while parked.
 
-All in-cluster consumers request `qwen3.8-27b`, including Karakeep text and
-image inference. ComfyUI's dedicated llama.cpp-client workflow also uses this
-active Service.
+The old `qwen3.8-27b` name is reserved for the separate 27B checkpoint; do not
+use it as a Flash-Next compatibility alias.
 
 **App→backend wiring + capacity rules:
 [`model-catalog.md`](../../docs/domains/ai-gpu/model-catalog.md) ·

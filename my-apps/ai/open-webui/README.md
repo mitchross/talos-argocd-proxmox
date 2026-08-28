@@ -41,10 +41,10 @@ Currently wired up (see `open-webui-configmap.env`):
 | Role                  | Model / Value                                                  |
 |-----------------------|----------------------------------------------------------------|
 | Chat backend          | `OPENAI_API_BASE_URL=http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1` |
-| `DEFAULT_MODELS`      | `qwen3.8-27b` — llama.cpp `--alias` |
-| `VISION_MODELS`       | `qwen3.8-27b` |
-| `TASK_MODEL`          | `qwen3.8-27b` |
-| `TASK_MODEL_EXTERNAL` | `qwen3.8-27b` |
+| `DEFAULT_MODELS`      | `Qwen3.8-Flash-Next Q4` — llama.cpp `--alias` |
+| `VISION_MODELS`       | `Qwen3.8-Flash-Next Q4` |
+| `TASK_MODEL`          | `Qwen3.8-Flash-Next Q4` |
+| `TASK_MODEL_EXTERNAL` | `Qwen3.8-Flash-Next Q4` |
 | `CONTEXT_WINDOW`      | `131072` (131K) — keep aligned with llama.cpp `--ctx-size`. If smaller, Open WebUI silently trims history / RAG before sending. |
 | Sampling              | `TEMPERATURE=0.7`, `TOP_P=0.80`, `MIN_P=0.0` |
 | Image generation      | ComfyUI — Z-Image-Turbo (text→img, 9 steps), Qwen-Image-Edit-2511 (edit) |
@@ -52,8 +52,8 @@ Currently wired up (see `open-webui-configmap.env`):
 | STT / TTS             | Whisper `medium` on CPU (in-pod), OpenAI TTS voice `alloy` |
 
 llama.cpp is served from `my-apps/ai/llama-cpp/deployment.yaml`; the Open WebUI
-model ID must match its `--alias`. It advertises only `qwen3.8-27b` so the model
-selector stays clean.
+model ID must match its `--alias`. It advertises only `Qwen3.8-Flash-Next Q4`
+so the model selector stays clean.
 
 ## Performance tuning (env ConfigMap)
 

@@ -13,20 +13,20 @@ ComfyUI, and SwarmUI are parked. Exactly one GPU workload may be active.
 
 ```
 Apps / OpenWebUI ──► llama.cpp (replicas: 1, one 3090)
-                         └── qwen3.8-27b (chat, tools, vision; 131,072 tokens)
+                         └── Qwen3.8-Flash-Next Q4 (chat, tools, vision; 131,072 tokens)
 
 vLLM (replicas: 0) ──► parked rollback backend
 ```
 
 ## Active LLM model
 
-llama.cpp exposes one OpenAI-compatible compatibility alias over the
-Flash-Next Q4 GGUF and BF16 projector. `qwen3.8-27b` is temporarily retained as
-the API id even though the physical model is Qwen3.8-Flash-Next.
+llama.cpp exposes the Flash-Next Q4 GGUF and BF16 projector under an API model
+name that matches the physical checkpoint. `qwen3.8-27b` is reserved for the
+separate 27B model and is not a Flash-Next alias.
 
 | API model | Model | Think | Context | Primary Use |
 |---|---|---|---:|---|
-| `qwen3.8-27b` | Qwen3.8-Flash-Next UD-Q4_K_XL + mmproj-BF16 | Low effort | 131K | Chat, tools, vision, and tasks |
+| `Qwen3.8-Flash-Next Q4` | Qwen3.8-Flash-Next UD-Q4_K_XL + mmproj-BF16 | Low effort | 131K | Chat, tools, vision, and tasks |
 
 Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
 
@@ -50,7 +50,7 @@ llama-server natively supports the Anthropic Messages API at `/v1/messages`. No 
 export ANTHROPIC_BASE_URL="http://llama.vanillax.me"
 export ANTHROPIC_AUTH_TOKEN="no-key-required"
 export ANTHROPIC_API_KEY=""
-claude --model "qwen3.8-27b"
+claude --model "Qwen3.8-Flash-Next Q4"
 ```
 
 ### Using with OpenClaw / Other Tools
@@ -111,7 +111,7 @@ For deeper image analysis (visual Q&A, reasoning), use **Qwen 3.8** via Open Web
 ComfyUI can also call llama-server's vision API directly via the `comfyui-llamacpp-client`
 node (URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`). The
 checked-in ComfyUI workflow is parked with ComfyUI and already requests the
-canonical `qwen3.8-27b` id.
+legacy `qwen3.8-27b` id; migrate that parked consumer separately before use.
 
 ## Video Generation (ComfyUI)
 
@@ -237,7 +237,7 @@ The job downloads (skips existing):
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`qwen3.8-27b` currently maps to Flash-Next with reasoning enabled at low effort.
+`Qwen3.8-Flash-Next Q4` uses reasoning enabled at low effort.
 
 ### RAG Tuning
 
