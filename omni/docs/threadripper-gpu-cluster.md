@@ -16,11 +16,24 @@ Kubernetes API until it returns.
 
 ## Storage controllers
 
-Put SATA disks on a host's native chipset controller. A cheap PCIe add-in card
-is not equivalent: a 4-port Marvell 88SE9215 negotiates PCIe 2.0 **x1**, so
-every disk behind it shares roughly 400 MB/s, and that controller family is a
-known source of NCQ timeouts and link resets under Linux. A boot disk behind a
-controller that wedges takes the whole host down with no logs.
+Measure the host in front of you; do not reason from a controller's reputation.
+
+The Threadripper's onboard AMD X399 SATA controller is the one that misbehaves
+here. Its boot SSD accumulated **442 SATA CRC errors** — link-layer, so cabling
+or the port rather than the flash — and the drives on it threw full-queue NCQ
+timeouts with hard link resets, a handful every boot. Moving all three disks to
+a 4-port Marvell 88SE9215 add-in card stopped both: zero ATA exceptions and zero
+new CRC errors since, with host IO pressure dropping from 10-21% to under 3%.
+
+The cost is real and worth knowing: that card negotiates PCIe 2.0 **x1**
+(`LnkSta: Speed 5GT/s, Width x1`), so every disk behind it shares roughly
+400 MB/s. It shows up in RAID resyncs and the `ssd-ent` flash tier, not in
+ordinary VM IO. Check what a card actually negotiates before trusting its port
+count:
+
+```bash
+lspci -vv -s <bdf> | grep -E 'LnkCap:|LnkSta:'
+```
 
 ## Why etcd is not on the Threadripper
 
