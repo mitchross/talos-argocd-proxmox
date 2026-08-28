@@ -174,9 +174,9 @@ isn't enough to plan around.
   disk plus any `additional_disks` you declare in the machine class, and
   provisions them all at VM creation — so extra data disks get recreated
   with the VM rather than needing a manual Proxmox attach (see
-  `omni/machine-classes/threadripper-gpu-worker.yaml`). The small CPU-only
-  `threadripper-worker` deliberately uses `local-lvm` so it does not consume
-  capacity from those Longhorn pools. You can still plan
+  `omni/machine-classes/threadripper-gpu-worker.yaml`). The CPU-only workers
+  deliberately keep their boot disks off those pools so they do not consume
+  Longhorn capacity. You can still plan
   storage as Longhorn replicas or use external storage (NFS to TrueNAS,
   RustFS S3) for stateful data.
 - **Extensions must be baked into the Talos image OR declared in the

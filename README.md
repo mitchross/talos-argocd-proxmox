@@ -92,9 +92,9 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | | Threadripper GPU + workers | Multi-node prod |
 > |---|---|---|
 > | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
-> | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` + `hp-sff-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
+> | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; HP micro (shed, wifi): 1 worker; HP SFF (house, wired): 1 worker | 3 CP + 3 workers + 1 GPU |
+> | Topology | HP SFF (house, wired): 1 CP + 1 worker; Threadripper: 1 GPU worker; Dell (house, wired): 1 worker; HP micro (shed, wifi): 1 worker | 3 CP + 3 workers + 1 GPU |
 
 The Threadripper classes intentionally allocate 100 GiB total: 12 GiB to the
 control plane, 24 GiB to the regular worker, and 64 GiB to the GPU worker. This
@@ -127,8 +127,8 @@ and the visible machine identity change only when Omni provisions a replacement
 from that class.
 
 ```bash
-omnictl apply -f omni/machine-classes/threadripper-control-plane.yaml
-omnictl apply -f omni/machine-classes/threadripper-worker.yaml
+omnictl apply -f omni/machine-classes/hp-sff-control-plane.yaml
+omnictl apply -f omni/machine-classes/hp-sff-worker.yaml
 omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
 omnictl apply -f omni/machine-classes/hp-micro-worker.yaml
 omnictl apply -f omni/machine-classes/hp-sff-worker.yaml
