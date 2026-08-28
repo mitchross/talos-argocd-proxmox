@@ -9,17 +9,16 @@ webhookCertificate:
   certManager:
     enabled: true
 
-controller:
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+# Top-level, not under `controller:` — the chart has no such key and ignores it.
+# Two managers contend for the same ManagerIdentity, so keep this at 1.
+replicas: 1
 
-# Leader election is on by default; leave single-replica since this is
-# a homelab and the controller is idempotent on restart.
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
 
 metrics:
   enabled: true
