@@ -44,7 +44,7 @@ spec:
             - --model
             - /models/qwen3.8-flash-next-gguf/unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf
             - --mmproj
-            - /models/qwen3.8-flash-next-gguf/mmproj-F16.gguf
+            - /models/qwen3.8-flash-next-gguf/mmproj-BF16.gguf
             - --alias
             - qwen3.8-27b
             - --ctx-size
@@ -62,7 +62,7 @@ spec:
             - --load-mode
             - mmap
             - --tensor-read-lazy
-            - "on"
+            - "auto"
             - --flash-attn
             - on
             - --cache-type-k
@@ -129,10 +129,10 @@ spec:
           resources:
             requests:
               nvidia.com/gpu: "1"
-              cpu: "24"
-              memory: 76Gi
+              cpu: "20"
+              memory: 80Gi
             limits:
-              memory: 92Gi
+              memory: 94Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: models

@@ -7,7 +7,7 @@ One active OpenAI-compatible local backend, **NOT ollama**:
 ### llama.cpp — active, single card
 - Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - Served API model: **`qwen3.8-27b`** — temporary compatibility alias for
-  Qwen3.8-Flash-Next UD-Q4_K_XL with F16 vision and symmetric q8_0 KV at 131K
+  Qwen3.8-Flash-Next UD-Q4_K_XL with BF16 vision and symmetric q8_0 KV at 131K
   on **one** RTX 3090.
 - **Use llama.cpp / `qwen3.8-27b` when wiring an in-cluster app to chat inference.**
 
@@ -32,7 +32,7 @@ active Service.
   [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
 - **Engine choice:** Qwen3.8-Flash-Next runs on a pinned post-merge llama.cpp
-  qwen4exp build via UD-Q4_K_XL GGUF and the F16 projector. The stock-vLLM
+  qwen4exp build via UD-Q4_K_XL GGUF and the BF16 projector. The stock-vLLM
   W4A16 deployment is a parked rollback.
 - **MTP stays off for Flash-Next.** The merged qwen4exp implementation did not
   include the final Flash-Next MTP path.

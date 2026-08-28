@@ -21,12 +21,12 @@ vLLM (replicas: 0) ──► parked rollback backend
 ## Active LLM model
 
 llama.cpp exposes one OpenAI-compatible compatibility alias over the
-Flash-Next Q4 GGUF and F16 projector. `qwen3.8-27b` is temporarily retained as
+Flash-Next Q4 GGUF and BF16 projector. `qwen3.8-27b` is temporarily retained as
 the API id even though the physical model is Qwen3.8-Flash-Next.
 
 | API model | Model | Think | Context | Primary Use |
 |---|---|---|---:|---|
-| `qwen3.8-27b` | Qwen3.8-Flash-Next UD-Q4_K_XL + mmproj-F16 | Low effort | 131K | Chat, tools, vision, and tasks |
+| `qwen3.8-27b` | Qwen3.8-Flash-Next UD-Q4_K_XL + mmproj-BF16 | Low effort | 131K | Chat, tools, vision, and tasks |
 
 Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
 
@@ -39,7 +39,7 @@ Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
 | `-b 4096 -ub 512` | Global | Batch sizes for prompt processing (4096 logical, 512 physical) |
 | `--parallel 1` | Global | Single-user -- maximize VRAM for context, not concurrent slots |
 | `--fit off` + `-ot` | Placement | Explicit CPU FFN placement; do not use automatic fit for the first boot |
-| `--load-mode mmap --tensor-read-lazy on` | PLE | Demand-page the large ngram table; do not mlock it |
+| `--load-mode mmap --tensor-read-lazy auto` | PLE | Demand-page tensors over 4 GiB, including the large ngram table; do not mlock it |
 | MTP | Off | Flash-Next's merged qwen4exp path does not include final MTP support |
 
 ### Using with Claude Code CLI
