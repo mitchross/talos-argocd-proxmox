@@ -23,6 +23,7 @@ spec:
                     operator: In
                     values:
                       - general-worker
+                      - dell-worker
                       - hp-sff-worker
       containers:
         - name: download
