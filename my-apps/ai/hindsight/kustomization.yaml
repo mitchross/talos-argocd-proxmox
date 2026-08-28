@@ -10,6 +10,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - vpa.yaml
   - kopiur/hindsight-db.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.

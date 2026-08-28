@@ -5,6 +5,7 @@ namespace: vllm
 
 # List EVERY file here — unlisted YAML is never deployed (Kustomize only renders what's listed).
 resources:
+  - vpa.yaml
   - namespace.yaml
   - pvc.yaml
   - deployment.yaml

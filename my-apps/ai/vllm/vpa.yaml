@@ -1,0 +1,20 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vllm-server
+  namespace: vllm
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vllm-server
+  updatePolicy:
+    # Whole-card scale-swap workload: learn recommendations without mutating
+    # the carefully sized GPU-serving pod.
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly

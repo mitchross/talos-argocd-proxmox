@@ -9,3 +9,4 @@ resources:
 - deployment.yaml
 - service.yaml
 - httproute.yaml
+- vpa.yaml
