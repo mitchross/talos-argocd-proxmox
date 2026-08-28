@@ -36,7 +36,7 @@ wave-1 Deployment mounts the share read-only and starts after the hook succeeds.
 - 131,072-token context with symmetric q8_0 K/V cache
 - Flash Attention and native Jinja; reasoning enabled at low effort
 - MTP disabled because the merged Flash-Next path does not include final MTP support
-- automatic fit disabled; PLE and blocks 10-46 FFN tensors explicitly placed on CPU
+- automatic fit disabled; PLE and blocks 9-46 FFN tensors explicitly placed on CPU
 - `--load-mode mmap --tensor-read-lazy auto`; no mlock, so tensors larger than
   4 GiB (including PLE/ngram) are demand-paged instead of being forced resident
 - 20 CPU / 80 GiB requests, no CPU limit, and a 94 GiB memory limit; the 100
