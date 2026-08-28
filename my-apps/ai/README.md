@@ -1,13 +1,13 @@
 # AI Stack Guide
 
-Local AI infrastructure running on one RTX 3090 (24 GB) + 128 GB
-system RAM, 12-core CPU. Time-slicing is OFF; whole-card allocation is
-enforced via the GPU Operator.
+Local AI infrastructure running on one RTX 3090 (24 GB) in the 30-vCPU,
+100 GiB Talos GPU VM. Time-slicing is OFF; whole-card allocation is enforced
+via the GPU Operator.
 
 The GPU workloads (vLLM, llama-cpp, ComfyUI) use whole-card allocation
 (`type: Recreate`, no time-slicing) and scale-swap by committed replica counts.
-llama.cpp is active with multimodal Qwen3.8-27B UD-IQ4_XS; vLLM, ComfyUI, and
-SwarmUI are parked. Exactly one GPU workload may be active.
+llama.cpp is active with multimodal Qwen3.8-Flash-Next UD-Q4_K_XL; vLLM,
+ComfyUI, and SwarmUI are parked. Exactly one GPU workload may be active.
 
 ## Architecture
 
@@ -20,12 +20,13 @@ vLLM (replicas: 0) ──► parked rollback backend
 
 ## Active LLM model
 
-llama.cpp exposes one non-thinking OpenAI-compatible model alias over the
-club-3090 single-card GGUF and F16 projector.
+llama.cpp exposes one OpenAI-compatible compatibility alias over the
+Flash-Next Q4 GGUF and F16 projector. `qwen3.8-27b` is temporarily retained as
+the API id even though the physical model is Qwen3.8-Flash-Next.
 
 | API model | Model | Think | Context | Primary Use |
 |---|---|---|---:|---|
-| `qwen3.8-27b` | Qwen3.8-27B UD-IQ4_XS + mmproj-F16 | Off | 131K | Chat, tools, vision, and tasks |
+| `qwen3.8-27b` | Qwen3.8-Flash-Next UD-Q4_K_XL + mmproj-F16 | Low effort | 131K | Chat, tools, vision, and tasks |
 
 Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
 
@@ -37,7 +38,9 @@ Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
 | `cache-type-v = q8_0` | KV cache | Quantized KV value cache (q8_0 not q4_0 — Qwen GQA sensitive to V cache quant) |
 | `-b 4096 -ub 512` | Global | Batch sizes for prompt processing (4096 logical, 512 physical) |
 | `--parallel 1` | Global | Single-user -- maximize VRAM for context, not concurrent slots |
-| `--spec-type draft-mtp` | Global | Use the GGUF's embedded MTP head at depth 2 |
+| `--fit off` + `-ot` | Placement | Explicit CPU FFN placement; do not use automatic fit for the first boot |
+| `--load-mode mmap --tensor-read-lazy on` | PLE | Demand-page the large ngram table; do not mlock it |
+| MTP | Off | Flash-Next's merged qwen4exp path does not include final MTP support |
 
 ### Using with Claude Code CLI
 
@@ -234,8 +237,7 @@ The job downloads (skips existing):
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`qwen3.8-27b` uses the server's non-thinking default so short structured jobs
-return without a reasoning preamble.
+`qwen3.8-27b` currently maps to Flash-Next with reasoning enabled at low effort.
 
 ### RAG Tuning
 

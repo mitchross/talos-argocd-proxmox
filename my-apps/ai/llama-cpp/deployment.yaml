@@ -37,14 +37,14 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: llama-cpp-server
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10236@sha256:fd68d13013141833e8214ecad6e1fbefb532db6a00b980cdecfe33603dbf2675
+          image: ghcr.io/mitchross/llama.cpp:server-cuda-qwen4exp-ca3d5a3e@sha256:d65024550d73e4746f0147cb877f6b98fb7885258b1e88d6dcd761a69964d029
           imagePullPolicy: IfNotPresent
           command: ["/app/llama-server"]
           args:
             - --model
-            - /models/qwen3.8-27b-gguf/unsloth-iq4xs/Qwen3.8-27B-UD-IQ4_XS.gguf
+            - /models/qwen3.8-flash-next-gguf/unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf
             - --mmproj
-            - /models/qwen3.8-27b-gguf/mmproj-F16.gguf
+            - /models/qwen3.8-flash-next-gguf/mmproj-F16.gguf
             - --alias
             - qwen3.8-27b
             - --ctx-size
@@ -55,6 +55,14 @@ spec:
             - "512"
             - --n-gpu-layers
             - "99"
+            - --fit
+            - "off"
+            - --override-tensor
+            - '^per_layer_token_embd\.weight$=CPU,blk\.(([0123][0123456789]|40|41|42|43|44|45|46))\.ffn_.*=CPU'
+            - --load-mode
+            - mmap
+            - --tensor-read-lazy
+            - "on"
             - --flash-attn
             - on
             - --cache-type-k
@@ -63,13 +71,11 @@ spec:
             - q8_0
             - --parallel
             - "1"
-            - --spec-type
-            - draft-mtp
-            - --spec-draft-n-max
-            - "2"
             - --jinja
             - --reasoning
-            - off
+            - on
+            - --reasoning-effort
+            - low
             - --reasoning-format
             - deepseek
             - --temp
@@ -92,8 +98,6 @@ spec:
           env:
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: compute,utility
-            - name: LLAMA_ARG_CHAT_TEMPLATE_KWARGS
-              value: '{"reasoning_effort":"low"}'
           ports:
             - name: http
               containerPort: 8080
@@ -125,11 +129,11 @@ spec:
           resources:
             requests:
               nvidia.com/gpu: "1"
-              cpu: "6"
-              memory: 32Gi
+              cpu: "24"
+              memory: 76Gi
             limits:
+              memory: 92Gi
               nvidia.com/gpu: "1"
-              memory: 64Gi
           volumeMounts:
             - name: models
               mountPath: /models

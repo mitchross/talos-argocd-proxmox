@@ -16,3 +16,6 @@ spec:
       - containerName: llama-cpp-server
         controlledResources: [cpu, memory]
         controlledValues: RequestsOnly
+        minAllowed:
+          cpu: "24"
+          memory: 76Gi
