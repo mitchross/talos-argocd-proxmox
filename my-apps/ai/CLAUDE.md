@@ -6,8 +6,9 @@ One active OpenAI-compatible local backend, **NOT ollama**:
 
 ### llama.cpp — active, single card
 - Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
-- Served model: **`qwen3.8-27b`** — Qwen3.8-27B UD-IQ4_XS with F16 vision,
-  symmetric q8_0 KV at 131K, and MTP-2 on **one** RTX 3090.
+- Served API model: **`qwen3.8-27b`** — temporary compatibility alias for
+  Qwen3.8-Flash-Next UD-Q4_K_XL with F16 vision and symmetric q8_0 KV at 131K
+  on **one** RTX 3090.
 - **Use llama.cpp / `qwen3.8-27b` when wiring an in-cluster app to chat inference.**
 
 ### vLLM — parked rollback
@@ -25,15 +26,18 @@ active Service.
 - **KV cache must be SYMMETRIC** — `q8_0/q8_0` or `q4_0/q4_0`, never mixed.
   Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
   Qwen3-Coder docs' q8-K/q4-V suggestion.
-- **Context limit = `min(model max, VRAM-affordable KV)`.** The live MTP profile
+- **Context limit = `min(model max, VRAM-affordable KV)`.** The live profile
   allocates 131072 tokens with q8_0 KV and vision; confirm `n_ctx_slot` and loaded
   VRAM after every restart. Historical vLLM measurements are in
   [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
-- **Engine choice:** Qwen 3.8 runs on llama.cpp via UD-IQ4_XS GGUF and the F16
-  projector. The stock-vLLM W4A16 deployment is a parked rollback.
-- **MTP-2 is inherited from the club-3090 profile.** Verify acceptance and
-  throughput from metrics and two warm runs before tuning its depth.
+- **Engine choice:** Qwen3.8-Flash-Next runs on a pinned post-merge llama.cpp
+  qwen4exp build via UD-Q4_K_XL GGUF and the F16 projector. The stock-vLLM
+  W4A16 deployment is a parked rollback.
+- **MTP stays off for Flash-Next.** The merged qwen4exp implementation did not
+  include the final Flash-Next MTP path.
+- **PLE stays lazy and mmap-backed.** Do not add mlock or disable
+  `--tensor-read-lazy`; the 100 GiB Talos VM cannot hold the Q4 model resident.
 - **TurboQuant `turbo3` KV** (≈5x smaller) is coming to mainline llama.cpp
   (PR #21089) — adopt it then for cheap big context.
 
