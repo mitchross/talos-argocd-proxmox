@@ -14,12 +14,12 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      # i5-8500, 6 physical cores / 54.7 GiB usable (56 GB installed, iGPU
-      # reserved). All six cores and 46 GiB leave ~8 GiB for Proxmox, the
-      # provider agent, and qemu overhead.
+      # i5-8500, 6 physical cores / 39 GiB usable after 16 GiB of its RAM moved
+      # to the HP SFF. 30 GiB leaves ~9 GiB for Proxmox, the provider agent, and
+      # qemu overhead.
       cores: 6
       sockets: 1
-      memory: 47104
+      memory: 30720
       # Boot disk carries Talos + the container image cache; 64 GiB put this node
       # in permanent DiskPressure. Must stay under the 151 GiB local-lvm pool.
       disk_size: 128

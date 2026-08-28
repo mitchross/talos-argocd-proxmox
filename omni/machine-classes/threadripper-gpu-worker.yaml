@@ -12,14 +12,13 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      # 24 of the host's 32 threads. At 32 this VM alone could saturate every
-      # thread, starving the control-plane and worker VMs and the host itself.
-      cores: 24
+      # 30 of the host's 32 threads, now that this is the only guest. Never 32:
+      # the host itself needs runway or the box stops answering.
+      cores: 30
       sockets: 1
-      # GPU passthrough pins guest RAM. Provision the general worker before
-      # replacing this VM: while the Dell was offline, this node used ~68 GiB
-      # and must shed non-GPU pods before the 64 GiB cutover.
-      memory: 65536
+      # GPU passthrough pins the whole allocation. 100 GiB is the tested ceiling
+      # on this 125 GiB host -- 120 GiB OOM-locked it.
+      memory: 102400
       disk_size: 450
       storage_selector: name == "nvme0-vmstore"
       network_bridge: vmbr0
