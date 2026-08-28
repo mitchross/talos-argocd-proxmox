@@ -17,5 +17,5 @@ spec:
         controlledResources: [cpu, memory]
         controlledValues: RequestsOnly
         minAllowed:
-          cpu: "24"
-          memory: 76Gi
+          cpu: "20"
+          memory: 80Gi
