@@ -9,6 +9,8 @@ name: talos-prod-cluster-v2
 labels:
   cluster-id: "2"
 kubernetes:
+  # Ceiling, not a preference: Omni rejects anything above this against Talos
+  # 1.13.9. Kubernetes 1.37 needs Talos 1.14, which is not GA.
   version: v1.36.4
 talos:
   version: v1.13.9
@@ -81,7 +83,7 @@ patches:
 ---
 kind: ControlPlane
 machineClass:
-  name: threadripper-control-plane
+  name: hp-sff-control-plane
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
@@ -89,13 +91,13 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
-- name: house-topology
+- name: hp-sff-topology
   inline:
     machine:
-      # Control plane and RTX 3090 worker share the Threadripper/Proxmox
-      # failure domain; each other box carries its own zone.
+      # etcd lives on the HP SFF, off the Threadripper: that host hard-locks
+      # with no panic and no logs, twice inside nine hours.
       nodeLabels:
-        topology.kubernetes.io/zone: house
+        topology.kubernetes.io/zone: hp-sff
 - name: control-plane-performance
   inline:
     cluster:
@@ -318,65 +320,6 @@ patches:
       diskSelector:
         match: "!system_disk && disk.size >= 350u * GB"
       minSize: 350GB
-      grow: true
----
-kind: Workers
-name: workers
-machineClass:
-  name: threadripper-worker
-  size: 1
-systemExtensions:
-- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
-- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
-- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
-- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-patches:
-- name: general-worker
-  inline:
-    machine:
-      nodeLabels:
-        node.vanillax.dev/class: general-worker
-        topology.kubernetes.io/zone: house
-      kubelet:
-        nodeIP:
-          validSubnets:
-          - 192.168.10.0/24
-        extraConfig:
-          serializeImagePulls: false
-          maxPods: 150
-      sysctls:
-        net.core.bpf_jit_harden: 1
-- name: general-longhorn-disks
-  inline:
-    machine:
-      # All-or-nothing annotation: every disk the node should register must be
-      # listed here. Omitting one leaves the node with zero usable disks.
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"tr-ssd","path":"/var/mnt/longhorn-tr-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]}]
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
-- name: general-longhorn-ssd-volume
-  inline:
-    apiVersion: v1alpha1
-    kind: UserVolumeConfig
-    name: longhorn-tr-ssd
-    provisioning:
-      # The only non-system disk is the 140 GiB ssd-ent device. Do NOT add a
-      # `disk.transport == 'scsi'` clause: virtio-scsi never matches it.
-      diskSelector:
-        match: "!system_disk && disk.size >= 100u * GB"
-      minSize: 100GB
       grow: true
 ---
 kind: Workers

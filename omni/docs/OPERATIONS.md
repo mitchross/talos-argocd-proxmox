@@ -48,10 +48,10 @@ Machine classes define the virtual hardware specifications for your Proxmox VMs.
 Apply each machine class individually using the `-f` flag:
 
 ```bash
-omnictl apply -f machine-classes/control-plane.yaml
-omnictl apply -f machine-classes/worker.yaml
-omnictl apply -f machine-classes/gpu-worker.yaml
-omnictl apply -f machine-classes/threadripper-control-plane.yaml
+omnictl apply -f machine-classes/hp-sff-control-plane.yaml
+omnictl apply -f machine-classes/hp-sff-worker.yaml
+omnictl apply -f machine-classes/dell-worker.yaml
+omnictl apply -f machine-classes/hp-micro-worker.yaml
 omnictl apply -f machine-classes/threadripper-gpu-worker.yaml
 ```
 
