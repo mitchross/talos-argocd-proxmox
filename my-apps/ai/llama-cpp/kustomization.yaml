@@ -11,4 +11,3 @@ resources:
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
-  - vpa.yaml
