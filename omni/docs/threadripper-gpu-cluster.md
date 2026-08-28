@@ -127,6 +127,18 @@ removing it destroys cluster state. Instead:
 5. Remove the **old** machine explicitly rather than scaling back to 1 and
    trusting Omni to pick the right one.
 
+## Versions
+
+Talos and Kubernetes are coupled: Omni validates the pair and refuses the sync
+outright with `invalid kubernetes version "X": is not compatible with talos
+version "Y"`. Talos 1.13.9 caps Kubernetes at 1.36.4, which is where this
+cluster sits — there is no headroom until Talos 1.14 is GA and Omni's catalog
+offers it. Check what a Talos release actually allows before planning a bump:
+
+```bash
+omnictl get talosversion <version> -o yaml   # lists every compatible k8s version
+```
+
 ## Operating rules
 
 - Applying a MachineClass changes **future** allocations only. It does not
