@@ -6,7 +6,7 @@ via the GPU Operator.
 
 The GPU workloads (vLLM, llama-cpp, ComfyUI) use whole-card allocation
 (`type: Recreate`, no time-slicing) and scale-swap by committed replica counts.
-llama.cpp is active with multimodal Qwen3.8-Flash-Next UD-Q4_K_XL; vLLM,
+llama.cpp is active with multimodal Qwen3.8-Flash-Next UD-IQ4_XS; vLLM,
 ComfyUI, and SwarmUI are parked. Exactly one GPU workload may be active.
 
 ## Architecture
@@ -26,7 +26,7 @@ separate 27B model and is not a Flash-Next alias.
 
 | API model | Model | Think | Context | Primary Use |
 |---|---|---|---:|---|
-| `Qwen3.8-Flash-Next Q4` | Qwen3.8-Flash-Next UD-Q4_K_XL + mmproj-BF16 | Low effort | 131K | Chat, tools, vision, and tasks |
+| `Qwen3.8-Flash-Next Q4` | Qwen3.8-Flash-Next UD-IQ4_XS + mmproj-BF16 | Low effort | 131K | Chat, tools, vision, and tasks |
 
 Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
 
