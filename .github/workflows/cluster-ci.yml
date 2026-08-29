@@ -64,6 +64,16 @@ jobs:
       - name: Validate official TrueNAS CSI deployment
         run: bash ./scripts/validate-truenas-csi.sh
 
+  llama-cpp-engine-contract:
+    name: llama.cpp Engine Contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate pinned Beellama image and deployment
+        run: bash ./scripts/validate-llama-cpp-engine.sh
+
   render-and-schema:
     name: Kustomize Render and Schema Validation
     runs-on: ubuntu-latest
