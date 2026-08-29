@@ -349,7 +349,7 @@ patches:
         node.longhorn.io/create-default-disk: "config"
       nodeAnnotations:
         node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"nvme1","path":"/var/mnt/longhorn-nvme1","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash"]}]
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash"]}]
 - file: patches/threadripper-gpu-workers.yaml
 - name: kubelet-performance
   inline:
@@ -370,16 +370,16 @@ patches:
           - bind
           - rshared
           - rw
-- name: longhorn-nvme1-volume
+# The 450GB NVMe disk is the AI model cache, not Longhorn: llama.cpp mmaps GGUF weights
+# from here, so page-cache misses are local NVMe reads instead of NFS round trips.
+- name: ai-model-cache-volume
   inline:
     apiVersion: v1alpha1
     kind: UserVolumeConfig
-    name: longhorn-nvme1
+    name: ai-model-cache
     provisioning:
-      # Upper bound added when longhorn-ssd-flash was introduced: without it this
-      # selector would ALSO match the 300GB enterprise-SSD disk and the two volumes
-      # would race for the same device. Sizes are the only thing that distinguishes
-      # them — both are virtio-scsi disks reporting the same model to Talos.
+      # Size is the only thing separating this from the 300GB ssd-flash disk — both are
+      # virtio-scsi disks reporting the same model to Talos. Do not drop the bound.
       diskSelector:
         match: "!system_disk && disk.size >= 400u * GB"
       minSize: 400GB

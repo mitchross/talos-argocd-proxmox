@@ -6,7 +6,9 @@ namespace: llama-cpp
 resources:
   - namespace.yaml
   - pvc.yaml
+  - pvc-model-cache.yaml
   - download-model-job.yaml
+  - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
