@@ -103,7 +103,9 @@
 - Modify: `my-apps/ai/llama-cpp/README.md`
 - Modify: `CLAUDE.md`
 - Modify: `my-apps/ai/CLAUDE.md`
+- Modify: `my-apps/ai/README.md`
 - Modify: `docs/domains/ai-gpu/model-catalog.md`
+- Modify: `docs/domains/ai-gpu/3090-llm-optimization.md`
 
 **Interfaces:**
 - Consumes: the exact runtime and artifact pins from Tasks 1-3.
@@ -127,7 +129,7 @@
 
 - [ ] **Step 5: Commit documentation**
 
-  Stage only the four documentation files and commit `docs(ai): document IQ4_XS placement trial`.
+  Stage only the six current-state documentation files and commit `docs(ai): document IQ4_XS placement trial`.
 
 ### Task 5: Run Static Verification
 
