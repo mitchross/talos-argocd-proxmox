@@ -53,6 +53,8 @@
 
 - Modify: `my-apps/ai/llama-cpp/deployment.yaml`
 - Modify: `my-apps/ai/llama-cpp/README.md`
+- Modify: `CLAUDE.md`
+- Modify: `my-apps/ai/CLAUDE.md`
 
 - [ ] Change `--model` to Atomic shard `00001-of-00033` and `--mmproj` to `mmproj-F16.gguf`.
 - [ ] Remove only the `per_layer_token_embd.weight=CPU` override; initially preserve the current CPU expert-layer pattern to isolate the layout change.
