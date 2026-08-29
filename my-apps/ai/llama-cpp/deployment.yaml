@@ -54,12 +54,12 @@ spec:
             - "4096"
             - --ubatch-size
             - "512"
-            - --n-gpu-layers
-            - "99"
             - --fit
-            - "off"
-            - --n-cpu-moe
-            - "38"
+            - "on"
+            - --fit-ctx
+            - "131072"
+            - --fit-target
+            - "512"
             - --load-mode
             - mmap
             - --tensor-read-lazy
