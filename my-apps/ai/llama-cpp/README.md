@@ -65,7 +65,8 @@ GiB. Together they leave approximately 256 GiB on the 450 GiB cache.
 - Flash Attention and native Jinja; reasoning enabled at low effort
 - F16 vision enabled with the projector on CPU to preserve the 131K GPU KV budget
 - MTP disabled because the merged Flash-Next path does not include final MTP support
-- automatic fit disabled; blocks 9-46 FFN tensors initially placed on CPU
+- automatic fit disabled; the native `--n-cpu-moe 38` path keeps the first 38
+  layers' expert weights on CPU and leaves ten expert layers on the GPU
 - `--load-mode mmap --tensor-read-lazy auto`; no mlock, so tensors larger than
   4 GiB are demand-paged instead of being forced resident. Atomic shard 00002
   contains only the 38.4 GB decimal N-gram table, so it is not interleaved with
@@ -88,9 +89,9 @@ Acceptance requires a warm, single-stream `tg128` result of at least 15 tok/s
 while the server remains configured for a 131,072-token slot. Record `pp512`,
 streaming TTFT, device and cgroup memory, major faults, process read bytes, CPU
 and GPU utilization, plus text, tool-call, and vision correctness. If the
-conservative blocks 9-46 CPU placement misses the target, move one expert
-boundary toward the GPU per measurement round; do not simultaneously change
-context, KV type, or speculative decoding.
+conservative 38-CPU-layer placement misses the target, reduce `--n-cpu-moe`
+one boundary per measurement round; do not simultaneously change context, KV
+type, or speculative decoding.
 
 ## Historical Unsloth baseline — 2026-08-28
 
