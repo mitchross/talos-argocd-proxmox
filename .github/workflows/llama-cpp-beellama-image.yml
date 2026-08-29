@@ -1,0 +1,108 @@
+name: llama.cpp Beellama CUDA image
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/llama-cpp-beellama-image.yml'
+      - 'my-apps/ai/llama-cpp/beellama-image/**'
+      - 'my-apps/ai/llama-cpp/deployment.yaml'
+      - 'scripts/validate-llama-cpp-engine.sh'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/llama-cpp-beellama-image.yml'
+      - 'my-apps/ai/llama-cpp/beellama-image/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/llama-cpp-beellama
+  IMAGE_DIR: my-apps/ai/llama-cpp/beellama-image
+  SOURCE_REF: a82a58a57fc307e5cec0dc68db64d143339be4f2
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate immutable inputs
+        id: meta
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+          version="$(<"$IMAGE_DIR/VERSION")"
+          source_ref="$(<"$IMAGE_DIR/SOURCE_REF")"
+          [[ "$version" =~ ^beellama-staging-v[0-9]+\.[0-9]+\.[0-9]+-r[0-9]+-sm86$ ]]
+          [[ "$source_ref" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$source_ref" == "$SOURCE_REF" ]]
+
+          publish=false
+          if [[ "$EVENT_NAME" != "pull_request" || "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]]; then
+            publish=true
+          fi
+          printf 'publish=%s\nsource_ref=%s\ntag=%s\n' "$publish" "$source_ref" "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Check immutable tag
+        id: exists
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if docker buildx imagetools inspect "$IMAGE:$TAG" > /tmp/image-manifest 2>/dev/null; then
+            digest="$(awk '$1 == "Digest:" { print $2; exit }' /tmp/image-manifest)"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            printf 'digest=%s\nexists=true\n' "$digest" >> "$GITHUB_OUTPUT"
+          else
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to GHCR
+        if: steps.meta.outputs.publish == 'true' && steps.exists.outputs.exists != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish server image
+        if: steps.exists.outputs.exists != 'true'
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: https://github.com/crusaderky/llama.cpp.git#${{ steps.meta.outputs.source_ref }}
+          file: .devops/cuda.Dockerfile
+          target: server
+          platforms: linux/amd64
+          push: ${{ steps.meta.outputs.publish == 'true' }}
+          tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          build-args: |
+            APP_REVISION=${{ steps.meta.outputs.source_ref }}
+            APP_VERSION=${{ steps.meta.outputs.tag }}
+            BASE_CUDA_DEV_CONTAINER=docker.io/nvidia/cuda:12.8.1-devel-ubuntu24.04@sha256:4b9ed5fa8361736996499f64ecebf25d4ec37ff56e4d11323ccde10aa36e0c43
+            BASE_CUDA_RUN_CONTAINER=docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04@sha256:828c4d878adcaa4265d80c95d8ec877149b49bb2419a4cf3bb6aa889bbb7ca2e
+            CUDA_DOCKER_ARCH=86
+            NODE_VERSION=24@sha256:9137a20e25879e0b557227b57e3ee4e9af4bde29eb3db66134cd1723e84f830b
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report image digest
+        env:
+          BUILT_DIGEST: ${{ steps.build.outputs.digest }}
+          EXISTING_DIGEST: ${{ steps.exists.outputs.digest }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          digest="${BUILT_DIGEST:-$EXISTING_DIGEST}"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          printf '### Beellama CUDA image\n\n`%s:%s@%s`\n' "$IMAGE" "$TAG" "$digest" >> "$GITHUB_STEP_SUMMARY"
