@@ -42,10 +42,9 @@ spec:
           command: ["/app/llama-server"]
           args:
             - --model
-            - /models/qwen3.8-flash-next-gguf/atomic-ad-4.27-q4-k-m-m64/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00001-of-00033.gguf
+            - /models/qwen3.8-flash-next-gguf/unsloth-ud-iq4-xs/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf
             - --mmproj
-            - /models/qwen3.8-flash-next-gguf/mmproj-F16.gguf
-            - --no-mmproj-offload
+            - /models/qwen3.8-flash-next-gguf/mmproj-BF16.gguf
             - --alias
             - Qwen3.8-Flash-Next Q4
             - --ctx-size
@@ -53,17 +52,17 @@ spec:
             - --batch-size
             - "4096"
             - --ubatch-size
-            - "512"
+            - "2048"
+            - --n-gpu-layers
+            - "99"
+            - --n-cpu-moe
+            - "45"
             - --fit
-            - "on"
-            - --fit-ctx
-            - "131072"
-            - --fit-target
-            - "512"
+            - "off"
             - --load-mode
             - mmap
             - --tensor-read-lazy
-            - "auto"
+            - "on"
             - --flash-attn
             - on
             - --cache-type-k
