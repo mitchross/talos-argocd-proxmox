@@ -42,9 +42,9 @@ spec:
           command: ["/app/llama-server"]
           args:
             - --model
-            - /models/qwen3.8-flash-next-gguf/unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf
+            - /models/qwen3.8-flash-next-gguf/atomic-ad-4.27-q4-k-m-m64/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00001-of-00033.gguf
             - --mmproj
-            - /models/qwen3.8-flash-next-gguf/mmproj-BF16.gguf
+            - /models/qwen3.8-flash-next-gguf/mmproj-F16.gguf
             - --no-mmproj-offload
             - --alias
             - Qwen3.8-Flash-Next Q4
@@ -59,7 +59,7 @@ spec:
             - --fit
             - "off"
             - --override-tensor
-            - '^per_layer_token_embd\.weight$=CPU,blk\.((9|[123][0123456789]|40|41|42|43|44|45|46))\.ffn_.*=CPU'
+            - '^blk\.((9|[123][0123456789]|40|41|42|43|44|45|46))\.ffn_.*=CPU'
             - --load-mode
             - mmap
             - --tensor-read-lazy
