@@ -49,6 +49,19 @@ The vLLM model share and compile cache remain intact for rollback. The retired
 syv-ai `qwen38-3090` application was removed; ArgoCD prunes its namespace and
 Longhorn compile-cache PVC, while the shared NFS model store remains retained.
 
+### Model acquisition performance
+
+The download hook resumes `.part` files and fetches the two large IQ4_XS
+shards concurrently. Each completed artifact is checked against its pinned
+byte size and SHA-256 before it becomes the canonical NAS copy; wave 0 then
+copies it to the GPU node's local NVMe PVC.
+
+Planned follow-up: replace the public-model curl transfers with authenticated
+`huggingface_hub` plus adaptive `hf_xet`, reusing the Hugging Face token in
+1Password. Keep normal adaptive mode under the downloader's 4 GiB memory limit;
+do not enable Xet high-performance mode until its larger buffers and node
+headroom are explicitly sized.
+
 ## App wiring
 
 The canonical direct-client configuration is:
