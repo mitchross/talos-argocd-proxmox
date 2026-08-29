@@ -7,7 +7,7 @@ One active OpenAI-compatible local backend, **NOT ollama**:
 ### llama.cpp — active, single card
 - Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - Served API model: **`Qwen3.8-Flash-Next Q4`** — Qwen3.8-Flash-Next
-  UD-Q4_K_XL with BF16 vision and symmetric q8_0 KV at 131K
+  AtomicChat AD-4.27bpw-Q4_K_M-M64 with F16 vision and symmetric q8_0 KV at 131K
   on **one** RTX 3090.
 - **Use llama.cpp / `Qwen3.8-Flash-Next Q4` when wiring an in-cluster app to chat inference.**
 
@@ -31,12 +31,13 @@ use it as a Flash-Next compatibility alias.
   [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
 - **Engine choice:** Qwen3.8-Flash-Next runs on a pinned post-merge llama.cpp
-  qwen4exp build via UD-Q4_K_XL GGUF and the BF16 projector. The stock-vLLM
+  qwen4exp build via AtomicChat's split Q4 GGUF and F16 projector. The stock-vLLM
   W4A16 deployment is a parked rollback.
 - **MTP stays off for Flash-Next.** The merged qwen4exp implementation did not
   include the final Flash-Next MTP path.
-- **PLE stays lazy and mmap-backed.** Do not add mlock or disable
-  `--tensor-read-lazy`; the 100 GiB Talos VM cannot hold the Q4 model resident.
+- **The dedicated N-gram shard stays lazy and mmap-backed.** Do not add mlock,
+  disable `--tensor-read-lazy`, or explicitly offload `per_layer_token_embd`;
+  the split AtomicChat layout keeps that table out of ordinary weight shards.
 - **TurboQuant `turbo3` KV** (≈5x smaller) is coming to mainline llama.cpp
   (PR #21089) — adopt it then for cheap big context.
 
