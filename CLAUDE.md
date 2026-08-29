@@ -12,7 +12,7 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **AI/LLM Backend**: Two OpenAI-compatible local backends, both NOT ollama:
 
-- **llama.cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`, served model `Qwen3.8-Flash-Next Q4`) is active with UD-Q4_K_XL GGUF, BF16 vision, symmetric q8_0 KV at 131K, and no MTP on one RTX 3090.
+- **llama.cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`, served model `Qwen3.8-Flash-Next Q4`) is active with AtomicChat AD-4.27bpw-Q4_K_M-M64 GGUF, F16 vision, symmetric q8_0 KV at 131K, and no MTP on one RTX 3090.
 - **vLLM** is the parked rollback backend at `replicas: 0`.
 
 GPU topology: the GPU workloads use **mutually exclusive whole-card** allocations (`type: Recreate`, time-slicing disabled — never oversubscribe the card). They scale-swap by committed replica counts. Current state is llama-cpp `1`, vLLM `0`, and ComfyUI/SwarmUI `0`; the chassis has one RTX 3090. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
