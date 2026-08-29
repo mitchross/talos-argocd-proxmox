@@ -68,7 +68,10 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 512Mi
+              # The serving pod reserves 80 GiB on this node. The copy process
+              # needs little anonymous memory; its file cache is reclaimable
+              # and bounded by the 2 GiB limit below.
+              memory: 64Mi
             limits:
               cpu: "4"
               memory: 2Gi
