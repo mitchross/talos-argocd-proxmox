@@ -58,8 +58,8 @@ spec:
             - "99"
             - --fit
             - "off"
-            - --override-tensor
-            - '^blk\.((9|[123][0123456789]|40|41|42|43|44|45|46))\.ffn_.*=CPU'
+            - --n-cpu-moe
+            - "38"
             - --load-mode
             - mmap
             - --tensor-read-lazy
