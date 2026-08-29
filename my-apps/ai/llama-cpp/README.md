@@ -27,8 +27,33 @@ official tag and its linux/amd64 manifest digest; do not use pre-merge `b10236`.
 
 The wave-0 Sync hook downloads and verifies all four Q4 shards and the public
 BF16 projector on the existing RWX model share. It resumes `.part` files,
-checks byte size and SHA-256, and atomically renames verified artifacts. The
-wave-1 Deployment mounts the share read-only and starts after the hook succeeds.
+checks byte size and SHA-256, and atomically renames verified artifacts.
+
+## Model storage
+
+Two tiers. NFS is the canonical archive; a node-local NVMe cache is what
+inference actually reads.
+
+| Tier | Backing | PVC | Role |
+|---|---|---|---|
+| Source | TrueNAS NFS, `192.168.10.133:/mnt/ai-pool/llama-cpp` | `llama-cpp-models-pvc` (RWX) | canonical archive, hydrated from Hugging Face |
+| Cache | GPU node's 450 GB NVMe, Talos UserVolume `ai-model-cache` → `/var/mnt/ai-model-cache` | `ai-model-cache` (RWO, `Retain`) | what the Deployment mounts at `/models` |
+
+The Deployment mounts **only** the cache. NFS must stay out of the inference
+path: llama.cpp demand-pages tensors under `--load-mode mmap`, so a page-cache
+miss against NFS becomes a network round trip, and under memory pressure that
+collapses throughput to well under 1 tok/s.
+
+`cache-sync-job.yaml` (wave-0 Sync hook) copies the four shards plus the
+projector from NFS to the cache, comparing **name and size only** — a SHA-256
+pass would stream ~104 GiB through page cache on every sync, which is the exact
+thrash the cache exists to avoid. It is idempotent; a warm cache exits in
+seconds.
+
+The cache PV is node-local by design (`nodeAffinity: gpu-worker=true`,
+`persistentVolumeReclaimPolicy: Retain`) and is **not** on Longhorn and not
+replicated — GGUF files are reproducible from NFS. The 450 GB disk holds the
+104.5 GiB checkpoint with ~336 GiB free for additional quants.
 
 ## Runtime profile
 

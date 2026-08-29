@@ -142,9 +142,11 @@ spec:
             - name: dshm
               mountPath: /dev/shm
       volumes:
+        # Node-local NVMe cache, not the NFS PVC: mmap page-cache misses during
+        # inference must not become NFS round trips. See cache-sync-job.yaml.
         - name: models
           persistentVolumeClaim:
-            claimName: llama-cpp-models-pvc
+            claimName: ai-model-cache
         - name: dshm
           emptyDir:
             medium: Memory
