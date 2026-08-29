@@ -36,19 +36,29 @@ spec:
               mkdir -p "$BASE/unsloth-ud-q4-k-xl"
               apk add --no-cache curl
 
+              # This hook re-runs on every sync. Hashing all shards each time is a
+              # ~104 GiB NFS read that contends with the server's mmap of the
+              # same files, so a matching stamp short-circuits it.
               fetch() {
                 name="$1" dest="$2" size="$3" expected="$4"
-                part="$dest.part"
-                if [ -f "$dest" ] && [ "$(stat -c %s "$dest")" = "$size" ] && \
-                   [ "$(sha256sum "$dest" | cut -d' ' -f1)" = "$expected" ]; then
-                  echo "verified: $name"
-                  return
+                part="$dest.part" stamp="$dest.sha256"
+                if [ -f "$dest" ] && [ "$(stat -c %s "$dest")" = "$size" ]; then
+                  if [ "$(cat "$stamp" 2>/dev/null)" = "$expected" ]; then
+                    echo "verified (stamp): $name"
+                    return
+                  fi
+                  if [ "$(sha256sum "$dest" | cut -d' ' -f1)" = "$expected" ]; then
+                    printf '%s' "$expected" > "$stamp"
+                    echo "verified: $name"
+                    return
+                  fi
                 fi
                 curl -fL -C - --retry 5 -o "$part" "$REPO/$name"
                 actual="$(sha256sum "$part" | cut -d' ' -f1)"
                 [ "$actual" = "$expected" ] || { echo "SHA MISMATCH: $name: $actual"; rm -f "$part"; exit 1; }
                 [ "$(stat -c %s "$part")" = "$size" ] || { echo "SIZE MISMATCH: $name"; rm -f "$part"; exit 1; }
                 mv "$part" "$dest"
+                printf '%s' "$expected" > "$stamp"
                 echo "downloaded and verified: $name"
               }
 
