@@ -45,7 +45,7 @@ spec:
             - name: HINDSIGHT_API_LLM_PROVIDER
               value: "openai"
             - name: HINDSIGHT_API_LLM_BASE_URL
-              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
             - name: HINDSIGHT_API_LLM_MODEL
               value: "qwen3.8-27b"
             - name: HINDSIGHT_API_LLM_API_KEY

@@ -6,8 +6,8 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # Parked rollback backend; llama-cpp owns the sole RTX 3090.
-  replicas: 0
+  # Active backend; owns the sole RTX 3090 (llama-cpp is parked at 0).
+  replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1

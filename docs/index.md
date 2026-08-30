@@ -30,7 +30,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **Database**: plain Postgres Deployments backed up by kopiur — hourly snapshots, restore-before-bind (CNPG retired 2026-08-13)
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
-- **AI**: llama.cpp serving `Qwen3.8-Flash-Next Q4` (UD-IQ4_XS + BF16 vision, expert-only CPU offload, q8 KV at 131K) on the sole RTX 3090. vLLM and image generation are parked ([model catalog](domains/ai-gpu/model-catalog.md) · [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md))
+- **AI**: vLLM serving `qwen3.8-27b` (Qwen3.8-27B AutoRound W4A16 + native vision, fp8 KV at 64K, 2-token MTP) on the sole RTX 3090. llama.cpp and image generation are parked ([model catalog](domains/ai-gpu/model-catalog.md) · [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md))
 
 ## Documentation
 

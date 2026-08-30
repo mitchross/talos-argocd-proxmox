@@ -26,8 +26,8 @@ Two things make this safe by construction:
 
 | App | Cards | `replicas` in git (current) | File |
 |---|---|---|---|
-| **llama-cpp** (Qwen 3.8 UD-IQ4_XS, active) | **1** | `1` | `my-apps/ai/llama-cpp/deployment.yaml` |
-| **vLLM** (Qwen 3.8 W4A16, rollback) | 1 | `0` | `my-apps/ai/vllm/deployment.yaml` |
+| **vLLM** (Qwen 3.8 27B W4A16, active) | **1** | `1` | `my-apps/ai/vllm/deployment.yaml` |
+| **llama-cpp** (Qwen 3.8 Flash-Next UD-IQ4_XS, rollback) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
 | **NInfer-3090** (Qwen 3.8 .ninfer, parked candidate) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
 | **ComfyUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | **SwarmUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
@@ -69,15 +69,15 @@ kubectl -n comfyui get pods; kubectl -n swarmui get pods
 kubectl -n gpu-operator exec ds/nvidia-powerlimit -- nvidia-smi
 
 # Endpoint answers (from any in-cluster pod)
-curl -s http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/models
+curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
 ```
 
 ## Side effects to expect
 
-- **Scaling llama-cpp to 0** → every Qwen consumer loses inference, including
+- **Scaling vLLM to 0** → every Qwen consumer loses inference, including
   Open WebUI, Perplexica, and Deal Scout. Treat it as an app-degraded window.
-- **ComfyUI's vision→image workflow needs llama-cpp too** — it calls the
-  llama-cpp multimodal endpoint for vision. Bringing up ComfyUI alone leaves
+- **ComfyUI's vision→image workflow needs the chat backend too** — it calls the
+  active multimodal endpoint for vision. Bringing up ComfyUI alone leaves
   its vision/caption nodes failing against a dead Service. With one card, that
   combined workflow cannot run concurrently.
 - **llmfit Jobs** need the active server parked first; only single-GPU Jobs fit.

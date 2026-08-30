@@ -8,7 +8,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
-  replicas: 1
+  # Parked GGUF rollback backend; vLLM owns the sole RTX 3090.
+  replicas: 0
   strategy:
     type: Recreate
   revisionHistoryLimit: 1

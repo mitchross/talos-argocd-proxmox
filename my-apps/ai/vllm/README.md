@@ -1,14 +1,14 @@
-# vLLM — parked Qwen3.8-27B rollback
+# vLLM — Qwen3.8-27B on one RTX 3090
 
-This ArgoCD-discovered app is retained at `replicas: 0` as a rollback backend.
-The active `qwen3.8-27b` service is llama.cpp; no consumer or HTTPRoute points
-at this Deployment.
+The active OpenAI-compatible chat, tool, and vision backend. Every in-cluster
+consumer points here.
 
 - in cluster: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- no direct LAN route; `vllm.vanillax.me` is a compatibility hostname on the active llama.cpp route
+- on the LAN: `https://vllm.vanillax.me/v1`
+- API model: `qwen3.8-27b`
 
-The chassis has one RTX 3090. Scale llama.cpp to zero in the same commit before
-restoring this Deployment to one replica.
+The chassis has one RTX 3090. llama.cpp is the parked GGUF rollback at
+`replicas: 0`; scale it up only in the same commit that scales this to zero.
 
 ## Model and storage
 
@@ -20,8 +20,12 @@ the NFS CSI driver. The existing 10 GbE NFS path is the repo's faster and more
 appropriate tier for large sequential model reads; no Longhorn model PVC or
 in-cluster download Job is needed.
 
-The server uses the stock digest-pinned `vllm/vllm-openai:v0.27.1` image. There
+The server uses the stock digest-pinned `vllm/vllm-openai:v0.28.0` image. There
 is no custom image, runtime patch, or model-prep controller in this deployment.
+
+Unsloth publishes no 4-bit checkpoint that runs here: their only vLLM-servable
+Qwen3.8-27B is NVFP4, which needs Blackwell tensor cores, and the 3090 is
+Ampere. Their Q4 line for this model is GGUF, i.e. the parked llama.cpp path.
 
 The checkpoint is natively multimodal (`Qwen3_5ForConditionalGeneration`) and
 includes its vision configuration and processor. The Deployment leaves the
@@ -30,7 +34,7 @@ vision tower enabled.
 ## Serving profile
 
 - 65,536-token request ceiling with FP8 KV cache
-- `gpu-memory-utilization=0.90`
+- `gpu-memory-utilization=0.93`
 - 2-token stock MTP speculative decoding
 - FP16 DeltaNet recurrent state
 - 2,048-token chunked prefill
@@ -41,8 +45,10 @@ vision tower enabled.
 The 65,536-token ceiling is the conservative one-card profile after restoring
 the roughly 2.7 GiB vision tower. It is not a measured maximum. Read the cache
 pool from the startup log and validate long-context plus image requests before
-raising it. llama.cpp remains a parked GGUF alternative, not a prerequisite for
-vision.
+raising it.
+
+`CONTEXT_WINDOW` in `my-apps/ai/open-webui/open-webui-configmap.env` must track
+this number — if it is larger, Open WebUI overruns the server's ceiling.
 
 Startup can take several minutes while torch.compile, CUDA graphs, and
 FlashInfer initialize. The startup probe allows up to one hour; readiness is
