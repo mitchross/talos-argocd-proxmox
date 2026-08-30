@@ -11,8 +11,8 @@ data:
   LOCAL_API_CLOUD_FALLBACK: "false"
   # AIS relay (internal service)
   WS_RELAY_URL: "http://worldmonitor-ais-relay:3004"
-  # LLM — in-cluster llama.cpp (qwen3.8-27b)
-  LLM_API_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions"
+  # LLM — in-cluster vLLM (qwen3.8-27b)
+  LLM_API_URL: "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions"
   LLM_MODEL: "qwen3.8-27b"
-  # Must be non-empty: the generic LLM provider is skipped when LLM_API_KEY is empty; llama.cpp accepts any value.
+  # Must be non-empty: the generic LLM provider is skipped when LLM_API_KEY is empty; vLLM accepts any value.
   LLM_API_KEY: "not-needed"
