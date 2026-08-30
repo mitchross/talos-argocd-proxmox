@@ -20,7 +20,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: flatnotes
-          image: dullage/flatnotes:v5.5.4
+          image: dullage/flatnotes:v5.5.5
           env:
             - name: FLATNOTES_AUTH_TYPE
               value: "password"
