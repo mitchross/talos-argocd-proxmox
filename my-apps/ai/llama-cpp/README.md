@@ -15,15 +15,14 @@ checkpoint.
 
 | Input | Pin |
 |---|---|
-| Engine source | upstream llama.cpp `4e97ac86ebe2c4cb8212d98d2641ad6768810896` (`b10666`) |
-| Engine image | `ghcr.io/ggml-org/llama.cpp:server-cuda-b10666@sha256:a2d04d1d1c2b2abe287fef9a22a3700a7fa20aec4c4ab56135e0099f38119848` (amd64) |
+| Engine source | Beellama fork `a82a58a57fc307e5cec0dc68db64d143339be4f2` |
+| Engine image | `ghcr.io/mitchross/llama-cpp-beellama:beellama-staging-v0.4.4-r9-sm86@sha256:06aad18a04052f3e7f8d838f93e9a467882d7779420b143a3c4efc5415bc6c27` (amd64) |
 | Model repository | `unsloth/Qwen3.8-Flash-Next-GGUF` revision `c8b5954a88c2775c546b92593eda40ea041d3176` |
 | Weights | `Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf` through `00003-of-00003.gguf` |
 | Vision projector | `mmproj-BF16.gguf`, SHA-256 `2e788f8c511d8093c7b43cb87b2fd7e14228340318057f8fb20c86df2efe2355` |
 
-Official build `b10666` is produced from a commit after the qwen4exp merge
-commit `6c84c7d5d8833c6e0df69628f75a0f599797934e`. The Deployment pins the
-official tag and its linux/amd64 manifest digest; do not use pre-merge `b10236`.
+The Beellama image is built natively for linux/amd64 and CUDA architecture 86
+from the pinned source commit. Do not use pre-merge official build `b10236`.
 
 The wave -1 Sync hook downloads and verifies all three IQ4_XS shards and the
 public BF16 projector on the existing RWX model share. It retains the prior
@@ -80,9 +79,10 @@ a static Kubernetes declaration, not an export quota.
 
 ## IQ4_XS placement acceptance gate — pending deployment
 
-This change replaces whole-layer auto-fit with expert-only CPU placement while
-preserving context, KV, sampling, and the external API. It does not claim a
-throughput win before the branch is merged and measured on the GPU worker.
+This PR changes only the engine image. It preserves the context, KV types,
+`--n-cpu-moe`, model files, projector, sampling, and external API, and does not
+claim a throughput win before the branch is merged and measured on the GPU
+worker.
 
 Acceptance requires a warm, single-stream `tg128` result of at least 15 tok/s
 while the server remains configured for a 131,072-token slot. Record `pp512`,
@@ -91,6 +91,12 @@ and GPU utilization, plus text, tool-call, and vision correctness. If the
 45-CPU-expert-layer placement misses the target, tune only `--n-cpu-moe` one
 boundary per measurement round; do not simultaneously change context, KV type,
 or speculative decoding.
+
+## Historical official b10666 IQ4_XS trial — failed
+
+The official b10666 engine reached 7.06 prompt tok/s and 0.763 decode tok/s
+with this model profile. The decode result failed the warm single-stream
+`tg128` acceptance gate of at least 15 tok/s.
 
 ## Historical Atomic auto-fit trial — 2026-08-29
 

@@ -37,7 +37,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: llama-cpp-server
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10666@sha256:a2d04d1d1c2b2abe287fef9a22a3700a7fa20aec4c4ab56135e0099f38119848
+          image: ghcr.io/mitchross/llama-cpp-beellama:beellama-staging-v0.4.4-r9-sm86@sha256:06aad18a04052f3e7f8d838f93e9a467882d7779420b143a3c4efc5415bc6c27
           imagePullPolicy: IfNotPresent
           command: ["/app/llama-server"]
           args:
