@@ -1,0 +1,84 @@
+# Hydrates the node-local NVMe cache from the NFS source PVC before the server
+# starts. Name+size only: a sha256 pass would stream the checkpoint through page
+# cache on every sync, which is the exact thrash the cache exists to avoid.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vllm-cache-sync
+  namespace: vllm
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 4
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      nodeSelector:
+        gpu-worker: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: sync
+          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              MODEL=Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead
+              SRC=/src/$MODEL
+              DST=/dst/$MODEL
+              mkdir -p "$DST"
+
+              [ -d "$SRC" ] || { echo "MISSING SOURCE: $SRC"; exit 1; }
+
+              sync_one() {
+                rel="$1"; s="$SRC/$rel"; d="$DST/$rel"
+                want=$(stat -c %s "$s")
+                if [ -f "$d" ] && [ "$(stat -c %s "$d")" = "$want" ]; then
+                  echo "present: $rel ($want bytes)"; return
+                fi
+                echo "copying: $rel ($want bytes)"
+                cp "$s" "$d.part" || { rm -f "$d.part"; exit 1; }
+                got=$(stat -c %s "$d.part")
+                [ "$got" = "$want" ] || { echo "SIZE MISMATCH $rel: $got != $want"; rm -f "$d.part"; exit 1; }
+                mv "$d.part" "$d"
+              }
+
+              # Whole checkpoint dir, flat — weights plus tokenizer/config/template
+              # files. vLLM refuses to load if any of them is missing.
+              for f in $(ls -1 "$SRC"); do
+                [ -f "$SRC/$f" ] && sync_one "$f"
+              done
+
+              echo "=== RESULT ==="
+              ls -1 "$DST" | wc -l | awk '{print "files: " $1}'
+              du -sb "$DST" | awk '{printf "model: %s bytes (%.2f GiB)\n", $1, $1/1073741824}'
+              df -h /dst
+          resources:
+            requests:
+              cpu: 500m
+              # The serving pod reserves 8 GiB on this node. The copy needs little
+              # anonymous memory; its file cache is reclaimable and capped below.
+              memory: 64Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: src
+              mountPath: /src
+              readOnly: true
+            - name: dst
+              mountPath: /dst
+              subPath: vllm
+      volumes:
+        - name: src
+          persistentVolumeClaim:
+            claimName: vllm-models-pvc
+        - name: dst
+          persistentVolumeClaim:
+            claimName: ai-model-cache-vllm

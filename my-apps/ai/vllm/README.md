@@ -13,12 +13,25 @@ The chassis has one RTX 3090. llama.cpp is the parked GGUF rollback at
 ## Model and storage
 
 The checkpoint is derived from the public
-`dbirks/Qwen3.8-27B-W4A16-AutoRound` Hugging Face repository. It is already on
-the TrueNAS `ai-pool/vllm` share as
-`Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead` and is mounted read-only through
-the NFS CSI driver. The existing 10 GbE NFS path is the repo's faster and more
-appropriate tier for large sequential model reads; no Longhorn model PVC or
-in-cluster download Job is needed.
+`dbirks/Qwen3.8-27B-W4A16-AutoRound` Hugging Face repository and lives on the
+TrueNAS `ai-pool/vllm` share as
+`Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead`.
+
+Two tiers, matching llama-cpp:
+
+| Tier | Backing | PVC | Role |
+|---|---|---|---|
+| Source | TrueNAS NFS, `192.168.10.133:/mnt/ai-pool/vllm` | `vllm-models-pvc` (ROX) | canonical archive |
+| Cache | GPU node's 450 GB NVMe, Talos UserVolume `ai-model-cache` → `/var/mnt/ai-model-cache` under `vllm/` | `ai-model-cache-vllm` (RWO, `Retain`) | what the Deployment mounts at `/models` |
+
+The Deployment mounts **only** the cache. `cache-sync-job.yaml` (wave 0 Sync
+hook) copies the checkpoint from NFS to the NVMe before the wave 1 server
+starts; it compares **name and size only** and a warm cache exits in seconds.
+
+The cache PV shares the same physical volume as llama-cpp's GGUF tree, kept
+apart by `subPath: vllm`. Its declared 60Gi is informational — a local PV
+enforces no quota, and the real ceiling is what llama-cpp's ~281 GiB leaves free
+of 450 GB.
 
 The server uses the stock digest-pinned `vllm/vllm-openai:v0.28.0` image. There
 is no custom image, runtime patch, or model-prep controller in this deployment.

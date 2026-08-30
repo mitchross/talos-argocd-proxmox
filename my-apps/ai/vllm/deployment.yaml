@@ -5,6 +5,8 @@ metadata:
   namespace: vllm
   labels:
     app: vllm-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"    # after the wave-0 cache-sync hook
 spec:
   # Active backend; owns the sole RTX 3090 (llama-cpp is parked at 0).
   replicas: 1
@@ -139,6 +141,7 @@ spec:
           volumeMounts:
             - name: models
               mountPath: /models
+              subPath: vllm          # shares the NVMe volume with llama-cpp's GGUF tree
               readOnly: true
             - name: dshm
               mountPath: /dev/shm        # kept: torch still uses it; default 64Mi is too small
@@ -150,9 +153,11 @@ spec:
               mountPath: /root/.triton/cache
               subPath: triton
       volumes:
+        # Node-local NVMe, NOT the NFS PVC. cache-sync-job.yaml hydrates it from
+        # NFS at wave 0; NFS stays the canonical archive and out of the serve path.
         - name: models
           persistentVolumeClaim:
-            claimName: vllm-models-pvc
+            claimName: ai-model-cache-vllm
         - name: dshm
           emptyDir:
             medium: Memory
