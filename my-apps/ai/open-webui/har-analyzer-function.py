@@ -71,7 +71,17 @@ class Filter:
             return body
 
         files = last_message.get("files", [])
-        content = last_message.get("content", "")
+        raw_content = last_message.get("content", "")
+        # Multimodal content is a list of parts, not a str — this filter is global,
+        # so an unguarded .strip() below fails EVERY image request in Open WebUI.
+        if isinstance(raw_content, list):
+            content = "".join(
+                p.get("text", "")
+                for p in raw_content
+                if isinstance(p, dict) and p.get("type") == "text"
+            )
+        else:
+            content = raw_content
 
         har_data = None
         har_filename = ""
@@ -123,7 +133,15 @@ class Filter:
             f"{report}"
         )
 
-        last_message["content"] = new_content
+        if isinstance(raw_content, list):
+            # Swap the text part for the report; keep image parts so HAR+image still sees the image.
+            last_message["content"] = [{"type": "text", "text": new_content}] + [
+                p
+                for p in raw_content
+                if not (isinstance(p, dict) and p.get("type") == "text")
+            ]
+        else:
+            last_message["content"] = new_content
         # Remove HAR from file list (already processed)
         last_message["files"] = [
             f for f in files
