@@ -33,7 +33,12 @@ spec:
               MODEL=Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead
               SRC=/src/$MODEL
               DST=/dst/$MODEL
+              READY=/dst/.vllm-sync-complete
               mkdir -p "$DST"
+
+              # Clear first, write last: the server's init container gates on this
+              # marker, so it must never exist over a half-copied checkpoint.
+              rm -f "$READY"
 
               [ -d "$SRC" ] || { echo "MISSING SOURCE: $SRC"; exit 1; }
 
@@ -55,6 +60,8 @@ spec:
               for f in $(ls -1 "$SRC"); do
                 [ -f "$SRC/$f" ] && sync_one "$f"
               done
+
+              echo "$MODEL" > "$READY"
 
               echo "=== RESULT ==="
               ls -1 "$DST" | wc -l | awk '{print "files: " $1}'
