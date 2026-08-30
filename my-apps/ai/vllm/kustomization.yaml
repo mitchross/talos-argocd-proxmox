@@ -8,6 +8,8 @@ resources:
   - vpa.yaml
   - namespace.yaml
   - pvc.yaml
+  - pvc-model-cache.yaml
+  - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
