@@ -1,7 +1,7 @@
 # Open WebUI
 
 Self-hosted ChatGPT-style frontend for the cluster's local LLM stack. Wires
-Open WebUI up to llama.cpp (OpenAI-compatible API), SearXNG for web search,
+Open WebUI up to vLLM (OpenAI-compatible API), SearXNG for web search,
 ComfyUI for image generation, Kiwix for offline RAG, and an MCP tool proxy
 (MCPO) for everything else.
 
@@ -21,11 +21,11 @@ ComfyUI for image generation, Kiwix for offline RAG, and an MCP tool proxy
                                │   │  │        └── mcpo-kiwix (port 8002, Kiwix fetch)
                                │   │  └── ComfyUI (image gen) ─→ Z-Image-Turbo / Qwen-Image-Edit
                                │   └── SearXNG (web search)
-                               └── llama-cpp-service.llama-cpp:8080/v1  (primary LLM)
+                               └── vllm-service.vllm:8080/v1  (primary LLM)
 ```
 
 Open WebUI itself is stateless UI + SQLite (on a PVC). The heavy lifting is
-elsewhere: llama.cpp holds the model in VRAM, ComfyUI owns the image-gen GPU,
+elsewhere: vLLM holds the model in VRAM, ComfyUI owns the image-gen GPU,
 SearXNG handles search, and MCPO exposes tool endpoints as OpenAPI. RAG
 embeddings run **locally inside the Open WebUI pod** (built-in
 SentenceTransformer, CPU) — no external embedding dependency. Open WebUI runs
@@ -40,19 +40,19 @@ Currently wired up (see `open-webui-configmap.env`):
 
 | Role                  | Model / Value                                                  |
 |-----------------------|----------------------------------------------------------------|
-| Chat backend          | `OPENAI_API_BASE_URL=http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1` |
-| `DEFAULT_MODELS`      | `Qwen3.8-Flash-Next Q4` — llama.cpp `--alias` |
-| `VISION_MODELS`       | `Qwen3.8-Flash-Next Q4` |
-| `TASK_MODEL`          | `Qwen3.8-Flash-Next Q4` |
-| `TASK_MODEL_EXTERNAL` | `Qwen3.8-Flash-Next Q4` |
-| `CONTEXT_WINDOW`      | `131072` (131K) — keep aligned with llama.cpp `--ctx-size`. If smaller, Open WebUI silently trims history / RAG before sending. |
+| Chat backend          | `OPENAI_API_BASE_URL=http://vllm-service.vllm.svc.cluster.local:8080/v1` |
+| `DEFAULT_MODELS`      | `qwen3.8-27b` — vLLM `--served-model-name` |
+| `VISION_MODELS`       | `qwen3.8-27b` |
+| `TASK_MODEL`          | `qwen3.8-27b` |
+| `TASK_MODEL_EXTERNAL` | `qwen3.8-27b` |
+| `CONTEXT_WINDOW`      | `65536` (64K) — keep aligned with vLLM `--max-model-len`. If smaller, Open WebUI silently trims history / RAG before sending. |
 | Sampling              | `TEMPERATURE=0.7`, `TOP_P=0.80`, `MIN_P=0.0` |
 | Image generation      | ComfyUI — Z-Image-Turbo (text→img, 9 steps), Qwen-Image-Edit-2511 (edit) |
 | Embeddings            | Built-in local SentenceTransformer (CPU, in-pod) — no external service |
 | STT / TTS             | Whisper `medium` on CPU (in-pod), OpenAI TTS voice `alloy` |
 
-llama.cpp is served from `my-apps/ai/llama-cpp/deployment.yaml`; the Open WebUI
-model ID must match its `--alias`. It advertises only `Qwen3.8-Flash-Next Q4`
+vLLM is served from `my-apps/ai/vllm/deployment.yaml`; the Open WebUI
+model ID must match its `--served-model-name`. It advertises only `qwen3.8-27b`
 so the model selector stays clean.
 
 ## Performance tuning (env ConfigMap)
@@ -68,7 +68,7 @@ Non-default env vars that matter, grouped by why they exist:
 | `AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST`    | `30` | Model list probe timeout. |
 | `CHAT_RESPONSE_STREAM_DELTA_CHUNK_SIZE`| `5`  | Batch 5 tokens per SSE push. Cuts CPU/network overhead vs per-token flushing. |
 | `ENABLE_COMPRESSION_MIDDLEWARE`        | `True` | Gzip HTTP responses — meaningful for large RAG payloads. |
-| `MODELS_CACHE_TTL` / `ENABLE_BASE_MODELS_CACHE` | `300` / `False` | Keep Open WebUI from caching an empty model list if llama.cpp is down during startup. |
+| `MODELS_CACHE_TTL` / `ENABLE_BASE_MODELS_CACHE` | `300` / `False` | Keep Open WebUI from caching an empty model list if vLLM is down during startup. |
 | `ENABLE_QUERIES_CACHE`                 | `True` | Reuse LLM-generated RAG search queries across similar prompts. |
 
 ### RAG
@@ -80,7 +80,7 @@ Non-default env vars that matter, grouped by why they exist:
 | `ENABLE_RAG_HYBRID_SEARCH`   | `True` | BM25 + embedding — better recall on technical content than pure vector. |
 | `RAG_SYSTEM_CONTEXT`         | `True` | Inject retrieved chunks into the system message (better for KV cache reuse than stuffing user msg). |
 | `RAG_EMBEDDING_BATCH_SIZE`   | `8` | Batch size for the built-in local embedder. |
-| `USE_CUDA_DOCKER`            | `false` | Open WebUI has no GPU; llama.cpp reserves the sole 3090. Embeddings run on CPU in-pod (default `RAG_EMBEDDING_ENGINE`, no external service). |
+| `USE_CUDA_DOCKER`            | `false` | Open WebUI has no GPU; vLLM reserves the sole 3090. Embeddings run on CPU in-pod (default `RAG_EMBEDDING_ENGINE`, no external service). |
 | `PDF_EXTRACT_IMAGES`         | `True` | Required for vision RAG over PDF diagrams. |
 
 ### UX
@@ -125,7 +125,7 @@ Applied by ArgoCD automatically (directory = Application). Files:
 | `namespace.yaml`          | `open-webui` namespace                                           |
 | `open-webui-configmap.env`| **All** env-based config. Source of truth for behavior.          |
 | `deployment.yaml`         | Open WebUI main Deployment (stateful via PVC below)              |
-| `loader.js`               | Formats llama.cpp usage telemetry for the response tooltip       |
+| `loader.js`               | Formats vLLM usage telemetry for the response tooltip       |
 | `pvc.yaml`                | SQLite + uploaded files persist here                             |
 | `service.yaml`            | ClusterIP for HTTPRoute                                          |
 | `httproute.yaml`          | External HTTPRoute to `open-webui.vanillax.me`                   |
@@ -147,9 +147,9 @@ kubectl apply -k my-apps/ai/open-webui/
 ## Troubleshooting
 
 **No models showing up in the UI**
-- Check `curl -s http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/models` from inside the cluster — what model name is advertised?
-- Compare against `DEFAULT_MODELS` in `open-webui-configmap.env`. It must match llama.cpp's `--alias` exactly.
-- If Open WebUI cached an empty model list while llama.cpp was crashlooping, restart `deploy/open-webui` after the backend is healthy.
+- Check `curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models` from inside the cluster — what model name is advertised?
+- Compare against `DEFAULT_MODELS` in `open-webui-configmap.env`. It must match vLLM's `--served-model-name` exactly.
+- If Open WebUI cached an empty model list while vLLM was crashlooping, restart `deploy/open-webui` after the backend is healthy.
 
 **Tools tab is empty**
 - `kubectl logs -n open-webui deploy/mcpo` — MCPO pods crash loudly if the API keys don't match `OPENAPI_API_ENDPOINTS`.

@@ -1,8 +1,8 @@
 # One 3090 vs two for Qwen3.8-27B
 
-The active backend is now the club-3090 llama.cpp single-card route. This page
-preserves the earlier stock-vLLM one-vs-two-card benchmark; it is historical
-evidence, not the current serving profile.
+The active backend is again stock vLLM on a single card. This page preserves the
+earlier one-vs-two-card benchmark; the chassis now holds one 3090 permanently,
+so the two-card column is historical evidence only.
 
 The swap procedure lives in [`gpu-scale-swap.md`](gpu-scale-swap.md); model
 inventory and app wiring live in [`model-catalog.md`](model-catalog.md).

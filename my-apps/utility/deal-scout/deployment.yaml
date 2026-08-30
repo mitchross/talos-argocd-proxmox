@@ -37,7 +37,7 @@ spec:
             # Pin both values: the digest call is best-effort and silently falls
             # back to facts-only prose when a backend or model id is stale.
             - name: DIGEST_LLM_URL
-              value: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions
+              value: http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions
             - name: DIGEST_LLM_MODEL
               value: qwen3.8-27b
             - name: INGEST_TOKEN

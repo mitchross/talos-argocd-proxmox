@@ -1,15 +1,15 @@
 # llama.cpp — Qwen3.8-Flash-Next Q4 on one RTX 3090
 
-This is the active OpenAI-compatible chat, tool, and vision backend:
+**Parked at `replicas: 0`** — vLLM owns the sole RTX 3090. This is the GGUF
+rollback backend; nothing points at it while parked.
 
 - in cluster: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
-- on the LAN: `https://llama.vanillax.me/v1` and the compatibility hostname
-  `https://vllm.vanillax.me/v1`
+- on the LAN: `https://llama.vanillax.me/v1`
 - API model: `Qwen3.8-Flash-Next Q4`
 
 The API model name identifies the physical Unsloth UD-IQ4_XS checkpoint. Do
 not use `qwen3.8-27b` for this model; that name belongs to the separate 27B
-checkpoint.
+checkpoint the active vLLM backend serves.
 
 ## Pinned inputs
 
@@ -124,7 +124,16 @@ placement to 20,444 MiB and allowed the 131K KV cache to initialize. The BF16
 projector then needed another 865.48 MiB on CUDA, so it remains enabled but
 uses `--no-mmproj-offload`.
 
-## Rollback
+## Bringing this back
+
+Set llama.cpp to `replicas: 1`, set `my-apps/ai/vllm/deployment.yaml` to
+`replicas: 0`, move the `vllm.vanillax.me` hostname back onto the llama.cpp
+HTTPRoute, and repoint consumers to `llama-cpp-service` with model
+`Qwen3.8-Flash-Next Q4` — all in one commit. The scheduler sequences the sole
+GPU; never scale both to one. Model artifacts stay on NFS and NVMe, so there is
+no download.
+
+## Rollback within llama.cpp
 
 For an in-place llama.cpp rollback, restore the Atomic model path
 `atomic-ad-4.27-q4-k-m-m64/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00001-of-00033.gguf`,
@@ -133,7 +142,4 @@ restore `mmproj-F16.gguf` and `--no-mmproj-offload`, set micro-batch back to
 restore `--fit on --fit-ctx 131072 --fit-target 512`. All artifacts remain on
 NFS and NVMe, so this is one normal `Recreate` rollout with no download.
 
-For a backend rollback, set llama.cpp to `replicas: 0`, set
-`my-apps/ai/vllm/deployment.yaml` to `replicas: 1`, restore the vLLM HTTPRoute,
-and repoint consumers in the same commit. The scheduler sequences the sole GPU;
-never scale both to one.
+

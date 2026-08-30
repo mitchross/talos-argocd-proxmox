@@ -9,8 +9,8 @@ data:
       - model_name: qwen3.8-27b
         litellm_params:
           model: openai/qwen3.8-27b
-          api_base: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
-          api_key: "llama-cpp-no-key-required"
+          api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+          api_key: "vllm-no-key-required"
         model_info:
           # Self-hosted — pin explicitly rather than rely on LiteLLM's cost map.
           input_cost_per_token: 0

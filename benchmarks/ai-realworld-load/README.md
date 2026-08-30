@@ -270,9 +270,9 @@ contributed no load.
 
 ## Historical engine A/B — vLLM control vs NInfer-3090 candidate
 
-The active backend is now the club-3090 single-card llama.cpp profile. This
-section preserves the earlier vLLM/NInfer method and results; it is not the
-current serving topology.
+The active backend is again the single-card vLLM W4A16 profile. This section
+preserves the earlier vLLM/NInfer comparison method and results; the numbers
+predate the current pin and are not a claim about it.
 
 The candidate is `my-apps/ai/ninfer/` (NInfer-3090 `v0.6.0-rtx3090`, commit
 `2ae51915225d`, official `qwen3_8_27b.ninfer` artifact, SHA-pinned). The
