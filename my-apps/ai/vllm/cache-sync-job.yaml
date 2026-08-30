@@ -1,6 +1,5 @@
-# Hydrates the node-local NVMe cache from the NFS source PVC before the server
-# starts. Name+size only: a sha256 pass would stream the checkpoint through page
-# cache on every sync, which is the exact thrash the cache exists to avoid.
+# Hydrates node-local NVMe from NFS; name+size avoids rereading the whole
+# checkpoint on warm syncs.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -31,21 +30,29 @@ spec:
             - -ec
             - |
               MODEL=Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead
+              REVISION=$MODEL:r1 # Bump here and in deployment.yaml for in-place source changes.
               SRC=/src/$MODEL
               DST=/dst/$MODEL
+              STATE=/dst/.vllm-cache-revision
               READY=/dst/.vllm-sync-complete
+              STATE_TMP=$STATE.part
+              READY_TMP=$READY.part
               mkdir -p "$DST"
 
-              # Clear first, write last: the server's init container gates on this
-              # marker, so it must never exist over a half-copied checkpoint.
-              rm -f "$READY"
+              # The Deployment may land before this Sync hook, so publish readiness last.
+              LAST_REVISION=$(cat "$STATE" 2>/dev/null || true)
+              FORCE_COPY=0
+              if [ -n "$LAST_REVISION" ] && [ "$LAST_REVISION" != "$REVISION" ]; then
+                FORCE_COPY=1
+              fi
+              rm -f "$READY" "$STATE_TMP" "$READY_TMP"
 
               [ -d "$SRC" ] || { echo "MISSING SOURCE: $SRC"; exit 1; }
 
               sync_one() {
                 rel="$1"; s="$SRC/$rel"; d="$DST/$rel"
                 want=$(stat -c %s "$s")
-                if [ -f "$d" ] && [ "$(stat -c %s "$d")" = "$want" ]; then
+                if [ "$FORCE_COPY" -eq 0 ] && [ -f "$d" ] && [ "$(stat -c %s "$d")" = "$want" ]; then
                   echo "present: $rel ($want bytes)"; return
                 fi
                 echo "copying: $rel ($want bytes)"
@@ -61,7 +68,10 @@ spec:
                 [ -f "$SRC/$f" ] && sync_one "$f"
               done
 
-              echo "$MODEL" > "$READY"
+              printf '%s\n' "$REVISION" > "$STATE_TMP"
+              mv "$STATE_TMP" "$STATE"
+              printf '%s\n' "$REVISION" > "$READY_TMP"
+              mv "$READY_TMP" "$READY"
 
               echo "=== RESULT ==="
               ls -1 "$DST" | wc -l | awk '{print "files: " $1}'
