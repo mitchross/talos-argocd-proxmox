@@ -5,11 +5,11 @@
 > [`noonghunna/club-3090`](https://github.com/noonghunna/club-3090) recipe repo,
 > recipe used for the active single-card configuration.
 >
-> Last updated: 2026-08-29 (current-state banner; historical analysis retained).
+> Last updated: 2026-08-30 (current-state banner; historical analysis retained).
 >
-> ⚠️ **Current topology:** llama.cpp serves `Qwen3.8-Flash-Next Q4` on the sole
-> RTX 3090 using UD-IQ4_XS, BF16 vision, q8_0 KV at 131K, expert-only CPU
-> offload, and no MTP. vLLM and image generation are parked. Any dual-card,
+> ⚠️ **Current topology:** vLLM serves `qwen3.8-27b` on the sole RTX 3090 using
+> the AutoRound W4A16 dense checkpoint, native vision, fp8 KV at 64K, and
+> 2-token MTP. llama.cpp and image generation are parked. Any dual-card,
 > Qwen3.6, or old preset statement below is historical unless repeated in the
 > model catalog.
 

@@ -6,31 +6,31 @@ via the GPU Operator.
 
 The GPU workloads (vLLM, llama-cpp, ComfyUI) use whole-card allocation
 (`type: Recreate`, no time-slicing) and scale-swap by committed replica counts.
-llama.cpp is active with multimodal Qwen3.8-Flash-Next UD-IQ4_XS; vLLM,
+vLLM is active with the multimodal dense Qwen3.8-27B AutoRound W4A16; llama.cpp,
 ComfyUI, and SwarmUI are parked. Exactly one GPU workload may be active.
 
 ## Architecture
 
 ```
-Apps / OpenWebUI ──► llama.cpp (replicas: 1, one 3090)
-                         └── Qwen3.8-Flash-Next Q4 (chat, tools, vision; 131,072 tokens)
+Apps / OpenWebUI ──► vLLM (replicas: 1, one 3090)
+                         └── qwen3.8-27b (chat, tools, vision; 65,536 tokens)
 
-vLLM (replicas: 0) ──► parked rollback backend
+llama.cpp (replicas: 0) ──► parked GGUF rollback backend
 ```
 
 ## Active LLM model
 
-llama.cpp exposes the Flash-Next Q4 GGUF and BF16 projector under an API model
-name that matches the physical checkpoint. `qwen3.8-27b` is reserved for the
-separate 27B model and is not a Flash-Next alias.
+vLLM serves the dense 27B checkpoint under the id every in-cluster consumer
+already sends. `Qwen3.8-Flash-Next Q4` belongs to the parked llama.cpp GGUF and
+is a different model, not an alias.
 
 | API model | Model | Think | Context | Primary Use |
 |---|---|---|---:|---|
-| `Qwen3.8-Flash-Next Q4` | Qwen3.8-Flash-Next UD-IQ4_XS + mmproj-BF16 | Low effort | 131K | Chat, tools, vision, and tasks |
+| `qwen3.8-27b` | Qwen3.8-27B-W4A16-AutoRound (int8 lm_head) | Off by default | 64K | Chat, tools, vision, and tasks |
 
-Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
+Source of truth: `my-apps/ai/vllm/deployment.yaml`.
 
-### Key llama-server Optimizations
+### Key llama-server Optimizations (parked rollback path)
 
 | Setting | Value | Why |
 |---------|-------|-----|
@@ -44,7 +44,9 @@ Source of truth: `my-apps/ai/llama-cpp/deployment.yaml`.
 
 ### Using with Claude Code CLI
 
-llama-server natively supports the Anthropic Messages API at `/v1/messages`. No proxy needed:
+Only works while llama.cpp is the active backend — the Anthropic Messages API at
+`/v1/messages` is a llama-server feature; vLLM serves OpenAI-compatible routes
+only, so on the current backend this needs a proxy.
 
 ```bash
 export ANTHROPIC_BASE_URL="http://llama.vanillax.me"
@@ -55,10 +57,10 @@ claude --model "Qwen3.8-Flash-Next Q4"
 
 ### Using with OpenClaw / Other Tools
 
-llama-server also exposes the OpenAI-compatible API at `/v1/chat/completions`:
+Both backends expose the OpenAI-compatible API at `/v1/chat/completions`:
 
 ```bash
-export OPENAI_BASE_URL="http://llama.vanillax.me/v1"
+export OPENAI_BASE_URL="http://vllm.vanillax.me/v1"
 export OPENAI_API_KEY="any-value"
 ```
 
@@ -107,11 +109,11 @@ Two options, both pre-installed in the megapak Docker image:
 **Workflows**: `workflows/florence2-caption.json`, `workflows/wd14-tagger.json`
 
 For deeper image analysis (visual Q&A, reasoning), use **Qwen 3.8** via Open WebUI chat
-(upload image → ask questions). This goes through the active llama.cpp backend, not ComfyUI.
-ComfyUI can also call llama-server's vision API directly via the `comfyui-llamacpp-client`
-node (URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`). The
-checked-in ComfyUI workflow is parked with ComfyUI and already requests the
-legacy `qwen3.8-27b` id; migrate that parked consumer separately before use.
+(upload image → ask questions). This goes through the active vLLM backend, not ComfyUI.
+ComfyUI can also call the chat backend's vision API directly via the
+`comfyui-llamacpp-client` node (URL:
+`http://vllm-service.vllm.svc.cluster.local:8080`). That workflow is parked with
+ComfyUI and requests `qwen3.8-27b`, which the active backend serves.
 
 ## Video Generation (ComfyUI)
 
@@ -237,7 +239,7 @@ The job downloads (skips existing):
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`Qwen3.8-Flash-Next Q4` uses reasoning enabled at low effort.
+`qwen3.8-27b` with thinking off by default.
 
 ### RAG Tuning
 
@@ -261,8 +263,8 @@ IMAGE_STEPS: 9  (Z-Image-Turbo optimal)
 
 | Service | Internal URL | External URL |
 |---------|-------------|-------------|
-| llama.cpp (default LLM backend) | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me`, `vllm.vanillax.me` |
-| vLLM (parked rollback) | `vllm-service.vllm.svc:8080` | -- |
+| vLLM (default LLM backend) | `vllm-service.vllm.svc:8080` | `vllm.vanillax.me` |
+| llama.cpp (parked rollback) | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me` |
 | Open WebUI | `open-webui-service.open-webui.svc:8080` | `open-webui.vanillax.me` |
 | ComfyUI | `comfyui-service.comfyui.svc:8188` | `comfyui.vanillax.me` |
 | SearXNG | `searxng.searxng.svc:8080` | -- |

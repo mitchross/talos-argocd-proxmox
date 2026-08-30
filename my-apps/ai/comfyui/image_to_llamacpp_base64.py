@@ -10,8 +10,8 @@ import urllib.error
 import numpy as np
 from PIL import Image
 
-_DEFAULT_SERVER = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
-# Qwen 3.8 multimodal (UD-IQ4_XS + mmproj-F16) — one model for both
+_DEFAULT_SERVER = "http://vllm-service.vllm.svc.cluster.local:8080"
+# Qwen 3.8 multimodal (AutoRound W4A16, native vision) — one model for both
 # image-to-prompt captioning and any tool/text chain that follows.
 _DEFAULT_MODEL = "qwen3.8-27b"
 
@@ -26,7 +26,7 @@ def _image_to_base64(image_tensor):
 
 
 def _chat_completion(server_url, model, messages, temperature, max_tokens):
-    """Call llama.cpp /v1/chat/completions and return the text response."""
+    """Call the chat backend's /v1/chat/completions and return the text response."""
     payload = {
         "model": model,
         "messages": messages,
@@ -115,7 +115,7 @@ class ImageToLlamaCppBase64:
 
 
 class LlamaCppVisionCaption:
-    """Sends an image to a llama.cpp vision model and returns the caption text."""
+    """Sends an image to the backend vision model and returns the caption text."""
 
     @classmethod
     def INPUT_TYPES(cls):

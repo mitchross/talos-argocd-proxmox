@@ -4,35 +4,39 @@
 
 One active OpenAI-compatible local backend, **NOT ollama**:
 
-### llama.cpp — active, single card
-- Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
-- Served API model: **`Qwen3.8-Flash-Next Q4`** — Qwen3.8-Flash-Next
-  Unsloth UD-IQ4_XS with BF16 vision, expert-only CPU offload, and symmetric q8_0 KV at 131K
-  on **one** RTX 3090.
-- **Use llama.cpp / `Qwen3.8-Flash-Next Q4` when wiring an in-cluster app to chat inference.**
+### vLLM — active, single card
+- Endpoint: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
+- Served API model: **`qwen3.8-27b`** — the dense Qwen3.8-27B AutoRound W4A16
+  checkpoint with native vision, fp8 KV at 64K, and 2-token MTP on **one**
+  RTX 3090.
+- **Use vLLM / `qwen3.8-27b` when wiring an in-cluster app to chat inference.**
 
-### vLLM — parked rollback
-- `replicas: 0`; do not point consumers at `vllm-service` while parked.
+### llama.cpp — parked rollback
+- `replicas: 0`; do not point consumers at `llama-cpp-service` while parked.
 
-The old `qwen3.8-27b` name is reserved for the separate 27B checkpoint; do not
-use it as a Flash-Next compatibility alias.
+`Qwen3.8-Flash-Next Q4` is the parked llama.cpp GGUF's id, a separate model —
+do not use it as a `qwen3.8-27b` alias.
+
+**No Unsloth quant is servable here.** Unsloth's only vLLM-ready Qwen3.8-27B is
+NVFP4, which needs Blackwell tensor cores; the 3090 is Ampere. Their Q4 line for
+this model is GGUF, i.e. the parked llama.cpp path.
 
 **App→backend wiring + capacity rules:
 [`model-catalog.md`](../../docs/domains/ai-gpu/model-catalog.md) ·
 [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).**
 
-### Gotchas (see `docs/domains/ai-gpu/3090-llm-optimization.md` for full rationale)
+### Gotchas — parked llama.cpp path (see `docs/domains/ai-gpu/3090-llm-optimization.md` for full rationale)
 - **KV cache must be SYMMETRIC** — `q8_0/q8_0` or `q4_0/q4_0`, never mixed.
   Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
   Qwen3-Coder docs' q8-K/q4-V suggestion.
-- **Context limit = `min(model max, VRAM-affordable KV)`.** The live profile
-  allocates 131072 tokens with q8_0 KV and vision; confirm `n_ctx_slot` and loaded
-  VRAM after every restart. Historical vLLM measurements are in
+- **Context limit = `min(model max, VRAM-affordable KV)`.** The live vLLM profile
+  allocates 65536 tokens with fp8 KV and vision; read `GPU KV cache size` out of
+  the startup log after every restart. Historical measurements are in
   [`single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
-- **Engine choice:** Qwen3.8-Flash-Next runs on a pinned post-merge llama.cpp
-  qwen4exp build via Unsloth's split IQ4_XS GGUF and BF16 projector. The stock-vLLM
-  W4A16 deployment is a parked rollback.
+- **Engine choice:** the 27B runs on stock unpatched vLLM — `qwen3_5.py` already
+  passes `quant_config` to `ParallelLMHead`, so W4A16 + int8 lm_head needs no
+  runtime patch. The llama.cpp Flash-Next build is the parked rollback.
 - **MTP stays off for Flash-Next.** The merged qwen4exp implementation did not
   include the final Flash-Next MTP path.
 - **The dedicated N-gram shard stays lazy and mmap-backed.** Do not add mlock,
@@ -54,7 +58,7 @@ The production AI workloads are pinned to the existing `gpu-worker=true`
 label. The Wi-Fi Dell worker is CPU-only and deliberately does not carry that
 label, so it cannot receive these 24/48-GiB model workloads.
 
-- **Current state:** llama-cpp `replicas: 1` holding the **sole** card; vLLM,
+- **Current state:** vLLM `replicas: 1` holding the **sole** card; llama-cpp,
   ComfyUI and SwarmUI are `0`.
   (Current, not permanent — flip the committed replica counts to swap which
   workload owns the cards. Full procedure + card truth table:

@@ -19,7 +19,7 @@ resources:
 modelList:
   local-qwen:
     model: openai/qwen3.8-27b
-    api_base: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
+    api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
     api_key: none
 
 toolsets:

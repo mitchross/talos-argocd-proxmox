@@ -33,8 +33,12 @@ if printf '%s' "$cmd" | grep -Eq '(^|[;&|[:space:]])git([[:space:]]+-C[[:space:]
   deny "Global rule: never push to main/master. Push to a feature/PR branch and open a PR instead."
 fi
 
-# Branch the command will run on.
-branch=$(git -C "$cwd" symbolic-ref --short -q HEAD 2>/dev/null || true)
+# Branch the command will run on. `git -C <path>` retargets another checkout, so
+# honour it — otherwise every worktree commit is judged against the session
+# cwd's branch and denied even when the worktree is on a feature branch.
+target=$(printf '%s' "$cmd" | sed -nE 's|.*[[:space:]]-C[[:space:]]+([^[:space:]]+).*|\1|p' | head -1)
+[ -n "$target" ] || target="$cwd"
+branch=$(git -C "$target" symbolic-ref --short -q HEAD 2>/dev/null || true)
 case "$branch" in
   main|master)
     deny "Global rule: currently on $branch -- no commit/push on main/master. Create a feature branch first (git checkout -b <branch>)."
