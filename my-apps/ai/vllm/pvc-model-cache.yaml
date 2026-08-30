@@ -1,0 +1,45 @@
+# Node-local model cache on the GPU worker's 450GB NVMe (`ai-model-cache` Talos
+# UserVolume, /dev/sdb1) — the same disk llama-cpp uses, kept apart by subPath.
+# Serving reads from here; the NFS PVC stays the canonical source copy.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ai-model-cache-vllm-local
+spec:
+  # Informational only for a local PV (nothing enforces it); the real ceiling is
+  # whatever llama-cpp's GGUF families leave free on the shared 450G volume.
+  capacity:
+    storage: 60Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ai-model-cache-local
+  volumeMode: Filesystem
+  local:
+    path: /var/mnt/ai-model-cache
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: gpu-worker
+              operator: In
+              values:
+                - "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-model-cache-vllm
+  namespace: vllm
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Node-local safetensors cache; reproducible from the NFS source PVC"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 60Gi
+  storageClassName: ai-model-cache-local
+  volumeName: ai-model-cache-vllm-local

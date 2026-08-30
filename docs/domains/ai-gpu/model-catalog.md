@@ -44,10 +44,12 @@ is the 4-bit vLLM path on this card.
 
 ## Storage and staging
 
-vLLM mounts `192.168.10.133:/mnt/ai-pool/vllm` read-only over the NFS CSI
-driver; the checkpoint is already staged there and needs no download Job. The
-torch.compile and Triton caches persist on a Longhorn PVC — without them the
-engine recompiles every boot.
+Both backends use the same two-tier shape: the TrueNAS share is the canonical
+archive, and a wave 0 Sync hook copies the weights to the GPU node's 450 GB
+NVMe, which is all the serving pod mounts. For vLLM that is
+`192.168.10.133:/mnt/ai-pool/vllm` → `/var/mnt/ai-model-cache/vllm`. The
+torch.compile and Triton caches persist separately on a Longhorn PVC — without
+them the engine recompiles every boot.
 
 The llama.cpp GGUF share, its download/cache-sync hooks, and its node-local
 NVMe cache all remain intact so the rollback is a replica flip plus a rewire.
