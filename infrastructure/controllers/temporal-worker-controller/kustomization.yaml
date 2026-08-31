@@ -4,6 +4,7 @@ namespace: temporal-worker-controller
 
 resources:
   - namespace.yaml
+  - manager-identity-recovery.yaml
 
 # Two OCI charts: CRDs (upgradeable independently) and the controller itself.
 helmCharts:

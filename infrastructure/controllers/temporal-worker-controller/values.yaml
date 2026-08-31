@@ -9,6 +9,10 @@ webhookCertificate:
   certManager:
     enabled: true
 
+# Chart releases do not advance appVersion monotonically, so pin the controller independently.
+image:
+  tag: v1.9.0
+
 # Top-level, not under `controller:` — the chart has no such key and ignores it.
 # Two managers contend for the same ManagerIdentity, so keep this at 1.
 replicas: 1
