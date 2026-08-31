@@ -32,6 +32,11 @@ configMapGenerator:
   - tokens-per-second-function.py
   options:
     disableNameSuffixHash: true
+- name: qwen-no-think-filter
+  files:
+  - qwen-no-think-filter.py
+  options:
+    disableNameSuffixHash: true
 - name: open-webui-configmap
   envs:
   - open-webui-configmap.env
