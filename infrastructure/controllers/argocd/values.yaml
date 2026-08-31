@@ -161,6 +161,26 @@ configs:
         end
       end
       return hs
+    # Maps Temporal's Ready condition into Argo CD health: True becomes Healthy,
+    # PlanExecutionFailed becomes Degraded, and unresolved states stay Progressing.
+    resource.customizations.health.temporal.io_WorkerDeployment: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = "Waiting for Temporal WorkerDeployment reconciliation"
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "Ready" then
+            hs.message = c.message or c.reason or hs.message
+            if c.status == "True" then
+              hs.status = "Healthy"
+            elseif c.reason == "PlanExecutionFailed" then
+              hs.status = "Degraded"
+            end
+            return hs
+          end
+        end
+      end
+      return hs
 # Argo CD server settings
 server:
   # One schedulable worker / one physical failure domain: extra replicas do
