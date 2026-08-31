@@ -1,0 +1,77 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: temporal-worker-controller-identity-recovery
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          serviceAccountName: temporal-worker-controller-service-account
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: recover-manager-identity
+              image: temporalio/admin-tools:1.31.2@sha256:dbc5fcd6ee8f0f4d808bf765af9a87dea9d8a283abfdcfbd2fc148496ba66107
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  api="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}"
+                  token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+                  ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                  namespace_json="$(SSL_CERT_FILE="${ca}" wget -qO- --header="Authorization: Bearer ${token}" "${api}/api/v1/namespaces/${POD_NAMESPACE}")"
+                  namespace_uid="$(printf '%s' "${namespace_json}" | sed -n 's/.*"uid"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+                  test -n "${namespace_uid}"
+
+                  desired_identity="${CONTROLLER_IDENTITY}/${namespace_uid}"
+                  deployment_names="$(temporal --disable-config-file --address "${TEMPORAL_ADDRESS}" --namespace "${TEMPORAL_NAMESPACE}" worker deployment list -o json | sed -n 's/^  "name": "\([^"]*\)",$/\1/p')"
+
+                  printf '%s\n' "${deployment_names}" | while IFS= read -r deployment_name; do
+                    test -n "${deployment_name}" || continue
+                    manager_identity="$(temporal --disable-config-file --address "${TEMPORAL_ADDRESS}" --namespace "${TEMPORAL_NAMESPACE}" worker deployment describe --name "${deployment_name}" -o json | sed -n 's/^  "managerIdentity": "\([^"]*\)"$/\1/p')"
+                    case "${manager_identity}" in
+                      "${CONTROLLER_IDENTITY}"/*)
+                        if [ "${manager_identity}" != "${desired_identity}" ]; then
+                          temporal --disable-config-file --address "${TEMPORAL_ADDRESS}" --namespace "${TEMPORAL_NAMESPACE}" --identity "${manager_identity}" worker deployment manager-identity unset --deployment-name "${deployment_name}" -y
+                          echo "cleared stale controller identity for ${deployment_name}"
+                        fi
+                        ;;
+                    esac
+                  done
+              env:
+                - name: CONTROLLER_IDENTITY
+                  value: temporal-worker-controller/temporal-worker-controller
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: TEMPORAL_ADDRESS
+                  value: temporal-frontend.temporal.svc.cluster.local:7233
+                - name: TEMPORAL_NAMESPACE
+                  value: default
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
