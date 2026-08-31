@@ -55,6 +55,14 @@ spec:
       backendRefs:
         - name: feature-flags
           port: 3001
+    # SDK remote config — session replay never starts when /array falls through to Django.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /array
+      backendRefs:
+        - name: hypercache-server
+          port: 3002
     # CDP webhooks
     - matches:
         - path:
@@ -134,22 +142,19 @@ spec:
       backendRefs:
         - name: feature-flags
           port: 3001
-    # CDP webhooks
+    # SDK remote config — session replay never starts when /array falls through to Django.
     - matches:
         - path:
             type: PathPrefix
-            value: /public/webhooks
-        - path:
-            type: PathPrefix
-            value: /public/m
+            value: /array
       backendRefs:
-        - name: plugins
-          port: 6738
-    # Default fallback to web
+        - name: hypercache-server
+          port: 3002
+    # SDK and recorder assets only; unmatched paths must not expose the Django UI/API.
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /static
       backendRefs:
         - name: web
           port: 8000

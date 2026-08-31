@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - httproute.yaml
+  - vpa.yaml
   - kopiur/postgres-data.yaml
   # Data layer (all in posthog namespace)
   - data-layer/postgres.yaml
@@ -21,6 +22,7 @@ resources:
   - core/plugins.yaml
   - core/capture.yaml
   - core/capture-ai.yaml
+  - core/hypercache-server.yaml
   - core/ingestion.yaml
   - core/ingestion-sessionreplay.yaml
   - core/recording-api.yaml
