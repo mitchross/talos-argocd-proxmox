@@ -253,6 +253,16 @@ spec:
             secretKeyRef:
               name: posthog-secrets
               key: posthog-db-url
+        - name: OBJECT_STORAGE_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: rustfs-access-key
+        - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: rustfs-secret-key
         resources:
           requests:
             cpu: 250m
