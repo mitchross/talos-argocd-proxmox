@@ -161,6 +161,7 @@ configs:
         end
       end
       return hs
+    # Maps Temporal WorkerDeployment readiness into Argo CD health status.
     resource.customizations.health.temporal.io_WorkerDeployment: |
       hs = {}
       hs.status = "Progressing"
