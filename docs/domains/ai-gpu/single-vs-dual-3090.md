@@ -29,6 +29,13 @@ over a real repository), with identical verbatim prompts.
 removes 36% of the KV pool but the workload still fits, because the pool is only
 ever ~76% full at peak. Decode barely moves; generation was never the bottleneck.
 
+Thinking depth is a separate per-request control, not a one-vs-two-card tuning
+knob. Qwen3.8 defaults a thinking request with no explicit effort to `xhigh`,
+which can waste context regardless of GPU count. Keep vLLM non-thinking by
+default; Pi should use `medium` for normal coding, `off` for trivial work, and
+`xhigh` only for genuinely hard reasoning. See
+[`pi-agent-local-dev.md`](pi-agent-local-dev.md).
+
 ## Why the pool is large enough
 
 Qwen3.8 is a hybrid-attention model. `full_attention_interval: 4` means only

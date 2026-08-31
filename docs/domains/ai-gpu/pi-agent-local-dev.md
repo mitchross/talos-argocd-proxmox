@@ -1,12 +1,8 @@
-# Pi Agent — Claude-Code-Grade Local Dev on the Dual-3090 Backend
+# Pi Agent — Claude-Code-Grade Local Dev on the Single-3090 Backend
 
-> ⚠️ **Model id and topology below are out of date.** The live backend is
-> **`qwen3.8-27b`** on the **sole** RTX 3090 via vLLM, AutoRound W4A16,
-> fp8 KV at **65,536 tokens**, native vision, and MTP-2. Every `qwen3.6-27b`,
-> `TP=2` and `262K` reference on this page is stale — substitute the current
-> values. See [`model-catalog.md`](model-catalog.md) and
-> [`single-vs-dual-3090.md`](single-vs-dual-3090.md); the surrounding technique
-> is still sound.
+> **Current state:** `qwen3.8-27b` runs on the sole RTX 3090 via vLLM with
+> AutoRound W4A16, fp8 KV at 65,536 tokens, native vision, and MTP-2. See
+> [`model-catalog.md`](model-catalog.md) for the backend source of truth.
 
 > Goal: fully local coding agents that match the Claude Code *capability set*
 > — tools, repo context, skills, research — without using Claude Code. The
@@ -20,10 +16,7 @@
 > Stack targets: Kubernetes/Talos GitOps (this repo), JavaScript/Node/
 > TypeScript, Python, React Native, Temporal.io.
 >
-> Last updated: 2026-08-19 (current-state banner; body last revised 2026-07-24,
-> including §9 — LiteLLM proxy + PostHog LLM Analytics,
-> and the `kimi-consult` subagent; §4a's pi-subagents status corrected —
-> it's back, for one targeted reason).
+> Last updated: 2026-08-30 (Qwen3.8 topology and explicit Pi thinking levels).
 
 ## Architecture
 
@@ -49,15 +42,9 @@
     <div class="dgm-link dgm-link--edge dgm-link--d1" aria-hidden="true"></div>
     <div class="dgm-node dgm-node--svc">
       <span class="dgm-node__badge">inference</span>
-      <span class="dgm-node__title">vLLM · <code>qwen3.6-27b</code> · TP=2</span>
-      <span class="dgm-node__sub">262K context · vision · <code>qwen3_coder</code> tool parser</span>
-      <span class="dgm-node__meta">Tensor-parallel across both cards — one model, two GPUs</span>
-    </div>
-    <div class="dgm-fan" aria-hidden="true">
-      <span class="dgm-fan__stem"></span>
-      <span class="dgm-fan__bar"></span>
-      <span class="dgm-fan__leg dgm-fan__leg--l"></span>
-      <span class="dgm-fan__leg dgm-fan__leg--r"></span>
+      <span class="dgm-node__title">vLLM · <code>qwen3.8-27b</code> · TP=1</span>
+      <span class="dgm-node__sub">64K context · vision · <code>qwen3_coder</code> tool parser</span>
+      <span class="dgm-node__meta">One model on the sole GPU</span>
     </div>
     <div class="dgm-row">
       <div class="dgm-node dgm-node--gpu dgm-node--pulse">
@@ -65,14 +52,9 @@
         <span class="dgm-node__title">RTX 3090</span>
         <span class="dgm-node__meta">200W cap</span>
       </div>
-      <div class="dgm-node dgm-node--gpu dgm-node--pulse">
-        <span class="dgm-node__badge">gpu 1</span>
-        <span class="dgm-node__title">RTX 3090</span>
-        <span class="dgm-node__meta">200W cap</span>
-      </div>
     </div>
   </div>
-  <p class="dgm-foot">Cards are exposed by the NVIDIA infrastructure DaemonSet. Whole-card and mutually exclusive — vLLM holding them means llama-cpp and ComfyUI are scaled to zero.</p>
+  <p class="dgm-foot">The card is exposed by the NVIDIA infrastructure DaemonSet. Whole-card and mutually exclusive — vLLM holding it means llama-cpp and ComfyUI are scaled to zero.</p>
 </div>
 
 Everything agent-side lives on the workstation (`~/.pi/agent/`); nothing here
@@ -81,13 +63,13 @@ don't fight these from the client:
 
 | Server flag (see `my-apps/ai/vllm/deployment.yaml`) | Why pi cares |
 |---|---|
-| `--served-model-name qwen3.6-27b` | the `id` pi must send |
-| `--max-model-len 262144` | matches `contextWindow` below |
-| `--max-num-seqs 2` | pi + ONE other consumer concurrently; a third request queues |
+| `--served-model-name qwen3.8-27b` | the `id` pi must send |
+| `--max-model-len 65536` | matches `contextWindow` below |
+| `--max-num-seqs 3` | three sequence slots share the card; long requests can still queue |
 | `--enable-auto-tool-choice` + `--tool-call-parser qwen3_coder` | pi's tool calls parse natively |
 | `--reasoning-parser qwen3` + thinking off by default | pi gets clean content; thinking is opt-in per request |
 | `--override-generation-config` (temp 0.7 / top_p 0.8 / top_k 20 / presence 1.5) | correct Qwen agent sampling — leave pi's sampling unset |
-| `--limit-mm-per-prompt {"image": 16}` | screenshot budget per prompt (pi resends the whole convo — see gotchas) |
+| `--limit-mm-per-prompt {"image": 1, "video": 0}` | one image per request; compact before sending a different screenshot |
 | HTTPRoute `timeouts: 30m` | long generations won't be cut by the gateway |
 
 ## 1. Point pi at the cluster — `~/.pi/agent/models.json`
@@ -95,25 +77,47 @@ don't fight these from the client:
 ```json
 {
   "providers": {
-    "homelab": {
+    "vanillax-vllm": {
       "baseUrl": "https://vllm.vanillax.me/v1",
       "api": "openai-completions",
       "apiKey": "none",
       "compat": {
         "supportsDeveloperRole": false,
         "supportsReasoningEffort": false,
-        "supportsUsageInStreaming": false,
-        "thinkingFormat": "qwen-chat-template"
+        "supportsUsageInStreaming": true,
+        "maxTokensField": "max_tokens",
+        "thinkingFormat": "chat-template",
+        "chatTemplateKwargs": {
+          "enable_thinking": { "$var": "thinking.enabled" },
+          "reasoning_effort": {
+            "$var": "thinking.effort",
+            "omitWhenOff": true
+          }
+        }
       },
       "models": [
         {
-          "id": "qwen3.6-27b",
-          "name": "Qwen3.6-27B (homelab 2x3090)",
+          "id": "qwen3.8-27b",
+          "name": "Qwen3.8 27B (vLLM, 1x3090, 64K)",
           "reasoning": true,
+          "thinkingLevelMap": {
+            "off": "off",
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": null,
+            "xhigh": "xhigh",
+            "max": null
+          },
           "input": ["text", "image"],
-          "contextWindow": 262144,
-          "maxTokens": 32768,
-          "cost": { "input": 0, "output": 0 }
+          "contextWindow": 65536,
+          "maxTokens": 16384,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
         }
       ]
     }
@@ -121,19 +125,42 @@ don't fight these from the client:
 }
 ```
 
-- `"qwen-chat-template"` is a pi ≥0.80 built-in preset that maps pi's thinking
-  toggle (Shift+Tab) to Qwen's `enable_thinking` chat-template kwarg — no
-  manual `chatTemplateKwargs` block needed. Verified against the server
-  (2026-07-06) via vLLM `/tokenize`: per-request kwargs are honored (nothink
-  renders the forced-empty `<think></think>`, +2 tokens). The server defaults
-  thinking off (`--default-chat-template-kwargs`); `models.json` hot-reloads
-  on `/model`, no restart needed.
-- `"supportsUsageInStreaming": false` matches what this vLLM route delivers —
-  side effect: **pi's token counters read 0** for these runs. Measure work in
-  wall time and tool-call counts (from the session JSONL), not tokens.
+Set the per-model startup default in `~/.pi/agent/settings.json`:
+
+```json
+{
+  "modelThinkingLevels": {
+    "vanillax-vllm/qwen3.8-27b": "medium"
+  }
+}
+```
+
+Qwen3.8's template defaults an omitted `reasoning_effort` to `xhigh`. The old
+`qwen-chat-template` shortcut sent only the on/off switch, so enabling thinking
+could silently select the most aggressive mode and consume most of a turn's
+context. This is a client/template mismatch, not evidence of a vLLM backend
+bug. The explicit `chat-template` mapping sends exactly this per request:
+
+| Command | Template kwargs | Use |
+|---|---|---|
+| `pi --thinking off` | `enable_thinking: false` | trivial edits, lookups, and formatting |
+| `pi --thinking low` | `enable_thinking: true`, `reasoning_effort: low` | short tasks that need a little reasoning |
+| `pi --thinking medium` | `enable_thinking: true`, `reasoning_effort: medium` | normal coding, debugging, and agent work |
+| `pi --thinking xhigh` | `enable_thinking: true`, `reasoning_effort: xhigh` | genuinely hard reasoning only |
+
+`off: "off"` declares Pi's off level, but `omitWhenOff` prevents that string
+from being sent as a Qwen effort. The null entries hide levels that the
+[Qwen3.8 template does not accept](https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/chat_template.jinja).
+Keep vLLM's `--default-chat-template-kwargs '{"enable_thinking": false}'`:
+the backend remains non-thinking by default, while Pi opts in explicitly for
+each enabled request. `models.json` hot-reloads when `/model` is opened.
+
+- `supportsReasoningEffort: false` prevents a duplicate top-level
+  `reasoning_effort`; Qwen receives it inside `chat_template_kwargs`.
+- `supportsUsageInStreaming: true` preserves vLLM's streamed usage counters.
 - `input: ["text","image"]` enables pi's screenshot flow (the 27B is
   multimodal).
-- Select with `/model` or `pi --model qwen3.6-27b`. Verify tools work:
+- Select with `/model` or `pi --model qwen3.8-27b`. Verify tools work:
   `pi "read package.json and summarize the scripts"` — you should see a
   `read` tool call, not a hallucinated answer.
 
@@ -145,7 +172,7 @@ don't fight these from the client:
 | Skills | Skills — **same Agent Skills standard** | `~/.pi/agent/skills/` or `.pi/skills/`; invoke `/skill:name` |
 | Slash commands | Prompt templates in `~/.pi/agent/prompts/` / `.pi/prompts/` | plain markdown, `/name` expands |
 | MCP servers | **`pi install npm:pi-mcp-adapter`** (not in core — see §4a) | token-efficient proxy: ONE `mcp` tool (~200 tokens) instead of hundreds of tool defs |
-| Subagents / Task | **`pi-subagents` package** (not in core) | parallel isolated agents — but see the `max-num-seqs 2` warning in §4a |
+| Subagents / Task | **`pi-subagents` package** (not in core) | parallel isolated agents — but see the `max-num-seqs 3` warning in §4a |
 | Plan mode | **`pi-plan` package** — read-only planning + approval-based execution | the Claude Code plan-mode equivalent |
 | Session resume / compact | `pi -c`, `pi -r`, `/compact` — plus a **session TREE**: `/fork`, `/tree`, branch and switch | sessions are JSONL trees, not linear — better than Claude Code for exploring alternatives |
 | Permission modes | ⚠️ **none by default — "YOLO mode"** | see the safety note below; `trust.json` + `--tools`/`--exclude-tools` + opt-in permission-gating extensions |
@@ -166,7 +193,7 @@ additive, not required.
 
 ```markdown
 # Environment
-- Local model (qwen3.6-27b on homelab vLLM). Free tokens, 262K window, but
+- Local model (qwen3.8-27b on homelab vLLM). Free tokens, 64K window, but
   PREFILL IS EXPENSIVE: keep context lean, prefer targeted reads over
   dumping whole trees. Compact or /new between unrelated tasks.
 - You have bash. Prefer CLIs over guessing: kubectl, talosctl, argocd,
@@ -257,7 +284,7 @@ Two tiers, both local/private:
    `embeddingModel` are required `{providerId, key}` objects. Use
    `"stream": true` — non-stream buffers the whole agent run (can exceed
    120s); streaming returns `sources` events in seconds:
-   `curl -sN -m 180 https://perplexica.vanillax.me/api/search -H 'Content-Type: application/json' -d '{"query":"QUERY","sources":["web"],"optimizationMode":"speed","stream":true,"chatModel":{"providerId":"llama-cpp-cluster","key":"qwen3.6-27b"},"embeddingModel":{"providerId":"transformers-default","key":"Xenova/all-MiniLM-L6-v2"}}'`
+   `curl -sN -m 180 https://perplexica.vanillax.me/api/search -H 'Content-Type: application/json' -d '{"query":"QUERY","sources":["web"],"optimizationMode":"speed","stream":true,"chatModel":{"providerId":"llama-cpp-cluster","key":"qwen3.8-27b"},"embeddingModel":{"providerId":"transformers-default","key":"Xenova/all-MiniLM-L6-v2"}}'`
    (output is ND-JSON events: `sources` then `response` chunks; if models
    change, re-list with `curl -s https://perplexica.vanillax.me/api/providers`.
    The chat model is the SAME vLLM instance pi runs on — each call takes one
@@ -301,7 +328,7 @@ here, and why the choices interact with the *local* backend:
 pi install npm:pi-mcp-adapter   # MCP servers (restart pi after)
 pi install npm:pi-plan          # read-only plan mode + approve-to-execute
 # npm:pi-subagents — NOT installed (removed 2026-07-06: zero usage in session
-# history, and wide fan-outs fight --max-num-seqs 2 anyway; reinstall if a
+# history, and wide fan-outs fight --max-num-seqs 3 anyway; reinstall if a
 # real parallel-isolation need appears — read the warning below first)
 ```
 
@@ -343,7 +370,7 @@ with good CLIs (temporal, argocd) — the CLI costs zero context.
 reason: `kimi-consult` (§9).** It was removed 2026-07-06 (zero usage, and
 every extension is failure surface — see the scripted-mode section) with the
 warning that parallel subagents each open their own request against vLLM,
-where `--max-num-seqs 2` means a fan-out of 3+ queues. That warning still
+where `--max-num-seqs 3` means a fan-out of 4+ queues. That warning still
 holds for **general-purpose subagents against the local backend** — but
 `kimi-consult` doesn't hit vLLM at all; it's a single subagent pinned to a
 *different* model/provider (Kimi K3 via LiteLLM → Moonshot's API), so it
@@ -458,7 +485,7 @@ the model *can* run `kubectl delete`. Layered mitigation for cluster work:
 - **Mix local + frontier in one session:** add your Anthropic/OpenAI key
   alongside the homelab provider (built-in providers need only `/login` — no
   models.json entry) and **Ctrl+P cycles models mid-session**. Daily loop on
-  `qwen3.6-27b` for free; hit a wall → Ctrl+P to a frontier model for one
+  `qwen3.8-27b` for free; hit a wall → Ctrl+P to a frontier model for one
   hard turn → cycle back. This is the "local volume, frontier judgment"
   economics from the wind-down plan, inside a single conversation.
 - **Session tree instead of restarts:** `/fork` before a risky refactor,
@@ -471,16 +498,16 @@ the model *can* run `kubectl delete`. Layered mitigation for cluster work:
 
 ## 5. Research & RAG strategy
 
-- **Code understanding: agentic retrieval beats embedding RAG.** With 262K of
+- **Code understanding: agentic retrieval beats embedding RAG.** With 64K of
   context and grep/read tools, pi navigates repos the way Claude Code does —
   search, open, follow imports. Don't build a vector index of your code; it
   goes stale and retrieves worse than the model's own targeted greps.
 - **Web research:** the `research` skill above (SearXNG for hits, Perplexica
   for synthesized+cited answers). This is the local replacement for Claude
   Code's WebSearch/WebFetch.
-- **Long-document Q&A:** just read the file(s) into context — that's what the
-  262K window is for. But mind the prefill bill (below); for a 500-page spec,
-  Perplexica-style retrieval first, full read second.
+- **Long-document Q&A:** read targeted sections into context; the live window is
+  64K. For a 500-page spec, use Perplexica-style retrieval first and read the
+  full document only if the targeted pass is insufficient.
 - **Offline references:** the Kiwix instance (wired into open-webui's mcpo)
   is also plain HTTP — add a curl line to the research skill if devdocs/wiki
   bundles are loaded.
@@ -488,15 +515,13 @@ the model *can* run `kubectl delete`. Layered mitigation for cluster work:
 ## 6. Operational gotchas (the ones that will bite)
 
 1. **Prefill is the tax, not decode.** pi resends the whole conversation
-   every turn; at 100K+ context each turn pays a multi-second-to-minutes
-   prefill even with chunked prefill enabled. Discipline: `/compact` at
+   every turn; at long context each turn pays the prefill cost again, even
+   with chunked prefill enabled. Discipline: `/compact` at
    milestones, `/new` per task, don't paste what the model can `read`.
-2. **Concurrency budget is 2.** `max-num-seqs 2` at 262K. pi + Open WebUI is
-   fine; pi + Perplexica deep-research + Karakeep tagging burst = queuing.
-   One heavy agent at a time.
-3. **Screenshots accumulate.** The 16-image cap exists because pi resends
-   convo history (see deployment.yaml comment). If a session wedges with
-   "At most N image(s) per prompt", `/compact` (drops old images) or `/new`.
+2. **Concurrency budget is 3.** `max-num-seqs 3` shares one card. Long prompts
+   can still consume the practical capacity and make later requests queue.
+3. **One image per request.** pi resends conversation history, but vLLM admits
+   only one image. `/compact` or `/new` before sending a different screenshot.
 4. **Internal route only.** `vllm.vanillax.me` resolves via the internal
    gateway — works on LAN/VPN, not from outside. Don't expose the /v1
    endpoint externally; it's unauthenticated.
@@ -506,22 +531,18 @@ the model *can* run `kubectl delete`. Layered mitigation for cluster work:
 6. **After GPU scale-swaps, pi errors are expected.** If vLLM is scaled to 0
    (image-gen session on the cards), pi gets connection errors — that's the
    whole-card topology, not a bug. Scale vLLM back to 1 in git.
-7. **Empty responses with thinking enabled = known local-model gotcha.**
-   Community reports (pi + local Qwen) of `enable_thinking` producing
-   empty `content`: everything lands in the reasoning channel and the
-   client shows nothing. Our server-side `--reasoning-parser qwen3` should
-   split it correctly — but if pi renders empty turns with thinking on,
-   drop the `chatTemplateKwargs` thinking mapping and run nothink (the
-   daily default anyway).
+7. **Do not leave Qwen3.8 thinking at its implicit level.** Its template
+   defaults an omitted effort to `xhigh`, which can spend a large turn on
+   reasoning and leave little room for final content. Use `medium` normally,
+   `off` for trivial work, and inspect `finish_reason` before blaming vLLM if
+   an `xhigh` turn returns little or no content.
 8. **vLLM fails loud, Ollama fails silent — that's a feature.** The
    Ollama-based pi guides warn that oversizing `num_ctx` silently falls
    back to CPU and "tanks tool-call reliability." vLLM has no such mode:
    requests over budget error visibly. If pi starts erroring at huge
-   contexts, that's the 262K/KV budget talking — `/compact`, don't retry.
-9. **Free upgrade pending:** swapping the vLLM checkpoint to AutoRound INT4 +
-   MTP n=3 (club-3090's default dual recipe) is specifically a *code-decode*
-   win (149 → ~264 TPS on code) — pi is the workload that benefits most.
-   Tracked in `3090-llm-optimization.md`.
+   contexts, that's the 64K request ceiling talking — `/compact`, don't retry.
+9. **MTP is already enabled.** The active profile uses two speculative draft
+   tokens; do not copy the old dual-card MTP-3 forecast into this 24 GiB layout.
 10. **Scripted `pi -p` can hang pre-request, forever.** No client timeout;
     intermittent startup race aggravated by prompt-reactive extensions
     (pi-goal). Full story + workarounds (TASK.md prompts, watchdog+retry,
@@ -554,21 +575,21 @@ OpenCode is the second agent in the toolchain — same vLLM endpoint, same
   "provider": {
     "homelab": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Homelab vLLM (2x3090)",
+      "name": "Homelab vLLM (1x3090)",
       "options": { "baseURL": "https://vllm.vanillax.me/v1" },
       "models": {
-        "qwen3.6-27b": {
-          "name": "Qwen3.6-27B",
-          "limit": { "context": 262144, "output": 32768 }
+        "qwen3.8-27b": {
+          "name": "Qwen3.8-27B",
+          "limit": { "context": 65536, "output": 16384 }
         }
       }
     }
   },
-  "model": "homelab/qwen3.6-27b"
+  "model": "homelab/qwen3.8-27b"
 }
 ```
 
-The `models` key must exactly match the served model id (`qwen3.6-27b`);
+The `models` key must exactly match the served model id (`qwen3.8-27b`);
 restart OpenCode after editing and it appears in the model picker. Frontier
 API keys slot in as normal OpenCode providers next to it.
 
@@ -584,20 +605,20 @@ API keys slot in as normal OpenCode providers next to it.
 | Extensibility | TypeScript extensions, 25 events | config + MCP |
 | Best at (here) | k8s/GitOps flows with custom skills, experiments, session branching | day-in-day-out TS/Python/React-Native editing where LSP pays |
 
-Shared-backend rule: **both agents count against `--max-num-seqs 2`.** pi +
-OpenCode simultaneously is the whole budget — fine for you alone, but don't
-also fire a Perplexica deep-research run mid-session. And OpenCode exposes
+Shared-backend rule: **both agents count against `--max-num-seqs 3`.** pi +
+OpenCode can run simultaneously, but a third long request may still exhaust
+practical capacity. OpenCode exposes
 per-model context limits in config (above) — keep them matching the server
 so it compacts instead of erroring at the ceiling.
 
 ## 8. Verify checklist
 
-- [ ] `pi --list-models` shows `qwen3.6-27b`; `/model` selects it
+- [ ] `pi --list-models` shows `qwen3.8-27b`; `/model` selects it
 - [ ] `pi "run 'ls' and tell me what you see"` → real `bash` tool call
 - [ ] Tool-call loop test: "read X, edit Y, run tests" chain completes
       without the model narrating instead of calling tools
-- [ ] Shift+Tab thinking toggle produces `<think>`-backed answers (server
-      splits it into `reasoning_content`; pi should render it as thinking)
+- [ ] `pi --thinking off` answers directly; `medium` and `xhigh` render
+      `<think>`-backed reasoning split by the server into `reasoning_content`
 - [ ] Paste a screenshot → model describes it (vision path through gateway)
 - [ ] `/skill:research quick lookup test` hits SearXNG and returns JSON
 - [ ] (if pi-mcp-adapter installed) `/mcp` lists servers; a proxy
@@ -628,9 +649,9 @@ flowchart TD
     SUB -->|"yes → subagent tool call<br/>agent: kimi-consult"| LROUTE
 
     subgraph CLUSTER["☸️ Kubernetes cluster"]
-        VROUTE --> VLLM["vLLM<br/>2x RTX 3090 · qwen3.6-27b"]
+        VROUTE --> VLLM["vLLM<br/>1x RTX 3090 · qwen3.8-27b"]
         LROUTE --> LITELLM["LiteLLM proxy<br/>looks up model → real backend + real key"]
-        LITELLM -->|"hosted_vllm/qwen3.6-27b"| VLLM
+        LITELLM -->|"hosted_vllm/qwen3.8-27b"| VLLM
         LITELLM -->|"moonshot/kimi-k3"| MOONSHOT
         LITELLM -.->|"success/failure_callback"| CAPTURE["PostHog capture"]
         CAPTURE --> CH[("ClickHouse")]
@@ -752,14 +773,14 @@ jq --arg key "$KEY" '.providers["vanillax-litellm"].apiKey = $key' \
 unset KEY
 ```
 
-Verify: `pi --list-models` should list both `vanillax-vllm/qwen3.6-27b` and
+Verify: `pi --list-models` should list both `vanillax-vllm/qwen3.8-27b` and
 `vanillax-litellm/kimi-k3`. Selecting the latter with `/model` and sending a
 message routes it through LiteLLM → Moonshot, logged to PostHog.
 
 ### Kimi K3 API specifics (learned from Moonshot's docs, not assumed)
 
 - **1M token context**, default max output 131,072 (ceiling 1,048,576) — not
-  the 262K/32K you'd guess from the vLLM numbers above; it's a different
+  the 64K/16K from the vLLM numbers above; it's a different
   model on a different backend.
 - **`reasoning_effort`** (`low`/`high`/`max`, default `max`) replaces a
   binary thinking toggle — and **can't be disabled**. K3 always reasons at
@@ -773,7 +794,7 @@ message routes it through LiteLLM → Moonshot, logged to PostHog.
 
 `~/.pi/agent/agents/kimi-consult.md` defines a custom subagent (via
 `@narumitw/pi-subagents`, §4a) pinned to `vanillax-litellm/kimi-k3`,
-read-only tools (`read`/`grep`/`find`/`ls`). The daily-driver Qwen3.6 agent
+read-only tools (`read`/`grep`/`find`/`ls`). The daily-driver Qwen3.8 agent
 calls it via the `subagent` tool —
 `{"agent": "kimi-consult", "task": "..."}` — for a second opinion on
 genuinely hard problems: an ambiguous spec, a bug it isn't converging on, an
@@ -782,7 +803,7 @@ tells the main agent when this is worth the cost (~$3/$15 per million tokens,
 unlike free local Qwen) instead of leaving it to reach for automatically.
 
 Because `kimi-consult` calls Moonshot's API rather than the local vLLM
-endpoint, it does **not** consume any of the `--max-num-seqs 2` budget from
+endpoint, it does **not** consume any of the `--max-num-seqs 3` budget from
 §4a/§6 — it's the one subagent use case that doesn't reopen that contention
 problem.
 
@@ -790,7 +811,7 @@ problem.
 
 - [ ] `kubectl get pods -n litellm` — `Running`/`1/1 Ready`, no OOMKilled
 - [ ] `curl -H "Authorization: Bearer $LITELLM_MASTER_KEY" https://litellm.vanillax.me/v1/models`
-      lists both `qwen3.6-27b` and `kimi-k3`
+      lists both `qwen3.8-27b` and `kimi-k3`
 - [ ] `pi --list-models` shows `vanillax-litellm/kimi-k3`
 - [ ] A message through `/model vanillax-litellm/kimi-k3` shows up in
       PostHog → AI engineering → LLM analytics within a few seconds
@@ -799,7 +820,7 @@ problem.
 
 ## Related docs
 
-- [`model-catalog.md`](model-catalog.md) — what `qwen3.6-27b` is, app→backend wiring
+- [`model-catalog.md`](model-catalog.md) — what `qwen3.8-27b` is, app→backend wiring
 - [`3090-llm-optimization.md`](3090-llm-optimization.md) — engine/KV analysis, power profile, wind-down roadmap
 - [`my-apps/ai/litellm/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/litellm) — §9's proxy source (config, secrets, deployment)
 - [LiteLLM docs — Moonshot AI provider](https://docs.litellm.ai/docs/providers/moonshot) · [PostHog LLM analytics](https://posthog.com/docs/llm-analytics) · [Kimi K3 quickstart](https://platform.kimi.ai/docs/guide/kimi-k3-quickstart)

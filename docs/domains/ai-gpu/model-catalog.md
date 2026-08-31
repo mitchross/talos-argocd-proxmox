@@ -30,9 +30,17 @@ vLLM serves one canonical id, `qwen3.8-27b`:
 | Concurrency | three sequence slots, 2,048-token chunked prefill |
 | Placement | whole card, `gpu-memory-utilization=0.93` |
 | Speculation | stock MTP, 2 draft tokens |
-| Default mode | thinking OFF; temp 0.7, top-p 0.8, top-k 20, presence-penalty 1.5 |
+| Backend default | thinking OFF; temp 0.7, top-p 0.8, top-k 20, presence-penalty 1.5 |
 
 The 200 W power cap remains mandatory.
+
+Keep the backend non-thinking by default. Qwen3.8 treats an enabled request
+without `reasoning_effort` as `xhigh`, so clients must opt in explicitly:
+`off` for trivial work, `medium` for normal coding/agent work, and `xhigh` only
+for hard reasoning. Pi's exact level mapping and commands live in
+[`pi-agent-local-dev.md`](pi-agent-local-dev.md).
+Excessive thinking from an omitted client-side effort is not by itself a vLLM
+backend bug.
 
 ### Why not an Unsloth quant here
 
