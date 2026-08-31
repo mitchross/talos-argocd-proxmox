@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hypercache-server
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: hypercache-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: hypercache-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: hypercache-server
+    spec:
+      containers:
+        - name: hypercache-server
+          image: ghcr.io/posthog/posthog/hypercache-server:master@sha256:37a7e1914258e1f59d7ab4ca4f8fe04a18a31605e681d03256a8678fa7cbbc0a
+          envFrom:
+            - configMapRef:
+                name: posthog-env
+          env:
+            - name: ADDRESS
+              value: "0.0.0.0:3002"
+            - name: ENABLE_METRICS
+              value: "true"
+            - name: RUST_LOG
+              value: "info"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+          ports:
+            - containerPort: 3002
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /_readiness
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /_liveness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hypercache-server
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: hypercache-server
+spec:
+  ports:
+    - name: http
+      port: 3002
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: hypercache-server

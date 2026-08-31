@@ -76,3 +76,22 @@ spec:
       path: /metrics
       interval: 30s
       scrapeTimeout: 10s
+---
+# HyperCache serves the public SDK remote config that enables session replay.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: posthog-hypercache-server
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: hypercache-server
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
