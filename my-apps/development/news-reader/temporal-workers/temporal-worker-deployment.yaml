@@ -40,7 +40,7 @@ spec:
       containers:
         - name: worker
           # Do NOT pin :latest — the controller keys build_id off the tag and cannot tell two pushes apart.
-          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.12
+          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.13
           imagePullPolicy: IfNotPresent
           # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them here.
           env:
