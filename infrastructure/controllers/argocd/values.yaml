@@ -161,9 +161,8 @@ configs:
         end
       end
       return hs
-    # Reads the Temporal WorkerDeployment Ready condition and reports it to Argo CD.
-    # Ready=True becomes Healthy, PlanExecutionFailed becomes Degraded, and any
-    # unresolved state remains Progressing while the controller reconciles it.
+    # Maps Temporal's Ready condition into Argo CD health: True becomes Healthy,
+    # PlanExecutionFailed becomes Degraded, and unresolved states stay Progressing.
     resource.customizations.health.temporal.io_WorkerDeployment: |
       hs = {}
       hs.status = "Progressing"

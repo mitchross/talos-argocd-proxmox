@@ -6,6 +6,11 @@ resources:
   - namespace.yaml
   - manager-identity-recovery.yaml
 
+configMapGenerator:
+  - name: temporal-worker-controller-identity-recovery-scripts
+    files:
+      - recover-manager-identity.sh=scripts/recover-manager-identity.sh
+
 # Two OCI charts: CRDs (upgradeable independently) and the controller itself.
 helmCharts:
   # Chart versions (0.x) are separate from the controller image version (v1.x), which is pinned in chart values.
