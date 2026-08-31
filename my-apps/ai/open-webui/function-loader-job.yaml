@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: load-functions-v7
+  name: load-functions-v8
   namespace: open-webui
   annotations:
     argocd.argoproj.io/hook: PostSync
@@ -47,6 +47,12 @@ spec:
                   "name": "Tokens Per Second",
                   "path": "/functions/tokens-per-second-function.py",
                   "description": "Filter: injects response_token/s + prompt_token/s into streamed usage stats",
+              },
+              {
+                  "id": "qwen_non_thinking_default",
+                  "name": "Qwen3.8 Non-Thinking Default",
+                  "path": "/functions/qwen-no-think-filter.py",
+                  "description": "Filter: forces qwen3.8-27b requests to use enable_thinking=false",
               },
           ]
 
@@ -164,6 +170,9 @@ spec:
         - name: tps-function
           mountPath: /functions/tokens-per-second-function.py
           subPath: tokens-per-second-function.py
+        - name: qwen-no-think-filter
+          mountPath: /functions/qwen-no-think-filter.py
+          subPath: qwen-no-think-filter.py
         - name: data
           mountPath: /app/backend/data
       volumes:
@@ -173,6 +182,9 @@ spec:
       - name: tps-function
         configMap:
           name: tokens-per-second-function
+      - name: qwen-no-think-filter
+        configMap:
+          name: qwen-no-think-filter
       - name: data
         persistentVolumeClaim:
           claimName: storage
