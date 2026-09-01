@@ -63,9 +63,14 @@ Initial embeddings use CPU-local `sentence-transformers/all-MiniLM-L6-v2`, so Su
 
 ## Routing
 
-The external HTTPRoute keeps SurfSense's single-origin contract:
+The external HTTPRoute mirrors SurfSense 0.0.39's upstream Caddy single-origin contract:
 
+- `/auth/callback*` -> frontend
 - `/auth/*` -> backend
+- `/users/*` -> backend
 - `/api/v1/*` -> backend
-- `/zero/*` -> Zero/WebSocket
+- `/zero/context` -> backend
+- remaining `/zero/*` -> Zero/WebSocket
 - everything else -> frontend
+
+The more-specific `/auth/callback` and `/zero/context` matches are intentional. The authenticated dashboard also requires `/users/me` to reach FastAPI; routing `/users/*` to the frontend produces an HTML 404 and the frontend surfaces `Failed to parse response`.
