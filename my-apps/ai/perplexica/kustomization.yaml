@@ -18,6 +18,9 @@ components:
 # Model-provider seed for the initContainer. Hash-suffixed so any
 # config.json change auto-rolls the deployment.
 configMapGenerator:
+  - name: perplexica-scripts
+    files:
+      - scripts/seed-config.sh
   - name: perplexica-config-seed
     files:
       - config.json

@@ -49,6 +49,9 @@ jobs:
       - name: Validate ArgoCD app topology
         run: bash ./scripts/validate-argocd-apps.sh
 
+      - name: Reject inline executable YAML bodies
+        run: bash ./scripts/validate-no-inline-scripts.sh
+
   truenas-csi-contract:
     name: TrueNAS CSI Contract
     runs-on: ubuntu-latest
@@ -245,4 +248,5 @@ jobs:
       - name: Run shellcheck on scripts
         run: |
           set -euo pipefail
-          shellcheck -S warning scripts/*.sh
+          find infrastructure monitoring my-apps scripts -type f -name '*.sh' -not -path '*/charts/*' -print0 \
+            | xargs -0 shellcheck -S warning

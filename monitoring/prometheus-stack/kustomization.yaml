@@ -34,6 +34,11 @@ resources:
   - homelab-power-dashboard.yaml # Homelab cost dashboard ($0.21/kWh, 4 homelab plugs only)
   - radar-ng-dashboard.yaml # radar-ng backend dashboard (logs + tile-server metrics)
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
+
+configMapGenerator:
+  - name: prometheus-stack-scripts
+    files:
+      - scripts/prune-retired-dashboards.sh
 # These CRD schemas push client-side apply's last-applied annotation past the 256KB cap — keep per-CRD ServerSideApply+Replace.
 patches:
   - target:

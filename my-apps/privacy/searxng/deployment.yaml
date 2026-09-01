@@ -28,19 +28,17 @@ spec:
           command:
             - sh
             - -c
-            - |
-              echo "Waiting for redis to be ready..."
-              until nc -z redis 6379; do
-                echo "Redis not ready, retrying in 2s..."
-                sleep 2
-              done
-              echo "Redis is ready!"
+            - /opt/repo-scripts/wait-for-redis.sh
           resources:
             requests:
               cpu: 10m
               memory: 16Mi
             limits:
               memory: 32Mi
+          volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
       containers:
         - name: searxng
           image: ghcr.io/searxng/searxng:2026.8.29-d226b78bc
@@ -76,6 +74,10 @@ spec:
               mountPath: /etc/searxng/limiter.toml
               subPath: limiter.toml
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: searxng-scripts
+            defaultMode: 0555
         - name: searxng-settings
           configMap:
             name: searxng-config-settings

@@ -47,21 +47,11 @@ spec:
             runAsUser: 0
           command: ["/bin/sh", "-c"]
           args:
-            - |
-              # Copy config from ConfigMap to PVC (HA needs writable config files)
-              cp /config-source/configuration.yaml /config/configuration.yaml
-              cp /config-source/automations.yaml /config/automations.yaml
-              cp /config-source/scripts.yaml /config/scripts.yaml
-              cp /config-source/scenes.yaml /config/scenes.yaml
-              cp /config-source/customize.yaml /config/customize.yaml
-              cp /config-source/lovelace-homelab-power.yaml /config/lovelace-homelab-power.yaml
-              # Ensure themes directory exists
-              mkdir -p /config/themes
-              # AirCube ZHA quirk -> custom_zha_quirks/ (loaded via zha.custom_quirks_path)
-              mkdir -p /config/custom_zha_quirks
-              cp /config-source/aircube.py /config/custom_zha_quirks/aircube.py
-              echo "Config files copied to PVC"
+            - /opt/repo-scripts/copy-config.sh
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: config
               mountPath: /config
             - name: config-files
@@ -74,19 +64,11 @@ spec:
             runAsUser: 0
           command: ["/bin/sh", "-c"]
           args:
-            - |
-              if [ ! -d "/config/custom_components/hacs" ]; then
-                echo "HACS not found, installing..."
-                apk add --no-cache bash wget unzip curl
-                # Try to install HACS with timeout, skip if fails
-                timeout 120 sh -c 'wget -O - https://get.hacs.xyz | bash -' || {
-                  echo "HACS install timed out or failed, continuing anyway..."
-                  echo "You can install HACS manually later from https://hacs.xyz"
-                }
-              else
-                echo "HACS already installed"
-              fi
+            - /opt/repo-scripts/install-hacs.sh
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: config
               mountPath: /config
       containers:
@@ -135,6 +117,10 @@ spec:
             limits:
               memory: 4Gi
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: home-assistant-scripts
+            defaultMode: 0555
         - name: config
           persistentVolumeClaim:
             claimName: config

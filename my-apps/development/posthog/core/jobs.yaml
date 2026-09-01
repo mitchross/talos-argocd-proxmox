@@ -26,34 +26,16 @@ spec:
         command:
         - /bin/sh
         - -c
-        - |
-          set -x
-          echo "Waiting for Kafka broker to accept connections..."
-          TIMEOUT=120
-          ELAPSED=0
-          until rpk topic list --brokers kafka:9092 2>/dev/null; do
-              echo "Kafka broker not ready yet (elapsed: ${ELAPSED}s)..."
-              sleep 2
-              ELAPSED=$((ELAPSED + 2))
-              if [ $ELAPSED -ge $TIMEOUT ]; then
-                  echo "Timeout waiting for Kafka broker after ${TIMEOUT}s"
-                  exit 1
-              fi
-          done
-          echo "Kafka broker is accepting requests, creating topics..."
-          for topic in events_plugin_ingestion exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion ai_events_ingestion clickhouse_ai_events_json; do
-              if rpk topic create "$topic" --brokers kafka:9092 -p 1 -r 1 2>&1; then
-                  echo "Topic $topic created successfully"
-              else
-                  if rpk topic list --brokers kafka:9092 | grep -q "$topic"; then
-                      echo "Topic $topic already exists, continuing"
-                  else
-                      echo "Failed to create topic $topic"
-                      exit 1
-                  fi
-              fi
-          done
-          echo "Topics ready"
+        - /opt/repo-scripts/init-kafka.sh
+        volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
+      volumes:
+      - name: repo-scripts
+        configMap:
+          name: posthog-scripts
+          defaultMode: 0555
 ---
 apiVersion: batch/v1
 kind: Job
@@ -86,56 +68,7 @@ spec:
         command:
         - /bin/sh
         - -c
-        - |
-          set -e
-          echo "Waiting for Postgres..."
-          TIMEOUT=120; ELAPSED=0
-          until python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('db', 5432))" 2>/dev/null; do
-            sleep 2; ELAPSED=$((ELAPSED + 2))
-            [ $ELAPSED -ge $TIMEOUT ] && echo "Postgres timeout" && exit 1
-          done
-          echo "Postgres ready"
-          echo "Waiting for ClickHouse..."
-          ELAPSED=0
-          until wget -q --spider --timeout=2 http://clickhouse:8123/ping 2>/dev/null; do
-            sleep 2; ELAPSED=$((ELAPSED + 2))
-            [ $ELAPSED -ge $TIMEOUT ] && echo "ClickHouse timeout" && exit 1
-          done
-          echo "ClickHouse ready"
-          echo "Flushing ClickHouse system logs..."
-          wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
-          echo "Running Django migrations..."
-          python manage.py migrate --noinput
-          # MUST run AFTER manage.py migrate: posthog_person doesn't exist on a fresh DB. IF NOT EXISTS keeps it idempotent.
-          echo "Applying self-hosted Postgres schema guards..."
-          python - <<'PY'
-          import os
-
-          os.environ.setdefault("DJANGO_SETTINGS_MODULE", "posthog.settings")
-
-          import django
-
-          django.setup()
-
-          from django.db import connection
-
-          with connection.cursor() as cursor:
-              cursor.execute(
-                  "ALTER TABLE public.posthog_person "
-                  "ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NULL"
-              )
-              # Library is preloaded via postgres args; without the extension the
-              # hourly monitoring task errors in the db log.
-              cursor.execute("CREATE EXTENSION IF NOT EXISTS pg_stat_statements")
-          PY
-          echo "Running ClickHouse migrations..."
-          python manage.py migrate_clickhouse
-          # --check is the gate: a pending required migration fails the Job and the sync (beats a silent worker CrashLoop). Never remove.
-          # Single-node CH gotcha: 0007* queries posthog.sharded_events; if hit, mark Complete in the PostHog admin and re-sync.
-          echo "Running async ClickHouse migrations..."
-          python manage.py run_async_migrations || true
-          python manage.py run_async_migrations --check
-          echo "All migrations complete"
+        - /opt/repo-scripts/migrate.sh
         envFrom:
         - configMapRef:
             name: posthog-env
@@ -166,6 +99,15 @@ spec:
             memory: 2Gi
           limits:
             memory: 4Gi
+        volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
+      volumes:
+      - name: repo-scripts
+        configMap:
+          name: posthog-scripts
+          defaultMode: 0555
 ---
 apiVersion: batch/v1
 kind: Job
@@ -197,38 +139,7 @@ spec:
         command:
         - /bin/sh
         - -c
-        - |
-          set -e
-          echo "Waiting for Postgres..."
-          TIMEOUT=120; ELAPSED=0
-          until python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('db', 5432))" 2>/dev/null; do
-            sleep 2; ELAPSED=$((ELAPSED + 2))
-            [ $ELAPSED -ge $TIMEOUT ] && echo "Postgres timeout" && exit 1
-          done
-          echo "Waiting for Redis..."
-          ELAPSED=0
-          until python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('redis7', 6379))" 2>/dev/null; do
-            sleep 2; ELAPSED=$((ELAPSED + 2))
-            [ $ELAPSED -ge $TIMEOUT ] && echo "Redis timeout" && exit 1
-          done
-          # RemoteConfig.sync() diffs against Postgres, not Redis — a wiped Redis is never repaired without force=True (flags go all-false, replay stops).
-          echo "Force-syncing RemoteConfig to Redis..."
-          python - <<'PY'
-          import os
-
-          os.environ.setdefault("DJANGO_SETTINGS_MODULE", "posthog.settings")
-
-          import django
-
-          django.setup()
-
-          from posthog.models.remote_config import RemoteConfig
-
-          for remote_config in RemoteConfig.objects.all():
-              remote_config.sync(force=True)
-              print(f"force-synced team {remote_config.team_id}")
-          PY
-          echo "RemoteConfig sync complete"
+        - /opt/repo-scripts/sync-remote-config.sh
         envFrom:
         - configMapRef:
             name: posthog-env
@@ -269,3 +180,12 @@ spec:
             memory: 1Gi
           limits:
             memory: 2Gi
+        volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
+      volumes:
+      - name: repo-scripts
+        configMap:
+          name: posthog-scripts
+          defaultMode: 0555

@@ -14,3 +14,9 @@ resources:
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
+
+configMapGenerator:
+  - name: vllm-scripts
+    files:
+      - scripts/sync-model-cache.sh
+      - scripts/wait-for-model-cache.sh

@@ -38,12 +38,11 @@ spec:
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh", "-c"]
         args:
-          - |
-            for d in thumbs upload backups library profile encoded-video; do
-              mkdir -p "/library/$d" && touch "/library/$d/.immich"
-            done
-            echo "immich /library folder markers ensured"
+          - /opt/repo-scripts/prepare-library.sh
         volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
         - name: library
           mountPath: /library
       containers:
@@ -133,6 +132,10 @@ spec:
         - name: transformers
           mountPath: /usr/src/app/.transformers_cache
       volumes:
+      - name: repo-scripts
+        configMap:
+          name: immich-scripts
+          defaultMode: 0555
       - name: library
         persistentVolumeClaim:
           claimName: library

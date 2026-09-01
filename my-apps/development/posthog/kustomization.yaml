@@ -33,6 +33,14 @@ resources:
 
 # Hash-suffixed: Kustomize rewrites every configMapRef.name, so any env edit rolls all consumers.
 configMapGenerator:
+  - name: posthog-scripts
+    files:
+      - scripts/copy-geoip.sh
+      - scripts/init-clickhouse.sh
+      - scripts/init-kafka.sh
+      - scripts/migrate.sh
+      - scripts/start-kafka.sh
+      - scripts/sync-remote-config.sh
   - name: posthog-env
     envs:
       - posthog-env.env

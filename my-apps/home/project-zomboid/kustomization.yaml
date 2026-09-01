@@ -18,6 +18,11 @@ components:
   - ../../common/kopiur-backup
 
 configMapGenerator:
+  - name: project-zomboid-scripts
+    files:
+      - scripts/prewarm-steamcmd.sh
+      - scripts/copy-config.sh
+      - scripts/stop-server.sh
   - name: zomboid-server-config
     files:
       - vanillax.ini

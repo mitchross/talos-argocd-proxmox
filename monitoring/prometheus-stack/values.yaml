@@ -195,6 +195,11 @@ alertmanager:
 # Grafana Configuration
 grafana:
   enabled: true
+  extraVolumes:
+    - name: repo-scripts
+      configMap:
+        name: prometheus-stack-scripts
+        defaultMode: 0555
   deploymentStrategy:
     type: Recreate
   admin:
@@ -242,11 +247,7 @@ grafana:
       imagePullPolicy: IfNotPresent
       command: ["/bin/sh", "-ec"]
       args:
-        - |
-          find /var/lib/grafana/dashboards/kubernetes \
-            -maxdepth 1 -type f -name '*.json' -delete 2>/dev/null || true
-          find /var/lib/grafana/dashboards/infrastructure \
-            -maxdepth 1 -type f -name 'vpa-autoscaling.json' -delete 2>/dev/null || true
+        - /opt/repo-scripts/prune-retired-dashboards.sh
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -256,6 +257,9 @@ grafana:
         seccompProfile:
           type: RuntimeDefault
       volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
         - name: storage
           mountPath: /var/lib/grafana
   # Stock dashboard bundle disabled: two dozen overlapping boards made triage a search problem.

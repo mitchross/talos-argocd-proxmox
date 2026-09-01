@@ -57,6 +57,11 @@ components:
   - ../../common/kopiur-backup
 
 configMapGenerator:
+  - name: project-nomad-scripts
+    files:
+      - scripts/migrate.sh
+      - scripts/start.sh
+      - scripts/start-kiwix.sh
   - name: project-nomad-config
     envs:
       - project-nomad-config.env
