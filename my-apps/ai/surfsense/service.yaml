@@ -5,7 +5,8 @@ metadata:
   namespace: surfsense
 spec:
   selector:
-    app.kubernetes.io/name: surfsense-backend
+    app.kubernetes.io/name: surfsense
+    app.kubernetes.io/component: backend
   ports:
     - name: http
       port: 8000
