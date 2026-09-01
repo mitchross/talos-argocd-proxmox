@@ -41,10 +41,12 @@ Fields:
 
 ## Local AI
 
-SurfSense can use the existing in-cluster OpenAI-compatible backend:
+SurfSense uses the existing in-cluster OpenAI-compatible backend through its
+operator-owned global model catalog:
 
 - Base URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
 - Model: `qwen3.8-27b`
+- Config: `global_llm_config.yaml`, mounted at `/app/app/config/global_llm_config.yaml`
 
 Initial embeddings use CPU-local `sentence-transformers/all-MiniLM-L6-v2`, so SurfSense does not request a GPU.
 
