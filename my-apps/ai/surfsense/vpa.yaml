@@ -1,10 +1,10 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: surfsense-db
+  name: surfsense-postgres
   namespace: surfsense
 spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-db}
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-postgres}
   updatePolicy: {updateMode: InPlaceOrRecreate}
   resourcePolicy:
     containerPolicies:
@@ -25,22 +25,10 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: surfsense-backend
+  name: surfsense
   namespace: surfsense
 spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-backend}
-  updatePolicy: {updateMode: InPlaceOrRecreate}
-  resourcePolicy:
-    containerPolicies:
-      - {containerName: '*', controlledValues: RequestsOnly}
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: surfsense-worker
-  namespace: surfsense
-spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-worker}
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense}
   updatePolicy: {updateMode: InPlaceOrRecreate}
   resourcePolicy:
     containerPolicies:
