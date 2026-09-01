@@ -1,0 +1,46 @@
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: surfsense-object-store
+  namespace: surfsense
+spec:
+  sources:
+    - pvc:
+        name: surfsense-object-store
+  identity:
+    username: surfsense-object-store
+    hostname: surfsense
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: surfsense-object-store-daily
+  namespace: surfsense
+spec:
+  policyRef:
+    name: surfsense-object-store
+  schedule:
+    cron: "59 3 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: surfsense-object-store-restore
+  namespace: surfsense
+spec:
+  source:
+    fromPolicy:
+      name: surfsense-object-store
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
