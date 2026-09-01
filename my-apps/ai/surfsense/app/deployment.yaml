@@ -4,7 +4,7 @@ metadata:
   name: surfsense
   namespace: surfsense
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   strategy:
@@ -33,6 +33,9 @@ spec:
           ports:
             - name: http
               containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: surfsense-selfhost-policy
           env:
             - name: SERVICE_ROLE
               value: api
@@ -74,6 +77,9 @@ spec:
             - {name: global-llm-config, mountPath: /app/app/config/global_llm_config.yaml, subPath: global_llm_config.yaml, readOnly: true}
         - name: worker
           image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          envFrom:
+            - configMapRef:
+                name: surfsense-selfhost-policy
           env:
             - name: SERVICE_ROLE
               value: worker

@@ -17,6 +17,7 @@ Do not split these child folders into independent Argo Applications unless there
 | `app/zero.yaml` | Rocicorp Zero realtime cache/replication layer; disposable SQLite replica |
 | `app/frontend.yaml` | SurfSense web frontend |
 | `app/migrations-job.yaml` | Argo CD Sync hook that runs SurfSense migrations after the data layer is healthy |
+| `app/credit-policy-job.yaml` | Idempotent Sync hook that reconciles persisted wallets to the no-credit self-host policy |
 | `app/service.yaml` | ClusterIP services for backend/frontend/Zero |
 | `app/pvc.yaml` | Durable SurfSense knowledge/object-store PVC |
 | `postgres/` | pgvector/PostgreSQL Deployment, Service, and restore-before-bind PVC |
@@ -25,6 +26,8 @@ Do not split these child folders into independent Argo Applications unless there
 | `kopiur/object-store.yaml` | Daily knowledge/object-store backup + Restore |
 | `externalsecret.yaml` | 1Password-backed application/database/Zero secrets; wave -1 |
 | `global_llm_config.yaml` | Operator-owned global chat model catalog; points SurfSense at the in-cluster vLLM service |
+| `selfhost.env` | Non-secret self-host policy: zero signup wallet and all hosted-style billing switches disabled |
+| `scripts/reconcile-credit-policy.sh` | SQL reconciliation script mounted into the credit-policy hook through a generated ConfigMap |
 | `httproute.yaml` | Single-origin external routing that mirrors SurfSense's upstream Caddy contract |
 | `vpa.yaml` | VPAs for every long-running Deployment |
 
@@ -35,8 +38,9 @@ Argo health gates each wave before advancing:
 1. `ExternalSecret` wave **-1** — materialize `surfsense-secrets` before consumers start.
 2. Postgres + Redis wave **0** — PVC/Restore resources reconcile in the same application sync; restore-before-bind keeps backed-up PVCs Pending until Kopiur hydrates them.
 3. `app/migrations-job.yaml` wave **1** — schema/publication migration hook runs only after the data layer is healthy.
-4. API+worker, Celery beat, and Zero wave **2**.
-5. Frontend wave **3**.
+4. `app/credit-policy-job.yaml` wave **2** — reconcile restored or pre-policy wallets after the user table exists.
+5. API+worker, Celery beat, and Zero wave **3**.
+6. Frontend wave **4**.
 
 Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The repo's restore-before-bind model intentionally lets the Restore/populator/PVC reconcile together while Argo waits for the workload to become healthy.
 
@@ -50,9 +54,10 @@ Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The
 6. **Zero is not backed up and has no PVC.** Its SQLite replica is `emptyDir`; replacement resyncs from Postgres.
 7. **Mirror SurfSense's upstream same-origin proxy contract exactly.** `/auth/callback` goes to the frontend; `/auth`, `/users`, `/api/v1`, and `/zero/context` go to the backend; remaining `/zero` traffic goes to zero-cache; everything else goes to the frontend. The `/users/me` and `/zero/context` exceptions are required for authenticated dashboard startup. Do not collapse these into broad `/auth` or `/zero` routes without preserving the more-specific exceptions.
 8. **Do not add upstream OpenSandbox's Docker socket to Talos.** Talos has no Docker daemon/socket. `SANDBOX_ENABLED=FALSE` is intentional until a Kubernetes-native or remote sandbox provider is selected.
-9. **Do not request a GPU.** The active RTX 3090 belongs to vLLM. SurfSense uses CPU embeddings and can call vLLM for chat.
-10. **Reuse cluster SearXNG** at `http://searxng.searxng.svc.cluster.local:8080`; do not deploy another copy.
-11. **Secrets stay in 1Password.** Item `surfsense`: `secret_key`, `db_password`, `zero_admin_password`, `zero_query_api_key`.
+9. **Do not request a GPU.** The active RTX 3090 belongs to vLLM. SurfSense uses CPU embeddings and calls vLLM for chat.
+10. **Local vLLM is free infrastructure, not a credit-metered provider.** Keep `qwen3.8-27b` at `billing_tier: free`. `selfhost.env` must keep `DEFAULT_CREDIT_MICROS_BALANCE=0` and hosted-style billing switches disabled. The credit-policy hook must reconcile restored or pre-policy wallet rows before workloads start; do not replace it with manual SQL or fake premium model entries.
+11. **Reuse cluster SearXNG** at `http://searxng.searxng.svc.cluster.local:8080`; do not deploy another copy.
+12. **Secrets stay in 1Password.** Item `surfsense`: `secret_key`, `db_password`, `zero_admin_password`, `zero_query_api_key`.
 
 ## Storage choices
 
@@ -67,5 +72,6 @@ The SurfSense backend image does not set a non-root `USER`, so object-store data
 
 - Base URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
 - Model: `qwen3.8-27b`
+- Billing tier: `free`
 
 Do not point SurfSense at the parked llama.cpp service unless the repo's AI backend state changes.
