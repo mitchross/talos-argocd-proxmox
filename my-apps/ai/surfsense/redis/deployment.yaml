@@ -19,6 +19,9 @@ spec:
       labels:
         app: surfsense-redis
     spec:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: redis
           image: redis:8-alpine
