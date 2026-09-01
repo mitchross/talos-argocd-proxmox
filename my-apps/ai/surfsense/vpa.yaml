@@ -1,0 +1,83 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: surfsense-db
+  namespace: surfsense
+spec:
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-db}
+  updatePolicy: {updateMode: InPlaceOrRecreate}
+  resourcePolicy:
+    containerPolicies:
+      - {containerName: '*', controlledValues: RequestsOnly}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: surfsense-redis
+  namespace: surfsense
+spec:
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-redis}
+  updatePolicy: {updateMode: InPlaceOrRecreate}
+  resourcePolicy:
+    containerPolicies:
+      - {containerName: '*', controlledValues: RequestsOnly}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: surfsense-backend
+  namespace: surfsense
+spec:
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-backend}
+  updatePolicy: {updateMode: InPlaceOrRecreate}
+  resourcePolicy:
+    containerPolicies:
+      - {containerName: '*', controlledValues: RequestsOnly}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: surfsense-worker
+  namespace: surfsense
+spec:
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-worker}
+  updatePolicy: {updateMode: InPlaceOrRecreate}
+  resourcePolicy:
+    containerPolicies:
+      - {containerName: '*', controlledValues: RequestsOnly}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: surfsense-beat
+  namespace: surfsense
+spec:
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-beat}
+  updatePolicy: {updateMode: InPlaceOrRecreate}
+  resourcePolicy:
+    containerPolicies:
+      - {containerName: '*', controlledValues: RequestsOnly}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: surfsense-zero
+  namespace: surfsense
+spec:
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-zero}
+  updatePolicy: {updateMode: InPlaceOrRecreate}
+  resourcePolicy:
+    containerPolicies:
+      - {containerName: '*', controlledValues: RequestsOnly}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: surfsense-frontend
+  namespace: surfsense
+spec:
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-frontend}
+  updatePolicy: {updateMode: InPlaceOrRecreate}
+  resourcePolicy:
+    containerPolicies:
+      - {containerName: '*', controlledValues: RequestsOnly}
