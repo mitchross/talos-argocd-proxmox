@@ -24,7 +24,7 @@ Do not split these child folders into independent Argo Applications unless there
 | `kopiur/postgres-data.yaml` | Hourly Postgres backup + Restore |
 | `kopiur/object-store.yaml` | Daily knowledge/object-store backup + Restore |
 | `externalsecret.yaml` | 1Password-backed application/database/Zero secrets; wave -1 |
-| `httproute.yaml` | Single-origin external routing for frontend, API/auth, and Zero WebSockets |
+| `httproute.yaml` | Single-origin external routing that mirrors SurfSense's upstream Caddy contract |
 | `vpa.yaml` | VPAs for every long-running Deployment |
 
 ## Sync / health ordering
@@ -47,7 +47,7 @@ Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The
 4. **`/shared_tmp` is intentionally `emptyDir`.** It only coordinates temporary upload/processing files between API and worker in the same pod.
 5. **Redis is not backed up.** Its PVC exists for ordinary restart continuity only and is explicitly backup-exempt.
 6. **Zero is not backed up and has no PVC.** Its SQLite replica is `emptyDir`; replacement resyncs from Postgres.
-7. **Keep SurfSense same-origin.** `/api/v1` and `/auth` route to backend, `/zero` routes to Zero, and `/` falls through to frontend.
+7. **Mirror SurfSense's upstream same-origin proxy contract exactly.** `/auth/callback` goes to the frontend; `/auth`, `/users`, `/api/v1`, and `/zero/context` go to the backend; remaining `/zero` traffic goes to zero-cache; everything else goes to the frontend. The `/users/me` and `/zero/context` exceptions are required for authenticated dashboard startup. Do not collapse these into broad `/auth` or `/zero` routes without preserving the more-specific exceptions.
 8. **Do not add upstream OpenSandbox's Docker socket to Talos.** Talos has no Docker daemon/socket. `SANDBOX_ENABLED=FALSE` is intentional until a Kubernetes-native or remote sandbox provider is selected.
 9. **Do not request a GPU.** The active RTX 3090 belongs to vLLM. SurfSense uses CPU embeddings and can call vLLM for chat.
 10. **Reuse cluster SearXNG** at `http://searxng.searxng.svc.cluster.local:8080`; do not deploy another copy.
