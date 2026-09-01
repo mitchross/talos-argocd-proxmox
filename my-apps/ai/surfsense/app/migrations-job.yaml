@@ -27,6 +27,8 @@ spec:
                   key: DB_PASSWORD
             - name: DATABASE_URL
               value: postgresql+asyncpg://surfsense:$(DB_PASSWORD)@db:5432/surfsense
+            - name: EMBEDDING_MODEL
+              value: sentence-transformers/all-MiniLM-L6-v2
             - name: PYTHONPATH
               value: /app
             - name: SERVICE_ROLE
