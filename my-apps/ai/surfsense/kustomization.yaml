@@ -24,5 +24,4 @@ resources:
   - kopiur/object-store.yaml
 
 components:
-  - ../../common/deployment-defaults
   - ../../common/kopiur-backup
