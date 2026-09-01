@@ -16,17 +16,36 @@ spec:
   hostnames:
     - surfsense.vanillax.me
   rules:
+    # SurfSense's frontend owns the post-login callback page. This more-specific
+    # prefix must beat the general /auth backend route below.
     - matches:
-        - path: {type: PathPrefix, value: /api/v1}
+        - path: {type: PathPrefix, value: /auth/callback}
+      backendRefs:
+        - name: frontend
+          port: 3000
+
+    # FastAPI owns auth, user profile, REST API, and the Zero auth-context
+    # endpoint. /users/me and /zero/context are required by the dashboard after
+    # login; sending either to Next.js/zero-cache produces the observed 404s.
+    - matches:
         - path: {type: PathPrefix, value: /auth}
+        - path: {type: PathPrefix, value: /users}
+        - path: {type: PathPrefix, value: /api/v1}
+        - path: {type: PathPrefix, value: /zero/context}
       backendRefs:
         - name: backend
           port: 8000
+
+    # Rocicorp Zero handles the remaining /zero sync traffic. Gateway API path
+    # precedence selects the longer /zero/context backend match above.
     - matches:
         - path: {type: PathPrefix, value: /zero}
       backendRefs:
         - name: zero-cache
           port: 4848
+
+    # Next.js application and frontend-owned API routes (/api/zero/*,
+    # /api/search, /api/contact, etc.).
     - matches:
         - path: {type: PathPrefix, value: /}
       backendRefs:
