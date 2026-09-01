@@ -25,19 +25,23 @@ spec:
       containers:
         - name: reconcile-credit-policy
           image: pgvector/pgvector:pg17
-          command: [psql]
-          args:
-            - --host=db
-            - --username=surfsense
-            - --dbname=surfsense
-            - --set=ON_ERROR_STOP=1
-            - --command=UPDATE "user" SET credit_micros_balance = 0, credit_micros_reserved = 0 WHERE credit_micros_balance <> 0 OR credit_micros_reserved <> 0;
+          command: ["/bin/sh", "/scripts/reconcile-credit-policy.sh"]
           env:
+            - name: PGHOST
+              value: db
+            - name: PGUSER
+              value: surfsense
+            - name: PGDATABASE
+              value: surfsense
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: surfsense-secrets
                   key: DB_PASSWORD
+          volumeMounts:
+            - name: credit-policy-scripts
+              mountPath: /scripts
+              readOnly: true
           securityContext:
             runAsUser: 999
             runAsGroup: 999
@@ -54,3 +58,8 @@ spec:
               memory: 32Mi
             limits:
               memory: 128Mi
+      volumes:
+        - name: credit-policy-scripts
+          configMap:
+            name: surfsense-credit-policy-scripts
+            defaultMode: 0555

@@ -57,7 +57,7 @@ This deployment does not use SurfSense's hosted credit wallet for local infrastr
 
 The policy keeps new-user wallet balance at zero and explicitly disables ETL, crawl, captcha, platform-scrape, and Stripe credit billing. This also keeps Auto mode eligible for the local `billing_tier: free` vLLM model instead of treating a default signup credit balance as premium-provider eligibility.
 
-SurfSense upstream defaults new users to a $5 wallet. The versioned `surfsense-credit-policy-v1` Sync hook runs after schema migrations and idempotently resets restored or pre-policy wallet balances before the API, worker, Beat, and Zero start. A fresh deployment and a restored deployment therefore converge on the same no-credit policy without manual SQL.
+SurfSense upstream defaults new users to a $5 wallet. The versioned `surfsense-credit-policy-v1` Sync hook runs after schema migrations and idempotently resets restored or pre-policy wallet balances before the API, worker, Beat, and Zero start. Its checked-in `scripts/reconcile-credit-policy.sh` is mounted through a hash-suffixed Kustomize-generated ConfigMap, so the executable policy stays out of the Job YAML. A fresh deployment and a restored deployment therefore converge on the same no-credit policy without manual SQL.
 
 ## Storage and DR
 

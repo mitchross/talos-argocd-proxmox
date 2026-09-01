@@ -27,6 +27,7 @@ Do not split these child folders into independent Argo Applications unless there
 | `externalsecret.yaml` | 1Password-backed application/database/Zero secrets; wave -1 |
 | `global_llm_config.yaml` | Operator-owned global chat model catalog; points SurfSense at the in-cluster vLLM service |
 | `selfhost.env` | Non-secret self-host policy: zero signup wallet and all hosted-style billing switches disabled |
+| `scripts/reconcile-credit-policy.sh` | SQL reconciliation script mounted into the credit-policy hook through a generated ConfigMap |
 | `httproute.yaml` | Single-origin external routing that mirrors SurfSense's upstream Caddy contract |
 | `vpa.yaml` | VPAs for every long-running Deployment |
 
