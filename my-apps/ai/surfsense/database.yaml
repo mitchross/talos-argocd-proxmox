@@ -47,6 +47,8 @@ spec:
               value: surfsense
             - name: POSTGRES_DB
               value: surfsense
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
