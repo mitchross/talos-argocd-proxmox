@@ -9,7 +9,7 @@ global_llm_configs:
     model_name: qwen3.8-27b
     supports_image_input: true
     supports_tools: true
-    max_input_tokens: 65536
+    max_input_tokens: 48000 # reserves output/tool-call headroom inside vLLM's 65,536-token window
     api_key: sk-required
     api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
     rpm: 60
