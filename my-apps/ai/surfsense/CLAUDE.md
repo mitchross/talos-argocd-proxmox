@@ -24,6 +24,7 @@ Do not split these child folders into independent Argo Applications unless there
 | `kopiur/postgres-data.yaml` | Hourly Postgres backup + Restore |
 | `kopiur/object-store.yaml` | Daily knowledge/object-store backup + Restore |
 | `externalsecret.yaml` | 1Password-backed application/database/Zero secrets; wave -1 |
+| `global_llm_config.yaml` | Operator-owned global chat model catalog; points SurfSense at the in-cluster vLLM service |
 | `httproute.yaml` | Single-origin external routing that mirrors SurfSense's upstream Caddy contract |
 | `vpa.yaml` | VPAs for every long-running Deployment |
 
