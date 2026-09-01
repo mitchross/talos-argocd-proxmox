@@ -12,3 +12,6 @@ configMapGenerator:
   - name: postgres-backups-lifecycle
     files:
       - lifecycle.json
+  - name: postgres-backups-lifecycle-scripts
+    files:
+      - scripts/apply-postgres-backups-lifecycle.sh

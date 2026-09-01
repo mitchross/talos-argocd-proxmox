@@ -19,6 +19,9 @@ components:
   - ../../common/kopiur-backup
 
 configMapGenerator:
+- name: open-webui-scripts
+  files:
+  - scripts/load-functions.py
 - name: open-webui-loader
   files:
   - loader.js

@@ -44,24 +44,14 @@ spec:
           command:
             - /bin/sh
             - -ec
-            - |
-              MODEL=Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead
-              REVISION=$MODEL:r1
-              READY=/models/.vllm-sync-complete
-              i=0
-              until [ "$(cat "$READY" 2>/dev/null)" = "$REVISION" ]; do
-                i=$((i + 1))
-                if [ "$i" -gt 360 ]; then
-                  echo "TIMEOUT: cache-sync never completed (60m)"; exit 1
-                fi
-                echo "waiting for vllm-cache-sync to finish hydrating the NVMe cache..."
-                sleep 10
-              done
-              echo "cache ready: $MODEL"
+            - /opt/repo-scripts/wait-for-model-cache.sh
           resources:
             requests: { cpu: 10m, memory: 16Mi }
             limits: { memory: 64Mi }
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: models
               mountPath: /models
               subPath: vllm
@@ -182,6 +172,10 @@ spec:
               mountPath: /root/.triton/cache
               subPath: triton
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: vllm-scripts
+            defaultMode: 0555
         # Node-local NVMe, NOT the NFS PVC. cache-sync-job.yaml hydrates it from
         # NFS at wave 0; NFS stays the canonical archive and out of the serve path.
         - name: models

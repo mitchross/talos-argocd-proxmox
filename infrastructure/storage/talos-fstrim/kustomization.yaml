@@ -4,3 +4,8 @@ namespace: talos-fstrim
 resources:
   - namespace.yaml
   - cronjob.yaml
+
+configMapGenerator:
+  - name: talos-fstrim-scripts
+    files:
+      - scripts/trim-node-filesystems.sh

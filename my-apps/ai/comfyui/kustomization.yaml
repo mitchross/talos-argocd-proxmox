@@ -10,7 +10,7 @@ resources:
 - service.yaml
 - httproute.yaml
 - externalsecret.yaml
-# download-models-job.yaml is intentionally excluded — one-time manual kubectl apply; listing it would re-run every sync.
+- download-models-job.yaml
 
 configMapGenerator:
   - name: comfyui-manager-config
@@ -22,6 +22,9 @@ configMapGenerator:
   - name: comfyui-custom-nodes
     files:
       - image_to_llamacpp_base64.py
+  - name: comfyui-download-scripts
+    files:
+      - scripts/download-models.sh
 
 labels:
   # Keep true: selectors are immutable on live Deployments; flipping to false forces delete/recreate.

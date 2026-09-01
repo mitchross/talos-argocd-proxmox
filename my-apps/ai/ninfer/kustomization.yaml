@@ -10,3 +10,8 @@ resources:
 - service.yaml
 - httproute.yaml
 - vpa.yaml
+
+configMapGenerator:
+- name: ninfer-scripts
+  files:
+  - scripts/download-model.sh

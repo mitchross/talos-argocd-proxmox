@@ -16,6 +16,10 @@ resources:
   - httproute-viewer.yaml
 
 configMapGenerator:
+  - name: versatiles-scripts
+    files:
+      - scripts/bootstrap-map.sh
+      - scripts/wait-for-map.sh
   # Hash suffix is the update mechanism: changing DATASET_URL (+ sha256) or config.yaml re-runs the bootstrap hook.
   # Newer planet snapshots: https://download.versatiles.org/ (see README).
   - name: versatiles-config

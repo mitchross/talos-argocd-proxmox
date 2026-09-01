@@ -13,3 +13,9 @@ resources:
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
+
+configMapGenerator:
+  - name: llama-cpp-scripts
+    files:
+      - scripts/download-models.sh
+      - scripts/sync-model-cache.sh

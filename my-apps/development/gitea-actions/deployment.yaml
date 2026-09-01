@@ -93,20 +93,9 @@ spec:
           command:
             - sh
             - -c
-            - |
-              while true; do
-                # Wait for dockerd before first prune (pod fresh-start case)
-                for i in $(seq 1 30); do
-                  docker info >/dev/null 2>&1 && break
-                  sleep 2
-                done
-                echo "[prune] starting cycle at $(date -u)"
-                docker buildx prune -af --keep-storage 20GB --filter until=24h 2>&1 || true
-                docker system prune -af --filter "until=72h" 2>&1 || true
-                df -h /var/lib/docker 2>/dev/null || true
-                sleep 21600
-              done
+            - /opt/repo-scripts/prune-docker-cache.sh
           volumeMounts:
+            - { name: repo-scripts, mountPath: /opt/repo-scripts, readOnly: true }
             - { name: var-run, mountPath: /var/run }
           resources:
             requests:
@@ -116,6 +105,10 @@ spec:
               memory: 128Mi
 
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: gitea-actions-scripts
+            defaultMode: 0555
         - { name: var-run, emptyDir: {} }
         - { name: data,    emptyDir: {} }
         # PVC, not emptyDir: keeps the 3 GB catthehacker image + base layers warm across restarts (pvc.yaml).

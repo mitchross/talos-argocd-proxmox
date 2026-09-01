@@ -11,8 +11,11 @@ spec:
         command:
         - sh
         - -c
-        - chown -R 1000:1000 /data && chmod -R 700 /data/git/.ssh 2>/dev/null; true
+        - /opt/repo-scripts/fix-permissions.sh
         volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
         - name: data
           mountPath: /data
         securityContext:
@@ -24,3 +27,8 @@ spec:
             - DAC_OVERRIDE
             drop:
             - NET_RAW
+      volumes:
+      - name: repo-scripts
+        configMap:
+          name: gitea-scripts
+          defaultMode: 0555

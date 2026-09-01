@@ -18,3 +18,8 @@ resources:
 
 components:
   - ../../common/kopiur-backup
+
+configMapGenerator:
+  - name: intercept-scripts
+    files:
+      - scripts/initialize-data.sh

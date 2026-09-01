@@ -29,14 +29,7 @@ spec:
           image: ghcr.io/kiwix/kiwix-serve:3.8.2
           command: ["sh", "-c"]
           args:
-            - |
-              ZIM_FILES=$(find /data -name '*.zim' 2>/dev/null)
-              if [ -z "$ZIM_FILES" ]; then
-                echo "No ZIM files found in /data, sleeping..."
-                sleep infinity
-              else
-                exec kiwix-serve --address=0.0.0.0 --port=8080 /data/*.zim
-              fi
+            - /opt/repo-scripts/start-kiwix.sh
           ports:
             - containerPort: 8080
               name: http
@@ -47,10 +40,17 @@ spec:
             limits:
               memory: 256Mi
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: nomad-storage
               mountPath: /data
               subPath: zim
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: project-nomad-scripts
+            defaultMode: 0555
         - name: nomad-storage
           persistentVolumeClaim:
             claimName: nomad-storage

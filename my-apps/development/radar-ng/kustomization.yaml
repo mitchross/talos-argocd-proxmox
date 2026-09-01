@@ -22,3 +22,8 @@ resources:
   - temporal-workers/temporal-worker-deployment.yaml
 
 namespace: radar-ng
+
+configMapGenerator:
+  - name: radar-ng-scripts
+    files:
+      - scripts/wait-for-basemap.sh
