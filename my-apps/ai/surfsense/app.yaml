@@ -1,0 +1,307 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: surfsense-migrations
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.38
+          command: [sh, -c, 'until nc -z db 5432; do sleep 2; done']
+      containers:
+        - name: migrations
+          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: DB_PASSWORD}
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://surfsense:$(DB_PASSWORD)@db:5432/surfsense
+            - name: PYTHONPATH
+              value: /app
+            - name: SERVICE_ROLE
+              value: migrate
+            - name: MIGRATION_TIMEOUT
+              value: "900"
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 1Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: surfsense
+spec:
+  selector: {app.kubernetes.io/name: surfsense-backend}
+  ports:
+    - {name: http, port: 8000, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surfsense-backend
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: surfsense-backend}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: surfsense-backend}
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          ports:
+            - {name: http, containerPort: 8000}
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: SECRET_KEY}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: DB_PASSWORD}
+            - {name: DATABASE_URL, value: 'postgresql+asyncpg://surfsense:$(DB_PASSWORD)@db:5432/surfsense'}
+            - {name: CELERY_BROKER_URL, value: redis://redis:6379/0}
+            - {name: CELERY_RESULT_BACKEND, value: redis://redis:6379/0}
+            - {name: REDIS_APP_URL, value: redis://redis:6379/0}
+            - {name: CELERY_TASK_DEFAULT_QUEUE, value: surfsense}
+            - {name: PYTHONPATH, value: /app}
+            - {name: UVICORN_LOOP, value: asyncio}
+            - {name: UNSTRUCTURED_HAS_PATCHED_LOOP, value: "1"}
+            - {name: FILE_STORAGE_LOCAL_PATH, value: /app/.local_object_store}
+            - {name: NEXT_FRONTEND_URL, value: 'https://surfsense.vanillax.me'}
+            - {name: BACKEND_URL, value: 'https://surfsense.vanillax.me'}
+            - {name: SURFSENSE_PUBLIC_URL, value: 'https://surfsense.vanillax.me'}
+            - {name: AUTH_TYPE, value: LOCAL}
+            - {name: DEPLOYMENT_MODE, value: self-hosted}
+            - {name: ETL_SERVICE, value: DOCLING}
+            - {name: EMBEDDING_MODEL, value: sentence-transformers/all-MiniLM-L6-v2}
+            - {name: SEARXNG_URL, value: 'http://searxng.searxng.svc.cluster.local:8080'}
+            - {name: SANDBOX_ENABLED, value: "FALSE"}
+            - {name: SERVICE_ROLE, value: api}
+            - {name: MAX_FILE_SIZE_MB, value: "500"}
+          readinessProbe:
+            httpGet: {path: /ready, port: http}
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: {path: /ready, port: http}
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {memory: 6Gi}
+          volumeMounts:
+            - {name: shared-temp, mountPath: /shared_tmp}
+            - {name: object-store, mountPath: /app/.local_object_store}
+      volumes:
+        - name: shared-temp
+          persistentVolumeClaim: {claimName: surfsense-shared-temp}
+        - name: object-store
+          persistentVolumeClaim: {claimName: surfsense-object-store}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surfsense-worker
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: surfsense-worker}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: surfsense-worker}
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: SECRET_KEY}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: DB_PASSWORD}
+            - {name: DATABASE_URL, value: 'postgresql+asyncpg://surfsense:$(DB_PASSWORD)@db:5432/surfsense'}
+            - {name: CELERY_BROKER_URL, value: redis://redis:6379/0}
+            - {name: CELERY_RESULT_BACKEND, value: redis://redis:6379/0}
+            - {name: REDIS_APP_URL, value: redis://redis:6379/0}
+            - {name: CELERY_TASK_DEFAULT_QUEUE, value: surfsense}
+            - {name: PYTHONPATH, value: /app}
+            - {name: FILE_STORAGE_LOCAL_PATH, value: /app/.local_object_store}
+            - {name: SEARXNG_URL, value: 'http://searxng.searxng.svc.cluster.local:8080'}
+            - {name: SANDBOX_ENABLED, value: "FALSE"}
+            - {name: SERVICE_ROLE, value: worker}
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {memory: 8Gi}
+          volumeMounts:
+            - {name: shared-temp, mountPath: /shared_tmp}
+            - {name: object-store, mountPath: /app/.local_object_store}
+      volumes:
+        - name: shared-temp
+          persistentVolumeClaim: {claimName: surfsense-shared-temp}
+        - name: object-store
+          persistentVolumeClaim: {claimName: surfsense-object-store}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surfsense-beat
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: surfsense-beat}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: surfsense-beat}
+    spec:
+      containers:
+        - name: beat
+          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: SECRET_KEY}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: DB_PASSWORD}
+            - {name: DATABASE_URL, value: 'postgresql+asyncpg://surfsense:$(DB_PASSWORD)@db:5432/surfsense'}
+            - {name: CELERY_BROKER_URL, value: redis://redis:6379/0}
+            - {name: CELERY_RESULT_BACKEND, value: redis://redis:6379/0}
+            - {name: CELERY_TASK_DEFAULT_QUEUE, value: surfsense}
+            - {name: PYTHONPATH, value: /app}
+            - {name: SERVICE_ROLE, value: beat}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zero-cache
+  namespace: surfsense
+spec:
+  selector: {app.kubernetes.io/name: surfsense-zero}
+  ports:
+    - {name: http, port: 4848, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surfsense-zero
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: surfsense-zero}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: surfsense-zero}
+    spec:
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: zero
+          image: rocicorp/zero:1.6.0
+          ports:
+            - {name: http, containerPort: 4848}
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: DB_PASSWORD}
+            - name: ZERO_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: ZERO_ADMIN_PASSWORD}
+            - name: ZERO_QUERY_API_KEY
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: ZERO_QUERY_API_KEY}
+            - {name: ZERO_UPSTREAM_DB, value: 'postgresql://surfsense:$(DB_PASSWORD)@db:5432/surfsense?sslmode=disable'}
+            - {name: ZERO_CVR_DB, value: 'postgresql://surfsense:$(DB_PASSWORD)@db:5432/surfsense?sslmode=disable'}
+            - {name: ZERO_CHANGE_DB, value: 'postgresql://surfsense:$(DB_PASSWORD)@db:5432/surfsense?sslmode=disable'}
+            - {name: ZERO_REPLICA_FILE, value: /data/zero.db}
+            - {name: ZERO_APP_PUBLICATIONS, value: zero_publication}
+            - {name: ZERO_AUTO_RESET, value: "true"}
+            - {name: ZERO_NUM_SYNC_WORKERS, value: "4"}
+            - {name: ZERO_UPSTREAM_MAX_CONNS, value: "20"}
+            - {name: ZERO_CVR_MAX_CONNS, value: "30"}
+            - {name: ZERO_QUERY_URL, value: 'http://frontend:3000/api/zero/query'}
+            - {name: ZERO_MUTATE_URL, value: 'http://frontend:3000/api/zero/mutate'}
+            - {name: ZERO_QUERY_FORWARD_COOKIES, value: "true"}
+          readinessProbe:
+            httpGet: {path: /keepalive, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 2Gi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: surfsense-zero}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: surfsense
+spec:
+  selector: {app.kubernetes.io/name: surfsense-frontend}
+  ports:
+    - {name: http, port: 3000, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surfsense-frontend
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: surfsense-frontend}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: surfsense-frontend}
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/modsetter/surfsense-web:0.0.39
+          ports:
+            - {name: http, containerPort: 3000}
+          env:
+            - {name: AUTH_TYPE, value: LOCAL}
+            - {name: ETL_SERVICE, value: DOCLING}
+            - {name: DEPLOYMENT_MODE, value: self-hosted}
+            - {name: SURFSENSE_BACKEND_INTERNAL_URL, value: 'http://backend:8000'}
+            - {name: MAX_FILE_SIZE_MB, value: "500"}
+            - name: ZERO_QUERY_API_KEY
+              valueFrom:
+                secretKeyRef: {name: surfsense-secrets, key: ZERO_QUERY_API_KEY}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 1Gi}
