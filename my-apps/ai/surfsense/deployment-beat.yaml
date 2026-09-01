@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surfsense-beat
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: surfsense-beat
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: surfsense-beat
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: feature.node.kubernetes.io/pci-0300_10de.present
+                    operator: DoesNotExist
+      containers:
+        - name: beat
+          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: surfsense-secrets
+                  key: SECRET_KEY
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: surfsense-secrets
+                  key: DB_PASSWORD
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://surfsense:$(DB_PASSWORD)@db:5432/surfsense
+            - name: CELERY_BROKER_URL
+              value: redis://redis:6379/0
+            - name: CELERY_RESULT_BACKEND
+              value: redis://redis:6379/0
+            - name: CELERY_TASK_DEFAULT_QUEUE
+              value: surfsense
+            - name: PYTHONPATH
+              value: /app
+            - name: SERVICE_ROLE
+              value: beat
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
