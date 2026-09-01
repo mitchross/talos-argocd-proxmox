@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: surfsense
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - storage.yaml
+  - database.yaml
+  - app.yaml
+  - httproute.yaml
+  - vpa.yaml
+
+components:
+  - ../../common/deployment-defaults
