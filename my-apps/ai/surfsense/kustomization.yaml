@@ -5,11 +5,24 @@ namespace: surfsense
 resources:
   - namespace.yaml
   - externalsecret.yaml
-  - storage.yaml
-  - database.yaml
-  - app.yaml
+  - pvc.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+  - redis/deployment.yaml
+  - redis/service.yaml
+  - redis/pvc.yaml
+  - migrations-job.yaml
+  - deployment.yaml
+  - deployment-beat.yaml
+  - deployment-zero.yaml
+  - deployment-frontend.yaml
+  - service.yaml
   - httproute.yaml
   - vpa.yaml
+  - kopiur/postgres-data.yaml
+  - kopiur/object-store.yaml
 
 components:
   - ../../common/deployment-defaults
+  - ../../common/kopiur-backup
