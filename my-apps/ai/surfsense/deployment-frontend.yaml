@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surfsense-frontend
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: surfsense-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: surfsense-frontend
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: feature.node.kubernetes.io/pci-0300_10de.present
+                    operator: DoesNotExist
+      containers:
+        - name: frontend
+          image: ghcr.io/modsetter/surfsense-web:0.0.39
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: AUTH_TYPE
+              value: LOCAL
+            - name: ETL_SERVICE
+              value: DOCLING
+            - name: DEPLOYMENT_MODE
+              value: self-hosted
+            - name: SURFSENSE_BACKEND_INTERNAL_URL
+              value: http://backend:8000
+            - name: MAX_FILE_SIZE_MB
+              value: "500"
+            - name: ZERO_QUERY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: surfsense-secrets
+                  key: ZERO_QUERY_API_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
