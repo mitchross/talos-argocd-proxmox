@@ -5,7 +5,9 @@ metadata:
   namespace: surfsense
 spec:
   targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-postgres}
-  updatePolicy: {updateMode: InPlaceOrRecreate}
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
   resourcePolicy:
     containerPolicies:
       - {containerName: '*', controlledValues: RequestsOnly}
@@ -17,7 +19,9 @@ metadata:
   namespace: surfsense
 spec:
   targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-redis}
-  updatePolicy: {updateMode: InPlaceOrRecreate}
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
   resourcePolicy:
     containerPolicies:
       - {containerName: '*', controlledValues: RequestsOnly}
@@ -29,10 +33,13 @@ metadata:
   namespace: surfsense
 spec:
   targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense}
-  updatePolicy: {updateMode: InPlaceOrRecreate}
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - {containerName: '*', controlledValues: RequestsOnly}
+      - {containerName: api, controlledValues: RequestsOnly}
+      - {containerName: worker, controlledValues: RequestsOnly}
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -41,7 +48,9 @@ metadata:
   namespace: surfsense
 spec:
   targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-beat}
-  updatePolicy: {updateMode: InPlaceOrRecreate}
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
   resourcePolicy:
     containerPolicies:
       - {containerName: '*', controlledValues: RequestsOnly}
@@ -53,7 +62,9 @@ metadata:
   namespace: surfsense
 spec:
   targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-zero}
-  updatePolicy: {updateMode: InPlaceOrRecreate}
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
   resourcePolicy:
     containerPolicies:
       - {containerName: '*', controlledValues: RequestsOnly}
@@ -65,7 +76,9 @@ metadata:
   namespace: surfsense
 spec:
   targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-frontend}
-  updatePolicy: {updateMode: InPlaceOrRecreate}
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
   resourcePolicy:
     containerPolicies:
       - {containerName: '*', controlledValues: RequestsOnly}
