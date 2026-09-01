@@ -34,3 +34,6 @@ configMapGenerator:
   - name: surfsense-selfhost-policy
     envs:
       - selfhost.env
+  - name: surfsense-credit-policy-scripts
+    files:
+      - scripts/reconcile-credit-policy.sh
