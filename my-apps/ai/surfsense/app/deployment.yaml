@@ -71,6 +71,7 @@ spec:
           volumeMounts:
             - {name: object-store, mountPath: /app/.local_object_store}
             - {name: shared-temp, mountPath: /shared_tmp}
+            - {name: global-llm-config, mountPath: /app/app/config/global_llm_config.yaml, subPath: global_llm_config.yaml, readOnly: true}
         - name: worker
           image: ghcr.io/modsetter/surfsense-backend:0.0.39
           env:
@@ -99,9 +100,13 @@ spec:
           volumeMounts:
             - {name: object-store, mountPath: /app/.local_object_store}
             - {name: shared-temp, mountPath: /shared_tmp}
+            - {name: global-llm-config, mountPath: /app/app/config/global_llm_config.yaml, subPath: global_llm_config.yaml, readOnly: true}
       volumes:
         - name: object-store
           persistentVolumeClaim:
             claimName: surfsense-object-store
         - name: shared-temp
           emptyDir: {}
+        - name: global-llm-config
+          configMap:
+            name: surfsense-global-llm-config
