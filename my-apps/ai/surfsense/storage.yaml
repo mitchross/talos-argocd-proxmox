@@ -24,11 +24,27 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Initial SurfSense pilot; enable Kopiur after validating backend data ownership"
 spec:
-  accessModes: [ReadWriteOnce]
+  accessModes: [ReadWriteMany]
   storageClassName: longhorn
   resources:
     requests:
       storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: surfsense-shared-temp
+  namespace: surfsense
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Temporary cross-worker processing files are disposable"
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
