@@ -47,6 +47,7 @@ operator-owned global model catalog:
 - Base URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
 - Model: `qwen3.8-27b`
 - Config: `global_llm_config.yaml`, mounted at `/app/app/config/global_llm_config.yaml`
+- Context budget: 48,000 input + 16,384 output, leaving 1,152 tokens for request/tool overhead inside vLLM's 65,536-token window
 - Billing tier: `free` — this is local infrastructure, not a metered provider
 
 Initial embeddings use CPU-local `sentence-transformers/all-MiniLM-L6-v2`, so SurfSense does not request a GPU.
