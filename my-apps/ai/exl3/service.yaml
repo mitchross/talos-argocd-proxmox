@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: exl3-qwen38
+  namespace: vllm
+spec:
+  selector:
+    app: exl3-qwen38
+  ports:
+    - name: http
+      port: 8888
+      targetPort: http
+      protocol: TCP
