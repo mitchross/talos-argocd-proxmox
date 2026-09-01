@@ -24,6 +24,11 @@ resources:
   - kopiur/library.yaml
   - kopiur/immich-postgres-data.yaml
 
+configMapGenerator:
+  - name: immich-scripts
+    files:
+      - scripts/prepare-library.sh
+
 # Injects the uniform kopiur fields (repository, copyMethod, populator) into the per-PVC stubs in kopiur/.
 components:
   - ../../common/kopiur-backup

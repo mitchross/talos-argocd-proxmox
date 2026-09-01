@@ -35,17 +35,15 @@ spec:
           command:
             - sh
             - -c
-            - |
-              echo "waiting for /data/basemap.pmtiles..."
-              until [ -s /data/basemap.pmtiles ]; do
-                sleep 5
-              done
-              echo "found $(ls -lh /data/basemap.pmtiles)"
+            - /opt/repo-scripts/wait-for-basemap.sh
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: pmtiles
               mountPath: /data
               readOnly: true
@@ -73,6 +71,10 @@ spec:
               cpu: 500m
               memory: 512Mi
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: radar-ng-scripts
+            defaultMode: 0555
         - name: pmtiles
           persistentVolumeClaim:
             claimName: pmtiles

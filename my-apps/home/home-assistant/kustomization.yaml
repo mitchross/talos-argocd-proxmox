@@ -33,6 +33,10 @@ generatorOptions:
   disableNameSuffixHash: true
 
 configMapGenerator:
+- name: home-assistant-scripts
+  files:
+  - scripts/copy-config.sh
+  - scripts/install-hacs.sh
 - name: config
   files:
   - configuration.yaml

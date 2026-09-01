@@ -20,9 +20,13 @@ spec:
             command:
             - /bin/sh
             - -c
-            - |
-              echo "Cleaning up all Failed pods..."
-              kubectl delete pods --field-selector=status.phase=Failed -A --ignore-not-found
-              echo "Cleaning up all Succeeded pods..."
-              kubectl delete pods --field-selector=status.phase=Succeeded -A --ignore-not-found
-              echo "Done."
+            - /opt/repo-scripts/cleanup-completed-pods.sh
+            volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+          volumes:
+          - name: repo-scripts
+            configMap:
+              name: pod-cleanup-scripts
+              defaultMode: 0555

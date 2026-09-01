@@ -35,8 +35,11 @@ spec:
         - name: sleeper
           image: ghcr.io/home-operations/busybox:1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-c", "while true; do sleep 3600; done"]
+          command: ["sh", "-c", "/opt/repo-scripts/sleep.sh"]
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: data
               mountPath: /data
           resources:
@@ -51,6 +54,10 @@ spec:
             capabilities:
               drop: ["ALL"]
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: restore-canary-scripts
+            defaultMode: 0555
         - name: data
           persistentVolumeClaim:
             claimName: restore-canary-data

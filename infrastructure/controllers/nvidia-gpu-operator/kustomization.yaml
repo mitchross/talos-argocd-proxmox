@@ -6,6 +6,11 @@ resources:
 - external-secret.yaml
 - time-slicing-config.yaml
 - powerlimit-daemonset.yaml    # Caps each GPU at 290W and reapplies after driver reloads
+
+configMapGenerator:
+- name: nvidia-powerlimit-scripts
+  files:
+  - scripts/reconcile-power-limit.sh
 # cluster-policy.yaml intentionally not included — the Helm chart generates its
 # own ClusterPolicy from valuesInline below. Keeping both would cause a conflict.
 

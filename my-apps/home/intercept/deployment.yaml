@@ -36,12 +36,7 @@ spec:
           command:
             - /bin/sh
             - -c
-            - >-
-              mkdir -p /persist/instance
-              /persist/weather_sat
-              /persist/radiosonde
-              /persist/subghz
-              /persist/adsb
+            - /opt/repo-scripts/initialize-data.sh
           securityContext:
             runAsUser: 0
             runAsNonRoot: false
@@ -53,6 +48,9 @@ spec:
               cpu: 100m
               memory: 32Mi
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: data
               mountPath: /persist
       containers:
@@ -150,6 +148,10 @@ spec:
             - name: usb-bus
               mountPath: /dev/bus/usb
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: intercept-scripts
+            defaultMode: 0555
         - name: data
           persistentVolumeClaim:
             claimName: intercept-data

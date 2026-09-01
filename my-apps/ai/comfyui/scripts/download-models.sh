@@ -1,0 +1,92 @@
+#!/bin/bash
+set -euo pipefail
+
+pip install -q huggingface_hub
+
+python3 << 'PYEOF'
+import os, shutil
+from huggingface_hub import hf_hub_download
+
+token = os.environ.get('HF_TOKEN', None)
+# /models is the shared repo (<share>/models via subPath) — the same
+# per-type folders ComfyUI Desktop and the deployment use.
+BASE = '/models'
+TMP = '/models/.tmp_download'
+
+def download(repo_id, filename, dest_dir, dest_name=None):
+    """Download a file from HuggingFace. Skips if already exists."""
+    if dest_name is None:
+        dest_name = os.path.basename(filename)
+    dest = os.path.join(dest_dir, dest_name)
+    if os.path.exists(dest):
+        size_mb = os.path.getsize(dest) / (1024*1024)
+        print(f'  SKIP (exists, {size_mb:.0f}MB): {dest_name}')
+        return
+    os.makedirs(dest_dir, exist_ok=True)
+    print(f'  Downloading {repo_id} / {filename} ...')
+    path = hf_hub_download(
+        repo_id=repo_id,
+        filename=filename,
+        local_dir=TMP,
+        token=token
+    )
+    shutil.move(path, dest)
+    size_gb = os.path.getsize(dest) / (1024**3)
+    print(f'  DONE ({size_gb:.1f}GB): {dest_name}')
+
+# Main diffusion models already live in the shared SMB repo; this only fetches missing auxiliary files.
+
+# FLUX text encoders (for Z-Image-Turbo)
+print('\n=== FLUX text encoders (for Z-Image-Turbo) ===')
+download('comfyanonymous/flux_text_encoders',
+         'clip_l.safetensors',
+         f'{BASE}/text_encoders')
+
+download('comfyanonymous/flux_text_encoders',
+         't5xxl_fp8_e4m3fn.safetensors',
+         f'{BASE}/text_encoders')
+
+# FLUX VAE (for Z-Image-Turbo)
+download('black-forest-labs/FLUX.1-dev',
+         'ae.safetensors',
+         f'{BASE}/vae')
+
+# Wan 2.2 auxiliary files
+print('\n=== Wan 2.2 auxiliary files ===')
+
+# UMT5-XXL text encoder (FP8, ~6.7GB)
+download('Comfy-Org/Wan_2.1_ComfyUI_repackaged',
+         'split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors',
+         f'{BASE}/text_encoders',
+         'umt5_xxl_fp8_e4m3fn_scaled.safetensors')
+
+# Wan VAE (14B models use the 2.1 VAE, ~254MB)
+download('Comfy-Org/Wan_2.2_ComfyUI_Repackaged',
+         'split_files/vae/wan_2.1_vae.safetensors',
+         f'{BASE}/vae',
+         'wan_2.1_vae.safetensors')
+
+# CLIP Vision H (required for I2V only, ~1.3GB)
+download('Comfy-Org/Wan_2.1_ComfyUI_repackaged',
+         'split_files/clip_vision/clip_vision_h.safetensors',
+         f'{BASE}/clip_vision',
+         'clip_vision_h.safetensors')
+
+# Cleanup and summary
+shutil.rmtree(TMP, ignore_errors=True)
+
+print('\n=== All downloads complete ===')
+total_gb = 0
+for subdir in ['diffusion_models', 'vae', 'text_encoders', 'clip_vision']:
+    path = os.path.join(BASE, subdir)
+    if os.path.exists(path):
+        print(f'\n{subdir}/')
+        for f in sorted(os.listdir(path)):
+            fpath = os.path.join(path, f)
+            if os.path.isfile(fpath):
+                size_gb = os.path.getsize(fpath) / (1024**3)
+                total_gb += size_gb
+                print(f'  {f} ({size_gb:.1f}GB)')
+print(f'\nTotal: {total_gb:.1f}GB')
+PYEOF
+

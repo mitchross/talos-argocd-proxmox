@@ -49,14 +49,18 @@ spec:
       command:
         - /bin/sh
         - -ec
-        - |
-          printf 'root-writer\n' > /data/root-writer.txt
-          stat -c 'root-writer ownership=%u:%g mode=%a' /data/root-writer.txt
-          sleep 3600
+        - /opt/repo-scripts/root-writer.sh
       volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
         - name: data
           mountPath: /data
   volumes:
+    - name: repo-scripts
+      configMap:
+        name: truenas-csi-canary-scripts
+        defaultMode: 0555
     - name: data
       persistentVolumeClaim:
         claimName: truenas-nfs-canary
@@ -96,16 +100,18 @@ spec:
       command:
         - /bin/sh
         - -ec
-        - |
-          printf 'nonroot-writer\n' > /data/nonroot-writer.txt
-          owner="$(stat -c '%u:%g' /data/nonroot-writer.txt)"
-          printf 'nonroot-writer ownership=%s\n' "$owner"
-          test "$owner" = "1000:1000"
-          sleep 3600
+        - /opt/repo-scripts/nonroot-writer.sh
       volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
         - name: data
           mountPath: /data
   volumes:
+    - name: repo-scripts
+      configMap:
+        name: truenas-csi-canary-scripts
+        defaultMode: 0555
     - name: data
       persistentVolumeClaim:
         claimName: truenas-nfs-canary
@@ -133,19 +139,19 @@ spec:
       command:
         - /bin/sh
         - -ec
-        - |
-          until test -f /data/root-writer.txt; do sleep 1; done
-          cat /data/root-writer.txt
-          for file in /data/*; do
-            test -f "$file" || continue
-            stat -c '%n ownership=%u:%g mode=%a' "$file"
-          done
-          sleep 3600
+        - /opt/repo-scripts/reader.sh
       volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
         - name: data
           mountPath: /data
           readOnly: true
   volumes:
+    - name: repo-scripts
+      configMap:
+        name: truenas-csi-canary-scripts
+        defaultMode: 0555
     - name: data
       persistentVolumeClaim:
         claimName: truenas-nfs-canary

@@ -6,3 +6,8 @@ resources:
 - namespace.yaml
 - rbac.yaml
 - cronjob.yaml
+
+configMapGenerator:
+- name: pod-cleanup-scripts
+  files:
+  - scripts/cleanup-completed-pods.sh

@@ -9,6 +9,9 @@ resources:
   - externalsecret.yaml
   - redis.yaml
 configMapGenerator:
+  - name: searxng-scripts
+    files:
+      - scripts/wait-for-redis.sh
   - name: searxng-config-settings
     files:
       - settings.yaml
