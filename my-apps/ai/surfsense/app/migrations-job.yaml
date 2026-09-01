@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: surfsense-migrations
+  namespace: surfsense
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.38
+          command: [sh, -c, 'until nc -z db 5432; do sleep 2; done']
+      containers:
+        - name: migrations
+          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: surfsense-secrets
+                  key: DB_PASSWORD
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://surfsense:$(DB_PASSWORD)@db:5432/surfsense
+            - name: PYTHONPATH
+              value: /app
+            - name: SERVICE_ROLE
+              value: migrate
+            - name: MIGRATION_TIMEOUT
+              value: "900"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
