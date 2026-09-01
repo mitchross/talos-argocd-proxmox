@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exl3-qwen38
+  namespace: vllm
+  labels:
+    app: exl3-qwen38
+spec:
+  # Experimental only. The production vLLM pod owns the sole RTX 3090.
+  # To test: scale vllm-server to 0 in Git, then scale this Deployment to 1.
+  replicas: 0
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: exl3-qwen38
+  template:
+    metadata:
+      labels:
+        app: exl3-qwen38
+    spec:
+      enableServiceLinks: false
+      restartPolicy: Always
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      terminationGracePeriodSeconds: 120
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: exl3-qwen38
+          # Mia publishes a deployment kit rather than a prebuilt x86 image.
+          # This devel image compiles the pinned ExLlamaV3 fork on first boot;
+          # the venv and weights persist on the existing node-local NVMe PVC.
+          image: nvidia/cuda:13.0.1-devel-ubuntu24.04
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                git ca-certificates python3 python3-venv python3-pip build-essential ninja-build
+              rm -rf /var/lib/apt/lists/*
+
+              ROOT=/models/exl3
+              KIT="$ROOT/kit"
+              mkdir -p "$ROOT/models"
+
+              if [ ! -d "$KIT/.git" ]; then
+                git clone https://github.com/MiaAI-Lab/Qwen3.8-27B-DFlash2-EXL3-5.0bpw.git "$KIT"
+              fi
+              cd "$KIT"
+              git fetch --all --tags --prune
+              git checkout --detach 09791b8a9045210cd2e90b49c13ffd3b34fb2d70
+
+              cat > .env <<'EOF'
+              MODEL_DIR=/models/exl3/models/Qwen3.8-27B-EXL3-3.5bpw
+              HF_TARGET_REPO=Mia-AiLab/Qwen3.8-27B-EXL3-3.5bpw
+              GPU_MEM_GB=22
+              CONTEXT_SIZE=262144
+              CACHE_QUANT=nvfp4
+              DRAFT=mtp
+              HOST=0.0.0.0
+              PORT=8888
+              TORCH_CUDA_ARCH_LIST=8.6
+              MAX_JOBS=8
+              EXL3_REPO=git+https://github.com/MiaAI-Lab/exllamav3.git@63b32f001d7b2cfed3b3e3aaf25f534ba53cc7ed
+              EOF
+
+              exec ./start.sh
+          env:
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: compute,utility
+            - name: HF_HOME
+              value: /models/exl3/hf-cache
+            - name: PIP_DISABLE_PIP_VERSION_CHECK
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8888
+              protocol: TCP
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 240
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              nvidia.com/gpu: "1"
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              nvidia.com/gpu: "1"
+              memory: 32Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            # Same node-local NVMe cache used by vLLM; EXL3 gets its own /exl3 tree.
+            claimName: ai-model-cache-vllm
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi
