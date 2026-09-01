@@ -176,11 +176,11 @@ spec:
           command:
             - /bin/sh
             - -c
-            - |
-              cp /code/share/GeoLite2-City.mmdb /share/GeoLite2-City.mmdb
-              ls -la /share/GeoLite2-City.mmdb
-              echo "GeoIP database copied successfully"
+            - /opt/repo-scripts/copy-geoip.sh
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: geoip-data
               mountPath: /share
       containers:
@@ -251,6 +251,10 @@ spec:
             limits:
               memory: 512Mi
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: posthog-scripts
+            defaultMode: 0555
         - name: geoip-data
           emptyDir: {}
 ---

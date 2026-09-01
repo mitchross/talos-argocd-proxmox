@@ -113,6 +113,8 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Use Gateway API (not Ingress) — this cluster uses Gateway API exclusively
 - On **external** HTTPRoutes: add `labels: external-dns: "true"`, annotation `external-dns.alpha.kubernetes.io/target: vanillax.me`, and `sectionName: https` on the parentRef — **all three are required or DNS/routing silently fails**
 - Follow GitOps workflow for all changes
+- Keep repo-owned multi-line shell, SQL, Python, and JavaScript programs out of Kubernetes YAML and Helm values. Store them under the owning Application's `scripts/`, package them with a hash-suffixed Kustomize `configMapGenerator`, mount the ConfigMap read-only, and execute the file by path so a fresh clone has every deployment step.
+- Direct argv commands, probes, and single-purpose one-line checks may stay inline. Migrations, reconciliation logic, loops, heredocs, and other maintainable programs may not.
 - Store secrets in 1Password, reference via ExternalSecret
 - Add backups to a normal application PVC with **kopiur**: label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy`+`SnapshotSchedule`+`Restore` in `kopiur/<pvc>.yaml`) with the **mover `securityContext` set to the data owner uid:gid**, pull in the `../../common/kopiur-backup` component, and point the PVC `dataSourceRef` at `<pvc>-restore`. See `.claude/commands/add-backup.md` and `docs/domains/storage/kopiur-backup-architecture.md`.
 - When marking a PVC `backup-exempt: "true"`, pair it with the fully-qualified reason annotation `storage.vanillax.dev/backup-exempt-reason`. There is **no runtime admission gate anymore** (pvc-plumber is gone) — the bare `backup-exempt-reason` key simply fails to record the reason; the kopiur backup-coverage CI check warns on missing/unqualified keys (it does not block)
@@ -147,6 +149,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Mix Ingress and Gateway API
 - Commit secrets to Git
 - Bypass GitOps workflow for configuration changes
+- Hide deployment or migration behavior in an inline YAML block or an undocumented CLI command
 - Deploy without considering sync wave order
 - Add backup CRs to system namespace PVCs (kube-system, argocd, longhorn-system, kopiur-system)
 - Manually create or delete kopiur `SnapshotPolicy`/`SnapshotSchedule`/`Restore` (or `ReplicationSource`/`ReplicationDestination` — those CRDs are gone) out of band. Manage backups through the per-PVC stub + the `kopiur-backup` component in git.

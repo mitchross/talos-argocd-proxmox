@@ -33,17 +33,15 @@ spec:
           command:
             - sh
             - -c
-            - |
-              echo "waiting for /data/osm.versatiles..."
-              until [ -s /data/osm.versatiles ]; do
-                sleep 5
-              done
-              echo "found archive, starting server"
+            - /opt/repo-scripts/wait-for-map.sh
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: map-data
               mountPath: /data
               readOnly: true
@@ -95,6 +93,10 @@ spec:
               mountPath: /config
               readOnly: true
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: versatiles-scripts
+            defaultMode: 0555
         - name: map-data
           persistentVolumeClaim:
             claimName: map-data-smb

@@ -26,7 +26,7 @@ spec:
               mountPath: /app/storage
         - name: migrate
           image: ghcr.io/mitchross/project-nomad:sha-35016fd
-          command: ["sh", "-c", "node ace migration:run --force && node ace db:seed"]
+          command: ["sh", "-c", "/opt/repo-scripts/migrate.sh"]
           envFrom:
             - configMapRef:
                 name: project-nomad-config
@@ -42,12 +42,15 @@ spec:
                   name: project-nomad-secrets
                   key: DB_PASSWORD
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: nomad-storage
               mountPath: /app/storage
       containers:
         - name: project-nomad
           image: ghcr.io/mitchross/project-nomad:sha-35016fd
-          command: ["sh", "-c", "node ace queue:work --all & exec node bin/server.js"]
+          command: ["sh", "-c", "/opt/repo-scripts/start.sh"]
           ports:
             - containerPort: 8080
               name: http
@@ -72,6 +75,9 @@ spec:
             limits:
               memory: 1Gi
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: nomad-storage
               mountPath: /app/storage
           livenessProbe:
@@ -89,6 +95,10 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: project-nomad-scripts
+            defaultMode: 0555
         - name: nomad-storage
           persistentVolumeClaim:
             claimName: nomad-storage

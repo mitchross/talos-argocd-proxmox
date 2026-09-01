@@ -23,12 +23,11 @@ spec:
           command:
             - /bin/bash
             - -c
-            - |
-              echo "Pre-warming SteamCMD to complete self-update..."
-              /home/steam/steamcmd/steamcmd.sh +quit || true
-              cp -a /home/steam/steamcmd/* /steam-cache/ 2>/dev/null || true
-              echo "SteamCMD pre-warm complete."
+            - /opt/repo-scripts/prewarm-steamcmd.sh
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: steam-cache
               mountPath: /steam-cache
         - name: copy-config
@@ -36,12 +35,11 @@ spec:
           command:
             - sh
             - -c
-            - |
-              mkdir -p /project-zomboid-config/Server
-              cp /config/vanillax.ini /project-zomboid-config/Server/vanillax.ini
-              cp /config/vanillax_SandboxVars.lua /project-zomboid-config/Server/vanillax_SandboxVars.lua
-              echo "Config files copied to /project-zomboid-config/Server/"
+            - /opt/repo-scripts/copy-config.sh
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: config-data
               mountPath: /project-zomboid-config
             - name: config
@@ -115,11 +113,7 @@ spec:
                 command:
                   - /bin/bash
                   - -c
-                  - |
-                    rcon-cli -c /home/steam/server/rcon.yml "save" || true
-                    sleep 5
-                    rcon-cli -c /home/steam/server/rcon.yml "quit" || true
-                    sleep 15
+                  - /opt/repo-scripts/stop-server.sh
           startupProbe:
             exec:
               command:
@@ -147,6 +141,9 @@ spec:
             periodSeconds: 30
             failureThreshold: 3
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: server-files
               mountPath: /project-zomboid
             - name: config-data
@@ -160,6 +157,10 @@ spec:
             limits:
               memory: 20Gi
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: project-zomboid-scripts
+            defaultMode: 0555
         - name: server-files
           persistentVolumeClaim:
             claimName: zomboid-server-files

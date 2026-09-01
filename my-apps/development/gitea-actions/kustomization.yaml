@@ -9,4 +9,9 @@ resources:
   - pvc.yaml
   - deployment.yaml
 
+configMapGenerator:
+  - name: gitea-actions-scripts
+    files:
+      - scripts/prune-docker-cache.sh
+
 # act-runner-token: 1Password item `gitea` field `act_runner_token`; it survives nukes via the restored gitea DB.

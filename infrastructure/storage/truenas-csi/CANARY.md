@@ -22,7 +22,7 @@ The node DaemonSet must be Ready on every schedulable node before continuing.
 ## Provision And Mount
 
 ```bash
-kubectl apply -f infrastructure/storage/truenas-csi/canary/nfs-canary.yaml
+kubectl apply -k infrastructure/storage/truenas-csi/canary
 kubectl wait -n truenas-csi-canary \
   --for=jsonpath='{.status.phase}'=Bound pvc/truenas-nfs-canary \
   --timeout=2m

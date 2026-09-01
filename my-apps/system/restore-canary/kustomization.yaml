@@ -9,6 +9,11 @@ resources:
 
 namespace: restore-canary
 
+configMapGenerator:
+  - name: restore-canary-scripts
+    files:
+      - scripts/sleep.sh
+
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
 components:
   - ../../common/kopiur-backup

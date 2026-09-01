@@ -57,17 +57,7 @@ spec:
           command:
             - sh
             - -c
-            - |
-              set -eu
-              echo "=== Applying lifecycle to s3://postgres-backups ==="
-              aws --endpoint-url http://192.168.10.133:30292 \
-                s3api put-bucket-lifecycle-configuration \
-                --bucket postgres-backups \
-                --lifecycle-configuration file:///lifecycle/lifecycle.json
-              echo "=== Verifying ==="
-              aws --endpoint-url http://192.168.10.133:30292 \
-                s3api get-bucket-lifecycle-configuration \
-                --bucket postgres-backups
+            - /opt/repo-scripts/apply-postgres-backups-lifecycle.sh
           resources:
             requests:
               cpu: 50m
@@ -78,11 +68,18 @@ spec:
             - name: lifecycle
               mountPath: /lifecycle
               readOnly: true
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: tmp
               mountPath: /tmp
       volumes:
         - name: lifecycle
           configMap:
             name: postgres-backups-lifecycle
+        - name: repo-scripts
+          configMap:
+            name: postgres-backups-lifecycle-scripts
+            defaultMode: 0555
         - name: tmp
           emptyDir: {}

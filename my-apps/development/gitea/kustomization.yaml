@@ -27,6 +27,11 @@ helmCharts:
   namespace: gitea
   valuesFile: values.yaml
 
+configMapGenerator:
+- name: gitea-scripts
+  files:
+  - scripts/fix-permissions.sh
+
 patches:
 - path: fix-permissions-patch.yaml
   target:
