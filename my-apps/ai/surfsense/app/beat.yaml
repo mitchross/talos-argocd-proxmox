@@ -45,6 +45,8 @@ spec:
               value: redis://redis:6379/0
             - name: CELERY_TASK_DEFAULT_QUEUE
               value: surfsense
+            - name: EMBEDDING_MODEL
+              value: sentence-transformers/all-MiniLM-L6-v2
             - name: PYTHONPATH
               value: /app
             - name: SERVICE_ROLE
@@ -54,4 +56,4 @@ spec:
               cpu: 50m
               memory: 128Mi
             limits:
-              memory: 512Mi
+              memory: 2Gi

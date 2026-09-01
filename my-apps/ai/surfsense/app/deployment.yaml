@@ -86,6 +86,7 @@ spec:
             - {name: REDIS_APP_URL, value: redis://redis:6379/0}
             - {name: CELERY_TASK_DEFAULT_QUEUE, value: surfsense}
             - {name: FILE_STORAGE_LOCAL_PATH, value: /app/.local_object_store}
+            - {name: EMBEDDING_MODEL, value: sentence-transformers/all-MiniLM-L6-v2}
             - {name: SEARXNG_URL, value: http://searxng.searxng.svc.cluster.local:8080}
             - {name: SANDBOX_ENABLED, value: "FALSE"}
             - {name: TMPDIR, value: /shared_tmp}
