@@ -57,15 +57,7 @@ This deployment does not use SurfSense's hosted credit wallet for local infrastr
 
 The policy keeps new-user wallet balance at zero and explicitly disables ETL, crawl, captcha, platform-scrape, and Stripe credit billing. This also keeps Auto mode eligible for the local `billing_tier: free` vLLM model instead of treating a default signup credit balance as premium-provider eligibility.
 
-SurfSense upstream defaults new users to a $5 wallet. Accounts created before this policy was applied keep that persisted balance until it is reset once. For a fully local install, reset existing wallets after deployment:
-
-```bash
-kubectl -n surfsense exec deploy/surfsense-postgres -- \
-  psql -U surfsense -d surfsense -c \
-  'UPDATE "user" SET credit_micros_balance = 0, credit_micros_reserved = 0;'
-```
-
-This is an operational one-time cleanup, not a recurring GitOps job; Argo must not rewrite user wallet rows on every sync.
+SurfSense upstream defaults new users to a $5 wallet. The versioned `surfsense-credit-policy-v1` Sync hook runs after schema migrations and idempotently resets restored or pre-policy wallet balances before the API, worker, Beat, and Zero start. A fresh deployment and a restored deployment therefore converge on the same no-credit policy without manual SQL.
 
 ## Storage and DR
 
