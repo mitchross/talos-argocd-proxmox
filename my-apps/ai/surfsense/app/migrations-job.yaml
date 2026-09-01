@@ -19,6 +19,9 @@ spec:
       containers:
         - name: migrations
           image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          envFrom:
+            - configMapRef:
+                name: surfsense-selfhost-policy
           env:
             - name: DB_PASSWORD
               valueFrom:
