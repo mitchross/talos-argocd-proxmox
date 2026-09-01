@@ -13,6 +13,7 @@ resources:
   - redis/service.yaml
   - redis/pvc.yaml
   - app/migrations-job.yaml
+  - app/credit-policy-job.yaml
   - app/deployment.yaml
   - app/beat.yaml
   - app/zero.yaml

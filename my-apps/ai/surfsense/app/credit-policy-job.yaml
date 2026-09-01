@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: surfsense-credit-policy-v1
+  namespace: surfsense
+  labels:
+    app.kubernetes.io/component: credit-policy
+    app.kubernetes.io/name: surfsense
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: credit-policy
+        app.kubernetes.io/name: surfsense
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      containers:
+        - name: reconcile-credit-policy
+          image: pgvector/pgvector:pg17
+          command: [psql]
+          args:
+            - --host=db
+            - --username=surfsense
+            - --dbname=surfsense
+            - --set=ON_ERROR_STOP=1
+            - --command=UPDATE "user" SET credit_micros_balance = 0, credit_micros_reserved = 0 WHERE credit_micros_balance <> 0 OR credit_micros_reserved <> 0;
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: surfsense-secrets
+                  key: DB_PASSWORD
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
