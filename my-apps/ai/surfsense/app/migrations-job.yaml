@@ -41,3 +41,12 @@ spec:
               memory: 256Mi
             limits:
               memory: 1Gi
+          volumeMounts:
+            - name: global-llm-config
+              mountPath: /app/app/config/global_llm_config.yaml
+              subPath: global_llm_config.yaml
+              readOnly: true
+      volumes:
+        - name: global-llm-config
+          configMap:
+            name: surfsense-global-llm-config

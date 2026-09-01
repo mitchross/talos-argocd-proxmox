@@ -1,0 +1,23 @@
+global_llm_configs:
+  - id: -1
+    name: Qwen 3.8 27B (vLLM)
+    billing_tier: free
+    anonymous_enabled: false
+    seo_enabled: false
+    quota_reserve_tokens: 4000
+    provider: openai
+    model_name: qwen3.8-27b
+    supports_image_input: true
+    supports_tools: true
+    max_input_tokens: 65536
+    api_key: sk-required
+    api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+    rpm: 60
+    tpm: 1000000
+    litellm_params:
+      max_tokens: 16384
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+    system_instructions: ""
+    use_default_system_instructions: true
+    citations_enabled: true

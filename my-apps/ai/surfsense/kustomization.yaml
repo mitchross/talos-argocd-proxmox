@@ -25,3 +25,8 @@ resources:
 
 components:
   - ../../common/kopiur-backup
+
+configMapGenerator:
+  - name: surfsense-global-llm-config
+    files:
+      - global_llm_config.yaml
