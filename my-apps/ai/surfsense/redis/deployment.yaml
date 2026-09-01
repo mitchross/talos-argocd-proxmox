@@ -19,6 +19,11 @@ spec:
       labels:
         app: surfsense-redis
     spec:
+      securityContext:
+        # redis:8-alpine runs redis as uid 999 / gid 1000. Fresh Longhorn
+        # volumes mount root-owned, so give the pod the Redis group on /data.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: redis
           image: redis:8-alpine
