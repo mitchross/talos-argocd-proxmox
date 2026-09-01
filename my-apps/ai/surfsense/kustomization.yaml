@@ -30,3 +30,6 @@ configMapGenerator:
   - name: surfsense-global-llm-config
     files:
       - global_llm_config.yaml
+  - name: surfsense-selfhost-policy
+    envs:
+      - selfhost.env
