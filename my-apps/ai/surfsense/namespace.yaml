@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: surfsense
+  labels:
+    kopiur.home-operations.com/repo: cluster-kopia
+  annotations:
+    # SurfSense backend image runs as root and owns the local knowledge/object store.
+    kopiur.home-operations.com/privileged-movers: "true"

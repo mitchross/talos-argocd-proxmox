@@ -1,0 +1,63 @@
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: surfsense-postgres-data
+  namespace: surfsense
+spec:
+  sources:
+    - pvc:
+        name: surfsense-postgres-data
+  identity:
+    username: surfsense-postgres-data
+    hostname: surfsense
+  hooks:
+    beforeSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app: surfsense-postgres
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
+          timeout: 2m
+  retention:
+    keepHourly: 24
+    keepDaily: 7
+    keepWeekly: 4
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups: [999]
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: surfsense-postgres-data-hourly
+  namespace: surfsense
+spec:
+  policyRef:
+    name: surfsense-postgres-data
+  schedule:
+    cron: "47 * * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: surfsense-postgres-data-restore
+  namespace: surfsense
+spec:
+  source:
+    fromPolicy:
+      name: surfsense-postgres-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups: [999]
