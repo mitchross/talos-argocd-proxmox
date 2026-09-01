@@ -4,7 +4,7 @@ metadata:
   name: surfsense-beat
   namespace: surfsense
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:
@@ -26,6 +26,9 @@ spec:
       containers:
         - name: beat
           image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          envFrom:
+            - configMapRef:
+                name: surfsense-selfhost-policy
           env:
             - name: SECRET_KEY
               valueFrom:

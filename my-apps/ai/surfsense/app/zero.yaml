@@ -4,7 +4,7 @@ metadata:
   name: surfsense-zero
   namespace: surfsense
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:

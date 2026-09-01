@@ -13,6 +13,7 @@ resources:
   - redis/service.yaml
   - redis/pvc.yaml
   - app/migrations-job.yaml
+  - app/credit-policy-job.yaml
   - app/deployment.yaml
   - app/beat.yaml
   - app/zero.yaml
@@ -30,3 +31,9 @@ configMapGenerator:
   - name: surfsense-global-llm-config
     files:
       - global_llm_config.yaml
+  - name: surfsense-selfhost-policy
+    envs:
+      - selfhost.env
+  - name: surfsense-credit-policy-scripts
+    files:
+      - scripts/reconcile-credit-policy.sh
