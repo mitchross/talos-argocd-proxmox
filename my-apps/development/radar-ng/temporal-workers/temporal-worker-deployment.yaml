@@ -47,7 +47,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.25
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.26
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
