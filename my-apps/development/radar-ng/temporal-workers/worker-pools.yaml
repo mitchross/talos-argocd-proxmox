@@ -1,0 +1,417 @@
+# One WorkerDeployment per Temporal task queue (plan Phase 1). Every pool polls only its own queue;
+# schedules still route to the legacy `radar-ng` queue until USE_ISOLATED_TASK_QUEUES=1 is set on the seeder (aux).
+# SKIP_SCHEDULE_SEED=1 everywhere here: the legacy worker seeds and runs the watchdog until the flip.
+# All pools share the RWO tiles/grids/state volumes, so they must land on tile-server's node (podAffinity).
+# Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them via env.
+---
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: radar-ng-worker-mrms
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker-mrms
+    radar-ng.vanillax.dev/worker: "true"
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal
+    temporalNamespace: default
+  rollout:
+    strategy: AllAtOnce
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: radar-ng-worker-mrms
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: tile-server
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # fsGroup REQUIRED: fresh Longhorn block volumes mount root:root; uid 1000 cannot write without it.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.25
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports:
+            - { containerPort: 9464, name: metrics }
+          env:
+            - { name: WORKER_ROLE, value: mrms }
+            - { name: SKIP_SCHEDULE_SEED, value: "1" }
+            # MRMS_RENDER_WORKERS=3 spawns one process per palette; slots cover 2 frames x 2 layers plus list/mark.
+            - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "6" }
+            - { name: TILE_DIR, value: /data/tiles }
+            - { name: GRID_DIR, value: /data/grids }
+            - { name: STATE_DIR, value: /data/state }
+            - { name: PUSH_DISABLED, value: "1" }
+          envFrom:
+            - configMapRef: { name: radar-ng-temporal-config }
+          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          livenessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - { name: tiles, mountPath: /data/tiles }
+            - { name: grids, mountPath: /data/grids }
+            - { name: state, mountPath: /data/state }
+          resources:
+            requests: { cpu: "2", memory: "3Gi" }
+            limits:   { cpu: "6", memory: "6Gi" }
+      volumes:
+        - name: tiles
+          persistentVolumeClaim: { claimName: tiles }
+        - name: grids
+          persistentVolumeClaim: { claimName: grids }
+        - name: state
+          persistentVolumeClaim: { claimName: state }
+---
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: radar-ng-worker-nowcast
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker-nowcast
+    radar-ng.vanillax.dev/worker: "true"
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal
+    temporalNamespace: default
+  rollout:
+    strategy: AllAtOnce
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: radar-ng-worker-nowcast
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: tile-server
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # fsGroup REQUIRED: fresh Longhorn block volumes mount root:root; uid 1000 cannot write without it.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.25
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports:
+            - { containerPort: 9464, name: metrics }
+          env:
+            - { name: WORKER_ROLE, value: nowcast }
+            - { name: SKIP_SCHEDULE_SEED, value: "1" }
+            # One pysteps run at a time; a second would double the ~3 GiB peak and starve the first.
+            - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "1" }
+            - { name: TILE_DIR, value: /data/tiles }
+            - { name: GRID_DIR, value: /data/grids }
+            - { name: STATE_DIR, value: /data/state }
+            - { name: PUSH_DISABLED, value: "1" }
+          envFrom:
+            - configMapRef: { name: radar-ng-temporal-config }
+          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          livenessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - { name: tiles, mountPath: /data/tiles }
+            - { name: grids, mountPath: /data/grids }
+            - { name: state, mountPath: /data/state }
+          resources:
+            requests: { cpu: "3", memory: "4Gi" }
+            limits:   { cpu: "8", memory: "8Gi" }
+      volumes:
+        - name: tiles
+          persistentVolumeClaim: { claimName: tiles }
+        - name: grids
+          persistentVolumeClaim: { claimName: grids }
+        - name: state
+          persistentVolumeClaim: { claimName: state }
+---
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: radar-ng-worker-hrrr
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker-hrrr
+    radar-ng.vanillax.dev/worker: "true"
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal
+    temporalNamespace: default
+  rollout:
+    strategy: AllAtOnce
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: radar-ng-worker-hrrr
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: tile-server
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # fsGroup REQUIRED: fresh Longhorn block volumes mount root:root; uid 1000 cannot write without it.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.25
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports:
+            - { containerPort: 9464, name: metrics }
+          env:
+            - { name: WORKER_ROLE, value: hrrr }
+            - { name: SKIP_SCHEDULE_SEED, value: "1" }
+            # Fan-out is 4 hours at a time (FORECAST_CONCURRENCY), so 4 slots is the whole budget.
+            - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "4" }
+            - { name: TILE_DIR, value: /data/tiles }
+            - { name: GRID_DIR, value: /data/grids }
+            - { name: STATE_DIR, value: /data/state }
+            - { name: PUSH_DISABLED, value: "1" }
+          envFrom:
+            - configMapRef: { name: radar-ng-temporal-config }
+          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          livenessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - { name: tiles, mountPath: /data/tiles }
+            - { name: grids, mountPath: /data/grids }
+            - { name: state, mountPath: /data/state }
+          resources:
+            requests: { cpu: "1", memory: "2Gi" }
+            limits:   { cpu: "4", memory: "6Gi" }
+      volumes:
+        - name: tiles
+          persistentVolumeClaim: { claimName: tiles }
+        - name: grids
+          persistentVolumeClaim: { claimName: grids }
+        - name: state
+          persistentVolumeClaim: { claimName: state }
+---
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: radar-ng-worker-aux
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker-aux
+    radar-ng.vanillax.dev/worker: "true"
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal
+    temporalNamespace: default
+  rollout:
+    strategy: AllAtOnce
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: radar-ng-worker-aux
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: tile-server
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # fsGroup REQUIRED: fresh Longhorn block volumes mount root:root; uid 1000 cannot write without it.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.25
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports:
+            - { containerPort: 9464, name: metrics }
+          env:
+            - { name: WORKER_ROLE, value: aux }
+            - { name: SKIP_SCHEDULE_SEED, value: "1" }
+            # Lightning holds one slot ~50 min/h; air quality chunks, tropical and cleanup share the rest.
+            - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "4" }
+            - { name: TILE_DIR, value: /data/tiles }
+            - { name: GRID_DIR, value: /data/grids }
+            - { name: STATE_DIR, value: /data/state }
+            - { name: PUSH_DISABLED, value: "1" }
+          envFrom:
+            - configMapRef: { name: radar-ng-temporal-config }
+          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          livenessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - { name: tiles, mountPath: /data/tiles }
+            - { name: grids, mountPath: /data/grids }
+            - { name: state, mountPath: /data/state }
+          resources:
+            requests: { cpu: "500m", memory: "1.5Gi" }
+            limits:   { cpu: "2", memory: "4Gi" }
+      volumes:
+        - name: tiles
+          persistentVolumeClaim: { claimName: tiles }
+        - name: grids
+          persistentVolumeClaim: { claimName: grids }
+        - name: state
+          persistentVolumeClaim: { claimName: state }
+---
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: radar-ng-worker-alerts
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker-alerts
+    radar-ng.vanillax.dev/worker: "true"
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal
+    temporalNamespace: default
+  rollout:
+    strategy: AllAtOnce
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: radar-ng-worker-alerts
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: tile-server
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # fsGroup REQUIRED: fresh Longhorn block volumes mount root:root; uid 1000 cannot write without it.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.25
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports:
+            - { containerPort: 9464, name: metrics }
+          env:
+            - { name: WORKER_ROLE, value: alerts }
+            - { name: SKIP_SCHEDULE_SEED, value: "1" }
+            # Small HTTP/JSON activities only; storm watches read grids, never write tiles.
+            - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "8" }
+            - { name: TILE_DIR, value: /data/tiles }
+            - { name: GRID_DIR, value: /data/grids }
+            - { name: STATE_DIR, value: /data/state }
+            - { name: PUSH_DISABLED, value: "1" }
+          envFrom:
+            - configMapRef: { name: radar-ng-temporal-config }
+          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          livenessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - { name: state, mountPath: /data/state }
+            - { name: grids, mountPath: /data/grids, readOnly: true }
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+            limits:   { cpu: "1", memory: "1Gi" }
+      volumes:
+        - name: state
+          persistentVolumeClaim: { claimName: state }
+        - name: grids
+          persistentVolumeClaim: { claimName: grids }
