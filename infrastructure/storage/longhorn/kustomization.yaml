@@ -9,6 +9,8 @@ resources:
   - node-failure-settings.yaml
   # Fast local flash tier — enterprise-SSD Longhorn disk (tag `flash`).
   - storageclass-flash.yaml
+  # Two-copy critical-state tier; provisioning fails closed until wired Longhorn node tags exist.
+  - storageclass-wired-ha.yaml
   # Disposable kopiur snapshot clones. WFFC lets the mover pick the node before the clone is provisioned (avoids V1 clone attach race).
   - storageclass-kopiur-staging.yaml
   # Chart-created `longhorn` StorageClass is V1-engine; do NOT route it to dataEngine:v2 (retired, see values.yaml).

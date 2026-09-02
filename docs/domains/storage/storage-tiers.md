@@ -1,12 +1,13 @@
 # Storage tiers
 
-The cluster has four storage tiers, **classified by what the hardware is** — not by
+The cluster has five storage tiers, **classified by what the hardware is** — not by
 which app uses them. Pick a class by the volume's access pattern.
 
 | Class | Backing hardware | Character | Use for |
 |-------|------------------|-----------|---------|
 | `longhorn` (**default**) | Threadripper EDILOCA NVMe plus the Dell Talos system SSD | local RWO; Threadripper tier is **read-strong**, Dell is a small Wi-Fi-site failure domain | app state, caches, read-heavy volumes, big sequential-write DBs (ClickHouse, Prometheus TSDB, Loki) |
 | `longhorn-flash` | Proxmox 2× enterprise SATA SSD, PLP, mdadm RAID1, **thick** LVM | fast local flash, **write-strong** (PLP), RWO | anything fsync-heavy: Postgres/MySQL commits, WAL, Kafka, Redis AOF, message queues |
+| `longhorn-wired-ha` | two distinct nodes/zones carrying the Longhorn `wired-storage` node tag | local V1 RWO, two synchronous replicas, survives one eligible node/disk loss | availability-critical small databases/state, paired with kopiur for disaster recovery |
 | `truenas-nfs` | TrueNAS HDD (BigTank) | network bulk, **RWX** | shared volumes, rebuildable tile/grid caches |
 | `*-smb` / static NFS | TrueNAS HDD / ai-pool SSD | network SMB/NFS shares | media libraries, model weights, hand-browsable data |
 
@@ -19,7 +20,13 @@ distinct classes, and you choose per volume:
 - **read-heavy or big-sequential-write → `longhorn` (default).** The NVMe reads far
   faster, and sequential write on this host's X399 chipset SATA is only ~65–92 MB/s.
 - **shared (RWX) → NFS/SMB.** Neither local block tier can be RWX safely.
+- **availability-critical small state → `longhorn-wired-ha`.** It trades one extra synchronous
+  local-network write for a second live copy; kopiur remains the recoverable off-cluster copy.
 - **when in doubt → `longhorn` default.**
+
+`longhorn-wired-ha` is opt-in and fails closed until at least two healthy,
+distinct-zone Longhorn nodes have the `wired-storage` node tag. Adding the class
+does not migrate existing PVCs; use a new or restore-before-bind PVC for adoption.
 
 ## The rule that matters most in practice: get small-block RANDOM IO off the HDD
 
@@ -144,10 +151,13 @@ This is also what modern Kubernetes-on-metal actually does — OpenShift Data Fo
 and vSAN all pool **local** NVMe and replicate in software, rather than front a SAN. Kubernetes
 already handles replication at the app layer; shared-array semantics are redundant.
 
-## The real single point of failure (unchanged until replica policy changes)
+## The real single point of failure for existing volumes
 
-The Dell provides a second schedulable Longhorn disk, but the `longhorn`
-StorageClass and existing volumes still request one replica. Capacity on two
-nodes is not redundancy: selected volumes must move to two replicas before
-they survive losing either Proxmox host. That trade-off is explicit because
-the second synchronous replica crosses the Wi-Fi media bridge.
+The `longhorn` StorageClass and existing volumes still request one replica.
+Capacity on several nodes is not redundancy: selected volumes must move to two
+replicas before they survive losing a storage node. The one-copy default remains
+deliberate for ordinary and rebuildable state; high availability is opt-in.
+
+The opt-in `longhorn-wired-ha` class is the migration target for small critical
+state once the wired-node tags are deployed and verified. It never changes an
+existing volume in place.

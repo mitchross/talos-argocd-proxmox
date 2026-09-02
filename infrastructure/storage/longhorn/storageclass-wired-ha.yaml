@@ -1,0 +1,25 @@
+# Two-copy RWO tier for availability-critical state on trusted wired storage nodes.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-wired-ha
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    argocd.argoproj.io/sync-options: Replace=true
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "2"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  dataEngine: "v1"
+  nodeSelector: "wired-storage"
+  dataLocality: "best-effort"
+  replicaAutoBalance: "best-effort"
+  replicaSoftAntiAffinity: "disabled"
+  replicaZoneSoftAntiAffinity: "disabled"
+  replicaDiskSoftAntiAffinity: "disabled"
+  disableRevisionCounter: "true"
+  unmapMarkSnapChainRemoved: "ignored"
