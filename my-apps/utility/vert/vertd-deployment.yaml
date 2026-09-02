@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: vertd
-          image: ghcr.io/vert-sh/vertd:latest@sha256:6a5b415e08ecd4d2178350dc8532c25f16498caab428bacf3538dacaee49a8e2
+          image: ghcr.io/vert-sh/vertd:latest@sha256:15d9ff3a42e11444de142b2d396679f356072954d2896576530744541961e45f
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
