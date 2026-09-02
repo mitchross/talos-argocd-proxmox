@@ -1,0 +1,17 @@
+# Temporal SDK metrics (schedule-to-start latency, slot usage, poll failures) from every worker pool.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: radar-ng-workers
+  namespace: radar-ng
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      radar-ng.vanillax.dev/worker: "true"
+  namespaceSelector:
+    matchNames: [radar-ng]
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 30s
