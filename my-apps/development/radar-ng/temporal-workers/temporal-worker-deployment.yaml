@@ -14,14 +14,8 @@ spec:
       name: cluster-temporal
     temporalNamespace: default
   rollout:
-    # Same progressive shape as news-reader-temporal-worker. Tune per
-    # workload — radar ingest is more time-sensitive than news.
-    strategy: Progressive
-    steps:
-      - rampPercentage: 10
-        pauseDuration: 2m
-      - rampPercentage: 50
-        pauseDuration: 5m
+    # Single replica pinned to the RWO node: Progressive would run old+new pods there for 7 min for no traffic-split benefit.
+    strategy: AllAtOnce
   sunset:
     scaledownDelay: 10m
     deleteDelay: 1h
@@ -58,7 +52,7 @@ spec:
             # No OTEL endpoint on purpose — set, the worker spams UNAVAILABLE gRPC retries; unset = no-op tracer.
             # CONFIG_REV is a no-op; bump it to roll pods on ConfigMap changes (pod annotations aren't in the controller's hash).
             - name: CONFIG_REV
-              value: "2026-05-10-backlog1"
+              value: "2026-09-02-render-workers-3"
             - name: TILE_DIR
               value: /data/tiles
             - name: STATE_DIR
@@ -80,10 +74,10 @@ spec:
             - { name: grids,  mountPath: /data/grids }
             - { name: state,  mountPath: /data/state }
           resources:
-            # CPU-bound (pysteps nowcast + MRMS reproject) — a tight CPU limit makes nowcast_run time out.
-            # 250m: Progressive rollout runs old+new side by side on tile-server's node (RWO affinity); 2×1-CPU requests can't schedule there.
-            requests: { cpu: "250m", memory: "3Gi" }
-            limits:   { cpu: "12", memory: "12Gi" }
+            # CPU-bound (pysteps nowcast + MRMS render) — a tight CPU limit makes nowcast_run time out.
+            # Requests track real steady use (~3 CPU / 5-8 Gi); OOMKilled at 12Gi when nowcast+HRRR+airquality overlapped.
+            requests: { cpu: "2", memory: "6Gi" }
+            limits:   { cpu: "12", memory: "16Gi" }
       volumes:
         - name: tiles
           persistentVolumeClaim: { claimName: tiles }
