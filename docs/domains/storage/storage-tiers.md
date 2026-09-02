@@ -28,6 +28,17 @@ distinct classes, and you choose per volume:
 distinct-zone Longhorn nodes have the `wired-storage` node tag. Adding the class
 does not migrate existing PVCs; use a new or restore-before-bind PVC for adoption.
 
+The tag comes from the Omni cluster template: the `hp-sff`, `hp-elite`, and `dell`
+worker blocks set the `node.longhorn.io/default-node-tags` node annotation, which
+Longhorn copies onto a node whose tag list is still empty. The Wi-Fi `hp-micro`
+node and the GPU node (radar's hot `flash` disk) are left untagged on purpose.
+Longhorn never re-syncs tags from the annotation afterwards, so to change a tagged
+node later edit `spec.tags` on its `nodes.longhorn.io` object as well. Verify with:
+
+```sh
+kubectl -n longhorn-system get nodes.longhorn.io -o custom-columns='NAME:.metadata.name,TAGS:.spec.tags'
+```
+
 ## The rule that matters most in practice: get small-block RANDOM IO off the HDD
 
 The biggest real-world storage win here is **not** flash-vs-NVMe (that difference is marginal, and
