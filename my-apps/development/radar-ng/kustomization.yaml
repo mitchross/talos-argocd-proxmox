@@ -15,7 +15,7 @@ resources:
   - deployment-open-meteo.yaml
   - servicemonitor.yaml
   - prometheusrule.yaml
-  # The open-meteo sync worker is NOT here — it's a sidecar in deployment-open-meteo.yaml (controller strips podAffinity; RWO volume).
+  # The open-meteo sync worker is NOT here — it's a sidecar in deployment-open-meteo.yaml (shares that RWO volume).
   # Schedules are seeded once via `python -m temporal.schedules.seed` after rollout.
   - temporal-workers/configmap-temporal-config.yaml
   - temporal-workers/temporal-connection.yaml

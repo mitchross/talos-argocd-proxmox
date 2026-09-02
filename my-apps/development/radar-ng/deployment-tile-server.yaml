@@ -22,7 +22,7 @@ spec:
         app: tile-server
       annotations:
         # Bump to force a ReplicaSet roll when only env changes — a stale field-manager can mask env diffs under SSA.
-        config-rev: "2026-05-10-forecast-ttl-300"
+        config-rev: "2026-09-02-alerts-queue"
     spec:
       # Prefer the node holding the worker that shares these RWO volumes (preferred, so tile-server can bootstrap first).
       affinity:
@@ -97,6 +97,9 @@ spec:
               value: temporal-frontend.temporal.svc.cluster.local:7233
             - name: TEMPORAL_NAMESPACE
               value: default
+            # Until a dedicated `alerts` worker pool exists, watch workflows must land on the queue that has a poller.
+            - name: TEMPORAL_ALERTS_TASK_QUEUE
+              value: radar-ng
           # Probe /api/livez through Caddy so a dead backgrounded uvicorn restarts the pod.
           # Do NOT probe /api/health: it degrades on stale NOAA data fleet-wide and would restart every replica.
           livenessProbe:
