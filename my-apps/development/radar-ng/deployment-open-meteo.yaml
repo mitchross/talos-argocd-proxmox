@@ -54,7 +54,7 @@ spec:
         # Runs non-versioned (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env).
         - name: sync-worker
           # Base image must match the serve container's (1.5.3 base lacks libparquet-glib.so.2400 -> HRRR sync rc=127).
-          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.7
+          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.8
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
