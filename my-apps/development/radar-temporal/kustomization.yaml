@@ -1,0 +1,78 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: radar-temporal
+resources:
+  - vpa.yaml
+  - namespace.yaml
+  - httproute.yaml
+  - externalsecret.yaml
+  - namespace-init-job.yaml
+  - prometheusrule.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+  - postgres/servicemonitor.yaml
+  - kopiur/radar-temporal-postgres-data.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.
+components:
+  - ../../common/kopiur-backup
+
+# Kustomize turns scripts/seed-namespaces.sh into a ConfigMap at render time.
+configMapGenerator:
+  - name: radar-temporal-seed-scripts
+    files:
+      - scripts/seed-namespaces.sh
+    options:
+      # Stable name — the Job mounts it by name; BeforeHookCreation already restarts the Job.
+      disableNameSuffixHash: true
+  # Mounted at /docker-entrypoint-initdb.d — creates temporal_visibility on the FIRST boot of an empty volume only.
+  - name: radar-temporal-postgres-init
+    files:
+      - postgres/init-visibility.sql
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        # Postgres (wave -2) mounts this — must exist before that wave.
+        argocd.argoproj.io/sync-wave: "-3"
+
+helmCharts:
+  - name: temporal
+    repo: https://go.temporal.io/helm-charts
+    version: 1.6.0
+    releaseName: radar-temporal
+    namespace: radar-temporal
+    includeCRDs: true
+    valuesFile: values.yaml
+
+patches:
+  # Scoped to Helm-rendered Jobs only — unscoped, it turns our seed Job's PostSync hook into Sync.
+  # Schema job must run in an earlier wave than the server Deployments or an image bump rolls pods before migrations finish.
+  - target:
+      kind: Job
+      labelSelector: helm.sh/chart
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1hook
+        value: Sync
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "-1"
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
+        value: BeforeHookCreation
+  # gRPC long-polls (60s+) read as permanently slow to Coroot's latency SLI (10s histogram cap) — latency SLO off, availability stays.
+  - target:
+      kind: Deployment
+      name: radar-temporal-frontend
+    patch: |
+      - op: add
+        path: /metadata/annotations/coroot.com~1slo-latency-objective
+        value: "0%"
+  - target:
+      kind: Deployment
+      name: radar-temporal-matching
+    patch: |
+      - op: add
+        path: /metadata/annotations/coroot.com~1slo-latency-objective
+        value: "0%"

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: radar-temporal
+  annotations:
+    # Before the wave -2 postgres stack: the kopiur label drives the cred fanout the PVC populator needs to bind.
+    argocd.argoproj.io/sync-wave: "-3"
+  labels:
+    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository tenancy for radar-temporal-postgres-data.
+    kopiur.home-operations.com/repo: cluster-kopia

@@ -1,0 +1,158 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-temporal-postgres
+  namespace: radar-temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-temporal-postgres
+  updatePolicy:
+    # Recommend only: a Recreate of the single-replica DB takes every shard down; size it by hand from the recommendation.
+    updateMode: "Off"
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # Fixed-size metrics sidecar — not VPA-managed.
+      - containerName: postgres-exporter
+        mode: "Off"
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-temporal-admintools
+  namespace: radar-temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-temporal-admintools
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-temporal-worker
+  namespace: radar-temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-temporal-worker
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-temporal-frontend
+  namespace: radar-temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-temporal-frontend
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-temporal-history
+  namespace: radar-temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-temporal-history
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-temporal-matching
+  namespace: radar-temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-temporal-matching
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-temporal-web
+  namespace: radar-temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-temporal-web
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 1Gi

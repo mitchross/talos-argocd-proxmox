@@ -1,0 +1,161 @@
+# Every metric name below was checked against the live shared Temporal server's series before use.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: radar-temporal-alerts
+  namespace: radar-temporal
+  labels:
+    app.kubernetes.io/name: radar-temporal
+    app.kubernetes.io/component: monitoring
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: radar-temporal.dlq
+      rules:
+        - alert: RadarTemporalTimerDLQNotEmpty
+          expr: max(dlq_message_count{namespace="radar-temporal", service_name="history", task_category="timer"}) > 0
+          for: 2m
+          labels:
+            severity: critical
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal timer DLQ contains durable tasks
+            description: |
+              The Radar control plane has {{ $value }} timer task(s) in its
+              dead-letter queue. Scheduled workflows can remain running while
+              their next durable timer never fires. Runbook: README.md
+              "Timer DLQ" — inventory with `tdbg dlq list` in
+              radar-temporal-admintools, correlate every message, merge only an
+              approved contiguous prefix; never purge.
+        - alert: RadarTemporalTimerDLQMetricMissing
+          expr: absent(dlq_message_count{namespace="radar-temporal", service_name="history", task_category="timer"}) == 1
+          for: 15m
+          labels:
+            severity: warning
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal timer-DLQ visibility is missing
+            description: |
+              Prometheus has not received the timer DLQ gauge from any
+              radar-temporal history pod for 15 minutes. Runbook: check the
+              history pods, the headless Service, the ServiceMonitor, and the
+              Prometheus target before trusting the DLQ alerts above.
+    - name: radar-temporal.availability
+      rules:
+        - alert: RadarTemporalServiceDown
+          expr: up{namespace="radar-temporal", job=~"radar-temporal-(frontend|history|matching|worker)-headless"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal {{ $labels.job }} pod {{ $labels.pod }} is not scrapeable
+            description: |
+              One replica of a Radar Temporal service has been down for 5
+              minutes. Two replicas keep serving, but the zone spread is now
+              broken. Runbook: `kubectl -n radar-temporal describe pod
+              {{ $labels.pod }}` — a Pending pod usually means its wired node
+              is gone (DoNotSchedule spread holds the slot until it returns).
+        - alert: RadarTemporalServiceReplicasDegraded
+          expr: count by (job) (up{namespace="radar-temporal", job=~"radar-temporal-(frontend|history|matching|worker)-headless"} == 1) < 3
+          for: 15m
+          labels:
+            severity: warning
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal {{ $labels.job }} has fewer than 3 healthy replicas
+            description: |
+              {{ $labels.job }} has been below its 3-replica target for 15
+              minutes, so a single further failure removes half the remaining
+              capacity. Runbook: `kubectl -n radar-temporal get pods -o wide`
+              and check node readiness for the wired nodes (hp-sff, hp-elite,
+              dell).
+        - alert: RadarTemporalPostgresDown
+          expr: up{namespace="radar-temporal", job="radar-temporal-postgres"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal Postgres exporter is down
+            description: |
+              The single Postgres instance behind the Radar control plane is
+              not scrapeable; every Temporal shard depends on it. Runbook:
+              `kubectl -n radar-temporal get pod,pvc -l app=radar-temporal-postgres`
+              — a Pending PVC on longhorn-wired-ha means the wired-storage
+              Longhorn node tags are missing; a Faulted volume is a stop
+              condition (do not force-detach, restore via kopiur).
+    - name: radar-temporal.persistence
+      rules:
+        - alert: RadarTemporalPersistenceErrorRateHigh
+          expr: |
+            sum by (service_name) (rate(persistence_errors{namespace="radar-temporal"}[5m]))
+              /
+            sum by (service_name) (rate(persistence_requests{namespace="radar-temporal"}[5m]))
+              > 0.05
+          for: 10m
+          labels:
+            severity: critical
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal {{ $labels.service_name }} persistence error ratio above 5%
+            description: |
+              More than 5% of {{ $labels.service_name }} database calls have
+              failed for 10 minutes. Runbook: break down by error type with
+              `sum by (error_type) (rate(persistence_error_with_type{namespace="radar-temporal", service_name="{{ $labels.service_name }}"}[5m]))`,
+              then check Postgres logs and connection counts
+              (`persistence_sql_open_conn`).
+        - alert: RadarTemporalResourceExhausted
+          expr: sum by (service_name) (rate(service_errors_resource_exhausted{namespace="radar-temporal"}[5m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal {{ $labels.service_name }} is returning ResourceExhausted
+            description: |
+              {{ $labels.service_name }} has been rejecting requests with
+              ResourceExhausted (rate limit or persistence QPS cap) for 10
+              minutes. Runbook: compare with worker poller counts and
+              `persistence_requests`; raise the dynamic-config RPS limits only
+              after confirming Postgres has headroom.
+    - name: radar-temporal.shards
+      rules:
+        - alert: RadarTemporalShardsNotFullyOwned
+          expr: sum(numshards_gauge{namespace="radar-temporal", service_name="history"}) != 32
+          for: 15m
+          labels:
+            severity: critical
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal history hosts own {{ $value }} of 32 shards
+            description: |
+              The history pods together should own exactly the 32 configured
+              shards. Fewer means workflows on unowned shards make no progress;
+              more means split ownership. Runbook: `kubectl -n radar-temporal
+              logs deploy/radar-temporal-history | grep -i shard`, check
+              membership (`membership_changed_count`) and that all 3 history
+              pods are Ready.
+        - alert: RadarTemporalShardChurnHigh
+          expr: sum(increase(shard_closed_count{namespace="radar-temporal", service_name="history"}[30m])) > 64
+          for: 10m
+          labels:
+            severity: warning
+            component: radar-temporal
+            category: workflow-platform
+          annotations:
+            summary: Radar Temporal shards are being closed and reacquired repeatedly
+            description: |
+              More than two full shard sets (64 closes) in 30 minutes. A
+              rolling restart closes each pod's shards once; sustained churn
+              means membership flapping or shard ownership lost errors.
+              Runbook: check history pod restarts, node network on the wired
+              nodes, and `persistence_error_with_type{error_type="persistence_ShardOwnershipLostError"}`.

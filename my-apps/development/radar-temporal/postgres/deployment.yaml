@@ -1,0 +1,139 @@
+# Plain Postgres + kopiur (gitea pattern). The chart's schema hooks (wave -1) create both schemas on first boot.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radar-temporal-postgres
+  namespace: radar-temporal
+  labels:
+    app: radar-temporal-postgres
+  annotations:
+    # Schema Jobs are wave -1 Sync hooks and waves block: Postgres must be healthy at wave -2 or the hook waits forever.
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radar-temporal-postgres
+  template:
+    metadata:
+      labels:
+        app: radar-temporal-postgres
+    spec:
+      # Same wired-only rule as the Temporal services; the volume's replicas live on these nodes too (dataLocality best-effort).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node.vanillax.dev/link
+                    operator: In
+                    values: ["wired"]
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+      containers:
+        - name: postgres
+          # Pin MAJOR.MINOR; majors need a manual dump/restore (gated in renovate.json5).
+          # Held at 17 until Temporal declares PG18 support — a wedged schema hook deadlocks the whole app sync.
+          image: postgres:17.11
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # Only used on first boot of an EMPTY volume; a restored volume skips init and its data wins.
+            - name: POSTGRES_DB
+              value: "temporal"
+            - name: POSTGRES_USER
+              value: "temporal"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: radar-temporal-db-secret
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+            # Subdirectory keeps initdb happy on a fresh PVC (top-level mount contains lost+found).
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # Suppresses liveness restarts while a restored DB replays WAL.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+        # Metrics sidecar — same pattern as gitea-postgres.
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/temporal?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              value: "temporal"
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: radar-temporal-db-secret
+                  key: password
+          ports:
+            - containerPort: 9187
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: radar-temporal-postgres-data
+        - name: initdb
+          configMap:
+            name: radar-temporal-postgres-init
