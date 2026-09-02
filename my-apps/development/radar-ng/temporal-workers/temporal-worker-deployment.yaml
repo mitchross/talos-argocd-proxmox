@@ -9,6 +9,8 @@ metadata:
     app: radar-ng-worker
     radar-ng.vanillax.dev/worker: "true"
 spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
   replicas: 1
   workerOptions:
     connectionRef:
@@ -51,7 +53,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           ports:
-            - { containerPort: 9464, name: metrics }
+            - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             # No OTEL endpoint on purpose — set, the worker spams UNAVAILABLE gRPC retries; unset = no-op tracer.
             # CONFIG_REV is a no-op; bump it to roll pods on ConfigMap changes (pod annotations aren't in the controller's hash).
