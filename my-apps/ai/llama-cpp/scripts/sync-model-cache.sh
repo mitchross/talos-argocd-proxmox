@@ -4,7 +4,8 @@ DST=/dst/qwen3.8-flash-next-gguf
 mkdir -p \
   "$DST/unsloth-ud-iq4-xs" \
   "$DST/unsloth-ud-q4-k-xl" \
-  "$DST/atomic-ad-4.27-q4-k-m-m64"
+  "$DST/atomic-ad-4.27-q4-k-m-m64" \
+  "$DST/mtp"
 
 sync_one() {
   rel="$1"; s="$SRC/$rel"; d="$DST/$rel"
@@ -27,6 +28,7 @@ for i in 1 2 3 4; do
   sync_one "unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-0000$i-of-00004.gguf"
 done
 sync_one "mmproj-BF16.gguf"
+sync_one "mtp/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf"
 
 i=1
 while [ "$i" -le 33 ]; do
@@ -39,4 +41,3 @@ sync_one "mmproj-F16.gguf"
 echo "=== RESULT ==="
 du -sb "$DST" | awk '{printf "cache: %s bytes (%.2f GiB)\n", $1, $1/1073741824}'
 df -h /dst
-
