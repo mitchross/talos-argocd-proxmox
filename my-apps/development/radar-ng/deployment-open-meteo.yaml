@@ -31,7 +31,7 @@ spec:
       containers:
         - name: open-meteo
           # Pin tag@digest of a verified build: 1.5.3 shipped without libparquet-glib.so.2400 and a bare tag re-pulls broken rebuilds.
-          image: ghcr.io/open-meteo/open-meteo:1.5.5@sha256:99978696b7def9d4851d2b9e85ea7a8ba08bd824f6fa6779edd733a164434694
+          image: ghcr.io/open-meteo/open-meteo:1.5.6@sha256:4e30cdc550702e7ebe3a27d61a6640e94a5d70798e58392361dab06e6210df35
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
