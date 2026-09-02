@@ -235,6 +235,8 @@ patches:
       nodeLabels:
         node.longhorn.io/create-default-disk: "config"
       nodeAnnotations:
+        # Node tag (not a disk tag) selecting longhorn-wired-ha replicas; applies only while the Longhorn node has no tags.
+        node.longhorn.io/default-node-tags: '["wired-storage"]'
         node.longhorn.io/default-disks-config: >-
           [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]}]
       kubelet:
@@ -293,6 +295,8 @@ patches:
         node.longhorn.io/create-default-disk: "config"
       # The Intel SSD is healthy but already reports 74% lifetime wear.
       nodeAnnotations:
+        # Node tag (not a disk tag) selecting longhorn-wired-ha replicas; applies only while the Longhorn node has no tags.
+        node.longhorn.io/default-node-tags: '["wired-storage"]'
         node.longhorn.io/default-disks-config: >-
           [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-elite-nvme","path":"/var/mnt/longhorn-hp-elite-nvme","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-elite-nvme"]}]
       kubelet:
@@ -354,6 +358,8 @@ patches:
       nodeLabels:
         node.longhorn.io/create-default-disk: "config"
       nodeAnnotations:
+        # Node tag (not a disk tag) selecting longhorn-wired-ha replicas; applies only while the Longhorn node has no tags.
+        node.longhorn.io/default-node-tags: '["wired-storage"]'
         node.longhorn.io/default-disks-config: >-
           [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]}]
       kubelet:
