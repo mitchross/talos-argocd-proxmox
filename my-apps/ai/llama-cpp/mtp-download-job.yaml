@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: llama-cpp-download-qwen38-flash-next-mtp
+  namespace: llama-cpp
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 4
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node.vanillax.dev/class
+                    operator: In
+                    values:
+                      - dell-worker
+      containers:
+        - name: download
+          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              apk add --no-cache curl
+              base=/models/qwen3.8-flash-next-gguf/mtp
+              file=mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf
+              rev=5d16c055a7c5cb276e721ee154f9c22420dde2a1
+              expected=5ff54097406a905cf3a724c709124ceb0e3e10235ee862298969e91c96fa96e6
+              mkdir -p "$base"
+              if [ -f "$base/$file" ] && [ "$(cat "$base/$file.sha256" 2>/dev/null)" = "$expected" ]; then
+                echo "verified (stamp): $file"
+                exit 0
+              fi
+              curl -fL --retry 5 -C - \
+                -o "$base/$file.part" \
+                "https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF/resolve/$rev/MTP/$file"
+              actual="$(sha256sum "$base/$file.part" | cut -d' ' -f1)"
+              [ "$actual" = "$expected" ] || {
+                echo "SHA MISMATCH: $file: $actual"
+                rm -f "$base/$file.part"
+                exit 1
+              }
+              mv "$base/$file.part" "$base/$file"
+              printf '%s' "$expected" > "$base/$file.sha256"
+              echo "downloaded and verified: $file"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: llama-cpp-models-pvc
