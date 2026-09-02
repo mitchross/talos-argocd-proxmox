@@ -1,6 +1,6 @@
 # One WorkerDeployment per Temporal task queue (plan Phase 1). Every pool polls only its own queue;
-# schedules still route to the legacy `radar-ng` queue until USE_ISOLATED_TASK_QUEUES=1 is set on the seeder (aux).
-# SKIP_SCHEDULE_SEED=1 everywhere here: the legacy worker seeds and runs the watchdog until the flip.
+# schedules still route to the legacy `radar-ng` queue until USE_ISOLATED_TASK_QUEUES=1 is set on legacy.
+# SKIP_SCHEDULE_SEED=1 stays set on every role pool during the initial cutover; legacy remains the sole seeder/observer.
 # All pools share the RWO tiles/grids/state volumes, so they must land on tile-server's node (podAffinity).
 # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them via env.
 ---
