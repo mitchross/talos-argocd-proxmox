@@ -1330,6 +1330,7 @@ merge it again.
 
 ## Mink references
 
+- `projects/talos-argocd-proxmox/radar-ng-end-to-end-execution-plan-and-handoff-2026-09-02.md`
 - `resources/temporal-postgres-and-radar-hrrr-recovery-completed-2026-09-02.md`
 - `resources/temporal-postgres-outage-2026-09-02-the-hp-elite-node-19216810172-stopped-k.md`
 - `resources/temporal-backup-completion-time-is-not-the-recovery-point.md`
