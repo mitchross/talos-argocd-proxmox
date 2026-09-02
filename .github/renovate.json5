@@ -154,6 +154,17 @@
       allowedVersions: '<1.5.3 || >=1.5.4',
       automerge: false,
     },
+    {
+      description: 'Radar Open-Meteo serve and sync share one image and must be reviewed and updated atomically.',
+      matchPackageNames: [
+        'ghcr.io/mitchross/radar-ng-open-meteo-worker',
+      ],
+      matchFileNames: [
+        'my-apps/development/radar-ng/deployment-open-meteo.yaml',
+      ],
+      groupName: 'radar open-meteo image',
+      automerge: false,
+    },
     // -------------------------------------------------------------------
     // PostHog image rules
     // -------------------------------------------------------------------

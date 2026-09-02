@@ -1,5 +1,4 @@
-# Self-hosted Open-Meteo API. Backed by model data synced into the PVC by
-# the open-meteo-sync-gfs and open-meteo-sync-hrrr CronJobs.
+# Self-hosted Open-Meteo API backed by model data synced into the PVC by its Temporal worker sidecar.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,6 +7,7 @@ metadata:
   labels:
     app: open-meteo
 spec:
+  progressDeadlineSeconds: 900
   replicas: 1
   strategy:
     type: Recreate
@@ -19,6 +19,7 @@ spec:
       labels:
         app: open-meteo
     spec:
+      terminationGracePeriodSeconds: 40
       # Keep UID 999 (the image's "openmeteo" user) so PVC writes match the files the sync worker writes.
       securityContext:
         runAsNonRoot: true
@@ -30,8 +31,11 @@ spec:
           type: RuntimeDefault
       containers:
         - name: open-meteo
-          # Pin tag@digest of a verified build: 1.5.3 shipped without libparquet-glib.so.2400 and a bare tag re-pulls broken rebuilds.
-          image: ghcr.io/open-meteo/open-meteo:1.5.6@sha256:4e30cdc550702e7ebe3a27d61a6640e94a5d70798e58392361dab06e6210df35
+          # Both containers use one verified artifact so the sync format matches the served binary.
+          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.9@sha256:0387cac5a2c691a67680e7d696b687fb91f135b3b6c7a733e7c3d0c1bab422f9
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          command: ["/app/openmeteo-api"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -40,6 +44,24 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 120
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
           volumeMounts:
             - name: openmeteo-data
               mountPath: /app/data
@@ -53,9 +75,8 @@ spec:
         # Sidecar, not a standalone WorkerDeployment: it must share this RWO volume with the serve container (same pod).
         # Runs non-versioned (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env).
         - name: sync-worker
-          # Base image must match the serve container's (1.5.3 base lacks libparquet-glib.so.2400 -> HRRR sync rc=127).
-          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.8
-          imagePullPolicy: Always
+          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.9@sha256:0387cac5a2c691a67680e7d696b687fb91f135b3b6c7a733e7c3d0c1bab422f9
+          imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
