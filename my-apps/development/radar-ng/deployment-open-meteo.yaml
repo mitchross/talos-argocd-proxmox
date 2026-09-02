@@ -50,7 +50,7 @@ spec:
             limits:
               cpu: 2000m
               memory: 2Gi
-        # Sidecar, not a standalone WorkerDeployment: the WorkerController strips podAffinity and this RWO volume needs co-location.
+        # Sidecar, not a standalone WorkerDeployment: it must share this RWO volume with the serve container (same pod).
         # Runs non-versioned (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env).
         - name: sync-worker
           # Base image must match the serve container's (1.5.3 base lacks libparquet-glib.so.2400 -> HRRR sync rc=127).
