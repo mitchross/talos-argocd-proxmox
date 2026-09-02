@@ -37,3 +37,50 @@ spec:
           annotations:
             summary: radar-ng API error rate is above 5 percent
             description: The five-minute API 5xx ratio has stayed above 5 percent for 10 minutes.
+    - name: radar-ng.worker
+      rules:
+        - alert: RadarNgWorkerOOMKilled
+          expr: kube_pod_container_status_last_terminated_reason{namespace="radar-ng", container="worker", reason="OOMKilled"} == 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng worker was OOMKilled
+            description: The Temporal worker container hit its memory limit; schedules skip while it restarts and heavy activities restart from scratch.
+        - alert: RadarNgWorkerMemoryHigh
+          expr: |
+            container_memory_working_set_bytes{namespace="radar-ng", container="worker"}
+              /
+            on (pod, container) kube_pod_container_resource_limits{namespace="radar-ng", container="worker", resource="memory"} > 0.85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng worker memory above 85 percent of its limit
+            description: Nowcast, HRRR and air-quality renders are overlapping; an OOM kill is likely without a slot or limit change.
+        - alert: RadarNgWorkerRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace="radar-ng", container="worker"}[1h]) > 1
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng worker restarted more than once in an hour
+            description: Repeated restarts drop in-flight renders and can leave Temporal schedules skipping.
+    - name: radar-ng.layers
+      rules:
+        - alert: RadarNgHrrrLayerMissing
+          expr: absent(radar_ng_tile_timestamps{layer="radar-hrrr"}) == 1
+          for: 3h
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng has published no HRRR forecast radar for 3 hours
+            description: The ingest-hrrr schedule is running but never publishing a complete run; check hour_pending and incomplete-run log lines.
+        - alert: RadarNgNowcastLayerMissing
+          expr: absent(radar_ng_tile_timestamps{layer="nowcast"}) == 1
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng nowcast layer has no published frames
+            description: Nowcast fails closed on radar publication gaps; look at /api/health nowcast.reason.

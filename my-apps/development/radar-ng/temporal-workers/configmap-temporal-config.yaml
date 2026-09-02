@@ -10,8 +10,10 @@ data:
   # Drop the missing colorblind palette (no backend/shared/palettes/colorblind.json
   # exists). The muted palette already advertises colorblind-safety.
   PALETTES: "classic,muted,vivid"
-  # Keep at 1 until render perf improves: a frame takes ~10 min vs the 2-min schedule cadence, so 3 backlogs the manifest.
+  # A frame renders in ~25-40 s; keep 1 so a run stays well inside the 2-min SKIP cadence (backlog >1 stretches the run, not freshness).
   BACKLOG_PER_CYCLE: "1"
+  # One process per palette (3 palettes); the 12-CPU limit has the headroom.
+  MRMS_RENDER_WORKERS: "3"
   MRMS_PREFIX: "CONUS/MergedBaseReflectivityQC_00.50"
   FORECAST_HOURS: "18"
   EXTENDED_FORECAST_HOURS: "48"
