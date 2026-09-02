@@ -20,6 +20,8 @@ resources:
   - temporal-workers/configmap-temporal-config.yaml
   - temporal-workers/temporal-connection.yaml
   - temporal-workers/temporal-worker-deployment.yaml
+  - temporal-workers/worker-pools.yaml
+  - temporal-workers/podmonitor.yaml
 
 namespace: radar-ng
 
