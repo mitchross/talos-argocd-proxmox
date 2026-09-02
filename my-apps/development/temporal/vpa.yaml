@@ -10,7 +10,8 @@ spec:
     kind: Deployment
     name: temporal-postgres
   updatePolicy:
-    updateMode: InPlaceOrRecreate
+    # Recommend only: a Recreate of the single-replica DB takes every Temporal shard down; size it by hand from the recommendation.
+    updateMode: "Off"
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
