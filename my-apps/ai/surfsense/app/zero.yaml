@@ -26,7 +26,7 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: zero
-          image: rocicorp/zero:1.6.0
+          image: rocicorp/zero:1.9.0
           ports:
             - name: http
               containerPort: 4848
