@@ -8,6 +8,7 @@ resources:
   - pvc.yaml
   - pvc-model-cache.yaml
   - download-model-job.yaml
+  - mtp-download-job.yaml
   - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml

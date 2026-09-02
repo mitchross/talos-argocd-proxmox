@@ -8,7 +8,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
-  # Parked GGUF rollback backend; vLLM owns the sole RTX 3090.
+  # Parked experimental Flash-Next MTP sidecar; vLLM owns the sole RTX 3090.
+  # Scale vLLM down before setting this deployment to replicas: 1.
   replicas: 0
   strategy:
     type: Recreate
@@ -36,18 +37,57 @@ spec:
       securityContext:
         fsGroup: 10001
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: install-unsloth-llama-cpp
+          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              apk add --no-cache curl
+              tag=b10715-mix-86bd2d3
+              asset=app-b10715-mix-86bd2d3-linux-x64-cuda12-portable.tar.gz
+              expected=0b5127dc1c50908fdae74e93369c4d943155f3beeddd4a2b15b0f4e8c05687dc
+              url="https://github.com/unslothai/llama.cpp/releases/download/$tag/$asset"
+              curl -fL --retry 5 -o /tmp/llama.tar.gz "$url"
+              echo "$expected  /tmp/llama.tar.gz" | sha256sum -c -
+              tar -xzf /tmp/llama.tar.gz -C /opt/unsloth
+              server="$(find /opt/unsloth -type f -name llama-server -perm -u+x | head -n 1)"
+              [ -n "$server" ] || { echo "llama-server not found in $asset"; exit 1; }
+              if [ "$server" != /opt/unsloth/llama-server ]; then
+                ln -sf "$server" /opt/unsloth/llama-server
+              fi
+              /opt/unsloth/llama-server --version
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - name: unsloth-bin
+              mountPath: /opt/unsloth
       containers:
         - name: llama-cpp-server
+          # Keep the official CUDA image as the runtime environment; the pinned
+          # Unsloth binary above supplies qwen4exp MTP + tensor borrowing.
           image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10666@sha256:a2d04d1d1c2b2abe287fef9a22a3700a7fa20aec4c4ab56135e0099f38119848
           imagePullPolicy: IfNotPresent
-          command: ["/app/llama-server"]
+          command: ["/opt/unsloth/llama-server"]
           args:
             - --model
             - /models/qwen3.8-flash-next-gguf/unsloth-ud-iq4-xs/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf
             - --mmproj
             - /models/qwen3.8-flash-next-gguf/mmproj-BF16.gguf
+            - -md
+            - /models/qwen3.8-flash-next-gguf/mtp/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf
+            - --spec-type
+            - draft-mtp
+            - --spec-draft-n-max
+            - "3"
             - --alias
-            - Qwen3.8-Flash-Next Q4
+            - Qwen3.8-Flash-Next Q4 MTP
             - --ctx-size
             - "131072"
             - --batch-size
@@ -99,6 +139,8 @@ spec:
           env:
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: compute,utility
+            - name: LD_LIBRARY_PATH
+              value: /opt/unsloth:/opt/unsloth/lib
           ports:
             - name: http
               containerPort: 8080
@@ -139,6 +181,9 @@ spec:
             - name: models
               mountPath: /models
               readOnly: true
+            - name: unsloth-bin
+              mountPath: /opt/unsloth
+              readOnly: true
             - name: dshm
               mountPath: /dev/shm
       volumes:
@@ -147,6 +192,8 @@ spec:
         - name: models
           persistentVolumeClaim:
             claimName: ai-model-cache
+        - name: unsloth-bin
+          emptyDir: {}
         - name: dshm
           emptyDir:
             medium: Memory
