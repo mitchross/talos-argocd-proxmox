@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: temporal-dlq
+  namespace: temporal
+  labels:
+    app.kubernetes.io/name: temporal
+    app.kubernetes.io/component: monitoring
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: temporal.dlq
+      rules:
+        - alert: TemporalTimerDLQNotEmpty
+          expr: max(dlq_message_count{namespace="temporal", service_name="history", task_category="timer"}) > 0
+          for: 2m
+          labels:
+            severity: critical
+            component: temporal
+            category: workflow-platform
+          annotations:
+            summary: Temporal timer DLQ contains durable tasks
+            description: |
+              Temporal has {{ $value }} timer task(s) in its dead-letter queue.
+              Scheduled workflows can remain running while their next durable
+              timer never fires. Inventory and correlate every message before
+              merging an explicitly approved contiguous prefix; never purge it.
+        - alert: TemporalTimerDLQMetricMissing
+          expr: absent(dlq_message_count{namespace="temporal", service_name="history", task_category="timer"}) == 1
+          for: 15m
+          labels:
+            severity: warning
+            component: temporal
+            category: workflow-platform
+          annotations:
+            summary: Temporal timer-DLQ visibility is missing
+            description: |
+              Prometheus has not received the timer DLQ gauge from Temporal
+              history for 15 minutes. Check the history pod, headless Service,
+              ServiceMonitor, and Prometheus target before trusting DLQ alerts.
