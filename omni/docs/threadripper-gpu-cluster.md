@@ -1,12 +1,13 @@
 # Cluster Topology
 
-`talos-prod-cluster-v2` spreads one control plane and four workers across four
+`talos-prod-cluster-v2` spreads one control plane and five workers across five
 Proxmox hosts. Each host is its own failure domain, named by the
 `topology.kubernetes.io/zone` label on its nodes.
 
 | Host | IP | Zone | Guests |
 |---|---|---|---|
 | HP ProDesk SFF | 192.168.10.21 | `hp-sff` | control plane, general worker |
+| HP Elite Mini 600 G9 | 192.168.10.22 | `hp-elite` | large general worker |
 | Threadripper | 192.168.10.14 | `house` | GPU worker only |
 | Dell OptiPlex 7060 | 192.168.10.16 | `dell` | general worker |
 | HP 600 G4 micro | 192.168.10.20 | `shed` | worker with the USB radios |
@@ -91,6 +92,7 @@ Set up remote kernel logging before trusting any diagnosis of that host — see
 |---|---|---|---|---|
 | `hp-sff-control-plane` | 4 | 12 GiB | 62 GiB | 100 GiB on its own SSD (`hp-sff-cp-vmstore`) |
 | `hp-sff-worker` | 6 | 40 GiB | (same host) | 128 GiB boot + 690 GiB Longhorn |
+| `hp-elite-worker` | 16 | 24 GiB | 30 GiB | 128 GiB boot + 440 GiB Longhorn |
 | `threadripper-gpu-worker` | 30 | 100 GiB | 125 GiB | 2x450 GiB + 300 GiB flash + RTX 3090 |
 | `dell-worker` | 4 | 30 GiB | 39 GiB | 128 GiB boot + 400 GiB Longhorn |
 | `hp-micro-worker` | 4 | 12 GiB | 15 GiB | 128 GiB boot + 850 GiB Longhorn (unschedulable) |
@@ -110,6 +112,10 @@ GiB free, and its 690 GiB Longhorn LV is XFS, which cannot be shrunk in place.
 
 Keep that VG thick. An lvmthin pool's metadata commits collapse fsync
 throughput, which is precisely what etcd depends on.
+
+The HP Elite Longhorn disk is the 512 GB Intel NVMe. SMART reported 74% wear
+when it was commissioned, with zero media/data-integrity errors; watch its wear
+and error counters and replace it before exhaustion.
 
 ## Storage
 

@@ -1,5 +1,5 @@
 # talos-prod-cluster-v2: Threadripper (1 CP + 1 general worker + 1 GPU worker),
-# HP micro in the shed (wifi, USB radios), HP SFF (wired) and Dell (wired).
+# HP micro in the shed (wifi, USB radios), HP SFF, HP Elite and Dell (wired).
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
 #   omnictl cluster template sync -v -f cluster-template-prod-v2.yaml
@@ -257,6 +257,62 @@ patches:
       diskSelector:
         match: "!system_disk && disk.size >= 600u * GB"
       minSize: 600GB
+      grow: true
+---
+kind: Workers
+name: hp-elite-workers
+machineClass:
+  name: hp-elite-worker
+  size: 1
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+patches:
+- name: hp-elite-worker
+  inline:
+    machine:
+      nodeLabels:
+        node.vanillax.dev/class: hp-elite-worker
+        topology.kubernetes.io/zone: hp-elite
+        node.vanillax.dev/link: wired
+      kubelet:
+        nodeIP:
+          validSubnets:
+          - 192.168.10.0/24
+        extraConfig:
+          serializeImagePulls: false
+      sysctls:
+        net.core.bpf_jit_harden: 1
+- name: hp-elite-longhorn-disks
+  inline:
+    machine:
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      # The Intel SSD is healthy but already reports 74% lifetime wear.
+      nodeAnnotations:
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-elite-nvme","path":"/var/mnt/longhorn-hp-elite-nvme","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-elite-nvme"]}]
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
+- name: hp-elite-longhorn-nvme-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-hp-elite-nvme
+    provisioning:
+      diskSelector:
+        match: "!system_disk && disk.size >= 400u * GB"
+      minSize: 400GB
       grow: true
 ---
 kind: Workers
