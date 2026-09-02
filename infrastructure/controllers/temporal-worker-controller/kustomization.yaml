@@ -17,7 +17,7 @@ helmCharts:
   - name: temporal-worker-controller-crds
     repo: oci://docker.io/temporalio
     # renovate: datasource=docker depName=docker.io/temporalio/temporal-worker-controller-crds
-    version: 0.28.1
+    version: 0.29.0
     releaseName: temporal-worker-controller-crds
     namespace: temporal-worker-controller
     includeCRDs: true
