@@ -1,0 +1,38 @@
+# Seeds the `radar-ng` Temporal namespace so a rebuild/PGDATA restore doesn't leave only `temporal-system`.
+# PostSync: the frontend must be reachable when scripts/seed-namespaces.sh (ConfigMap via configMapGenerator) probes it.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: radar-temporal-namespace-seed
+  namespace: radar-temporal
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    app.kubernetes.io/name: radar-temporal-namespace-seed
+    app.kubernetes.io/part-of: radar-temporal
+spec:
+  backoffLimit: 20
+  ttlSecondsAfterFinished: 3600   # keep 1h so `kubectl logs` still works post-success
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: radar-temporal-namespace-seed
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seed
+          image: temporalio/admin-tools:1.31.2
+          command: ["/bin/sh", "/scripts/seed-namespaces.sh"]
+          volumeMounts:
+            - name: seed-script
+              mountPath: /scripts
+              readOnly: true
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { memory: 512Mi }
+      volumes:
+        - name: seed-script
+          configMap:
+            name: radar-temporal-seed-scripts
+            defaultMode: 0555   # readable + executable

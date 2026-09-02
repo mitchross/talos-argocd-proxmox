@@ -1,0 +1,174 @@
+server:
+  enabled: true
+  # Chart default tag lags Temporal server patches by weeks; bump here. A chart bump only wins if its default exceeds this.
+  image:
+    repository: temporalio/server
+    tag: 1.31.2
+    pullPolicy: IfNotPresent
+  # Applies to frontend/history/matching/worker; web and admintools stay single-replica.
+  replicaCount: 3
+  # Three wired nodes = three zone slots. maxSurge 0 so a rollout never needs a 4th slot the spread below would refuse.
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  # Wired nodes only (hp-sff, hp-elite, dell). The GPU node has no link label; hp-micro is wifi.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node.vanillax.dev/link
+                operator: In
+                values: ["wired"]
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+  metrics:
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+  config:
+    logLevel: "info"
+    persistence:
+      defaultStore: default
+      visibilityStore: visibility
+      # Immutable after first boot — changing it means a new database and a data migration.
+      numHistoryShards: 32
+      datastores:
+        default:
+          sql:
+            createDatabase: false
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal
+            connectAddr: "radar-temporal-postgres.radar-temporal.svc.cluster.local:5432"
+            # Temporal 1.28+ refuses to boot without this and the chart doesn't set it (ConnectProtocol: zero value crashloop).
+            connectProtocol: "tcp"
+            user: temporal
+            existingSecret: radar-temporal-db-secret
+            secretKey: password
+        visibility:
+          sql:
+            createDatabase: false
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal_visibility
+            connectAddr: "radar-temporal-postgres.radar-temporal.svc.cluster.local:5432"
+            connectProtocol: "tcp"
+            user: temporal
+            existingSecret: radar-temporal-db-secret
+            secretKey: password
+  # Per-service only in this chart (no server-wide default): one replica per zone, hard; voluntary disruption one pod at a time.
+  frontend:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: radar-temporal
+            app.kubernetes.io/component: frontend
+    podDisruptionBudget:
+      maxUnavailable: 1
+  history:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: radar-temporal
+            app.kubernetes.io/component: history
+    podDisruptionBudget:
+      maxUnavailable: 1
+  matching:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: radar-temporal
+            app.kubernetes.io/component: matching
+    podDisruptionBudget:
+      maxUnavailable: 1
+  worker:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: radar-temporal
+            app.kubernetes.io/component: worker
+    podDisruptionBudget:
+      maxUnavailable: 1
+
+# Keep OFF on 1.30+ images: shims render a wave-0 ConfigMap the wave -1 schema hook can never mount → sync deadlock.
+shims:
+  dockerize: false
+  elasticsearchTool: false
+
+schema:
+  useHelmHooks: false
+  backoffLimit: 20
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+admintools:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+
+web:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
