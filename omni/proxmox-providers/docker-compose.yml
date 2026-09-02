@@ -1,7 +1,7 @@
 # One Sidero Proxmox provider container per Proxmox host, one compose project.
-# All four run the same build: the image line is repeated per service (not an
+# All five run the same build: the image line is repeated per service (not an
 # anchor) so Renovate sees and bumps every pin in a single PR.
-# Per-service ops: `docker compose up -d hp-sff`; bare `down` takes all four.
+# Per-service ops: `docker compose up -d hp-sff`; bare `down` takes all five.
 x-provider: &provider
   env_file:
     - .env
@@ -52,6 +52,20 @@ services:
       --id proxmox-hp-sff
       --provider-name "Proxmox HP SFF"
       --provider-description "HP ProDesk SFF host (192.168.10.21), house, wired"
+
+  hp-elite:
+    <<: *provider
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
+    container_name: omni-infra-provider-proxmox-hp-elite
+    volumes:
+      - ./hp-elite.config.yaml:/config.yaml:ro
+    command: >
+      --config-file /config.yaml
+      --omni-api-endpoint ${OMNI_API_ENDPOINT}
+      --omni-service-account-key ${OMNI_INFRA_PROVIDER_KEY_HP_ELITE}
+      --id proxmox-hp-elite
+      --provider-name "Proxmox HP Elite"
+      --provider-description "HP Elite Mini 600 G9 host (192.168.10.22), house, wired, large CPU worker"
 
   dell:
     <<: *provider
