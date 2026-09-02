@@ -13,6 +13,8 @@ metadata:
     app: radar-ng-worker-mrms
     radar-ng.vanillax.dev/worker: "true"
 spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
   replicas: 1
   workerOptions:
     connectionRef:
@@ -53,7 +55,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           ports:
-            - { containerPort: 9464, name: metrics }
+            - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: mrms }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
@@ -96,6 +98,8 @@ metadata:
     app: radar-ng-worker-nowcast
     radar-ng.vanillax.dev/worker: "true"
 spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
   replicas: 1
   workerOptions:
     connectionRef:
@@ -136,7 +140,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           ports:
-            - { containerPort: 9464, name: metrics }
+            - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: nowcast }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
@@ -179,6 +183,8 @@ metadata:
     app: radar-ng-worker-hrrr
     radar-ng.vanillax.dev/worker: "true"
 spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
   replicas: 1
   workerOptions:
     connectionRef:
@@ -219,7 +225,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           ports:
-            - { containerPort: 9464, name: metrics }
+            - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: hrrr }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
@@ -262,6 +268,8 @@ metadata:
     app: radar-ng-worker-aux
     radar-ng.vanillax.dev/worker: "true"
 spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
   replicas: 1
   workerOptions:
     connectionRef:
@@ -302,7 +310,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           ports:
-            - { containerPort: 9464, name: metrics }
+            - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: aux }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
@@ -345,6 +353,8 @@ metadata:
     app: radar-ng-worker-alerts
     radar-ng.vanillax.dev/worker: "true"
 spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
   replicas: 1
   workerOptions:
     connectionRef:
@@ -385,7 +395,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           ports:
-            - { containerPort: 9464, name: metrics }
+            - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: alerts }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
