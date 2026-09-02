@@ -5,6 +5,7 @@
 | Class | Use Case |
 |-------|----------|
 | `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The Threadripper GPU worker has three Longhorn disks: `/var/lib/longhorn`, `/var/mnt/longhorn-nvme1`, and flash-tagged `/var/mnt/longhorn-ssd-flash`. The Dell CPU worker adds a dedicated 400 GiB virtual disk on its Samsung 500 GB SSD at `/var/mnt/longhorn-dell-ssd` (tag `dell-ssd`); its Talos boot disk stays unschedulable. The Threadripper general worker is compute-only. Dell capacity is a separate failure domain (zone `dell`), not HA by itself. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
+| `longhorn-wired-ha` | Opt-in two-replica V1 RWO storage across distinct trusted wired nodes/zones. Use only after at least two Longhorn nodes carry the `wired-storage` node tag; provisioning deliberately fails before that prerequisite. Availability-critical small databases/state, always paired with kopiur. Existing PVCs do not migrate when their StorageClass changes. |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
