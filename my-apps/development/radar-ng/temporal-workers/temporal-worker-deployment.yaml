@@ -7,6 +7,7 @@ metadata:
   namespace: radar-ng
   labels:
     app: radar-ng-worker
+    radar-ng.vanillax.dev/worker: "true"
 spec:
   replicas: 1
   workerOptions:
@@ -23,6 +24,7 @@ spec:
     metadata:
       labels:
         app: radar-ng-worker
+        radar-ng.vanillax.dev/worker: "true"
     spec:
       # Shares RWO tiles/grids/state with tile-server — must land on the same node or Longhorn Multi-Attach fails.
       affinity:
@@ -43,11 +45,13 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.24
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.25
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
+          ports:
+            - { containerPort: 9464, name: metrics }
           env:
             # No OTEL endpoint on purpose — set, the worker spams UNAVAILABLE gRPC retries; unset = no-op tracer.
             # CONFIG_REV is a no-op; bump it to roll pods on ConfigMap changes (pod annotations aren't in the controller's hash).
@@ -69,6 +73,13 @@ spec:
               value: "0"
           envFrom:
             - configMapRef: { name: radar-ng-temporal-config }
+          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          livenessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
           volumeMounts:
             - { name: tiles,  mountPath: /data/tiles }
             - { name: grids,  mountPath: /data/grids }
