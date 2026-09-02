@@ -20,3 +20,6 @@ configMapGenerator:
     files:
       - scripts/download-models.sh
       - scripts/sync-model-cache.sh
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
