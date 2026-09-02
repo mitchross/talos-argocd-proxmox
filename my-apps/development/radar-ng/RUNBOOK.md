@@ -96,3 +96,27 @@ pool until an image containing those roles is running. Then:
 
 This ordering prevents a schedule update from routing work to a queue with no
 poller and keeps existing pinned workflows replayable.
+
+## Schedule stops firing (timer never fires)
+
+Signature: `temporal schedule describe --schedule-id <id>` shows `NextRunTime`
+in the past, `RunningWorkflows []`, not paused, and `ActionCounts.MissedCatchupWindow`
+climbing. The schedule answers RPCs instantly, so the seed self-heal (which only
+recreates schedules whose RPCs hang) does nothing. The backing
+`temporal-sys-scheduler:<id>` workflow set a timer that the 1-shard history
+service never fired; it stays asleep until something signals it.
+
+Any signal wakes it — `describe` and `trigger` both do:
+
+```sh
+kubectl -n temporal exec deploy/temporal-admintools -- \
+  temporal schedule trigger \
+  --address temporal-frontend.temporal.svc.cluster.local:7233 \
+  --namespace default \
+  --schedule-id poll-alerts --overlap-policy Skip
+```
+
+Expect it to wedge again after the next run until the worker image carries the
+schedule watchdog (it re-triggers overdue schedules itself). Verify recovery by
+the state file the workflow writes, e.g. `alerts_active_snapshot.json` mtime on
+the `state` PVC moving.
