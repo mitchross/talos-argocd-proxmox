@@ -15,7 +15,7 @@ repo) — together they cover server side + app side of the same system.
 
 ```mermaid
 flowchart LR
-    subgraph chart[Helm chart go.temporal.io/helm-charts@1.2.0]
+    subgraph chart[Helm chart go.temporal.io/helm-charts@1.6.0]
         FE[frontend<br/>:7233 gRPC]
         HIST[history]
         MATCH[matching]
@@ -25,15 +25,15 @@ flowchart LR
         JOB[schema-job<br/>argo sync-wave -1]
     end
 
-    CNPG[(CloudNative-PG<br/>cluster: temporal-database<br/>db: temporal + temporal_visibility)]
+    PG[(Plain PostgreSQL<br/>Longhorn RWO + kopiur<br/>temporal + temporal_visibility)]
     SECRET[externalsecret<br/>temporal-db-secret]
     HR[HTTPRoute<br/>temporal.vanillax.me]
 
-    JOB -- "manageSchema migrations" --> CNPG
+    JOB -- "manageSchema migrations" --> PG
     FE -- writes --> HIST
     FE -- enqueues --> MATCH
-    HIST <-- reads/writes --> CNPG
-    MATCH <-- reads --> CNPG
+    HIST <-- reads/writes --> PG
+    MATCH <-- reads --> PG
     SECRET --> FE
     SECRET --> HIST
     SECRET --> MATCH
@@ -64,9 +64,11 @@ namespace.yaml          # `temporal` namespace
 namespace-init-job.yaml # Post-install Job — creates the `default` Temporal namespace
 externalsecret.yaml     # Pulls Postgres creds from 1Password into `temporal-db-secret`
 httproute.yaml          # Gateway API route: temporal.vanillax.me → temporal-web
+prometheusrule.yaml     # Timer DLQ and missing-visibility alerts
+postgres/               # Plain Postgres, Longhorn RWO PVC, exporter, ServiceMonitor
+kopiur/                  # Postgres backup and restore policy
 scripts/
   seed-namespaces.sh    # Mounted by namespace-init-job; idempotent `tctl namespace register`
-charts/temporal-1.1.1/  # Vendored chart for review/diff (kustomize inflates fresh from `helm`)
 ```
 
 ---
@@ -81,18 +83,18 @@ migrations **must run before any temporal server Pod boots**, otherwise
 sequenceDiagram
     autonumber
     participant Argo as ArgoCD
-    participant CNPG as CloudNative-PG
+    participant PG as Plain PostgreSQL
     participant Job as schema-job<br/>(sync-wave -1)
     participant Server as temporal-{frontend,history,matching,worker}
     participant Seed as namespace-init-job<br/>(PostSync)
     participant CLI as tctl seed-namespaces.sh
 
-    Argo->>CNPG: already running (separate App, infrastructure/database/cloudnative-pg/temporal)
+    Argo->>PG: Postgres Deployment starts in sync wave -2
     Argo->>Job: Sync wave -1 — apply schema-job
-    Job->>CNPG: temporal-sql-tool setup-schema + update-schema
-    CNPG-->>Job: done
+    Job->>PG: temporal-sql-tool setup-schema + update-schema
+    PG-->>Job: done
     Argo->>Server: Sync wave 0 — apply Deployments
-    Server->>CNPG: gRPC startup → schema check passes
+    Server->>PG: gRPC startup → schema check passes
     Argo->>Seed: PostSync — namespace-init-job
     Seed->>CLI: seed-namespaces.sh
     CLI->>Server: `temporal operator namespace create default`
@@ -122,11 +124,10 @@ needs the server up.
 
 ---
 
-## Persistence: why CloudNative-PG (not the chart's bundled DB)
+## Persistence: plain PostgreSQL on Longhorn
 
-The Temporal Helm chart's defaults were trimmed of bundled subcharts in
-1.x (no Cassandra, no Prometheus, no PG). We point at our own
-`CloudNativePG` cluster:
+The chart does not own a bundled database. This Application runs one plain
+PostgreSQL Deployment backed by a Longhorn RWO volume and kopiur backups:
 
 ```yaml
 # excerpt from values.yaml
@@ -136,20 +137,20 @@ server:
       defaultStore: default
       visibilityStore: visibility
       datastores:
-        default:    {sql: {databaseName: temporal,            connectAddr: temporal-database-rw.cloudnative-pg.svc.cluster.local:5432, ...}}
-        visibility: {sql: {databaseName: temporal_visibility, connectAddr: temporal-database-rw.cloudnative-pg.svc.cluster.local:5432, ...}}
+        default:    {sql: {databaseName: temporal,            connectAddr: temporal-postgres.temporal.svc.cluster.local:5432, ...}}
+        visibility: {sql: {databaseName: temporal_visibility, connectAddr: temporal-postgres.temporal.svc.cluster.local:5432, ...}}
 ```
 
-The `temporal-database` CNPG cluster (operator at
-`infrastructure/database/cloudnative-pg/`) gives us automated backups,
-HA-ready PG, and a `-rw` Service that resolves to whichever Pod is
-currently primary. Two databases — one for workflow history, one for
-visibility (searchable workflow attributes).
+`postgres/deployment.yaml` serves two databases: workflow history and
+searchable visibility. Its RWO Deployment uses `Recreate`, and
+`kopiur/temporal-postgres-data.yaml` provides restore-before-bind backups.
+This is one database instance, not database HA. Longhorn handles a disk or
+node loss; kopiur is the independent restore path.
 
 > 💡 **`numHistoryShards: 1`** is set in our values.yaml. This is
-> **permanent** — it can never be lowered, and raising it requires
-> re-creating the namespace. Production clusters typically use 512+;
-> 1 is fine for a homelab single-node, single-namespace setup.
+> **permanent for this Temporal database** — changing it requires a new
+> control plane and data migration. The shared cluster stays at one shard;
+> the dedicated Radar control plane is planned with 32 from its first boot.
 
 ---
 
@@ -160,14 +161,14 @@ visibility (searchable workflow attributes).
 helmCharts:
   - name: temporal
     repo: https://go.temporal.io/helm-charts
-    version: 1.2.0          # chart version — renovate auto-bumps via .github/renovate.json5
+    version: 1.6.0          # chart version — renovate auto-bumps via .github/renovate.json5
     valuesFile: values.yaml
 
 # values.yaml (excerpt)
 server:
   image:
     repository: temporalio/server
-    tag: 1.31.0             # server version override — chart's default lags real releases
+    tag: 1.31.2             # server version override — chart's default lags real releases
 ```
 
 The **chart** and the **server image** rev independently. The chart
@@ -240,9 +241,8 @@ kubectl -n temporal logs deploy/temporal-frontend --tail=50
 kubectl -n temporal exec -it deploy/temporal-admintools -- bash
 # now you can run `temporal workflow list ...`, etc.
 
-# Force the Temporal server/schema ArgoCD app to resync (e.g. after editing
-# values.yaml or recreating only its CNPG database). `database-temporal` owns
-# PostgreSQL; syncing it does NOT run this app's schema hook.
+# Force the Temporal server/schema ArgoCD app to resync after editing values.
+# PostgreSQL is part of this same Application.
 argocd app sync my-apps-temporal
 
 # Check schema migration logs
@@ -251,6 +251,42 @@ kubectl -n temporal logs job/temporal-schema-1.x.y
 # Watch the namespace-init job (first install only)
 kubectl -n temporal logs job/temporal-namespace-seed
 ```
+
+### Timer DLQ alert runbook
+
+A non-zero timer DLQ is a control-plane incident. A Schedule can still look
+`RUNNING` while its durable `TimerFired` task is stranded. Application-level
+manual triggers can produce fresh runs, but they do not repair that timer.
+
+Inventory first:
+
+```bash
+kubectl -n temporal exec deploy/temporal-admintools -- \
+  tdbg dlq list --print-json
+
+kubectl -n temporal exec deploy/temporal-admintools -- \
+  tdbg dlq read --dlq-type 2 --cluster active --target-cluster active \
+  --last-message-id <last-id> --max-message-count 100
+```
+
+For every message, identify the namespace, workflow ID, run ID, task type,
+and current workflow state. Coordinate with every affected application owner.
+DLQ merge uses prefix semantics, so a message cannot be skipped in the middle.
+
+Only after the exact prefix is approved, re-enqueue it and watch the job:
+
+```bash
+kubectl -n temporal exec deploy/temporal-admintools -- \
+  tdbg dlq merge --dlq-type 2 --cluster active --target-cluster active \
+  --last-message-id <approved-prefix-last-id>
+
+kubectl -n temporal exec deploy/temporal-admintools -- \
+  tdbg dlq job describe --job-token '<token>'
+```
+
+Then list the DLQ again and verify affected schedules fire naturally for at
+least two cadences. Do not treat manual triggers as proof. Never purge a DLQ,
+and do not delete or recreate schedules as an automatic recovery action.
 
 ---
 
