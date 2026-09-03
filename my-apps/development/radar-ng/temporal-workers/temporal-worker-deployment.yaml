@@ -29,7 +29,16 @@ spec:
         radar-ng.vanillax.dev/worker: "true"
     spec:
       # Shares RWO tiles/grids/state with tile-server — must land on the same node or Longhorn Multi-Attach fails.
+      priorityClassName: app-critical
       affinity:
+        # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: In
+                    values: ["true"]
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
