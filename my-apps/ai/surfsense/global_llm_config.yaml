@@ -1,6 +1,6 @@
 global_llm_configs:
   - id: -1
-    name: Qwen 3.8 27B (vLLM)
+    name: Qwen 3.8 27B (llama.cpp)
     billing_tier: free
     anonymous_enabled: false
     seo_enabled: false
@@ -9,9 +9,9 @@ global_llm_configs:
     model_name: qwen3.8-27b
     supports_image_input: true
     supports_tools: true
-    max_input_tokens: 48000 # reserves output/tool-call headroom inside vLLM's 65,536-token window
+    max_input_tokens: 48000 # reserves output/tool-call headroom inside llama.cpp's 65,536-token window
     api_key: sk-required
-    api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+    api_base: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
     rpm: 60
     tpm: 1000000
     litellm_params:

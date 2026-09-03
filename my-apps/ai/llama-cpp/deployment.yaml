@@ -8,8 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
-  # Parked experimental Flash-Next MTP sidecar; vLLM owns the sole RTX 3090.
-  # Scale vLLM down before setting this deployment to replicas: 1.
+  # Active single-RTX-3090 backend. vLLM is parked at 0 by its Kustomization.
   replicas: 0
   strategy:
     type: Recreate
@@ -37,75 +36,38 @@ spec:
       securityContext:
         fsGroup: 10001
         fsGroupChangePolicy: OnRootMismatch
-      initContainers:
-        - name: install-unsloth-llama-cpp
-          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-          command:
-            - /bin/sh
-            - -ec
-            - |
-              apk add --no-cache curl
-              tag=b10715-mix-86bd2d3
-              asset=app-b10715-mix-86bd2d3-linux-x64-cuda12-portable.tar.gz
-              expected=0b5127dc1c50908fdae74e93369c4d943155f3beeddd4a2b15b0f4e8c05687dc
-              url="https://github.com/unslothai/llama.cpp/releases/download/$tag/$asset"
-              curl -fL --retry 5 -o /tmp/llama.tar.gz "$url"
-              echo "$expected  /tmp/llama.tar.gz" | sha256sum -c -
-              tar -xzf /tmp/llama.tar.gz -C /opt/unsloth
-              server="$(find /opt/unsloth -type f -name llama-server -perm -u+x | head -n 1)"
-              [ -n "$server" ] || { echo "llama-server not found in $asset"; exit 1; }
-              if [ "$server" != /opt/unsloth/llama-server ]; then
-                ln -sf "$server" /opt/unsloth/llama-server
-              fi
-              # Do not execute the downloaded binary in Alpine: Unsloth's
-              # portable x64 CUDA build is glibc-linked while Alpine is musl.
-              # The main llama.cpp CUDA image provides the glibc/CUDA runtime.
-              test -x /opt/unsloth/llama-server
-              echo "installed Unsloth llama.cpp $tag"
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: "2"
-              memory: 1Gi
-          volumeMounts:
-            - name: unsloth-bin
-              mountPath: /opt/unsloth
       containers:
         - name: llama-cpp-server
-          # Keep the official CUDA image as the runtime environment; the pinned
-          # Unsloth binary above supplies qwen4exp MTP + tensor borrowing.
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10666@sha256:a2d04d1d1c2b2abe287fef9a22a3700a7fa20aec4c4ab56135e0099f38119848
+          # b10751 fixed the Qwen3.8-27B MTP KV-init regression seen in b10745;
+          # b10752 is the next official CUDA12 image and is pinned to linux/amd64.
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10752@sha256:dde47811ea25c3a30233edba1bb898e7e7246ab653f94a3972b8497c4a349b4b
           imagePullPolicy: IfNotPresent
-          command: ["/opt/unsloth/llama-server"]
+          command: ["/app/llama-server"]
           args:
             - --model
-            - /models/qwen3.8-flash-next-gguf/unsloth-ud-iq4-xs/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf
+            - /models/qwen3.8-27b-gguf/Qwen3.8-27B-UD-Q4_K_XL.gguf
             - --mmproj
-            - /models/qwen3.8-flash-next-gguf/mmproj-BF16.gguf
+            - /models/qwen3.8-27b-gguf/mmproj-BF16.gguf
             - -md
-            - /models/qwen3.8-flash-next-gguf/mtp/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf
+            - /models/qwen3.8-27b-gguf/mtp/mtp-Qwen3.8-27B-Q4_0.gguf
             - --spec-type
             - draft-mtp
             - --spec-draft-n-max
-            - "3"
+            - "2"
+            - --spec-draft-ngl
+            - "99"
             - --alias
-            - Qwen3.8-Flash-Next Q4 MTP
+            - qwen3.8-27b
             - --ctx-size
-            - "131072"
+            - "65536"
             - --batch-size
-            - "4096"
+            - "2048"
             - --ubatch-size
             - "2048"
             - --n-gpu-layers
             - "99"
-            - --n-cpu-moe
-            - "45"
             - --fit
             - "off"
-            # b10715 supports mmap load mode but predates --tensor-read-lazy.
-            # The model still reads from the node-local NVMe-backed PVC.
             - --load-mode
             - mmap
             - --flash-attn
@@ -114,6 +76,12 @@ spec:
             - q8_0
             - --cache-type-v
             - q8_0
+            - --cache-type-k-draft
+            - q8_0
+            - --cache-type-v-draft
+            - q8_0
+            - --cache-reuse
+            - "256"
             - --parallel
             - "1"
             - --jinja
@@ -123,6 +91,9 @@ spec:
             - low
             - --reasoning-format
             - deepseek
+            - --reasoning-preserve
+            - --image-min-tokens
+            - "1024"
             - --temp
             - "0.7"
             - --top-p
@@ -143,8 +114,14 @@ spec:
           env:
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: compute,utility
-            - name: LD_LIBRARY_PATH
-              value: /opt/unsloth:/opt/unsloth/lib
+            # Community RTX 3090 Qwen3.8-27B results use CUDA graph optimization
+            # for the dense decode path.
+            - name: GGML_CUDA_GRAPH_OPT
+              value: "1"
+            # Ampere multimodal runs have hit a cuBLAS compute-type fault during
+            # vision prefill; fp32 compute fixes it with negligible measured cost.
+            - name: GGML_CUDA_CUBLAS_COMPUTE_TYPE
+              value: fp32
           ports:
             - name: http
               containerPort: 8080
@@ -153,10 +130,10 @@ spec:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 300
+            failureThreshold: 180
           livenessProbe:
             httpGet:
               path: /health
@@ -176,28 +153,23 @@ spec:
           resources:
             requests:
               nvidia.com/gpu: "1"
-              cpu: "20"
-              memory: 80Gi
+              cpu: "4"
+              memory: 16Gi
             limits:
-              memory: 94Gi
+              memory: 48Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: models
               mountPath: /models
               readOnly: true
-            - name: unsloth-bin
-              mountPath: /opt/unsloth
-              readOnly: true
             - name: dshm
               mountPath: /dev/shm
       volumes:
-        # Node-local NVMe cache, not the NFS PVC: mmap page-cache misses during
-        # inference must not become NFS round trips. See cache-sync-job.yaml.
+        # Node-local NVMe cache, not NFS: the download hook persists the verified
+        # artifacts on NFS and cache-sync hydrates this PVC before the server.
         - name: models
           persistentVolumeClaim:
             claimName: ai-model-cache
-        - name: unsloth-bin
-          emptyDir: {}
         - name: dshm
           emptyDir:
             medium: Memory

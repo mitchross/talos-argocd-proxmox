@@ -41,11 +41,11 @@ spec:
               value: "postgresql://hindsight:$(POSTGRES_PASSWORD)@hindsight-db:5432/hindsight"
             - name: HINDSIGHT_API_VECTOR_EXTENSION
               value: "pgvector"
-            # Memory-processing LLM: in-cluster llama.cpp (OpenAI-compatible, free tokens)
+            # Memory-processing LLM: active in-cluster llama.cpp backend.
             - name: HINDSIGHT_API_LLM_PROVIDER
               value: "openai"
             - name: HINDSIGHT_API_LLM_BASE_URL
-              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
+              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
             - name: HINDSIGHT_API_LLM_MODEL
               value: "qwen3.8-27b"
             - name: HINDSIGHT_API_LLM_API_KEY
