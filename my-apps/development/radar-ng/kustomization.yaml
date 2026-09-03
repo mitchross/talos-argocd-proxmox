@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - vpa.yaml
   - namespace.yaml
+  - priorityclass.yaml
   - pvcs.yaml
   - services.yaml
   - httproute.yaml
