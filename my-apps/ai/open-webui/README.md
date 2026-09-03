@@ -50,6 +50,18 @@ After the 2026-09-03 cutover, ordinary Open WebUI responses measured roughly
 42-43 generated tok/s on the single RTX 3090. Under generation the card showed
 about 22.7 GiB VRAM used and high GPU utilization at the 220 W cap.
 
+## Date/time grounding
+
+`DEFAULT_SYSTEM_PROMPT` injects `{{CURRENT_DATE}}`, `{{CURRENT_WEEKDAY}}`, and
+`{{CURRENT_TIMEZONE}}` so Qwen is not forced to guess the current date. Exact
+current time, timezone conversion, and calendar arithmetic should use the
+`mcpo-time` tool.
+
+Do not add `{{CURRENT_TIME}}` or `{{CURRENT_DATETIME}}` to the persistent system
+prompt: Open WebUI resolves them on every request, changing the prompt prefix
+and hurting KV/prefix reuse on long conversations. The date-only variable
+changes once per day.
+
 ## Features
 
 - **Web search**: SearXNG (`WEB_SEARCH_*`, `SEARXNG_QUERY_URL`).
