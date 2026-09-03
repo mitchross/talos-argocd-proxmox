@@ -15,6 +15,11 @@ resources:
   - httproute.yaml
   - servicemonitor.yaml
 
+# Flash-Next test cutover: release the sole RTX 3090 for llama.cpp.
+replicas:
+  - name: vllm-server
+    count: 0
+
 configMapGenerator:
   - name: vllm-scripts
     files:
