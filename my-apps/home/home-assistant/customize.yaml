@@ -1,46 +1,257 @@
 # `hidden: true` only removes a switch from the default view; the power-off lockout automation
-# in automations.yaml is the real enforcement. gpu_psu_* entity_ids are kept to preserve history.
+# in automations.yaml is the real enforcement. Entity prefixes are frozen to keep history, so
+# friendly_name is the only place the real hardware is named.
 
-# ---------- Threadripper GPUs (entity_id kept as gpu_psu_* for history) ----------
+# ---------- Threadripper Host (entity prefix gpu_psu_*) ----------
+sensor.gpu_psu_current_consumption:
+  friendly_name: Threadripper Host Power
 sensor.gpu_psu_energy:
-  friendly_name: Threadripper GPUs Energy
+  friendly_name: Threadripper Host Energy
 sensor.gpu_psu_cost:
-  friendly_name: Threadripper GPUs Cost
+  friendly_name: Threadripper Host Cost
 sensor.gpu_psu_cost_rate:
-  friendly_name: Threadripper GPUs Cost Rate
+  friendly_name: Threadripper Host Cost Rate
 sensor.gpu_psu_power_share:
-  friendly_name: Threadripper GPUs Power Share
+  friendly_name: Threadripper Host Power Share
 sensor.gpu_psu_energy_share_today:
-  friendly_name: Threadripper GPUs Energy Share Today
+  friendly_name: Threadripper Host Energy Share Today
+sensor.gpu_psu_voltage:
+  friendly_name: Threadripper Host Voltage
+sensor.gpu_psu_current:
+  friendly_name: Threadripper Host Current
 sensor.gpu_psu_energy_daily:
-  friendly_name: Threadripper GPUs Energy Daily
+  friendly_name: Threadripper Host Energy Daily
 sensor.gpu_psu_energy_weekly:
-  friendly_name: Threadripper GPUs Energy Weekly
+  friendly_name: Threadripper Host Energy Weekly
 sensor.gpu_psu_energy_monthly:
-  friendly_name: Threadripper GPUs Energy Monthly
+  friendly_name: Threadripper Host Energy Monthly
 sensor.gpu_psu_energy_yearly:
-  friendly_name: Threadripper GPUs Energy Yearly
+  friendly_name: Threadripper Host Energy Yearly
 sensor.gpu_psu_cost_daily:
-  friendly_name: Threadripper GPUs Cost Daily
+  friendly_name: Threadripper Host Cost Daily
 sensor.gpu_psu_cost_weekly:
-  friendly_name: Threadripper GPUs Cost Weekly
+  friendly_name: Threadripper Host Cost Weekly
 sensor.gpu_psu_cost_monthly:
-  friendly_name: Threadripper GPUs Cost Monthly
+  friendly_name: Threadripper Host Cost Monthly
 sensor.gpu_psu_cost_yearly:
-  friendly_name: Threadripper GPUs Cost Yearly
-
-# Switches keep the `_smart_plug` suffix (unlike the sensors).
-switch.gpu_psu_smart_plug:
-  friendly_name: Threadripper GPUs (read-only)
-  hidden: true
-switch.nas_psu_smart_plug:
-  friendly_name: NAS PSU (read-only)
-  hidden: true
-switch.truenas_server_smart_plug:
-  friendly_name: TrueNAS Server (read-only)
+  friendly_name: Threadripper Host Cost Yearly
+switch.gpu_psu:
+  friendly_name: Threadripper Host (read-only)
   hidden: true
 
-# NAS PSU / TrueNAS host need no overrides — their Tapo device names already display correctly.
+# ---------- NAS Drive PSU (entity prefix nas_psu_*) ----------
+sensor.nas_psu_current_consumption:
+  friendly_name: NAS Drive PSU Power
+sensor.nas_psu_energy:
+  friendly_name: NAS Drive PSU Energy
+sensor.nas_psu_cost:
+  friendly_name: NAS Drive PSU Cost
+sensor.nas_psu_cost_rate:
+  friendly_name: NAS Drive PSU Cost Rate
+sensor.nas_psu_power_share:
+  friendly_name: NAS Drive PSU Power Share
+sensor.nas_psu_energy_share_today:
+  friendly_name: NAS Drive PSU Energy Share Today
+sensor.nas_psu_voltage:
+  friendly_name: NAS Drive PSU Voltage
+sensor.nas_psu_current:
+  friendly_name: NAS Drive PSU Current
+sensor.nas_psu_energy_daily:
+  friendly_name: NAS Drive PSU Energy Daily
+sensor.nas_psu_energy_weekly:
+  friendly_name: NAS Drive PSU Energy Weekly
+sensor.nas_psu_energy_monthly:
+  friendly_name: NAS Drive PSU Energy Monthly
+sensor.nas_psu_energy_yearly:
+  friendly_name: NAS Drive PSU Energy Yearly
+sensor.nas_psu_cost_daily:
+  friendly_name: NAS Drive PSU Cost Daily
+sensor.nas_psu_cost_weekly:
+  friendly_name: NAS Drive PSU Cost Weekly
+sensor.nas_psu_cost_monthly:
+  friendly_name: NAS Drive PSU Cost Monthly
+sensor.nas_psu_cost_yearly:
+  friendly_name: NAS Drive PSU Cost Yearly
+switch.nas_psu:
+  friendly_name: NAS Drive PSU (read-only)
+  hidden: true
+
+# ---------- TrueNAS (DL360) (entity prefix truenas_server_*) ----------
+sensor.truenas_server_current_consumption:
+  friendly_name: TrueNAS (DL360) Power
+sensor.truenas_server_energy:
+  friendly_name: TrueNAS (DL360) Energy
+sensor.truenas_server_cost:
+  friendly_name: TrueNAS (DL360) Cost
+sensor.truenas_server_cost_rate:
+  friendly_name: TrueNAS (DL360) Cost Rate
+sensor.truenas_server_power_share:
+  friendly_name: TrueNAS (DL360) Power Share
+sensor.truenas_server_energy_share_today:
+  friendly_name: TrueNAS (DL360) Energy Share Today
+sensor.truenas_server_voltage:
+  friendly_name: TrueNAS (DL360) Voltage
+sensor.truenas_server_current:
+  friendly_name: TrueNAS (DL360) Current
+sensor.truenas_server_energy_daily:
+  friendly_name: TrueNAS (DL360) Energy Daily
+sensor.truenas_server_energy_weekly:
+  friendly_name: TrueNAS (DL360) Energy Weekly
+sensor.truenas_server_energy_monthly:
+  friendly_name: TrueNAS (DL360) Energy Monthly
+sensor.truenas_server_energy_yearly:
+  friendly_name: TrueNAS (DL360) Energy Yearly
+sensor.truenas_server_cost_daily:
+  friendly_name: TrueNAS (DL360) Cost Daily
+sensor.truenas_server_cost_weekly:
+  friendly_name: TrueNAS (DL360) Cost Weekly
+sensor.truenas_server_cost_monthly:
+  friendly_name: TrueNAS (DL360) Cost Monthly
+sensor.truenas_server_cost_yearly:
+  friendly_name: TrueNAS (DL360) Cost Yearly
+switch.truenas_server:
+  friendly_name: TrueNAS (DL360) (read-only)
+  hidden: true
+
+# ---------- HP SFF + Optiplex (entity prefix hp_sff_*) ----------
+sensor.hp_sff_current_consumption:
+  friendly_name: HP SFF + Optiplex Power
+sensor.hp_sff_energy:
+  friendly_name: HP SFF + Optiplex Energy
+sensor.hp_sff_cost:
+  friendly_name: HP SFF + Optiplex Cost
+sensor.hp_sff_cost_rate:
+  friendly_name: HP SFF + Optiplex Cost Rate
+sensor.hp_sff_power_share:
+  friendly_name: HP SFF + Optiplex Power Share
+sensor.hp_sff_energy_share_today:
+  friendly_name: HP SFF + Optiplex Energy Share Today
+sensor.hp_sff_voltage:
+  friendly_name: HP SFF + Optiplex Voltage
+sensor.hp_sff_current:
+  friendly_name: HP SFF + Optiplex Current
+sensor.hp_sff_energy_daily:
+  friendly_name: HP SFF + Optiplex Energy Daily
+sensor.hp_sff_energy_weekly:
+  friendly_name: HP SFF + Optiplex Energy Weekly
+sensor.hp_sff_energy_monthly:
+  friendly_name: HP SFF + Optiplex Energy Monthly
+sensor.hp_sff_energy_yearly:
+  friendly_name: HP SFF + Optiplex Energy Yearly
+sensor.hp_sff_cost_daily:
+  friendly_name: HP SFF + Optiplex Cost Daily
+sensor.hp_sff_cost_weekly:
+  friendly_name: HP SFF + Optiplex Cost Weekly
+sensor.hp_sff_cost_monthly:
+  friendly_name: HP SFF + Optiplex Cost Monthly
+sensor.hp_sff_cost_yearly:
+  friendly_name: HP SFF + Optiplex Cost Yearly
+switch.hp_sff:
+  friendly_name: HP SFF + Optiplex (read-only)
+  hidden: true
+
+# ---------- Shed (HP micro, solar) (entity prefix shed_lab_*) ----------
+sensor.shed_lab_current_consumption:
+  friendly_name: Shed (HP micro, solar) Power
+sensor.shed_lab_energy:
+  friendly_name: Shed (HP micro, solar) Energy
+sensor.shed_lab_cost:
+  friendly_name: Shed (HP micro, solar) Cost
+sensor.shed_lab_cost_rate:
+  friendly_name: Shed (HP micro, solar) Cost Rate
+sensor.shed_lab_power_share:
+  friendly_name: Shed (HP micro, solar) Power Share
+sensor.shed_lab_energy_share_today:
+  friendly_name: Shed (HP micro, solar) Energy Share Today
+sensor.shed_lab_voltage:
+  friendly_name: Shed (HP micro, solar) Voltage
+sensor.shed_lab_current:
+  friendly_name: Shed (HP micro, solar) Current
+sensor.shed_lab_energy_daily:
+  friendly_name: Shed (HP micro, solar) Energy Daily
+sensor.shed_lab_energy_weekly:
+  friendly_name: Shed (HP micro, solar) Energy Weekly
+sensor.shed_lab_energy_monthly:
+  friendly_name: Shed (HP micro, solar) Energy Monthly
+sensor.shed_lab_energy_yearly:
+  friendly_name: Shed (HP micro, solar) Energy Yearly
+sensor.shed_lab_cost_daily:
+  friendly_name: Shed (HP micro, solar) Cost Daily
+sensor.shed_lab_cost_weekly:
+  friendly_name: Shed (HP micro, solar) Cost Weekly
+sensor.shed_lab_cost_monthly:
+  friendly_name: Shed (HP micro, solar) Cost Monthly
+sensor.shed_lab_cost_yearly:
+  friendly_name: Shed (HP micro, solar) Cost Yearly
+switch.shed_lab:
+  friendly_name: Shed (HP micro, solar) (read-only)
+  hidden: true
+
+# ---------- Gaming PC (7800X3D + 3090) (entity prefix gaming_pc_*) ----------
+sensor.gaming_pc_current_consumption:
+  friendly_name: Gaming PC (7800X3D + 3090) Power
+sensor.gaming_pc_energy:
+  friendly_name: Gaming PC (7800X3D + 3090) Energy
+sensor.gaming_pc_cost:
+  friendly_name: Gaming PC (7800X3D + 3090) Cost
+sensor.gaming_pc_cost_rate:
+  friendly_name: Gaming PC (7800X3D + 3090) Cost Rate
+sensor.gaming_pc_power_share:
+  friendly_name: Gaming PC (7800X3D + 3090) Power Share
+sensor.gaming_pc_energy_share_today:
+  friendly_name: Gaming PC (7800X3D + 3090) Energy Share Today
+sensor.gaming_pc_voltage:
+  friendly_name: Gaming PC (7800X3D + 3090) Voltage
+sensor.gaming_pc_current:
+  friendly_name: Gaming PC (7800X3D + 3090) Current
+sensor.gaming_pc_energy_daily:
+  friendly_name: Gaming PC (7800X3D + 3090) Energy Daily
+sensor.gaming_pc_energy_weekly:
+  friendly_name: Gaming PC (7800X3D + 3090) Energy Weekly
+sensor.gaming_pc_energy_monthly:
+  friendly_name: Gaming PC (7800X3D + 3090) Energy Monthly
+sensor.gaming_pc_energy_yearly:
+  friendly_name: Gaming PC (7800X3D + 3090) Energy Yearly
+sensor.gaming_pc_cost_daily:
+  friendly_name: Gaming PC (7800X3D + 3090) Cost Daily
+sensor.gaming_pc_cost_weekly:
+  friendly_name: Gaming PC (7800X3D + 3090) Cost Weekly
+sensor.gaming_pc_cost_monthly:
+  friendly_name: Gaming PC (7800X3D + 3090) Cost Monthly
+sensor.gaming_pc_cost_yearly:
+  friendly_name: Gaming PC (7800X3D + 3090) Cost Yearly
+switch.gaming_pc:
+  friendly_name: Gaming PC (7800X3D + 3090)
+
+# ---------- HP Elite (estimated) (entity prefix hp_elite_estimated_*) ----------
+sensor.hp_elite_estimated_current_consumption:
+  friendly_name: HP Elite (estimated) Power
+sensor.hp_elite_estimated_energy:
+  friendly_name: HP Elite (estimated) Energy
+sensor.hp_elite_estimated_cost:
+  friendly_name: HP Elite (estimated) Cost
+sensor.hp_elite_estimated_cost_rate:
+  friendly_name: HP Elite (estimated) Cost Rate
+sensor.hp_elite_estimated_power_share:
+  friendly_name: HP Elite (estimated) Power Share
+sensor.hp_elite_estimated_energy_share_today:
+  friendly_name: HP Elite (estimated) Energy Share Today
+sensor.hp_elite_estimated_energy_daily:
+  friendly_name: HP Elite (estimated) Energy Daily
+sensor.hp_elite_estimated_energy_weekly:
+  friendly_name: HP Elite (estimated) Energy Weekly
+sensor.hp_elite_estimated_energy_monthly:
+  friendly_name: HP Elite (estimated) Energy Monthly
+sensor.hp_elite_estimated_energy_yearly:
+  friendly_name: HP Elite (estimated) Energy Yearly
+sensor.hp_elite_estimated_cost_daily:
+  friendly_name: HP Elite (estimated) Cost Daily
+sensor.hp_elite_estimated_cost_weekly:
+  friendly_name: HP Elite (estimated) Cost Weekly
+sensor.hp_elite_estimated_cost_monthly:
+  friendly_name: HP Elite (estimated) Cost Monthly
+sensor.hp_elite_estimated_cost_yearly:
+  friendly_name: HP Elite (estimated) Cost Yearly
 
 # ---------- StuckAtPrototype AirCube (Zigbee air-quality, ZHA quirk) ----------
 # Display-only: Grafana matches on the `entity` label, not friendly_name, so renames can't break aircube-dashboard.yaml.
