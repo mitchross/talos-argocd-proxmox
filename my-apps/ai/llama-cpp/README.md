@@ -68,8 +68,10 @@ are not downloaded, synchronized or referenced by the active manifests.
 - `GGML_CUDA_CUBLAS_COMPUTE_TYPE=fp32` avoids an Ampere multimodal cuBLAS
   failure observed during vision prefill.
 - `--image-min-tokens 1024` favors vision/grounding correctness.
-- reasoning defaults to low effort; clients can override per request using
-  OpenAI-compatible `reasoning_effort`.
+- reasoning defaults to low effort server-side. Qwen3.8 separately controls
+  `enable_thinking` and reasoning effort (`low`, `medium`, `xhigh`); clients
+  that expose an off switch must send `enable_thinking=false`, not merely omit
+  `reasoning_effort`. The Pi.dev guide documents the exact mapping.
 - `--reasoning-preserve` keeps reasoning state coherent across multi-turn use.
 - Prefix `--cache-reuse` is intentionally omitted: llama.cpp disables it when
   the multimodal projector is loaded, so keeping the flag only produces a
