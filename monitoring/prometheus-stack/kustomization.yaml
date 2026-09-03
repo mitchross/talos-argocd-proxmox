@@ -29,9 +29,7 @@ resources:
   - frigate-dashboard.yaml # Frigate Grafana dashboard
   - loki-logs-dashboard.yaml # Custom Loki logs dashboard (uses OTEL labels)
   - solar-dashboard.yaml # Epever Solar MPPT dashboard
-  - tapo-power-dashboard.yaml # Tapo smart plug power monitoring (all plugs)
   - aircube-dashboard.yaml # StuckAtPrototype AirCube Zigbee air-quality (eCO2/tVOC/temp/humidity)
-  - homelab-power-dashboard.yaml # Homelab cost dashboard ($0.21/kWh, 4 homelab plugs only)
   - radar-ng-dashboard.yaml # radar-ng backend dashboard (logs + tile-server metrics)
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
 
@@ -39,6 +37,22 @@ configMapGenerator:
   - name: prometheus-stack-scripts
     files:
       - scripts/prune-retired-dashboards.sh
+  # Dashboard JSON lives in dashboards/ as real .json, not embedded in YAML, so diffs stay
+  # readable and the files can be linted. The sidecar discovers them by the label below.
+  - name: homelab-power-dashboard
+    files:
+      - dashboards/homelab-power.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
+  - name: tapo-power-dashboard
+    files:
+      - dashboards/tapo-power-monitoring.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
 # These CRD schemas push client-side apply's last-applied annotation past the 256KB cap — keep per-CRD ServerSideApply+Replace.
 patches:
   - target:
