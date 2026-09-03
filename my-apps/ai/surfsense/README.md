@@ -52,6 +52,24 @@ operator-owned global model catalog:
 
 Initial embeddings use CPU-local `sentence-transformers/all-MiniLM-L6-v2`, so SurfSense does not request a GPU.
 
+## Obsidian / Mink integration
+
+The CachyOS Obsidian client uses `/home/vanillax/.mink` as its vault and the
+official SurfSense Obsidian plugin `0.1.0`. Its server URL is
+`http://127.0.0.1:18000`, supplied by the enabled user unit
+`~/.config/systemd/user/surfsense-obsidian-tunnel.service`, which maintains an
+authenticated `kubectl port-forward` to the backend Service. The plugin targets
+workspace `My Workspace`, includes only the `wiki/` folder, leaves attachments
+disabled, and reconciles every 10 minutes in addition to realtime note events.
+
+The backend already serves the plugin API beneath `/api/v1/obsidian/*`; no
+server-side vault mount belongs in this deployment. Enable API access for the
+workspace and create a dedicated personal access token in SurfSense before
+configuring the plugin. The token lives only in the plugin's local `data.json`
+and must remain excluded from Mink's Git sync. Keep note sync on the loopback
+tunnel: plugin `0.1.0` replays vault create events on every Obsidian startup,
+and sending that burst through Cloudflare can produce managed-WAF 403s.
+
 ## Self-host billing policy
 
 This deployment does not use SurfSense's hosted credit wallet for local infrastructure. `selfhost.env` is materialized as `surfsense-selfhost-policy` and loaded by the API, worker, Beat, and migration containers.

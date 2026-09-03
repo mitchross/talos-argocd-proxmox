@@ -58,6 +58,7 @@ Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The
 10. **Local vLLM is free infrastructure, not a credit-metered provider.** Keep `qwen3.8-27b` at `billing_tier: free`. `selfhost.env` must keep `DEFAULT_CREDIT_MICROS_BALANCE=0` and hosted-style billing switches disabled. The credit-policy hook must reconcile restored or pre-policy wallet rows before workloads start; do not replace it with manual SQL or fake premium model entries.
 11. **Reuse cluster SearXNG** at `http://searxng.searxng.svc.cluster.local:8080`; do not deploy another copy.
 12. **Secrets stay in 1Password.** Item `surfsense`: `secret_key`, `db_password`, `zero_admin_password`, `zero_query_api_key`.
+13. **Obsidian sync is client-pushed through a loopback Kubernetes tunnel.** The CachyOS plugin syncs only Mink `wiki/` through `127.0.0.1:18000`; do not add a server-side vault mount, route note-body bursts through Cloudflare, or commit the plugin PAT.
 
 ## Storage choices
 
