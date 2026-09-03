@@ -8,7 +8,7 @@
 > This document is for **Pi.dev / Pi coding agent**, not Raspberry Pi.
 
 Pi is a workstation client. Nothing in `~/.pi/agent/` deploys to Kubernetes.
-The cluster owns model/runtime tuning; Pi only needs the provider/model metadata
+The cluster owns model/runtime tuning; Pi only needs provider/model metadata
 that describes the OpenAI-compatible API and Qwen3.8's reasoning controls.
 
 ## 1. Update Pi
@@ -19,7 +19,8 @@ pi update --all
 pi --version
 ```
 
-The configuration below targets Pi 0.84.x or newer.
+`pi update --self` updates Pi itself; `pi update --all` updates Pi and installed
+packages/extensions. The configuration below targets Pi 0.84.x or newer.
 
 ## 2. `~/.pi/agent/models.json`
 
@@ -43,7 +44,8 @@ Use a dedicated custom provider for the active llama.cpp endpoint:
           "reasoning_effort": {
             "$var": "thinking.effort",
             "omitWhenOff": true
-          }
+          },
+          "preserve_thinking": true
         }
       },
       "models": [
@@ -82,16 +84,17 @@ Qwen3.8's upstream template accepts only `low`, `medium`, and `xhigh` when
 thinking is enabled, and defaults to `xhigh` if effort is omitted. Turning
 thinking off is a separate `enable_thinking=false` control.
 
-Pi's generic OpenAI `reasoning_effort` mode omits the effort field when Pi is
-set to `off`. That is not enough here because llama.cpp has its own server-side
-reasoning default. The explicit mapping above makes every request unambiguous:
+Pi has a built-in `qwen-chat-template` mode for the on/off toggle, but the
+current implementation does not also place Pi's selected effort inside the
+Qwen chat-template kwargs. `chat-template` lets this provider send both pieces
+explicitly:
 
 | Pi level | `chat_template_kwargs` sent to llama.cpp |
 |---|---|
-| `off` | `enable_thinking: false` |
-| `low` | `enable_thinking: true`, `reasoning_effort: low` |
-| `medium` | `enable_thinking: true`, `reasoning_effort: medium` |
-| `xhigh` | `enable_thinking: true`, `reasoning_effort: xhigh` |
+| `off` | `enable_thinking: false`, `preserve_thinking: true` |
+| `low` | `enable_thinking: true`, `reasoning_effort: low`, `preserve_thinking: true` |
+| `medium` | `enable_thinking: true`, `reasoning_effort: medium`, `preserve_thinking: true` |
+| `xhigh` | `enable_thinking: true`, `reasoning_effort: xhigh`, `preserve_thinking: true` |
 
 `omitWhenOff` prevents Pi from sending the string `off` as a Qwen reasoning
 effort. Unsupported Pi levels are `null`, so the UI skips them rather than
@@ -102,7 +105,7 @@ Other compatibility choices:
 - `supportsDeveloperRole: false` keeps the agent context in an ordinary system
   message for the local OpenAI-compatible server.
 - `supportsReasoningEffort: false` prevents a duplicate top-level
-  `reasoning_effort`; the value belongs in `chat_template_kwargs` above.
+  `reasoning_effort`; effort is deliberately carried in `chat_template_kwargs`.
 - `input: ["text", "image"]` enables Pi screenshot/image input.
 - Sampling is not set in Pi. The validated production server owns temp/top-p/
   top-k/min-p/presence/repeat defaults.
@@ -111,17 +114,20 @@ Other compatibility choices:
 
 ## 3. Fix your existing `~/.pi/agent/settings.json`
 
-Your previous config used provider `vanillax-vllm` and the now-obsolete
-`modelThinkingLevels` key. Keep your installed packages exactly as they are;
-change only the model selection fields.
+Your current file already has the right packages and uses model-specific
+`medium` reasoning. Keep those. Rename the old provider and make the current
+backend the default.
 
-The important result should be:
+The relevant result should be:
 
 ```json
 {
   "defaultProvider": "vanillax-llama",
   "defaultModel": "qwen3.8-27b",
   "defaultThinkingLevel": "medium",
+  "modelThinkingLevels": {
+    "vanillax-llama/qwen3.8-27b": "medium"
+  },
   "enabledModels": [
     "vanillax-llama/qwen3.8-27b",
     "vanillax-litellm/kimi-k3"
@@ -129,8 +135,9 @@ The important result should be:
 }
 ```
 
-Do **not** copy that small object over your whole file — your `packages`, theme,
-and other settings should remain. To update the existing JSON safely with `jq`:
+Do **not** overwrite your whole file with that small example; preserve your
+`packages`, theme, changelog state, and other settings. Update the existing JSON
+safely with `jq`:
 
 ```bash
 cp ~/.pi/agent/settings.json ~/.pi/agent/settings.json.bak
@@ -139,13 +146,17 @@ jq '
   .defaultProvider = "vanillax-llama"
   | .defaultModel = "qwen3.8-27b"
   | .defaultThinkingLevel = "medium"
-  | del(.modelThinkingLevels)
+  | .modelThinkingLevels = ((.modelThinkingLevels // {})
+      | with_entries(
+          if .key == "vanillax-vllm/qwen3.8-27b"
+          then .key = "vanillax-llama/qwen3.8-27b"
+          else . end))
+  | .modelThinkingLevels["vanillax-llama/qwen3.8-27b"] = "medium"
   | .enabledModels = ((.enabledModels // [])
       | map(if . == "vanillax-vllm/qwen3.8-27b"
             then "vanillax-llama/qwen3.8-27b"
             else . end)
-      | if index("vanillax-llama/qwen3.8-27b") then .
-        else ["vanillax-llama/qwen3.8-27b"] + . end)
+      | unique)
 ' ~/.pi/agent/settings.json > ~/.pi/agent/settings.json.new \
   && mv ~/.pi/agent/settings.json.new ~/.pi/agent/settings.json
 ```
@@ -153,12 +164,13 @@ jq '
 Then verify:
 
 ```bash
-jq '{defaultProvider,defaultModel,defaultThinkingLevel,enabledModels,packages}' \
+jq '{defaultProvider,defaultModel,defaultThinkingLevel,modelThinkingLevels,enabledModels,packages}' \
   ~/.pi/agent/settings.json
 ```
 
-Pi 0.84.x uses `defaultThinkingLevel`; unknown legacy keys are ignored, so
-removing `modelThinkingLevels` avoids a config value that looks active but is not.
+Current Pi supports both `defaultThinkingLevel` and per-model
+`modelThinkingLevels`; keeping the per-model value means this Qwen model starts
+at medium even if another provider later uses a different global default.
 
 ## 4. Start and verify
 
@@ -187,8 +199,8 @@ pi --list-models qwen3.8-27b
 ```
 
 Inside Pi, `/model` should show `vanillax-llama/qwen3.8-27b`, and the statusline
-should show `medium`. Use Shift+Tab (or your configured thinking control) to
-cycle only the supported levels.
+should show `medium`. `/model` + Ctrl+S and `/thinking` + Ctrl+S are also valid
+ways to persist the startup selections.
 
 First tool test from a repository root:
 
@@ -201,8 +213,6 @@ branch and require Pi to run the relevant tests/typecheck.
 
 ## 5. Verify reasoning control directly
 
-The easiest sanity check is behavioral:
-
 ```bash
 pi --model vanillax-llama/qwen3.8-27b --thinking off \
   "Reply with exactly: OFF_OK"
@@ -212,10 +222,33 @@ pi --model vanillax-llama/qwen3.8-27b --thinking medium \
 ```
 
 If Pi says `off` but the backend still emits a reasoning block, inspect the
-request/backend logs before changing model flags. Do not work around it by
-making xhigh or low the server-wide default.
+request/backend logs before changing model flags.
 
-## 6. Vision / screenshot test
+## 6. Current date/time in Pi
+
+Pi's model is not a clock. Do not trust Qwen to infer today's date from model
+training, file timestamps, or session text.
+
+For any current-date/time question, tell Pi to use its built-in bash tool:
+
+```text
+Before answering anything date/time-sensitive, run `date` (and `date -u` when
+UTC matters). Never infer the current date from model knowledge.
+```
+
+Put that rule in `~/.pi/agent/AGENTS.md` if you want it globally. It adds almost
+no context and avoids injecting a timestamp into every prompt. Your shell has
+the workstation's actual timezone, so `date` is the source of truth for Pi.
+
+Quick test:
+
+```text
+What is today's date? Verify with the shell before answering.
+```
+
+You should see a bash call to `date` rather than a guessed date.
+
+## 7. Vision / screenshot test
 
 The production backend has the BF16 multimodal projector enabled. Attach a
 screenshot/image in Pi and ask a concrete question about it.
@@ -229,7 +262,7 @@ kubectl -n llama-cpp exec deploy/llama-cpp-server -- nvidia-smi
 
 Do not point Pi at ComfyUI for vision; `qwen3.8-27b` itself is multimodal.
 
-## 7. Context discipline
+## 8. Context discipline
 
 The server has one 65,536-token slot. Local token **volume** is free, but a
 single request still has a finite context window.
@@ -245,7 +278,7 @@ For coding agents:
 The current backend is optimized for strong single-user interactive latency,
 not high-concurrency serving.
 
-## 8. Your installed Pi packages
+## 9. Your installed Pi packages
 
 Your existing package list can stay. Packages/extensions add prompt/tool
 surface area, so keep only things you actually use, but there is no backend
@@ -262,7 +295,7 @@ For Kubernetes/Talos work, native CLIs through Pi's bash tool (`kubectl`,
 `talosctl`, `argocd`, `gh`, `jq`) are usually more context-efficient than
 loading a huge MCP catalog.
 
-## 9. Optional global `~/.pi/agent/AGENTS.md`
+## 10. Optional global `~/.pi/agent/AGENTS.md`
 
 ```markdown
 # Environment
@@ -270,6 +303,7 @@ loading a huge MCP catalog.
 - Free local token volume is not infinite context. Keep reads targeted and
   compact long sessions.
 - Prefer actual CLI/tool evidence over guessing.
+- For current date/time, run `date` (and `date -u` for UTC); never guess it.
 
 # Kubernetes / homelab
 - GitOps only for changes: edit Git and let ArgoCD reconcile.
@@ -285,7 +319,7 @@ loading a huge MCP catalog.
 Pi discovers project context files, so this repo's existing instruction files
 remain useful; do not duplicate the whole repository policy globally.
 
-## 10. Backend source of truth
+## 11. Backend source of truth
 
 Pi should not carry backend tuning beyond capability metadata. Runtime tuning
 lives in:
