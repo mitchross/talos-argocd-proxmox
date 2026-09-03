@@ -1,6 +1,6 @@
 # One WorkerDeployment per Temporal task queue (plan Phase 1). Every pool polls only its own queue;
-# schedules still route to the legacy `radar-ng` queue until USE_ISOLATED_TASK_QUEUES=1 is set on legacy.
-# SKIP_SCHEDULE_SEED=1 stays set on every role pool during the initial cutover; legacy remains the sole seeder/observer.
+# Schedules route to these per-role queues (USE_ISOLATED_TASK_QUEUES=1 in the shared ConfigMap).
+# Exactly one pool seeds Schedules: aux carries SEED_SCHEDULES=1, every other pool keeps SKIP_SCHEDULE_SEED=1.
 # All pools share the RWO tiles/grids/state volumes, so they must land on tile-server's node (podAffinity).
 # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them via env.
 ---
@@ -349,7 +349,8 @@ spec:
             - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: aux }
-            - { name: SKIP_SCHEDULE_SEED, value: "1" }
+            # Sole Schedule seeder + stall observer now that legacy is retired; never set this on a second pool.
+            - { name: SEED_SCHEDULES, value: "1" }
             # Lightning holds one slot ~50 min/h; air quality chunks, tropical and cleanup share the rest.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "4" }
             - { name: TILE_DIR, value: /data/tiles }
