@@ -15,6 +15,11 @@ resources:
   - httproute.yaml
   - servicemonitor.yaml
 
+# Flash-Next test cutover: claim the sole RTX 3090 after vLLM is parked.
+replicas:
+  - name: llama-cpp-server
+    count: 1
+
 configMapGenerator:
   - name: llama-cpp-scripts
     files:
