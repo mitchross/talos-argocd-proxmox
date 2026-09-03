@@ -70,14 +70,16 @@ spec:
               memory: 128Mi
             limits:
               memory: 512Mi
-          # DCGM /health stalls past the 1s default while the GPU is under load; 1s probes = restart loops.
+          # /health stalls under GPU load and podMapper's API calls can DeadlineExceed;
+          # 5s still killed it 509x, so allow a slow answer and require 3 misses.
           livenessProbe:
             httpGet:
               path: /health
               port: 9400
             initialDelaySeconds: 45
             periodSeconds: 30
-            timeoutSeconds: 5
+            timeoutSeconds: 20
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health
