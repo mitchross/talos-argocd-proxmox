@@ -172,7 +172,43 @@ Current Pi supports both `defaultThinkingLevel` and per-model
 `modelThinkingLevels`; keeping the per-model value means this Qwen model starts
 at medium even if another provider later uses a different global default.
 
-## 4. Start and verify
+## 4. Workstation launchers (`~/.zshrc`)
+
+The workstation uses two convenience aliases:
+
+```bash
+alias pi-qwen-only='pi --model vanillax-llama/qwen3.8-27b --thinking medium'
+alias pi-withk3='pi --model vanillax-litellm/kimi-k3'
+```
+
+`pi-qwen-only` always starts a fresh Qwen session on the local llama.cpp backend
+with medium reasoning. `pi-withk3` starts on Kimi K3 through LiteLLM; because
+both models remain enabled in Pi settings, `/model` can still switch that
+session to `vanillax-llama/qwen3.8-27b` when needed.
+
+Persist the aliases in `~/.zshrc`, then reload the shell:
+
+```bash
+source ~/.zshrc
+
+type pi-qwen-only
+type pi-withk3
+```
+
+Expected:
+
+```text
+pi-qwen-only is an alias for pi --model vanillax-llama/qwen3.8-27b --thinking medium
+pi-withk3 is an alias for pi --model vanillax-litellm/kimi-k3
+```
+
+If an existing Pi session was created before the provider rename, resuming it
+may still show `vanillax-vllm` in the status bar because the session metadata
+stores the old provider identity. That does **not** mean the new provider config
+failed. Use a new session for clean llama.cpp validation rather than reusing an
+old `vanillax-vllm` session.
+
+## 5. Start and verify
 
 Normal launch after the settings change:
 
@@ -186,16 +222,23 @@ Explicit launch while validating:
 pi --provider vanillax-llama --model qwen3.8-27b --thinking medium
 ```
 
-Or:
+Or use the workstation launcher:
 
 ```bash
-pi --model vanillax-llama/qwen3.8-27b --thinking medium
+pi-qwen-only
 ```
 
 Check discovery:
 
 ```bash
 pi --list-models qwen3.8-27b
+```
+
+Expected model row:
+
+```text
+provider        model        context  max-out  thinking  images
+vanillax-llama  qwen3.8-27b  65.5K    16.4K    yes       yes
 ```
 
 Inside Pi, `/model` should show `vanillax-llama/qwen3.8-27b`, and the statusline
@@ -211,7 +254,7 @@ Read package.json and summarize the scripts. Do not guess; use the read tool.
 You should see a real `read` tool call. Then test a small edit in a disposable
 branch and require Pi to run the relevant tests/typecheck.
 
-## 5. Verify reasoning control directly
+## 6. Verify reasoning control directly
 
 ```bash
 pi --model vanillax-llama/qwen3.8-27b --thinking off \
@@ -224,7 +267,7 @@ pi --model vanillax-llama/qwen3.8-27b --thinking medium \
 If Pi says `off` but the backend still emits a reasoning block, inspect the
 request/backend logs before changing model flags.
 
-## 6. Current date/time in Pi
+## 7. Current date/time in Pi
 
 Pi's model is not a clock. Do not trust Qwen to infer today's date from model
 training, file timestamps, or session text.
@@ -248,7 +291,7 @@ What is today's date? Verify with the shell before answering.
 
 You should see a bash call to `date` rather than a guessed date.
 
-## 7. Vision / screenshot test
+## 8. Vision / screenshot test
 
 The production backend has the BF16 multimodal projector enabled. Attach a
 screenshot/image in Pi and ask a concrete question about it.
@@ -262,7 +305,7 @@ kubectl -n llama-cpp exec deploy/llama-cpp-server -- nvidia-smi
 
 Do not point Pi at ComfyUI for vision; `qwen3.8-27b` itself is multimodal.
 
-## 8. Context discipline
+## 9. Context discipline
 
 The server has one 65,536-token slot. Local token **volume** is free, but a
 single request still has a finite context window.
@@ -278,7 +321,7 @@ For coding agents:
 The current backend is optimized for strong single-user interactive latency,
 not high-concurrency serving.
 
-## 9. Your installed Pi packages
+## 10. Your installed Pi packages
 
 Your existing package list can stay. Packages/extensions add prompt/tool
 surface area, so keep only things you actually use, but there is no backend
@@ -295,7 +338,7 @@ For Kubernetes/Talos work, native CLIs through Pi's bash tool (`kubectl`,
 `talosctl`, `argocd`, `gh`, `jq`) are usually more context-efficient than
 loading a huge MCP catalog.
 
-## 10. Optional global `~/.pi/agent/AGENTS.md`
+## 11. Optional global `~/.pi/agent/AGENTS.md`
 
 ```markdown
 # Environment
@@ -319,7 +362,7 @@ loading a huge MCP catalog.
 Pi discovers project context files, so this repo's existing instruction files
 remain useful; do not duplicate the whole repository policy globally.
 
-## 11. Backend source of truth
+## 12. Backend source of truth
 
 Pi should not carry backend tuning beyond capability metadata. Runtime tuning
 lives in:
