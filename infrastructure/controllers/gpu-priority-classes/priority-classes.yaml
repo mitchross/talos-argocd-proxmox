@@ -25,3 +25,14 @@ metadata:
 value: 50
 globalDefault: false
 preemptionPolicy: PreemptLowerPriority
+---
+# Production data pipelines: outrank general homelab apps, still yield to primary AI workloads.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: app-critical
+  annotations:
+    description: "Production data pipelines (radar-ng ingestion + tile origin)"
+value: 500
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
