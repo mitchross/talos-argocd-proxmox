@@ -41,13 +41,13 @@ Fields:
 
 ## Local AI
 
-SurfSense uses the existing in-cluster OpenAI-compatible backend through its
+SurfSense uses the active in-cluster OpenAI-compatible llama.cpp backend through its
 operator-owned global model catalog:
 
-- Base URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
+- Base URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - Model: `qwen3.8-27b`
 - Config: `global_llm_config.yaml`, mounted at `/app/app/config/global_llm_config.yaml`
-- Context budget: 48,000 input + 16,384 output, leaving 1,152 tokens for request/tool overhead inside vLLM's 65,536-token window
+- Context budget: 48,000 input + 16,384 output, leaving 1,152 tokens for request/tool overhead inside llama.cpp's 65,536-token window
 - Billing tier: `free` — this is local infrastructure, not a metered provider
 
 Initial embeddings use CPU-local `sentence-transformers/all-MiniLM-L6-v2`, so SurfSense does not request a GPU.
@@ -74,33 +74,6 @@ and sending that burst through Cloudflare can produce managed-WAF 403s.
 
 This deployment does not use SurfSense's hosted credit wallet for local infrastructure. `selfhost.env` is materialized as `surfsense-selfhost-policy` and loaded by the API, worker, Beat, and migration containers.
 
-The policy keeps new-user wallet balance at zero and explicitly disables ETL, crawl, captcha, platform-scrape, and Stripe credit billing. This also keeps Auto mode eligible for the local `billing_tier: free` vLLM model instead of treating a default signup credit balance as premium-provider eligibility.
+The policy keeps new-user wallet balance at zero and explicitly disables ETL, crawl, captcha, platform-scrape, and Stripe credit billing. This also keeps Auto mode eligible for the local `billing_tier: free` llama.cpp model instead of treating a default signup credit balance as premium-provider eligibility.
 
 SurfSense upstream defaults new users to a $5 wallet. The versioned `surfsense-credit-policy-v1` Sync hook runs after schema migrations and idempotently resets restored or pre-policy wallet balances before the API, worker, Beat, and Zero start. Its checked-in `scripts/reconcile-credit-policy.sh` is mounted through a hash-suffixed Kustomize-generated ConfigMap, so the executable policy stays out of the Job YAML. A fresh deployment and a restored deployment therefore converge on the same no-credit policy without manual SQL.
-
-## Storage and DR
-
-### Durable
-
-- `surfsense-postgres-data` — `longhorn`, RWO, hourly Kopiur snapshots, restore-before-bind. PostgreSQL runs as uid/gid `999`, uses a `PGDATA` subdirectory, checksums, logical replication, and a pre-snapshot `CHECKPOINT` hook.
-- `surfsense-object-store` — `longhorn`, RWO, daily Kopiur snapshots, restore-before-bind. SurfSense stores uploaded blobs and workspace knowledge-store Git working trees under this filesystem. API and worker are in the same pod specifically so both see the exact same volume without requiring RWX storage.
-
-### Disposable
-
-- Redis keeps a small `longhorn` RWO PVC for ordinary restart continuity and is explicitly backup-exempt.
-- Zero's SQLite replica uses `emptyDir` and resyncs from PostgreSQL after replacement.
-- `/shared_tmp` is `emptyDir` shared by API and worker and is disposable.
-
-## Routing
-
-The external HTTPRoute mirrors SurfSense 0.0.39's upstream Caddy single-origin contract:
-
-- `/auth/callback*` -> frontend
-- `/auth/*` -> backend
-- `/users/*` -> backend
-- `/api/v1/*` -> backend
-- `/zero/context` -> backend
-- remaining `/zero/*` -> Zero/WebSocket
-- everything else -> frontend
-
-The more-specific `/auth/callback` and `/zero/context` matches are intentional. The authenticated dashboard also requires `/users/me` to reach FastAPI; routing `/users/*` to the frontend produces an HTML 404 and the frontend surfaces `Failed to parse response`.
