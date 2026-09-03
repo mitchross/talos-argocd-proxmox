@@ -9,6 +9,8 @@ metadata:
 data:
   # Drop the missing colorblind palette (no backend/shared/palettes/colorblind.json
   # exists). The muted palette already advertises colorblind-safety.
+  # Seeding writes each Schedule to its own role queue; "0" would collapse them onto the retired `radar-ng` queue.
+  USE_ISOLATED_TASK_QUEUES: "1"
   PALETTES: "classic,muted,vivid"
   # A frame renders in ~25-40 s; keep 1 so a run stays well inside the 2-min SKIP cadence (backlog >1 stretches the run, not freshness).
   BACKLOG_PER_CYCLE: "1"

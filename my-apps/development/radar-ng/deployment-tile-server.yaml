@@ -24,7 +24,6 @@ spec:
         # Bump to force a ReplicaSet roll when only env changes — a stale field-manager can mask env diffs under SSA.
         config-rev: "2026-09-02-alerts-queue"
     spec:
-      # Prefer the node holding the worker that shares these RWO volumes (preferred, so tile-server can bootstrap first).
       priorityClassName: app-critical
       affinity:
         # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
@@ -35,14 +34,6 @@ spec:
                   - key: gpu-worker
                     operator: In
                     values: ["true"]
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app: radar-ng-worker
-                topologyKey: kubernetes.io/hostname
       # ScheduleAnyway so the pod still schedules when only one node matches.
       topologySpreadConstraints:
         - maxSkew: 1
@@ -106,9 +97,8 @@ spec:
               value: temporal-frontend.temporal.svc.cluster.local:7233
             - name: TEMPORAL_NAMESPACE
               value: default
-            # Until a dedicated `alerts` worker pool exists, watch workflows must land on the queue that has a poller.
             - name: TEMPORAL_ALERTS_TASK_QUEUE
-              value: radar-ng
+              value: radar-ng-alerts
           # Probe /api/livez through Caddy so a dead backgrounded uvicorn restarts the pod.
           # Do NOT probe /api/health: it degrades on stale NOAA data fleet-wide and would restart every replica.
           livenessProbe:
