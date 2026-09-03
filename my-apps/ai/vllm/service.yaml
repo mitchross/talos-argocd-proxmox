@@ -4,13 +4,14 @@ metadata:
   name: vllm-service
   namespace: vllm
   labels:
-    app: vllm-server          # selected by servicemonitor.yaml (ServiceMonitor matches Service labels)
-spec:
-  selector:
     app: vllm-server
+spec:
+  # vLLM is parked. Preserve the old DNS name for persistent consumers whose
+  # configuration lives outside Git (for example already-imported n8n flows).
+  # Git-managed consumers use llama-cpp-service directly.
+  type: ExternalName
+  externalName: llama-cpp-service.llama-cpp.svc.cluster.local
   ports:
-    - name: http              # CRITICAL — HTTPRoute matches by port name; fails silently without it
+    - name: http
       protocol: TCP
-      port: 8080              # cluster-facing port (matches the llama-cpp convention)
-      targetPort: http        # → container port 8000
-  type: ClusterIP
+      port: 8080
