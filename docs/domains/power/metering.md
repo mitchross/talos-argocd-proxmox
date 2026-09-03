@@ -60,11 +60,11 @@ device watts ──integration──▶ kWh ──utility_meter──▶ daily /
 The all-in marginal rate is `(energy + delivery riders) × (1 + sales tax)`. The
 energy component steps between three windows:
 
-| Window | When |
-|---|---|
-| Summer on-peak | June–September, weekdays 14:00–19:00 |
-| Summer off-peak | June–September, all other hours |
-| Non-summer | October–May |
+| Window | When | All-in rate |
+|---|---|---|
+| Summer on-peak | June–August, weekdays 14:00–19:00 | ~$0.289 |
+| Summer off-peak | June–August, all other hours | ~$0.238 |
+| Non-summer | September–May | ~$0.216 |
 
 Rates live in `my-apps/home/home-assistant/configuration.yaml` under
 `input_number:`. **Git is the source of truth** — the `initial:` values reset the
@@ -74,6 +74,25 @@ the file, not the dashboard.
 Cost integrates a live USD/hour rate rather than applying a flat tariff after
 the fact, so a workload that runs only during on-peak hours is priced at on-peak
 rates.
+
+### Last month, and other finished totals
+
+The `*_monthly` sensors are month-to-date and reset on the 1st, so they are the
+wrong thing to compare against a bill. Home Assistant's `utility_meter` keeps the
+previous cycle in a `last_period` attribute, and template sensors surface it:
+
+| Sensor | What it holds |
+|---|---|
+| `sensor.homelab_cost_last_month` | Last calendar month's finished total |
+| `sensor.homelab_total_energy_last_month` | Last month's kWh |
+| `sensor.homelab_cost_yesterday` | Yesterday's finished cost |
+| `sensor.<prefix>_cost_last_month` | Per-device, last month |
+| `sensor.<prefix>_energy_last_month` | Per-device, last month |
+
+These stop moving once the cycle closes, which is what makes them comparable
+month to month. The dashboards' *This Month vs Last* panel subtracts one from the
+other — expect it to read negative early in the month, since a young month has
+simply not accrued yet.
 
 ## Where to look
 
