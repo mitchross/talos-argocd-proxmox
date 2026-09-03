@@ -9,7 +9,7 @@ metadata:
     strimzi.io/cluster: dev-kafka
 spec:
   # Single broker fits the one schedulable worker; scaling to 3 also needs the replication settings below raised.
-  replicas: 1
+  replicas: 0
   roles:
     - broker
     - controller
