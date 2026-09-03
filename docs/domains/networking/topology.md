@@ -2,25 +2,30 @@
 
 ## Overview
 
-The cluster (`talos-prod-cluster-v2`) runs a wired control plane, general
-worker, and RTX 3090 GPU worker on a flat LAN with 10G switch infrastructure,
-plus a wired HP SFF worker, a wired Dell worker, and a Wi-Fi-bridged HP micro
-worker in the shed; all node addresses are on the same `192.168.10.0/24`:
+The cluster (`talos-prod-cluster-v2`) spans five Proxmox hosts on a flat LAN.
+Four are wired through the 10G switch; the fifth sits in the shed behind a Wi-Fi
+media bridge. Every node address is on the same `192.168.10.0/24`:
 
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
   10G switch.
-- **Control-plane VM** — DHCP on the wired LAN.
-- **GPU worker VM** — DHCP on the wired LAN (dual RTX 3090 passed through from
-  the bare-metal X399/2950X host).
+- **Control-plane VM** — DHCP on the wired LAN, on the HP SFF host.
+- **GPU worker VM** — DHCP on the wired LAN; one RTX 3090 passed through from
+  the bare-metal X399/2950X Threadripper host.
 - **General worker VM** — DHCP on the wired LAN; 8 vCPU and 24 GiB RAM for
   CPU-only compute.
-- **Dell CPU worker VM** — DHCP on the wired LAN (2.5 GbE add-in card on the
-  Dell host); see the
+- **HP SFF worker VM** — DHCP on the wired LAN; carries the `wired-storage`
+  Longhorn tag.
+- **HP Elite worker VM** — DHCP on the wired LAN; 13th-gen i5-13500T, NVMe
+  Longhorn disk, also `wired-storage`.
+- **Dell Optiplex worker VM** — DHCP on the wired LAN (2.5 GbE add-in card on
+  the Optiplex host); see the
   [Dell Proxmox Talos worker runbook](dell-proxmox-talos-worker.md).
 - **HP micro worker VM** — DHCP, in the shed behind an ASUS RT-AX86U media
   bridge; carries the USB radios and is tainted `node.vanillax.dev/link=wifi`.
-- **HP SFF worker VM** — DHCP on the wired LAN.
 - **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
+
+Wall-plug draw and cost per host are metered separately — see
+[power metering](../power/metering.md).
 
 Verify live node addresses with `kubectl get nodes -o wide`.
 
@@ -68,9 +73,14 @@ instance-manager or replica flows, uses VXLAN.
 │         └──────────────────┘       └────────────────┘       └────────────┘  │
 │                                                                              │
 │   2.5G   ┌────────────────┐ vmbr0 ┌────────────┐    ┌────────────────────┐  │
-│   ──────▶│ Dell Proxmox   │──────▶│ Dell CPU   │    │ HP SFF host (.21)  │  │
-│          │ host (.16)     │       │ Worker VM  │    │ → HP SFF Worker VM │  │
-│          └────────────────┘       └────────────┘    └────────────────────┘  │
+│   ──────▶│ Dell Optiplex  │──────▶│ Optiplex   │    │ HP SFF host (.21)  │  │
+│          │ host (.16)     │       │ Worker VM  │    │ → control plane +  │  │
+│          └────────────────┘       └────────────┘    │   HP SFF Worker VM │  │
+│                                                     └────────────────────┘  │
+│          ┌────────────────┐ vmbr0 ┌──────────────────┐                       │
+│          │ HP Elite (.22) │──────▶│ HP Elite Worker  │                       │
+│          └────────────────┘       │ VM               │                       │
+│                                   └──────────────────┘                       │
 │          (every node appears directly on 192.168.10.0/24)                    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -84,9 +94,10 @@ instance-manager or replica flows, uses VXLAN.
 |--------|-----|---------|
 | Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
 | Proxmox | 192.168.10.14 | Hypervisor |
-| Dell Proxmox | 192.168.10.16 | CPU-only hypervisor (wired 2.5 GbE) |
+| Dell Optiplex Proxmox | 192.168.10.16 | CPU-only hypervisor (wired 2.5 GbE) |
 | HP micro Proxmox | 192.168.10.20 | Shed hypervisor behind the media bridge; USB radios |
-| HP SFF Proxmox | 192.168.10.21 | CPU-only hypervisor (wired) |
+| HP SFF Proxmox | 192.168.10.21 | CPU-only hypervisor (wired); hosts the control plane |
+| HP Elite Proxmox | 192.168.10.22 | CPU-only hypervisor (wired, i5-13500T) |
 | Technitium / Omni (rpi5) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
 | ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the shed |
 | Control Plane | DHCP | K8s control-plane node; verify live address with `kubectl` |
