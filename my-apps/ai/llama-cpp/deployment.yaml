@@ -57,7 +57,11 @@ spec:
               if [ "$server" != /opt/unsloth/llama-server ]; then
                 ln -sf "$server" /opt/unsloth/llama-server
               fi
-              /opt/unsloth/llama-server --version
+              # Do not execute the downloaded binary in Alpine: Unsloth's
+              # portable x64 CUDA build is glibc-linked while Alpine is musl.
+              # The main llama.cpp CUDA image provides the glibc/CUDA runtime.
+              test -x /opt/unsloth/llama-server
+              echo "installed Unsloth llama.cpp $tag"
           resources:
             requests:
               cpu: 100m
