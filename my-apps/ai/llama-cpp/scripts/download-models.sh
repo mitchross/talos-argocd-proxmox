@@ -1,114 +1,54 @@
 #!/bin/sh
-BASE=/models/qwen3.8-flash-next-gguf
-UNSLOTH_REV=c8b5954a88c2775c546b92593eda40ea041d3176
-ATOMIC_REV=142262902a46f7daed19c79d0771534c8106ad59
-UNSLOTH_REPO=https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF/resolve/$UNSLOTH_REV
-ATOMIC_REPO=https://huggingface.co/AtomicChat/Qwen3.8-Flash-Next-GGUF/resolve/$ATOMIC_REV
-ATOMIC_DIR=Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64
-mkdir -p \
-  "$BASE/unsloth-ud-iq4-xs" \
-  "$BASE/unsloth-ud-q4-k-xl" \
-  "$BASE/atomic-ad-4.27-q4-k-m-m64"
+set -eu
+
+BASE=/models/qwen3.8-27b-gguf
+REPO=https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main
+mkdir -p "$BASE/mtp"
 apk add --no-cache curl
 
-# This hook re-runs on every sync. Hashing all shards each time is a
-# ~104 GiB NFS read that contends with the server's mmap of the
-# same files, so a matching stamp short-circuits it.
+# The Hub path can move, but content cannot silently change: every artifact is
+# SHA-256 pinned before it becomes the durable NFS copy.
 fetch() {
-  repo="$1" name="$2" dest="$3" size="$4" expected="$5"
-  part="$dest.part" stamp="$dest.sha256"
-  if [ -f "$dest" ] && [ "$(stat -c %s "$dest")" = "$size" ]; then
-    if [ "$(cat "$stamp" 2>/dev/null)" = "$expected" ]; then
-      echo "verified (stamp): $name"
-      return
-    fi
-    if [ "$(sha256sum "$dest" | cut -d' ' -f1)" = "$expected" ]; then
+  name="$1" dest="$2" expected="$3"
+  part="$dest.part"
+  stamp="$dest.sha256"
+
+  if [ -f "$dest" ] && [ "$(cat "$stamp" 2>/dev/null || true)" = "$expected" ]; then
+    echo "verified (stamp): $name"
+    return
+  fi
+
+  if [ -f "$dest" ]; then
+    actual="$(sha256sum "$dest" | cut -d' ' -f1)"
+    if [ "$actual" = "$expected" ]; then
       printf '%s' "$expected" > "$stamp"
       echo "verified: $name"
       return
     fi
+    echo "existing file hash mismatch, replacing: $name"
+    rm -f "$dest"
   fi
-  curl -fL -C - --retry 5 -o "$part" "$repo/$name"
+
+  curl -fL -C - --retry 5 --retry-delay 2 -o "$part" "$REPO/$name"
   actual="$(sha256sum "$part" | cut -d' ' -f1)"
-  [ "$actual" = "$expected" ] || { echo "SHA MISMATCH: $name: $actual"; rm -f "$part"; exit 1; }
-  [ "$(stat -c %s "$part")" = "$size" ] || { echo "SIZE MISMATCH: $name"; rm -f "$part"; exit 1; }
+  [ "$actual" = "$expected" ] || {
+    echo "SHA MISMATCH: $name: $actual"
+    rm -f "$part"
+    exit 1
+  }
   mv "$part" "$dest"
   printf '%s' "$expected" > "$stamp"
   echo "downloaded and verified: $name"
 }
 
-fetch "$UNSLOTH_REPO" UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf \
-  "$BASE/unsloth-ud-iq4-xs/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf" \
-  10946624 5ce89370720f8bf90890f439361282104c1aa1482d4013bb9a50923e758e71a4
-fetch "$UNSLOTH_REPO" UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00002-of-00003.gguf \
-  "$BASE/unsloth-ud-iq4-xs/Qwen3.8-Flash-Next-UD-IQ4_XS-00002-of-00003.gguf" \
-  49835229856 577a38a2392b40ca2193cea502e1d92f60b8cd370675d308e0ec21885d9daaa7 &
-iq4_xs_pid_2=$!
-fetch "$UNSLOTH_REPO" UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00003-of-00003.gguf \
-  "$BASE/unsloth-ud-iq4-xs/Qwen3.8-Flash-Next-UD-IQ4_XS-00003-of-00003.gguf" \
-  43836407744 d4634e6d84f0ebb0940be15c90d3790bf6464e3dea3a1cddc567dc0e83ad8833 &
-iq4_xs_pid_3=$!
-wait "$iq4_xs_pid_2"
-wait "$iq4_xs_pid_3"
+fetch Qwen3.8-27B-UD-Q4_K_XL.gguf \
+  "$BASE/Qwen3.8-27B-UD-Q4_K_XL.gguf" \
+  3f227079003add2511437e5b1e94812e363385225bf6a9b47b0054a72bc8b01e
 
-fetch "$UNSLOTH_REPO" UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf \
-  "$BASE/unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf" \
-  10946624 4448186216b3af4cc558bbce2c3213f01608f8f8b2e5267a9767971dd3ec8082
-fetch "$UNSLOTH_REPO" UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00002-of-00004.gguf \
-  "$BASE/unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-00002-of-00004.gguf" \
-  49859583136 3f342f1c1580473f1ee94ddd5b28206e8c07a70fa1a366f59d1d6c922919a6c9
-fetch "$UNSLOTH_REPO" UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00003-of-00004.gguf \
-  "$BASE/unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-00003-of-00004.gguf" \
-  49376141504 56758f40269cad5cd9b0d3d6fbae0f40f6d5be6de49e4ab392dbe83157d9cbd3
-fetch "$UNSLOTH_REPO" UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00004-of-00004.gguf \
-  "$BASE/unsloth-ud-q4-k-xl/Qwen3.8-Flash-Next-UD-Q4_K_XL-00004-of-00004.gguf" \
-  12087983520 753bda48b98ba4f1636134a90a967de1b2d3908a236c026e464777342e53510a
-fetch "$UNSLOTH_REPO" mmproj-BF16.gguf "$BASE/mmproj-BF16.gguf" \
-  907542944 2e788f8c511d8093c7b43cb87b2fd7e14228340318057f8fb20c86df2efe2355
+fetch mmproj-BF16.gguf \
+  "$BASE/mmproj-BF16.gguf" \
+  83ee4f4f205fa514161778c41df1ea14144faa0f713510893b63c2395f5c2d53
 
-# AtomicChat isolates the approximately 38.4 GB N-gram table in
-# shard 00002 so mmap can page it without pinning ordinary model
-# tensors. Keep every LFS object immutable and independently
-# verifiable; the first shard is the llama.cpp model entrypoint.
-while read -r name size expected; do
-  fetch "$ATOMIC_REPO" "$ATOMIC_DIR/$name" \
-    "$BASE/atomic-ad-4.27-q4-k-m-m64/$name" "$size" "$expected"
-done <<'ATOMIC_Q4_ARTIFACTS'
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00001-of-00033.gguf 693380288 d74620aad612239711e0947f58d2614fa8f47335fb01f23e47b24a3315c3e730
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00002-of-00033.gguf 38400184512 77edf6523f6abbd7ba6a78aa1ef4a658dfaca544f9c5f46cf0efd0b0ff00bef0
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00003-of-00033.gguf 1999024832 50a95250ea2cfb5b9359bfbf37e8334959266c38777c134e1c7082c4a668f59d
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00004-of-00033.gguf 1787651072 0a32371569fd1564e82be13301a872847d00dce450db7c7f930f6978c0bccd6d
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00005-of-00033.gguf 1654830080 d545285f60dd11a2dfc46388a86af7ecb4c1bbdd86ac5364bb860ad3eefca8a4
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00006-of-00033.gguf 1993256608 64aacb4a86cc92a5a48f19619393f22af9b1a17d1c2dfbaded21bf936553994d
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00007-of-00033.gguf 1725815808 7cfd22c0de5dda2500643b9e13ef9c4aea338968ca29c1786226b325bc5948c6
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00008-of-00033.gguf 1830961056 408457d6a65f632b62ebec099112fb106ed1c1d3d5bc2bd9e189004bad9af550
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00009-of-00033.gguf 1915366048 c1f962654057e9a4f71af34ccada5d242af62a5c915b0694a0a152b30b24ba99
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00010-of-00033.gguf 1711956000 b85555c695efc1bd6852d005bd20931882b54c2d0f48a0912f846fe5e252b697
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00011-of-00033.gguf 1844820928 e5cb081065b8721583ddc29f5f71f5acb1d537c2d2a3bd8bc18e03d4340d2e43
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00012-of-00033.gguf 1923724224 cc9cb8624556958f65b9763c918ee077542e3d0cc1f6a81a647b2987860f1243
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00013-of-00033.gguf 1703597888 cd4abb2dc631a08f9b3885597f77bc24d1b1d9acd4662cafc17ebfb8e0b8959e
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00014-of-00033.gguf 1844820928 b14050af3b53ee789575a2a8159cb1524a2160a8b251e97fd367f2c0ffcf73d3
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00015-of-00033.gguf 1909864352 d6066a9799e1640b2609fa9c28b19d33ce1441c4737de11d3eb8e283d494c61f
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00016-of-00033.gguf 1717457728 76c95f5229b461e6c648f536a714457913fab50fb2608ffa64ec10ddbf8eabed
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00017-of-00033.gguf 1853179072 5a9428ca9bab16c1ada3b43bc98b60d3a884f7bded0aa9b468fb66dd6c36e68b
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00018-of-00033.gguf 1901506240 d4ad15dfa433fc1d0d09112bb175512321d41fe60a651b720e1c104cdd2c8f97
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00019-of-00033.gguf 1725815872 6ba1501407c639a126e74f483bfa4073da42ea24abecd251a7d560a0810855ba
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00020-of-00033.gguf 1830961088 96fc276c556886d19af5d1514876c59ad7d37005e99c329f35e4d4418515219b
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00021-of-00033.gguf 1915366080 f3c46604b832c24201c1d4d6ac22830ec729830f66e7bb91a2f8895ec41d62f9
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00022-of-00033.gguf 1711956000 5ae92fbdd717a4246620608a441571fd041dfb2a4bd20d969a8f6c8cd411b734
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00023-of-00033.gguf 1844820928 59bc05521ea68a8b6ff4b78fd275a0da975270384db05f2fbc62fbb901f28b15
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00024-of-00033.gguf 1923724224 14216d45769bc6ffec284e1be54ef9b200081fb528b97653ccaeedad896a5396
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00025-of-00033.gguf 1703597888 94bd0311975222d1c62f47fa6cde17bb56ad6f98c47c42c888a19e7d57b704af
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00026-of-00033.gguf 1844820928 b69a8f3b9896f7c0c1b75778d833ef8b0a3aa6d2df587444741a172a39f49c1f
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00027-of-00033.gguf 1909864352 35c3703530a17fcf42b8dbe8a582a3fe1be6e5d58885460fd46fd614585bec8b
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00028-of-00033.gguf 1646472000 8d01bec24d38b8876c8a011e04ccfca22584d9f86ea24c13e7e7b07a781cfbba
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00029-of-00033.gguf 1725375264 2b266e2d2a7f610d0a3de55a626e2f9029594c383074240d29c383a8f70e1064
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00030-of-00033.gguf 1738770080 36af1ca74bbf2bd4d79ac78b61a9f5d24e5ca9aac33d298bfbed7d9dbbe86c69
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00031-of-00033.gguf 1646472000 2cf675a6d3df1ff2eb018323c7e64ab14cd650eb38f954e948df27501822fdc1
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00032-of-00033.gguf 1725375264 59c5ab585958f86cecbd812a9ae34f1475d98ffff235d27734964fb53d8b4951
-Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64-00033-of-00033.gguf 1220605344 0a7311b24f8636f5b7c0f0dca4f6275ec6b45e326a5eb7400410ca4e32c269c2
-ATOMIC_Q4_ARTIFACTS
-fetch "$ATOMIC_REPO" mmproj-Qwen3.8-Flash-Next-F16.gguf \
-  "$BASE/mmproj-F16.gguf" \
-  904003840 0e61454a76dd154a10aaa8fb1ada32615f55a13e4171014dacd06913e4aa6889
-
+fetch MTP/mtp-Qwen3.8-27B-Q4_0.gguf \
+  "$BASE/mtp/mtp-Qwen3.8-27B-Q4_0.gguf" \
+  50d9ce5a6da381bbcfb31061cf73df94a90e6faf8efeddee379a9cb8f1501c6e
