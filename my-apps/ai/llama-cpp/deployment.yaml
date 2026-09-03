@@ -103,8 +103,6 @@ spec:
             - q8_0
             - --cache-type-v-draft
             - q8_0
-            - --cache-reuse
-            - "256"
             - --parallel
             - "1"
             - --jinja
