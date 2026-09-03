@@ -1,0 +1,2104 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "At a glance",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Total Power Now",
+      "description": "Sum of every metered plug. The HP Elite mini PC has no plug and is NOT counted.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 400
+              },
+              {
+                "color": "orange",
+                "value": 700
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Burn Rate",
+      "description": "USD/hour at the current draw and the current TOU rate.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd_per_h{entity=\"sensor.homelab_cost_rate\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 3
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Cost Today",
+      "description": "Resets at midnight.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 4
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Billable Draw",
+      "description": "Total draw minus the solar-fed shed. This is what the cost figures price.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 400
+              },
+              {
+                "color": "orange",
+                "value": 700
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_grid_power\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 5
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Energy Today",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "kwatth",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.homelab_total_energy_today\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 7
+      },
+      "id": 6
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Cost This Month",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 25
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_monthly\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 7
+      },
+      "id": 7
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Cost This Year",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_yearly\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 7
+      },
+      "id": 8
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Rate Now ($/kWh)",
+      "description": "All-in marginal rate: (energy + delivery riders) x (1 + tax).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 4,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd_per_kwh{entity=\"sensor.current_electricity_rate\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 7
+      },
+      "id": 9
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Run-Rate / Year",
+      "description": "Annualised from the CURRENT instant billable draw \u2014 a what-if, not a forecast.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd_per_h{entity=\"sensor.homelab_cost_rate\"}) * 8760",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 12
+      },
+      "id": 10
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 11,
+      "title": "Hot spots \u2014 who is costing what",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Biggest Draw Right Now",
+      "description": "Name of the highest-drawing plug, with its wattage.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 400
+              },
+              {
+                "color": "orange",
+                "value": 700
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(1, label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\"))",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 18
+      },
+      "id": 12
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Live Draw \u2014 Per Plug",
+      "description": "Sorted by draw. This is the hot-spot list.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 400
+              },
+              {
+                "color": "orange",
+                "value": 700
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 10,
+        "x": 6,
+        "y": 18
+      },
+      "id": 13
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "piechart",
+      "title": "Share of Total Draw",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "watt",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 18
+      },
+      "id": 14
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Cost This Month \u2014 Per Plug (leaderboard)",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 25
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_cost_monthly\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_monthly\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 24
+      },
+      "id": 15
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Cost Today \u2014 Per Plug",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 4
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 24
+      },
+      "id": 16
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Cost This Year \u2014 Per Plug",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_cost_yearly\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_yearly\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "id": 17
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Cost / Year If Left At This Draw",
+      "description": "What each device would cost over a year if it never left its current draw. Solar-fed plugs read zero by design. Sizes the payback of turning something off; it is not a bill forecast.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd_per_h{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_cost_rate\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_rate\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\") * 8760",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 18
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Energy Today \u2014 Per Plug",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "kwatth",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_energy_kwh{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_energy_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_energy_daily\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "id": 19
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 20,
+      "title": "Idle floor \u2014 what it costs to do nothing",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Idle Floor (24h min)",
+      "description": "Lowest total draw in 24h \u2014 the always-on baseline you pay for even when nothing runs.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 400
+              },
+              {
+                "color": "orange",
+                "value": 700
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "min_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}))[24h:5m])",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 39
+      },
+      "id": 21
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Peak (24h max)",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 400
+              },
+              {
+                "color": "orange",
+                "value": 700
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}))[24h:5m])",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 39
+      },
+      "id": 22
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Baseline Cost / Year",
+      "description": "The idle floor, annualised. This is the number that only shrinks by removing or consolidating hardware.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "min_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_grid_power\"}))[24h:5m]) / 1000 * scalar(max(homeassistant_sensor_unit_usd_per_kwh{entity=\"sensor.current_electricity_rate\"})) * 8760",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 39
+      },
+      "id": 23
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Headroom Above Idle",
+      "description": "Peak minus idle: how much of the draw is actual work vs. just being powered on.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}))[24h:5m]) - min_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}))[24h:5m])",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 39
+      },
+      "id": 24
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 25,
+      "title": "Usage over time",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Stacked Power \u2014 All Plugs",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "watt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "id": 26
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Total vs Billable vs Idle Floor",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "watt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"})",
+          "legendFormat": "total",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_grid_power\"})",
+          "legendFormat": "billable (excl. solar)",
+          "refId": "B",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "min_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}))[24h:5m])",
+          "legendFormat": "idle floor (24h)",
+          "refId": "C",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 55
+      },
+      "id": 27
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Cost Accrual Today (resets at midnight)",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "currencyUSD",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"})",
+          "legendFormat": "TOTAL",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "B",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 55
+      },
+      "id": 28
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Energy Today \u2014 Per Plug (resets at midnight)",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "kwatth",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_energy_kwh{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_energy_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_energy_daily\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 63
+      },
+      "id": 29
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Share of Draw \u2014 Per Plug",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_percent{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_power_share\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_power_share\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 63
+      },
+      "id": 30
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 71
+      },
+      "id": 31,
+      "title": "Electrical",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Voltage",
+      "description": "Real plugs only \u2014 the estimated host reports no electrical telemetry.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "volt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_voltage\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_voltage\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 72
+      },
+      "id": 32
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Current",
+      "description": "Real plugs only \u2014 the estimated host reports no electrical telemetry.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "amp",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_current\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 72
+      },
+      "id": 33
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 80
+      },
+      "id": 34,
+      "title": "Reading this dashboard",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "datasource": null,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "### Where the money actually goes\n\n**Idle floor is the real bill.** Peak draw is dramatic but brief; the 24h minimum runs 8,760\nhours a year. If *Baseline Cost / Year* is most of *Cost This Year*, no amount of workload\ntuning helps \u2014 only removing or consolidating a box does.\n\n**Hot-spot triage, in order:**\n\n1. **Threadripper host** is the swing consumer. It idles high (big PSU, HDDs, one RTX 3090) and\n   spikes under inference. Check it against `docs/domains/ai-gpu/gpu-scale-swap.md` \u2014 the GPU\n   workloads are mutually exclusive whole-card allocations, so a backend left at `replicas: 1`\n   with nothing calling it is pure idle cost. `POWER_LIMIT_WATTS` caps the card's ceiling.\n2. **HP SFF + Optiplex share one plug.** A high reading here cannot be attributed to either box.\n   Split the outlet before drawing conclusions about which one to retire.\n3. **NAS Drive PSU vs TrueNAS Server** are two plugs on one machine \u2014 spinning disks vs the\n   host. Persistent draw on the drive PSU with an idle host means spindles that never sleep.\n4. **Gaming PC** is a workstation, not a cluster node. It is metered but deliberately NOT\n   power-locked, so it is expected to swing between zero and several hundred watts.\n\n**Two numbers here are not measurements:**\n\n- **HP Elite (est.)** has no smart plug. Its draw is a flat assumed figure set by\n  `input_number.hp_elite_estimated_watts` in Home Assistant, so it moves the totals without\n  ever reflecting reality. Fit a plug and the guess goes away.\n- **Shed is solar-fed**, so its cost rate is pinned to zero: it contributes watts and kWh but\n  no dollars, and *Billable Draw* is total draw minus the shed. What its own supply is doing \u2014\n  MPPT yield, battery bank state of charge \u2014 is on the **Solar MPPT Monitor** dashboard.\n\n**Numbers that are what-ifs, not forecasts:** *Run-Rate / Year* and *Cost / Year If Left At This\nDraw* annualise the current instant. They answer \"what does leaving this on cost me?\" \u2014 they are\nnot a prediction of next month's bill. Use *Cost This Month* for that.\n\n**Cost basis:** the all-in marginal rate \u2014 (energy + delivery riders) x (1 + sales tax) \u2014 which\nsteps between summer on-peak, summer off-peak and non-summer. Rates live in\n`my-apps/home/home-assistant/configuration.yaml` under `input_number:`; git is the source of\ntruth and the UI sliders reset to it on restart."
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 81
+      },
+      "id": 35
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "homelab",
+    "power",
+    "cost",
+    "tapo",
+    "home-assistant"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Homelab Power & Cost",
+  "uid": "homelab-power-cost",
+  "version": 0,
+  "weekStart": ""
+}

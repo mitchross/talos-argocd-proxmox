@@ -2,15 +2,19 @@
 # To intentionally power-cycle a plug, disable this automation first.
 - id: homelab_plug_poweroff_lockout
   alias: Homelab plug power-off lockout
-  description: Prevents accidental shutdown of Threadripper GPUs / NAS PSU / TrueNAS Tapo plugs.
+  description: >-
+    Restores the always-on homelab Tapo plugs if one is switched off. The Gaming
+    PC plug is deliberately not locked — that box gets powered down normally.
   mode: parallel
   max: 10
   trigger:
     - platform: state
       entity_id:
-        - switch.gpu_psu_smart_plug
-        - switch.nas_psu_smart_plug
-        - switch.truenas_server_smart_plug
+        - switch.gpu_psu
+        - switch.nas_psu
+        - switch.truenas_server
+        - switch.hp_sff
+        - switch.shed_lab
       from: "on"
       to: "off"
   action:

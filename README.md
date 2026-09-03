@@ -415,23 +415,32 @@ Run Omni and `omnictl` **on the same release** (currently `v1.10.4`, pinned in `
 
 ## Hardware
 
-```
-Compute
-├── AMD Threadripper 2950X (16c/32t)
-├── 128GB ECC DDR4 RAM
-├── 2x NVIDIA RTX 3090 24GB
-└── Google Coral TPU
+Five Proxmox hosts run the cluster. Four are wired to the 10G switch; the HP
+micro sits in the shed behind a Wi-Fi media bridge.
 
+| Host | Address | CPU / RAM | Role |
+|------|---------|-----------|------|
+| Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (1x RTX 3090 passthrough) + general worker |
+| Dell Optiplex | 192.168.10.16 | i5-8500 6c · 39 GB | CPU worker (2.5 GbE add-in NIC) |
+| HP micro (shed) | 192.168.10.20 | i5-8500T 6c · 31 GB | CPU worker, USB radios, Wi-Fi-bridged and solar-fed |
+| HP SFF (ProDesk) | 192.168.10.21 | i5-8500 6c · 63 GB | Control plane + CPU worker |
+| HP Elite | 192.168.10.22 | i5-13500T 20c · 31 GB | CPU worker (NVMe Longhorn disk) |
+
+```
 Storage
-├── 4TB ZFS RAID-Z2
-├── NVMe OS Drive
-└── Longhorn distributed storage for K8s
+├── TrueNAS (192.168.10.133) — ZFS, NFS/SMB, RustFS S3 for backups
+├── Longhorn distributed storage for K8s
+└── Local NVMe AI model cache on the Threadripper host
 
 Network
-├── 2.5Gb Networking
+├── 10G switch (2.5 GbE to the Optiplex, Wi-Fi bridge to the shed)
 ├── Firewalla Gold
-└── Internal DNS Resolution
+└── Internal DNS Resolution (Technitium on the rpi5)
 ```
+
+The second RTX 3090 lives in a 7800X3D workstation outside the cluster. Wall-plug
+power and cost for every host are metered — see
+[docs/domains/power/metering.md](docs/domains/power/metering.md).
 
 ## Troubleshooting
 

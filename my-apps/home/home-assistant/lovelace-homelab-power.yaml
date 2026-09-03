@@ -6,75 +6,70 @@ views:
     icon: mdi:server-network
     path: overview
     cards:
-      - type: vertical-stack
-        cards:
-          - type: markdown
-            content: |
-              # Homelab Power & Cost
-              Real-time draw, per-device share, and time-of-use cost across the
-              Threadripper GPUs, NAS PSU and TrueNAS host. Cost uses the
-              **all-in marginal rate** (energy + delivery riders + tax) that
-              varies by season and peak/off-peak window. Switch entities are
-              locked read-only — see the `Homelab plug power-off lockout`
-              automation.
+      - type: markdown
+        content: |
+          # Homelab Power & Cost
+          Live draw, per-device share and time-of-use cost across the cluster
+          hosts, the NAS and the office workstation. Cost uses the **all-in
+          marginal rate** (energy + delivery riders + tax), which varies by
+          season and peak/off-peak window.
 
-          - type: entities
-            title: Current Rate
-            entities:
-              - entity: sensor.current_electricity_rate
-                name: Effective rate
-              - entity: sensor.electricity_tariff_period
-                name: Tariff window
-              - type: section
-                label: Rate inputs (temporary — git is source of truth)
-              - entity: input_number.rate_summer_onpeak
-                name: Summer on-peak
-              - entity: input_number.rate_summer_offpeak
-                name: Summer off-peak
-              - entity: input_number.rate_nonsummer
-                name: Non-summer
-              - entity: input_number.rate_delivery_riders
-                name: Delivery riders
-              - entity: input_number.rate_sales_tax_pct
-                name: Sales tax
+          Two figures are not measurements. **HP Elite** has no plug — its draw
+          is the assumed number set below. **The shed runs on solar**, so it
+          contributes watts but no cost, and *billable draw* is the total minus
+          the shed.
 
-          - type: glance
-            title: Right Now
-            state_color: false
-            entities:
-              - entity: sensor.homelab_total_power
-                name: Total
-              - entity: sensor.gpu_psu_current_consumption
-                name: Threadripper GPUs
-              - entity: sensor.nas_psu_current_consumption
-                name: NAS PSU
-              - entity: sensor.truenas_server_current_consumption
-                name: TrueNAS
+          The **HP SFF** plug feeds the HP SFF *and* the Dell Optiplex on one
+          outlet. Switches are locked read-only except the Gaming PC — see the
+          `Homelab plug power-off lockout` automation.
 
-      - type: horizontal-stack
-        title: Share of homelab draw
-        cards:
-          - type: gauge
-            entity: sensor.gpu_psu_power_share
-            name: Threadripper GPUs
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
-            entity: sensor.nas_psu_power_share
-            name: NAS PSU
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
-            entity: sensor.truenas_server_power_share
-            name: TrueNAS
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
+      - type: entities
+        title: Rate & assumptions
+        entities:
+          - entity: sensor.current_electricity_rate
+            name: Effective rate
+          - entity: sensor.electricity_tariff_period
+            name: Tariff window
+          - entity: sensor.homelab_cost_rate
+            name: Burn rate (USD/h)
+          - type: section
+            label: Inputs (temporary — git is source of truth)
+          - entity: input_number.rate_summer_onpeak
+            name: Summer on-peak
+          - entity: input_number.rate_summer_offpeak
+            name: Summer off-peak
+          - entity: input_number.rate_nonsummer
+            name: Non-summer
+          - entity: input_number.rate_delivery_riders
+            name: Delivery riders
+          - entity: input_number.rate_sales_tax_pct
+            name: Sales tax
+          - entity: input_number.hp_elite_estimated_watts
+            name: HP Elite (estimated) assumed draw
+
+      - type: glance
+        title: Live draw
+        state_color: false
+        columns: 4
+        entities:
+          - entity: sensor.homelab_total_power
+            name: TOTAL
+          - entity: sensor.homelab_grid_power
+            name: Billable
+          - entity: sensor.gpu_psu_current_consumption
+            name: Threadripper Host
+          - entity: sensor.nas_psu_current_consumption
+            name: NAS Drive PSU
+          - entity: sensor.truenas_server_current_consumption
+            name: TrueNAS (DL360)
+          - entity: sensor.hp_sff_current_consumption
+            name: HP SFF + Optiplex
+          - entity: sensor.shed_lab_current_consumption
+            name: Shed (HP micro, solar)
+          - entity: sensor.gaming_pc_current_consumption
+            name: Gaming PC (7800X3D + 3090)
+          - entity: sensor.hp_elite_estimated_current_consumption
+            name: HP Elite (estimated)
 
       - type: glance
         title: Cost so far
@@ -90,25 +85,96 @@ views:
           - entity: sensor.homelab_cost_yearly
             name: This Year
 
+      - type: grid
+        title: Share of total draw
+        columns: 3
+        square: false
+        cards:
+          - type: gauge
+            entity: sensor.gpu_psu_power_share
+            name: Threadripper Host
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+          - type: gauge
+            entity: sensor.nas_psu_power_share
+            name: NAS Drive PSU
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+          - type: gauge
+            entity: sensor.truenas_server_power_share
+            name: TrueNAS (DL360)
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+          - type: gauge
+            entity: sensor.hp_sff_power_share
+            name: HP SFF + Optiplex
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+          - type: gauge
+            entity: sensor.shed_lab_power_share
+            name: Shed (HP micro, solar)
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+          - type: gauge
+            entity: sensor.gaming_pc_power_share
+            name: Gaming PC (7800X3D + 3090)
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+          - type: gauge
+            entity: sensor.hp_elite_estimated_power_share
+            name: HP Elite (estimated)
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+
       - type: entities
-        title: Cost by device
+        title: Cost today
         entities:
-          - type: section
-            label: Today
           - entity: sensor.gpu_psu_cost_daily
-            name: Threadripper GPUs
+            name: Threadripper Host
           - entity: sensor.nas_psu_cost_daily
-            name: NAS PSU
+            name: NAS Drive PSU
           - entity: sensor.truenas_server_cost_daily
-            name: TrueNAS
-          - type: section
-            label: This Month
+            name: TrueNAS (DL360)
+          - entity: sensor.hp_sff_cost_daily
+            name: HP SFF + Optiplex
+          - entity: sensor.shed_lab_cost_daily
+            name: Shed (HP micro, solar)
+          - entity: sensor.gaming_pc_cost_daily
+            name: Gaming PC (7800X3D + 3090)
+          - entity: sensor.hp_elite_estimated_cost_daily
+            name: HP Elite (estimated)
+
+      - type: entities
+        title: Cost this month
+        entities:
           - entity: sensor.gpu_psu_cost_monthly
-            name: Threadripper GPUs
+            name: Threadripper Host
           - entity: sensor.nas_psu_cost_monthly
-            name: NAS PSU
+            name: NAS Drive PSU
           - entity: sensor.truenas_server_cost_monthly
-            name: TrueNAS
+            name: TrueNAS (DL360)
+          - entity: sensor.hp_sff_cost_monthly
+            name: HP SFF + Optiplex
+          - entity: sensor.shed_lab_cost_monthly
+            name: Shed (HP micro, solar)
+          - entity: sensor.gaming_pc_cost_monthly
+            name: Gaming PC (7800X3D + 3090)
+          - entity: sensor.hp_elite_estimated_cost_monthly
+            name: HP Elite (estimated)
 
       - type: history-graph
         title: Power draw (24h)
@@ -116,13 +182,21 @@ views:
         refresh_interval: 30
         entities:
           - entity: sensor.gpu_psu_current_consumption
-            name: Threadripper GPUs
+            name: Threadripper Host
           - entity: sensor.nas_psu_current_consumption
-            name: NAS PSU
+            name: NAS Drive PSU
           - entity: sensor.truenas_server_current_consumption
-            name: TrueNAS
+            name: TrueNAS (DL360)
+          - entity: sensor.hp_sff_current_consumption
+            name: HP SFF + Optiplex
+          - entity: sensor.shed_lab_current_consumption
+            name: Shed (HP micro, solar)
+          - entity: sensor.gaming_pc_current_consumption
+            name: Gaming PC (7800X3D + 3090)
+          - entity: sensor.hp_elite_estimated_current_consumption
+            name: HP Elite (estimated)
           - entity: sensor.homelab_total_power
-            name: Total
+            name: TOTAL
 
       - type: statistics-graph
         title: Energy by day (30d)
@@ -135,6 +209,10 @@ views:
           - sensor.gpu_psu_energy
           - sensor.nas_psu_energy
           - sensor.truenas_server_energy
+          - sensor.hp_sff_energy
+          - sensor.shed_lab_energy
+          - sensor.gaming_pc_energy
+          - sensor.hp_elite_estimated_energy
 
       - type: statistics-graph
         title: Cost by month (12 months)
@@ -147,9 +225,13 @@ views:
           - sensor.gpu_psu_cost
           - sensor.nas_psu_cost
           - sensor.truenas_server_cost
+          - sensor.hp_sff_cost
+          - sensor.shed_lab_cost
+          - sensor.gaming_pc_cost
+          - sensor.hp_elite_estimated_cost
 
       - type: statistics-graph
-        title: Total homelab cost by month
+        title: Total cost by month
         chart_type: bar
         period: month
         days_to_show: 365
@@ -159,29 +241,113 @@ views:
           - sensor.homelab_cost
 
       - type: entities
-        title: Per-plug detail
+        title: Per-device detail
         entities:
           - type: section
-            label: Threadripper GPUs
+            label: Threadripper Host
           - entity: sensor.gpu_psu_current_consumption
+            name: Power now
           - entity: sensor.gpu_psu_power_share
+            name: Share of total
           - entity: sensor.gpu_psu_energy_daily
-          - entity: sensor.gpu_psu_voltage
-          - entity: sensor.gpu_psu_current
+            name: Energy today
           - entity: sensor.gpu_psu_cost_daily
+            name: Cost today
+          - entity: sensor.gpu_psu_cost_monthly
+            name: Cost this month
+          - entity: sensor.gpu_psu_voltage
+            name: Voltage
+          - entity: sensor.gpu_psu_current
+            name: Current
           - type: section
-            label: NAS PSU
+            label: NAS Drive PSU
           - entity: sensor.nas_psu_current_consumption
+            name: Power now
           - entity: sensor.nas_psu_power_share
+            name: Share of total
           - entity: sensor.nas_psu_energy_daily
-          - entity: sensor.nas_psu_voltage
-          - entity: sensor.nas_psu_current
+            name: Energy today
           - entity: sensor.nas_psu_cost_daily
+            name: Cost today
+          - entity: sensor.nas_psu_cost_monthly
+            name: Cost this month
+          - entity: sensor.nas_psu_voltage
+            name: Voltage
+          - entity: sensor.nas_psu_current
+            name: Current
           - type: section
-            label: TrueNAS Server
+            label: TrueNAS (DL360)
           - entity: sensor.truenas_server_current_consumption
+            name: Power now
           - entity: sensor.truenas_server_power_share
+            name: Share of total
           - entity: sensor.truenas_server_energy_daily
-          - entity: sensor.truenas_server_voltage
-          - entity: sensor.truenas_server_current
+            name: Energy today
           - entity: sensor.truenas_server_cost_daily
+            name: Cost today
+          - entity: sensor.truenas_server_cost_monthly
+            name: Cost this month
+          - entity: sensor.truenas_server_voltage
+            name: Voltage
+          - entity: sensor.truenas_server_current
+            name: Current
+          - type: section
+            label: HP SFF + Optiplex
+          - entity: sensor.hp_sff_current_consumption
+            name: Power now
+          - entity: sensor.hp_sff_power_share
+            name: Share of total
+          - entity: sensor.hp_sff_energy_daily
+            name: Energy today
+          - entity: sensor.hp_sff_cost_daily
+            name: Cost today
+          - entity: sensor.hp_sff_cost_monthly
+            name: Cost this month
+          - entity: sensor.hp_sff_voltage
+            name: Voltage
+          - entity: sensor.hp_sff_current
+            name: Current
+          - type: section
+            label: Shed (HP micro, solar)
+          - entity: sensor.shed_lab_current_consumption
+            name: Power now
+          - entity: sensor.shed_lab_power_share
+            name: Share of total
+          - entity: sensor.shed_lab_energy_daily
+            name: Energy today
+          - entity: sensor.shed_lab_cost_daily
+            name: Cost today
+          - entity: sensor.shed_lab_cost_monthly
+            name: Cost this month
+          - entity: sensor.shed_lab_voltage
+            name: Voltage
+          - entity: sensor.shed_lab_current
+            name: Current
+          - type: section
+            label: Gaming PC (7800X3D + 3090)
+          - entity: sensor.gaming_pc_current_consumption
+            name: Power now
+          - entity: sensor.gaming_pc_power_share
+            name: Share of total
+          - entity: sensor.gaming_pc_energy_daily
+            name: Energy today
+          - entity: sensor.gaming_pc_cost_daily
+            name: Cost today
+          - entity: sensor.gaming_pc_cost_monthly
+            name: Cost this month
+          - entity: sensor.gaming_pc_voltage
+            name: Voltage
+          - entity: sensor.gaming_pc_current
+            name: Current
+          - type: section
+            label: HP Elite (estimated)
+          - entity: sensor.hp_elite_estimated_current_consumption
+            name: Power now
+          - entity: sensor.hp_elite_estimated_power_share
+            name: Share of total
+          - entity: sensor.hp_elite_estimated_energy_daily
+            name: Energy today
+          - entity: sensor.hp_elite_estimated_cost_daily
+            name: Cost today
+          - entity: sensor.hp_elite_estimated_cost_monthly
+            name: Cost this month
