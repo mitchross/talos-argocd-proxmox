@@ -5,3 +5,5 @@ kind: Kustomization
 namespace: opentelemetry
 resources:
   - servicemonitor.yaml
+  - collector-servicemonitor.yaml
+  - collector-alerts.yaml

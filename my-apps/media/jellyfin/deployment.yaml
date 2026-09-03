@@ -14,8 +14,6 @@ spec:
     metadata:
       labels:
         app: jellyfin
-      annotations:
-        instrumentation.opentelemetry.io/inject-dotnet: "opentelemetry/default"
     spec:
       securityContext:
         runAsNonRoot: true

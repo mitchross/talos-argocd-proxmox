@@ -31,19 +31,6 @@ spec:
                 - "*"
               max_age: 7200
 
-      # Cluster-wide metrics from K8s API (pod phases, deployments, restarts, node conditions)
-      k8s_cluster:
-        auth_type: serviceAccount
-        collection_interval: 30s
-        node_conditions_to_report:
-        - Ready
-        - MemoryPressure
-        - DiskPressure
-        allocatable_types_to_report:
-        - cpu
-        - memory
-        - nvidia.com/gpu
-
     processors:
       # MUST be first in every pipeline so backpressure happens before k8sattributes/batch allocate. Tuned for the 1Gi limit.
       memory_limiter:
@@ -108,6 +95,12 @@ spec:
         endpoint: tempo.monitoring.svc.cluster.local:4317
         tls:
           insecure: true
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 30s
+        sending_queue:
+          enabled: true
+          queue_size: 64
 
       # Loki - logs via OTLP HTTP
       otlphttp/loki:
@@ -116,14 +109,17 @@ spec:
           X-Scope-OrgID: "1"
         tls:
           insecure: true
-
-      # Prometheus - metrics via OTLP HTTP
-      otlphttp/prometheus:
-        endpoint: http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/otlp
-        tls:
-          insecure: true
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 30s
+        sending_queue:
+          enabled: true
+          queue_size: 128
 
     service:
+      telemetry:
+        logs:
+          level: warn
       pipelines:
         logs:
           # Every receiver listed here must be defined under receivers: above, or the collector refuses to boot.
@@ -134,7 +130,3 @@ spec:
           receivers: [otlp]
           processors: [memory_limiter, k8sattributes, resource, batch]
           exporters: [otlp/tempo]
-        metrics:
-          receivers: [otlp, k8s_cluster]
-          processors: [memory_limiter, k8sattributes, resource, batch]
-          exporters: [otlphttp/prometheus]

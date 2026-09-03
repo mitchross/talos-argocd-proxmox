@@ -12,8 +12,6 @@ spec:
     metadata:
       labels:
         app: tika
-      annotations:
-        instrumentation.opentelemetry.io/inject-java: "opentelemetry/default"
     spec:
       containers:
         - name: tika
@@ -57,8 +55,6 @@ spec:
     metadata:
       labels:
         app: gotenberg
-      annotations:
-        instrumentation.opentelemetry.io/inject-go: "opentelemetry/default"
     spec:
       containers:
         - name: gotenberg

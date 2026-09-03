@@ -17,8 +17,6 @@ spec:
     metadata:
       labels:
         app: perplexica
-      annotations:
-        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
       # Seeds /data/config.json from the ConfigMap; on an existing file only modelProviders +
       # search are overwritten so user UI preferences survive each deploy.
