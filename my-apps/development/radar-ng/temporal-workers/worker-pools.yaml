@@ -58,7 +58,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.29
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -152,7 +152,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.29
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -246,7 +246,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.29
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -340,7 +340,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.29
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -435,7 +435,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.29
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
