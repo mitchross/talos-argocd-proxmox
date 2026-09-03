@@ -30,23 +30,31 @@ llama.cpp serves the canonical `qwen3.8-27b` id:
 | Concurrency | one sequence slot |
 | Placement | target + draft fully on RTX 3090 |
 | Speculation | MTP Q4_0, `n-max=2` |
-| Backend default | low reasoning; temp 0.7, top-p 0.8, top-k 20, presence-penalty 1.5 |
+| Backend default | low reasoning; temp 0.7, top-p 0.8, top-k 20, min-p 0, presence-penalty 1.5 |
+| Power cap | 220 W |
 
 `b10751` fixed a Qwen3.8-27B MTP KV-initialization regression present in
-`b10745`; production uses `b10752`. The 65K window is deliberately conservative
-for the first production cutover: stability, tools, vision, Pi and multi-turn
-correctness matter more than advertising the largest context that can boot.
+`b10745`; production uses `b10752`. The 65K window is deliberately conservative:
+stability, tools, vision, Pi.dev and multi-turn correctness matter more than
+advertising the largest context that can boot.
 
-The 200 W power cap remains mandatory.
+### Measured production baseline — 2026-09-03
+
+Normal Open WebUI responses measured about **42-43 generated tok/s**. While
+generating, the single RTX 3090 reported approximately **22,740 MiB / 24,576
+MiB VRAM**, **87% GPU utilization**, and **216 W / 220 W**. These are
+real-machine observations on the Threadripper 2950X host, not synthetic maxima.
 
 ## Storage and staging
 
 The TrueNAS llama.cpp share is the canonical archive. A wave -1 hook downloads
 and SHA-verifies the Q4_K_XL target, BF16 projector and Q4_0 MTP artifact; a
-wave 0 hook hydrates those files into the GPU worker's 450 GB local NVMe cache.
-The serving pod mounts only the local cache.
+wave 0 hook hydrates those files into the GPU worker's local NVMe cache. The
+serving pod mounts only the local cache.
 
-The old vLLM model and compile caches remain intact for rollback.
+A revisioned ready stamp plus a serving initContainer gates startup until the
+exact local-NVMe artifact set is present. The old vLLM model and compile caches
+remain intact for rollback.
 
 ## App wiring
 
@@ -54,11 +62,25 @@ Canonical Git-managed direct-client configuration:
 
 - endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - model: `qwen3.8-27b`
+- LAN endpoint: `https://llama.vanillax.me/v1`
 
-Both `https://vllm.vanillax.me/v1` and `https://llama.vanillax.me/v1` route to
-llama.cpp. The old in-cluster `vllm-service.vllm.svc.cluster.local:8080` name is
-retained as an `ExternalName` alias for persistent clients whose configuration
-is stored outside Git, such as already-imported n8n workflows.
+`https://vllm.vanillax.me/v1` remains a compatibility LAN hostname and also
+routes to llama.cpp. The old in-cluster
+`vllm-service.vllm.svc.cluster.local:8080` name remains an `ExternalName` alias
+for persistent clients whose configuration lives outside Git, such as already
+imported n8n workflows.
+
+Git-managed consumers should use `llama-cpp-service` directly. Current direct
+consumers include Open WebUI, Perplexica/Vane, LiteLLM, Presenton, SurfSense,
+HolmesGPT, Hindsight, Project Nomad, and the ComfyUI vision bridge.
+
+## Pi.dev
+
+Pi.dev uses the same `qwen3.8-27b` API id through
+`https://llama.vanillax.me/v1`. The workstation configuration lives in
+[`pi-agent-local-dev.md`](pi-agent-local-dev.md). Pi sends top-level
+`reasoning_effort`; medium is the normal coding default and xhigh is reserved
+for difficult reasoning.
 
 ## Rollback
 
