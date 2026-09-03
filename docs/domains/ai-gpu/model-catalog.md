@@ -8,8 +8,8 @@ inference. The GPU swap procedure lives in
 
 | Backend | Replicas | Cards | Served model | Status |
 |---|---:|---:|---|---|
-| vLLM | `1` | **1** | `qwen3.8-27b` | Active backend for every app |
-| llama.cpp | `0` | 1 | `Qwen3.8-Flash-Next Q4` | Parked GGUF rollback |
+| llama.cpp | `1` | **1** | `qwen3.8-27b` | Active production backend |
+| vLLM | `0` | 1 | `qwen3.8-27b` | Parked rollback |
 | NInfer | `0` | 1 | `qwen3.8-ninfer` | Parked evaluation |
 | ComfyUI / SwarmUI | `0` | 1 | Image generation | Parked |
 
@@ -18,63 +18,50 @@ The chassis has one RTX 3090. Exactly one GPU Deployment may have
 
 ## Active Qwen3.8 backend
 
-vLLM serves one canonical id, `qwen3.8-27b`:
+llama.cpp serves the canonical `qwen3.8-27b` id:
 
 | Property | Value |
 |---|---|
-| Engine | stock `vllm/vllm-openai:v0.28.0`, unpatched |
-| Weights | `Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead` (dense 27B, ~17 GB) |
-| Vision | native `Qwen3_5ForConditionalGeneration` tower, one image per prompt |
-| KV | `fp8_e4m3`, uncalibrated scales; fp16 DeltaNet recurrent state |
+| Engine | stock llama.cpp `b10752` CUDA12 |
+| Weights | Unsloth `Qwen3.8-27B-UD-Q4_K_XL.gguf` (~17.6 GB) |
+| Vision | BF16 Qwen3.8-27B projector |
+| KV | q8_0 K/V for target and MTP draft |
 | Context allocation | 65,536 tokens |
-| Concurrency | three sequence slots, 2,048-token chunked prefill |
-| Placement | whole card, `gpu-memory-utilization=0.93` |
-| Speculation | stock MTP, 2 draft tokens |
-| Backend default | thinking OFF; temp 0.7, top-p 0.8, top-k 20, presence-penalty 1.5 |
+| Concurrency | one sequence slot |
+| Placement | target + draft fully on RTX 3090 |
+| Speculation | MTP Q4_0, `n-max=2` |
+| Backend default | low reasoning; temp 0.7, top-p 0.8, top-k 20, presence-penalty 1.5 |
+
+`b10751` fixed a Qwen3.8-27B MTP KV-initialization regression present in
+`b10745`; production uses `b10752`. The 65K window is deliberately conservative
+for the first production cutover: stability, tools, vision, Pi and multi-turn
+correctness matter more than advertising the largest context that can boot.
 
 The 200 W power cap remains mandatory.
 
-Keep the backend non-thinking by default. Qwen3.8 treats an enabled request
-without `reasoning_effort` as `xhigh`, so clients must opt in explicitly:
-`off` for trivial work, `medium` for normal coding/agent work, and `xhigh` only
-for hard reasoning. Pi's exact level mapping and commands live in
-[`pi-agent-local-dev.md`](pi-agent-local-dev.md).
-Excessive thinking from an omitted client-side effort is not by itself a vLLM
-backend bug.
-
-### Why not an Unsloth quant here
-
-Unsloth's only vLLM-servable Qwen3.8-27B checkpoint is
-[`unsloth/Qwen3.8-27B-NVFP4`](https://huggingface.co/unsloth/Qwen3.8-27B-NVFP4),
-and NVFP4 needs Blackwell tensor cores (sm_120) — the 3090 is Ampere sm_86.
-Unsloth's Q4 line for this model is GGUF, i.e. llama.cpp only. AutoRound W4A16
-is the 4-bit vLLM path on this card.
-
 ## Storage and staging
 
-Both backends use the same two-tier shape: the TrueNAS share is the canonical
-archive, and a wave 0 Sync hook copies the weights to the GPU node's 450 GB
-NVMe, which is all the serving pod mounts. For vLLM that is
-`192.168.10.133:/mnt/ai-pool/vllm` → `/var/mnt/ai-model-cache/vllm`. The
-torch.compile and Triton caches persist separately on a Longhorn PVC — without
-them the engine recompiles every boot.
+The TrueNAS llama.cpp share is the canonical archive. A wave -1 hook downloads
+and SHA-verifies the Q4_K_XL target, BF16 projector and Q4_0 MTP artifact; a
+wave 0 hook hydrates those files into the GPU worker's 450 GB local NVMe cache.
+The serving pod mounts only the local cache.
 
-The llama.cpp GGUF share, its download/cache-sync hooks, and its node-local
-NVMe cache all remain intact so the rollback is a replica flip plus a rewire.
+The old vLLM model and compile caches remain intact for rollback.
 
 ## App wiring
 
-The canonical direct-client configuration is:
+Canonical Git-managed direct-client configuration:
 
-- endpoint: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
+- endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - model: `qwen3.8-27b`
 
-Every in-cluster consumer uses this pair, and `https://vllm.vanillax.me/v1`
-routes to the same Service. `llama.vanillax.me` stays on the parked llama.cpp
-route.
+Both `https://vllm.vanillax.me/v1` and `https://llama.vanillax.me/v1` route to
+llama.cpp. The old in-cluster `vllm-service.vllm.svc.cluster.local:8080` name is
+retained as an `ExternalName` alias for persistent clients whose configuration
+is stored outside Git, such as already-imported n8n workflows.
 
-## Changing the served model
+## Rollback
 
-The served id is `--served-model-name` in `my-apps/ai/vllm/deployment.yaml`.
-Roll every consumer in the same change if it changes: several background jobs
-treat LLM failures as best-effort and otherwise fail silently.
+The vLLM manifests, model cache and compile caches are retained. Rollback is a
+single GitOps change that flips GPU ownership, restores the vLLM route/service,
+and rewires Git-managed consumers. Never scale both backends to one.
