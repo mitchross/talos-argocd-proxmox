@@ -63,10 +63,14 @@ configs:
     # change", and skipped the Deployment apply — selfHeal can't help because the
     # controller perceives no drift. A manual hard refresh fixed it instantly.
     # "0" (disabled) let that stale state persist indefinitely (cluster cache is
-    # watch-based with no resync-duration knob in this version). 1h bounds the
-    # worst-case staleness window to one hour. Raise toward 2h-4h if the hourly
-    # all-apps manifest regeneration pressures the repo-servers.
-    timeout.hard.reconciliation: "1h"
+    # watch-based; v3.5.2 still exposes no --cluster-cache-resync-duration, so
+    # --app-hard-resync is the only lever). 1h proved far too wide: 2026-09-03
+    # the same masquerade hit four times in one session (open-meteo, llama-cpp,
+    # gpu-priority-classes, radar-ng), each needing a manual hard refresh, and
+    # one of them wedged a namespace rebuild because a referenced PriorityClass
+    # never rendered. 15m bounds the window to roughly one merge-and-verify loop.
+    # Raise toward 30m-1h if the resync pressures the repo-servers.
+    timeout.hard.reconciliation: "15m"
     # Global diff noise cleanup for resources normalized by their controllers.
     # Keep these system-level so AppSets only carry app-specific rules.
     #

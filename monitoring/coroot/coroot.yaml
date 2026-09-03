@@ -88,9 +88,10 @@ spec:
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 256Mi
+      # 512Mi OOMKilled the agent 140x; it reached 427Mi minutes after a restart.
       limits:
-        memory: 512Mi
+        memory: 1Gi
   logsTTL: 3d
   tracesTTL: 3d
   profilesTTL: 3d
