@@ -3,15 +3,15 @@
 ## Observability Architecture
 
 ```
-OTEL Collector Agent (DaemonSet)  →  OTEL Collector Gateway (Deployment)  →  Tempo (traces)
-  per node: filelog + OTLP recv        k8sattributes, batch, fan-out     →  Loki (logs)
-                                                                         →  Prometheus (metrics)
+OTEL Collector Agent (DaemonSet)  →  OTEL Collector Gateway (Deployment)  →  Loki (logs)
+  per node: filelog only               k8sattributes, batch
+External radar-ng mobile SDK      →                                      →  Tempo (traces)
 ```
 
 External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
-`otel.vanillax.me/v1/{traces,logs,metrics}` via `collector-gateway-httproute.yaml`.
+`otel.vanillax.me/v1/{traces,logs}` via `collector-gateway-httproute.yaml`.
 
-- **OTEL Operator** (`infrastructure/controllers/opentelemetry-operator/`) — manages Collectors and auto-instrumentation
+- **OTEL Operator** (`infrastructure/controllers/opentelemetry-operator/`) — manages Collectors
 - **Prometheus + Grafana** (`monitoring/prometheus-stack/`) — metrics storage, dashboards, alerting
 - **Loki** (`monitoring/loki-stack/`) — log storage (S3 backend on RustFS)
 - **Tempo** (`monitoring/tempo/`) — trace storage (S3 backend on RustFS)
@@ -19,24 +19,12 @@ External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
 - **Trivy Operator** (`monitoring/trivy-operator/`) — conservative vulnerability + exposed-secret scanning
 - **pod-cleanup** (`monitoring/pod-cleanup/`) — 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide
 
-## Auto-Instrumentation
+## Telemetry boundary
 
-Apps opt-in by adding an annotation to their Deployment:
-
-```yaml
-annotations:
-  instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
-  # also: inject-java, inject-go, inject-dotnet
-```
-
-The OTEL Operator webhook injects an init container with the OTEL SDK. Traces are sent to the Agent's OTLP endpoint automatically.
-
-**NEVER use `inject-python`** — it crashed every Python app it touched here
-(see README § auto-instrumentation), and `instrumentation.yaml` intentionally
-pins no python image. Only annotate apps whose main container actually runs
-the matching runtime: the injection adds an init container that gates pod
-start on an image pull, so it's pure cost on a non-matching runtime (e.g. a
-static SPA served by nginx).
+Do not add blanket auto-instrumentation or OTEL Kubernetes metrics. Prometheus
+already owns cluster/application metrics, while the OTEL agents own container
+logs. Add application tracing only for a named consumer and an explicit query
+or dashboard; send it to the gateway, not the per-node log agents.
 
 ## Common Pitfalls
 
@@ -54,6 +42,7 @@ static SPA served by nginx).
   expansions. Keep Git at or above the live requested size; use a narrowly scoped
   per-Application ignore only for a known legacy PVC that cannot be reconciled.
 - **Loki tenant_id**: Multi-tenant mode requires `X-Scope-OrgID` header or `tenant_id` config — 401 without it
+- **Collector recursion**: never collect `opentelemetry` or `loki-stack` pod logs; backend failures otherwise feed their own retry logs back into the failed backend
 - **OTEL Collector CRDs**: Use `v1beta1` API version for `OpenTelemetryCollector`, `v1alpha1` for `Instrumentation`
 
 ## Key Files
@@ -64,4 +53,3 @@ static SPA served by nginx).
 - OTEL Collector Agent: `infrastructure/controllers/opentelemetry-operator/collector-agent.yaml`
 - OTEL Collector Gateway: `infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml`
 - OTEL Gateway public HTTPRoute: `infrastructure/controllers/opentelemetry-operator/collector-gateway-httproute.yaml`
-- Auto-instrumentation: `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml`
