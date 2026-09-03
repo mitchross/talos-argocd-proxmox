@@ -72,7 +72,8 @@ imported n8n workflows.
 
 Git-managed consumers should use `llama-cpp-service` directly. Current direct
 consumers include Open WebUI, Perplexica/Vane, LiteLLM, Presenton, SurfSense,
-HolmesGPT, Hindsight, Project Nomad, and the ComfyUI vision bridge.
+HolmesGPT, Hindsight, Project Nomad, the ComfyUI vision bridge, WorldMonitor,
+Keep, Deal Scout, Karakeep, and the News Reader Temporal worker.
 
 ## Pi.dev
 
@@ -82,6 +83,19 @@ Pi.dev uses the same `qwen3.8-27b` API id through
 `enable_thinking` from its valid effort values (`low`, `medium`, `xhigh`), Pi
 uses explicit `chat_template_kwargs` so `off` really disables thinking and
 `medium` is the normal coding default.
+
+The workstation launchers are:
+
+```bash
+alias pi-qwen-only='pi --model vanillax-llama/qwen3.8-27b --thinking medium'
+alias pi-withk3='pi --model vanillax-litellm/kimi-k3'
+```
+
+`pi-qwen-only` is the clean local-Qwen path. `pi-withk3` starts on Kimi K3 but
+keeps Qwen available through `/model` because both are enabled in Pi settings.
+Old Pi sessions created under the retired `vanillax-vllm` provider can retain
+that provider name in session metadata; use a new session when validating the
+current llama.cpp provider.
 
 ## Rollback
 
