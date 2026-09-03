@@ -205,7 +205,6 @@ Detailed instructions load automatically when working in these directories:
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
-| **OTEL auto-instrumentation** | `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml` |
 | **Jobs with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
 | **Helm Job Kustomize patch** | `my-apps/development/temporal/kustomization.yaml` |
 

@@ -28,8 +28,11 @@ spec:
   rules:
     - matches:
         - path:
-            type: PathPrefix
-            value: /v1/
+            type: Exact
+            value: /v1/logs
+        - path:
+            type: Exact
+            value: /v1/traces
       backendRefs:
         - group: ""
           kind: Service

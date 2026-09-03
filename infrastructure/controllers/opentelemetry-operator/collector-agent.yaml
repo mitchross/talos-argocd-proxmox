@@ -11,9 +11,9 @@ spec:
   resources:
     requests:
       cpu: 50m
-      memory: 128Mi
-    limits:
       memory: 512Mi
+    limits:
+      memory: 1Gi
   volumeMounts:
   - name: varlogpods
     mountPath: /var/log/pods
@@ -34,8 +34,12 @@ spec:
         include:
         - /var/log/pods/*/*/*.log
         exclude:
-        - /var/log/pods/opentelemetry_otel-agent*/**
+        # Never feed the collectors or Loki back into Loki; backend failures otherwise amplify their own retry logs.
+        - /var/log/pods/opentelemetry_*/**
+        - /var/log/pods/loki-stack_*/**
         start_at: end
+        retry_on_failure:
+          enabled: true
         include_file_path: true
         include_file_name: false
         operators:
@@ -67,54 +71,35 @@ spec:
           field: resource["k8s.node.name"]
           value: EXPR(env("K8S_NODE_NAME"))
 
-      # Accept OTLP from auto-instrumented apps
-      otlp:
-        protocols:
-          grpc:
-            endpoint: 0.0.0.0:4317
-          http:
-            endpoint: 0.0.0.0:4318
-
-      # Per-node container, pod, and node metrics from kubelet
-      kubeletstats:
-        collection_interval: 30s
-        auth_type: serviceAccount
-        endpoint: "https://${env:K8S_NODE_NAME}:10250"
-        insecure_skip_verify: true
-        metric_groups:
-        - node
-        - pod
-        - container
-        extra_metadata_labels:
-        - container.id
-
     processors:
       memory_limiter:
         check_interval: 1s
-        limit_mib: 384
-        spike_limit_mib: 96
+        limit_mib: 768
+        spike_limit_mib: 192
       batch:
         timeout: 5s
         send_batch_size: 1024
+        send_batch_max_size: 1024
 
     exporters:
-      # Forward everything to the gateway
+      # Forward application logs to the gateway
       otlp/gateway:
         endpoint: otel-gateway-collector.opentelemetry.svc.cluster.local:4317
         tls:
           insecure: true
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 30s
+        sending_queue:
+          enabled: true
+          queue_size: 64
 
     service:
+      telemetry:
+        logs:
+          level: warn
       pipelines:
         logs:
           receivers: [filelog]
-          processors: [memory_limiter, batch]
-          exporters: [otlp/gateway]
-        traces:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [otlp/gateway]
-        metrics:
-          receivers: [otlp, kubeletstats]
           processors: [memory_limiter, batch]
           exporters: [otlp/gateway]
