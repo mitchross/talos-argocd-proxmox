@@ -1,93 +1,39 @@
-# vLLM — Qwen3.8-27B on one RTX 3090
+# vLLM — parked Qwen3.8-27B rollback backend
 
-The active OpenAI-compatible chat, tool, and vision backend. Every in-cluster
-consumer points here.
+vLLM is retained in Git and on the GPU-node NVMe cache, but **production is
+`replicas: 0`**. Stock llama.cpp now owns the single RTX 3090 and serves the
+canonical `qwen3.8-27b` API model.
 
-- in cluster: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- on the LAN: `https://vllm.vanillax.me/v1`
-- API model: `qwen3.8-27b`
+The old DNS name `vllm-service.vllm.svc.cluster.local:8080` remains as an
+`ExternalName` compatibility alias to `llama-cpp-service` so persistent clients
+whose configuration lives outside Git do not break during the cutover.
 
-The chassis has one RTX 3090. llama.cpp is the parked GGUF rollback at
-`replicas: 0`; scale it up only in the same commit that scales this to zero.
+The old `vllm.vanillax.me` HTTPRoute is not rendered by this Kustomization;
+`my-apps/ai/llama-cpp/httproute.yaml` owns that hostname while llama.cpp is
+production.
 
-## Model and storage
+## Retained rollback shape
 
-The checkpoint is derived from the public
-`dbirks/Qwen3.8-27B-W4A16-AutoRound` Hugging Face repository and lives on the
-TrueNAS `ai-pool/vllm` share as
-`Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead`.
+- stock `vllm/vllm-openai:v0.28.0`
+- Qwen3.8-27B AutoRound W4A16 + INT8 lm_head + BF16 embeddings
+- native vision
+- 65,536 max model length
+- fp8 E4M3 KV
+- float16 DeltaNet recurrent state
+- stock MTP with 2 speculative tokens
+- explicit Qwen3 reasoning and tool parsers
+- node-local NVMe model and compile caches
 
-Two tiers, matching llama-cpp:
-
-| Tier | Backing | PVC | Role |
-|---|---|---|---|
-| Source | TrueNAS NFS, `192.168.10.133:/mnt/ai-pool/vllm` | `vllm-models-pvc` (ROX) | canonical archive |
-| Cache | GPU node's 450 GB NVMe, Talos UserVolume `ai-model-cache` → `/var/mnt/ai-model-cache` under `vllm/` | `ai-model-cache-vllm` (RWO, `Retain`) | what the Deployment mounts at `/models` |
-
-The Deployment mounts **only** the cache. `cache-sync-job.yaml` (wave 0 Sync
-hook) copies the checkpoint from NFS to the NVMe before the wave 1 server
-starts; it compares **name and size only** and a warm cache exits in seconds.
-
-The cache PV shares the same physical volume as llama-cpp's GGUF tree, kept
-apart by `subPath: vllm`. Its declared 60Gi is informational — a local PV
-enforces no quota, and the real ceiling is what llama-cpp's ~281 GiB leaves free
-of 450 GB.
-
-The server uses the stock digest-pinned `vllm/vllm-openai:v0.28.0` image. There
-is no custom image, runtime patch, or model-prep controller in this deployment.
-
-Unsloth publishes no 4-bit checkpoint that runs here: their only vLLM-servable
-Qwen3.8-27B is NVFP4, which needs Blackwell tensor cores, and the 3090 is
-Ampere. Their Q4 line for this model is GGUF, i.e. the parked llama.cpp path.
-
-The checkpoint is natively multimodal (`Qwen3_5ForConditionalGeneration`) and
-includes its vision configuration and processor. The Deployment leaves the
-vision tower enabled.
-
-## Serving profile
-
-- 65,536-token request ceiling with FP8 KV cache
-- `gpu-memory-utilization=0.93`
-- 2-token stock MTP speculative decoding
-- FP16 DeltaNet recurrent state
-- 2,048-token chunked prefill
-- `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
-- vision enabled, limited to one image and no video per prompt
-- Qwen3 reasoning and `qwen3_coder` tool-call parsers
-
-The 65,536-token ceiling is the conservative one-card profile after restoring
-the roughly 2.7 GiB vision tower. It is not a measured maximum. Read the cache
-pool from the startup log and validate long-context plus image requests before
-raising it.
-
-`CONTEXT_WINDOW` in `my-apps/ai/open-webui/open-webui-configmap.env` must track
-this number — if it is larger, Open WebUI overruns the server's ceiling.
-
-Startup can take several minutes while torch.compile, CUDA graphs, and
-FlashInfer initialize. The startup probe allows up to one hour; readiness is
-served by `/health`.
-
-## Verify after ArgoCD sync
-
-```bash
-kubectl -n vllm rollout status deploy/vllm-server --timeout=20m
-kubectl -n vllm logs deploy/vllm-server | grep 'GPU KV cache size'
-kubectl -n vllm port-forward svc/vllm-service 8080:8080
-curl -s http://127.0.0.1:8080/v1/models | jq
-curl -s http://127.0.0.1:8080/metrics \
-  | grep 'spec_decode_num_accepted_tokens_total'
-```
-
-Also send an OpenAI-compatible chat request containing one base64 image and
-confirm the response describes it. Requests with multiple images or video are
-rejected intentionally by `--limit-mm-per-prompt`.
-
-Run a benchmark twice after each restart; the first pass includes JIT warmup
-and can read substantially low. Historical single-vs-dual measurements remain
-under `benchmarks/ai-realworld-load/`.
+Nothing in the vLLM model/cache path is deleted by the llama.cpp cutover.
 
 ## Rollback
 
-Revert the Git commit and let ArgoCD sync. Do not use `kubectl edit` or
-imperative scaling: ArgoCD self-heal will overwrite it. The model share uses a
-Retain PV and is unaffected by a Deployment rollback.
+A rollback must be one GitOps change that:
+
+1. sets `vllm-server=1` and `llama-cpp-server=0`,
+2. restores `httproute.yaml` to the vLLM Kustomization and removes
+   `vllm.vanillax.me` from the llama.cpp HTTPRoute,
+3. changes `vllm-service` back from `ExternalName` to the vLLM selector Service,
+4. repoints Git-managed consumers from `llama-cpp-service` to `vllm-service`.
+
+Never run both whole-card deployments at one replica on the single RTX 3090.

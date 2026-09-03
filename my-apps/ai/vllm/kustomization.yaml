@@ -12,10 +12,10 @@ resources:
   - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml
-  - httproute.yaml
   - servicemonitor.yaml
 
-# Flash-Next test cutover: release the sole RTX 3090 for llama.cpp.
+# Production cutover: llama.cpp owns the sole RTX 3090. Keep vLLM artifacts
+# intact at zero replicas for a one-PR rollback if needed.
 replicas:
   - name: vllm-server
     count: 0
