@@ -104,10 +104,10 @@ spec:
             - "45"
             - --fit
             - "off"
+            # b10715 supports mmap load mode but predates --tensor-read-lazy.
+            # The model still reads from the node-local NVMe-backed PVC.
             - --load-mode
             - mmap
-            - --tensor-read-lazy
-            - "on"
             - --flash-attn
             - on
             - --cache-type-k
