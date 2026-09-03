@@ -8,34 +8,22 @@
 > This document is for **Pi.dev / Pi coding agent**, not Raspberry Pi.
 
 Pi is a workstation client. Nothing in `~/.pi/agent/` deploys to Kubernetes.
-The cluster owns the model/runtime; Pi only needs an OpenAI-compatible provider
-entry and the model metadata that lets it expose the right reasoning levels,
-context window, image input, and token accounting.
+The cluster owns model/runtime tuning; Pi only needs the provider/model metadata
+that describes the OpenAI-compatible API and Qwen3.8's reasoning controls.
 
-## 1. Update Pi itself
+## 1. Update Pi
 
 ```bash
-# Pi CLI only
 pi update --self
-
-# Or Pi + installed packages/extensions
 pi update --all
-```
-
-Useful checks:
-
-```bash
 pi --version
-pi list
 ```
 
-Pi's current package manager also supports `pi update --models` for refreshed
-remote catalogs, but the homelab model below is defined locally in
-`models.json`, so that command is not required for this backend.
+The configuration below targets Pi 0.84.x or newer.
 
 ## 2. `~/.pi/agent/models.json`
 
-Use a dedicated custom provider for the homelab llama.cpp endpoint:
+Use a dedicated custom provider for the active llama.cpp endpoint:
 
 ```json
 {
@@ -46,10 +34,17 @@ Use a dedicated custom provider for the homelab llama.cpp endpoint:
       "apiKey": "local-no-key-required",
       "compat": {
         "supportsDeveloperRole": false,
-        "supportsReasoningEffort": true,
+        "supportsReasoningEffort": false,
         "supportsUsageInStreaming": true,
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "reasoning_effort"
+        "thinkingFormat": "chat-template",
+        "chatTemplateKwargs": {
+          "enable_thinking": { "$var": "thinking.enabled" },
+          "reasoning_effort": {
+            "$var": "thinking.effort",
+            "omitWhenOff": true
+          }
+        }
       },
       "models": [
         {
@@ -57,7 +52,7 @@ Use a dedicated custom provider for the homelab llama.cpp endpoint:
           "name": "Qwen3.8 27B (llama.cpp, 1x3090, 65K)",
           "reasoning": true,
           "thinkingLevelMap": {
-            "off": "none",
+            "off": "off",
             "minimal": null,
             "low": "low",
             "medium": "medium",
@@ -81,114 +76,151 @@ Use a dedicated custom provider for the homelab llama.cpp endpoint:
 }
 ```
 
-Why these compatibility settings:
+### Why the explicit chat-template mapping matters
 
-- `openai-completions` matches llama.cpp's `/v1/chat/completions` API.
-- `supportsDeveloperRole: false` keeps Pi on a single normal `system` message;
-  Qwen3.8's template is stricter than OpenAI's role model and this avoids
-  duplicate/developer-system edge cases.
-- llama.cpp now accepts top-level OpenAI-style `reasoning_effort`, so the old
-  vLLM-era `chat_template_kwargs` workaround is intentionally gone.
-- Qwen3.8 accepts `low`, `medium`, and `xhigh`; `none` disables thinking.
-  Unsupported Pi levels are explicitly `null`, so Pi hides/clamps them instead
-  of inventing values the model template does not understand.
+Qwen3.8's upstream template accepts only `low`, `medium`, and `xhigh` when
+thinking is enabled, and defaults to `xhigh` if effort is omitted. Turning
+thinking off is a separate `enable_thinking=false` control.
+
+Pi's generic OpenAI `reasoning_effort` mode omits the effort field when Pi is
+set to `off`. That is not enough here because llama.cpp has its own server-side
+reasoning default. The explicit mapping above makes every request unambiguous:
+
+| Pi level | `chat_template_kwargs` sent to llama.cpp |
+|---|---|
+| `off` | `enable_thinking: false` |
+| `low` | `enable_thinking: true`, `reasoning_effort: low` |
+| `medium` | `enable_thinking: true`, `reasoning_effort: medium` |
+| `xhigh` | `enable_thinking: true`, `reasoning_effort: xhigh` |
+
+`omitWhenOff` prevents Pi from sending the string `off` as a Qwen reasoning
+effort. Unsupported Pi levels are `null`, so the UI skips them rather than
+inventing values the model template rejects.
+
+Other compatibility choices:
+
+- `supportsDeveloperRole: false` keeps the agent context in an ordinary system
+  message for the local OpenAI-compatible server.
+- `supportsReasoningEffort: false` prevents a duplicate top-level
+  `reasoning_effort`; the value belongs in `chat_template_kwargs` above.
 - `input: ["text", "image"]` enables Pi screenshot/image input.
-- sampling is deliberately not set in Pi. The production server owns the
-  validated Qwen sampling defaults: temp 0.7, top-p 0.8, top-k 20, min-p 0,
-  presence penalty 1.5, repeat penalty 1.0.
+- Sampling is not set in Pi. The validated production server owns temp/top-p/
+  top-k/min-p/presence/repeat defaults.
 
-`models.json` reloads whenever `/model` is opened, so a Pi restart is usually
-not needed after editing it.
+`models.json` reloads whenever `/model` is opened.
 
-## 3. `~/.pi/agent/settings.json`
+## 3. Fix your existing `~/.pi/agent/settings.json`
 
-Make the homelab model the default and use **medium** reasoning for normal coding:
+Your previous config used provider `vanillax-vllm` and the now-obsolete
+`modelThinkingLevels` key. Keep your installed packages exactly as they are;
+change only the model selection fields.
+
+The important result should be:
 
 ```json
 {
   "defaultProvider": "vanillax-llama",
   "defaultModel": "qwen3.8-27b",
   "defaultThinkingLevel": "medium",
-  "modelThinkingLevels": {
-    "vanillax-llama/qwen3.8-27b": "medium"
-  }
+  "enabledModels": [
+    "vanillax-llama/qwen3.8-27b",
+    "vanillax-litellm/kimi-k3"
+  ]
 }
 ```
 
-You can save the same settings interactively:
+Do **not** copy that small object over your whole file — your `packages`, theme,
+and other settings should remain. To update the existing JSON safely with `jq`:
 
-1. `/model` → choose `vanillax-llama/qwen3.8-27b` → **Ctrl+S**.
-2. `/thinking` → choose `medium` → **Ctrl+S**.
+```bash
+cp ~/.pi/agent/settings.json ~/.pi/agent/settings.json.bak
 
-Recommended levels:
+jq '
+  .defaultProvider = "vanillax-llama"
+  | .defaultModel = "qwen3.8-27b"
+  | .defaultThinkingLevel = "medium"
+  | del(.modelThinkingLevels)
+  | .enabledModels = ((.enabledModels // [])
+      | map(if . == "vanillax-vllm/qwen3.8-27b"
+            then "vanillax-llama/qwen3.8-27b"
+            else . end)
+      | if index("vanillax-llama/qwen3.8-27b") then .
+        else ["vanillax-llama/qwen3.8-27b"] + . end)
+' ~/.pi/agent/settings.json > ~/.pi/agent/settings.json.new \
+  && mv ~/.pi/agent/settings.json.new ~/.pi/agent/settings.json
+```
 
-| Pi level | Qwen request | Use |
-|---|---|---|
-| `off` | `reasoning_effort: none` | trivial edits, formatting, lookups |
-| `low` | `reasoning_effort: low` | short code changes |
-| `medium` | `reasoning_effort: medium` | default coding/debugging/agent work |
-| `xhigh` | `reasoning_effort: xhigh` | hard reasoning only |
+Then verify:
 
-Do not use `xhigh` as the everyday default. It consumes much more generation
-budget and is exactly the overthinking behavior this setup is trying to avoid.
+```bash
+jq '{defaultProvider,defaultModel,defaultThinkingLevel,enabledModels,packages}' \
+  ~/.pi/agent/settings.json
+```
+
+Pi 0.84.x uses `defaultThinkingLevel`; unknown legacy keys are ignored, so
+removing `modelThinkingLevels` avoids a config value that looks active but is not.
 
 ## 4. Start and verify
 
-Normal launch:
+Normal launch after the settings change:
 
 ```bash
 pi
 ```
 
-Explicit launch while testing the migration:
+Explicit launch while validating:
 
 ```bash
 pi --provider vanillax-llama --model qwen3.8-27b --thinking medium
 ```
 
-Or select the provider-qualified model in one argument:
+Or:
 
 ```bash
 pi --model vanillax-llama/qwen3.8-27b --thinking medium
 ```
 
-List what Pi sees:
+Check discovery:
 
 ```bash
 pi --list-models qwen3.8-27b
 ```
 
-Inside a Pi `bash` tool invocation, Pi exposes the selected model and effective
-reasoning level:
+Inside Pi, `/model` should show `vanillax-llama/qwen3.8-27b`, and the statusline
+should show `medium`. Use Shift+Tab (or your configured thinking control) to
+cycle only the supported levels.
 
-```bash
-printf '%s/%s\n' "$PI_PROVIDER" "$PI_MODEL"
-printf 'reasoning=%s\n' "$PI_REASONING_LEVEL"
-```
-
-Expected:
-
-```text
-vanillax-llama/qwen3.8-27b
-reasoning=medium
-```
-
-First tool test from the repository root:
+First tool test from a repository root:
 
 ```text
 Read package.json and summarize the scripts. Do not guess; use the read tool.
 ```
 
-You should see a real tool call. Then test an edit in a disposable branch and
-make Pi run the relevant tests/typecheck rather than merely describing them.
+You should see a real `read` tool call. Then test a small edit in a disposable
+branch and require Pi to run the relevant tests/typecheck.
 
-## 5. Vision / screenshot test
+## 5. Verify reasoning control directly
+
+The easiest sanity check is behavioral:
+
+```bash
+pi --model vanillax-llama/qwen3.8-27b --thinking off \
+  "Reply with exactly: OFF_OK"
+
+pi --model vanillax-llama/qwen3.8-27b --thinking medium \
+  "What is 37*43? Give the answer and a one-line check."
+```
+
+If Pi says `off` but the backend still emits a reasoning block, inspect the
+request/backend logs before changing model flags. Do not work around it by
+making xhigh or low the server-wide default.
+
+## 6. Vision / screenshot test
 
 The production backend has the BF16 multimodal projector enabled. Attach a
-screenshot/image in Pi and ask a concrete question about it. Keep the image
-small enough that image tokens do not unnecessarily eat the 65K coding window.
+screenshot/image in Pi and ask a concrete question about it.
 
-If text works but images fail, check the backend first:
+If text works but images fail:
 
 ```bash
 kubectl -n llama-cpp logs deploy/llama-cpp-server --tail=200
@@ -197,43 +229,40 @@ kubectl -n llama-cpp exec deploy/llama-cpp-server -- nvidia-smi
 
 Do not point Pi at ComfyUI for vision; `qwen3.8-27b` itself is multimodal.
 
-## 6. Context discipline
+## 7. Context discipline
 
-The server has one 65,536-token slot. Pi may have unlimited local token
-**volume**, but a single request does not have unlimited context.
+The server has one 65,536-token slot. Local token **volume** is free, but a
+single request still has a finite context window.
 
 For coding agents:
 
 - prefer targeted `read`, `grep`, `find`, and `ls` over dumping whole trees;
 - `/compact` before the session becomes mostly historical tool output;
 - use `/new` between unrelated tasks;
-- avoid sending giant generated files, lockfiles, logs, or build artifacts;
-- one active llama.cpp sequence slot means parallel subagents contend for the
-  same GPU request slot rather than increasing throughput.
+- avoid giant generated files, lockfiles, logs, or build artifacts;
+- parallel subagents contend for the same single llama.cpp sequence slot.
 
 The current backend is optimized for strong single-user interactive latency,
 not high-concurrency serving.
 
-## 7. Recommended Pi tools/packages
+## 8. Your installed Pi packages
 
-Pi's built-ins (`read`, `bash`, `edit`, `write`, `grep`, `find`, `ls`) are enough
-for most repository work. Add packages only where they solve a real workflow:
+Your existing package list can stay. Packages/extensions add prompt/tool
+surface area, so keep only things you actually use, but there is no backend
+migration requirement to remove them.
+
+Useful maintenance:
 
 ```bash
-# MCP bridge, if you actually need MCP servers from Pi
-pi install npm:pi-mcp-adapter
-
-# Then inspect/update packages normally
 pi list
 pi update --all
 ```
 
-Keep package count modest on the local model: every extension/tool definition
-adds prompt tokens. For Kubernetes/Talos work, native CLIs (`kubectl`,
-`talosctl`, `argocd`, `gh`, `jq`) through Pi's shell tool are usually more
-context-efficient than loading a giant MCP catalog.
+For Kubernetes/Talos work, native CLIs through Pi's bash tool (`kubectl`,
+`talosctl`, `argocd`, `gh`, `jq`) are usually more context-efficient than
+loading a huge MCP catalog.
 
-## 8. Global `~/.pi/agent/AGENTS.md` starter
+## 9. Optional global `~/.pi/agent/AGENTS.md`
 
 ```markdown
 # Environment
@@ -254,19 +283,18 @@ context-efficient than loading a giant MCP catalog.
 ```
 
 Pi discovers project context files, so this repo's existing instruction files
-remain useful; do not duplicate the whole repository policy into the global
-file.
+remain useful; do not duplicate the whole repository policy globally.
 
-## 9. Backend source of truth
+## 10. Backend source of truth
 
-Pi should not carry backend-specific tuning beyond capability metadata. The
-cluster owns runtime tuning in:
+Pi should not carry backend tuning beyond capability metadata. Runtime tuning
+lives in:
 
 - `my-apps/ai/llama-cpp/deployment.yaml`
 - `my-apps/ai/llama-cpp/README.md`
 - `docs/domains/ai-gpu/model-catalog.md`
 
-Current production shape:
+Current measured production shape:
 
 ```text
 Qwen3.8-27B UD-Q4_K_XL
@@ -281,6 +309,5 @@ BF16 vision projector
 220 W cap
 ```
 
-If the model ID stays `qwen3.8-27b`, Pi does not need a config change for an
-engine patch or quant replacement unless the capabilities/context/reasoning
-contract changes.
+If the model ID remains `qwen3.8-27b`, Pi does not need a config change for a
+runtime patch or quant replacement unless capabilities/context/reasoning change.
