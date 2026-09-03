@@ -78,9 +78,10 @@ HolmesGPT, Hindsight, Project Nomad, and the ComfyUI vision bridge.
 
 Pi.dev uses the same `qwen3.8-27b` API id through
 `https://llama.vanillax.me/v1`. The workstation configuration lives in
-[`pi-agent-local-dev.md`](pi-agent-local-dev.md). Pi sends top-level
-`reasoning_effort`; medium is the normal coding default and xhigh is reserved
-for difficult reasoning.
+[`pi-agent-local-dev.md`](pi-agent-local-dev.md). Because Qwen3.8 separates
+`enable_thinking` from its valid effort values (`low`, `medium`, `xhigh`), Pi
+uses explicit `chat_template_kwargs` so `off` really disables thinking and
+`medium` is the normal coding default.
 
 ## Rollback
 
