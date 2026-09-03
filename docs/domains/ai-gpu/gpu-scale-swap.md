@@ -8,94 +8,77 @@ manifests all point here.
 
 GPU workloads are **mutually-exclusive whole-card**: time-slicing is disabled,
 every GPU pod requests whole `nvidia.com/gpu` cards, and each Deployment uses
-`strategy: Recreate`. **Never two pods on the cards at once.** You don't
-"deploy" a GPU app — you **swap** which one holds the cards by flipping
-committed `replicas:` values.
+`strategy: Recreate`. **Never two pods on the card at once.** You don't
+"deploy" a GPU app — you **swap** which one holds the card by flipping
+committed replica counts.
 
 Two things make this safe by construction:
 
 1. **The scheduler enforces exclusivity.** A newly scaled-up pod sits
-   `Pending` until the outgoing pod actually releases its card(s).
-   `0/2 nodes available ... Insufficient nvidia.com/gpu` during a swap is
-   **normal**, not a broken scheduler — it clears when the old pod finishes
-   terminating.
-2. **ArgoCD selfHeal reverts manual scaling.** `kubectl scale` is undone
-   within minutes. The committed value in git is the only real switch.
+   `Pending` until the outgoing pod actually releases its card.
+   `Insufficient nvidia.com/gpu` during a swap is normal.
+2. **ArgoCD selfHeal reverts manual scaling.** `kubectl scale` is undone.
+   The committed value in git is the only real switch.
 
 ## Card truth table
 
 | App | Cards | `replicas` in git (current) | File |
-|---|---|---|---|
-| **vLLM** (Qwen 3.8 27B W4A16, active) | **1** | `1` | `my-apps/ai/vllm/deployment.yaml` |
-| **llama-cpp** (Qwen 3.8 Flash-Next UD-IQ4_XS, rollback) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
-| **NInfer-3090** (Qwen 3.8 .ninfer, parked candidate) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
-| **ComfyUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
-| **SwarmUI** (image gen — see note below) | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
-| llmfit (batch benchmark **Jobs**, not always-on) | 1 or 2 | n/a | `my-apps/ai/llmfit/` |
+|---|---:|---:|---|
+| **llama.cpp** (Qwen3.8-27B UD-Q4_K_XL, active) | **1** | `1` | `my-apps/ai/llama-cpp/deployment.yaml` |
+| **vLLM** (Qwen3.8-27B W4A16, rollback) | 1 | `0` | `my-apps/ai/vllm/deployment.yaml` |
+| **NInfer-3090** (Qwen3.8 .ninfer, parked candidate) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
+| **ComfyUI** | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
+| **SwarmUI** | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
+| llmfit (batch benchmark Jobs) | 1 | n/a | `my-apps/ai/llmfit/` |
 
-> **Single-card reality (2026-08-21, permanent):** the chassis holds one RTX
-> 3090. A valid state has exactly one `replicas: 1` GPU Deployment.
-
-There are no valid two-workload combinations. The dual-GPU llmfit Job cannot
-run on this chassis.
-
-> **Image gen: ComfyUI vs SwarmUI — decision pending.** ComfyUI's manifest is
-> marked *retired, replaced by SwarmUI* (SwarmUI self-starts its own ComfyUI),
-> but the docs' vision→image wiring still describes ComfyUI and no final call
-> has been made. Both sit at `replicas: 0`; neither is canonical yet. If you
-> need image gen today, pick one, bring it up per the procedure below, and
-> scale it back to 0 when done.
+The chassis permanently has one RTX 3090. A valid steady state has exactly one
+GPU Deployment at `replicas: 1`.
 
 ## The procedure
 
-1. **Pick the target state** from the truth table (exactly one active row).
-2. **Edit the `replicas:` values in ONE commit** — outgoing app(s) to `0`,
-   incoming app(s) to `1`, in their `deployment.yaml` files. One commit means
-   ArgoCD applies both sides together and the scheduler sequences the rest.
-3. **Push.** The my-apps AppSet (wave 6) syncs automatically; no manual sync
-   needed.
-4. **Wait out the handover.** The incoming pod stays `Pending` while the
-   outgoing pod terminates (model unload can take ~a minute). Do **not**
-   "fix" the Pending state — see rule 1 above.
-5. **Verify:**
+1. Pick the target state from the truth table.
+2. Edit outgoing and incoming committed replica counts in **one PR/commit**.
+3. Push/merge and let ArgoCD self-heal to the new state.
+4. Wait for the outgoing pod to release the GPU; do not "fix" the incoming
+   pod while it is Pending.
+5. Verify:
 
 ```bash
-# Old pod gone, new pod Running
-kubectl -n llama-cpp get pods; kubectl -n vllm get pods
-kubectl -n comfyui get pods; kubectl -n swarmui get pods
+kubectl -n llama-cpp get pods
+kubectl -n vllm get pods
+kubectl -n comfyui get pods
+kubectl -n swarmui get pods
 
-# Who actually holds the cards (run inside the power-limit admin DaemonSet,
-# which sees all GPUs without consuming an allocation)
+# Card owner / live cap.
 kubectl -n gpu-operator exec ds/nvidia-powerlimit -- nvidia-smi
 
-# Endpoint answers (from any in-cluster pod)
-curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
+# Active production endpoint.
+curl -s http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/models
 ```
+
+The LAN compatibility hostname `https://vllm.vanillax.me/v1` currently routes
+to llama.cpp too; the canonical in-cluster endpoint is `llama-cpp-service`.
 
 ## Side effects to expect
 
-- **Scaling vLLM to 0** → every Qwen consumer loses inference, including
-  Open WebUI, Perplexica, and Deal Scout. Treat it as an app-degraded window.
-- **ComfyUI's vision→image workflow needs the chat backend too** — it calls the
-  active multimodal endpoint for vision. Bringing up ComfyUI alone leaves
-  its vision/caption nodes failing against a dead Service. With one card, that
-  combined workflow cannot run concurrently.
-- **llmfit Jobs** need the active server parked first; only single-GPU Jobs fit.
+- Scaling llama.cpp to 0 removes the active chat/vision backend for Open WebUI,
+  Perplexica, SurfSense, LiteLLM, Hindsight, Presenton, HolmesGPT, Project Nomad,
+  and any Pi.dev sessions using the cluster endpoint.
+- ComfyUI's vision-to-image helper depends on the active chat backend. With one
+  card, ComfyUI and the chat backend cannot both own the GPU simultaneously.
+- llmfit Jobs require the active server parked first.
 
 ## Don'ts
 
-- Don't `kubectl scale` (selfHeal reverts it — commit the value).
-- Don't set `NVIDIA_VISIBLE_DEVICES`/`CUDA_VISIBLE_DEVICES` in pod env — they
-  bypass the device plugin's accounting (sole exception: the infrastructure
-  `nvidia-powerlimit` admin DaemonSet).
-- Don't switch a GPU Deployment to `RollingUpdate` — Recreate is what
-  guarantees the old pod releases the card (and avoids RWO Multi-Attach).
-- Don't delete the 200 W power cap to "fix" slowness — tune
-  `POWER_LIMIT_WATTS` in
-  `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`
-  instead. The cap is set by the house circuit, not by the efficiency knee;
-  raising it needs an electrical decision, not just a performance one.
+- Don't `kubectl scale`; selfHeal reverts it.
+- Don't set `NVIDIA_VISIBLE_DEVICES`/`CUDA_VISIBLE_DEVICES` in GPU workload pods.
+  The infrastructure `nvidia-powerlimit` DaemonSet is the intentional exception.
+- Don't switch a GPU Deployment to `RollingUpdate`; `Recreate` releases the
+  whole card cleanly and avoids RWO Multi-Attach.
+- Don't raise the **220 W** production power cap just to chase throughput.
+  `POWER_LIMIT_WATTS` lives in
+  `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`;
+  changing it is an electrical/circuit decision.
 
-Related: [model catalog](model-catalog.md) (who points at what) ·
+Related: [model catalog](model-catalog.md) ·
 [3090 LLM optimization](3090-llm-optimization.md) · `my-apps/ai/CLAUDE.md`
-(GPU workload pattern).
