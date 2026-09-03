@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: opentelemetry-collectors
+  namespace: opentelemetry
+spec:
+  namespaceSelector:
+    matchNames:
+      - opentelemetry
+  selector:
+    matchLabels:
+      operator.opentelemetry.io/collector-monitoring-service: Exists
+  endpoints:
+    - port: monitoring
+      interval: 30s
+      scrapeTimeout: 10s
