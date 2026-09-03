@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: llama-cpp-download-qwen38-flash-next
+  name: llama-cpp-download-qwen38-27b
   namespace: llama-cpp
   annotations:
     argocd.argoproj.io/hook: Sync
