@@ -1,174 +1,93 @@
 # Open WebUI
 
-Self-hosted ChatGPT-style frontend for the cluster's local LLM stack. Wires
-Open WebUI up to vLLM (OpenAI-compatible API), SearXNG for web search,
-ComfyUI for image generation, Kiwix for offline RAG, and an MCP tool proxy
-(MCPO) for everything else.
+Self-hosted ChatGPT-style frontend for the cluster's local AI stack.
 
-## Architecture
+## Active wiring
 
-```
-                       https://open-webui.vanillax.me
-                                   │
-                        Gateway (Cilium) → HTTPRoute
-                                   │
-                           ┌───────┴────────┐
-                           │   Open WebUI   │  (this app — Deployment)
-                           └───┬───┬──┬──┬──┘
-               OpenAI-compat   │   │  │  └── MCPO (tools)
-                               │   │  │        ├── mcpo-time (port 8000)
-                               │   │  │        ├── mcpo-multi (port 8001, fs/memory/sqlite)
-                               │   │  │        └── mcpo-kiwix (port 8002, Kiwix fetch)
-                               │   │  └── ComfyUI (image gen) ─→ Z-Image-Turbo / Qwen-Image-Edit
-                               │   └── SearXNG (web search)
-                               └── vllm-service.vllm:8080/v1  (primary LLM)
+```text
+https://open-webui.vanillax.me
+        |
+        v
+Open WebUI
+  |-- llama.cpp -> qwen3.8-27b (chat / reasoning / tools / vision)
+  |-- SearXNG   -> web search
+  |-- MCPO      -> MCP-backed tools
+  |-- ComfyUI   -> image generation
+  `-- local CPU SentenceTransformer / Whisper -> RAG + STT
 ```
 
-Open WebUI itself is stateless UI + SQLite (on a PVC). The heavy lifting is
-elsewhere: vLLM holds the model in VRAM, ComfyUI owns the image-gen GPU,
-SearXNG handles search, and MCPO exposes tool endpoints as OpenAPI. RAG
-embeddings run **locally inside the Open WebUI pod** (built-in
-SentenceTransformer, CPU) — no external embedding dependency. Open WebUI runs
-on a CPU worker; local Whisper STT is CPU-backed.
+The canonical LLM connection is:
 
-## Model & backend
+- endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
+- model: `qwen3.8-27b`
+- context: `65536`
 
-> ⚠️ **Source of truth is `open-webui-configmap.env`.** If you change models,
-> update the env file — don't trust this README over the live config.
+`open-webui-configmap.env` is the source of truth. Persistent Open WebUI model
+configuration is disabled so GitOps values win over stale DB-stored connection
+settings.
 
-Currently wired up (see `open-webui-configmap.env`):
+## Current model profile
 
-| Role                  | Model / Value                                                  |
-|-----------------------|----------------------------------------------------------------|
-| Chat backend          | `OPENAI_API_BASE_URL=http://vllm-service.vllm.svc.cluster.local:8080/v1` |
-| `DEFAULT_MODELS`      | `qwen3.8-27b` — vLLM `--served-model-name` |
-| `VISION_MODELS`       | `qwen3.8-27b` |
-| `TASK_MODEL`          | `qwen3.8-27b` |
-| `TASK_MODEL_EXTERNAL` | `qwen3.8-27b` |
-| `CONTEXT_WINDOW`      | `65536` (64K) — keep aligned with vLLM `--max-model-len`. If smaller, Open WebUI silently trims history / RAG before sending. |
-| Sampling              | `TEMPERATURE=0.7`, `TOP_P=0.80`, `MIN_P=0.0` |
-| Image generation      | ComfyUI — Z-Image-Turbo (text→img, 9 steps), Qwen-Image-Edit-2511 (edit) |
-| Embeddings            | Built-in local SentenceTransformer (CPU, in-pod) — no external service |
-| STT / TTS             | Whisper `medium` on CPU (in-pod), OpenAI TTS voice `alloy` |
+| Role | Value |
+|---|---|
+| Chat/default | `qwen3.8-27b` |
+| Vision | `qwen3.8-27b` |
+| Task/title model | `qwen3.8-27b` |
+| Backend | stock llama.cpp `b10752` |
+| Target | Qwen3.8-27B `UD-Q4_K_XL` |
+| Context | 65,536 |
+| MTP | Q4_0 draft, `n-max=2` |
+| KV | q8_0 target + draft |
+| Sampling | temp 0.7, top-p 0.8, min-p 0; server also owns top-k 20 and presence penalty 1.5 |
+| Vision projector | BF16 |
 
-vLLM is served from `my-apps/ai/vllm/deployment.yaml`; the Open WebUI
-model ID must match its `--served-model-name`. It advertises only `qwen3.8-27b`
-so the model selector stays clean.
+The production backend defaults to low reasoning. Open WebUI can request more
+reasoning per conversation, but do not make xhigh the everyday default.
 
-## Performance tuning (env ConfigMap)
+## Performance baseline
 
-Non-default env vars that matter, grouped by why they exist:
-
-### FastAPI / HTTP
-
-| Var                                    | Value | Why |
-|----------------------------------------|-------|-----|
-| `THREAD_POOL_SIZE`                     | `500` | Default (40) chokes under concurrent chat + RAG + tool calls. |
-| `AIOHTTP_CLIENT_TIMEOUT`               | `1800` (30 min) | Matches the HTTPRoute timeout so long completions aren't cut off mid-stream. |
-| `AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST`    | `30` | Model list probe timeout. |
-| `CHAT_RESPONSE_STREAM_DELTA_CHUNK_SIZE`| `5`  | Batch 5 tokens per SSE push. Cuts CPU/network overhead vs per-token flushing. |
-| `ENABLE_COMPRESSION_MIDDLEWARE`        | `True` | Gzip HTTP responses — meaningful for large RAG payloads. |
-| `MODELS_CACHE_TTL` / `ENABLE_BASE_MODELS_CACHE` | `300` / `False` | Keep Open WebUI from caching an empty model list if vLLM is down during startup. |
-| `ENABLE_QUERIES_CACHE`                 | `True` | Reuse LLM-generated RAG search queries across similar prompts. |
-
-### RAG
-
-| Var                          | Value  | Why |
-|------------------------------|--------|-----|
-| `CHUNK_SIZE` / `CHUNK_OVERLAP`| 800 / 150 (~18%) | Smaller chunks improve precision w/ hybrid search; 18% overlap preserves cross-chunk context. |
-| `RAG_TOP_K`                  | `10`   | Hybrid search retrieves more; model does the culling. |
-| `ENABLE_RAG_HYBRID_SEARCH`   | `True` | BM25 + embedding — better recall on technical content than pure vector. |
-| `RAG_SYSTEM_CONTEXT`         | `True` | Inject retrieved chunks into the system message (better for KV cache reuse than stuffing user msg). |
-| `RAG_EMBEDDING_BATCH_SIZE`   | `8` | Batch size for the built-in local embedder. |
-| `USE_CUDA_DOCKER`            | `false` | Open WebUI has no GPU; vLLM reserves the sole 3090. Embeddings run on CPU in-pod (default `RAG_EMBEDDING_ENGINE`, no external service). |
-| `PDF_EXTRACT_IMAGES`         | `True` | Required for vision RAG over PDF diagrams. |
-
-### UX
-
-| Var                                   | Value  | Why |
-|---------------------------------------|--------|-----|
-| `ENABLE_AUTOCOMPLETE_GENERATION`      | `False` | Fires on every keystroke → massive API load for marginal UX gain. |
-| `ENABLE_PERSISTENT_CONFIG`            | `False` | Forces Open WebUI to use GitOps env values instead of stale DB-stored connection settings. |
-| `SHOW_THOUGHTS`                       | `True` | Render `<think>` blocks from thinking-capable models. |
+After the 2026-09-03 cutover, ordinary Open WebUI responses measured roughly
+42-43 generated tok/s on the single RTX 3090. Under generation the card showed
+about 22.7 GiB VRAM used and high GPU utilization at the 220 W cap.
 
 ## Features
 
-- **Web search** — SearXNG-backed, private. Click `+` in chat to enable per-message. Config: `WEB_SEARCH_*`, `SEARXNG_QUERY_URL`.
-- **RAG** — upload PDFs/docs, hybrid (BM25 + embedding) search. See `KIWIX_RAG_INSTRUCTIONS.md` for the offline-encyclopedia RAG setup via `fetch`.
-- **Tools via MCPO** — wired through `OPENAPI_API_ENDPOINTS`:
-  - `mcpo-time` — current time/date
-  - `mcpo-multi` — filesystem, memory, SQLite
-  - `mcpo-kiwix` — offline encyclopedia fetch tool
-- **Image generation** — ComfyUI backend, 9-step Z-Image-Turbo default, LLM-enhanced prompts (`ENABLE_IMAGE_PROMPT_GENERATION`).
-- **Voice** — Whisper `medium` STT in-pod, OpenAI TTS (voice `alloy`).
-- **Custom functions** — `function-loader-job.yaml` loads custom functions (e.g., `har-analyzer-function.py`) into the UI.
+- **Web search**: SearXNG (`WEB_SEARCH_*`, `SEARXNG_QUERY_URL`).
+- **RAG**: local CPU embeddings, hybrid BM25/vector retrieval.
+- **Tools**: MCPO endpoints from `OPENAPI_API_ENDPOINTS`.
+- **Vision**: the same `qwen3.8-27b` model; no separate vision LLM.
+- **Image generation**: ComfyUI, separate from the chat model.
+- **Voice**: local Whisper STT; configured TTS remains OpenAI-compatible.
 
-### What is MCP / MCPO?
+## Important env settings
 
-**MCP** (Model Context Protocol) is Anthropic's spec for exposing tools to
-LLMs (filesystem ops, web fetch, DB queries, etc.). **MCPO** is an OpenAPI
-proxy in front of MCP servers, so any OpenAPI-aware client — including Open
-WebUI's Tools tab — can call them without speaking MCP natively.
+- `ENABLE_PERSISTENT_CONFIG=False`: GitOps model/backend settings stay authoritative.
+- `CONTEXT_WINDOW=65536`: keep aligned with llama.cpp `--ctx-size`.
+- `DEFAULT_MODELS`, `VISION_MODELS`, `TASK_MODEL`, `TASK_MODEL_EXTERNAL`: all `qwen3.8-27b`.
+- `AIOHTTP_CLIENT_TIMEOUT=1800`: matches long-generation Gateway timeouts.
+- `ENABLE_AUTOCOMPLETE_GENERATION=False`: avoids constant background LLM traffic.
+- `USE_CUDA_DOCKER=false`: Open WebUI stays CPU-only; llama.cpp owns the RTX 3090.
 
-In this cluster, MCPO exposes three tool bundles as OpenAPI endpoints
-(`8000/8001/8002`) and Open WebUI auto-registers them via
-`OPENAPI_API_ENDPOINTS`. The `Settings → Tools` UI path in the original
-README is the *manual* way to register more — the three above are already
-wired in via ConfigMap.
+## Debugging
 
-## Deployment
+Check the backend directly before blaming the UI:
 
-Applied by ArgoCD automatically (directory = Application). Files:
-
-| File                      | Purpose                                                          |
-|---------------------------|------------------------------------------------------------------|
-| `namespace.yaml`          | `open-webui` namespace                                           |
-| `open-webui-configmap.env`| **All** env-based config. Source of truth for behavior.          |
-| `deployment.yaml`         | Open WebUI main Deployment (stateful via PVC below)              |
-| `loader.js`               | Formats vLLM usage telemetry for the response tooltip       |
-| `pvc.yaml`                | SQLite + uploaded files persist here                             |
-| `service.yaml`            | ClusterIP for HTTPRoute                                          |
-| `httproute.yaml`          | External HTTPRoute to `open-webui.vanillax.me`                   |
-| `mcpo-deployment.yaml`    | MCPO Deployment (three tool bundles, ports 8000/8001/8002)       |
-| `mcp-config.yaml`         | Multi-tool server config (filesystem/memory/sqlite)              |
-| `mcp-kiwix.yaml`          | Kiwix fetch tool config                                          |
-| `function-loader-job.yaml`| One-shot Job — loads `har-analyzer-function.py` into the UI      |
-| `kustomization.yaml`      | Ties it all together. **Must list every YAML** under `resources:` |
-
-Force a manual apply (bypassing ArgoCD, for dev):
 ```bash
-kubectl apply -k my-apps/ai/open-webui/
+kubectl -n llama-cpp get pods
+kubectl -n llama-cpp logs deploy/llama-cpp-server --tail=200
+kubectl -n llama-cpp exec deploy/llama-cpp-server -- nvidia-smi
+curl -s https://llama.vanillax.me/v1/models
 ```
 
-## Access
+Then confirm the UI pod received the rendered ConfigMap:
 
-- Public: https://open-webui.vanillax.me (Cloudflare tunnel → gateway-external)
+```bash
+kubectl -n open-webui get pods
+kubectl -n open-webui describe deploy/open-webui
+```
 
-## Troubleshooting
+## GPU ownership
 
-**No models showing up in the UI**
-- Check `curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models` from inside the cluster — what model name is advertised?
-- Compare against `DEFAULT_MODELS` in `open-webui-configmap.env`. It must match vLLM's `--served-model-name` exactly.
-- If Open WebUI cached an empty model list while vLLM was crashlooping, restart `deploy/open-webui` after the backend is healthy.
-
-**Tools tab is empty**
-- `kubectl logs -n open-webui deploy/mcpo` — MCPO pods crash loudly if the API keys don't match `OPENAPI_API_ENDPOINTS`.
-- Test endpoint directly: `kubectl exec -n open-webui deploy/open-webui -- curl -s http://mcpo.open-webui.svc.cluster.local:8000/openapi.json`
-
-**Web search returns nothing**
-- Verify SearXNG is alive: `kubectl get pods -n searxng`
-- `SEARXNG_QUERY_URL` must include `&format=json` — without JSON format Open WebUI silently drops results.
-
-**Long completions cut off mid-stream**
-- `AIOHTTP_CLIENT_TIMEOUT=1800` handles 30-min generations. If you're running longer, bump this *and* the `HTTPRoute` timeout — the shorter of the two wins.
-
-## Gotchas
-
-- **Env ConfigMap is law.** `ENABLE_PERSISTENT_CONFIG=False` forces Open WebUI
-  to read these GitOps values on restart; UI edits to connection/model settings
-  are session-only.
-- **MCPO key must match** between the MCPO Deployment env and
-  `OPENAPI_API_ENDPOINTS` — format is
-  `name:url:api_key;name:url:api_key;…`.
-- **PVC is RWO.** Deployment uses `strategy: Recreate` (see
-  `my-apps/CLAUDE.md` — RWO + RollingUpdate = Multi-Attach deadlock).
+Open WebUI itself does not request a GPU. The single RTX 3090 belongs to the
+active llama.cpp Deployment. ComfyUI/SwarmUI/vLLM are mutually exclusive
+whole-card workloads and remain parked unless a GitOps scale-swap is performed.
