@@ -85,6 +85,54 @@ views:
           - entity: sensor.homelab_cost_yearly
             name: This Year
 
+      - type: glance
+        title: Last completed month
+        show_state: true
+        columns: 3
+        entities:
+          - entity: sensor.homelab_cost_last_month
+            name: Cost last month
+          - entity: sensor.homelab_total_energy_last_month
+            name: Energy last month
+          - entity: sensor.homelab_cost_yesterday
+            name: Cost yesterday
+
+      - type: entities
+        title: Cost last month — per device
+        entities:
+          - entity: sensor.gpu_psu_cost_last_month
+            name: Threadripper Host
+          - entity: sensor.nas_psu_cost_last_month
+            name: NAS Drive PSU
+          - entity: sensor.truenas_server_cost_last_month
+            name: TrueNAS (DL360)
+          - entity: sensor.hp_sff_cost_last_month
+            name: HP SFF + Optiplex
+          - entity: sensor.shed_lab_cost_last_month
+            name: Shed (HP micro, solar)
+          - entity: sensor.gaming_pc_cost_last_month
+            name: Gaming PC (7800X3D + 3090)
+          - entity: sensor.hp_elite_estimated_cost_last_month
+            name: HP Elite (estimated)
+
+      - type: entities
+        title: Energy last month — per device
+        entities:
+          - entity: sensor.gpu_psu_energy_last_month
+            name: Threadripper Host
+          - entity: sensor.nas_psu_energy_last_month
+            name: NAS Drive PSU
+          - entity: sensor.truenas_server_energy_last_month
+            name: TrueNAS (DL360)
+          - entity: sensor.hp_sff_energy_last_month
+            name: HP SFF + Optiplex
+          - entity: sensor.shed_lab_energy_last_month
+            name: Shed (HP micro, solar)
+          - entity: sensor.gaming_pc_energy_last_month
+            name: Gaming PC (7800X3D + 3090)
+          - entity: sensor.hp_elite_estimated_energy_last_month
+            name: HP Elite (estimated)
+
       - type: grid
         title: Share of total draw
         columns: 3

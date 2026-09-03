@@ -547,6 +547,7 @@ template:
   - sensor:
       # now()-based templates re-render every minute; float(<bill default>) keeps this right
       # before the input_number sliders are first touched.
+      # Summer is June-August: September bills at the non-summer rate.
       - name: "Current Electricity Rate"
         unique_id: current_electricity_rate
         unit_of_measurement: "USD/kWh"
@@ -554,7 +555,7 @@ template:
         icon: mdi:cash-multiple
         state: >
           {% set n = now() %}
-          {% set summer = n.month in [6, 7, 8, 9] %}
+          {% set summer = n.month in [6, 7, 8] %}
           {% set onpeak = summer and n.weekday() < 5 and 14 <= n.hour < 19 %}
           {% if onpeak %}
             {% set e = states('input_number.rate_summer_onpeak') | float(0.151904) %}
@@ -572,7 +573,7 @@ template:
         icon: mdi:clock-outline
         state: >
           {% set n = now() %}
-          {% set summer = n.month in [6, 7, 8, 9] %}
+          {% set summer = n.month in [6, 7, 8] %}
           {% set onpeak = summer and n.weekday() < 5 and 14 <= n.hour < 19 %}
           {% if onpeak %}Summer On-Peak
           {% elif summer %}Summer Off-Peak
@@ -705,6 +706,143 @@ template:
         state: >
           {{ (states('sensor.hp_elite_estimated_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
+
+      # ----- last completed month (utility_meter last_period) -----
+      - name: "GPU PSU Cost Last Month"
+        unique_id: gpu_psu_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.gpu_psu_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "NAS PSU Cost Last Month"
+        unique_id: nas_psu_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.nas_psu_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "TrueNAS Server Cost Last Month"
+        unique_id: truenas_server_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.truenas_server_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "HP SFF Cost Last Month"
+        unique_id: hp_sff_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.hp_sff_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Shed Lab Cost Last Month"
+        unique_id: shed_lab_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.shed_lab_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Gaming PC Cost Last Month"
+        unique_id: gaming_pc_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.gaming_pc_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "HP Elite Estimated Cost Last Month"
+        unique_id: hp_elite_estimated_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.hp_elite_estimated_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "GPU PSU Energy Last Month"
+        unique_id: gpu_psu_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.gpu_psu_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "NAS PSU Energy Last Month"
+        unique_id: nas_psu_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.nas_psu_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "TrueNAS Server Energy Last Month"
+        unique_id: truenas_server_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.truenas_server_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "HP SFF Energy Last Month"
+        unique_id: hp_sff_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.hp_sff_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "Shed Lab Energy Last Month"
+        unique_id: shed_lab_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.shed_lab_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "Gaming PC Energy Last Month"
+        unique_id: gaming_pc_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.gaming_pc_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "HP Elite Estimated Energy Last Month"
+        unique_id: hp_elite_estimated_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.hp_elite_estimated_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "Homelab Cost Last Month"
+        unique_id: homelab_cost_last_month
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-check
+        state: >
+          {{ state_attr('sensor.homelab_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Homelab Cost Yesterday"
+        unique_id: homelab_cost_yesterday
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:calendar-arrow-left
+        state: >
+          {{ state_attr('sensor.homelab_cost_daily', 'last_period') | float(0) | round(4) }}
+
+      - name: "Homelab Total Energy Last Month"
+        unique_id: homelab_total_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.homelab_total_energy_monthly', 'last_period') | float(0) | round(3) }}
 
       # ----- live % of total draw (entity slug == *_power_share) -----
       - name: "GPU PSU Power Share"
