@@ -1,0 +1,13 @@
+# Owned here, not by a shared app: a stale render in another Application left every
+# pod in this namespace rejected with "no PriorityClass with name app-critical was found".
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: app-critical
+  annotations:
+    description: "Production data pipelines: above general homelab apps, below primary AI workloads"
+    # Cluster-scoped and referenced by every workload here, so it must exist before them.
+    argocd.argoproj.io/sync-wave: "-5"
+value: 500
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
