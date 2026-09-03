@@ -7,18 +7,10 @@ resources:
   - collector-agent.yaml
   - collector-gateway.yaml
   - collector-gateway-httproute.yaml
-  - instrumentation.yaml
 
 # Cold-start deadlock guard: the Fail webhooks register before the operator is up, so CRs applied in the same pass abort the sync forever.
 # NEVER ship an operator and the CRs its own webhook admits in the same wave.
 patches:
-  - target:
-      kind: Instrumentation
-    patch: |-
-      - op: add
-        path: /metadata/annotations
-        value:
-          argocd.argoproj.io/sync-wave: "1"
   - target:
       kind: OpenTelemetryCollector
     patch: |-

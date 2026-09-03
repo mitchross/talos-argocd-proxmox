@@ -124,8 +124,6 @@ prometheus:
         - namespace: prometheus-stack
           name: kube-prometheus-stack-alertmanager
           port: 9093
-    # The OTEL gateway exports metrics to /api/v1/otlp — 404s while this is off (chart default false).
-    enableOTLPReceiver: true
 # Alertmanager Configuration
 alertmanager:
   enabled: true

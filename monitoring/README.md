@@ -9,8 +9,8 @@ visualized in Grafana. No SaaS in the pipeline.
 ```mermaid
 graph TB
     subgraph "Collection (infrastructure/controllers/opentelemetry-operator/)"
-        A[OTEL Collector Agent<br/>DaemonSet per node] -->|OTLP gRPC| B[OTEL Collector Gateway<br/>Deployment 2 replicas]
-        C[Auto-instrumented Apps] -->|OTLP :4317| A
+        A[OTEL Collector Agent<br/>filelog DaemonSet per node] -->|logs, OTLP gRPC| B[OTEL Collector Gateway<br/>1 replica]
+        C[radar-ng mobile SDK] -->|logs + traces, OTLP HTTP| B
     end
 
     subgraph "Processing (Gateway)"
@@ -21,7 +21,7 @@ graph TB
     subgraph "Local Storage (monitoring/)"
         E -->|logs| F[Loki<br/>loki-stack/]
         E -->|traces| G[Tempo<br/>tempo/]
-        E -->|metrics| H[Prometheus<br/>prometheus-stack/]
+        H[Prometheus<br/>native scrape discovery]
     end
 
     subgraph "Visualization"
@@ -57,9 +57,9 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| **OTEL Operator** | `infrastructure/controllers/opentelemetry-operator/` | Manages Collectors + auto-instrumentation |
-| **OTEL Agent** | Same (CRD: `collector-agent.yaml`) | DaemonSet, scrapes pod logs via filelog, receives OTLP |
-| **OTEL Gateway** | Same (CRD: `collector-gateway.yaml`) | Centralized processing, fan-out to all backends |
+| **OTEL Operator** | `infrastructure/controllers/opentelemetry-operator/` | Manages the two Collectors |
+| **OTEL Agent** | Same (CRD: `collector-agent.yaml`) | DaemonSet, scrapes pod logs via filelog |
+| **OTEL Gateway** | Same (CRD: `collector-gateway.yaml`) | Enriches logs and routes logs/traces to their backends |
 | **Prometheus** | `monitoring/prometheus-stack/` | Metrics storage, alerting, Grafana |
 | **Loki** | `monitoring/loki-stack/` | Log storage (S3 on RustFS) |
 | **Tempo** | `monitoring/tempo/` | Trace storage (S3 on RustFS) |
@@ -67,52 +67,15 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 | **Trivy Operator** | `monitoring/trivy-operator/` | Conservative vulnerability + exposed-secret scanning |
 | **pod-cleanup** | `monitoring/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
 
-## Auto-Instrumentation
+## Telemetry scope
 
-The OTEL Operator injects OTEL SDKs into pods automatically. Opt-in by
-adding an annotation to a Deployment's *pod template*:
-
-```yaml
-spec:
-  template:
-    metadata:
-      annotations:
-        instrumentation.opentelemetry.io/inject-nodejs: "true"
-        # also available: inject-java, inject-go, inject-dotnet
-```
-
-> 🚫 **Do NOT use `inject-python: "true"`.** We tried it — the OTEL Python
-> SDK init container crashed every Python app in the cluster. If you need
-> tracing for a Python service, use the OTEL Python SDK manually inside the
-> app (don't use the operator's auto-injection). Node.js / Java / Go /
-> .NET auto-injection works, but validate on a canary pod first.
-
-### When auto-instrumentation "silently fails"
-
-Common failure modes, in order of likelihood:
-
-1. **Annotation is on the Deployment, not the pod template.** It must be
-   on `spec.template.metadata.annotations`, not `metadata.annotations`.
-2. **Init container OOMed.** The injected SDK downloads at startup; some
-   apps with tight memory limits kill it. Check
-   `kubectl describe pod <pod>` for `OOMKilled` on the init container.
-3. **Instrumentation CR not matching.** The `Instrumentation` CR
-   (`infrastructure/controllers/opentelemetry-operator/instrumentation.yaml`)
-   defines which image / endpoint is injected. If it's not in the same
-   namespace as the pod (or a selectable namespace), the webhook skips.
-4. **Webhook wasn't running at pod-create time.** Annotations are only
-   applied by the mutating webhook on *creation*. Existing pods need a
-   rollout (`kubectl rollout restart deploy/<name>`) after you add the
-   annotation.
-5. **Network policy / Cilium rule blocks OTLP.** Apps send to the Agent's
-   OTLP port (`:4317` on the node). If a NetworkPolicy blocks egress to
-   the DaemonSet, traces never leave the pod.
-
-Verify an app is actually instrumented:
-```bash
-kubectl describe pod <pod> | grep -A5 'Init Containers'
-# Should show an 'opentelemetry-auto-instrumentation-*' init container.
-```
+The node agents collect container stdout/stderr only. Prometheus already
+collects Kubernetes and application metrics through kubelet, kube-state-metrics,
+ServiceMonitors, and PodMonitors, so OTEL does not duplicate those metrics.
+Application auto-injection is intentionally not deployed: the former blanket
+experiment added startup and runtime cost without a maintained trace consumer.
+The radar-ng mobile app remains the explicit exception and sends its own logs
+and traces directly to the public gateway.
 
 ## Kubernetes Metrics: Two Pipelines
 
@@ -213,7 +176,6 @@ The three GitOps-managed entrypoints are:
 - Argo CD alerts: `monitoring/prometheus-stack/argocd-sync-alerts.yaml`
 - GPU alerts/dashboard: `monitoring/prometheus-stack/gpu-alerts.yaml`, `gpu-dashboard.yaml`
 - OTEL Collectors: `infrastructure/controllers/opentelemetry-operator/collector-*.yaml`
-- Auto-instrumentation: `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml`
 - k8sgpt runbook: `monitoring/k8sgpt/README.md`
 - Trivy Operator runbook: `monitoring/trivy-operator/README.md`
 
