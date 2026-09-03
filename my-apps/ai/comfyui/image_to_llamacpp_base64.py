@@ -10,9 +10,9 @@ import urllib.error
 import numpy as np
 from PIL import Image
 
-_DEFAULT_SERVER = "http://vllm-service.vllm.svc.cluster.local:8080"
-# Qwen 3.8 multimodal (AutoRound W4A16, native vision) — one model for both
-# image-to-prompt captioning and any tool/text chain that follows.
+_DEFAULT_SERVER = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
+# Qwen 3.8 multimodal on stock llama.cpp — one model for both image-to-prompt
+# captioning and any tool/text chain that follows.
 _DEFAULT_MODEL = "qwen3.8-27b"
 
 
