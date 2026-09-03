@@ -1101,6 +1101,442 @@
       "id": 17
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 18,
+      "title": "Last completed month",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Cost Last Month",
+      "description": "The finished total for the previous calendar month, from utility_meter's last_period. Unlike Cost This Month it no longer moves.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 25
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_last_month\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 32
+      },
+      "id": 19
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Energy Last Month",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "kwatth",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.homelab_total_energy_last_month\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 32
+      },
+      "id": 20
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Cost Yesterday",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 4
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_yesterday\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 32
+      },
+      "id": 21
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "This Month vs Last",
+      "description": "Month-to-date minus last month's finished total. Negative early in the month is normal \u2014 it only means the month is young, not that costs fell.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_monthly\"}) - max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_last_month\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 32
+      },
+      "id": 22
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Cost Last Month \u2014 Per Device",
+      "description": "Last month's finished cost, per device.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 25
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_cost_last_month\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_last_month\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "id": 23
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "bargauge",
+      "title": "Energy Last Month \u2014 Per Device",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "kwatth",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sortBy": "Value",
+        "sortDesc": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_energy_kwh{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc|hp_elite_estimated)_energy_last_month\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_energy_last_month\"), \"plug\", \"threadripper\", \"plug\", \"gpu_psu\"), \"plug\", \"nas-drive-psu\", \"plug\", \"nas_psu\"), \"plug\", \"truenas\", \"plug\", \"truenas_server\"), \"plug\", \"hp-sff+optiplex\", \"plug\", \"hp_sff\"), \"plug\", \"shed\", \"plug\", \"shed_lab\"), \"plug\", \"gaming-pc\", \"plug\", \"gaming_pc\"), \"plug\", \"hp-elite (est.)\", \"plug\", \"hp_elite_estimated\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 24
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 25,
+      "title": "Annualised what-ifs",
+      "type": "row",
+      "panels": []
+    },
+    {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1171,9 +1607,9 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 46
       },
-      "id": 18
+      "id": 26
     },
     {
       "datasource": {
@@ -1234,9 +1670,9 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 46
       },
-      "id": 19
+      "id": 27
     },
     {
       "collapsed": false,
@@ -1244,9 +1680,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 53
       },
-      "id": 20,
+      "id": 28,
       "title": "Idle floor \u2014 what it costs to do nothing",
       "type": "row",
       "panels": []
@@ -1321,9 +1757,9 @@
         "h": 6,
         "w": 6,
         "x": 0,
-        "y": 39
+        "y": 54
       },
-      "id": 21
+      "id": 29
     },
     {
       "datasource": {
@@ -1395,9 +1831,9 @@
         "h": 6,
         "w": 6,
         "x": 6,
-        "y": 39
+        "y": 54
       },
-      "id": 22
+      "id": 30
     },
     {
       "datasource": {
@@ -1469,9 +1905,9 @@
         "h": 6,
         "w": 6,
         "x": 12,
-        "y": 39
+        "y": 54
       },
-      "id": 23
+      "id": 31
     },
     {
       "datasource": {
@@ -1531,9 +1967,9 @@
         "h": 6,
         "w": 6,
         "x": 18,
-        "y": 39
+        "y": 54
       },
-      "id": 24
+      "id": 32
     },
     {
       "collapsed": false,
@@ -1541,9 +1977,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 60
       },
-      "id": 25,
+      "id": 33,
       "title": "Usage over time",
       "type": "row",
       "panels": []
@@ -1609,9 +2045,9 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 61
       },
-      "id": 26
+      "id": 34
     },
     {
       "datasource": {
@@ -1696,9 +2132,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 55
+        "y": 70
       },
-      "id": 27
+      "id": 35
     },
     {
       "datasource": {
@@ -1772,9 +2208,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 70
       },
-      "id": 28
+      "id": 36
     },
     {
       "datasource": {
@@ -1837,9 +2273,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 63
+        "y": 78
       },
-      "id": 29
+      "id": 37
     },
     {
       "datasource": {
@@ -1902,9 +2338,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 63
+        "y": 78
       },
-      "id": 30
+      "id": 38
     },
     {
       "collapsed": false,
@@ -1912,9 +2348,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 71
+        "y": 86
       },
-      "id": 31,
+      "id": 39,
       "title": "Electrical",
       "type": "row",
       "panels": []
@@ -1980,9 +2416,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 72
+        "y": 87
       },
-      "id": 32
+      "id": 40
     },
     {
       "datasource": {
@@ -2045,9 +2481,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 72
+        "y": 87
       },
-      "id": 33
+      "id": 41
     },
     {
       "collapsed": false,
@@ -2055,9 +2491,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 80
+        "y": 95
       },
-      "id": 34,
+      "id": 42,
       "title": "Reading this dashboard",
       "type": "row",
       "panels": []
@@ -2074,9 +2510,9 @@
         "h": 15,
         "w": 24,
         "x": 0,
-        "y": 81
+        "y": 96
       },
-      "id": 35
+      "id": 43
     }
   ],
   "refresh": "30s",
