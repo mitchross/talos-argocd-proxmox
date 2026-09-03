@@ -31,7 +31,16 @@ spec:
         app: radar-ng-worker-mrms
         radar-ng.vanillax.dev/worker: "true"
     spec:
+      priorityClassName: app-critical
       affinity:
+        # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: In
+                    values: ["true"]
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -116,7 +125,16 @@ spec:
         app: radar-ng-worker-nowcast
         radar-ng.vanillax.dev/worker: "true"
     spec:
+      priorityClassName: app-critical
       affinity:
+        # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: In
+                    values: ["true"]
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -201,7 +219,16 @@ spec:
         app: radar-ng-worker-hrrr
         radar-ng.vanillax.dev/worker: "true"
     spec:
+      priorityClassName: app-critical
       affinity:
+        # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: In
+                    values: ["true"]
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -286,7 +313,16 @@ spec:
         app: radar-ng-worker-aux
         radar-ng.vanillax.dev/worker: "true"
     spec:
+      priorityClassName: app-critical
       affinity:
+        # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: In
+                    values: ["true"]
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -371,7 +407,16 @@ spec:
         app: radar-ng-worker-alerts
         radar-ng.vanillax.dev/worker: "true"
     spec:
+      priorityClassName: app-critical
       affinity:
+        # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: In
+                    values: ["true"]
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
