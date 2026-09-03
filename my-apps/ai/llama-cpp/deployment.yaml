@@ -36,6 +36,29 @@ spec:
       securityContext:
         fsGroup: 10001
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # An existing Deployment can roll while Argo Sync hooks are still
+        # downloading/hydrating a new model. Gate the real server on an atomic,
+        # revisioned ready stamp written only after local-NVMe hydration ends.
+        - name: wait-for-model-cache
+          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+          command:
+            - /bin/sh
+            - -ec
+            - /opt/repo-scripts/wait-for-model-cache.sh
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+            - name: models
+              mountPath: /models
+              readOnly: true
       containers:
         - name: llama-cpp-server
           # b10751 fixed the Qwen3.8-27B MTP KV-init regression seen in b10745;
@@ -165,6 +188,10 @@ spec:
             - name: dshm
               mountPath: /dev/shm
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: llama-cpp-scripts
+            defaultMode: 0555
         # Node-local NVMe cache, not NFS: the download hook persists the verified
         # artifacts on NFS and cache-sync hydrates this PVC before the server.
         - name: models
