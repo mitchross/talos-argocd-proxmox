@@ -4,8 +4,8 @@
 as the rollback path.
 
 - in cluster: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
-- LAN compatibility endpoint: `https://vllm.vanillax.me/v1`
-- alternate LAN endpoint: `https://llama.vanillax.me/v1`
+- canonical LAN endpoint: `https://llama.vanillax.me/v1`
+- compatibility LAN endpoint: `https://vllm.vanillax.me/v1`
 - API model: `qwen3.8-27b`
 
 ## Production profile
@@ -13,6 +13,7 @@ as the rollback path.
 | Setting | Value |
 |---|---|
 | GPU | 1x RTX 3090 24 GB |
+| Power cap | 220 W |
 | Engine | stock llama.cpp `b10752`, official CUDA12 linux/amd64 image |
 | Target | `unsloth/Qwen3.8-27B-GGUF` `UD-Q4_K_XL` |
 | Target size | ~17.6 GB |
@@ -24,10 +25,15 @@ as the rollback path.
 | Concurrency | one slot |
 | Storage | verified NFS archive -> GPU-node local NVMe cache |
 
-The goal is an everyday backend, not a maximum-context benchmark. Community
-single-3090 Qwen3.8-27B results show this dense/full-GPU shape is dramatically
-faster than the Flash-Next CPU-MoE layout previously tested here, while keeping
-vision, reasoning, tools and MTP.
+Observed after the 2026-09-03 production cutover: normal Open WebUI responses
+sustained about **42-43 generated tok/s**; under generation the RTX 3090 showed
+about **22,740 MiB / 24,576 MiB VRAM**, **87% GPU utilization**, and **216 W /
+220 W**. Treat these as the first real-machine baseline, not a synthetic ceiling.
+
+The goal is an everyday backend, not a maximum-context benchmark. This
+dense/full-GPU shape is roughly an order of magnitude faster on this exact host
+than the Flash-Next IQ4_XS CPU-MoE trial, while retaining vision, reasoning,
+tools and MTP.
 
 ## Pinned inputs
 
@@ -39,12 +45,18 @@ vision, reasoning, tools and MTP.
 `b10751` fixed the Qwen3.8-27B MTP KV-initialization regression reported in
 `b10745`; `b10752` is the next official image and contains that fix.
 
-## Storage
+## Storage and startup ordering
 
 The wave -1 download hook SHA-verifies the model, projector and MTP artifact on
 TrueNAS NFS. The wave 0 cache-sync hook copies only those three files into the
 GPU worker's node-local `ai-model-cache` PVC. The serving pod mounts only the
 NVMe cache.
+
+A revisioned `.qwen38-27b-cache-ready` stamp is written only after all three
+artifacts finish local-NVMe hydration. `wait-for-model-cache` blocks the serving
+container until that exact revision and all files are present. This prevents an
+existing Deployment from crash-looping while Argo hooks are still staging a
+new model.
 
 Old Flash-Next artifacts may remain on NFS/NVMe for manual recovery, but they
 are not downloaded, synchronized or referenced by the active manifests.
@@ -56,9 +68,15 @@ are not downloaded, synchronized or referenced by the active manifests.
 - `GGML_CUDA_CUBLAS_COMPUTE_TYPE=fp32` avoids an Ampere multimodal cuBLAS
   failure observed during vision prefill.
 - `--image-min-tokens 1024` favors vision/grounding correctness.
-- reasoning defaults to low effort; clients can override per request.
+- reasoning defaults to low effort; clients can override per request using
+  OpenAI-compatible `reasoning_effort`.
 - `--reasoning-preserve` keeps reasoning state coherent across multi-turn use.
-- `--cache-reuse 256` improves repeated-prefix / agent workloads.
+- Prefix `--cache-reuse` is intentionally omitted: llama.cpp disables it when
+  the multimodal projector is loaded, so keeping the flag only produces a
+  misleading startup warning.
+- Sampling stays server-owned at temp 0.7 / top-p 0.8 / top-k 20 / min-p 0 /
+  presence penalty 1.5 / repeat penalty 1.0 unless a client explicitly
+  overrides it.
 
 ## Cutover / rollback
 
