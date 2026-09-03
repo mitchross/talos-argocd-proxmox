@@ -7,7 +7,7 @@ metadata:
     # Kafka and its topic must be Healthy before the browser starts polling.
     argocd.argoproj.io/sync-wave: "2"
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/component: kafka-ui
