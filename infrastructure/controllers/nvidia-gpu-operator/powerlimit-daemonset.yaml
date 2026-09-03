@@ -58,8 +58,8 @@ spec:
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "utility"
-            # 200W is a HOUSE-CIRCUIT constraint, not an efficiency choice (290W flickered the basement lights).
-            # Do not raise toward the 290W efficiency knee without confirming the circuit.
+            # 220W is the current HOUSE-CIRCUIT constraint, not an efficiency choice.
+            # Do not raise toward the ~290W efficiency knee without confirming the circuit.
             - name: POWER_LIMIT_WATTS
               value: "220"
             - name: REAPPLY_SECONDS

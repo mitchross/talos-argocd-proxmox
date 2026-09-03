@@ -10,12 +10,12 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **Tech Stack**: Talos OS + ArgoCD + Cilium (Gateway API) + Longhorn + 1Password + GPU support
 
-**AI/LLM Backend**: Two OpenAI-compatible local backends, both NOT ollama:
+**AI/LLM Backend**: one active OpenAI-compatible local backend plus a parked rollback, both NOT ollama:
 
-- **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.8-27b`) is active with the AutoRound W4A16 dense 27B, native vision, fp8 KV at 64K, and 2-token MTP on one RTX 3090.
-- **llama.cpp** is the parked GGUF rollback backend at `replicas: 0` (Unsloth Flash-Next UD-IQ4_XS).
+- **llama.cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`, served model `qwen3.8-27b`) is active with Qwen3.8-27B UD-Q4_K_XL, q8_0 target/draft KV, 65K context, MTP-2, native vision, and one RTX 3090.
+- **vLLM** is the parked Qwen3.8-27B W4A16 rollback backend at `replicas: 0`; its model/cache artifacts remain intact.
 
-GPU topology: the GPU workloads use **mutually exclusive whole-card** allocations (`type: Recreate`, time-slicing disabled — never oversubscribe the card). They scale-swap by committed replica counts. Current state is vLLM `1`, llama-cpp `0`, and ComfyUI/SwarmUI `0`; the chassis has one RTX 3090. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
+GPU topology: the GPU workloads use **mutually exclusive whole-card** allocations (`type: Recreate`, time-slicing disabled — never oversubscribe the card). They scale-swap by committed replica counts. Current state is llama.cpp `1`, vLLM `0`, and ComfyUI/SwarmUI `0`; the chassis has one RTX 3090. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
@@ -122,7 +122,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
-- Use **vLLM** (`qwen3.8-27b`, the default for app inference) or the parked llama.cpp rollback backend — **never ollama**
+- Use **llama.cpp** (`qwen3.8-27b`, the active default for app inference) or the parked vLLM rollback backend — **never ollama**
 - Use sync waves when adding infrastructure components
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
@@ -173,7 +173,7 @@ Detailed instructions load automatically when working in these directories:
 | `infrastructure/database/` | Database AppSet scope (Redis + shared support); plain-Postgres pointer |
 | `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
 | `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
-| `my-apps/ai/` | GPU workload patterns, vLLM backend |
+| `my-apps/ai/` | GPU workload patterns, active llama.cpp backend, parked vLLM rollback |
 | `my-apps/development/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
 | `monitoring/` | Monitoring pitfalls (S3 creds, ServiceMonitor selectors) |
 

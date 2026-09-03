@@ -25,7 +25,7 @@ Do not split these child folders into independent Argo Applications unless there
 | `kopiur/postgres-data.yaml` | Hourly Postgres backup + Restore |
 | `kopiur/object-store.yaml` | Daily knowledge/object-store backup + Restore |
 | `externalsecret.yaml` | 1Password-backed application/database/Zero secrets; wave -1 |
-| `global_llm_config.yaml` | Operator-owned global chat model catalog; points SurfSense at the in-cluster vLLM service |
+| `global_llm_config.yaml` | Operator-owned global chat model catalog; points SurfSense at the active in-cluster llama.cpp service |
 | `selfhost.env` | Non-secret self-host policy: zero signup wallet and all hosted-style billing switches disabled |
 | `scripts/reconcile-credit-policy.sh` | SQL reconciliation script mounted into the credit-policy hook through a generated ConfigMap |
 | `httproute.yaml` | Single-origin external routing that mirrors SurfSense's upstream Caddy contract |
@@ -54,8 +54,8 @@ Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The
 6. **Zero is not backed up and has no PVC.** Its SQLite replica is `emptyDir`; replacement resyncs from Postgres.
 7. **Mirror SurfSense's upstream same-origin proxy contract exactly.** `/auth/callback` goes to the frontend; `/auth`, `/users`, `/api/v1`, and `/zero/context` go to the backend; remaining `/zero` traffic goes to zero-cache; everything else goes to the frontend. The `/users/me` and `/zero/context` exceptions are required for authenticated dashboard startup. Do not collapse these into broad `/auth` or `/zero` routes without preserving the more-specific exceptions.
 8. **Do not add upstream OpenSandbox's Docker socket to Talos.** Talos has no Docker daemon/socket. `SANDBOX_ENABLED=FALSE` is intentional until a Kubernetes-native or remote sandbox provider is selected.
-9. **Do not request a GPU.** The active RTX 3090 belongs to vLLM. SurfSense uses CPU embeddings and calls vLLM for chat.
-10. **Local vLLM is free infrastructure, not a credit-metered provider.** Keep `qwen3.8-27b` at `billing_tier: free`. `selfhost.env` must keep `DEFAULT_CREDIT_MICROS_BALANCE=0` and hosted-style billing switches disabled. The credit-policy hook must reconcile restored or pre-policy wallet rows before workloads start; do not replace it with manual SQL or fake premium model entries.
+9. **Do not request a GPU.** The active RTX 3090 belongs to llama.cpp. SurfSense uses CPU embeddings and calls llama.cpp for chat.
+10. **Local llama.cpp is free infrastructure, not a credit-metered provider.** Keep `qwen3.8-27b` at `billing_tier: free`. `selfhost.env` must keep `DEFAULT_CREDIT_MICROS_BALANCE=0` and hosted-style billing switches disabled. The credit-policy hook must reconcile restored or pre-policy wallet rows before workloads start; do not replace it with manual SQL or fake premium model entries.
 11. **Reuse cluster SearXNG** at `http://searxng.searxng.svc.cluster.local:8080`; do not deploy another copy.
 12. **Secrets stay in 1Password.** Item `surfsense`: `secret_key`, `db_password`, `zero_admin_password`, `zero_query_api_key`.
 13. **Obsidian sync is client-pushed through a loopback Kubernetes tunnel.** The CachyOS plugin syncs only Mink `wiki/` through `127.0.0.1:18000`; do not add a server-side vault mount, route note-body bursts through Cloudflare, or commit the plugin PAT.
@@ -71,8 +71,8 @@ The SurfSense backend image does not set a non-root `USER`, so object-store data
 
 ## Local AI
 
-- Base URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
+- Base URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - Model: `qwen3.8-27b`
 - Billing tier: `free`
 
-Do not point SurfSense at the parked llama.cpp service unless the repo's AI backend state changes.
+Do not point SurfSense at the parked vLLM backend unless the repo's AI backend state changes.

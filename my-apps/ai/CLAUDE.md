@@ -37,6 +37,8 @@ One active OpenAI-compatible local backend, **NOT ollama**:
   path; it avoids a reported cuBLAS multimodal prefill failure.
 - **`--image-min-tokens 1024` is intentional** for Qwen vision/grounding
   correctness.
+- **Do not re-add `--cache-reuse` while multimodal is enabled.** llama.cpp
+  disables it with the projector loaded and only emits a warning.
 - **Local = unlimited token volume (free), not an infinite request window.**
 
 ## GPU Topology
@@ -56,8 +58,8 @@ is CPU-only and deliberately does not carry that label.
   env; they override the device-plugin/CDI injection.
 - The infrastructure `nvidia-powerlimit` DaemonSet is the exception because it
   administers the physical card without consuming a workload allocation.
-- The 3090 power cap is a house-circuit constraint. Do not raise it as a casual
-  performance tweak.
+- The current **220 W** 3090 power cap is a house-circuit constraint. Do not
+  raise it as a casual performance tweak.
 
 ## GPU Workload Pattern
 
