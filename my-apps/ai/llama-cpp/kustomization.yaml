@@ -8,14 +8,13 @@ resources:
   - pvc.yaml
   - pvc-model-cache.yaml
   - download-model-job.yaml
-  - mtp-download-job.yaml
   - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
 
-# Flash-Next test cutover: claim the sole RTX 3090 after vLLM is parked.
+# Production cutover: llama.cpp owns the sole RTX 3090; vLLM is parked at 0.
 replicas:
   - name: llama-cpp-server
     count: 1
