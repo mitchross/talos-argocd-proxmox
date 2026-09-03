@@ -26,14 +26,15 @@ loki:
         period: 24h
   ingester:
     chunk_encoding: snappy
+    wal:
+      # Loki defaults replay to 4GB; keep recovery below the write pod's 1Gi limit.
+      replay_memory_ceiling: 750MB
   querier:
     max_concurrent: 4
   query_scheduler:
     use_scheduler_ring: true
   frontend_worker:
     scheduler_address: loki-backend.loki-stack.svc.cluster.local:9095
-  pattern_ingester:
-    enabled: true
   limits_config:
     allow_structured_metadata: true
     volume_enabled: true

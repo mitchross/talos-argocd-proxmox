@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: opentelemetry-collectors
+  namespace: opentelemetry
+spec:
+  groups:
+    - name: opentelemetry-collectors
+      rules:
+        - alert: OpenTelemetryCollectorBackpressure
+          expr: |
+            sum(rate(otelcol_receiver_refused_log_records[5m])) > 0
+            or
+            sum(rate(otelcol_exporter_send_failed_log_records[5m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: OpenTelemetry collectors are refusing or dropping logs
+            description: The log pipeline has sustained receiver refusals or failed exports for 10 minutes.
+        - alert: OpenTelemetryCollectorQueueNearCapacity
+          expr: |
+            max(otelcol_exporter_queue_size / otelcol_exporter_queue_capacity) > 0.8
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: OpenTelemetry collector retry queue is near capacity
+            description: A collector exporter queue has remained above 80% full for 10 minutes.
