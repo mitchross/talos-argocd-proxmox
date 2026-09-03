@@ -146,6 +146,8 @@ input_number:
 
 # Cost integrates a live USD/h cost-rate (power * current TOU rate), not a fixed tariff.
 # Every integral starts at 0 when first created; totals only fill in as data accumulates.
+# NEVER drop max_sub_interval: an integration only steps when its source CHANGES, so a
+# constant source (the HP Elite estimate, the shed's pinned-zero cost) integrates to 0 forever.
 sensor:
   # --- per-device energy (kWh) ---
   - platform: integration
@@ -155,6 +157,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.nas_psu_current_consumption
     name: "NAS PSU Energy"
@@ -162,6 +165,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.truenas_server_current_consumption
     name: "TrueNAS Server Energy"
@@ -169,6 +173,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.hp_sff_current_consumption
     name: "HP SFF Energy"
@@ -176,6 +181,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.shed_lab_current_consumption
     name: "Shed Lab Energy"
@@ -183,6 +189,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.gaming_pc_current_consumption
     name: "Gaming PC Energy"
@@ -190,6 +197,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.hp_elite_estimated_current_consumption
     name: "HP Elite Estimated Energy"
@@ -197,6 +205,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
 
   # --- homelab total energy (kWh) — feeds weekly/monthly/yearly meters ---
   - platform: integration
@@ -206,6 +215,7 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval: "00:05:00"
 
   # --- per-device cumulative cost (USD) — integrates the USD/h cost-rate ---
   - platform: integration
@@ -215,6 +225,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.nas_psu_cost_rate
     name: "NAS PSU Cost"
@@ -222,6 +233,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.truenas_server_cost_rate
     name: "TrueNAS Server Cost"
@@ -229,6 +241,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.hp_sff_cost_rate
     name: "HP SFF Cost"
@@ -236,6 +249,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.shed_lab_cost_rate
     name: "Shed Lab Cost"
@@ -243,6 +257,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.gaming_pc_cost_rate
     name: "Gaming PC Cost"
@@ -250,6 +265,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
   - platform: integration
     source: sensor.hp_elite_estimated_cost_rate
     name: "HP Elite Estimated Cost"
@@ -257,6 +273,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
 
   # --- homelab total cumulative cost (USD) ---
   - platform: integration
@@ -266,6 +283,7 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval: "00:05:00"
 
 # Each `name:` slug MUST equal its config key: HA derives the entity_id from `name`, and a
 # mismatch makes the template/dashboard references silently read nothing.

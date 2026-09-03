@@ -178,3 +178,11 @@ kubectl exec -n home-assistant deploy/home-assistant -c home-assistant -- \
 
 Newly created integrations and utility meters start at zero. Totals only fill in
 as data accumulates — an empty panel on day one is expected, not a bug.
+
+> **Every integration sensor needs `max_sub_interval`.** A Riemann-sum
+> integration only steps when its source *changes state*. A source that holds a
+> constant value emits no state changes, so its energy and cost integrate to
+> zero forever while its live wattage looks perfectly healthy. That bites any
+> device whose draw is a fixed number — the HP Elite estimate, and the shed's
+> pinned-zero cost rate. `max_sub_interval: "00:05:00"` forces a time-based step
+> every five minutes regardless.
