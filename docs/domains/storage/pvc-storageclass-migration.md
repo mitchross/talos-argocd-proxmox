@@ -58,27 +58,33 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl patch pv $OLD_PV -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
    ```
 
-2. **Stop writers without touching the pod.** A temporary NetworkPolicy blocks
-   every client; terminating open sessions forces reconnects into the block.
+2. **Stop writers without touching the pod.** Use a Cilium `ingressDeny`
+   policy. A plain Kubernetes NetworkPolicy with no ingress rules does **not**
+   block here: the cluster's existing Cilium allow rules still admit the
+   traffic, and clients reconnect within seconds. Deny rules win over allows.
+   Terminating open sessions forces every client to reconnect into the block.
    Argo CD does not manage this object, so it will not remove it for you.
 
    ```sh
    kubectl -n <ns> apply -f - <<'YAML'
-   apiVersion: networking.k8s.io/v1
-   kind: NetworkPolicy
+   apiVersion: cilium.io/v2
+   kind: CiliumNetworkPolicy
    metadata: { name: cutover-quiesce }
    spec:
-     podSelector: { matchLabels: { app: temporal-postgres } }
-     policyTypes: [Ingress]
+     endpointSelector: { matchLabels: { app: temporal-postgres } }
+     ingressDeny:
+       - fromEntities: [all]
    YAML
    kubectl -n <ns> exec deploy/temporal-postgres -c postgres -- psql -U temporal -d temporal -c \
-     "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE backend_type='client backend' AND pid<>pg_backend_pid();"
+     "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE backend_type='client backend' AND pid<>pg_backend_pid() AND client_addr IS NOT NULL;"
    kubectl -n <ns> exec deploy/temporal-postgres -c postgres -- psql -U temporal -d temporal -c \
-     "SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND pid<>pg_backend_pid();"
+     "SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND pid<>pg_backend_pid() AND client_addr IS NOT NULL;"
    ```
 
-   Expected: the count is `0` and stays `0` on a second run. Temporal services
-   log persistence errors while blocked; that is the point.
+   Expected: the count is `0` and stays `0` on a second run ten seconds later.
+   The metrics sidecar's loopback session is exempt (`client_addr IS NULL`) and
+   is expected to remain. Temporal services log persistence errors while
+   blocked; that is the point.
 
 3. **Take the cutover snapshot.** Manual `Snapshot` CRs reuse the policy (hooks,
    identity, mover uid). `Retain` keeps the kopia snapshot if the CR is later
@@ -99,11 +105,17 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
 
    Expected: `Succeeded <kopia-id>` within a few minutes. Write the id down.
 
-4. **Recreate the claim.** Delete the `Restore` first: it pins its snapshot at
+4. **Make Argo CD see the new class, then recreate the claim.** Argo CD can
+   hold a stale render for minutes after a merge and will happily recreate the
+   PVC on the **old** class from it. Hard-refresh and wait until the PVC shows
+   `OutOfSync` (the desired state now differs from the live claim) before
+   deleting anything. Delete the `Restore` first: it pins its snapshot at
    admission and never re-resolves, so a leftover `Restore` would hydrate an old
    snapshot. The pod must go too, or PVC protection keeps the claim alive.
 
    ```sh
+   kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite
+   kubectl -n argocd get application <app> -o json | jq -r '.status.resources[] | select(.kind=="PersistentVolumeClaim") | "\(.name) \(.status)"'   # <pvc> OutOfSync
    kubectl -n <ns> delete restore <restore>
    kubectl -n <ns> delete pvc <pvc> --wait=false
    kubectl -n <ns> delete pod -l app=temporal-postgres
@@ -142,6 +154,16 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal operator cluster health   # SERVING
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule list --namespace default
    kubectl -n <ns> exec deploy/temporal-admintools -- tdbg dlq list                     # count unchanged
+   ```
+
+   A schedule whose `NextRunTime` is in the past after a restore has lost its
+   timer (the scheduler workflow shows no pending timer and only reacts to
+   signals). Re-arm it without touching the spec or the DLQ:
+
+   ```sh
+   kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule toggle --schedule-id <id> --namespace default --pause --reason "re-arm timer"
+   kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule toggle --schedule-id <id> --namespace default --unpause --reason "re-arm timer"
+   kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule describe --schedule-id <id> --namespace default -o json | jq '.info.futureActionTimes[0]'   # in the future
    ```
 
 8. **Retire the old volume** only after the next scheduled `Snapshot` on the new
