@@ -11,7 +11,7 @@ metadata:
 value: "delete-both-statefulset-and-deployment-pod"
 
 ---
-# Without this, PVCs whose replicas are all lost stick in Terminating.
+# Reaps replica directories and engine/replica processes that lost their CRs (node offline during a delete).
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -20,12 +20,14 @@ metadata:
 value: "replica-data;instance"
 
 ---
+# Evict a last replica to another node, then let the drain proceed; single-replica volumes no longer wedge Talos upgrades.
+# Volumes pinned by diskSelector (longhorn-flash) still block on their node — nowhere to evict to.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: node-drain-policy
   namespace: longhorn-system
-value: "block-if-contains-last-replica"
+value: "block-for-eviction-if-contains-last-replica"
 
 ---
 # INTENTIONALLY 1: a mass-restore bootstrap overloads any engine on this hardware and faults
@@ -42,16 +44,6 @@ apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: disable-scheduling-on-cordoned-node
-  namespace: longhorn-system
-value: "true"
-
----
-# Automatically detach volumes on node failure after timeout
-# This allows volumes to be reattached to healthy nodes
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: kubernetes-cluster-autoscaler-enabled
   namespace: longhorn-system
 value: "true"
 
