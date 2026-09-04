@@ -51,12 +51,11 @@ kubectl delete ns sc-canary
 Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
 `temporal-postgres-data`, `<restore>` is `temporal-postgres-data-restore`.
 
-1. **Keep the old volume as a fallback.** Nothing is deleted until step 8.
-
-   ```sh
-   OLD_PV=$(kubectl -n <ns> get pvc <pvc> -o jsonpath='{.spec.volumeName}')
-   kubectl patch pv $OLD_PV -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
-   ```
+1. **The fallback is the pinned cutover snapshot, not the old volume.** Do not
+   patch the old PV to `Retain`. The class's `Delete` reclaim policy lets
+   Kubernetes and Longhorn garbage-collect the old volume the moment the claim
+   is gone, with nothing to clean up by hand. Step 3 pins the kopia snapshot
+   that holds the exact pre-cutover bytes off-cluster.
 
 2. **Stop writers without touching the pod.** Use a Cilium `ingressDeny`
    policy. A plain Kubernetes NetworkPolicy with no ingress rules does **not**
@@ -116,11 +115,12 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    ```sh
    kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite
    kubectl -n argocd get application <app> -o json | jq -r '.status.resources[] | select(.kind=="PersistentVolumeClaim") | "\(.name) \(.status)"'   # <pvc> OutOfSync
+   OLD_PV=$(kubectl -n <ns> get pvc <pvc> -o jsonpath='{.spec.volumeName}')
    kubectl -n <ns> delete restore <restore>
    kubectl -n <ns> delete pvc <pvc> --wait=false
    kubectl -n <ns> delete pod -l app=temporal-postgres
    kubectl -n <ns> get pvc <pvc>          # NotFound within ~1 min
-   kubectl get pv $OLD_PV                 # Released
+   kubectl get pv $OLD_PV                 # NotFound once the claim is gone (reclaim Delete)
    kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=normal --overwrite
    ```
 
@@ -166,12 +166,11 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule describe --schedule-id <id> --namespace default -o json | jq '.info.futureActionTimes[0]'   # in the future
    ```
 
-8. **Retire the old volume** only after the next scheduled `Snapshot` on the new
-   volume is `Succeeded`.
+8. **Confirm the new volume backs up.** Nothing to retire; the old volume was
+   garbage-collected in step 4.
 
    ```sh
-   kubectl -n <ns> get snapshot --sort-by=.metadata.creationTimestamp | tail -2
-   kubectl delete pv $OLD_PV
+   kubectl -n <ns> get snapshot --sort-by=.metadata.creationTimestamp | tail -2   # newest hourly: Succeeded
    ```
 
 ## Failure path
@@ -183,8 +182,8 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
   admission pins the newest snapshot.
 - **Roll back the class:** revert the Git change, then repeat step 4. The
   cutover snapshot restores equally well onto the old class.
-- **Last resort:** the Retained old PV still holds the pre-cutover bytes until
-  step 8. Bind it with a PVC that sets `volumeName` and no `dataSourceRef`.
+- **Last resort:** the pinned cutover `Snapshot` holds the exact pre-cutover
+  bytes; a fresh `Restore` + PVC hydrates from it on any class.
 
 ## Source of truth
 
