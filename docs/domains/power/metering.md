@@ -52,9 +52,9 @@ energy component steps between three windows:
 
 | Window | When | All-in rate |
 |---|---|---|
-| Summer on-peak | June–August, weekdays 14:00–19:00 | ~$0.289 |
-| Summer off-peak | June–August, all other hours | ~$0.238 |
-| Non-summer | September–May | ~$0.216 |
+| Summer on-peak | June–August, weekdays 14:00–19:00 | ~$0.285 |
+| Summer off-peak | June–August, all other hours | ~$0.235 |
+| Non-summer | September–May | ~$0.213 |
 
 Rates live in `my-apps/home/home-assistant/configuration.yaml` under
 `input_number:`. **Git is the source of truth**: the `initial:` values reset the
@@ -115,6 +115,46 @@ estimate.
 
 **The HP SFF plug cannot be attributed.** It feeds two hosts. Split the outlet
 before concluding which of the two to retire.
+
+## House-level data from Consumers Energy
+
+The plugs only see the homelab. The whole-house number comes from the utility:
+a daily CronJob (`my-apps/home/consumers-energy-sync/`) drives a headless
+Chromium through the Consumers Energy portal, downloads the *Share data → CSV*
+export (one row per day, trailing 30 days, with CE's own cost), and pushes it
+into Home Assistant. Source and image: `github.com/mitchross/consumers-energy-sync`.
+
+| What lands | Where it shows |
+|---|---|
+| `consumers_energy:grid_kwh`, `consumers_energy:grid_cost` (long-term statistics) | HA Energy dashboard grid source with cost; `statistics-graph` cards |
+| `sensor.consumers_energy_kwh_yesterday`, `_kwh_7d`, `_kwh_month`, `_kwh_last_month` and the `_cost_*` twins | Homelab Power dashboard, Grafana via the Prometheus exporter |
+| `sensor.homelab_share_of_house`, `sensor.combined_share_of_house` | Homelab kWh yesterday as a share of the house |
+| `sensor.consumers_energy_effective_rate` | CE cost / kWh yesterday, next to the modelled rate |
+
+The live sensors are set through the REST API, so they vanish on an HA restart
+until the next 06:17 run. The statistics persist.
+
+**Running it elsewhere.** The same image runs anywhere with the same env vars
+(`CE_PORTAL_USERNAME`, `CE_PORTAL_PASSWORD`, `HASS_URL`, `HASS_TOKEN`):
+
+```bash
+# local checkout: node --env-file=.env index.mjs [--download-only|--import-only|--dry-run]
+docker run --rm --user 1001:1001 --env-file .env -v ce-data:/data \
+  ghcr.io/mitchross/consumers-energy-sync:v0.1.1
+```
+
+`/data` holds the Playwright cookie jar (a credential) and the CSVs; keep it
+private. The first run logs in with the password; later runs reuse the cookie
+jar. A failed run leaves a full-page screenshot in `/data`.
+
+**Cumulative sums.** Each import bases its running total on what HA already
+holds just before the export window, so overlapping trailing windows stay
+consistent. Importing data *older* than what HA has breaks that: clear both
+statistics first (`recorder.clear_statistics`) and import oldest-first.
+
+**Releasing a new image.** Tag the sync repo (`git tag v0.x.y && git push --tags`);
+the workflow publishes to GHCR. Bump the tag and digest in `cronjob.yaml`.
+The base image version must equal the `playwright` version in `package.json`.
 
 ## Safety: the power-off lockout
 

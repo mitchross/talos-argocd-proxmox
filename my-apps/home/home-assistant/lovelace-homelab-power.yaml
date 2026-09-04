@@ -42,6 +42,48 @@ views:
           - entity: input_number.rate_sales_tax_pct
             name: Sales tax
 
+      - type: entities
+        title: House (Consumers Energy)
+        entities:
+          - entity: sensor.consumers_energy_kwh_yesterday
+            name: House yesterday
+          - entity: sensor.homelab_total_energy_yesterday
+            name: Homelab yesterday
+          - entity: sensor.homelab_share_of_house
+            name: Homelab share of house
+          - entity: sensor.combined_share_of_house
+            name: Homelab + office share of house
+          - entity: sensor.consumers_energy_cost_yesterday
+            name: CE cost yesterday
+          - entity: sensor.consumers_energy_effective_rate
+            name: CE effective rate
+          - entity: sensor.current_electricity_rate
+            name: Modelled rate now
+          - type: section
+            label: Month to date and last month
+          - entity: sensor.consumers_energy_kwh_month
+            name: House this month
+          - entity: sensor.consumers_energy_cost_month
+            name: CE cost this month
+          - entity: sensor.consumers_energy_kwh_last_month
+            name: House last month
+          - entity: sensor.consumers_energy_cost_last_month
+            name: CE cost last month
+          - entity: sensor.consumers_energy_last_reading
+            name: Last CE reading
+
+      - type: statistics-graph
+        title: House vs homelab by day (30d)
+        chart_type: bar
+        period: day
+        days_to_show: 30
+        stat_types:
+          - change
+        entities:
+          - consumers_energy:grid_kwh
+          - sensor.homelab_total_energy
+          - sensor.office_total_energy
+
       - type: glance
         title: Live draw
         state_color: false
