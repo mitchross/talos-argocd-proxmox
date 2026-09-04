@@ -144,8 +144,12 @@ server:
 `postgres/deployment.yaml` serves two databases: workflow history and
 searchable visibility. Its RWO Deployment uses `Recreate`, and
 `kopiur/temporal-postgres-data.yaml` provides restore-before-bind backups.
-This is one database instance, not database HA. Longhorn handles a disk or
-node loss; kopiur is the independent restore path.
+The PVC is on `longhorn-wired-ha`: two synchronous replicas on distinct
+wired-storage nodes, and the pod is pinned to wired nodes as well. This is one
+database instance, not database HA. Longhorn survives one node or disk loss
+with a full copy intact; kopiur is the independent restore path. Changing the
+StorageClass again is a restore-before-bind recreation, see
+[pvc-storageclass-migration.md](../../../docs/domains/storage/pvc-storageclass-migration.md).
 
 > 💡 **`numHistoryShards: 1`** is set in our values.yaml. This is
 > **permanent for this Temporal database** — changing it requires a new

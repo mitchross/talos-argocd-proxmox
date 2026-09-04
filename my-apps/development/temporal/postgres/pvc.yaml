@@ -15,7 +15,8 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn # needs CSI VolumeSnapshot for kopiur
+  # Immutable: changing the class means restore-before-bind recreation (docs/domains/storage/pvc-storageclass-migration.md).
+  storageClassName: longhorn-wired-ha # two replicas on distinct wired nodes; Longhorn CSI snapshots for kopiur
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
