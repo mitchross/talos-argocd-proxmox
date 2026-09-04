@@ -58,6 +58,15 @@ metadata:
 value: "true"
 
 ---
+# No autoscaler here. Longhorn's webhook forbids deleting this Setting, so it must stay declared as false.
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: kubernetes-cluster-autoscaler-enabled
+  namespace: longhorn-system
+value: "false"
+
+---
 # V2 (SPDK) reactor cores; inert on V1 but the 2-core default wedges a rebuild under restore churn.
 # Name must be the consolidated `data-engine-cpu-mask` — the legacy `v2-data-engine-cpu-mask` is rejected.
 apiVersion: longhorn.io/v1beta2
