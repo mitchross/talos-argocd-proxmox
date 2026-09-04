@@ -9,6 +9,8 @@
   "links": [],
   "panels": [
     {
+      "type": "row",
+      "title": "Current Power",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -17,20 +19,25 @@
         "y": 0
       },
       "id": 1,
-      "title": "Current Power",
-      "type": "row"
+      "panels": []
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "type": "stat",
+      "title": "Live Power Draw",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
+          "unit": "watt",
+          "decimals": 1,
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               {
                 "color": "green",
@@ -38,57 +45,59 @@
               },
               {
                 "color": "yellow",
-                "value": 100
+                "value": 120
               },
               {
                 "color": "orange",
-                "value": 500
+                "value": 200
               },
               {
                 "color": "red",
-                "value": 1000
+                "value": 300
               }
             ]
-          },
-          "unit": "watt",
-          "decimals": 1
-        }
+          }
+        },
+        "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 1
-      },
-      "id": 2,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true
       },
-      "title": "Live Power Draw",
-      "type": "stat",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_current_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"name\", \"threadripper\", \"name\", \"gpu_psu\"), \"name\", \"nas-drive-psu\", \"name\", \"nas_psu\"), \"name\", \"truenas\", \"name\", \"truenas_server\"), \"name\", \"hp-sff+optiplex\", \"name\", \"hp_sff\"), \"name\", \"shed\", \"name\", \"shed_lab\"), \"name\", \"gaming-pc\", \"name\", \"gaming_pc\"), \"name\", \"hp-elite (est.)\", \"name\", \"hp_elite_estimated\")",
-          "legendFormat": "{{name}}",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "legendFormat": "{{plug}}",
           "refId": "A",
-          "instant": false,
-          "range": true
+          "instant": true,
+          "range": false
         }
-      ]
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2
     },
     {
+      "type": "row",
+      "title": "Power Over Time",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -97,66 +106,76 @@
         "y": 9
       },
       "id": 3,
-      "title": "Power Over Time",
-      "type": "row"
+      "panels": []
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "type": "timeseries",
+      "title": "Power Consumption Over Time",
+      "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "unit": "watt",
           "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "spanNulls": false,
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
+              "group": "A",
               "mode": "none"
             }
           }
-        }
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 10
-      },
-      "id": 4,
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
         },
+        "overrides": []
+      },
+      "options": {
         "legend": {
           "displayMode": "table",
-          "placement": "right",
+          "placement": "bottom",
+          "showLegend": true,
           "calcs": [
             "mean",
             "max",
             "lastNotNull"
           ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
         }
       },
-      "title": "Power Consumption Over Time",
-      "type": "timeseries",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_current_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"name\", \"threadripper\", \"name\", \"gpu_psu\"), \"name\", \"nas-drive-psu\", \"name\", \"nas_psu\"), \"name\", \"truenas\", \"name\", \"truenas_server\"), \"name\", \"hp-sff+optiplex\", \"name\", \"hp_sff\"), \"name\", \"shed\", \"name\", \"shed_lab\"), \"name\", \"gaming-pc\", \"name\", \"gaming_pc\"), \"name\", \"hp-elite (est.)\", \"name\", \"hp_elite_estimated\")",
-          "legendFormat": "{{name}}",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": false,
           "range": true
         }
-      ]
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 4
     },
     {
+      "type": "row",
+      "title": "Energy Usage",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -165,74 +184,73 @@
         "y": 20
       },
       "id": 5,
-      "title": "Energy Usage",
-      "type": "row"
+      "panels": []
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "type": "stat",
+      "title": "Energy Today",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
+          "unit": "kwatth",
+          "decimals": 2,
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "text",
                 "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "orange",
-                "value": 5
               }
             ]
-          },
-          "unit": "kwatth",
-          "decimals": 2
-        }
+          }
+        },
+        "overrides": []
       },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 21
-      },
-      "id": 6,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true
       },
-      "title": "Energy Today",
-      "type": "stat",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_energy_kwh{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_today_s_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.+)_today_s_consumption\"), \"name\", \"threadripper\", \"name\", \"gpu_psu\"), \"name\", \"nas-drive-psu\", \"name\", \"nas_psu\"), \"name\", \"truenas\", \"name\", \"truenas_server\"), \"name\", \"hp-sff+optiplex\", \"name\", \"hp_sff\"), \"name\", \"shed\", \"name\", \"shed_lab\"), \"name\", \"gaming-pc\", \"name\", \"gaming_pc\"), \"name\", \"hp-elite (est.)\", \"name\", \"hp_elite_estimated\")",
-          "legendFormat": "{{name}}",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_energy_kwh{entity=~\"sensor.threadripper_energy_daily|sensor.nas_psu_energy_daily|sensor.truenas_energy_daily|sensor.hp_sff_energy_daily|sensor.hp_elite_energy_daily|sensor.gaming_pc_energy_daily|sensor.macbook_energy_daily\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "legendFormat": "{{plug}}",
           "refId": "A",
-          "instant": false,
-          "range": true
+          "instant": true,
+          "range": false
         }
-      ]
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 6
     },
     {
+      "type": "row",
+      "title": "Voltage & Current",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -241,104 +259,143 @@
         "y": 27
       },
       "id": 7,
-      "title": "Voltage & Current",
-      "type": "row"
+      "panels": []
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "type": "timeseries",
+      "title": "Voltage",
+      "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "unit": "volt",
           "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
             "fillOpacity": 10,
-            "lineWidth": 2,
-            "spanNulls": false
-          }
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
         }
       },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_voltage_v{entity=~\"sensor.threadripper_voltage|sensor.nas_psu_voltage|sensor.truenas_voltage|sensor.hp_sff_voltage|sensor.hp_elite_voltage|sensor.gaming_pc_voltage|sensor.macbook_voltage\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "legendFormat": "{{plug}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 28
       },
-      "id": 8,
-      "options": {
-        "tooltip": {
-          "mode": "multi"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "title": "Voltage",
-      "type": "timeseries",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_voltage\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.+)_voltage\"), \"name\", \"threadripper\", \"name\", \"gpu_psu\"), \"name\", \"nas-drive-psu\", \"name\", \"nas_psu\"), \"name\", \"truenas\", \"name\", \"truenas_server\"), \"name\", \"hp-sff+optiplex\", \"name\", \"hp_sff\"), \"name\", \"shed\", \"name\", \"shed_lab\"), \"name\", \"gaming-pc\", \"name\", \"gaming_pc\"), \"name\", \"hp-elite (est.)\", \"name\", \"hp_elite_estimated\")",
-          "legendFormat": "{{name}}",
-          "refId": "A",
-          "instant": false,
-          "range": true
-        }
-      ]
+      "id": 8
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "type": "timeseries",
+      "title": "Current",
+      "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "unit": "amp",
           "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
             "fillOpacity": 10,
-            "lineWidth": 2,
-            "spanNulls": false
-          }
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 28
-      },
-      "id": 9,
-      "options": {
-        "tooltip": {
-          "mode": "multi"
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 2
         },
+        "overrides": []
+      },
+      "options": {
         "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
         }
       },
-      "title": "Current",
-      "type": "timeseries",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_current\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current\"), \"name\", \"threadripper\", \"name\", \"gpu_psu\"), \"name\", \"nas-drive-psu\", \"name\", \"nas_psu\"), \"name\", \"truenas\", \"name\", \"truenas_server\"), \"name\", \"hp-sff+optiplex\", \"name\", \"hp_sff\"), \"name\", \"shed\", \"name\", \"shed_lab\"), \"name\", \"gaming-pc\", \"name\", \"gaming_pc\"), \"name\", \"hp-elite (est.)\", \"name\", \"hp_elite_estimated\")",
-          "legendFormat": "{{name}}",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_current_a{entity=~\"sensor.threadripper_current|sensor.nas_psu_current|sensor.truenas_current|sensor.hp_sff_current|sensor.hp_elite_current|sensor.gaming_pc_current|sensor.macbook_current\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": false,
           "range": true
         }
-      ]
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "id": 9
     },
     {
+      "type": "row",
+      "title": "Total Power (All Plugs)",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -347,66 +404,75 @@
         "y": 36
       },
       "id": 10,
-      "title": "Total Power (All Plugs)",
-      "type": "row"
+      "panels": []
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "type": "timeseries",
+      "title": "Stacked Power (All Plugs)",
+      "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "unit": "watt",
           "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
             "fillOpacity": 25,
-            "lineWidth": 2,
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
+              "group": "A",
               "mode": "normal"
             }
           }
-        }
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 37
-      },
-      "id": 11,
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
         },
+        "overrides": []
+      },
+      "options": {
         "legend": {
           "displayMode": "table",
-          "placement": "right",
+          "placement": "bottom",
+          "showLegend": true,
           "calcs": [
             "mean",
             "max",
             "lastNotNull"
           ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
         }
       },
-      "title": "Stacked Power (All Plugs)",
-      "type": "timeseries",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server|hp_sff|shed_lab|gaming_pc)_current_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"name\", \"threadripper\", \"name\", \"gpu_psu\"), \"name\", \"nas-drive-psu\", \"name\", \"nas_psu\"), \"name\", \"truenas\", \"name\", \"truenas_server\"), \"name\", \"hp-sff+optiplex\", \"name\", \"hp_sff\"), \"name\", \"shed\", \"name\", \"shed_lab\"), \"name\", \"gaming-pc\", \"name\", \"gaming_pc\"), \"name\", \"hp-elite (est.)\", \"name\", \"hp_elite_estimated\")",
-          "legendFormat": "{{name}}",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": false,
           "range": true
         }
-      ]
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 11
     }
   ],
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "tapo",
@@ -423,8 +489,9 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "browser",
   "title": "Tapo Power Monitor",
   "uid": "tapo-power-monitor",
-  "version": 4
+  "version": 0,
+  "weekStart": ""
 }

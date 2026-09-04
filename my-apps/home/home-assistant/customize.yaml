@@ -1,47 +1,52 @@
-# `hidden: true` only removes a switch from the default view; the power-off lockout automation
-# in automations.yaml is the real enforcement. Entity prefixes are frozen to keep history, so
-# friendly_name is the only place the real hardware is named.
+# friendly_name is what Grafana shows: it must read '<Device> <Metric...>' so the dashboards can
+# strip the metric words. `hidden: true` is cosmetic; the lockout automation is the real enforcement.
 
-# ---------- Threadripper Host (entity prefix gpu_psu_*) ----------
-sensor.gpu_psu_current_consumption:
+# ---------- Threadripper Host (threadripper_*) ----------
+sensor.threadripper_current_consumption:
   friendly_name: Threadripper Host Power
-sensor.gpu_psu_energy:
-  friendly_name: Threadripper Host Energy
-sensor.gpu_psu_cost:
-  friendly_name: Threadripper Host Cost
-sensor.gpu_psu_cost_rate:
-  friendly_name: Threadripper Host Cost Rate
-sensor.gpu_psu_power_share:
-  friendly_name: Threadripper Host Power Share
-sensor.gpu_psu_energy_share_today:
-  friendly_name: Threadripper Host Energy Share Today
-sensor.gpu_psu_voltage:
+sensor.threadripper_voltage:
   friendly_name: Threadripper Host Voltage
-sensor.gpu_psu_current:
+sensor.threadripper_current:
   friendly_name: Threadripper Host Current
-sensor.gpu_psu_energy_daily:
+sensor.threadripper_energy:
+  friendly_name: Threadripper Host Energy
+sensor.threadripper_cost:
+  friendly_name: Threadripper Host Cost
+sensor.threadripper_cost_rate:
+  friendly_name: Threadripper Host Cost Rate
+sensor.threadripper_power_share:
+  friendly_name: Threadripper Host Power Share
+sensor.threadripper_cost_last_month:
+  friendly_name: Threadripper Host Cost Last Month
+sensor.threadripper_energy_last_month:
+  friendly_name: Threadripper Host Energy Last Month
+sensor.threadripper_energy_daily:
   friendly_name: Threadripper Host Energy Daily
-sensor.gpu_psu_energy_weekly:
+sensor.threadripper_energy_weekly:
   friendly_name: Threadripper Host Energy Weekly
-sensor.gpu_psu_energy_monthly:
+sensor.threadripper_energy_monthly:
   friendly_name: Threadripper Host Energy Monthly
-sensor.gpu_psu_energy_yearly:
+sensor.threadripper_energy_yearly:
   friendly_name: Threadripper Host Energy Yearly
-sensor.gpu_psu_cost_daily:
+sensor.threadripper_cost_daily:
   friendly_name: Threadripper Host Cost Daily
-sensor.gpu_psu_cost_weekly:
+sensor.threadripper_cost_weekly:
   friendly_name: Threadripper Host Cost Weekly
-sensor.gpu_psu_cost_monthly:
+sensor.threadripper_cost_monthly:
   friendly_name: Threadripper Host Cost Monthly
-sensor.gpu_psu_cost_yearly:
+sensor.threadripper_cost_yearly:
   friendly_name: Threadripper Host Cost Yearly
-switch.gpu_psu:
+switch.threadripper:
   friendly_name: Threadripper Host (read-only)
   hidden: true
 
-# ---------- NAS Drive PSU (entity prefix nas_psu_*) ----------
+# ---------- NAS Drive PSU (nas_psu_*) ----------
 sensor.nas_psu_current_consumption:
   friendly_name: NAS Drive PSU Power
+sensor.nas_psu_voltage:
+  friendly_name: NAS Drive PSU Voltage
+sensor.nas_psu_current:
+  friendly_name: NAS Drive PSU Current
 sensor.nas_psu_energy:
   friendly_name: NAS Drive PSU Energy
 sensor.nas_psu_cost:
@@ -50,12 +55,10 @@ sensor.nas_psu_cost_rate:
   friendly_name: NAS Drive PSU Cost Rate
 sensor.nas_psu_power_share:
   friendly_name: NAS Drive PSU Power Share
-sensor.nas_psu_energy_share_today:
-  friendly_name: NAS Drive PSU Energy Share Today
-sensor.nas_psu_voltage:
-  friendly_name: NAS Drive PSU Voltage
-sensor.nas_psu_current:
-  friendly_name: NAS Drive PSU Current
+sensor.nas_psu_cost_last_month:
+  friendly_name: NAS Drive PSU Cost Last Month
+sensor.nas_psu_energy_last_month:
+  friendly_name: NAS Drive PSU Energy Last Month
 sensor.nas_psu_energy_daily:
   friendly_name: NAS Drive PSU Energy Daily
 sensor.nas_psu_energy_weekly:
@@ -76,46 +79,52 @@ switch.nas_psu:
   friendly_name: NAS Drive PSU (read-only)
   hidden: true
 
-# ---------- TrueNAS (DL360) (entity prefix truenas_server_*) ----------
-sensor.truenas_server_current_consumption:
+# ---------- TrueNAS (DL360) (truenas_*) ----------
+sensor.truenas_current_consumption:
   friendly_name: TrueNAS (DL360) Power
-sensor.truenas_server_energy:
-  friendly_name: TrueNAS (DL360) Energy
-sensor.truenas_server_cost:
-  friendly_name: TrueNAS (DL360) Cost
-sensor.truenas_server_cost_rate:
-  friendly_name: TrueNAS (DL360) Cost Rate
-sensor.truenas_server_power_share:
-  friendly_name: TrueNAS (DL360) Power Share
-sensor.truenas_server_energy_share_today:
-  friendly_name: TrueNAS (DL360) Energy Share Today
-sensor.truenas_server_voltage:
+sensor.truenas_voltage:
   friendly_name: TrueNAS (DL360) Voltage
-sensor.truenas_server_current:
+sensor.truenas_current:
   friendly_name: TrueNAS (DL360) Current
-sensor.truenas_server_energy_daily:
+sensor.truenas_energy:
+  friendly_name: TrueNAS (DL360) Energy
+sensor.truenas_cost:
+  friendly_name: TrueNAS (DL360) Cost
+sensor.truenas_cost_rate:
+  friendly_name: TrueNAS (DL360) Cost Rate
+sensor.truenas_power_share:
+  friendly_name: TrueNAS (DL360) Power Share
+sensor.truenas_cost_last_month:
+  friendly_name: TrueNAS (DL360) Cost Last Month
+sensor.truenas_energy_last_month:
+  friendly_name: TrueNAS (DL360) Energy Last Month
+sensor.truenas_energy_daily:
   friendly_name: TrueNAS (DL360) Energy Daily
-sensor.truenas_server_energy_weekly:
+sensor.truenas_energy_weekly:
   friendly_name: TrueNAS (DL360) Energy Weekly
-sensor.truenas_server_energy_monthly:
+sensor.truenas_energy_monthly:
   friendly_name: TrueNAS (DL360) Energy Monthly
-sensor.truenas_server_energy_yearly:
+sensor.truenas_energy_yearly:
   friendly_name: TrueNAS (DL360) Energy Yearly
-sensor.truenas_server_cost_daily:
+sensor.truenas_cost_daily:
   friendly_name: TrueNAS (DL360) Cost Daily
-sensor.truenas_server_cost_weekly:
+sensor.truenas_cost_weekly:
   friendly_name: TrueNAS (DL360) Cost Weekly
-sensor.truenas_server_cost_monthly:
+sensor.truenas_cost_monthly:
   friendly_name: TrueNAS (DL360) Cost Monthly
-sensor.truenas_server_cost_yearly:
+sensor.truenas_cost_yearly:
   friendly_name: TrueNAS (DL360) Cost Yearly
-switch.truenas_server:
+switch.truenas:
   friendly_name: TrueNAS (DL360) (read-only)
   hidden: true
 
-# ---------- HP SFF + Optiplex (entity prefix hp_sff_*) ----------
+# ---------- HP SFF + Optiplex (hp_sff_*) ----------
 sensor.hp_sff_current_consumption:
   friendly_name: HP SFF + Optiplex Power
+sensor.hp_sff_voltage:
+  friendly_name: HP SFF + Optiplex Voltage
+sensor.hp_sff_current:
+  friendly_name: HP SFF + Optiplex Current
 sensor.hp_sff_energy:
   friendly_name: HP SFF + Optiplex Energy
 sensor.hp_sff_cost:
@@ -124,12 +133,10 @@ sensor.hp_sff_cost_rate:
   friendly_name: HP SFF + Optiplex Cost Rate
 sensor.hp_sff_power_share:
   friendly_name: HP SFF + Optiplex Power Share
-sensor.hp_sff_energy_share_today:
-  friendly_name: HP SFF + Optiplex Energy Share Today
-sensor.hp_sff_voltage:
-  friendly_name: HP SFF + Optiplex Voltage
-sensor.hp_sff_current:
-  friendly_name: HP SFF + Optiplex Current
+sensor.hp_sff_cost_last_month:
+  friendly_name: HP SFF + Optiplex Cost Last Month
+sensor.hp_sff_energy_last_month:
+  friendly_name: HP SFF + Optiplex Energy Last Month
 sensor.hp_sff_energy_daily:
   friendly_name: HP SFF + Optiplex Energy Daily
 sensor.hp_sff_energy_weekly:
@@ -150,135 +157,113 @@ switch.hp_sff:
   friendly_name: HP SFF + Optiplex (read-only)
   hidden: true
 
-# ---------- Shed (HP micro, solar) (entity prefix shed_lab_*) ----------
-sensor.shed_lab_current_consumption:
-  friendly_name: Shed (HP micro, solar) Power
-sensor.shed_lab_energy:
-  friendly_name: Shed (HP micro, solar) Energy
-sensor.shed_lab_cost:
-  friendly_name: Shed (HP micro, solar) Cost
-sensor.shed_lab_cost_rate:
-  friendly_name: Shed (HP micro, solar) Cost Rate
-sensor.shed_lab_power_share:
-  friendly_name: Shed (HP micro, solar) Power Share
-sensor.shed_lab_energy_share_today:
-  friendly_name: Shed (HP micro, solar) Energy Share Today
-sensor.shed_lab_voltage:
-  friendly_name: Shed (HP micro, solar) Voltage
-sensor.shed_lab_current:
-  friendly_name: Shed (HP micro, solar) Current
-sensor.shed_lab_energy_daily:
-  friendly_name: Shed (HP micro, solar) Energy Daily
-sensor.shed_lab_energy_weekly:
-  friendly_name: Shed (HP micro, solar) Energy Weekly
-sensor.shed_lab_energy_monthly:
-  friendly_name: Shed (HP micro, solar) Energy Monthly
-sensor.shed_lab_energy_yearly:
-  friendly_name: Shed (HP micro, solar) Energy Yearly
-sensor.shed_lab_cost_daily:
-  friendly_name: Shed (HP micro, solar) Cost Daily
-sensor.shed_lab_cost_weekly:
-  friendly_name: Shed (HP micro, solar) Cost Weekly
-sensor.shed_lab_cost_monthly:
-  friendly_name: Shed (HP micro, solar) Cost Monthly
-sensor.shed_lab_cost_yearly:
-  friendly_name: Shed (HP micro, solar) Cost Yearly
-switch.shed_lab:
-  friendly_name: Shed (HP micro, solar) (read-only)
+# ---------- HP Elite Mini G9 (hp_elite_*) ----------
+sensor.hp_elite_current_consumption:
+  friendly_name: HP Elite Mini G9 Power
+sensor.hp_elite_voltage:
+  friendly_name: HP Elite Mini G9 Voltage
+sensor.hp_elite_current:
+  friendly_name: HP Elite Mini G9 Current
+sensor.hp_elite_energy:
+  friendly_name: HP Elite Mini G9 Energy
+sensor.hp_elite_cost:
+  friendly_name: HP Elite Mini G9 Cost
+sensor.hp_elite_cost_rate:
+  friendly_name: HP Elite Mini G9 Cost Rate
+sensor.hp_elite_power_share:
+  friendly_name: HP Elite Mini G9 Power Share
+sensor.hp_elite_cost_last_month:
+  friendly_name: HP Elite Mini G9 Cost Last Month
+sensor.hp_elite_energy_last_month:
+  friendly_name: HP Elite Mini G9 Energy Last Month
+sensor.hp_elite_energy_daily:
+  friendly_name: HP Elite Mini G9 Energy Daily
+sensor.hp_elite_energy_weekly:
+  friendly_name: HP Elite Mini G9 Energy Weekly
+sensor.hp_elite_energy_monthly:
+  friendly_name: HP Elite Mini G9 Energy Monthly
+sensor.hp_elite_energy_yearly:
+  friendly_name: HP Elite Mini G9 Energy Yearly
+sensor.hp_elite_cost_daily:
+  friendly_name: HP Elite Mini G9 Cost Daily
+sensor.hp_elite_cost_weekly:
+  friendly_name: HP Elite Mini G9 Cost Weekly
+sensor.hp_elite_cost_monthly:
+  friendly_name: HP Elite Mini G9 Cost Monthly
+sensor.hp_elite_cost_yearly:
+  friendly_name: HP Elite Mini G9 Cost Yearly
+switch.hp_elite:
+  friendly_name: HP Elite Mini G9 (read-only)
   hidden: true
 
-# ---------- Gaming PC (7800X3D + 3090) (entity prefix gaming_pc_*) ----------
+# ---------- Gaming PC (gaming_pc_*) ----------
 sensor.gaming_pc_current_consumption:
-  friendly_name: Gaming PC (7800X3D + 3090) Power
-sensor.gaming_pc_energy:
-  friendly_name: Gaming PC (7800X3D + 3090) Energy
-sensor.gaming_pc_cost:
-  friendly_name: Gaming PC (7800X3D + 3090) Cost
-sensor.gaming_pc_cost_rate:
-  friendly_name: Gaming PC (7800X3D + 3090) Cost Rate
-sensor.gaming_pc_power_share:
-  friendly_name: Gaming PC (7800X3D + 3090) Power Share
-sensor.gaming_pc_energy_share_today:
-  friendly_name: Gaming PC (7800X3D + 3090) Energy Share Today
+  friendly_name: Gaming PC Power
 sensor.gaming_pc_voltage:
-  friendly_name: Gaming PC (7800X3D + 3090) Voltage
+  friendly_name: Gaming PC Voltage
 sensor.gaming_pc_current:
-  friendly_name: Gaming PC (7800X3D + 3090) Current
+  friendly_name: Gaming PC Current
+sensor.gaming_pc_energy:
+  friendly_name: Gaming PC Energy
+sensor.gaming_pc_cost:
+  friendly_name: Gaming PC Cost
+sensor.gaming_pc_cost_rate:
+  friendly_name: Gaming PC Cost Rate
+sensor.gaming_pc_power_share:
+  friendly_name: Gaming PC Power Share
+sensor.gaming_pc_cost_last_month:
+  friendly_name: Gaming PC Cost Last Month
+sensor.gaming_pc_energy_last_month:
+  friendly_name: Gaming PC Energy Last Month
 sensor.gaming_pc_energy_daily:
-  friendly_name: Gaming PC (7800X3D + 3090) Energy Daily
+  friendly_name: Gaming PC Energy Daily
 sensor.gaming_pc_energy_weekly:
-  friendly_name: Gaming PC (7800X3D + 3090) Energy Weekly
+  friendly_name: Gaming PC Energy Weekly
 sensor.gaming_pc_energy_monthly:
-  friendly_name: Gaming PC (7800X3D + 3090) Energy Monthly
+  friendly_name: Gaming PC Energy Monthly
 sensor.gaming_pc_energy_yearly:
-  friendly_name: Gaming PC (7800X3D + 3090) Energy Yearly
+  friendly_name: Gaming PC Energy Yearly
 sensor.gaming_pc_cost_daily:
-  friendly_name: Gaming PC (7800X3D + 3090) Cost Daily
+  friendly_name: Gaming PC Cost Daily
 sensor.gaming_pc_cost_weekly:
-  friendly_name: Gaming PC (7800X3D + 3090) Cost Weekly
+  friendly_name: Gaming PC Cost Weekly
 sensor.gaming_pc_cost_monthly:
-  friendly_name: Gaming PC (7800X3D + 3090) Cost Monthly
+  friendly_name: Gaming PC Cost Monthly
 sensor.gaming_pc_cost_yearly:
-  friendly_name: Gaming PC (7800X3D + 3090) Cost Yearly
-switch.gaming_pc:
-  friendly_name: Gaming PC (7800X3D + 3090)
+  friendly_name: Gaming PC Cost Yearly
 
-# ---------- HP Elite (estimated) (entity prefix hp_elite_estimated_*) ----------
-sensor.hp_elite_estimated_current_consumption:
-  friendly_name: HP Elite (estimated) Power
-sensor.hp_elite_estimated_energy:
-  friendly_name: HP Elite (estimated) Energy
-sensor.hp_elite_estimated_cost:
-  friendly_name: HP Elite (estimated) Cost
-sensor.hp_elite_estimated_cost_rate:
-  friendly_name: HP Elite (estimated) Cost Rate
-sensor.hp_elite_estimated_power_share:
-  friendly_name: HP Elite (estimated) Power Share
-sensor.hp_elite_estimated_energy_share_today:
-  friendly_name: HP Elite (estimated) Energy Share Today
-sensor.hp_elite_estimated_energy_daily:
-  friendly_name: HP Elite (estimated) Energy Daily
-sensor.hp_elite_estimated_energy_weekly:
-  friendly_name: HP Elite (estimated) Energy Weekly
-sensor.hp_elite_estimated_energy_monthly:
-  friendly_name: HP Elite (estimated) Energy Monthly
-sensor.hp_elite_estimated_energy_yearly:
-  friendly_name: HP Elite (estimated) Energy Yearly
-sensor.hp_elite_estimated_cost_daily:
-  friendly_name: HP Elite (estimated) Cost Daily
-sensor.hp_elite_estimated_cost_weekly:
-  friendly_name: HP Elite (estimated) Cost Weekly
-sensor.hp_elite_estimated_cost_monthly:
-  friendly_name: HP Elite (estimated) Cost Monthly
-sensor.hp_elite_estimated_cost_yearly:
-  friendly_name: HP Elite (estimated) Cost Yearly
-
-# ---------- StuckAtPrototype AirCube (Zigbee air-quality, ZHA quirk) ----------
-# Display-only: Grafana matches on the `entity` label, not friendly_name, so renames can't break aircube-dashboard.yaml.
-sensor.stuckatprototype_aircube_temperature:
-  friendly_name: AirCube Temperature
-sensor.stuckatprototype_aircube_humidity:
-  friendly_name: AirCube Humidity
-sensor.stuckatprototype_aircube_equivalent_co2:
-  friendly_name: AirCube eCO2
-sensor.stuckatprototype_aircube_volatile_organic_compounds_parts:
-  friendly_name: AirCube tVOC
-sensor.stuckatprototype_aircube_voc_level:
-  friendly_name: AirCube VOC Level
-number.stuckatprototype_aircube_brightness:
-  friendly_name: AirCube Brightness
-
-# Hidden: rssi/lqi are link diagnostics, `number.stuckatprototype_aircube` is ZHA's raw duplicate
-# of the brightness slider, and identify is a commissioning aid.
-sensor.stuckatprototype_aircube_rssi:
-  friendly_name: AirCube RSSI
-  hidden: true
-sensor.stuckatprototype_aircube_lqi:
-  friendly_name: AirCube LQI
-  hidden: true
-number.stuckatprototype_aircube:
-  friendly_name: AirCube Brightness (duplicate — use AirCube Brightness)
-  hidden: true
-button.stuckatprototype_aircube_identify:
-  friendly_name: AirCube Identify
-  hidden: true
+# ---------- MacBook + Monitor (macbook_*) ----------
+sensor.macbook_current_consumption:
+  friendly_name: MacBook + Monitor Power
+sensor.macbook_voltage:
+  friendly_name: MacBook + Monitor Voltage
+sensor.macbook_current:
+  friendly_name: MacBook + Monitor Current
+sensor.macbook_energy:
+  friendly_name: MacBook + Monitor Energy
+sensor.macbook_cost:
+  friendly_name: MacBook + Monitor Cost
+sensor.macbook_cost_rate:
+  friendly_name: MacBook + Monitor Cost Rate
+sensor.macbook_power_share:
+  friendly_name: MacBook + Monitor Power Share
+sensor.macbook_cost_last_month:
+  friendly_name: MacBook + Monitor Cost Last Month
+sensor.macbook_energy_last_month:
+  friendly_name: MacBook + Monitor Energy Last Month
+sensor.macbook_energy_daily:
+  friendly_name: MacBook + Monitor Energy Daily
+sensor.macbook_energy_weekly:
+  friendly_name: MacBook + Monitor Energy Weekly
+sensor.macbook_energy_monthly:
+  friendly_name: MacBook + Monitor Energy Monthly
+sensor.macbook_energy_yearly:
+  friendly_name: MacBook + Monitor Energy Yearly
+sensor.macbook_cost_daily:
+  friendly_name: MacBook + Monitor Cost Daily
+sensor.macbook_cost_weekly:
+  friendly_name: MacBook + Monitor Cost Weekly
+sensor.macbook_cost_monthly:
+  friendly_name: MacBook + Monitor Cost Monthly
+sensor.macbook_cost_yearly:
+  friendly_name: MacBook + Monitor Cost Yearly

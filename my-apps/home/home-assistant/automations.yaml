@@ -3,18 +3,18 @@
 - id: homelab_plug_poweroff_lockout
   alias: Homelab plug power-off lockout
   description: >-
-    Restores the always-on homelab Tapo plugs if one is switched off. The Gaming
-    PC plug is deliberately not locked — that box gets powered down normally.
+    Restores the always-on homelab Tapo plugs if one is switched off. The office
+    plugs (Gaming PC, MacBook) are deliberately not locked.
   mode: parallel
   max: 10
   trigger:
     - platform: state
       entity_id:
-        - switch.gpu_psu
+        - switch.threadripper
         - switch.nas_psu
-        - switch.truenas_server
+        - switch.truenas
         - switch.hp_sff
-        - switch.shed_lab
+        - switch.hp_elite
       from: "on"
       to: "off"
   action:
