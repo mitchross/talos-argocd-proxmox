@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: consumers-energy-sync
+
+# Daily CronJob: headless Chromium downloads the Consumers Energy usage CSV and
+# pushes it into Home Assistant as long-term statistics. Source + image:
+# github.com/mitchross/consumers-energy-sync (private repo, public GHCR package).
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - pvc.yaml
+  - cronjob.yaml
