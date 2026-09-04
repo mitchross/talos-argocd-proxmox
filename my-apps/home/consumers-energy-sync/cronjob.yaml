@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: consumers-energy-sync
+  namespace: consumers-energy-sync
+spec:
+  # CE posts the previous day overnight; 06:17 local catches it with margin.
+  schedule: "17 6 * * *"
+  timeZone: America/New_York
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          restartPolicy: Never
+          # pwuser in the Playwright image; fsGroup makes the PVC writable for it.
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              image: ghcr.io/mitchross/consumers-energy-sync:v0.1.1@sha256:81cff10b88945d15ecee92679658c48723fd19c51c363524f1288cb7e854fe12
+              envFrom:
+                - secretRef:
+                    name: consumers-energy-sync
+              env:
+                - name: HASS_URL
+                  value: http://home-assistant.home-assistant.svc.cluster.local:8123
+                - name: ENERGY_CSV_DIR
+                  value: /data
+                - name: TIMEZONE
+                  value: America/Detroit
+                - name: HOME
+                  value: /tmp
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+                limits:
+                  memory: 2Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: consumers-energy-sync-data
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi

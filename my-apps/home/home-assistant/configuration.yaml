@@ -57,6 +57,8 @@ prometheus:
       - sensor.combined_*
       - sensor.current_electricity_rate
       - sensor.electricity_tariff_period
+      # House-level data pushed by the consumers-energy-sync CronJob.
+      - sensor.consumers_energy_*
       # StuckAtPrototype AirCube Zigbee air-quality monitor (temp/humidity/eCO2/
       # tVOC + rssi/lqi). Feeds the aircube-dashboard.json Grafana dashboard.
       - sensor.stuckatprototype_aircube_*
@@ -116,7 +118,7 @@ input_number:
     mode: box
     unit_of_measurement: "USD/kWh"
     icon: mdi:transmission-tower
-    initial: 0.120887
+    initial: 0.122077
   rate_sales_tax_pct:
     name: "Rate — Sales Tax"
     min: 0
@@ -125,7 +127,7 @@ input_number:
     mode: box
     unit_of_measurement: "%"
     icon: mdi:percent
-    initial: 6.0
+    initial: 4.0
 
 # Cost integrates a live USD/h cost-rate (power * current TOU rate), not a fixed tariff.
 # Every integral starts at 0 when first created; totals only fill in as data accumulates.
@@ -643,8 +645,8 @@ template:
           {% else %}
             {% set e = states('input_number.rate_nonsummer') | float(0.082996) %}
           {% endif %}
-          {% set r = states('input_number.rate_delivery_riders') | float(0.120887) %}
-          {% set t = states('input_number.rate_sales_tax_pct') | float(6) %}
+          {% set r = states('input_number.rate_delivery_riders') | float(0.122077) %}
+          {% set t = states('input_number.rate_sales_tax_pct') | float(4) %}
           {{ ((e + r) * (1 + t / 100)) | round(5) }}
 
       - name: "Electricity Tariff Period"
@@ -1063,4 +1065,58 @@ template:
           {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
             {{ (states('sensor.macbook_current_consumption') | float(0) / total * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      # ----- house vs homelab (sensor.consumers_energy_* are pushed daily by consumers-energy-sync) -----
+      - name: "Homelab Total Energy Yesterday"
+        unique_id: homelab_total_energy_yesterday
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.homelab_total_energy_daily', 'last_period') | float(0) | round(3) }}
+
+      - name: "Combined Total Energy Yesterday"
+        unique_id: combined_total_energy_yesterday
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.combined_total_energy_daily', 'last_period') | float(0) | round(3) }}
+
+      - name: "Homelab Share Of House"
+        unique_id: homelab_share_of_house
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:home-percent
+        availability: "{{ states('sensor.consumers_energy_kwh_yesterday') | is_number }}"
+        state: >
+          {% set house = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
+          {% if house > 0 %}
+            {{ (states('sensor.homelab_total_energy_yesterday') | float(0) / house * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      - name: "Combined Share Of House"
+        unique_id: combined_share_of_house
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:home-percent
+        availability: "{{ states('sensor.consumers_energy_kwh_yesterday') | is_number }}"
+        state: >
+          {% set house = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
+          {% if house > 0 %}
+            {{ (states('sensor.combined_total_energy_yesterday') | float(0) / house * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      # What CE actually charged per kWh yesterday, to check the modelled rate against.
+      - name: "Consumers Energy Effective Rate"
+        unique_id: consumers_energy_effective_rate
+        unit_of_measurement: "USD/kWh"
+        state_class: measurement
+        icon: mdi:cash-check
+        availability: "{{ states('sensor.consumers_energy_kwh_yesterday') | is_number and states('sensor.consumers_energy_cost_yesterday') | is_number }}"
+        state: >
+          {% set kwh = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
+          {% if kwh > 0 %}
+            {{ (states('sensor.consumers_energy_cost_yesterday') | float(0) / kwh) | round(5) }}
           {% else %}0{% endif %}
