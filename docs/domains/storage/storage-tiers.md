@@ -26,7 +26,8 @@ distinct classes, and you choose per volume:
 
 `longhorn-wired-ha` is opt-in and fails closed until at least two healthy,
 distinct-zone Longhorn nodes have the `wired-storage` node tag. Adding the class
-does not migrate existing PVCs; use a new or restore-before-bind PVC for adoption.
+does not migrate existing PVCs; use a new or restore-before-bind PVC for adoption
+(runbook: [pvc-storageclass-migration.md](pvc-storageclass-migration.md)).
 
 The tag comes from the Omni cluster template: the `hp-sff`, `hp-elite`, and `dell`
 worker blocks set the `node.longhorn.io/default-node-tags` node annotation, which

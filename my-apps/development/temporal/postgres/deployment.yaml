@@ -23,6 +23,15 @@ spec:
     spec:
       # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
       terminationGracePeriodSeconds: 60
+      # Replicas live on wired-storage nodes; keep the engine there too so a wifi/house node never fronts the DB.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node.vanillax.dev/link
+                    operator: In
+                    values: ["wired"]
       securityContext:
         fsGroup: 999 # postgres uid:gid in the official image
       containers:
