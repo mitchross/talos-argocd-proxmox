@@ -40,34 +40,26 @@ recorder:
       - sensor.*_rssi
       - sensor.*_lqi
 
-# Metered homelab + workstation plugs. Household plugs and the garage fridge are
-# deliberately excluded. Entity prefixes are frozen to preserve history: gpu_psu is
-# the Threadripper host, basement_homelab_* is the garage fridge.
+# Only the metered plugs and the derived totals are exported. Household plugs stay out.
 prometheus:
   requires_auth: false
   filter:
     include_entity_globs:
-      - sensor.gpu_psu_*
+      - sensor.threadripper_*
       - sensor.nas_psu_*
-      - sensor.truenas_server_*
+      - sensor.truenas_*
       - sensor.hp_sff_*
-      - sensor.shed_lab_*
+      - sensor.hp_elite_*
       - sensor.gaming_pc_*
-      - sensor.hp_elite_estimated_*
-      - sensor.homelab_total_*
-      - sensor.homelab_grid_*
-      - sensor.homelab_cost_*
+      - sensor.macbook_*
+      - sensor.homelab_*
+      - sensor.office_*
+      - sensor.combined_*
       - sensor.current_electricity_rate
       - sensor.electricity_tariff_period
       # StuckAtPrototype AirCube Zigbee air-quality monitor (temp/humidity/eCO2/
       # tVOC + rssi/lqi). Feeds the aircube-dashboard.json Grafana dashboard.
       - sensor.stuckatprototype_aircube_*
-    exclude_entity_globs:
-      - sensor.basement_homelab_* # garage fridge — plug was renamed, entity_ids were not
-      - sensor.dryer_smart_plug_*
-      - sensor.office_smart_plug_*
-      - sensor.office2_smart_plug_*
-      - sensor.tv_smart_plug_*
 
 # Energy dashboard is configured in the UI: add each sensor.<dev>_energy sensor as Individual devices.
 energy:
@@ -134,24 +126,17 @@ input_number:
     unit_of_measurement: "%"
     icon: mdi:percent
     initial: 6.0
-  hp_elite_estimated_watts:
-    name: "HP Elite (estimated) — Assumed Draw"
-    min: 0
-    max: 400
-    step: 1
-    mode: box
-    unit_of_measurement: "W"
-    icon: mdi:help-circle-outline
-    initial: 30
 
 # Cost integrates a live USD/h cost-rate (power * current TOU rate), not a fixed tariff.
 # Every integral starts at 0 when first created; totals only fill in as data accumulates.
+# Each `name:` slug MUST equal the entity prefix: HA derives the entity_id from `name`, and a
+# mismatch makes every template/dashboard reference silently read nothing.
 sensor:
-  # --- per-device energy (kWh) ---
+  # --- energy (kWh): one integral per plug, one per group ---
   - platform: integration
-    source: sensor.gpu_psu_current_consumption
-    name: "GPU PSU Energy"
-    unique_id: gpu_psu_energy
+    source: sensor.threadripper_current_consumption
+    name: "Threadripper Energy"
+    unique_id: threadripper_energy
     unit_prefix: k
     round: 3
     method: left
@@ -163,9 +148,9 @@ sensor:
     round: 3
     method: left
   - platform: integration
-    source: sensor.truenas_server_current_consumption
-    name: "TrueNAS Server Energy"
-    unique_id: truenas_server_energy
+    source: sensor.truenas_current_consumption
+    name: "TrueNAS Energy"
+    unique_id: truenas_energy
     unit_prefix: k
     round: 3
     method: left
@@ -177,9 +162,9 @@ sensor:
     round: 3
     method: left
   - platform: integration
-    source: sensor.shed_lab_current_consumption
-    name: "Shed Lab Energy"
-    unique_id: shed_lab_energy
+    source: sensor.hp_elite_current_consumption
+    name: "HP Elite Energy"
+    unique_id: hp_elite_energy
     unit_prefix: k
     round: 3
     method: left
@@ -191,14 +176,12 @@ sensor:
     round: 3
     method: left
   - platform: integration
-    source: sensor.hp_elite_estimated_current_consumption
-    name: "HP Elite Estimated Energy"
-    unique_id: hp_elite_estimated_energy
+    source: sensor.macbook_current_consumption
+    name: "MacBook Energy"
+    unique_id: macbook_energy
     unit_prefix: k
     round: 3
     method: left
-
-  # --- homelab total energy (kWh) — feeds weekly/monthly/yearly meters ---
   - platform: integration
     source: sensor.homelab_total_power
     name: "Homelab Total Energy"
@@ -206,12 +189,26 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
-
-  # --- per-device cumulative cost (USD) — integrates the USD/h cost-rate ---
   - platform: integration
-    source: sensor.gpu_psu_cost_rate
-    name: "GPU PSU Cost"
-    unique_id: gpu_psu_cost
+    source: sensor.office_total_power
+    name: "Office Total Energy"
+    unique_id: office_total_energy
+    unit_prefix: k
+    round: 3
+    method: left
+  - platform: integration
+    source: sensor.combined_total_power
+    name: "Combined Total Energy"
+    unique_id: combined_total_energy
+    unit_prefix: k
+    round: 3
+    method: left
+
+  # --- cost (USD): integrates the USD/h cost-rate ---
+  - platform: integration
+    source: sensor.threadripper_cost_rate
+    name: "Threadripper Cost"
+    unique_id: threadripper_cost
     unit_time: h
     round: 4
     method: left
@@ -223,9 +220,9 @@ sensor:
     round: 4
     method: left
   - platform: integration
-    source: sensor.truenas_server_cost_rate
-    name: "TrueNAS Server Cost"
-    unique_id: truenas_server_cost
+    source: sensor.truenas_cost_rate
+    name: "TrueNAS Cost"
+    unique_id: truenas_cost
     unit_time: h
     round: 4
     method: left
@@ -237,9 +234,9 @@ sensor:
     round: 4
     method: left
   - platform: integration
-    source: sensor.shed_lab_cost_rate
-    name: "Shed Lab Cost"
-    unique_id: shed_lab_cost
+    source: sensor.hp_elite_cost_rate
+    name: "HP Elite Cost"
+    unique_id: hp_elite_cost
     unit_time: h
     round: 4
     method: left
@@ -251,14 +248,12 @@ sensor:
     round: 4
     method: left
   - platform: integration
-    source: sensor.hp_elite_estimated_cost_rate
-    name: "HP Elite Estimated Cost"
-    unique_id: hp_elite_estimated_cost
+    source: sensor.macbook_cost_rate
+    name: "MacBook Cost"
+    unique_id: macbook_cost
     unit_time: h
     round: 4
     method: left
-
-  # --- homelab total cumulative cost (USD) ---
   - platform: integration
     source: sensor.homelab_cost_rate
     name: "Homelab Cost"
@@ -266,27 +261,39 @@ sensor:
     unit_time: h
     round: 4
     method: left
+  - platform: integration
+    source: sensor.office_cost_rate
+    name: "Office Cost"
+    unique_id: office_cost
+    unit_time: h
+    round: 4
+    method: left
+  - platform: integration
+    source: sensor.combined_cost_rate
+    name: "Combined Cost"
+    unique_id: combined_cost
+    unit_time: h
+    round: 4
+    method: left
 
-# Each `name:` slug MUST equal its config key: HA derives the entity_id from `name`, and a
-# mismatch makes the template/dashboard references silently read nothing.
 utility_meter:
   # ===== ENERGY (kWh) =====
   # Threadripper Host
-  gpu_psu_energy_daily:
-    name: "GPU PSU Energy Daily"
-    source: sensor.gpu_psu_energy
+  threadripper_energy_daily:
+    name: "Threadripper Energy Daily"
+    source: sensor.threadripper_energy
     cycle: daily
-  gpu_psu_energy_weekly:
-    name: "GPU PSU Energy Weekly"
-    source: sensor.gpu_psu_energy
+  threadripper_energy_weekly:
+    name: "Threadripper Energy Weekly"
+    source: sensor.threadripper_energy
     cycle: weekly
-  gpu_psu_energy_monthly:
-    name: "GPU PSU Energy Monthly"
-    source: sensor.gpu_psu_energy
+  threadripper_energy_monthly:
+    name: "Threadripper Energy Monthly"
+    source: sensor.threadripper_energy
     cycle: monthly
-  gpu_psu_energy_yearly:
-    name: "GPU PSU Energy Yearly"
-    source: sensor.gpu_psu_energy
+  threadripper_energy_yearly:
+    name: "Threadripper Energy Yearly"
+    source: sensor.threadripper_energy
     cycle: yearly
   # NAS Drive PSU
   nas_psu_energy_daily:
@@ -306,21 +313,21 @@ utility_meter:
     source: sensor.nas_psu_energy
     cycle: yearly
   # TrueNAS (DL360)
-  truenas_server_energy_daily:
-    name: "TrueNAS Server Energy Daily"
-    source: sensor.truenas_server_energy
+  truenas_energy_daily:
+    name: "TrueNAS Energy Daily"
+    source: sensor.truenas_energy
     cycle: daily
-  truenas_server_energy_weekly:
-    name: "TrueNAS Server Energy Weekly"
-    source: sensor.truenas_server_energy
+  truenas_energy_weekly:
+    name: "TrueNAS Energy Weekly"
+    source: sensor.truenas_energy
     cycle: weekly
-  truenas_server_energy_monthly:
-    name: "TrueNAS Server Energy Monthly"
-    source: sensor.truenas_server_energy
+  truenas_energy_monthly:
+    name: "TrueNAS Energy Monthly"
+    source: sensor.truenas_energy
     cycle: monthly
-  truenas_server_energy_yearly:
-    name: "TrueNAS Server Energy Yearly"
-    source: sensor.truenas_server_energy
+  truenas_energy_yearly:
+    name: "TrueNAS Energy Yearly"
+    source: sensor.truenas_energy
     cycle: yearly
   # HP SFF + Optiplex
   hp_sff_energy_daily:
@@ -339,24 +346,24 @@ utility_meter:
     name: "HP SFF Energy Yearly"
     source: sensor.hp_sff_energy
     cycle: yearly
-  # Shed (HP micro, solar)
-  shed_lab_energy_daily:
-    name: "Shed Lab Energy Daily"
-    source: sensor.shed_lab_energy
+  # HP Elite Mini G9
+  hp_elite_energy_daily:
+    name: "HP Elite Energy Daily"
+    source: sensor.hp_elite_energy
     cycle: daily
-  shed_lab_energy_weekly:
-    name: "Shed Lab Energy Weekly"
-    source: sensor.shed_lab_energy
+  hp_elite_energy_weekly:
+    name: "HP Elite Energy Weekly"
+    source: sensor.hp_elite_energy
     cycle: weekly
-  shed_lab_energy_monthly:
-    name: "Shed Lab Energy Monthly"
-    source: sensor.shed_lab_energy
+  hp_elite_energy_monthly:
+    name: "HP Elite Energy Monthly"
+    source: sensor.hp_elite_energy
     cycle: monthly
-  shed_lab_energy_yearly:
-    name: "Shed Lab Energy Yearly"
-    source: sensor.shed_lab_energy
+  hp_elite_energy_yearly:
+    name: "HP Elite Energy Yearly"
+    source: sensor.hp_elite_energy
     cycle: yearly
-  # Gaming PC (7800X3D + 3090)
+  # Gaming PC
   gaming_pc_energy_daily:
     name: "Gaming PC Energy Daily"
     source: sensor.gaming_pc_energy
@@ -373,24 +380,28 @@ utility_meter:
     name: "Gaming PC Energy Yearly"
     source: sensor.gaming_pc_energy
     cycle: yearly
-  # HP Elite (estimated)
-  hp_elite_estimated_energy_daily:
-    name: "HP Elite Estimated Energy Daily"
-    source: sensor.hp_elite_estimated_energy
+  # MacBook + Monitor
+  macbook_energy_daily:
+    name: "MacBook Energy Daily"
+    source: sensor.macbook_energy
     cycle: daily
-  hp_elite_estimated_energy_weekly:
-    name: "HP Elite Estimated Energy Weekly"
-    source: sensor.hp_elite_estimated_energy
+  macbook_energy_weekly:
+    name: "MacBook Energy Weekly"
+    source: sensor.macbook_energy
     cycle: weekly
-  hp_elite_estimated_energy_monthly:
-    name: "HP Elite Estimated Energy Monthly"
-    source: sensor.hp_elite_estimated_energy
+  macbook_energy_monthly:
+    name: "MacBook Energy Monthly"
+    source: sensor.macbook_energy
     cycle: monthly
-  hp_elite_estimated_energy_yearly:
-    name: "HP Elite Estimated Energy Yearly"
-    source: sensor.hp_elite_estimated_energy
+  macbook_energy_yearly:
+    name: "MacBook Energy Yearly"
+    source: sensor.macbook_energy
     cycle: yearly
-  # Homelab total energy
+  # Homelab total
+  homelab_total_energy_daily:
+    name: "Homelab Total Energy Daily"
+    source: sensor.homelab_total_energy
+    cycle: daily
   homelab_total_energy_weekly:
     name: "Homelab Total Energy Weekly"
     source: sensor.homelab_total_energy
@@ -403,24 +414,58 @@ utility_meter:
     name: "Homelab Total Energy Yearly"
     source: sensor.homelab_total_energy
     cycle: yearly
+  # Office total
+  office_total_energy_daily:
+    name: "Office Total Energy Daily"
+    source: sensor.office_total_energy
+    cycle: daily
+  office_total_energy_weekly:
+    name: "Office Total Energy Weekly"
+    source: sensor.office_total_energy
+    cycle: weekly
+  office_total_energy_monthly:
+    name: "Office Total Energy Monthly"
+    source: sensor.office_total_energy
+    cycle: monthly
+  office_total_energy_yearly:
+    name: "Office Total Energy Yearly"
+    source: sensor.office_total_energy
+    cycle: yearly
+  # Combined total
+  combined_total_energy_daily:
+    name: "Combined Total Energy Daily"
+    source: sensor.combined_total_energy
+    cycle: daily
+  combined_total_energy_weekly:
+    name: "Combined Total Energy Weekly"
+    source: sensor.combined_total_energy
+    cycle: weekly
+  combined_total_energy_monthly:
+    name: "Combined Total Energy Monthly"
+    source: sensor.combined_total_energy
+    cycle: monthly
+  combined_total_energy_yearly:
+    name: "Combined Total Energy Yearly"
+    source: sensor.combined_total_energy
+    cycle: yearly
 
   # ===== COST (USD) =====
   # Threadripper Host
-  gpu_psu_cost_daily:
-    name: "GPU PSU Cost Daily"
-    source: sensor.gpu_psu_cost
+  threadripper_cost_daily:
+    name: "Threadripper Cost Daily"
+    source: sensor.threadripper_cost
     cycle: daily
-  gpu_psu_cost_weekly:
-    name: "GPU PSU Cost Weekly"
-    source: sensor.gpu_psu_cost
+  threadripper_cost_weekly:
+    name: "Threadripper Cost Weekly"
+    source: sensor.threadripper_cost
     cycle: weekly
-  gpu_psu_cost_monthly:
-    name: "GPU PSU Cost Monthly"
-    source: sensor.gpu_psu_cost
+  threadripper_cost_monthly:
+    name: "Threadripper Cost Monthly"
+    source: sensor.threadripper_cost
     cycle: monthly
-  gpu_psu_cost_yearly:
-    name: "GPU PSU Cost Yearly"
-    source: sensor.gpu_psu_cost
+  threadripper_cost_yearly:
+    name: "Threadripper Cost Yearly"
+    source: sensor.threadripper_cost
     cycle: yearly
   # NAS Drive PSU
   nas_psu_cost_daily:
@@ -440,21 +485,21 @@ utility_meter:
     source: sensor.nas_psu_cost
     cycle: yearly
   # TrueNAS (DL360)
-  truenas_server_cost_daily:
-    name: "TrueNAS Server Cost Daily"
-    source: sensor.truenas_server_cost
+  truenas_cost_daily:
+    name: "TrueNAS Cost Daily"
+    source: sensor.truenas_cost
     cycle: daily
-  truenas_server_cost_weekly:
-    name: "TrueNAS Server Cost Weekly"
-    source: sensor.truenas_server_cost
+  truenas_cost_weekly:
+    name: "TrueNAS Cost Weekly"
+    source: sensor.truenas_cost
     cycle: weekly
-  truenas_server_cost_monthly:
-    name: "TrueNAS Server Cost Monthly"
-    source: sensor.truenas_server_cost
+  truenas_cost_monthly:
+    name: "TrueNAS Cost Monthly"
+    source: sensor.truenas_cost
     cycle: monthly
-  truenas_server_cost_yearly:
-    name: "TrueNAS Server Cost Yearly"
-    source: sensor.truenas_server_cost
+  truenas_cost_yearly:
+    name: "TrueNAS Cost Yearly"
+    source: sensor.truenas_cost
     cycle: yearly
   # HP SFF + Optiplex
   hp_sff_cost_daily:
@@ -473,24 +518,24 @@ utility_meter:
     name: "HP SFF Cost Yearly"
     source: sensor.hp_sff_cost
     cycle: yearly
-  # Shed (HP micro, solar)
-  shed_lab_cost_daily:
-    name: "Shed Lab Cost Daily"
-    source: sensor.shed_lab_cost
+  # HP Elite Mini G9
+  hp_elite_cost_daily:
+    name: "HP Elite Cost Daily"
+    source: sensor.hp_elite_cost
     cycle: daily
-  shed_lab_cost_weekly:
-    name: "Shed Lab Cost Weekly"
-    source: sensor.shed_lab_cost
+  hp_elite_cost_weekly:
+    name: "HP Elite Cost Weekly"
+    source: sensor.hp_elite_cost
     cycle: weekly
-  shed_lab_cost_monthly:
-    name: "Shed Lab Cost Monthly"
-    source: sensor.shed_lab_cost
+  hp_elite_cost_monthly:
+    name: "HP Elite Cost Monthly"
+    source: sensor.hp_elite_cost
     cycle: monthly
-  shed_lab_cost_yearly:
-    name: "Shed Lab Cost Yearly"
-    source: sensor.shed_lab_cost
+  hp_elite_cost_yearly:
+    name: "HP Elite Cost Yearly"
+    source: sensor.hp_elite_cost
     cycle: yearly
-  # Gaming PC (7800X3D + 3090)
+  # Gaming PC
   gaming_pc_cost_daily:
     name: "Gaming PC Cost Daily"
     source: sensor.gaming_pc_cost
@@ -507,24 +552,24 @@ utility_meter:
     name: "Gaming PC Cost Yearly"
     source: sensor.gaming_pc_cost
     cycle: yearly
-  # HP Elite (estimated)
-  hp_elite_estimated_cost_daily:
-    name: "HP Elite Estimated Cost Daily"
-    source: sensor.hp_elite_estimated_cost
+  # MacBook + Monitor
+  macbook_cost_daily:
+    name: "MacBook Cost Daily"
+    source: sensor.macbook_cost
     cycle: daily
-  hp_elite_estimated_cost_weekly:
-    name: "HP Elite Estimated Cost Weekly"
-    source: sensor.hp_elite_estimated_cost
+  macbook_cost_weekly:
+    name: "MacBook Cost Weekly"
+    source: sensor.macbook_cost
     cycle: weekly
-  hp_elite_estimated_cost_monthly:
-    name: "HP Elite Estimated Cost Monthly"
-    source: sensor.hp_elite_estimated_cost
+  macbook_cost_monthly:
+    name: "MacBook Cost Monthly"
+    source: sensor.macbook_cost
     cycle: monthly
-  hp_elite_estimated_cost_yearly:
-    name: "HP Elite Estimated Cost Yearly"
-    source: sensor.hp_elite_estimated_cost
+  macbook_cost_yearly:
+    name: "MacBook Cost Yearly"
+    source: sensor.macbook_cost
     cycle: yearly
-  # Homelab total cost
+  # Homelab total
   homelab_cost_daily:
     name: "Homelab Cost Daily"
     source: sensor.homelab_cost
@@ -541,8 +586,42 @@ utility_meter:
     name: "Homelab Cost Yearly"
     source: sensor.homelab_cost
     cycle: yearly
+  # Office total
+  office_cost_daily:
+    name: "Office Cost Daily"
+    source: sensor.office_cost
+    cycle: daily
+  office_cost_weekly:
+    name: "Office Cost Weekly"
+    source: sensor.office_cost
+    cycle: weekly
+  office_cost_monthly:
+    name: "Office Cost Monthly"
+    source: sensor.office_cost
+    cycle: monthly
+  office_cost_yearly:
+    name: "Office Cost Yearly"
+    source: sensor.office_cost
+    cycle: yearly
+  # Combined total
+  combined_cost_daily:
+    name: "Combined Cost Daily"
+    source: sensor.combined_cost
+    cycle: daily
+  combined_cost_weekly:
+    name: "Combined Cost Weekly"
+    source: sensor.combined_cost
+    cycle: weekly
+  combined_cost_monthly:
+    name: "Combined Cost Monthly"
+    source: sensor.combined_cost
+    cycle: monthly
+  combined_cost_yearly:
+    name: "Combined Cost Yearly"
+    source: sensor.combined_cost
+    cycle: yearly
 
-# Template sensors: live all-in rate, tariff window, totals, per-device cost-rate and share.
+# Template sensors: live all-in rate, tariff window, group totals, per-device cost-rate and share.
 template:
   - sensor:
       # now()-based templates re-render every minute; float(<bill default>) keeps this right
@@ -579,67 +658,58 @@ template:
           {% elif summer %}Summer Off-Peak
           {% else %}Non-Summer{% endif %}
 
-      # No smart plug on this host yet, so its draw is the assumed figure above rather
-      # than a measurement. Point this at the plug's sensor the day one is fitted.
-      - name: "HP Elite Estimated Current Consumption"
-        unique_id: hp_elite_estimated_current_consumption
-        unit_of_measurement: "W"
-        device_class: power
-        state_class: measurement
-        state: >
-          {{ states('input_number.hp_elite_estimated_watts') | float(30) }}
-
-      # Totals cover every metered device plus the estimated one; the homelab_total_*
-      # entity_ids are kept so the long-term statistics stay continuous.
+      # ----- group totals (W). homelab = always-on servers, office = workstations, combined = both -----
       - name: "Homelab Total Power"
         unique_id: homelab_total_power
         unit_of_measurement: "W"
         device_class: power
         state_class: measurement
         availability: >
-          {{ states('sensor.gpu_psu_current_consumption') not in ['unknown','unavailable']
+          {{ states('sensor.threadripper_current_consumption') not in ['unknown','unavailable']
              or states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.truenas_server_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.truenas_current_consumption') not in ['unknown','unavailable']
              or states('sensor.hp_sff_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.shed_lab_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.gaming_pc_current_consumption') not in ['unknown','unavailable'] }}
+             or states('sensor.hp_elite_current_consumption') not in ['unknown','unavailable'] }}
         state: >
-          {{ (states('sensor.gpu_psu_current_consumption') | float(0)
+          {{ (states('sensor.threadripper_current_consumption') | float(0)
             + states('sensor.nas_psu_current_consumption') | float(0)
-            + states('sensor.truenas_server_current_consumption') | float(0)
+            + states('sensor.truenas_current_consumption') | float(0)
             + states('sensor.hp_sff_current_consumption') | float(0)
-            + states('sensor.shed_lab_current_consumption') | float(0)
-            + states('sensor.gaming_pc_current_consumption') | float(0)
-            + states('sensor.hp_elite_estimated_current_consumption') | float(0)) | round(1) }}
+            + states('sensor.hp_elite_current_consumption') | float(0)) | round(1) }}
 
-      # Billable draw: everything except the solar-fed Shed (HP micro, solar).
-      # Cost is priced off THIS, never off homelab_total_power.
-      - name: "Homelab Grid Power"
-        unique_id: homelab_grid_power
+      - name: "Office Total Power"
+        unique_id: office_total_power
         unit_of_measurement: "W"
         device_class: power
         state_class: measurement
+        availability: >
+          {{ states('sensor.gaming_pc_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.macbook_current_consumption') not in ['unknown','unavailable'] }}
         state: >
-          {{ (states('sensor.gpu_psu_current_consumption') | float(0)
-            + states('sensor.nas_psu_current_consumption') | float(0)
-            + states('sensor.truenas_server_current_consumption') | float(0)
-            + states('sensor.hp_sff_current_consumption') | float(0)
-            + states('sensor.gaming_pc_current_consumption') | float(0)
-            + states('sensor.hp_elite_estimated_current_consumption') | float(0)) | round(1) }}
+          {{ (states('sensor.gaming_pc_current_consumption') | float(0)
+            + states('sensor.macbook_current_consumption') | float(0)) | round(1) }}
 
-      - name: "Homelab Total Energy Today"
-        unique_id: homelab_total_energy_today
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total_increasing
+      - name: "Combined Total Power"
+        unique_id: combined_total_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        availability: >
+          {{ states('sensor.threadripper_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.truenas_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.hp_sff_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.hp_elite_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.gaming_pc_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.macbook_current_consumption') not in ['unknown','unavailable'] }}
         state: >
-          {{ (states('sensor.gpu_psu_energy_daily') | float(0)
-            + states('sensor.nas_psu_energy_daily') | float(0)
-            + states('sensor.truenas_server_energy_daily') | float(0)
-            + states('sensor.hp_sff_energy_daily') | float(0)
-            + states('sensor.shed_lab_energy_daily') | float(0)
-            + states('sensor.gaming_pc_energy_daily') | float(0)
-            + states('sensor.hp_elite_estimated_energy_daily') | float(0)) | round(3) }}
+          {{ (states('sensor.threadripper_current_consumption') | float(0)
+            + states('sensor.nas_psu_current_consumption') | float(0)
+            + states('sensor.truenas_current_consumption') | float(0)
+            + states('sensor.hp_sff_current_consumption') | float(0)
+            + states('sensor.hp_elite_current_consumption') | float(0)
+            + states('sensor.gaming_pc_current_consumption') | float(0)
+            + states('sensor.macbook_current_consumption') | float(0)) | round(1) }}
 
       # ----- live USD/h cost-rate (power_kW * current all-in rate) -----
       - name: "Homelab Cost Rate"
@@ -648,191 +718,104 @@ template:
         state_class: measurement
         icon: mdi:cash-fast
         state: >
-          {{ (states('sensor.homelab_grid_power') | float(0) / 1000
+          {{ (states('sensor.homelab_total_power') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      - name: "GPU PSU Cost Rate"
-        unique_id: gpu_psu_cost_rate
+      - name: "Office Cost Rate"
+        unique_id: office_cost_rate
         unit_of_measurement: "USD/h"
         state_class: measurement
+        icon: mdi:cash-fast
         state: >
-          {{ (states('sensor.gpu_psu_current_consumption') | float(0) / 1000
+          {{ (states('sensor.office_total_power') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
+
+      - name: "Combined Cost Rate"
+        unique_id: combined_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        icon: mdi:cash-fast
+        state: >
+          {{ (states('sensor.combined_total_power') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
+
+      - name: "Threadripper Cost Rate"
+        unique_id: threadripper_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        icon: mdi:cash-fast
+        state: >
+          {{ (states('sensor.threadripper_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
       - name: "NAS PSU Cost Rate"
         unique_id: nas_psu_cost_rate
         unit_of_measurement: "USD/h"
         state_class: measurement
+        icon: mdi:cash-fast
         state: >
           {{ (states('sensor.nas_psu_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      - name: "TrueNAS Server Cost Rate"
-        unique_id: truenas_server_cost_rate
+      - name: "TrueNAS Cost Rate"
+        unique_id: truenas_cost_rate
         unit_of_measurement: "USD/h"
         state_class: measurement
+        icon: mdi:cash-fast
         state: >
-          {{ (states('sensor.truenas_server_current_consumption') | float(0) / 1000
+          {{ (states('sensor.truenas_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
       - name: "HP SFF Cost Rate"
         unique_id: hp_sff_cost_rate
         unit_of_measurement: "USD/h"
         state_class: measurement
+        icon: mdi:cash-fast
         state: >
           {{ (states('sensor.hp_sff_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      # Shed (HP micro, solar) runs off its own solar + battery bank, so it costs nothing on the grid
-      # bill. Kept as a real sensor so its cost meters and dashboard rows stay uniform.
-      - name: "Shed Lab Cost Rate"
-        unique_id: shed_lab_cost_rate
+      - name: "HP Elite Cost Rate"
+        unique_id: hp_elite_cost_rate
         unit_of_measurement: "USD/h"
         state_class: measurement
-        state: "0"
+        icon: mdi:cash-fast
+        state: >
+          {{ (states('sensor.hp_elite_current_consumption') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
       - name: "Gaming PC Cost Rate"
         unique_id: gaming_pc_cost_rate
         unit_of_measurement: "USD/h"
         state_class: measurement
+        icon: mdi:cash-fast
         state: >
           {{ (states('sensor.gaming_pc_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      - name: "HP Elite Estimated Cost Rate"
-        unique_id: hp_elite_estimated_cost_rate
+      - name: "MacBook Cost Rate"
+        unique_id: macbook_cost_rate
         unit_of_measurement: "USD/h"
         state_class: measurement
+        icon: mdi:cash-fast
         state: >
-          {{ (states('sensor.hp_elite_estimated_current_consumption') | float(0) / 1000
+          {{ (states('sensor.macbook_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      # ----- last completed month (utility_meter last_period) -----
-      - name: "GPU PSU Cost Last Month"
-        unique_id: gpu_psu_cost_last_month
-        unit_of_measurement: "USD"
-        state_class: total
-        icon: mdi:calendar-check
-        state: >
-          {{ state_attr('sensor.gpu_psu_cost_monthly', 'last_period') | float(0) | round(4) }}
-
-      - name: "NAS PSU Cost Last Month"
-        unique_id: nas_psu_cost_last_month
-        unit_of_measurement: "USD"
-        state_class: total
-        icon: mdi:calendar-check
-        state: >
-          {{ state_attr('sensor.nas_psu_cost_monthly', 'last_period') | float(0) | round(4) }}
-
-      - name: "TrueNAS Server Cost Last Month"
-        unique_id: truenas_server_cost_last_month
-        unit_of_measurement: "USD"
-        state_class: total
-        icon: mdi:calendar-check
-        state: >
-          {{ state_attr('sensor.truenas_server_cost_monthly', 'last_period') | float(0) | round(4) }}
-
-      - name: "HP SFF Cost Last Month"
-        unique_id: hp_sff_cost_last_month
-        unit_of_measurement: "USD"
-        state_class: total
-        icon: mdi:calendar-check
-        state: >
-          {{ state_attr('sensor.hp_sff_cost_monthly', 'last_period') | float(0) | round(4) }}
-
-      - name: "Shed Lab Cost Last Month"
-        unique_id: shed_lab_cost_last_month
-        unit_of_measurement: "USD"
-        state_class: total
-        icon: mdi:calendar-check
-        state: >
-          {{ state_attr('sensor.shed_lab_cost_monthly', 'last_period') | float(0) | round(4) }}
-
-      - name: "Gaming PC Cost Last Month"
-        unique_id: gaming_pc_cost_last_month
-        unit_of_measurement: "USD"
-        state_class: total
-        icon: mdi:calendar-check
-        state: >
-          {{ state_attr('sensor.gaming_pc_cost_monthly', 'last_period') | float(0) | round(4) }}
-
-      - name: "HP Elite Estimated Cost Last Month"
-        unique_id: hp_elite_estimated_cost_last_month
-        unit_of_measurement: "USD"
-        state_class: total
-        icon: mdi:calendar-check
-        state: >
-          {{ state_attr('sensor.hp_elite_estimated_cost_monthly', 'last_period') | float(0) | round(4) }}
-
-      - name: "GPU PSU Energy Last Month"
-        unique_id: gpu_psu_energy_last_month
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total
-        state: >
-          {{ state_attr('sensor.gpu_psu_energy_monthly', 'last_period') | float(0) | round(3) }}
-
-      - name: "NAS PSU Energy Last Month"
-        unique_id: nas_psu_energy_last_month
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total
-        state: >
-          {{ state_attr('sensor.nas_psu_energy_monthly', 'last_period') | float(0) | round(3) }}
-
-      - name: "TrueNAS Server Energy Last Month"
-        unique_id: truenas_server_energy_last_month
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total
-        state: >
-          {{ state_attr('sensor.truenas_server_energy_monthly', 'last_period') | float(0) | round(3) }}
-
-      - name: "HP SFF Energy Last Month"
-        unique_id: hp_sff_energy_last_month
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total
-        state: >
-          {{ state_attr('sensor.hp_sff_energy_monthly', 'last_period') | float(0) | round(3) }}
-
-      - name: "Shed Lab Energy Last Month"
-        unique_id: shed_lab_energy_last_month
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total
-        state: >
-          {{ state_attr('sensor.shed_lab_energy_monthly', 'last_period') | float(0) | round(3) }}
-
-      - name: "Gaming PC Energy Last Month"
-        unique_id: gaming_pc_energy_last_month
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total
-        state: >
-          {{ state_attr('sensor.gaming_pc_energy_monthly', 'last_period') | float(0) | round(3) }}
-
-      - name: "HP Elite Estimated Energy Last Month"
-        unique_id: hp_elite_estimated_energy_last_month
-        unit_of_measurement: "kWh"
-        device_class: energy
-        state_class: total
-        state: >
-          {{ state_attr('sensor.hp_elite_estimated_energy_monthly', 'last_period') | float(0) | round(3) }}
-
+      # ----- finished periods (utility_meter last_period): comparable against a bill -----
       - name: "Homelab Cost Last Month"
         unique_id: homelab_cost_last_month
         unit_of_measurement: "USD"
-        state_class: total
         icon: mdi:calendar-check
+        state_class: total
         state: >
           {{ state_attr('sensor.homelab_cost_monthly', 'last_period') | float(0) | round(4) }}
 
       - name: "Homelab Cost Yesterday"
         unique_id: homelab_cost_yesterday
         unit_of_measurement: "USD"
-        state_class: total
         icon: mdi:calendar-arrow-left
+        state_class: total
         state: >
           {{ state_attr('sensor.homelab_cost_daily', 'last_period') | float(0) | round(4) }}
 
@@ -844,16 +827,176 @@ template:
         state: >
           {{ state_attr('sensor.homelab_total_energy_monthly', 'last_period') | float(0) | round(3) }}
 
-      # ----- live % of total draw (entity slug == *_power_share) -----
-      - name: "GPU PSU Power Share"
-        unique_id: gpu_psu_power_share
+      - name: "Office Cost Last Month"
+        unique_id: office_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.office_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Office Cost Yesterday"
+        unique_id: office_cost_yesterday
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-arrow-left
+        state_class: total
+        state: >
+          {{ state_attr('sensor.office_cost_daily', 'last_period') | float(0) | round(4) }}
+
+      - name: "Office Total Energy Last Month"
+        unique_id: office_total_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.office_total_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "Combined Cost Last Month"
+        unique_id: combined_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.combined_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Combined Cost Yesterday"
+        unique_id: combined_cost_yesterday
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-arrow-left
+        state_class: total
+        state: >
+          {{ state_attr('sensor.combined_cost_daily', 'last_period') | float(0) | round(4) }}
+
+      - name: "Combined Total Energy Last Month"
+        unique_id: combined_total_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.combined_total_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "Threadripper Cost Last Month"
+        unique_id: threadripper_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.threadripper_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Threadripper Energy Last Month"
+        unique_id: threadripper_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.threadripper_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "NAS PSU Cost Last Month"
+        unique_id: nas_psu_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.nas_psu_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "NAS PSU Energy Last Month"
+        unique_id: nas_psu_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.nas_psu_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "TrueNAS Cost Last Month"
+        unique_id: truenas_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.truenas_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "TrueNAS Energy Last Month"
+        unique_id: truenas_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.truenas_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "HP SFF Cost Last Month"
+        unique_id: hp_sff_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.hp_sff_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "HP SFF Energy Last Month"
+        unique_id: hp_sff_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.hp_sff_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "HP Elite Cost Last Month"
+        unique_id: hp_elite_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.hp_elite_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "HP Elite Energy Last Month"
+        unique_id: hp_elite_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.hp_elite_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "Gaming PC Cost Last Month"
+        unique_id: gaming_pc_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.gaming_pc_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Gaming PC Energy Last Month"
+        unique_id: gaming_pc_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.gaming_pc_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "MacBook Cost Last Month"
+        unique_id: macbook_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.macbook_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "MacBook Energy Last Month"
+        unique_id: macbook_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.macbook_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      # ----- live % of combined draw -----
+      - name: "Threadripper Power Share"
+        unique_id: threadripper_power_share
         unit_of_measurement: "%"
         state_class: measurement
         icon: mdi:chart-pie
         state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
-            {{ (states('sensor.gpu_psu_current_consumption') | float(0) / total * 100) | round(1) }}
+            {{ (states('sensor.threadripper_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
       - name: "NAS PSU Power Share"
@@ -862,20 +1005,20 @@ template:
         state_class: measurement
         icon: mdi:chart-pie
         state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
             {{ (states('sensor.nas_psu_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
-      - name: "TrueNAS Server Power Share"
-        unique_id: truenas_server_power_share
+      - name: "TrueNAS Power Share"
+        unique_id: truenas_power_share
         unit_of_measurement: "%"
         state_class: measurement
         icon: mdi:chart-pie
         state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
-            {{ (states('sensor.truenas_server_current_consumption') | float(0) / total * 100) | round(1) }}
+            {{ (states('sensor.truenas_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
       - name: "HP SFF Power Share"
@@ -884,20 +1027,20 @@ template:
         state_class: measurement
         icon: mdi:chart-pie
         state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
             {{ (states('sensor.hp_sff_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
-      - name: "Shed Lab Power Share"
-        unique_id: shed_lab_power_share
+      - name: "HP Elite Power Share"
+        unique_id: hp_elite_power_share
         unit_of_measurement: "%"
         state_class: measurement
         icon: mdi:chart-pie
         state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
-            {{ (states('sensor.shed_lab_current_consumption') | float(0) / total * 100) | round(1) }}
+            {{ (states('sensor.hp_elite_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
       - name: "Gaming PC Power Share"
@@ -906,96 +1049,18 @@ template:
         state_class: measurement
         icon: mdi:chart-pie
         state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
             {{ (states('sensor.gaming_pc_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
-      - name: "HP Elite Estimated Power Share"
-        unique_id: hp_elite_estimated_power_share
+      - name: "MacBook Power Share"
+        unique_id: macbook_power_share
         unit_of_measurement: "%"
         state_class: measurement
         icon: mdi:chart-pie
         state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% set total = states('sensor.combined_total_power') | float(0) %}
           {% if total > 0 %}
-            {{ (states('sensor.hp_elite_estimated_current_consumption') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      # ----- share of today's energy (entity slug == *_energy_share_today) -----
-      - name: "GPU PSU Energy Share Today"
-        unique_id: gpu_psu_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.gpu_psu_energy_daily') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "NAS PSU Energy Share Today"
-        unique_id: nas_psu_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.nas_psu_energy_daily') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "TrueNAS Server Energy Share Today"
-        unique_id: truenas_server_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.truenas_server_energy_daily') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "HP SFF Energy Share Today"
-        unique_id: hp_sff_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.hp_sff_energy_daily') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "Shed Lab Energy Share Today"
-        unique_id: shed_lab_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.shed_lab_energy_daily') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "Gaming PC Energy Share Today"
-        unique_id: gaming_pc_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.gaming_pc_energy_daily') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "HP Elite Estimated Energy Share Today"
-        unique_id: hp_elite_estimated_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.hp_elite_estimated_energy_daily') | float(0) / total * 100) | round(1) }}
+            {{ (states('sensor.macbook_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}

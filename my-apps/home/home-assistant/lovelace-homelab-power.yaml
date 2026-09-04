@@ -9,29 +9,26 @@ views:
       - type: markdown
         content: |
           # Homelab Power & Cost
-          Live draw, per-device share and time-of-use cost across the cluster
-          hosts, the NAS and the office workstation. Cost uses the **all-in
-          marginal rate** (energy + delivery riders + tax), which varies by
-          season and peak/off-peak window.
+          Every box sits behind a Tapo P115 plug. **Homelab** is the five always-on
+          servers, **Office** is the Gaming PC and the MacBook, **Combined** is both.
+          Cost uses the **all-in marginal rate** (energy + delivery riders + tax),
+          which varies by season and peak/off-peak window.
 
-          Two figures are not measurements. **HP Elite** has no plug — its draw
-          is the assumed number set below. **The shed runs on solar**, so it
-          contributes watts but no cost, and *billable draw* is the total minus
-          the shed.
-
-          The **HP SFF** plug feeds the HP SFF *and* the Dell Optiplex on one
-          outlet. Switches are locked read-only except the Gaming PC — see the
-          `Homelab plug power-off lockout` automation.
+          The **HP SFF** plug feeds two hosts (HP 8500 + Optiplex 8500), so its draw
+          cannot be split. Homelab switches are locked read-only by the
+          `Homelab plug power-off lockout` automation; the office plugs are not.
 
       - type: entities
-        title: Rate & assumptions
+        title: Rate
         entities:
           - entity: sensor.current_electricity_rate
             name: Effective rate
           - entity: sensor.electricity_tariff_period
             name: Tariff window
           - entity: sensor.homelab_cost_rate
-            name: Burn rate (USD/h)
+            name: Homelab burn rate (USD/h)
+          - entity: sensor.office_cost_rate
+            name: Office burn rate (USD/h)
           - type: section
             label: Inputs (temporary — git is source of truth)
           - entity: input_number.rate_summer_onpeak
@@ -44,8 +41,6 @@ views:
             name: Delivery riders
           - entity: input_number.rate_sales_tax_pct
             name: Sales tax
-          - entity: input_number.hp_elite_estimated_watts
-            name: HP Elite (estimated) assumed draw
 
       - type: glance
         title: Live draw
@@ -53,26 +48,28 @@ views:
         columns: 4
         entities:
           - entity: sensor.homelab_total_power
-            name: TOTAL
-          - entity: sensor.homelab_grid_power
-            name: Billable
-          - entity: sensor.gpu_psu_current_consumption
+            name: HOMELAB
+          - entity: sensor.office_total_power
+            name: OFFICE
+          - entity: sensor.combined_total_power
+            name: COMBINED
+          - entity: sensor.threadripper_current_consumption
             name: Threadripper Host
           - entity: sensor.nas_psu_current_consumption
             name: NAS Drive PSU
-          - entity: sensor.truenas_server_current_consumption
+          - entity: sensor.truenas_current_consumption
             name: TrueNAS (DL360)
           - entity: sensor.hp_sff_current_consumption
             name: HP SFF + Optiplex
-          - entity: sensor.shed_lab_current_consumption
-            name: Shed (HP micro, solar)
+          - entity: sensor.hp_elite_current_consumption
+            name: HP Elite Mini G9
           - entity: sensor.gaming_pc_current_consumption
-            name: Gaming PC (7800X3D + 3090)
-          - entity: sensor.hp_elite_estimated_current_consumption
-            name: HP Elite (estimated)
+            name: Gaming PC
+          - entity: sensor.macbook_current_consumption
+            name: MacBook + Monitor
 
       - type: glance
-        title: Cost so far
+        title: Homelab cost so far
         show_state: true
         columns: 4
         entities:
@@ -86,7 +83,35 @@ views:
             name: This Year
 
       - type: glance
-        title: Last completed month
+        title: Office cost so far
+        show_state: true
+        columns: 4
+        entities:
+          - entity: sensor.office_cost_daily
+            name: Today
+          - entity: sensor.office_cost_weekly
+            name: This Week
+          - entity: sensor.office_cost_monthly
+            name: This Month
+          - entity: sensor.office_cost_yearly
+            name: This Year
+
+      - type: glance
+        title: Combined cost so far
+        show_state: true
+        columns: 4
+        entities:
+          - entity: sensor.combined_cost_daily
+            name: Today
+          - entity: sensor.combined_cost_weekly
+            name: This Week
+          - entity: sensor.combined_cost_monthly
+            name: This Month
+          - entity: sensor.combined_cost_yearly
+            name: This Year
+
+      - type: glance
+        title: Last completed month (homelab)
         show_state: true
         columns: 3
         entities:
@@ -97,49 +122,61 @@ views:
           - entity: sensor.homelab_cost_yesterday
             name: Cost yesterday
 
+      - type: glance
+        title: Last completed month (office)
+        show_state: true
+        columns: 3
+        entities:
+          - entity: sensor.office_cost_last_month
+            name: Cost last month
+          - entity: sensor.office_total_energy_last_month
+            name: Energy last month
+          - entity: sensor.office_cost_yesterday
+            name: Cost yesterday
+
       - type: entities
         title: Cost last month — per device
         entities:
-          - entity: sensor.gpu_psu_cost_last_month
+          - entity: sensor.threadripper_cost_last_month
             name: Threadripper Host
           - entity: sensor.nas_psu_cost_last_month
             name: NAS Drive PSU
-          - entity: sensor.truenas_server_cost_last_month
+          - entity: sensor.truenas_cost_last_month
             name: TrueNAS (DL360)
           - entity: sensor.hp_sff_cost_last_month
             name: HP SFF + Optiplex
-          - entity: sensor.shed_lab_cost_last_month
-            name: Shed (HP micro, solar)
+          - entity: sensor.hp_elite_cost_last_month
+            name: HP Elite Mini G9
           - entity: sensor.gaming_pc_cost_last_month
-            name: Gaming PC (7800X3D + 3090)
-          - entity: sensor.hp_elite_estimated_cost_last_month
-            name: HP Elite (estimated)
+            name: Gaming PC
+          - entity: sensor.macbook_cost_last_month
+            name: MacBook + Monitor
 
       - type: entities
         title: Energy last month — per device
         entities:
-          - entity: sensor.gpu_psu_energy_last_month
+          - entity: sensor.threadripper_energy_last_month
             name: Threadripper Host
           - entity: sensor.nas_psu_energy_last_month
             name: NAS Drive PSU
-          - entity: sensor.truenas_server_energy_last_month
+          - entity: sensor.truenas_energy_last_month
             name: TrueNAS (DL360)
           - entity: sensor.hp_sff_energy_last_month
             name: HP SFF + Optiplex
-          - entity: sensor.shed_lab_energy_last_month
-            name: Shed (HP micro, solar)
+          - entity: sensor.hp_elite_energy_last_month
+            name: HP Elite Mini G9
           - entity: sensor.gaming_pc_energy_last_month
-            name: Gaming PC (7800X3D + 3090)
-          - entity: sensor.hp_elite_estimated_energy_last_month
-            name: HP Elite (estimated)
+            name: Gaming PC
+          - entity: sensor.macbook_energy_last_month
+            name: MacBook + Monitor
 
       - type: grid
-        title: Share of total draw
-        columns: 3
+        title: Share of combined draw
+        columns: 4
         square: false
         cards:
           - type: gauge
-            entity: sensor.gpu_psu_power_share
+            entity: sensor.threadripper_power_share
             name: Threadripper Host
             unit: "%"
             min: 0
@@ -153,7 +190,7 @@ views:
             max: 100
             needle: true
           - type: gauge
-            entity: sensor.truenas_server_power_share
+            entity: sensor.truenas_power_share
             name: TrueNAS (DL360)
             unit: "%"
             min: 0
@@ -167,22 +204,22 @@ views:
             max: 100
             needle: true
           - type: gauge
-            entity: sensor.shed_lab_power_share
-            name: Shed (HP micro, solar)
+            entity: sensor.hp_elite_power_share
+            name: HP Elite Mini G9
             unit: "%"
             min: 0
             max: 100
             needle: true
           - type: gauge
             entity: sensor.gaming_pc_power_share
-            name: Gaming PC (7800X3D + 3090)
+            name: Gaming PC
             unit: "%"
             min: 0
             max: 100
             needle: true
           - type: gauge
-            entity: sensor.hp_elite_estimated_power_share
-            name: HP Elite (estimated)
+            entity: sensor.macbook_power_share
+            name: MacBook + Monitor
             unit: "%"
             min: 0
             max: 100
@@ -191,60 +228,62 @@ views:
       - type: entities
         title: Cost today
         entities:
-          - entity: sensor.gpu_psu_cost_daily
+          - entity: sensor.threadripper_cost_daily
             name: Threadripper Host
           - entity: sensor.nas_psu_cost_daily
             name: NAS Drive PSU
-          - entity: sensor.truenas_server_cost_daily
+          - entity: sensor.truenas_cost_daily
             name: TrueNAS (DL360)
           - entity: sensor.hp_sff_cost_daily
             name: HP SFF + Optiplex
-          - entity: sensor.shed_lab_cost_daily
-            name: Shed (HP micro, solar)
+          - entity: sensor.hp_elite_cost_daily
+            name: HP Elite Mini G9
           - entity: sensor.gaming_pc_cost_daily
-            name: Gaming PC (7800X3D + 3090)
-          - entity: sensor.hp_elite_estimated_cost_daily
-            name: HP Elite (estimated)
+            name: Gaming PC
+          - entity: sensor.macbook_cost_daily
+            name: MacBook + Monitor
 
       - type: entities
         title: Cost this month
         entities:
-          - entity: sensor.gpu_psu_cost_monthly
+          - entity: sensor.threadripper_cost_monthly
             name: Threadripper Host
           - entity: sensor.nas_psu_cost_monthly
             name: NAS Drive PSU
-          - entity: sensor.truenas_server_cost_monthly
+          - entity: sensor.truenas_cost_monthly
             name: TrueNAS (DL360)
           - entity: sensor.hp_sff_cost_monthly
             name: HP SFF + Optiplex
-          - entity: sensor.shed_lab_cost_monthly
-            name: Shed (HP micro, solar)
+          - entity: sensor.hp_elite_cost_monthly
+            name: HP Elite Mini G9
           - entity: sensor.gaming_pc_cost_monthly
-            name: Gaming PC (7800X3D + 3090)
-          - entity: sensor.hp_elite_estimated_cost_monthly
-            name: HP Elite (estimated)
+            name: Gaming PC
+          - entity: sensor.macbook_cost_monthly
+            name: MacBook + Monitor
 
       - type: history-graph
         title: Power draw (24h)
         hours_to_show: 24
         refresh_interval: 30
         entities:
-          - entity: sensor.gpu_psu_current_consumption
+          - entity: sensor.threadripper_current_consumption
             name: Threadripper Host
           - entity: sensor.nas_psu_current_consumption
             name: NAS Drive PSU
-          - entity: sensor.truenas_server_current_consumption
+          - entity: sensor.truenas_current_consumption
             name: TrueNAS (DL360)
           - entity: sensor.hp_sff_current_consumption
             name: HP SFF + Optiplex
-          - entity: sensor.shed_lab_current_consumption
-            name: Shed (HP micro, solar)
+          - entity: sensor.hp_elite_current_consumption
+            name: HP Elite Mini G9
           - entity: sensor.gaming_pc_current_consumption
-            name: Gaming PC (7800X3D + 3090)
-          - entity: sensor.hp_elite_estimated_current_consumption
-            name: HP Elite (estimated)
+            name: Gaming PC
+          - entity: sensor.macbook_current_consumption
+            name: MacBook + Monitor
           - entity: sensor.homelab_total_power
-            name: TOTAL
+            name: HOMELAB
+          - entity: sensor.office_total_power
+            name: OFFICE
 
       - type: statistics-graph
         title: Energy by day (30d)
@@ -254,13 +293,13 @@ views:
         stat_types:
           - change
         entities:
-          - sensor.gpu_psu_energy
+          - sensor.threadripper_energy
           - sensor.nas_psu_energy
-          - sensor.truenas_server_energy
+          - sensor.truenas_energy
           - sensor.hp_sff_energy
-          - sensor.shed_lab_energy
+          - sensor.hp_elite_energy
           - sensor.gaming_pc_energy
-          - sensor.hp_elite_estimated_energy
+          - sensor.macbook_energy
 
       - type: statistics-graph
         title: Cost by month (12 months)
@@ -270,16 +309,16 @@ views:
         stat_types:
           - change
         entities:
-          - sensor.gpu_psu_cost
+          - sensor.threadripper_cost
           - sensor.nas_psu_cost
-          - sensor.truenas_server_cost
+          - sensor.truenas_cost
           - sensor.hp_sff_cost
-          - sensor.shed_lab_cost
+          - sensor.hp_elite_cost
           - sensor.gaming_pc_cost
-          - sensor.hp_elite_estimated_cost
+          - sensor.macbook_cost
 
       - type: statistics-graph
-        title: Total cost by month
+        title: Homelab vs office cost by month
         chart_type: bar
         period: month
         days_to_show: 365
@@ -287,32 +326,33 @@ views:
           - change
         entities:
           - sensor.homelab_cost
+          - sensor.office_cost
 
       - type: entities
         title: Per-device detail
         entities:
           - type: section
             label: Threadripper Host
-          - entity: sensor.gpu_psu_current_consumption
+          - entity: sensor.threadripper_current_consumption
             name: Power now
-          - entity: sensor.gpu_psu_power_share
-            name: Share of total
-          - entity: sensor.gpu_psu_energy_daily
+          - entity: sensor.threadripper_power_share
+            name: Share of combined
+          - entity: sensor.threadripper_energy_daily
             name: Energy today
-          - entity: sensor.gpu_psu_cost_daily
+          - entity: sensor.threadripper_cost_daily
             name: Cost today
-          - entity: sensor.gpu_psu_cost_monthly
+          - entity: sensor.threadripper_cost_monthly
             name: Cost this month
-          - entity: sensor.gpu_psu_voltage
+          - entity: sensor.threadripper_voltage
             name: Voltage
-          - entity: sensor.gpu_psu_current
+          - entity: sensor.threadripper_current
             name: Current
           - type: section
             label: NAS Drive PSU
           - entity: sensor.nas_psu_current_consumption
             name: Power now
           - entity: sensor.nas_psu_power_share
-            name: Share of total
+            name: Share of combined
           - entity: sensor.nas_psu_energy_daily
             name: Energy today
           - entity: sensor.nas_psu_cost_daily
@@ -325,26 +365,26 @@ views:
             name: Current
           - type: section
             label: TrueNAS (DL360)
-          - entity: sensor.truenas_server_current_consumption
+          - entity: sensor.truenas_current_consumption
             name: Power now
-          - entity: sensor.truenas_server_power_share
-            name: Share of total
-          - entity: sensor.truenas_server_energy_daily
+          - entity: sensor.truenas_power_share
+            name: Share of combined
+          - entity: sensor.truenas_energy_daily
             name: Energy today
-          - entity: sensor.truenas_server_cost_daily
+          - entity: sensor.truenas_cost_daily
             name: Cost today
-          - entity: sensor.truenas_server_cost_monthly
+          - entity: sensor.truenas_cost_monthly
             name: Cost this month
-          - entity: sensor.truenas_server_voltage
+          - entity: sensor.truenas_voltage
             name: Voltage
-          - entity: sensor.truenas_server_current
+          - entity: sensor.truenas_current
             name: Current
           - type: section
             label: HP SFF + Optiplex
           - entity: sensor.hp_sff_current_consumption
             name: Power now
           - entity: sensor.hp_sff_power_share
-            name: Share of total
+            name: Share of combined
           - entity: sensor.hp_sff_energy_daily
             name: Energy today
           - entity: sensor.hp_sff_cost_daily
@@ -356,27 +396,27 @@ views:
           - entity: sensor.hp_sff_current
             name: Current
           - type: section
-            label: Shed (HP micro, solar)
-          - entity: sensor.shed_lab_current_consumption
+            label: HP Elite Mini G9
+          - entity: sensor.hp_elite_current_consumption
             name: Power now
-          - entity: sensor.shed_lab_power_share
-            name: Share of total
-          - entity: sensor.shed_lab_energy_daily
+          - entity: sensor.hp_elite_power_share
+            name: Share of combined
+          - entity: sensor.hp_elite_energy_daily
             name: Energy today
-          - entity: sensor.shed_lab_cost_daily
+          - entity: sensor.hp_elite_cost_daily
             name: Cost today
-          - entity: sensor.shed_lab_cost_monthly
+          - entity: sensor.hp_elite_cost_monthly
             name: Cost this month
-          - entity: sensor.shed_lab_voltage
+          - entity: sensor.hp_elite_voltage
             name: Voltage
-          - entity: sensor.shed_lab_current
+          - entity: sensor.hp_elite_current
             name: Current
           - type: section
-            label: Gaming PC (7800X3D + 3090)
+            label: Gaming PC
           - entity: sensor.gaming_pc_current_consumption
             name: Power now
           - entity: sensor.gaming_pc_power_share
-            name: Share of total
+            name: Share of combined
           - entity: sensor.gaming_pc_energy_daily
             name: Energy today
           - entity: sensor.gaming_pc_cost_daily
@@ -388,14 +428,18 @@ views:
           - entity: sensor.gaming_pc_current
             name: Current
           - type: section
-            label: HP Elite (estimated)
-          - entity: sensor.hp_elite_estimated_current_consumption
+            label: MacBook + Monitor
+          - entity: sensor.macbook_current_consumption
             name: Power now
-          - entity: sensor.hp_elite_estimated_power_share
-            name: Share of total
-          - entity: sensor.hp_elite_estimated_energy_daily
+          - entity: sensor.macbook_power_share
+            name: Share of combined
+          - entity: sensor.macbook_energy_daily
             name: Energy today
-          - entity: sensor.hp_elite_estimated_cost_daily
+          - entity: sensor.macbook_cost_daily
             name: Cost today
-          - entity: sensor.hp_elite_estimated_cost_monthly
+          - entity: sensor.macbook_cost_monthly
             name: Cost this month
+          - entity: sensor.macbook_voltage
+            name: Voltage
+          - entity: sensor.macbook_current
+            name: Current
