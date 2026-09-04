@@ -17,7 +17,7 @@ parameters:
   dataEngine: "v1"
   nodeSelector: "wired-storage"
   dataLocality: "best-effort"
-  replicaAutoBalance: "best-effort"
+  replicaAutoBalance: "least-effort" # rebalance only when redundancy is missing; best-effort chases a rebooting node
   replicaSoftAntiAffinity: "disabled"
   replicaZoneSoftAntiAffinity: "disabled"
   replicaDiskSoftAntiAffinity: "disabled"

@@ -36,9 +36,10 @@ defaultSettings:
   autoCleanupSystemGeneratedSnapshot: "true"
   # Allow Longhorn to auto-upgrade volume engines after manager upgrades
   concurrentAutomaticEngineUpgradePerNodeLimit: "3"
-  # Allow detached volumes to rebuild replicas (fixes VolSync clone volumes
-  # stuck in VolumeCloneCopyCompleteAwaitingHealthy with replica count > 1)
+  # Detached multi-replica volumes still rebuild; otherwise a clone waits for an attach that never comes.
   offlineReplicaRebuilding: "true"
+  # ext4 fsfreeze before each snapshot instead of a best-effort sync (needs kernel >= 5.17; Talos is 6.x).
+  freezeFilesystemForSnapshot: "true"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
