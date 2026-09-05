@@ -1,0 +1,113 @@
+path,title
+.claude/commands/add-backup.md,add-backup
+.claude/commands/new-app.md,new-app
+.claude/commands/new-database.md,new-database
+.claude/rules/comments.md,Comment length
+.claude/rules/mink.md,mink
+.pi/skills/mink-note/SKILL.md,/mink:note — Intelligent Note Capture
+.pi/skills/mink/SKILL.md,Mink — context management for this project
+AGENTS.md,Agent Instructions
+CLAUDE.md,CLAUDE.md
+README.md,Talos ArgoCD Proxmox Cluster
+benchmarks/ai-realworld-load/README.md,Real-world AI load baseline (dual vs single RTX 3090)
+benchmarks/vllm/README.md,vLLM throughput benchmark
+docs/backup-repository-setup.md,"Backup Repository Setup (S3 + Kopia, via kopiur)"
+docs/disaster-recovery.md,Disaster Recovery
+docs/documentation-standard.md,Documentation reader contract
+docs/domains/ai-gpu/3090-llm-optimization.md,"3090 LLM Optimization — Topology, Models, and Context Strategy"
+docs/domains/ai-gpu/gpu-scale-swap.md,GPU scale-swap runbook
+docs/domains/ai-gpu/model-catalog.md,AI model catalog
+docs/domains/ai-gpu/pi-agent-local-dev.md,Pi.dev Agent — local coding against Qwen3.8-27B
+docs/domains/ai-gpu/single-vs-dual-3090.md,One 3090 vs two for Qwen3.8-27B
+docs/domains/argocd/argocd.md,ArgoCD GitOps Architecture
+docs/domains/argocd/entrypoints.md,Argo CD Entrypoints
+docs/domains/argocd/manifest-cache-contract.md,Manifest cache dependency contract
+docs/domains/cnpg/plain-postgres-migration.md,Plain Postgres + kopiur: the CNPG exit ramp
+docs/domains/cnpg/run-postgres-plain-english.md,Run Postgres in this cluster — the plain-English guide
+docs/domains/multicluster/enterprise-gitops-roadmap.md,Enterprise multi-cluster GitOps roadmap
+docs/domains/multicluster/prd.md,PRD: Heterogeneous Multi-Cluster GitOps Fleet (Talos + OpenShift SNO)
+docs/domains/networking/dell-proxmox-talos-worker.md,Dell Proxmox Talos CPU worker
+docs/domains/networking/policy.md,Network Security & LAN Isolation
+docs/domains/networking/technitium-vanillax-me-migration.md,Technitium `vanillax.me` Split-DNS
+docs/domains/networking/topology.md,Network Topology
+docs/domains/observability/radar-ng.md,radar-ng observability cookbook
+docs/domains/power/metering.md,Power & Cost Metering
+docs/domains/rustfs/credential-runbook.md,RustFS Credential Runbook
+docs/domains/scheduling/omni-contract-validation.md,Omni machine contract in CI
+docs/domains/scheduling/vpa-and-topology.md,VPA policy ownership and scheduling
+docs/domains/storage/architecture-future.md,Future idea — tiered storage (not implemented)
+docs/domains/storage/backup-validation-contract.md,"Backup validation: references are a graph, not a kind check"
+docs/domains/storage/collecting-storage-evidence.md,Read-only storage evidence collection
+docs/domains/storage/kopia-maintenance-plan.md,Kopia Repository Maintenance (kopiur-managed)
+docs/domains/storage/kopiur-backup-architecture.md,kopiur backup architecture — the instruction manual
+docs/domains/storage/kopiur-evaluation.md,kopiur evaluation — engine candidate for the backup path
+docs/domains/storage/kopiur-mover-permissions.md,Why the kopiur mover runs as the data owner (file permissions)
+docs/domains/storage/pvc-storageclass-migration.md,Move a kopiur-backed PVC to another StorageClass
+docs/domains/storage/storage-model-rwo-rwx-and-sizing.md,"Storage Model: RWO vs RWX, truenas-csi, and Capacity Sizing"
+docs/domains/storage/storage-tiers.md,Storage tiers
+docs/easy-guide.md,The easy guide — explain this cluster to anyone
+docs/index.md,talos-argocd-proxmox
+docs/kopiur-playground.md,Interactive: the kopiur playground
+docs/kopiur-trial.md,"kopiur trial — replacing pvc-plumber (complete, now production)"
+docs/learn/course.md,Interactive course — how your data survives a cluster wipe
+docs/nas-performance.md,NAS hardware and performance reference
+docs/posthog-self-host-k8s.md,Self-Hosting PostHog on Kubernetes
+docs/radar-ng-handoff-2026-09-02.md,Radar NG end-to-end execution plan and handoff — 2026-09-02
+docs/storage-architecture.md,"Storage, Backup & Restore Architecture"
+docs/superpowers/plans/2026-06-13-technitium-external-dns.md,Technitium ExternalDNS Implementation Plan
+docs/superpowers/plans/2026-08-10-dell-longhorn-compute-only.md,Dell Longhorn Compute-Only Implementation Plan
+docs/superpowers/plans/2026-08-29-qwen38-flash-next-atomic-quant.md,Qwen3.8 Flash Next Atomic Quant Implementation Plan
+docs/superpowers/plans/2026-08-29-qwen38-flash-next-iq4-xs.md,Qwen3.8 Flash Next IQ4_XS Implementation Plan
+docs/superpowers/specs/2026-06-13-technitium-external-dns-design.md,Technitium ExternalDNS Design
+docs/superpowers/specs/2026-08-10-dell-longhorn-compute-only-design.md,Dell Longhorn Compute-Only Design
+docs/superpowers/specs/2026-08-29-qwen38-flash-next-atomic-quant-design.md,Qwen3.8 Flash Next Atomic Quant Trial Design
+docs/superpowers/specs/2026-08-29-qwen38-flash-next-iq4-xs-design.md,Qwen3.8 Flash Next IQ4_XS Deployment Design
+docs/truenas-special-vdev-stall-runbook.md,TrueNAS storage rules & NFS-stall troubleshooting
+infrastructure/CLAUDE.md,Infrastructure Guidelines
+infrastructure/controllers/external-dns/README.md,ExternalDNS
+infrastructure/controllers/opentelemetry-operator-observability/README.md,Is the telemetry pipeline itself working?
+infrastructure/database/CLAUDE.md,Database Guidelines
+infrastructure/networking/CLAUDE.md,Networking Guidelines
+infrastructure/networking/README.md,Network Architecture
+infrastructure/storage/CLAUDE.md,Storage Guidelines
+infrastructure/storage/truenas-csi/CANARY.md,TrueNAS CSI NFS Canary
+monitoring/CLAUDE.md,Monitoring Guidelines
+monitoring/README.md,Monitoring & Observability Stack
+monitoring/holmesgpt/CONSOLE-DESIGN.md,Ask the cluster console — source-only draft
+monitoring/prometheus-stack/GPU-MONITORING.md,GPU Monitoring with DCGM Exporter
+monitoring/trivy-operator/README.md,Trivy Operator
+my-apps/CLAUDE.md,Application Guidelines
+my-apps/ai/CLAUDE.md,AI / GPU Workload Guidelines
+my-apps/ai/README.md,AI Stack Guide
+my-apps/ai/comfyui/README.md,ComfyUI on Talos + ArgoCD
+my-apps/ai/llama-cpp/README.md,llama.cpp — Qwen3.8-27B on one RTX 3090
+my-apps/ai/ninfer/README.md,"NInfer-3090 — experimental candidate backend (parked, scale-swap)"
+my-apps/ai/open-webui/KIWIX_RAG_INSTRUCTIONS.md,Kiwix RAG Setup Instructions
+my-apps/ai/open-webui/README.md,Open WebUI
+my-apps/ai/open-webui/SEARXNG-SETUP.md,SearXNG Integration with Open WebUI
+my-apps/ai/surfsense/CLAUDE.md,SurfSense on Kubernetes — Agent Guide
+my-apps/ai/surfsense/README.md,SurfSense
+my-apps/ai/swarmui/README.md,SwarmUI
+my-apps/ai/vllm/README.md,vLLM — parked Qwen3.8-27B rollback backend
+my-apps/development/gitea-actions/README.md,Gitea Actions runner recovery
+my-apps/development/kafka/README.md,Kafka learning cluster
+my-apps/development/news-reader/temporal-workers/README.md,news-reader-temporal-worker
+my-apps/development/posthog/CLAUDE.md,PostHog on Kubernetes — Agent Guide
+my-apps/development/posthog/UPGRADE.md,PostHog Image Bump Checklist
+my-apps/development/radar-ng/RUNBOOK.md,radar-ng operations
+my-apps/development/temporal/README.md,temporal — server (cluster side)
+my-apps/home/frigate/README.md,Frigate with Google Nest Camera Integration
+my-apps/home/project-zomboid/README.md,Project Zomboid Dedicated Server (Build 42 unstable)
+my-apps/maps/versatiles/README.md,VersaTiles — self-hosted worldwide map at maps.vanillax.me
+my-apps/media/immich/README.md,Immich — Self-Hosted Photos
+my-apps/system/restore-canary/README.md,restore-canary
+omni/CONTRIBUTING.md,Contributing to Sidero Omni + Talos + Proxmox Starter Kit
+omni/README.md,Sidero Omni + Talos on Proxmox Starter Kit
+omni/docs/ARCHITECTURE.md,Architecture
+omni/docs/CILIUM_CNI.md,Cilium CNI on Talos Linux
+omni/docs/OPERATIONS.md,Operations Guide
+omni/docs/PREREQUISITES.md,Prerequisites
+omni/docs/TROUBLESHOOTING.md,Troubleshooting Guide
+omni/docs/dell-proxmox-gpu-worker.md,Dell Proxmox GPU worker
+omni/docs/threadripper-gpu-cluster.md,Cluster Topology
+omni/omni/README.md,Omni Self-Hosted Deployment

@@ -95,12 +95,22 @@ workloads and wildcard ceilings. Reviewed exclusions live in
 
 ## Topology and disruption
 
-The Omni template assigns every node a zone: the Threadripper control plane and
-RTX 3090 worker are `house`, and the separate Dell worker is `yard`.
-Cloudflared uses a soft `ScheduleAnyway` hostname constraint. Hostname spread
-works immediately on every Kubernetes node; zone labels are declarative in the
-Omni template but take effect only after that template is synced. Soft spread
-preserves availability during a node outage while preferring an even placement.
+The active Omni template uses physical-host zone labels:
+
+| Physical host | Talos nodes | Zone |
+| --- | --- | --- |
+| HP SFF | Control plane and worker | `hp-sff` |
+| HP Elite | Worker | `hp-elite` |
+| Dell | Temporary worker | `dell` |
+| Threadripper | GPU worker | `house` |
+| Shed HP | Worker behind the media bridge | `shed` |
+
+Cloudflared uses soft `ScheduleAnyway` hostname spread. Kubernetes hostnames
+identify VMs, so the SFF's two nodes are distinct hostnames but the same physical
+failure domain. Use physical-host placement when replicas must survive a chassis
+loss. Soft spread prefers distribution without guaranteeing it or overriding
+storage, affinity and capacity constraints. Check live labels after syncing Omni;
+a Git edit alone does not update them.
 
 Replicated critical workloads should pair spread with a
 `PodDisruptionBudget` using `maxUnavailable: 1` and
@@ -138,7 +148,7 @@ kubectl get pdb -n cloudflared
 ```
 
 Expected results are active policies in `InPlaceOrRecreate`, the learn-only
-policy in `Off`, zone values `house`/`yard` after the Omni template is synced,
+policy in `Off`, zone values matching the table after the Omni template is synced,
 cloudflared replicas spread when nodes are available, and a PDB allowing at
 most one voluntary disruption. A blank zone means the Omni template has not
 yet been applied to that machine set; do not assume the Git edit labels a live
@@ -161,4 +171,4 @@ Sources of truth are the controller
 the rendered-policy validator
 [`validate-vpa-policies.py`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/validate-vpa-policies.py),
 and the node labels in
-[`cluster-template-threadripper-gpu-workers.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-threadripper-gpu-workers.yaml).
+[`cluster-template-prod-v2.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-prod-v2.yaml).
