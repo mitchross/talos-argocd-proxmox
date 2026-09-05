@@ -18,11 +18,21 @@ def healthy_objects():
             {"kind": "Service", "metadata": {"name": service, "namespace": "kube-system", "labels": {"app": service}},
              "spec": {"ports": [{"name": "metrics", "targetPort": "prometheus"}]}},
         ])
-    for kind, name in [("DaemonSet", "kube-prometheus-stack-prometheus-node-exporter"),
-                       ("Deployment", "kube-prometheus-stack-kube-state-metrics")]:
-        objects.append({"kind": kind, "metadata": {"name": name, "namespace": "prometheus-stack"},
+    for kind, namespace, name in [
+        ("DaemonSet", "prometheus-stack", "kube-prometheus-stack-prometheus-node-exporter"),
+        ("Deployment", "prometheus-stack", "kube-prometheus-stack-kube-state-metrics"),
+        ("DaemonSet", "kube-system", "cilium-envoy"),
+        ("Deployment", "external-secrets", "external-secrets"),
+        ("Deployment", "snapshot-controller", "snapshot-controller"),
+    ]:
+        objects.append({"kind": kind, "metadata": {"name": name, "namespace": namespace},
                         "spec": {"template": {"spec": {"containers": [{"name": "exporter", "resources": {
                             "requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"memory": "256Mi"}}}]}}}})
+    snapshot = objects[-1]["spec"]
+    snapshot["replicas"] = 2
+    snapshot["template"]["spec"]["affinity"] = {"podAntiAffinity": {
+        "preferredDuringSchedulingIgnoredDuringExecution": [{"weight": 100,
+            "podAffinityTerm": {"topologyKey": "topology.kubernetes.io/zone"}}]}}
     return objects
 
 
@@ -51,6 +61,16 @@ class MonitoringContractTests(unittest.TestCase):
         objects = healthy_objects()
         objects[0]["spec"]["namespaceSelector"]["matchNames"] = ["gateway"]
         self.assertTrue(contract.validate(objects))
+
+    def test_ignored_snapshot_replica_or_affinity_values_fail(self):
+        for field in ["replicas", "affinity"]:
+            objects = healthy_objects()
+            spec = objects[-1]["spec"]
+            if field == "replicas":
+                spec["replicas"] = 1
+            else:
+                spec["template"]["spec"].pop("affinity")
+            self.assertTrue(contract.validate(objects))
 
     def test_ignored_helm_resource_values_fail(self):
         for resources in [None, {}, {"limits": {"memory": "256Mi"}}]:
