@@ -79,7 +79,7 @@ wait for all the Applications it generates; those reconcile independently. See
 | Kubernetes | `v1.37.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.1` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
-| ArgoCD Helm chart | `10.7.1` (Argo CD `v3.5.2`) | `scripts/bootstrap-argocd.sh` |
+| ArgoCD Helm chart | `10.8.0` (Argo CD `v3.5.2`) | `scripts/bootstrap-argocd.sh` |
 | Proxmox provider | `v0.2.0-3-g7cefedd@sha256:5dcddc…` | `omni/proxmox-providers/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
@@ -310,7 +310,7 @@ kubectl get applications -n argocd -w
 kubectl get applications -n argocd \
   -o custom-columns=NAME:.metadata.name,WAVE:.metadata.annotations.argocd\\.argoproj\\.io/sync-wave,STATUS:.status.sync.status
 
-# (Optional) ArgoCD UI — admin password is pre-configured via the bootstrap Helm values
+# (Optional) ArgoCD UI — bootstrap preserves the configured password stored in 1Password
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 # open https://localhost:8080
 ```
