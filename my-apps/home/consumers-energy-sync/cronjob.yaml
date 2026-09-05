@@ -4,8 +4,8 @@ metadata:
   name: consumers-energy-sync
   namespace: consumers-energy-sync
 spec:
-  # CE posts the previous day overnight; 06:17 local catches it with margin.
-  schedule: "17 6 * * *"
+  # CE posts the previous day late morning; a 06:17 run got stale data. 13:17 has margin.
+  schedule: "17 13 * * *"
   timeZone: America/New_York
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
@@ -27,7 +27,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: sync
-              image: ghcr.io/mitchross/consumers-energy-sync:v0.1.1@sha256:81cff10b88945d15ecee92679658c48723fd19c51c363524f1288cb7e854fe12
+              image: ghcr.io/mitchross/consumers-energy-sync:v0.1.2@sha256:0d6c6d211e98dbd778e27723e2b9192f16aa99cf9367916ad24e53abdfb70ffa
               envFrom:
                 - secretRef:
                     name: consumers-energy-sync
