@@ -2,7 +2,8 @@
 
 The HPs do the everyday work. The Threadripper has the 3090. The shed talks to
 radios over a Wi-Fi bridge. TrueNAS holds the big files and backups, and a Pi
-runs Omni and DNS. Click a machine to see what is inside it.
+runs Omni and DNS. Click a machine to see what is inside it, or explore the
+private, public and shed network paths below.
 
 <div id="lab-explorer">
   <p>The interactive inventory is loading. The <a href="../audits/2026-09-05-inventory/">full written inventory</a> is also available.</p>

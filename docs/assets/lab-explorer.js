@@ -6,7 +6,7 @@
 
   function mount(root, data) {
     root.dataset.ready = "true";
-    const state = {host: "sff", tab: "disks", proposed: false, outage: "sff"};
+    const state = {host: "sff", tab: "disks", proposed: false, outage: "sff", network: "private"};
     const hosts = data.hosts;
     const getHost = id => hosts.find(h => h.id === id);
     const button = (action, value, text, active) => `<button type="button" data-action="${action}" data-value="${escape(value)}" aria-pressed="${active}">${escape(text)}</button>`;
@@ -22,6 +22,7 @@
       <p class="lab-caption" id="lab-role-caption"></p>
       <div class="lab-machines" id="lab-machines" aria-label="Choose a physical machine"></div>
       <section class="lab-detail" aria-label="Selected machine" id="lab-detail"></section>
+      <section class="lab-detail" id="lab-network" aria-label="Network paths and addresses"></section>
       <div class="lab-footer"><button type="button" class="lab-action" data-action="download">Download full inventory</button><span>Snapshot: ${escape(data.date)} · VM and physical-host IPs are separate.</span></div>`;
     const $ = selector => root.querySelector(selector);
 
@@ -60,6 +61,11 @@
       return `<div class="lab-outage"><label for="lab-outage-host"><strong>What if this machine stops?</strong></label><select id="lab-outage-host">${hosts.map(x=>`<option value="${escape(x.id)}" ${x.id===h.id?"selected":""}>${escape(x.name)} · ${escape(x.ip)}</option>`).join("")}</select><p class="lab-caption">A dependency walkthrough. This does not touch the lab or predict a recovery time.</p><div class="lab-outcome"><strong>${escape(h.name)} disappears</strong><p>${escape(h.loss)}</p></div><div class="lab-outcome"><strong>What would improve this?</strong><p>${escape(h.advice)}</p></div>${h.id==="nas"?'<p>Kopiur restore waits for RustFS. NAS downtime is accepted; binding an empty replacement during an outage is not.</p>':""}${rows.length?`<details><summary>${rows.length} recorded claims with this storage dependency</summary>${rows.map(({claim:c,text})=>`<div class="lab-claim"><strong>${escape(c.namespace)} / ${escape(c.claim)}</strong><br>${escape(c.requested_storage)} · ${escape(c.storage_class||c.csi_driver)}<br>${escape(text)}</div>`).join("")}</details>`:'<p>No Longhorn/NAS claim placements in this snapshot are attributed to this host. That does not remove its device or management dependencies.</p>'}</div>`;
     }
 
+    function renderNetwork() {
+      const net=data.network, path=net.paths.find(p=>p.id===state.network);
+      $("#lab-network").innerHTML=`<h2>How things connect</h2><div class="lab-toggle" aria-label="Choose a network path">${net.paths.map(p=>button("network",p.id,p.name,p.id===state.network)).join("")}</div><div class="lab-network-flow">${path.steps.map((s,i)=>`<div><span class="lab-caption">${i+1}</span><strong>${escape(s.title)}</strong><p>${escape(s.text)}</p></div>`).join("")}</div><p>${escape(path.note)}</p><details><summary>Other recorded network addresses</summary>${net.addresses.map(a=>`<div class="lab-claim"><strong>${escape(a.name)} · ${escape(a.ip)}</strong><br>${escape(a.role)}</div>`).join("")}<p class="lab-caption">${escape(net.source)}</p><p class="lab-caption">10G switch model and management IP were not captured.</p></details>`;
+    }
+
     function renderDetail() {
       const h=getHost(state.host);
       $("#lab-detail").innerHTML = `<button type="button" class="lab-action lab-back" data-action="back">↑ Pick another machine</button><h2>${escape(h.name)}</h2><p>${escape(h.summary)}</p><div class="lab-facts"><span><strong>Host:</strong> ${escape(h.ip)}</span><span>${escape(h.model)}</span><span>${escape(h.cpu)}</span><span>${escape(h.ram)} installed</span><span>${escape(h.link)}</span><span><strong>Zone:</strong> ${escape(h.zone||"outside Kubernetes")}</span></div>${h.power!==null?`<p class="lab-caption">Power sample: ~${h.power} W${h.extraPower?` · ${escape(h.extraPower)}`:""}. One reading, not an average.</p>`:h.id==="sff"||h.id==="dell"?'<p class="lab-caption">SFF + Dell shared plug: ~63 W combined at collection. Per-host power was not separated.</p>':""}${state.proposed?`<p class="lab-advice"><strong>My suggested job: ${escape(h.suggested)}</strong><br>${escape(h.advice)}</p>`:""}<div class="lab-tabs lab-toggle" aria-label="Machine detail">${button("tab","disks","Disks & memory",state.tab==="disks")}${button("tab","vms","VMs & apps",state.tab==="vms")}${button("tab","outage","What if it stops?",state.tab==="outage")}</div><div id="lab-content">${state.tab==="disks"?diskView(h):state.tab==="vms"?vmView(h):outageView()}</div>`;
@@ -69,6 +75,7 @@
       const target=event.target.closest("button[data-action]");
       if (!target || !root.contains(target)) return;
       const {action,value}=target.dataset;
+      if (action==="network") {state.network=value;renderNetwork();root.querySelector(`button[data-action="network"][data-value="${value}"]`).focus({preventScroll:true});return;}
       if (action==="back") {$("#lab-machines").scrollIntoView({block:"start"});root.querySelector(`button[data-action="host"][data-value="${state.host}"]`).focus({preventScroll:true});return;}
       if (action==="download") {
         const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));
@@ -85,7 +92,7 @@
       if(event.target.id!=="lab-outage-host")return;
       state.outage=event.target.value;state.host=state.outage;renderNav();renderDetail();$("#lab-outage-host").focus({preventScroll:true});
     });
-    renderNav();renderDetail();
+    renderNav();renderDetail();renderNetwork();
   }
 
   function init() {

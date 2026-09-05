@@ -1964,5 +1964,116 @@ window.HOMELAB_INVENTORY = {
     "Disk capacity uses decimal GB/TB; VM allocations and RAM use GiB/MiB. Capacity bars are not disk-use measurements.",
     "NAS pool percentages use the SSH snapshot; the later dashboard uses different usable-capacity accounting.",
     "Suggested roles and outage walkthroughs are explanations, not applied policy or measured recovery tests."
-  ]
+  ],
+  "network": {
+    "source": "Network topology documentation and committed Cilium/Gateway manifests; these endpoints were not re-probed during the Talos upgrade.",
+    "addresses": [
+      {
+        "name": "Firewalla router",
+        "ip": "192.168.10.1",
+        "role": "Default LAN route"
+      },
+      {
+        "name": "ASUS RT-AX86U",
+        "ip": "192.168.10.70",
+        "role": "Shed media bridge; management address"
+      },
+      {
+        "name": "Wyze Bridge",
+        "ip": "192.168.10.46",
+        "role": "Recorded camera stream endpoint"
+      },
+      {
+        "name": "External gateway",
+        "ip": "192.168.10.49",
+        "role": "gateway-external"
+      },
+      {
+        "name": "Internal gateway",
+        "ip": "192.168.10.50",
+        "role": "gateway-internal"
+      },
+      {
+        "name": "Private split-DNS gateway",
+        "ip": "192.168.10.52",
+        "role": "gateway-internal-technitium"
+      },
+      {
+        "name": "Cilium address pool",
+        "ip": "192.168.10.32/27",
+        "role": "First and last addresses excluded by policy"
+      }
+    ],
+    "paths": [
+      {
+        "id": "private",
+        "name": "Private app",
+        "steps": [
+          {
+            "title": "Your browser",
+            "text": "A private app hostname"
+          },
+          {
+            "title": "Technitium DNS",
+            "text": "192.168.10.15 answers the lookup"
+          },
+          {
+            "title": "Internal gateway",
+            "text": "192.168.10.52 for split-DNS routes"
+          },
+          {
+            "title": "App service",
+            "text": "Cilium sends the request to its pods"
+          }
+        ],
+        "note": "This path is for routes enrolled in the Technitium split-DNS gateway. The separate .50 internal gateway also remains declared. DNS resolves the name; it does not proxy the HTTP request."
+      },
+      {
+        "id": "public",
+        "name": "Public app",
+        "steps": [
+          {
+            "title": "Your browser",
+            "text": "A public app hostname"
+          },
+          {
+            "title": "Cloudflare",
+            "text": "Public DNS and tunnel entry"
+          },
+          {
+            "title": "cloudflared pods",
+            "text": "Tunnel connects into the cluster"
+          },
+          {
+            "title": "External gateway",
+            "text": "gateway-external \u2192 app service"
+          }
+        ],
+        "note": "Cloudflare tunnels are in use; Cloudflare Access is not. The gateway has configured VIP .49, while tunnel origin routing uses the configured cluster service."
+      },
+      {
+        "id": "shed",
+        "name": "Shed connection",
+        "steps": [
+          {
+            "title": "House Talos node",
+            "text": "Cross-node pod traffic"
+          },
+          {
+            "title": "Cilium VXLAN",
+            "text": "Carries traffic between node IPs"
+          },
+          {
+            "title": "Wi-Fi media bridge",
+            "text": "ASUS RT-AX86U; Ethernet at the shed"
+          },
+          {
+            "title": "Shed Talos VM",
+            "text": "192.168.10.156 at the audit"
+          }
+        ],
+        "note": "Talos sees a wired interface. The radio hop still matters, so this host has a Wi-Fi scheduling taint and no scheduled Longhorn replicas."
+      }
+    ]
+  }
 };
