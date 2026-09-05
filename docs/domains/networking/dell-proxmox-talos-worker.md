@@ -56,14 +56,15 @@ needs availability rather than space.
 
 ## Hardware-bound workload
 
-The Dell VM carries no USB devices. Intercept's two RTL-SDRs (`0bda:2838`) and
-the Zigbee coordinator are USB-passed to the HP 600 G4 shed VM
-(`hp-micro-workers`, `omni/machine-classes/hp-micro-worker.yaml`); Intercept and
-Home Assistant follow the NFD labels
+The Dell VM carries no USB devices. Intercept's two RTL-SDRs (`0bda:2838`) go to
+the HP 600 G4 shed VM (`hp-micro-workers`,
+`omni/machine-classes/hp-micro-worker.yaml`) and the Zigbee coordinator to the HP
+Elite VM (`hp-elite-workers`, `omni/machine-classes/hp-elite-worker.yaml`);
+Intercept and Home Assistant follow the NFD labels
 `feature.node.kubernetes.io/custom-usb.rtl-sdr` and
-`custom-usb.zigbee-coordinator` rather than a node class. The provider schema
-has no USB field, so those mappings are re-added by hand after a VM replacement
-of that host.
+`custom-usb.zigbee-coordinator` rather than a node class. Each machine class
+declares its devices in a `usb_devices:` list of Proxmox Resource Mappings, so a
+replaced VM comes back with them attached.
 
 Frigate is pinned to `node.vanillax.dev/class=dell-worker` and currently scaled
 to zero. It uses CPU software decode and OpenVINO CPU detection — no NVIDIA
