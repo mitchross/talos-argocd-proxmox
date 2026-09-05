@@ -1,0 +1,128 @@
+rule_files:
+- collector.rules.yaml
+evaluation_interval: 1m
+tests:
+- name: healthy targets and no errors
+  interval: 1m
+  input_series:
+  - &id002
+    series: up{telemetry_stack="homelab",otel_collector="otel-agent"}
+    values: 1+0x20
+  - &id001
+    series: up{telemetry_stack="homelab",otel_collector="otel-gateway"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorBackpressure
+    exp_alerts: []
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorQueueNearCapacity
+    exp_alerts: []
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorTargetDown
+    exp_alerts: []
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorTargetsMissing
+    exp_alerts: []
+- name: missing agent discovery is not healthy
+  interval: 1m
+  input_series:
+  - *id001
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorTargetsMissing
+    exp_alerts:
+    - exp_labels:
+        severity: critical
+        component: opentelemetry
+        telemetry_stack: homelab
+        otel_collector: otel-agent
+      exp_annotations:
+        summary: OpenTelemetry collector metrics discovery is missing
+        description: No scrape target exists for otel-agent. Check ServiceMonitor
+          selection and operator monitoring Services; missing data is not healthy
+          telemetry.
+        runbook_url: https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/opentelemetry-operator-observability/README.md
+- name: trace failures with total suffix
+  interval: 1m
+  input_series:
+  - *id002
+  - *id001
+  - series: otelcol_exporter_send_failed_spans_total{telemetry_stack="homelab",namespace="opentelemetry",pod="gateway-0",exporter="otlp/tempo"}
+    values: 0+60x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorBackpressure
+    exp_alerts:
+    - exp_labels:
+        severity: warning
+        component: opentelemetry
+        namespace: opentelemetry
+        pod: gateway-0
+        exporter: otlp/tempo
+      exp_annotations:
+        summary: OpenTelemetry telemetry is being refused or exports are failing
+        description: Collector opentelemetry/gateway-0 has sustained log/trace refusals
+          or export failures. Retries may recover these; this is not proof of permanent
+          data loss.
+        runbook_url: https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/opentelemetry-operator-observability/README.md
+- name: legacy log failure counter
+  interval: 1m
+  input_series:
+  - *id002
+  - *id001
+  - series: otelcol_exporter_send_failed_log_records{telemetry_stack="homelab",namespace="opentelemetry",pod="gateway-0",exporter="otlp/tempo"}
+    values: 0+60x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorBackpressure
+    exp_alerts:
+    - exp_labels:
+        severity: warning
+        component: opentelemetry
+        namespace: opentelemetry
+        pod: gateway-0
+        exporter: otlp/tempo
+      exp_annotations:
+        summary: OpenTelemetry telemetry is being refused or exports are failing
+        description: Collector opentelemetry/gateway-0 has sustained log/trace refusals
+          or export failures. Retries may recover these; this is not proof of permanent
+          data loss.
+        runbook_url: https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/opentelemetry-operator-observability/README.md
+- name: queue capacity 100
+  interval: 1m
+  input_series:
+  - *id002
+  - *id001
+  - series: otelcol_exporter_queue_size{telemetry_stack="homelab",namespace="opentelemetry",pod="gateway-0",exporter="otlp/tempo"}
+    values: 95+0x20
+  - series: otelcol_exporter_queue_capacity{telemetry_stack="homelab",namespace="opentelemetry",pod="gateway-0",exporter="otlp/tempo"}
+    values: 100+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorQueueNearCapacity
+    exp_alerts:
+    - exp_labels:
+        severity: warning
+        component: opentelemetry
+        namespace: opentelemetry
+        pod: gateway-0
+        exporter: otlp/tempo
+      exp_annotations:
+        summary: OpenTelemetry collector retry queue is near capacity
+        description: Collector opentelemetry/gateway-0 exporter otlp/tempo has remained
+          above 80% queue utilization.
+        runbook_url: https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/opentelemetry-operator-observability/README.md
+- name: queue capacity 0
+  interval: 1m
+  input_series:
+  - *id002
+  - *id001
+  - series: otelcol_exporter_queue_size{telemetry_stack="homelab",namespace="opentelemetry",pod="gateway-0",exporter="otlp/tempo"}
+    values: 95+0x20
+  - series: otelcol_exporter_queue_capacity{telemetry_stack="homelab",namespace="opentelemetry",pod="gateway-0",exporter="otlp/tempo"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: OpenTelemetryCollectorQueueNearCapacity
+    exp_alerts: []
