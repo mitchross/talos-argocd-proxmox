@@ -15,11 +15,10 @@ spec:
       labels:
         app: cloudflared
     spec:
-      # Soft spread keeps ingress replicas balanced while still permitting all
-      # three to run during a node outage.
+      # Spread across physical hosts; permit co-location when a host is unavailable.
       topologySpreadConstraints:
         - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
+          topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: ScheduleAnyway
           # Compare only pods from the same rollout. Old/new ReplicaSets
           # otherwise distort skew while a Deployment is replacing pods.
@@ -32,6 +31,14 @@ spec:
             matchLabels:
               app: cloudflared
       affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node.vanillax.dev/pool
+                    operator: In
+                    values: [general]
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
@@ -42,7 +49,7 @@ spec:
                       operator: In
                       values:
                         - cloudflared
-                topologyKey: kubernetes.io/hostname
+                topologyKey: topology.kubernetes.io/zone
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:2026.8.3 # renovate: docker=cloudflare/cloudflared
