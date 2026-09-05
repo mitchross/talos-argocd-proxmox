@@ -52,19 +52,6 @@ spec:
               1. Check node health and storage capacity
               2. Check replica rebuild progress in the Longhorn UI
             runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
-        - alert: LonghornSnapshotChainTooLong
-          expr: longhorn_volume_snapshot_count > 100
-          for: 5m
-          labels:
-            severity: warning
-            component: longhorn
-            category: snapshot
-          annotations:
-            summary: "Longhorn volume has too many snapshots: {{ $labels.volume }}"
-            description: |
-              Volume {{ $labels.volume }} has {{ $value }} snapshots.
-              Long snapshot chains can impact performance.
-            runbook_url: "https://longhorn.io/docs/latest/snapshots-and-backups/snapshots/"
         - alert: LonghornNodeStorageLow
           expr: |
             (
@@ -84,34 +71,4 @@ spec:
               Actions:
               1. Clean up unused volumes/snapshots
               2. Add more storage to the node
-            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
-    - name: longhorn.performance
-      rules:
-        - alert: LonghornVolumeHighLatency
-          expr: "histogram_quantile(0.99, \n  rate(longhorn_volume_read_latency_seconds_bucket[5m])\n) > 0.1\n"
-          for: 5m
-          labels:
-            severity: warning
-            component: longhorn
-            category: performance
-          annotations:
-            summary: "High read latency on Longhorn volume: {{ $labels.volume }}"
-            description: |
-              Volume {{ $labels.volume }} is experiencing high read latency.
-              99th percentile latency: {{ $value | humanizeDuration }}
-            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
-        - alert: LonghornVolumeHighIOPS
-          expr: "rate(longhorn_volume_read_iops_total[5m]) + \nrate(longhorn_volume_write_iops_total[5m]) > 1000\n"
-          for: 10m
-          labels:
-            severity: info
-            component: longhorn
-            category: performance
-          annotations:
-            summary: "High IOPS on Longhorn volume: {{ $labels.volume }}"
-            description: |
-              Volume {{ $labels.volume }} is experiencing high IOPS.
-              Current IOPS: {{ $value | humanize }}
-
-              This is informational - monitor for performance impact.
             runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
