@@ -9,11 +9,12 @@ name: talos-prod-cluster-v2
 labels:
   cluster-id: "2"
 kubernetes:
-  # Ceiling, not a preference: Omni rejects anything above this against Talos
-  # 1.13.9. Kubernetes 1.37 needs Talos 1.14, which is not GA.
-  version: v1.36.4
+  # Ceiling for Talos 1.14, and the version it ships. Omni rejects anything above it.
+  version: v1.37.0
 talos:
-  version: v1.13.9
+  # Install disk is an Omni resource since 1.11, not a config patch; unset, Omni
+  # auto-picks the SMALLEST disk — wrong on the GPU worker (300G flash < 450G boot).
+  version: v1.14.0
 patches:
 - name: disable-default-cni
   inline:
@@ -29,11 +30,6 @@ patches:
     kind: ResolverConfig
     nameservers:
     - address: 192.168.10.1
-- name: install-disk
-  inline:
-    machine:
-      install:
-        disk: /dev/sda
 # NEVER remove: without this the inner VXLAN TCP checksum is never completed
 # and cross-node pod TCP silently black-holes (Tcp: InCsumErrors, no drops
 # logged). Check with `talosctl get ethernetstatus`.

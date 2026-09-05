@@ -12,7 +12,7 @@ services:
 
   threadripper:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0-3-g7cefedd@sha256:5dcddc67c3793aa9f0ea693733e1293639b036595ed599c46e30033b5e112e3c
     container_name: omni-infra-provider-proxmox-threadripper
     volumes:
       - ./threadripper.config.yaml:/config.yaml:ro
@@ -27,7 +27,7 @@ services:
 
   hp-micro:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0-3-g7cefedd@sha256:5dcddc67c3793aa9f0ea693733e1293639b036595ed599c46e30033b5e112e3c
     container_name: omni-infra-provider-proxmox-hp-micro
     volumes:
       - ./hp-micro.config.yaml:/config.yaml:ro
@@ -41,7 +41,7 @@ services:
 
   hp-sff:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0-3-g7cefedd@sha256:5dcddc67c3793aa9f0ea693733e1293639b036595ed599c46e30033b5e112e3c
     container_name: omni-infra-provider-proxmox-hp-sff
     volumes:
       - ./hp-sff.config.yaml:/config.yaml:ro
@@ -55,7 +55,7 @@ services:
 
   hp-elite:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0-3-g7cefedd@sha256:5dcddc67c3793aa9f0ea693733e1293639b036595ed599c46e30033b5e112e3c
     container_name: omni-infra-provider-proxmox-hp-elite
     volumes:
       - ./hp-elite.config.yaml:/config.yaml:ro
@@ -69,7 +69,7 @@ services:
 
   dell:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0@sha256:c0d0687e87d9f2fb77c7a9d6d7263820953d20441200f3de64b22afaa7ff273e
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.2.0-3-g7cefedd@sha256:5dcddc67c3793aa9f0ea693733e1293639b036595ed599c46e30033b5e112e3c
     container_name: omni-infra-provider-proxmox-dell
     volumes:
       - ./dell.config.yaml:/config.yaml:ro
