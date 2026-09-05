@@ -23,7 +23,7 @@ helmCharts:
     valuesFile: values.yaml
     # Chart kubeVersion floor is >=1.32; without this, helm templates with default capabilities (v1.31) and the render fails.
     # Keep loosely in step with the real cluster version (omni/cluster-template/cluster-template.yaml).
-    kubeVersion: "1.36.4"
+    kubeVersion: "1.37.0"
 
 # Upstream RBAC gap: kopiur-mover gets `*/status` but not the parent resources, so movers 403 and a
 # Restore sits in "Restoring" with no status. Drop once upstream fixes it.
