@@ -36,6 +36,10 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 
 ## Documentation
 
+Start with the [hardware, disk placement and GitOps review](audits/2026-09-05-hardware-and-placement-review.md)
+for the engineering recommendation, proposed workload pools and disk move priorities.
+Those proposals are explicitly separate from deployed state.
+
 The [September 5 architecture audit](audits/2026-09-05-architecture-audit.md) and
 [dated repository/host inventory](audits/2026-09-05-inventory.md) record verified
 findings, proposed fixes, and current-state differences that still need reconciliation.
