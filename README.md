@@ -125,6 +125,9 @@ disappear from Proxmox.
 
 ### 2. Apply the machine classes and provision Talos
 
+**Fresh GPU provisioning is blocked by install-disk selection.** Resolve the
+[known disk issue](docs/audits/2026-09-05-upgrade-and-disks.md) before this step.
+
 Machine classes and the cluster template are **snapshots stored inside Omni**.
 Apply all six classes before syncing the template; template sync owns the
 MachineSets. Applying a class does not mutate an existing VM: CPU, RAM, disks,
@@ -380,66 +383,52 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 
 ## Cluster Upgrades & Talos 1.14 Notes
 
-The cluster runs Talos **1.14.0**. Two things work differently here than in older
-guides — read them before touching the cluster template.
+The templates target Talos **1.14.0** and Kubernetes **1.37.0**. Committing or
+merging these files does not upgrade the running machines; Omni performs the
+rollout separately. See the [upgrade and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
+before applying the template to an existing cluster or using it for a rebuild.
 
-### Install disk is an Omni resource, not a config patch
+### Fresh GPU provisioning needs a disk-selection fix
 
-Through Talos 1.13 the install disk was set with a cluster-level
-`machine.install.disk` patch. Talos 1.14 reworked the install flow and Omni 1.11
-moved the setting into a first-class `MachineInstallDiskConfig` resource, so a
-config patch carrying `machine.install.disk` is now **silently ignored**. Neither
-cluster template ships one any more.
+Omni 1.11 manages the install disk through `MachineInstallDiskConfig`;
+`machine.install.disk` patches no longer select it. Already-installed machines
+keep their detected system disk. On a fresh machine, the default selects the
+smallest eligible disk.
 
-An already-installed machine always resolves to the disk it is running on, so
-upgrades and config changes are unaffected. The setting only matters when a
-machine is provisioned, or wiped and reinstalled — and with nothing set, Omni
-auto-picks the **smallest** eligible disk (at least 5 GB, not read-only, not a
-CD-ROM, not a member of another disk).
+The GPU class has a 450 GB boot disk, another 450 GB disk, and a 300 GB flash
+disk. That default selects the flash disk. **Do not reprovision the GPU worker
+or run a full rebuild with this layout until fresh-install selection is fixed.**
+An override on today's machine is insufficient: the Proxmox provider generates
+a new UUID for a replacement, and the override belongs to the old UUID.
 
-That default is right wherever the boot disk is also the smallest disk, which is
-every machine class except the Threadripper GPU worker:
+An in-place upgrade does not require moving these disks. The separate
+[disk plan](docs/audits/2026-09-05-upgrade-and-disks.md#disk-placement-follow-up)
+keeps the capacity decision explicit rather than shrinking a volume as part
+of a version bump.
 
-| Machine class | Boot disk | Other disks | Auto-pick |
-|---|---|---|---|
-| `hp-micro` / `hp-sff` / `hp-elite` / `dell-worker` | 128 GB | 850 / 690 / 440 / 400 GB | ✅ boot disk |
-| `threadripper-gpu-worker` | 450 GB | 450 GB + **300 GB** flash | ❌ the 300 GB flash tier |
+### Kubernetes compatibility and upgrade order
 
-The template cannot carry the override: its `install:` block lives only on
-`kind: Machine` documents keyed by machine UUID, and every machine set here is
-autoprovisioned from a machine class. Set the install disk for the GPU worker
-once in the Omni UI, or apply a `MachineInstallDiskConfig` for that machine,
-**before** reprovisioning it.
+Talos 1.14 ships Kubernetes 1.37, but the shipped version is not the only
+compatible version. Check Omni's `talosversion` resource for the supported
+pairs. Keep the current Kubernetes version while upgrading Talos first; once
+Talos and its extensions are healthy, advance Kubernetes. The committed
+template records the final target, so review the template diff before syncing
+it during either stage.
 
-### Kubernetes tracks the Talos ceiling
+Keep both cluster templates, the kopiur chart's `kubeVersion`, and Cluster CI's
+`KUBERNETES_VERSION` aligned with the intended Kubernetes target. Configure the
+kubelet through `machine.kubelet.extraConfig`; Kubernetes 1.37 rejects removed
+cAdvisor command-line flags.
 
-Omni validates the pair and refuses the sync outright with `invalid kubernetes
-version "X": is not compatible with talos version "Y"`. Talos 1.14 caps
-Kubernetes at 1.37.0, which is where this cluster sits. Check what a Talos
-release allows before planning a bump:
+### A stalled upgrade is not a reason to delete the control plane
 
-```bash
-omnictl get talosversion <version> -o yaml   # lists every compatible k8s version
-```
-
-Configure the kubelet through `machine.kubelet.extraConfig` (KubeletConfiguration),
-never `extraArgs` — since Kubernetes 1.37 the kubelet **refuses to start** if any
-deprecated cAdvisor flag is set. Three places carry the Kubernetes version and must
-move together: the cluster template, `kubeVersion` in
-`infrastructure/controllers/kopiur-operator/kustomization.yaml`, and
-`KUBERNETES_VERSION` in `.github/workflows/cluster-ci.yml`.
-
-### Never pin below Talos 1.14.0
-
-1.14 is the floor for this repo: the install-disk behavior above assumes it, and
-the templates set kube-scheduler integer args that older patch lines mis-marshal.
-
-For a stuck rollout, reprovision one machine at a time (this preserves etcd
-quorum for control planes):
-
-```bash
-omnictl cluster machine delete <machine-id> --timeout 15m   # wait for Ready before the next
-```
+This cluster has **one** control-plane machine. Rebooting it temporarily stops
+the Kubernetes API; deleting it removes the only etcd member. There is no
+remaining quorum. Keep it intact while diagnosing an upgrade failure, and
+follow the [recovery runbook](docs/disaster-recovery.md) if recovery is required.
+Worker replacement also needs a storage recovery plan: most Longhorn volumes
+still have only one replica. A fresh GPU replacement additionally needs the
+install-disk fix above.
 
 ### Upgrading Omni / omnictl
 
@@ -457,7 +446,7 @@ micro sits in the shed behind a Wi-Fi media bridge.
 
 | Host | Address | CPU / RAM | Role |
 |------|---------|-----------|------|
-| Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (1x RTX 3090 passthrough) + general worker |
+| Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (1x RTX 3090 passthrough) |
 | Dell Optiplex | 192.168.10.16 | i5-8500 6c · 39 GB | CPU worker (2.5 GbE add-in NIC) |
 | HP micro (shed) | 192.168.10.20 | i5-8500T 6c · 31 GB | CPU worker, USB radios, Wi-Fi-bridged and solar-fed |
 | HP SFF (ProDesk) | 192.168.10.21 | i5-8500 6c · 63 GB | Control plane + CPU worker |
