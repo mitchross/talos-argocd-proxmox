@@ -1,0 +1,35 @@
+name: Telemetry Rule Tests
+on:
+  pull_request:
+    paths:
+      - 'infrastructure/controllers/opentelemetry-operator-observability/**'
+      - 'scripts/prepare-telemetry-rule-tests.py'
+      - 'scripts/tests/test_prepare_telemetry_rule_tests.py'
+      - '.github/workflows/telemetry-rule-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infrastructure/controllers/opentelemetry-operator-observability/**'
+      - 'scripts/prepare-telemetry-rule-tests.py'
+      - 'scripts/tests/test_prepare_telemetry_rule_tests.py'
+      - '.github/workflows/telemetry-rule-tests.yml'
+permissions:
+  contents: read
+jobs:
+  prometheus-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install PyYAML==6.0.3
+      - name: Test rule-file preparation
+        run: python -m unittest discover -s scripts/tests -p test_prepare_telemetry_rule_tests.py -v
+      - name: Prepare alert-rule tests
+        run: python scripts/prepare-telemetry-rule-tests.py /tmp/otel-rule-tests
+      - name: Check rules and evaluate synthetic time series
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 check rules collector.rules.yaml
+          docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 test rules collector-alerts.test.yaml
