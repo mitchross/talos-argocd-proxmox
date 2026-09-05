@@ -53,6 +53,21 @@ configMapGenerator:
       labels:
         grafana_dashboard: "1"
         app.kubernetes.io/name: grafana-dashboards
+  - name: shed-solar-dashboard
+    files:
+      - dashboards/shed-solar.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
+  # Copied from github.com/mitchross/epsolar grafana/; re-copy on upstream changes.
+  - name: solar-buffer-control-dashboard
+    files:
+      - dashboards/solar-buffer-control.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
 # These CRD schemas push client-side apply's last-applied annotation past the 256KB cap — keep per-CRD ServerSideApply+Replace.
 patches:
   - target:

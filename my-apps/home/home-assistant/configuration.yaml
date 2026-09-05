@@ -52,6 +52,10 @@ prometheus:
       - sensor.hp_elite_*
       - sensor.gaming_pc_*
       - sensor.macbook_*
+      # Solar-fed shed plug: watts/kWh only, no cost sensors.
+      - sensor.shed_lab_*
+      - sensor.solar_*
+      - binary_sensor.solar_*
       - sensor.homelab_*
       - sensor.office_*
       - sensor.combined_*
@@ -65,6 +69,163 @@ prometheus:
 
 # Energy dashboard is configured in the UI: add each sensor.<dev>_energy sensor as Individual devices.
 energy:
+
+# Shed solar: the rpi4 (github.com/mitchross/epsolar) polls the EPEVER MPPT over Modbus and serves
+# this JSON. kWh counters are the controller's own; sensors go unavailable if the Pi is down.
+rest:
+  - resource: http://192.168.10.174:8080/api/v1/status
+    scan_interval: 30
+    timeout: 10
+    sensor:
+      - name: "Solar PV Power"
+        unique_id: solar_pv_power
+        value_template: "{{ value_json.telemetry.pv_power }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+      - name: "Solar PV Voltage"
+        unique_id: solar_pv_voltage
+        value_template: "{{ value_json.telemetry.pv_voltage }}"
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+      - name: "Solar Battery Voltage"
+        unique_id: solar_battery_voltage
+        value_template: "{{ value_json.telemetry.battery_voltage }}"
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+      - name: "Solar Battery SOC"
+        unique_id: solar_battery_soc
+        value_template: "{{ value_json.soc.percent | round(1) }}"
+        unit_of_measurement: "%"
+        device_class: battery
+        state_class: measurement
+      - name: "Solar Battery SOC Controller"
+        unique_id: solar_battery_soc_controller
+        value_template: "{{ value_json.telemetry.battery_soc }}"
+        unit_of_measurement: "%"
+        device_class: battery
+        state_class: measurement
+      - name: "Solar Battery Power"
+        unique_id: solar_battery_power
+        value_template: "{{ value_json.telemetry.net_battery_power | round(1) }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        icon: mdi:battery-charging
+      - name: "Solar Charge Power"
+        unique_id: solar_charge_power
+        value_template: "{{ value_json.telemetry.controller_charge_power }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+      - name: "Solar Load Power"
+        unique_id: solar_load_power
+        value_template: "{{ value_json.telemetry.load_power }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        icon: mdi:power-plug
+      - name: "Solar Charging State"
+        unique_id: solar_charging_state
+        value_template: "{{ value_json.telemetry.charging_state }}"
+        icon: mdi:solar-power
+      - name: "Solar Automation State"
+        unique_id: solar_automation_state
+        value_template: "{{ value_json.automation.state }}"
+        icon: mdi:robot
+      - name: "Solar Automation Reason"
+        unique_id: solar_automation_reason
+        value_template: "{{ value_json.automation.reason }}"
+        icon: mdi:text
+      - name: "Solar Generated Today"
+        unique_id: solar_generated_today
+        value_template: "{{ value_json.telemetry.generated_today_kwh }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Solar Generated Month"
+        unique_id: solar_generated_month
+        value_template: "{{ value_json.telemetry.generated_month_kwh }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Solar Generated Year"
+        unique_id: solar_generated_year
+        value_template: "{{ value_json.telemetry.generated_year_kwh }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Solar Generated Total"
+        unique_id: solar_generated_total
+        value_template: "{{ value_json.telemetry.generated_total_kwh }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Solar Consumed Today"
+        unique_id: solar_consumed_today
+        value_template: "{{ value_json.telemetry.consumed_today_kwh }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Solar Consumed Month"
+        unique_id: solar_consumed_month
+        value_template: "{{ value_json.telemetry.consumed_month_kwh }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Solar Consumed Total"
+        unique_id: solar_consumed_total
+        value_template: "{{ value_json.telemetry.consumed_total_kwh }}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+      - name: "Solar Battery Energy Remaining"
+        unique_id: solar_battery_energy_remaining
+        value_template: "{{ value_json.energy.estimated_energy_remaining_wh | round(0) }}"
+        unit_of_measurement: "Wh"
+        device_class: energy_storage
+        state_class: measurement
+      - name: "Solar Runtime Remaining"
+        unique_id: solar_runtime_remaining
+        value_template: "{{ value_json.energy.estimated_runtime_minutes | round(0) }}"
+        unit_of_measurement: "min"
+        device_class: duration
+        state_class: measurement
+        icon: mdi:timer-sand
+      - name: "Solar Battery Temperature"
+        unique_id: solar_battery_temperature
+        value_template: "{{ value_json.telemetry.battery_temperature }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: "Solar Controller Temperature"
+        unique_id: solar_controller_temperature
+        value_template: "{{ value_json.telemetry.controller_temperature }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: "Solar Last Update"
+        unique_id: solar_last_update
+        value_template: "{{ value_json.telemetry.timestamp }}"
+        device_class: timestamp
+    binary_sensor:
+      - name: "Solar Load On"
+        unique_id: solar_load_on
+        value_template: "{{ value_json.telemetry.load_on }}"
+        device_class: power
+      - name: "Solar Controller Online"
+        unique_id: solar_controller_online
+        value_template: "{{ value_json.telemetry.connected }}"
+        device_class: connectivity
+      - name: "Solar Fault"
+        unique_id: solar_fault
+        value_template: "{{ value_json.telemetry.fault_active }}"
+        device_class: problem
+      - name: "Solar Automation Armed"
+        unique_id: solar_automation_armed
+        value_template: "{{ value_json.automation_armed }}"
 
 # Enable the person integration
 person:
@@ -181,6 +342,13 @@ sensor:
     source: sensor.macbook_current_consumption
     name: "MacBook Energy"
     unique_id: macbook_energy
+    unit_prefix: k
+    round: 3
+    method: left
+  - platform: integration
+    source: sensor.shed_lab_current_consumption
+    name: "Shed Lab Energy"
+    unique_id: shed_lab_energy
     unit_prefix: k
     round: 3
     method: left
@@ -398,6 +566,23 @@ utility_meter:
   macbook_energy_yearly:
     name: "MacBook Energy Yearly"
     source: sensor.macbook_energy
+    cycle: yearly
+  # Shed Lab (solar, no cost meters)
+  shed_lab_energy_daily:
+    name: "Shed Lab Energy Daily"
+    source: sensor.shed_lab_energy
+    cycle: daily
+  shed_lab_energy_weekly:
+    name: "Shed Lab Energy Weekly"
+    source: sensor.shed_lab_energy
+    cycle: weekly
+  shed_lab_energy_monthly:
+    name: "Shed Lab Energy Monthly"
+    source: sensor.shed_lab_energy
+    cycle: monthly
+  shed_lab_energy_yearly:
+    name: "Shed Lab Energy Yearly"
+    source: sensor.shed_lab_energy
     cycle: yearly
   # Homelab total
   homelab_total_energy_daily:
@@ -988,6 +1173,14 @@ template:
         state_class: total
         state: >
           {{ state_attr('sensor.macbook_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "Shed Lab Energy Last Month"
+        unique_id: shed_lab_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.shed_lab_energy_monthly', 'last_period') | float(0) | round(3) }}
 
       # ----- live % of combined draw -----
       - name: "Threadripper Power Share"

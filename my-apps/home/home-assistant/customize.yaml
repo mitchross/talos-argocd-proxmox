@@ -267,3 +267,26 @@ sensor.macbook_cost_monthly:
   friendly_name: MacBook + Monitor Cost Monthly
 sensor.macbook_cost_yearly:
   friendly_name: MacBook + Monitor Cost Yearly
+
+# ---------- Shed Lab (solar) (shed_lab_*) — solar-fed, no cost entities ----------
+sensor.shed_lab_current_consumption:
+  friendly_name: Shed Lab (solar) Power
+sensor.shed_lab_voltage:
+  friendly_name: Shed Lab (solar) Voltage
+sensor.shed_lab_current:
+  friendly_name: Shed Lab (solar) Current
+sensor.shed_lab_energy:
+  friendly_name: Shed Lab (solar) Energy
+sensor.shed_lab_energy_last_month:
+  friendly_name: Shed Lab (solar) Energy Last Month
+sensor.shed_lab_energy_daily:
+  friendly_name: Shed Lab (solar) Energy Daily
+sensor.shed_lab_energy_weekly:
+  friendly_name: Shed Lab (solar) Energy Weekly
+sensor.shed_lab_energy_monthly:
+  friendly_name: Shed Lab (solar) Energy Monthly
+sensor.shed_lab_energy_yearly:
+  friendly_name: Shed Lab (solar) Energy Yearly
+switch.shed_lab:
+  friendly_name: Shed Lab (solar) (read-only)
+  hidden: true
