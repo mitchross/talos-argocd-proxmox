@@ -1,0 +1,26 @@
+:root {color-scheme: dark; font: 17px/1.6 system-ui, sans-serif; background: #10161e; color: #e1e7ef;}
+* {box-sizing: border-box;}
+body {margin: 0;}
+main {max-width: 920px; margin: auto; padding: 36px 22px 60px;}
+h1 {font-size: clamp(2.3rem, 6vw, 3.8rem); line-height: 1.1; margin: 12px 0;}
+h2 {font-size: 1.4rem;}
+.eyebrow {font-size: .72rem; letter-spacing: .16em; color: #7cd4bd;}
+header p, .note, footer {color: #a7b5c5;}
+form, #result, .status {background: #19222e; border: 1px solid #2d3b4b; border-radius: 12px; padding: 22px; margin-top: 20px;}
+.status {display: flex; align-items: center; justify-content: space-between; gap: 15px; font-size: .85rem;}
+.scope {display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px;}
+label {display: block; font-weight: 600; font-size: .85rem;}
+input, select, textarea {display: block; width: 100%; margin-top: 7px; padding: 12px; border: 1px solid #435266; border-radius: 6px; background: #10161e; color: inherit; font: inherit;}
+textarea {resize: vertical;}
+button {padding: 10px 15px; border: 1px solid #435266; border-radius: 6px; font: inherit; font-size: .85rem; cursor: pointer; background: #243445; color: inherit;}
+button:hover {background: #30475d;}
+button:disabled {opacity: .5; cursor: progress;}
+#submit {background: #7cd4bd; color: #10231d; font-weight: 700;}
+.examples {display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 22px;}
+.examples button {font-size: .75rem;}
+.note, footer {font-size: .77rem;}
+footer {margin-top: 30px;}
+pre {font: inherit; white-space: pre-wrap; overflow-wrap: anywhere;}
+summary {cursor: pointer; color: #7cd4bd;}
+li {overflow-wrap: anywhere; margin-bottom: 8px;}
+@media (max-width: 600px) {.scope {grid-template-columns: 1fr;} .status {align-items: flex-start; flex-direction: column;}}
