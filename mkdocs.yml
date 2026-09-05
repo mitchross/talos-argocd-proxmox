@@ -78,12 +78,15 @@ plugins:
   - search
 
 extra_css:
+  - assets/lab-explorer.css
   - assets/kopiur-playground.css
   - assets/nav-tweaks.css
   - assets/diagram-docs.css
   - assets/motion.css
 
 extra_javascript:
+  - assets/lab-inventory-data.js
+  - assets/lab-explorer.js
   - assets/kopiur-playground.js
   # Adds body.motion-on, which is what arms the reveal rules in motion.css.
   # Without it every page renders fully static — never blank.
@@ -93,6 +96,7 @@ extra_javascript:
 nav:
   - Overview & architecture:
       - Home — the big picture: index.md
+      - Explore the lab: lab.md
       - The easy guide (explain it to anyone): easy-guide.md
       - Documentation reader contract: documentation-standard.md
       - Architecture audit — September 2026: audits/2026-09-05-architecture-audit.md

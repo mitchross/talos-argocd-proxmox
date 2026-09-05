@@ -1,5 +1,8 @@
 # Hardware, disk placement, and GitOps decisions
 
+Prefer a quick look around? [Explore the interactive lab inventory](../lab.md).
+The measurements and reasoning are below.
+
 **Purpose:** give an engineering recommendation for this lab: what to keep,
 where workloads belong, which disks deserve attention, and what should change
 before claiming automatic recovery from a host failure.

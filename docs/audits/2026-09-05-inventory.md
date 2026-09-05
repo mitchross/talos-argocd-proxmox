@@ -1,5 +1,8 @@
 # Repository and physical inventory — 5 September 2026
 
+[Explore these machines interactively](../lab.md): hosts, guest IPs, all physical
+drives, VM allocations and a dependency walkthrough.
+
 **Status:** observed inventory and owner-confirmed constraints. This is a dated
 audit snapshot, not a replacement for the owning manifests or recovery runbooks.
 See the [architecture audit and proposed PRs](2026-09-05-architecture-audit.md).
