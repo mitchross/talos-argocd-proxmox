@@ -958,7 +958,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "topk(1, label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\"))",
+          "expr": "topk(1, label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption|sensor.shed_lab_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\"))",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": true,
@@ -1033,7 +1033,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption|sensor.shed_lab_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": true,
@@ -1096,7 +1096,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption|sensor.shed_lab_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": true,
@@ -1744,7 +1744,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_energy_kwh{entity=~\"sensor.threadripper_energy_last_month|sensor.nas_psu_energy_last_month|sensor.truenas_energy_last_month|sensor.hp_sff_energy_last_month|sensor.hp_elite_energy_last_month|sensor.gaming_pc_energy_last_month|sensor.macbook_energy_last_month\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_energy_kwh{entity=~\"sensor.threadripper_energy_last_month|sensor.nas_psu_energy_last_month|sensor.truenas_energy_last_month|sensor.hp_sff_energy_last_month|sensor.hp_elite_energy_last_month|sensor.gaming_pc_energy_last_month|sensor.macbook_energy_last_month|sensor.shed_lab_energy_last_month\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": true,
@@ -1969,7 +1969,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_energy_kwh{entity=~\"sensor.threadripper_energy_daily|sensor.nas_psu_energy_daily|sensor.truenas_energy_daily|sensor.hp_sff_energy_daily|sensor.hp_elite_energy_daily|sensor.gaming_pc_energy_daily|sensor.macbook_energy_daily\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_energy_kwh{entity=~\"sensor.threadripper_energy_daily|sensor.nas_psu_energy_daily|sensor.truenas_energy_daily|sensor.hp_sff_energy_daily|sensor.hp_elite_energy_daily|sensor.gaming_pc_energy_daily|sensor.macbook_energy_daily|sensor.shed_lab_energy_daily\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": true,
@@ -2344,7 +2344,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor.threadripper_current_consumption|sensor.nas_psu_current_consumption|sensor.truenas_current_consumption|sensor.hp_sff_current_consumption|sensor.hp_elite_current_consumption|sensor.gaming_pc_current_consumption|sensor.macbook_current_consumption|sensor.shed_lab_current_consumption\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": false,
@@ -2585,7 +2585,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_energy_kwh{entity=~\"sensor.threadripper_energy_daily|sensor.nas_psu_energy_daily|sensor.truenas_energy_daily|sensor.hp_sff_energy_daily|sensor.hp_elite_energy_daily|sensor.gaming_pc_energy_daily|sensor.macbook_energy_daily\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_energy_kwh{entity=~\"sensor.threadripper_energy_daily|sensor.nas_psu_energy_daily|sensor.truenas_energy_daily|sensor.hp_sff_energy_daily|sensor.hp_elite_energy_daily|sensor.gaming_pc_energy_daily|sensor.macbook_energy_daily|sensor.shed_lab_energy_daily\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": false,
@@ -2730,7 +2730,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_voltage_v{entity=~\"sensor.threadripper_voltage|sensor.nas_psu_voltage|sensor.truenas_voltage|sensor.hp_sff_voltage|sensor.hp_elite_voltage|sensor.gaming_pc_voltage|sensor.macbook_voltage\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_voltage_v{entity=~\"sensor.threadripper_voltage|sensor.nas_psu_voltage|sensor.truenas_voltage|sensor.hp_sff_voltage|sensor.hp_elite_voltage|sensor.gaming_pc_voltage|sensor.macbook_voltage|sensor.shed_lab_voltage\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": false,
@@ -2796,7 +2796,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_current_a{entity=~\"sensor.threadripper_current|sensor.nas_psu_current|sensor.truenas_current|sensor.hp_sff_current|sensor.hp_elite_current|sensor.gaming_pc_current|sensor.macbook_current\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
+          "expr": "label_replace(max by (entity, friendly_name) (homeassistant_sensor_current_a{entity=~\"sensor.threadripper_current|sensor.nas_psu_current|sensor.truenas_current|sensor.hp_sff_current|sensor.hp_elite_current|sensor.gaming_pc_current|sensor.macbook_current|sensor.shed_lab_current\"}), \"plug\", \"$1\", \"friendly_name\", \"^(.+?) (Power|Energy|Cost|Voltage|Current|Share).*$\")",
           "legendFormat": "{{plug}}",
           "refId": "A",
           "instant": false,
@@ -3534,13 +3534,274 @@
     },
     {
       "type": "row",
-      "title": "Reading this dashboard",
+      "title": "Shed — solar-fed (free power, outside the grid totals)",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 116
+      },
+      "id": 60,
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Shed Draw Now",
+      "description": "HP micro in the shed. Solar-fed, so it costs nothing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.shed_lab_current_consumption\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 117
+      },
+      "id": 61
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Shed Energy Today",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "kwatth",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.shed_lab_energy_daily\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 117
+      },
+      "id": 62
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Shed Energy This Month",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "kwatth",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.shed_lab_energy_monthly\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 117
+      },
+      "id": 63
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Shed Energy Last Month",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "kwatth",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.shed_lab_energy_last_month\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 117
+      },
+      "id": 64
+    },
+    {
+      "type": "row",
+      "title": "Reading this dashboard",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 123
       },
       "id": 58,
       "panels": []
@@ -3551,13 +3812,13 @@
       "title": "",
       "options": {
         "mode": "markdown",
-        "content": "### Where the money actually goes\n\n**Idle floor is the real bill.** Peak draw is dramatic but brief; the 24h minimum runs 8,760\nhours a year. If *Baseline Cost / Year* is most of *Cost This Year*, no amount of workload\ntuning helps — only removing or consolidating a box does.\n\n**Groups.** *Homelab* is the five always-on servers and is the number to compare with the\nbill. *Office* is the Gaming PC and the MacBook: metered, priced, but not locked on, so it is\nexpected to swing to zero. *Combined* is both.\n\n**Hot-spot triage, in order:**\n\n1. **Threadripper host** is the swing consumer: big PSU, HDDs, one RTX 3090, and it spikes\n   under inference. A GPU backend left at `replicas: 1` with nothing calling it is pure idle\n   cost — see `docs/domains/ai-gpu/gpu-scale-swap.md`.\n2. **HP SFF + Optiplex share one plug.** A high reading here cannot be attributed to either\n   box. Split the outlet before deciding which one to retire.\n3. **NAS Drive PSU vs TrueNAS** are two plugs on one machine — spinning disks vs the host.\n   Persistent draw on the drive PSU with an idle host means spindles that never sleep.\n4. **HP Elite Mini G9** is the smallest server. If it is above ~40 W something is wrong.\n\n**Not metered:** the HP micro in the shed runs off its own solar and has no plug. Its supply\nside (MPPT yield, battery bank) is on the **Solar MPPT Monitor** dashboard.\n\n**What-ifs, not forecasts:** *Run-Rate / Year* and *Cost / Year If Left At This Draw*\nannualise the current instant. Use *Cost This Month* or *Cost Last Month* for a bill estimate.\n\n**Cost basis:** the all-in marginal rate — (energy + delivery riders) x (1 + sales tax) — which\nsteps between summer on-peak, summer off-peak and non-summer. Rates live in\n`my-apps/home/home-assistant/configuration.yaml` under `input_number:`; git is the source of\ntruth and the UI sliders reset to it on restart.\n\n**Plug names** come from each Home Assistant entity's `friendly_name` (customize.yaml), which\nmust read `<Device> <Metric ...>`; the dashboard strips the metric words."
+        "content": "### Where the money actually goes\n\n**Idle floor is the real bill.** Peak draw is dramatic but brief; the 24h minimum runs 8,760\nhours a year. If *Baseline Cost / Year* is most of *Cost This Year*, no amount of workload\ntuning helps — only removing or consolidating a box does.\n\n**Groups.** *Homelab* is the five always-on servers and is the number to compare with the\nbill. *Office* is the Gaming PC and the MacBook: metered, priced, but not locked on, so it is\nexpected to swing to zero. *Combined* is both.\n\n**Hot-spot triage, in order:**\n\n1. **Threadripper host** is the swing consumer: big PSU, HDDs, one RTX 3090, and it spikes\n   under inference. A GPU backend left at `replicas: 1` with nothing calling it is pure idle\n   cost — see `docs/domains/ai-gpu/gpu-scale-swap.md`.\n2. **HP SFF + Optiplex share one plug.** A high reading here cannot be attributed to either\n   box. Split the outlet before deciding which one to retire.\n3. **NAS Drive PSU vs TrueNAS** are two plugs on one machine — spinning disks vs the host.\n   Persistent draw on the drive PSU with an idle host means spindles that never sleep.\n4. **HP Elite Mini G9** is the smallest server. If it is above ~40 W something is wrong.\n\n**Shed Lab** is the HP micro in the shed, on its own solar. It is metered for watts and kWh\nbut has no cost and is outside every grid group. Its supply side (MPPT yield, battery bank) is on\nthe **Solar MPPT Monitor** dashboard.\n\n**What-ifs, not forecasts:** *Run-Rate / Year* and *Cost / Year If Left At This Draw*\nannualise the current instant. Use *Cost This Month* or *Cost Last Month* for a bill estimate.\n\n**Cost basis:** the all-in marginal rate — (energy + delivery riders) x (1 + sales tax) — which\nsteps between summer on-peak, summer off-peak and non-summer. Rates live in\n`my-apps/home/home-assistant/configuration.yaml` under `input_number:`; git is the source of\ntruth and the UI sliders reset to it on restart.\n\n**Plug names** come from each Home Assistant entity's `friendly_name` (customize.yaml), which\nmust read `<Device> <Metric ...>`; the dashboard strips the metric words."
       },
       "gridPos": {
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 117
+        "y": 124
       },
       "id": 59
     }

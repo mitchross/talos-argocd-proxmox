@@ -61,12 +61,14 @@ prometheus:
     # Control-plane jobs discover CP nodes via kubernetes_sd role:node, never static IPs (cluster is destroyed/recreated via Omni).
     # Needs the control-plane-performance machineconfig patch (etcd 2381, controller-manager 10257, scheduler 10259 on 0.0.0.0); job names must match the chart's default rules/dashboards.
     additionalScrapeConfigs:
+      # rpi4 in the shed: the epsolar service (github.com/mitchross/epsolar) serves both the
+      # legacy epever_* and the epsolar_*/solar_buffer_* metrics on 8080. 9812 is retired.
       - job_name: 'epever-solar'
         metrics_path: /metrics
         scheme: http
         scrape_interval: 15s
         static_configs:
-          - targets: ['192.168.10.174:9812']
+          - targets: ['192.168.10.174:8080']
             labels:
               instance: 'rpi4-solar'
               location: 'home'

@@ -17,11 +17,13 @@ what it costs, and how to add a plug.
 | HP Elite Mini G9 | `hp_elite_*` | homelab | HP Elite Mini 600 G9 (`.22`) |
 | Gaming PC | `gaming_pc_*` | office | 7800X3D workstation with the second RTX 3090. **Not a cluster node** |
 | MacBook + Monitor | `macbook_*` | office | Office desk |
+| Shed Lab (solar) | `shed_lab_*` | none | HP micro in the shed (`.20`), solar-fed |
 
-**Not metered:** the HP micro in the shed (`.20`). It runs off its own solar and
-battery bank, has no plug, and would cost nothing on the bill anyway. Its supply
-side (MPPT yield, battery bank voltage and state of charge) lives in the separate
-Grafana **Solar MPPT Monitor** dashboard (`solar-mppt-monitor`).
+**Shed Lab** runs off the shed's own solar and battery bank, so it has watts and
+kWh (with the daily/weekly/monthly/yearly meters) but no cost entities, and it is
+not in any group or in the house-share numbers. Its supply side (MPPT yield,
+battery bank voltage and state of charge) lives in the separate Grafana
+**Solar MPPT Monitor** dashboard (`solar-mppt-monitor`).
 
 Household plugs (dryer, TV, office lamps, the garage fridge) exist in Home
 Assistant but are outside this accounting: the Prometheus filter only exports
@@ -132,7 +134,7 @@ into Home Assistant. Source and image: `github.com/mitchross/consumers-energy-sy
 | `sensor.consumers_energy_effective_rate` | CE cost / kWh yesterday, next to the modelled rate |
 
 The live sensors are set through the REST API, so they vanish on an HA restart
-until the next 06:17 run. The statistics persist.
+until the next 13:17 run. The statistics persist.
 
 **Running it elsewhere.** The same image runs anywhere with the same env vars
 (`CE_PORTAL_USERNAME`, `CE_PORTAL_PASSWORD`, `HASS_URL`, `HASS_TOKEN`):
@@ -230,3 +232,29 @@ three or the old totals come back:
 
 Renaming an entity prefix is the same operation from Home Assistant's point of
 view: the new prefix starts at zero and the old one is orphaned.
+
+## Shed solar
+
+```
+panels → EPEVER XTRA3210N MPPT → 12.8 V LiFePO4 bank (2 × 100 Ah) → LOAD → Anker SOLIX → HP micro (Tapo Shed Lab)
+                    │
+                    └─ Modbus RTU over USB serial → rpi4 (192.168.10.174) → `epsolar` service
+```
+
+The rpi4 is the only host with the serial link. Its `epsolar` service
+(github.com/mitchross/epsolar, private) polls the controller every 5 s, runs
+the guarded LOAD automation, and serves two feeds:
+
+| Feed | Consumer |
+|---|---|
+| `:8080/metrics` (`epever_*`, `epsolar_*`, `solar_buffer_*`) | cluster Prometheus, job `epever-solar` (`monitoring/prometheus-stack/values.yaml`) |
+| `:8080/api/v1/status` (JSON) | Home Assistant `rest:` sensors `sensor.solar_*` / `binary_sensor.solar_*` (30 s) |
+
+Grafana: **Shed Solar** (`shed-solar.json`, the overview page), **Solar Buffer
+Control** (the author's detailed dashboard, copied from the epsolar repo), and
+the older **Solar MPPT Monitor**. Home Assistant: the **Solar** view of the
+Homelab Power dashboard. kWh counters are the controller's own lifetime
+totals; `sensor.solar_generated_total` is the Energy dashboard's solar source.
+
+If the Pi is down every `solar_*` sensor goes unavailable and the Prometheus
+target shows `up == 0`; nothing on the grid side is affected.
