@@ -56,13 +56,13 @@ class BootstrapTests(unittest.TestCase):
         return any(call[:2] == ["kubectl", "apply"] and
                    any(arg.endswith("/argocd/root.yaml") for arg in call) for call in calls)
 
-    def test_fresh_install_uses_generated_admin_credential(self):
+    def test_fresh_install_preserves_configured_admin_credential(self):
         result, calls = self.run_bootstrap()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(self.root_applied(calls))
         helm = next(call for call in calls if call[0] == "helm")
-        self.assertFalse(any("argocdServerAdminPassword" in arg for arg in helm))
-        self.assertIn("argocd-initial-admin-secret", result.stdout)
+        self.assertTrue(any(arg.startswith("configs.secret.argocdServerAdminPassword=") for arg in helm))
+        self.assertIn("Admin password is pre-configured", result.stdout)
 
     def test_successful_rerun_preserves_redis_secret(self):
         result, calls = self.run_bootstrap(BOOTSTRAP_TEST_REDIS_EXISTS="1")
