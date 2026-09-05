@@ -104,6 +104,12 @@ extraConfig:
 
 # Must match the README seed flag, or a fresh bootstrap leaves envoy holding zero listeners.
 envoy:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      memory: 1Gi
   xdsMode: split
 
 # Gateway API Support
@@ -124,6 +130,12 @@ resources:
   limits:
     memory: 3Gi
 
+prometheus:
+  enabled: true
+  metricsService: true
+  serviceMonitor:
+    enabled: false
+
 # Hubble (Observability)
 hubble:
   enabled: true 
@@ -136,6 +148,11 @@ hubble:
 
 # Operator Configuration
 operator:
+  prometheus:
+    enabled: true
+    metricsService: true
+    serviceMonitor:
+      enabled: false
   # Required hostname anti-affinity below spreads the two replicas. Drop to 1 if only one
   # worker is schedulable — the 2nd replica would stay Pending and hang the app.
   replicas: 2
