@@ -110,7 +110,7 @@ spec:
     matchNames:
       - kube-system
   endpoints:
-    - port: prometheus
+    - port: metrics
       interval: 30s
       path: /metrics
 ---
@@ -132,28 +132,28 @@ spec:
     matchNames:
       - kube-system
   endpoints:
-    - port: prometheus
+    - port: metrics
       interval: 30s
       path: /metrics
 ---
-# ServiceMonitor for Gateway API (if using)
+# Gateway API traffic is handled by the per-node Cilium Envoy.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: gateway-api-metrics
+  name: cilium-envoy-metrics
   namespace: prometheus-stack
   labels:
-    app.kubernetes.io/name: gateway-api
+    app.kubernetes.io/name: cilium-envoy
     release: kube-prometheus-stack
     prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: gateway
+      k8s-app: cilium-envoy
   namespaceSelector:
     matchNames:
-      - gateway
+      - kube-system
   endpoints:
-    - port: metrics
+    - port: envoy-metrics
       interval: 30s
       path: /metrics
