@@ -1,0 +1,27 @@
+name: Holmes Console Tests
+on:
+  pull_request:
+    paths:
+      - 'monitoring/holmesgpt/scripts/server.py'
+      - 'monitoring/holmesgpt/ui/**'
+      - 'monitoring/holmesgpt/tests/test_console.py'
+      - '.github/workflows/holmes-console-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'monitoring/holmesgpt/scripts/server.py'
+      - 'monitoring/holmesgpt/ui/**'
+      - 'monitoring/holmesgpt/tests/test_console.py'
+      - '.github/workflows/holmes-console-tests.yml'
+permissions:
+  contents: read
+jobs:
+  console:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m unittest discover -s monitoring/holmesgpt/tests -p test_console.py -v
+      - run: node --check monitoring/holmesgpt/ui/app.js
