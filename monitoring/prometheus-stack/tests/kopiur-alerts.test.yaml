@@ -1,0 +1,72 @@
+rule_files:
+  - kopiur.rules.yaml
+evaluation_interval: 1m
+tests:
+  - name: failed backups identify the data namespace and policy across controller restarts
+    interval: 1m
+    input_series:
+      - series: kopiur_snapshot_consecutive_failures{namespace="kopiur-system",exported_namespace="gitea",name="gitea-shared-storage",pod="controller-old"}
+        values: '3+0x6 stale _x13'
+      - series: kopiur_snapshot_consecutive_failures{namespace="kopiur-system",exported_namespace="gitea",name="gitea-shared-storage",pod="controller-new"}
+        values: '_x6 3+0x13'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: KopiurSnapshotsFailing
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: KopiurSnapshotsFailing
+        exp_alerts:
+          - exp_labels:
+              namespace: gitea
+              policy: gitea-shared-storage
+              severity: warning
+              component: kopiur
+              category: backup
+            exp_annotations:
+              summary: 'kopiur backups failing repeatedly: gitea/gitea-shared-storage'
+              description: |
+                3 consecutive snapshot failures.
+                Inspect policy gitea-shared-storage and its failed Snapshots:
+                kubectl -n gitea get snapshotpolicy,snapshot
+                Check source volume health, repository access, and mover permissions.
+  - name: stale backups identify the data namespace and collapse duplicate scrapes
+    interval: 1m
+    input_series:
+      - series: kopiur_policy_last_backup_success_timestamp_seconds{namespace="kopiur-system",exported_namespace="gitea",policy="gitea-shared-storage",instance="first"}
+        values: '-100000+0x20'
+      - series: kopiur_policy_last_backup_success_timestamp_seconds{namespace="kopiur-system",exported_namespace="gitea",policy="gitea-shared-storage",instance="second"}
+        values: '-100000+0x20'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: KopiurBackupStale
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: KopiurBackupStale
+        exp_alerts:
+          - exp_labels:
+              namespace: gitea
+              policy: gitea-shared-storage
+              severity: critical
+              component: kopiur
+              category: backup
+            exp_annotations:
+              summary: 'kopiur backup stale (>26h): gitea/gitea-shared-storage'
+              description: |
+                No successful kopiur snapshot for policy gitea-shared-storage in over 26 hours.
+                Inspect its schedule and failed Snapshots:
+                kubectl -n gitea get snapshotpolicy,snapshotschedule,snapshot
+                Preserve the source volume before recovery; the latest backup may omit recent writes.
+  - name: healthy backups and failures below the threshold do not alert
+    interval: 1m
+    input_series:
+      - series: kopiur_snapshot_consecutive_failures{namespace="kopiur-system",exported_namespace="gitea",name="gitea-shared-storage"}
+        values: '2+0x20'
+      - series: kopiur_policy_last_backup_success_timestamp_seconds{namespace="kopiur-system",exported_namespace="gitea",policy="gitea-shared-storage"}
+        values: '0+60x20'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: KopiurSnapshotsFailing
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: KopiurBackupStale
+        exp_alerts: []
