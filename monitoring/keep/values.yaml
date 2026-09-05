@@ -1,4 +1,4 @@
-# Alertmanager webhooks land here; a provisioned workflow asks HolmesGPT to RCA criticals. No chat/text receivers by design.
+# Alertmanager webhooks land here; AI investigations are explicitly requested.
 global:
   # Chart only ships nginx/haproxy/traefik Ingress; this cluster is Gateway
   # API. httproute.yaml replicates the prefix-strip the nginx template does.
@@ -62,33 +62,7 @@ backend:
         authentication:
           api_url: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
           api_key: none
-    workflows:
-      - id: holmes-rca
-        name: Holmes RCA on critical alerts
-        description: >-
-          Ask HolmesGPT to investigate every critical alert and attach the
-          evidence-based root cause to the alert.
-        triggers:
-          - type: alert
-            filters:
-              - key: severity
-                value: critical
-        actions:
-          - name: holmes-investigate
-            provider:
-              type: http
-              with:
-                url: http://holmes-holmes.holmesgpt.svc.cluster.local/api/chat
-                method: POST
-                body:
-                  ask: >-
-                    Investigate this Kubernetes alert and state the root cause
-                    with the evidence you found, then one recommended fix.
-                    Alert: {{ alert.name }}. Namespace: {{ alert.namespace }}.
-                    Description: {{ alert.description }}.
-            enrich_alert:
-              - key: ai_rca
-                value: "{{ results.body.analysis }}"
+    workflows: []
 
 frontend:
   enabled: true
