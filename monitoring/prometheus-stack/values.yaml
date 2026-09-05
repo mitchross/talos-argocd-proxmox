@@ -357,6 +357,7 @@ grafana:
 # Enable for comprehensive node-level metrics (VPA-optimized 2026-02-28)
 nodeExporter:
   enabled: true
+prometheus-node-exporter:
   hostRootFsMount:
     enabled: true
     mountPropagation: HostToContainer
@@ -369,14 +370,14 @@ nodeExporter:
       memory: 256Mi
 kubeStateMetrics:
   enabled: true
+# Expose PVC backup labels so alerts/dashboards can distinguish backup-exempt PVCs.
+kube-state-metrics:
   resources:
     requests:
       cpu: 50m
       memory: 256Mi
     limits:
       memory: 512Mi
-# Expose PVC backup labels so alerts/dashboards can distinguish backup-exempt PVCs.
-kube-state-metrics:
   metricLabelsAllowlist:
     # kube-state-metrics sanitizes cnpg.io/cluster to label_cnpg_io_cluster.
     - persistentvolumeclaims=[backup-exempt,cnpg.io/cluster]
