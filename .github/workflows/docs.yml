@@ -7,6 +7,7 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "requirements.txt"
       - "package.json"
       - "package-lock.json"
       - "scripts/render-diagrams.sh"
@@ -19,6 +20,7 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "requirements.txt"
       - "package.json"
       - "package-lock.json"
       - "scripts/render-diagrams.sh"
@@ -65,18 +67,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
-          # cache: pip removed — repo has no requirements.txt/pyproject.toml,
-          # so setup-python fails before MkDocs runs. Deps are installed
-          # inline by the next step (mkdocs-material + pymdown-extensions);
-          # a one-job CI run installing two small wheels is cheap enough that
-          # we don't need pip caching here.
+          cache: pip
 
-      - name: Install MkDocs Material
-        run: |
-          pip install \
-            'mkdocs>=1.6' \
-            mkdocs-material==9.5.* \
-            pymdown-extensions==10.*
+      - name: Install documentation dependencies
+        run: python -m pip install -r requirements.txt
 
       - name: Build site
         # --strict since 2026-07-01: the cross-repo links that used to warn
