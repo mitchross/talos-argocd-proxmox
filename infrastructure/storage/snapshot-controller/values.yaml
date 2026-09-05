@@ -1,21 +1,23 @@
-# Standard values for generic snapshot-controller
-# Using Piraeus/Linbit chart which is the standard distribution
-
-replicaCount: 2
-
-image:
-  repository: registry.k8s.io/sig-storage/snapshot-controller
-  tag: v8.6.0
-
-affinity:
-  podAntiAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 100
-      podAffinityTerm:
-        labelSelector:
-          matchExpressions:
-          - key: app.kubernetes.io/name
-            operator: In
-            values:
-            - snapshot-controller
-        topologyKey: kubernetes.io/hostname
+controller:
+  replicaCount: 2
+  image:
+    repository: registry.k8s.io/sig-storage/snapshot-controller
+    tag: v8.6.0
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: snapshot-controller
+            topologyKey: topology.kubernetes.io/zone
+  pdb:
+    maxUnavailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
