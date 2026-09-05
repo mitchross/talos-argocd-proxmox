@@ -1,120 +1,54 @@
-# llms.txt — talos-argocd-proxmox
+# talos-argocd-proxmox
 
-> Curated, LLM-facing context for this repo. For the full developer guide see
-> [CLAUDE.md](CLAUDE.md); for the documentation map see [docs/index.md](docs/index.md).
-> This file captures **operational truths that cannot be inferred from the
-> manifests** — the behavior you only learn by nuking and rebuilding the cluster.
+> Current repository context for AI assistants. Use this as a reading map;
+> operational procedures and detailed rules live in the linked sources.
 
-GitOps Kubernetes cluster: **Talos OS + self-managing ArgoCD + Cilium on Proxmox**,
-provisioned via **Omni**. Apps are discovered by directory (directory = Application).
-PVC backups are **kopiur** (Kopia-native operator); databases are **CNPG / Barman → S3**.
-The retired pvc-plumber + VolSync + Kyverno stack is gone (2026-06-27) — ignore it
-if you see it in git history.
+GitOps Kubernetes on Talos OS and Proxmox, provisioned through Omni and managed
+by ArgoCD. ApplicationSets discover app directories; infrastructure paths are
+listed explicitly. PVC backups use kopiur with restore-before-bind. Postgres
+runs as app-owned Deployments backed up by kopiur; CNPG/Barman is retired.
 
-## Self-hosting PostHog on Kubernetes (working reference)
+## Start here
 
-This repo contains a **complete, working self-hosted PostHog on Kubernetes**
-(product analytics, session replay, feature flags, LLM analytics) — upstream
-does not support self-hosting and maintains only a single-box docker-compose;
-public working K8s references are rare. Start here:
+- [AGENTS.md](AGENTS.md) — Codex entrypoint and explicit Mink capture rules.
+- [CLAUDE.md](CLAUDE.md) — shared repository rules, GitOps workflow, sync waves,
+  secrets, storage, and links to directory-specific CLAUDE.md files.
+- [docs/index.md](docs/index.md) — canonical documentation map.
+- [docs/easy-guide.md](docs/easy-guide.md) — introduction to the platform.
 
-- [docs/posthog-self-host-k8s.md](docs/posthog-self-host-k8s.md) — the portable
-  human walkthrough (topology, boot order, single-node ClickHouse, upgrades, DR)
+## Operations and recovery
+
+- [docs/disaster-recovery.md](docs/disaster-recovery.md) — rebuild prerequisites,
+  recovery sequence, verification, and remaining operational boundaries.
+- [docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md) —
+  ApplicationSets, explicit entrypoints, and sync-wave ownership.
+- [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)
+  — backup and restore mechanics, per-PVC configuration, and verification.
+- [docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)
+  — mover permissions must match the data owner.
+- [docs/domains/cnpg/plain-postgres-migration.md](docs/domains/cnpg/plain-postgres-migration.md)
+  — current plain-Postgres pattern and the completed CNPG retirement.
+- [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md)
+  — operating the app-owned databases.
+
+Do not use historical rebuild counts or retired operator procedures as current
+instructions. Check the owning manifests and canonical runbook before acting.
+
+## AI workloads
+
+- [my-apps/ai/CLAUDE.md](my-apps/ai/CLAUDE.md) — GPU allocation rules and backend guidance.
+- [docs/domains/ai-gpu/model-catalog.md](docs/domains/ai-gpu/model-catalog.md) — app-to-backend wiring.
+- [docs/domains/ai-gpu/gpu-scale-swap.md](docs/domains/ai-gpu/gpu-scale-swap.md) — replica overrides and the single-card swap procedure.
+
+## Self-hosted PostHog
+
+- [docs/posthog-self-host-k8s.md](docs/posthog-self-host-k8s.md) — deployment,
+  boot order, upgrades, and recovery.
 - [my-apps/development/posthog/CLAUDE.md](my-apps/development/posthog/CLAUDE.md)
-  — agent-facing file map, invariants, and porting instructions
+  — agent-facing file map and invariants.
 - [my-apps/development/posthog/UPGRADE.md](my-apps/development/posthog/UPGRADE.md)
-  — the drift checklist to run before every PostHog image bump
-- [my-apps/development/posthog/](my-apps/development/posthog/) — the manifests
-  (plain Deployments + Kustomize, no Helm)
+  — checks before changing PostHog images.
 
-Operational truths: PostHog breaks on **config drift, not code** — mirror
-upstream's ClickHouse `named_collections` and bootstrap `sharded_*` tables
-before any image bump; bump `posthog/posthog` and `posthog-node` digests in
-lockstep (one grouped Renovate PR, never automerged); celery defaults to
-one fork per core with no recycling — cap it or it leaks to tens of GiB;
-only Postgres needs backup (it holds the API keys/dashboards — ~165 MB),
-ClickHouse/Kafka/Redis rebuild empty by design.
-
-## The DR claim (verified 2026-06-28 — first kopiur-only full nuke)
-
-A full cluster nuke-and-rebuild restores **all PVC data (kopiur)** and **all
-databases (CNPG / Barman)** automatically. The **one remaining manual step** is the
-gitea-actions runner token (re-register + recreate its Secret — the 1Password
-automation is staged but not yet enabled; see below). End state of this rebuild:
-**93/93 ArgoCD Applications Synced + Healthy**.
-
-## Bootstrap / DR operational truths
-
-### Two independent restore systems — never conflate them
-- **PVC data → kopiur, restore-before-bind.** On bootstrap ~22 `Restore` CRs fire
-  `FromPolicy` with zero manual steps. PVCs sit **`Pending` until the populate job
-  hydrates them from RustFS, then bind with data** — this is correct, not stuck. The
-  flow is gated only on Longhorn coming up; populate pods sitting `Pending` while
-  storage initializes is normal.
-- **Postgres → CNPG native Barman/S3 (NOT kopiur)** while a DB remains on CNPG.
-  Clusters auto-recover from the backup lineage on bootstrap
-  (`bootstrap.recovery` → external cluster). Small DBs are healthy in minutes;
-  large ones (e.g. gitea) sit on "Setting up primary / Creating primary instance
-  (from backup)" longer while WAL replays — that is recovery in progress, not failure.
-  NOTE (2026-07-09): databases are migrating to **plain Postgres + kopiur**
-  (docs/domains/cnpg/plain-postgres-migration.md); migrated ones restore like any
-  other PVC, and NEW databases start on the plain pattern.
-
-### Self-healing vs. real intervention
-- App pods that depend on a DB or secret go `Init:CrashLoopBackOff` /
-  `CreateContainerConfigError` during restore. **`CrashLoopBackOff` self-heals**
-  (backoff caps ~5 min) once the dependency is up — do **not** delete pods to "fix"
-  it; just wait.
-- **Exception:** a pod stuck in `CreateContainerConfigError` for a *missing* Secret
-  will **not** pick up a newly-created Secret on its own — that one needs a pod
-  rotation.
-
-### gitea-actions runner token (the one remaining manual step on rebuild)
-- The act-runner needs a Gitea registration token in `Secret/gitea-actions/act-runner-token`.
-  The runner's data PVC is **backup-exempt** (DinD cache), so the registration is
-  never restored — on each rebuild you regenerate the token and recreate the Secret:
-  ```bash
-  kubectl exec -n gitea deploy/gitea -- gitea actions generate-runner-token
-  # then create Secret/gitea-actions/act-runner-token from the value
-  ```
-- Automation is **staged but not yet live**:
-  `my-apps/development/gitea-actions/externalsecret.yaml` (sources field
-  `act_runner_token` from the 1Password `gitea-actions` item) is committed but
-  **commented out of the kustomization** until that 1Password field is populated.
-  Once enabled, the token becomes nuke-durable (lives in 1Password, not on the
-  exempt PVC).
-
-### kopiur SnapshotPolicy → cosmetic OutOfSync
-- The kopiur controller server-defaults a few `SnapshotPolicy` spec fields after
-  apply (e.g. `defaultDeletionPolicy`, `groupBy`), so a backed-up app can show a
-  **cosmetic OutOfSync** — confirm the diff is only server-defaulted fields before
-  treating it as drift. (The my-apps AppSet `ignoreDifferences` masks PVC restore
-  fields and StatefulSet `imagePullPolicy`, not these — so it may simply be
-  tolerated.)
-
-### Omni / Proxmox infra-provider gotchas
-- A cluster stuck `Destroying` **and** `ScalingUp` simultaneously = the infra
-  provider can't clear its `<provider>.ProvisionController` finalizer on the
-  MachineRequests. **Diagnose from the provider's omnictl, not the cluster's.**
-  `--destroy-disconnected-machines` does **not** help — it's a finalizer block, not
-  a connectivity problem.
-- The Proxmox API token must be the exact string `USER@REALM!TOKENID=SECRET` with no
-  stray whitespace or trailing newline. Any deviation → "not authorized to access
-  endpoint" on every provision.
-- The Omni Proxmox infra provider can only declare **`pci_devices`** (via resource
-  mappings in the machine class). **USB dongles** (e.g. the Zigbee CP2102N,
-  `10c4:ea60`) cannot be declared there — per rebuild you must `qm set <vmid> -usb0
-  mapping=…` by hand, use PCI-controller passthrough, or run ser2net-over-IP.
-
-## Deeper references
-
-- [CLAUDE.md](CLAUDE.md) — full development guide & patterns
-- [README.md](README.md) — provision + bootstrap runbook
-- [docs/index.md](docs/index.md) — documentation map
-- [docs/disaster-recovery.md](docs/disaster-recovery.md) — full nuke/rebuild runbook
-- [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md) — backup/restore architecture
-- [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md) — CNPG / Barman database DR
-- Long-form root-cause notes live in the operator's Mink vault:
-  `omni-stuck-cluster-destroy-infra-provider-proxmox-auth-failure`,
-  `proxmox-api-secret-format`, `zigbee-usb-dongle-passthrough`,
-  `gitea-act-runner-token`.
+PostHog's Postgres stores its identity and configuration and is kopiur-backed.
+ClickHouse, Kafka, and Redis are intentionally disposable; do not apply their
+backup exemption to Postgres.

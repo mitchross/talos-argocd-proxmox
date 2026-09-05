@@ -1,7 +1,7 @@
 # macOS / Windows specific
 .DS_Store
 Thumbs.db
-*.ds_store # Consolidate
+*.ds_store
 
 # Python Virtual Environment
 tools/venv/
@@ -20,7 +20,8 @@ bin/
 # --- IaC Specific Ignores --- 
 
 # Terraform
-*.tfvars # WARNING: Can ignore non-secret vars files too!
+# WARNING: Can ignore non-secret vars files too!
+*.tfvars
 *.tfstate
 *.tfstate.*
 .terraform*
@@ -39,14 +40,16 @@ packer_cache/
 *.pkrvars.hcl
 
 # Talos
-/iac/talos/clusterconfig/ # Generated node configs
+# Generated node configs
+/iac/talos/clusterconfig/
 talosconfig*
-talsecrets.yaml # Ignore unencrypted secrets file if present
+# Ignore unencrypted secrets file if present
+talsecrets.yaml
 
 # SOPS / Secrets Management
 *.agekey
-.sops.keys # Folder
-*.sops.keys # Files
+.sops.keys
+*.sops.keys
 .secrets*
 *.secret
 secrets?.yaml
@@ -59,7 +62,7 @@ secret_*.yaml
 # General Credentials & Keys
 1password-credentials.*
 tunnel-credentials.json
-credentials.* # Fixed typo
+credentials.*
 *.key
 *.pem
 *.crt
@@ -67,7 +70,8 @@ credentials.* # Fixed typo
 id_rsa*
 id_ed25519*
 # *.pub # Usually okay to commit public keys
-*.env # WARNING: Can ignore non-secret .env files too!
+# WARNING: Can ignore non-secret .env files too!
+*.env
 infra/controllers/external-secrets/external-secrets-token.env
 
 # GPG keys
@@ -114,13 +118,6 @@ credentials.base64
 *.base64
 *.auto.tfvars
 
-# Terraform state
-.terraform/
-*.tfstate
-*.tfstate.*
-
-# Mac OS
-.DS_Store
 /my-apps/privacy/proxitok/source
 /my-apps/privacy/proxitok/docker/misc
 /my-apps/privacy/proxitok/docker
@@ -138,3 +135,11 @@ __pycache__/
 
 # Antigravity/agent brainstorm scratch (HTML + server pid) — never commit
 .superpowers/
+
+# Local assistant permissions and runtime state
+.claude/settings.local.json
+.claude/worktrees/
+
+# Local Python tool caches
+.pytest_cache/
+.ruff_cache/

@@ -44,14 +44,6 @@
         icon: mdi-application-outline
         href: https://vert.vanillax.me
         description: Vert
-    - Fizzy:
-        icon: mdi-flask-outline
-        href: https://fizzy.vanillax.me
-        description: Fizzy
-    - Mailpit:
-        icon: mailpit.png
-        href: https://mailpit.vanillax.me
-        description: Email Testing Server
     - Cobalt:
         icon: mdi-download-circle-outline
         href: https://dl.vanillax.me

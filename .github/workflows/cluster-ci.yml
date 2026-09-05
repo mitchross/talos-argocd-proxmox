@@ -171,6 +171,16 @@ jobs:
           set -euo pipefail
           python3 ./scripts/validate-vpa-policies.py /tmp/all-manifests.yaml
 
+      - name: Validate metrics discovery and capability-aware Argo render
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s scripts/tests -p test_monitoring_contract.py -v
+          kustomize build infrastructure/controllers/argocd --enable-helm \
+            --helm-kube-version "${KUBERNETES_VERSION}" \
+            --helm-api-versions monitoring.coreos.com/v1 > /tmp/argocd-with-monitoring.yaml
+          python3 scripts/validate-monitoring-contract.py /tmp/all-manifests.yaml \
+            --argocd-capabilities /tmp/argocd-with-monitoring.yaml
+
   # backup-exempt-contract job RETIRED 2026-06-27 (pvc-plumber removed). It
   # hard-failed on the bare `backup-exempt-reason` key because pvc-plumber denied
   # such PVCs on CREATE; with pvc-plumber gone, nothing enforces the key, so the

@@ -1,184 +1,88 @@
-# Network Security & LAN Isolation
+# Cilium network policy boundaries
 
-This document details the Cilium network policy that isolates Kubernetes pods from the local network, preventing lateral movement attacks while allowing legitimate traffic.
+**Status:** current policy behavior, reviewed 2026-09-05. This page describes
+what the manifests allow and where stronger isolation still needs work.
 
-## Overview
+The shared policy limits ordinary pod egress to unlisted private LAN addresses.
+It also permits broad cluster traffic, internet access, and shared exceptions.
+It does not isolate applications from one another or make the NAS unreachable.
+The owning manifest is
+[`block-lan-access.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/networking/cilium/policies/block-lan-access.yaml).
 
-The cluster uses a **CiliumClusterwideNetworkPolicy** to implement a "default deny" stance for LAN access. This provides an 80/20 security solution - one policy that protects all pods without requiring per-app network policies.
+## Effective shared policy
 
-## The Threat Model
+`endpointSelector: {}` selects all Cilium-managed endpoints. Host-network and
+host-firewall behavior must be assessed separately; this is not a host firewall.
 
-When hosting public-facing applications (via Cloudflare Tunnel), an attacker who exploits a vulnerability could:
+| Direction | Allowed by the shared policy |
+| --- | --- |
+| Ingress | `cluster`, `host`, and `world` entities |
+| Egress to public IPv4 | `0.0.0.0/0` except RFC1918 ranges |
+| Egress to cluster | `cluster`, `host`, and `kube-apiserver` entities |
+| Egress to LoadBalancer pool | All ports in `192.168.10.32/27` |
+| Other private destinations | Only if another applicable allow or exception permits them |
 
-1. Gain shell access inside a pod
-2. Scan the internal network
-3. Pivot to attack other LAN devices (router, NAS, other servers)
+An exposed application can therefore reach other cluster endpoints and the
+shared storage exceptions after compromise. Cloudflare Tunnel transports public
+requests to the external Gateway. Cloudflare Access is not configured; application
+authentication remains an application concern. Private routes use the internal
+Gateway and Technitium DNS.
 
-```text
-  Internet            Cloudflare           Kubernetes Cluster
-  ┌──────────┐  1.    ┌────────────┐  2.   ┌──────────────────┐
-  │ Attacker │──────▶ │ Cloudflare │─────▶ │  Vulnerable Pod  │
-  │          │ Exploit│  Tunnel    │  RCE  │                  │
-  └──────────┘        └────────────┘       └────────┬─────────┘
-                                                    │ 3. Pivot
-                                                    │    BLOCKED
-                                                    ▼
-                          LAN (192.168.10.0/24)
-                          ┌──────────────────────────────────┐
-                          │  Router .1   TrueNAS .133   Other │  <- unreachable
-                          └──────────────────────────────────┘
-```
+## Explicit private-network exceptions
 
-## The Solution: CiliumClusterwideNetworkPolicy
+These are grants in the shared policy, not a list of all effective access:
 
-Located at: `infrastructure/networking/cilium/policies/block-lan-access.yaml`
+| Destination | Allowed ports | Purpose |
+| --- | --- | --- |
+| TrueNAS `192.168.10.133` | TCP 443, 2049, 111, 445, 9000, 30292, 30293; UDP 111 | CSI API, NFS, SMB, RustFS |
+| Wyze Bridge `192.168.10.46` | TCP 8554 | Frigate RTSP |
+| Threadripper Proxmox `192.168.10.14` | TCP 8006 | Proxmox API |
+| Solar monitor `192.168.10.174` | TCP 8080, 9812 | Solar metrics |
+| IoT subnet `192.168.101.0/24` | TCP 80, 443 | Smart-plug control |
+| LoadBalancer pool `192.168.10.32/27` | All | Service external IP access |
 
-### What Gets Blocked
+The LoadBalancer exception overlaps the Wyze address. The separate 8554 grant
+does not restrict that address to 8554 while the broader subnet grant applies.
+The router `192.168.10.1` has no explicit allow. Avoid equating a failed ICMP
+probe with proof that every TCP path is denied.
 
-| Traffic | Status | Reason |
-|---------|--------|--------|
-| RFC1918 ranges (10.x, 172.16.x, 192.168.x) | **BLOCKED** | Prevents LAN scanning |
-| Router (192.168.10.1) | **BLOCKED** | Prevents admin/SSH access |
-| Random LAN devices | **BLOCKED** | No lateral movement |
+## Allow policies add together
 
-### What Gets Allowed
+A namespace NetworkPolicy that lists only DNS and an inference backend cannot
+remove internet or cluster access granted by this shared policy. Allow policies
+combine. Cilium explicit deny rules take precedence over allows, but an overly
+broad deny can also block required DNS, API, gateway, backup, or storage traffic.
+See [Kubernetes policy semantics](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+and [Cilium deny policies](https://docs.cilium.io/en/stable/security/policy/language/#deny-policies).
 
-| Traffic | Status | Reason |
-|---------|--------|--------|
-| Internet (public IPs) | **ALLOWED** | Apps need external APIs |
-| Pod-to-Pod (cluster) | **ALLOWED** | Inter-service communication |
-| Kube-apiserver | **ALLOWED** | Kubernetes operations |
-| DNS (CoreDNS) | **ALLOWED** | Name resolution |
-| TrueNAS (specific ports) | **ALLOWED** | NFS/SMB/RustFS storage |
-| LoadBalancer IPs | **ALLOWED** | Cilium L2 announcements |
+The [architecture audit](../../audits/2026-09-05-architecture-audit.md) proposes
+an opt-in namespace boundary: exclude opted-in endpoints from the shared allow,
+then declare their actual ingress/egress dependencies. This is proposed work,
+not an isolation guarantee already provided by the manifests. Start with a
+canary and observe both allowed and rejected flows before changing real apps.
 
-## Policy Architecture
+## Verify a change
 
-```text
-                          ┌─────────────┐
-                          │   Any Pod   │
-                          └──────┬──────┘
-              ALLOWED  ┌─────────┼─────────┐  BLOCKED
-                       ▼         ▼         ▼
-   ─────────────────────────────────    ──────────────────────────
-   ✓ Internet   (0.0.0.0/0 EXCEPT       ✗ LAN Devices (192.168.10.x)
-                 RFC1918)               ✗ Router      (192.168.10.1)
-   ✓ Cluster    (pods, nodes, apiserver)
-   ✓ Storage    (TrueNAS: NFS,SMB,RustFS)
-   ✓ LB Pool    (192.168.10.32/27)
-```
-
-## Whitelisted LAN Resources
-
-These specific IPs are allowed on specific ports only:
-
-| IP | Hostname | Allowed Ports | Purpose |
-|----|----------|---------------|---------|
-| 192.168.10.133 | TrueNAS | 2049 (NFS), 111 (RPC), 445 (SMB), 9000, 30292-30293 (RustFS S3) | Storage backend (10G) |
-| 192.168.10.46 | Wyze Bridge | 8554 (RTSP) | Camera streams for Frigate |
-| 192.168.10.14 | Proxmox | 8006 (API) | Omni/Terraform integration |
-| 192.168.10.32/27 | LB Pool | All | Cilium L2 LoadBalancer IPs |
-
-## Why Lateral Movement Fails
-
-The policy uses `endpointSelector: {}` which matches **ALL pods** in the cluster:
-
-```yaml
-spec:
-  endpointSelector: {}  # <-- Applies to EVERY pod
-```
-
-This means:
-- DVWA pod cannot reach LAN
-- n8n pod cannot reach LAN
-- If attacker pivots from DVWA → n8n, n8n STILL cannot reach LAN
-
-```text
-Attacker ──exploit──▶ DVWA Pod            (shell access gained)
-                        │
-                        ├── ping 192.168.10.1 ──✗ BLOCKED (100% packet loss)
-                        │
-                        └── pivot ──▶ n8n Pod  (lateral movement works)
-                                        │
-                                        └── ping 192.168.10.1 ──✗ STILL BLOCKED
-
-  No matter which pod the attacker lands on, the LAN is unreachable.
-```
-
-## Testing the Policy
-
-### Quick Test (from any pod)
+From the operator workstation, inspect current policy and endpoint state:
 
 ```bash
-# Test LAN access (should fail)
-kubectl exec -n <namespace> <pod> -- ping -c 1 -W 2 192.168.10.1
-
-# Test internet access (should work)
-kubectl exec -n <namespace> <pod> -- ping -c 2 8.8.8.8
+kubectl get ciliumclusterwidenetworkpolicy
+kubectl get ciliumnetworkpolicy,networkpolicy -A
+kubectl -n kube-system get pods -l k8s-app=cilium
 ```
 
-### Full Pentest Simulation
-
-Deploy DVWA (Damn Vulnerable Web Application) for realistic testing:
-
-1. Access `https://dvwa.vanillax.me`
-2. Login: `admin` / `password`
-3. Set security to "Low"
-4. Navigate to Command Injection
-5. Try: `; ping -c 1 -W 2 192.168.10.1`
-
-**Expected Result**: 100% packet loss (LAN blocked)
-
-### Verify from Multiple Pods
+For an existing test pod with Hubble access configured:
 
 ```bash
-# Test from different namespaces
-for ns in dvwa n8n immich; do
-  echo "=== Testing from $ns ==="
-  kubectl exec -n $ns deploy/${ns} -- ping -c 1 -W 2 192.168.10.1 2>&1 | grep -E "packet loss|PING"
-done
+hubble observe --pod <namespace>/<pod> --verdict DROPPED
 ```
 
-## Hubble Observability
+Test each required connection and an intentionally denied TCP destination from
+the selected endpoint. Use policy verdicts to distinguish denial from a missing
+route, DNS failure, refused connection, or unavailable server. A policy object
+existing is not evidence that the intended endpoint was selected.
 
-Use Hubble to see policy enforcement in real-time:
-
-```bash
-# Watch for dropped traffic
-hubble observe --verdict DROPPED --to-ip 192.168.10.0/24
-
-# Watch specific pod
-hubble observe --pod dvwa/dvwa --verdict DROPPED
-```
-
-## Troubleshooting
-
-### App Can't Reach Required LAN Resource
-
-Add a specific whitelist rule:
-
-```yaml
-- toCIDR:
-    - 192.168.10.X/32  # The IP you need
-  toPorts:
-    - ports:
-        - port: "XXXX"  # Only the required port
-          protocol: TCP
-```
-
-### Policy Not Taking Effect
-
-1. Check Cilium agent is running: `kubectl get pods -n kube-system -l k8s-app=cilium`
-2. Verify policy is applied: `kubectl get ciliumclusterwidenetworkpolicies`
-3. Check Hubble for verdicts: `hubble observe --pod <your-pod>`
-
-### Internet Stopped Working
-
-Ensure `toEntities: host` is present - this allows traffic to reach the node which then NATs to the internet.
-
-## Security Considerations
-
-1. **Minimize Whitelists**: Only add LAN IPs that are absolutely necessary
-2. **Port Restrict**: Always specify ports, never allow all ports to a LAN IP
-3. **No Router Access**: Never whitelist 192.168.10.1 (your gateway)
-4. **Regular Audits**: Review whitelisted IPs periodically
+Make policy changes through Git. If a change breaks required traffic, revert
+that policy commit and verify the original flows recover. Preserve the Cilium
+VXLAN configuration needed by the shed media bridge; transport and policy are
+separate controls. The [topology guide](topology.md) owns the physical network.

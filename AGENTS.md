@@ -6,7 +6,9 @@ Before changing anything in this repo, read `CLAUDE.md` in the repo root — it
 is the law here (GitOps-only workflow, directory = ArgoCD Application, sync
 waves, kopiur backups, Gateway API rules). Nested `CLAUDE.md` files in
 `infrastructure/`, `my-apps/`, `monitoring/`, etc. carry directory-specific
-rules; read the one nearest the files you touch.
+rules. Before editing a file, read each applicable `CLAUDE.md` along its
+path from the repo root to the file, in parent-to-child order. Load these
+files yourself; do not wait for the user to mention or attach them.
 
 ## Mink Knowledge Capture
 

@@ -15,7 +15,7 @@ this repo.
 
 - **Self-Managing ArgoCD** — ArgoCD manages its own install, upgrades, and ApplicationSets from Git
 - **Directory = Application** — apps are discovered by directory path; no hand-written `Application` manifests
-- **Sync Wave Ordering** — strict deployment order prevents race conditions
+- **Sync Wave Ordering** — health-gated core dependencies, followed by independently reconciled applications
 - **Zero-Touch Backups** — label a namespace + drop a per-PVC stub, get automatic [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) backups to RustFS/S3 with restore-before-bind DR
 - **Gateway API** — modern ingress via Cilium Gateway API (not legacy Ingress)
 - **GPU Support** — full NVIDIA GPU support via Talos system extensions + GPU Operator
@@ -34,7 +34,7 @@ this repo.
 
 ![Argo CD bootstrap and dependency-gated sync waves](docs/assets/argocd-sync-waves.svg)
 
-*Wave numbers establish order; health checks make Argo CD wait.
+*Waves order resources within an Application; generated applications reconcile independently.
 [Open the Argo CD flow full size](docs/assets/argocd-sync-waves.svg).*
 
 **The core idea: a directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application` automatically. No manual `Application` resources.
@@ -47,7 +47,10 @@ monitoring/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-s
 
 ### Sync Wave Architecture
 
-ArgoCD deploys in strict order so dependencies land before the things that need them:
+The root Application orders its direct children using these waves. Lua health
+checks gate direct child Applications. Creating an ApplicationSet does **not**
+wait for all the Applications it generates; those reconcile independently. See
+[the wave scope and restore behavior](docs/domains/argocd/argocd.md#how-argo-cd-sync-waves-and-waiting-work).
 
 | Wave | Component | Purpose |
 |------|-----------|---------|
@@ -74,9 +77,9 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Omni server + `omnictl` | `v1.11.0` | `omni/omni/omni.env.example` |
 | Talos Linux | `v1.14.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Kubernetes | `v1.37.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
-| Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
+| Cilium | `1.20.1` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
-| ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
+| ArgoCD Helm chart | `10.7.1` (Argo CD `v3.5.2`) | `scripts/bootstrap-argocd.sh` |
 | Proxmox provider | `v0.2.0-3-g7cefedd@sha256:5dcddc…` | `omni/proxmox-providers/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
@@ -87,21 +90,22 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 
 ## Rebuild and Bootstrap
 
-> **Two clusters live here.** Everything below uses the **Threadripper GPU + workers** cluster. For the multi-node prod cluster, swap the names/files:
+> **The active cluster is `talos-prod-cluster-v2`.** The older template is
+> retained as a reference; its presence does not mean a second cluster is running:
 >
-> | | Threadripper GPU + workers | Multi-node prod |
+> | | Active cluster | Older template reference |
 > |---|---|---|
 > | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
 > | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `hp-elite-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
 > | Topology | HP SFF (house, wired): 1 CP + 1 worker; HP Elite (house, wired): 1 large worker; Threadripper: 1 GPU worker; Dell (house, wired): 1 worker; HP micro (shed, wifi): 1 worker | 3 CP + 3 workers + 1 GPU |
 
-The Threadripper classes intentionally allocate 100 GiB total: 12 GiB to the
-control plane, 24 GiB to the regular worker, and 64 GiB to the GPU worker. This
-leaves roughly 25.67 GiB of the host's 125.67 GiB usable RAM for Proxmox and
-QEMU overhead. The HP micro worker receives 12 GiB of its host's 16 GiB and the
-HP SFF worker 40 GiB of its host's 48 GiB. The HP Elite worker receives 24 GiB
-and 16 vCPU from its 30 GiB, 20-thread host.
+The HP SFF hosts the control plane and one worker; the Threadripper hosts the
+100 GiB GPU VM. HP Elite, Dell, and the shed HP each host one worker. Machine
+classes define allocations for newly provisioned VMs, which can differ from
+existing VM settings. See the [dated host and disk inventory](docs/audits/2026-09-05-inventory.md)
+for measured capacity and drift. The Dell is temporary hardware, not a planned
+long-term quorum member.
 
 This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no

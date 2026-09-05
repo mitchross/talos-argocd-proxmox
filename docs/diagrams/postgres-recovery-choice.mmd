@@ -1,31 +1,21 @@
 ---
-title: Choose the recovery contract before the PostgreSQL controller
+title: The deployed PostgreSQL recovery contract
 config:
   layout: elk
 ---
 flowchart TB
-  accTitle: PostgreSQL recovery-controller decision
-  accDescr: Workloads requiring point-in-time recovery, replicas, or automated failover use CloudNativePG and Barman. Simpler workloads use plain PostgreSQL and Kopiur restore-before-bind.
+  accTitle: PostgreSQL snapshot recovery and its limits
+  accDescr: The deployed database pattern is plain PostgreSQL with PGDATA and WAL on one PVC, restored through Kopiur. Point-in-time recovery and database failover would require a separate design review; CNPG is retired.
 
   NEED{"`Need PITR, replicas,
   automated failover,
   or near-zero RPO?`"}
 
-  subgraph CNPG["DATABASE-AWARE RECOVERY"]
-    direction LR
-    CLUSTER["`CloudNativePG Cluster
-    operator-owned pods`"]
-    BARMAN["`Barman
-    base backups and WAL`"]
-    DBBUCKET["`RustFS
-    database lineage`"]
-    CLUSTER cnpg1@--> BARMAN
-    BARMAN cnpg2@--> DBBUCKET
-  end
+  REVIEW["`Separate design review
+  Not supplied by the current pattern
+  CNPG is retired`"]
 
-  subgraph PLAIN["VOLUME RECOVERY"]
-    direction LR
-    DEPLOY["`Plain PostgreSQL
+    DEPLOY["`DEPLOYED: Plain PostgreSQL
     Recreate Deployment`"]
     PVC["`One PVC
     PGDATA and WAL`"]
@@ -33,9 +23,8 @@ flowchart TB
     restore-before-bind`"]
     DEPLOY plain1@--> PVC
     PVC plain2@--> KOPIUR
-  end
 
-  NEED yes@-- "YES" --> CLUSTER
+  NEED yes@-- "YES" --> REVIEW
   NEED no@-- "NO" --> DEPLOY
 
   classDef decision fill:#344250,stroke:#17212b,color:#ffffff
@@ -43,12 +32,10 @@ flowchart TB
   classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
   classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
   class NEED decision
-  class CLUSTER,BARMAN,DBBUCKET external
+  class REVIEW external
   class DEPLOY,PVC,KOPIUR desired
 
   yes@{ animation: fast }
   no@{ animation: fast }
-  cnpg1@{ animation: slow }
-  cnpg2@{ animation: slow }
   plain1@{ animation: slow }
   plain2@{ animation: slow }

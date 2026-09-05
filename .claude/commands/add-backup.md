@@ -110,7 +110,7 @@ are gone.
    ```bash
    kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore
    kubectl -n <ns> get secret kopiur-rustfs      # fanned in by the ClusterExternalSecret
-   kubectl -n <ns> get snapshot                  # Completed with non-zero files after first run
+   kubectl -n <ns> get snapshot                  # Succeeded with non-zero files after first run
    ```
 
 ## Exclusions
@@ -118,7 +118,8 @@ are gone.
 Do not back up:
 
 - Redis PVCs — backup-exempt, disposable.
-- PostHog PVCs — backup-exempt, disposable.
+- PostHog ClickHouse/Kafka/Redis PVCs — backup-exempt, disposable. Postgres is
+  kopiur-backed because it holds identity and configuration; do not exempt it.
 - System-namespace PVCs.
 - Non-Longhorn PVCs that can't use the CSI snapshot path.
 

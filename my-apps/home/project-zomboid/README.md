@@ -1,5 +1,20 @@
 # Project Zomboid Dedicated Server (Build 42 unstable)
 
+**Status: parked.** `deployment.yaml` deliberately sets `replicas: 0`. Keep this
+Application and its manifests as the reference for turning the server back on.
+Both PVCs remain allocated; the `zomboid-data` Kopiur backup remains configured.
+
+To resume, change `spec.replicas` to `1` in Git and merge the change. Check that
+the Deployment reaches `1/1` Ready and that RCON responds to `players` before
+inviting players. Startup updates the Steam installation and copies the
+repository's server configuration into the data volume, so review those files
+and the configured game branch before resuming.
+
+To park it again, commit `replicas: 0`; expect `0/0` Ready with both PVCs still
+Bound. The PDB permits one unavailable pod, so it does not demand a running
+server while parked or prevent a voluntary drain when resumed. A drain of a
+running single server interrupts play.
+
 Self-hosted Zomboid multiplayer server for the homelab. UDP game traffic
 (no HTTPRoute / Cloudflare tunnel — games don't speak HTTP), runs on a
 standard worker node with Longhorn storage.
