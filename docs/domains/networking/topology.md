@@ -11,8 +11,6 @@ media bridge. Every node address is on the same `192.168.10.0/24`:
 - **Control-plane VM** — DHCP on the wired LAN, on the HP SFF host.
 - **GPU worker VM** — DHCP on the wired LAN; one RTX 3090 passed through from
   the bare-metal X399/2950X Threadripper host.
-- **General worker VM** — DHCP on the wired LAN; 8 vCPU and 24 GiB RAM for
-  CPU-only compute.
 - **HP SFF worker VM** — DHCP on the wired LAN; carries the `wired-storage`
   Longhorn tag.
 - **HP Elite worker VM** — DHCP on the wired LAN; 13th-gen i5-13500T, NVMe
@@ -41,50 +39,19 @@ instance-manager or replica flows, uses VXLAN.
 
 ## Physical Topology
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              NETWORK TOPOLOGY                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   ┌─────────────────┐                                ┌─────────────────┐    │
-│   │    Proxmox      │                                │    TrueNAS      │    │
-│   │  192.168.10.14  │                                │  192.168.10.133 │    │
-│   └────────┬────────┘                                └────────┬────────┘    │
-│            │ 10G                                              │ 10G         │
-│            ▼                                                  ▼             │
-│   ┌────────────────────────────────────────────────────────────────────┐   │
-│   │                        10G SWITCH                                   │   │
-│   │                     192.168.10.0/24                                 │   │
-│   └────────────────────────────────────────────────────────────────────┘   │
-│            │                                    │                            │
-│            ▼                                    ▼                            │
-│   ┌──────────────────────┐          ┌──────────────────────────────────┐    │
-│   │ Control Plane +      │          │        GPU Worker VM             │    │
-│   │ General Worker VMs   │          │                                  │    │
-│   │      DHCP            │          │            DHCP                  │    │
-│   │                      │          │  net0 (ens18) → vmbr0 → 10G LAN │    │
-│   └──────────────────────┘          │  dual RTX 3090 (passthrough)    │    │
-│                                     └──────────────────────────────────┘    │
-│                                                                              │
-│   Wi-Fi ┌──────────────────┐  eth  ┌────────────────┐ vmbr0 ┌────────────┐  │
-│   ~~~~~▶│  ASUS RT-AX86U   │──────▶│ HP micro (.20) │──────▶│ HP micro   │  │
-│         │  media bridge    │       │ shed, USB      │       │ Worker VM  │  │
-│         │  192.168.10.70   │       │ radios         │       │ DHCP       │  │
-│         └──────────────────┘       └────────────────┘       └────────────┘  │
-│                                                                              │
-│   2.5G   ┌────────────────┐ vmbr0 ┌────────────┐    ┌────────────────────┐  │
-│   ──────▶│ Dell Optiplex  │──────▶│ Optiplex   │    │ HP SFF host (.21)  │  │
-│          │ host (.16)     │       │ Worker VM  │    │ → control plane +  │  │
-│          └────────────────┘       └────────────┘    │   HP SFF Worker VM │  │
-│                                                     └────────────────────┘  │
-│          ┌────────────────┐ vmbr0 ┌──────────────────┐                       │
-│          │ HP Elite (.22) │──────▶│ HP Elite Worker  │                       │
-│          └────────────────┘       │ VM               │                       │
-│                                   └──────────────────┘                       │
-│          (every node appears directly on 192.168.10.0/24)                    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+| Physical host | Talos role | Network boundary |
+| --- | --- | --- |
+| HP SFF `.21` | One control plane and one worker | Wired; both VMs fail with the same chassis |
+| HP Elite `.22` | One worker | Wired |
+| Threadripper `.14` | One GPU worker, one RTX 3090 | Wired |
+| Dell `.16` | One temporary worker | Wired; improvised hardware, not long-term quorum capacity |
+| Shed HP `.20` | One worker with USB radios | Ethernet to ASUS RT-AX86U, then Wi-Fi media bridge |
+| Pi 5 `.15` | Omni and Technitium, outside Kubernetes | Separate management/DNS host |
+| TrueNAS `.133` | NAS and RustFS, outside Kubernetes | 10 GbE; planned NAS downtime stalls its consumers |
+
+A 10G switch does not give every attached host a 10 GbE link. See the
+[dated hardware inventory](../../audits/2026-09-05-inventory.md) for measured
+host capacity, disks, and evidence limits.
 
 ## IP Assignments
 
@@ -142,7 +109,8 @@ The Cilium network policy allows these storage connections:
 |-------------|-------|---------|
 | 192.168.10.133 | 2049, 111 | NFS |
 | 192.168.10.133 | 445 | SMB |
-| 192.168.10.133 | 9000, 30292, 30293 | RustFS S3 (Loki, Tempo, pgBackRest) |
+| 192.168.10.133 | 443 | TrueNAS CSI API |
+| 192.168.10.133 | 9000, 30292, 30293 | RustFS S3 (Kopiur, Loki, Tempo) |
 
 ## Troubleshooting
 
@@ -189,7 +157,7 @@ Reference throughput (TrueNAS ARC-cached 4GB file):
 | Layer | Speed |
 |-------|-------|
 | iperf3 (wire) | 9.4 Gb/s |
-| Proxmox host → NFS | 2.7 GB/s |
+| Proxmox host → NFS | Historical 2.7 GB/s application read; exceeds a 10 GbE wire and must not be treated as wire throughput (cache effects/test method need separation) |
 | Talos VM → NFS (untuned) | ~128 MB/s |
 
 **Debug commands**:

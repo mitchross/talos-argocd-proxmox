@@ -7,8 +7,8 @@
 > and [kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md).
 > Databases are plain Postgres + kopiur (CNPG retired 2026-08-13 — history in
 > the [plain Postgres migration doc](domains/cnpg/plain-postgres-migration.md))
-> and follow the normal kopiur flow in this runbook — no database-specific
-> recovery steps exist anymore.
+> and use the same automatic PVC restoration. Database recovery still needs
+> application-level acceptance; see [post-restore acceptance](#post-restore-acceptance).
 
 ![Full-cluster failure, external survivors, Talos rebuild, Argo waves, data restoration, and acceptance](assets/disaster-recovery-sequence.svg)
 
@@ -68,16 +68,14 @@ Block the nuke until every box checks — **you restore *from* these**:
 
 ## Rebuild sequence
 
-> **2026-07-31 Application identity migration:** the pending domain-prefix
-> change replaces generated Argo Application objects. Merge that change only
-> **after `omnictl cluster delete` has removed the old Kubernetes API**, then
-> bootstrap from the merged revision. Merging it into the live old cluster can
-> let the deleted Application identities prune the workloads they own.
+> **Historical identity migration:** the 2026-07-31 domain-prefix change is
+> complete. Its merge-after-destruction step is not part of a normal rebuild.
+> Future Application renames need a separate ownership/finalizer migration;
+> deleting an old Application identity can prune the resources it owns.
 
 ```text
   omnictl cluster delete
     -> wait: machines drained, VMs gone in Proxmox
-    -> merge the prepared recovery/Application-name PR (old API is gone)
     -> omnictl apply machine classes + template validate/sync
     -> machines provision from the NEW template
     -> Gateway API CRDs
@@ -85,8 +83,8 @@ Block the nuke until every box checks — **you restore *from* these**:
     -> seed 1Password credentials
     -> bootstrap-argocd.sh
     -> sync waves install Cilium management -> Longhorn -> kopiur -> DB support
-    -> wave 6: every backed-up PVC (databases included) hydrates via
-       restore-before-bind — no per-database steps
+    -> generated apps: backed-up PVCs hydrate via restore-before-bind
+    -> verify application reads/writes, credentials and fresh backups
 ```
 
 > **Manual pre-steps before `bootstrap-argocd.sh`** — the script assumes them.
@@ -157,15 +155,17 @@ half-converged cluster.
   snapshot yet** while the repo is reachable (`onMissingSnapshot: Continue` =
   deploy-or-restore) — which is why the pre-nuke checklist insists a Snapshot exists
   for anything you intend to restore.
-- Restores complete in rough size order; a full wave of ~24 PVCs is roughly an hour.
+- Historical rebuilds of roughly 24 PVCs took about an hour. Current app count,
+  data size, placement and storage load differ; this is a reference measurement,
+  not a current recovery-time guarantee.
 - **PostHog adds ~nothing to the wave**: only `postgres-data` restores
   (~165 MB actual — seconds to hydrate). Its ClickHouse/Kafka/Redis rebuild
   empty by design; PostHog's rebuild cost is the migrate Job re-creating the
   ClickHouse schema (minutes), not data movement.
-- **The API server will wobble.** etcd fsync latency inflates under
-  cluster-wide restore I/O — expect intermittent `readyz` failures, slow
-  kubectl, csi-sidecar leader-election restarts. It recovers between bursts;
-  it is load, not failure.
+- Past restore bursts increased etcd fsync latency and caused API readiness
+  and leader-election failures. Watch those symptoms during recovery; persistent
+  failures require investigating storage latency and node health. Do not assume
+  every API failure is harmless restore load.
 - A few movers may hit cross-node attach conflicts ("volume is currently
   attached to a different node") as Jobs recreate pods — Longhorn's
   attachment reconciler clears these; the last stragglers land as load drains.
@@ -257,18 +257,19 @@ kubectl -n radar-ng rollout restart deploy/tile-server deploy/basemap deploy/ope
 kubectl -n radar-ng delete pod -l app=radar-ng-worker
 ```
 
-On this single-worker cluster, `Insufficient cpu` during recovery usually means
-requested CPU is saturated, not that the Proxmox host is busy. Verify with:
+An `Insufficient cpu` scheduling event means requests exceed an eligible node's
+available allocatable CPU. Inspect affinity, taints and requests across eligible
+nodes; low host utilization alone does not make a pod schedulable. Verify with:
 
 ```bash
-kubectl describe node talos-prod-cluster-v2-gpu-workers-f7x5ct \
+kubectl describe node <eligible-node> \
   | sed -n '/Allocated resources:/,/Events:/p'
 kubectl top nodes
 ```
 
 ## Post-restore acceptance
 
-State BOTH claims, with live numbers:
+Record all three acceptance checks, with live evidence:
 
 1. **Restore contract**: every backed-up PVC `Bound` via its kopiur `Restore`
    populator (none stuck `Pending`), and the first post-restore `Snapshot` for
@@ -282,6 +283,14 @@ State BOTH claims, with live numbers:
    ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage`
    are the expected exempt set (PostHog's `postgres-data` is protected — it
    carries the API keys/dashboards).
+
+3. **Application recovery**: a Bound PVC is necessary but not sufficient. Check
+   Postgres accepts authenticated connections and the app can read existing data
+   and complete a normal write. Verify Gitea can read a known repository and its
+   database, Paperless can retrieve an existing document, and Temporal can complete
+   a new workflow/timer. For apps with separate file/database PVCs, confirm both
+   restore points describe compatible data. Validate restored credentials against
+   1Password before treating an authentication failure as data corruption.
 
 ---
 
