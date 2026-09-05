@@ -24,7 +24,7 @@ WARNINGS (printed, exit 0):
   [mover]   A SnapshotPolicy/Restore with no spec.mover security context (neither
             securityContext nor inheritSecurityContextFrom) → likely PermissionDenied
             (the #1 kopiur gotcha — see docs/domains/storage/kopiur-mover-permissions.md).
-  [gap]     A longhorn PVC that is neither backed up nor backup-exempt → review.
+  [gap]     Any non-system PVC neither backed up nor backup-exempt → review.
   [exempt]  A backup-exempt PVC missing the fully-qualified reason annotation
             (kept for grep-ability now that pvc-plumber no longer enforces it).
 """
@@ -76,6 +76,29 @@ def has_mover_sc(d):
     return bool(mover.get("securityContext") or mover.get("inheritSecurityContextFrom"))
 
 
+def restore_link_errors(pvc, restores_by_name, expected_policy=None):
+    """Check the named restore, not just the API group/kind of the pointer."""
+    ns, name = meta(pvc, "namespace"), meta(pvc, "name")
+    ref = (pvc.get("spec") or {}).get("dataSourceRef") or {}
+    target_ns = ref.get("namespace") or ns
+    if target_ns != ns:
+        return [f"[dsr]     PVC {ns}/{name}: cross-namespace Restore is outside this repository's restore contract"]
+    restore = restores_by_name.get((target_ns, ref.get("name")))
+    if restore is None:
+        return [f"[dsr]     PVC {ns}/{name}: named Restore {target_ns}/{ref.get('name')} was not rendered"]
+    spec = restore.get("spec") or {}
+    errors = []
+    if "populator" not in (spec.get("target") or {}):
+        errors.append(f"[dsr]     PVC {ns}/{name}: Restore {ref.get('name')} is not a populator target")
+    policy_ref = (spec.get("source") or {}).get("fromPolicy") or {}
+    if expected_policy is not None and (
+        policy_ref.get("name") != expected_policy
+        or (policy_ref.get("namespace") or ns) != ns
+    ):
+        errors.append(f"[dsr]     PVC {ns}/{name}: Restore {ref.get('name')} must use source.fromPolicy {ns}/{expected_policy}, got {policy_ref}")
+    return errors
+
+
 def main():
     if len(sys.argv) != 2:
         sys.stderr.write("usage: validate-kopiur-coverage.py <rendered-manifests.yaml>\n")
@@ -109,6 +132,7 @@ def main():
     # workload operator adopts it (Kafka/Strimzi). Index only restores whose
     # source policy matches the PVC's SnapshotPolicy; a same-name target alone
     # must not accidentally satisfy the DR contract.
+    restores_by_name = {(meta(r, "namespace"), meta(r, "name")): r for r in restores}
     direct_restore_pvcs = {}
     for r in restores:
         spec = r.get("spec") or {}
@@ -157,6 +181,8 @@ def main():
             dsr = (pvc.get("spec") or {}).get("dataSourceRef") or {}
             if dsr.get("apiGroup") != KOPIUR_GROUP or dsr.get("kind") != "Restore":
                 fails.append(f"[dsr]     PVC {pns}/{pvcname} is backed up but dataSourceRef is not a kopiur Restore → recreates EMPTY in DR (got: {dsr or 'none'})")
+                continue
+            fails.extend(restore_link_errors(pvc, restores_by_name, pname))
 
     for r in restores:
         if not has_mover_sc(r):
@@ -172,18 +198,18 @@ def main():
     for (pns, pname), pvc in sorted(pvcs.items(), key=lambda kv: (kv[0][0] or "", kv[0][1] or "")):
         if pns in SYSTEM_NS:
             continue
-        if (pvc.get("spec") or {}).get("storageClassName") != "longhorn":
-            continue
+        storage_class = (pvc.get("spec") or {}).get("storageClassName", "<default>")
         lbls = labels_of(pvc)
-        if any(k.startswith("cnpg.io/") for k in lbls):  # CNPG = Barman, not kopiur
-            continue
         if (pns, pname) in backed_pvcs:
             continue
+        dsr = (pvc.get("spec") or {}).get("dataSourceRef") or {}
+        if dsr.get("apiGroup") == KOPIUR_GROUP and dsr.get("kind") == "Restore":
+            fails.extend(restore_link_errors(pvc, restores_by_name))
         if lbls.get(EXEMPT_LABEL) == "true":
             if not anns_of(pvc).get(EXEMPT_REASON):
                 warns.append(f"[exempt]  PVC {pns}/{pname} is backup-exempt but missing {EXEMPT_REASON} annotation")
             continue
-        warns.append(f"[gap]     PVC {pns}/{pname} (longhorn) is neither backed up nor backup-exempt → review")
+        warns.append(f"[gap]     PVC {pns}/{pname} ({storage_class}) is neither backed up nor backup-exempt → review")
 
     print("== kopiur backup coverage ==")
     print(f"  policies={len(policies)} restores={len(restores)} pvcs={len(pvcs)} backed-namespaces={len(backed_namespaces)}")
@@ -194,7 +220,7 @@ def main():
     if fails:
         print(f"\n{len(fails)} hard failure(s): a backup would silently fail or a PVC would recreate empty in DR.")
         return 1
-    print(f"\nOK — coverage intact ({len(warns)} warning(s), 0 failures).")
+    print(f"\nValidation passed ({len(warns)} warning(s), 0 broken restore links). Warnings are unresolved coverage decisions, not proof of recovery.")
     return 0
 
 
