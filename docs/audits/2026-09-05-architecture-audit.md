@@ -20,6 +20,10 @@ constraints. Runtime observations were taken on September 5 and are snapshots,
 not uptime guarantees. The [inventory](2026-09-05-inventory.md) contains the physical
 map, evidence limits, documentation inventory, and downloadable resource lists.
 
+For the consolidated engineering judgment, disk move priorities and proposed
+node pools, read the [hardware and placement review](2026-09-05-hardware-and-placement-review.md).
+It distinguishes the current system from recommendations that are not deployed.
+
 ## Implementation tracking
 
 | PR | Scope | State at this checkpoint |
