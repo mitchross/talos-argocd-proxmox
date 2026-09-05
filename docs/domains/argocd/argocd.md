@@ -216,7 +216,7 @@ repo-server. With Argo CD `v3.5.2`, Cluster CI currently pins:
 | Kustomize | `5.8.1` |
 | Helm | `4.2.1` |
 | Kubeconform | `0.7.0` |
-| Kubernetes schema | `1.36.3` |
+| Kubernetes schema | `1.36.4` |
 
 Argo CD 3.5 already uses Helm 4. Keep CI and local tooling aligned when
 upgrading it. The Kubernetes schema pin above is separate from the cluster's

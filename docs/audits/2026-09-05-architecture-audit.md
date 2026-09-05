@@ -27,9 +27,31 @@ map, evidence limits, documentation inventory, and downloadable resource lists.
 | [#2238](https://github.com/mitchross/talos-argocd-proxmox/pull/2238) | Retire Fizzy and Mailpit | Merged; removal reconciled |
 | [#2241](https://github.com/mitchross/talos-argocd-proxmox/pull/2241) | Cilium metrics and exporter resources | Merged; 14 Cilium targets up |
 | [#2242](https://github.com/mitchross/talos-argocd-proxmox/pull/2242) | Retain parked Zomboid, correct PDB | Merged; zero replicas and both claims retained |
-| [#2243](https://github.com/mitchross/talos-argocd-proxmox/pull/2243) | Remove Headlamp Secret read permission | Prepared; verify authorization after merge |
-| [#2244](https://github.com/mitchross/talos-argocd-proxmox/pull/2244) | Remove automatic Keep-to-Holmes calls | Prepared; verify workflow deprovisioning after merge |
-| [#2245](https://github.com/mitchross/talos-argocd-proxmox/pull/2245) | Snapshot replicas, controller resources, VPA coverage | Prepared; verify rollout and placement after merge |
+| [#2243](https://github.com/mitchross/talos-argocd-proxmox/pull/2243) | Remove Headlamp Secret read permission | Merged; explicit authorization reviews deny Secrets and allow pods/logs |
+| [#2244](https://github.com/mitchross/talos-argocd-proxmox/pull/2244) | Remove automatic Keep-to-Holmes calls | Merged; previous Holmes workflow is marked deleted in Keep |
+| [#2245](https://github.com/mitchross/talos-argocd-proxmox/pull/2245) | Snapshot replicas, controller resources, VPA coverage | Merged; snapshot controller has two healthy pods on separate hosts |
+
+The dependency pass merged 15 of the 16 requested updates. PostHog
+[#2249](https://github.com/mitchross/talos-argocd-proxmox/pull/2249) is held because
+the proposed feature-flags image queries a database column that is absent in the
+running database. Its application and schema need a coordinated upgrade.
+[#2237](https://github.com/mitchross/talos-argocd-proxmox/pull/2237) now includes the
+GPU replacement disk finding and the single-control-plane recovery correction.
+Talos remains 1.13.9 and Kubernetes remains 1.36.4 until the separate live rollout.
+
+After these merges, Grafana is healthy on `13.2.1-distroless`, all 97 Prometheus
+targets are up (including 14 Cilium targets), and VPA has 120 recommendations
+across 124 policies. Immich Postgres now has a recommendation. These are live
+checks at this checkpoint, not availability guarantees.
+
+PostHog's pinned monolith image was built June 15 and its pinned node image
+March 31; the proposed Rust images were built September 4. The new feature-flags
+query references `feature_flags_teamfeatureflagsconfig.property_matching_version`.
+The live schema lacks that column, and its feature-flags migration history ends
+at `0010`. A coordinated upgrade must bring the monolith, node services and
+schema into agreement; a green manifest render does not validate that contract.
+See the [application upgrade checklist](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/UPGRADE.md)
+before resuming that PR. No production migration was run.
 
 Original findings below refer to the dated evidence snapshot unless marked
 resolved. Further work includes bootstrap failure handling, narrowed Argo diff
@@ -190,12 +212,14 @@ behavior, so adopting them is not a harmless annotation cleanup.
 
 **Priority: P2.** `scripts/bootstrap-argocd.sh` accepts any Helm failure if an
 existing argocd-server Deployment is Available. An old healthy server does not
-prove the requested installation succeeded. The same script seeds a fixed bcrypt
-admin-password hash. A hash is not a plaintext password disclosure, but it is a
-reusable bootstrap credential and allows offline guessing.
+prove the requested installation succeeded.
 
-**Fix:** remove the committed credential override, use a fresh per-install secret
-or the existing documented 1Password path, and preserve the actual Helm failure.
+**Owner clarification:** the bootstrap password setting intentionally preserves
+the login stored in 1Password across rebuilds, and Argo is internal-only. The
+initial proposal to replace it with a generated password was withdrawn from
+PR #2247. Preserve this authentication behavior.
+
+**Fix:** distinguish actual Helm failures from the known rerun ownership conflict.
 If tolerating a known SSA ownership conflict, match that specific error and verify
 the intended resources/version before proceeding. Exercise first install,
 successful rerun, known conflict, and an unrelated failure with shell-command
