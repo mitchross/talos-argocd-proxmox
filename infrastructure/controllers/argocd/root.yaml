@@ -7,7 +7,7 @@ metadata:
     # Manifest-generate-paths cache hint: only invalidate root's manifest cache
     # when files under apps/ change. Without this, any commit anywhere in the
     # repo forces the repo-server to re-render the root app-of-apps tree.
-    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/argocd/apps
+    argocd.argoproj.io/manifest-generate-paths: .
     # Force CLIENT-side diff for the app-of-apps. The global
     # controller.diff.server.side: "true" (argocd-cmd-params-cm) does a dry-run
     # server-side apply of every managed resource against the API server. For
