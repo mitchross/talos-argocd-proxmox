@@ -52,23 +52,77 @@ operator-owned global model catalog:
 
 Initial embeddings use CPU-local `sentence-transformers/all-MiniLM-L6-v2`, so SurfSense does not request a GPU.
 
-## Obsidian / Mink integration
+## Mink Git import
 
-The CachyOS Obsidian client uses `/home/vanillax/.mink` as its vault and the
-official SurfSense Obsidian plugin `0.1.0`. Its server URL is
-`http://127.0.0.1:18000`, supplied by the enabled user unit
-`~/.config/systemd/user/surfsense-obsidian-tunnel.service`, which maintains an
-authenticated `kubectl port-forward` to the backend Service. The plugin targets
-workspace `My Workspace`, includes only the `wiki/` folder, leaves attachments
-disabled, and reconciles every 10 minutes in addition to realtime note events.
+The GitOps manifests define `surfsense-mink-sync`, a six-hourly CronJob that
+shallow-clones `mitchross/mink-data` (`main`) and uploads visible Markdown under
+`wiki/` into the `Mink` folder in `My Workspace` (ID `1`). Only notes pushed to
+GitHub are imported; local-only changes wait for Mink's normal Git sync.
+The credentials are provisioned and the CronJob is enabled in Git. Deployment
+and first-run verification follow merging this change.
+The removed Obsidian plugin and desktop tunnel are not required.
 
-The backend already serves the plugin API beneath `/api/v1/obsidian/*`; no
-server-side vault mount belongs in this deployment. Enable API access for the
-workspace and create a dedicated personal access token in SurfSense before
-configuring the plugin. The token lives only in the plugin's local `data.json`
-and must remain excluded from Mink's Git sync. Keep note sync on the loopback
-tunnel: plugin `0.1.0` replays vault create events on every Obsidian startup,
-and sending that burst through Cloudflare can produce managed-WAF 403s.
+This follows the [Hoyt Labs folder-upload approach](https://github.com/drewpayment/hoytlabs-talos/blob/main/apps/surfsense/minknotes-sync-cronjob.yaml).
+[`scripts/sync-mink.py`](scripts/sync-mink.py) is mounted from a hash-suffixed
+Kustomize ConfigMap. The job uses temporary node storage, calls `http://backend:8000`
+inside the cluster, and uploads at most 500 files per batch. SurfSense identifies
+files by folder name and relative path, skips unchanged bytes, and versions edits.
+Deleted or renamed source notes are **not pruned**; prior Obsidian imports remain
+separate and may duplicate these notes in search. Hidden paths, symlinks, non-Markdown
+files, and files outside `wiki/` are excluded.
+
+### Enable and verify
+
+1. The `surfsense` item in 1Password vault `homelab-prod` contains concealed fields
+   `mink_github_token` (the existing GitHub CLI OAuth credential, with repository
+   access) and `mink_api_token` (the dedicated `Mink Git sync` SurfSense PAT for
+   the workspace owner). A replacement GitHub token needs only read-only Contents
+   access to `mitchross/mink-data`.
+   Enable API access in `My Workspace`. The token must permit document creation
+   and reading folders and task logs. The dedicated ExternalSecret keeps these
+   credentials separate from the application containers.
+2. Merge the enabled [`mink-sync-cronjob.yaml`](mink-sync-cronjob.yaml) through
+   the normal GitOps workflow. ArgoCD manages the resources;
+   the schedule runs at 00:17, 06:17, 12:17, and 18:17 UTC. Initial processing can
+   take hours on CPU; the Job deadline is four hours.
+3. Check the credentials and scheduled run:
+
+   ```bash
+   kubectl -n surfsense get externalsecret surfsense-mink-sync
+   kubectl -n surfsense get cronjob surfsense-mink-sync
+   kubectl -n surfsense get jobs --sort-by=.metadata.creationTimestamp
+   kubectl -n surfsense logs job/<scheduled-job-name>
+   ```
+
+   Expect `SecretSynced`, an unsuspended CronJob, and a completed Job whose final
+   line is `Mink import complete`. Check the `Mink/wiki` tree in SurfSense and
+   search for a known note to confirm retrieval. A repeat run should retain the
+   same folder and documents while skipping unchanged files.
+
+The uploader waits for a **new worker task log to complete**, including the final
+batch; an idle folder flag alone can mean the worker has not started. It fails on
+partial indexing errors, ambiguous concurrent folder-upload logs, authentication
+errors, and timeouts. Avoid other folder uploads in this workspace during a run:
+SurfSense 0.0.39 does not return the worker task ID from this endpoint. HTTP reads
+retry transient failures; uploads and failed Jobs do not automatically retry because
+the server may already have accepted the request. Inspect SurfSense task logs and
+wait for any outstanding worker before the next run.
+
+Operator credential bootstrap is recorded in
+[`scripts/provision-mink-credentials.py`](scripts/provision-mink-credentials.py).
+Run it locally with authenticated `op`, `gh`, and `kubectl` access. It preserves
+existing item fields, verifies GitHub access, saves concealed tokens through stdin,
+and registers only the SurfSense token hash in the app database for workspace 1's
+active owner. This is an administrative account-data operation; it does not change
+Kubernetes resources. Re-running reuses the stored token without revoking other
+PATs. Expiry follows `PAT_MAX_EXPIRY_DAYS` when configured; otherwise it has no
+expiry, matching the deployment default. Revoke `Mink Git sync` in SurfSense to
+remove its access; never print the 1Password values in logs.
+
+For rollback, commit `suspend: true`; existing imported documents remain available.
+Suspension prevents future Jobs and does not cancel a Job already running.
+Validate locally with `kustomize build my-apps/ai/surfsense` and
+`python -m unittest discover -s my-apps/ai/surfsense/scripts -p 'test_*.py'` (requires `httpx`).
 
 ## Self-host billing policy
 
