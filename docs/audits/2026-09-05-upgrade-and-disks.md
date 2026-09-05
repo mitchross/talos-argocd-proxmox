@@ -88,7 +88,7 @@ healthy. The V1 volume controller waits for all scheduled, non-failed replicas
 to run before updating the engine's replica address map; the replica controller
 counts started, not-yet-healthy replicas against the concurrency limit.
 
-The [rebuild setting](../../infrastructure/storage/longhorn/node-failure-settings.yaml)
+The [rebuild setting](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/storage/longhorn/node-failure-settings.yaml)
 is raised from one to two slots per node to release this observed circular
 wait. This keeps the last-replica drain protection in place. It is a rollout
 recovery change, not proof that a full restore can sustain two simultaneous
