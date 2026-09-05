@@ -15,7 +15,15 @@ spec:
     - name: kopiur.backup
       rules:
         - alert: KopiurSnapshotsFailing
-          expr: kopiur_snapshot_consecutive_failures >= 3
+          # Scraping renames the policy namespace to exported_namespace; this metric calls the policy name.
+          expr: >-
+            max by (namespace, policy) (
+              label_replace(
+                label_replace(kopiur_snapshot_consecutive_failures,
+                  "namespace", "$1", "exported_namespace", "(.+)"),
+                "policy", "$1", "name", "(.+)"
+              )
+            ) >= 3
           for: 10m
           labels:
             severity: warning
@@ -25,16 +33,16 @@ spec:
             summary: "kopiur backups failing repeatedly: {{ $labels.namespace }}/{{ $labels.policy }}"
             description: |
               {{ $value }} consecutive snapshot failures.
-
-              Actions:
-              1. kubectl -n {{ $labels.namespace }} get snapshot | tail
-              2. Check the failed Snapshot's status.failure and mover Job logs
-              3. Common causes: source PVC unattachable (Longhorn volume
-                 faulted), repo unreachable, mover uid/gid mismatch
+              Inspect policy {{ $labels.policy }} and its failed Snapshots:
+              kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshot
+              Check source volume health, repository access, and mover permissions.
         - alert: KopiurBackupStale
-          # All app PVCs snapshot hourly (the canary is daily), so >26h with
-          # no successful backup means the schedule is broken, not just slow.
-          expr: time() - kopiur_policy_last_backup_success_timestamp_seconds > 26 * 3600
+          # The 26h threshold covers daily schedules; it is not an hourly recovery-point guarantee.
+          expr: >-
+            time() - max by (namespace, policy) (
+              label_replace(kopiur_policy_last_backup_success_timestamp_seconds,
+                "namespace", "$1", "exported_namespace", "(.+)")
+            ) > 26 * 3600
           for: 15m
           labels:
             severity: critical
@@ -43,13 +51,10 @@ spec:
           annotations:
             summary: "kopiur backup stale (>26h): {{ $labels.namespace }}/{{ $labels.policy }}"
             description: |
-              No successful kopiur snapshot for over 26 hours. The restore
-              point for this PVC is aging — a volume failure now means losing
-              everything since the last snapshot.
-
-              Actions:
-              1. kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshotschedule,snapshot
-              2. Check SnapshotSchedule is not suspended and Snapshots' failure status
+              No successful kopiur snapshot for policy {{ $labels.policy }} in over 26 hours.
+              Inspect its schedule and failed Snapshots:
+              kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshotschedule,snapshot
+              Preserve the source volume before recovery; the latest backup may omit recent writes.
         - alert: KopiurCascadeDeletedSnapshots
           # onPolicyDelete: Retain is pinned in the kopiur-backup component — a mode="delete" cascade means the pin was bypassed and history is being destroyed.
           expr: increase(kopiur_policy_cascade_children_deleted_total{mode="delete"}[15m]) > 0

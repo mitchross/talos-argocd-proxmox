@@ -1,8 +1,10 @@
-name: Telemetry Rule Tests
+name: Telemetry and Backup Rule Tests
 on:
   pull_request:
     paths:
       - 'infrastructure/controllers/opentelemetry-operator-observability/**'
+      - 'monitoring/prometheus-stack/kopiur-alerts.yaml'
+      - 'monitoring/prometheus-stack/tests/kopiur-alerts.test.yaml'
       - 'scripts/prepare-telemetry-rule-tests.py'
       - 'scripts/tests/test_prepare_telemetry_rule_tests.py'
       - '.github/workflows/telemetry-rule-tests.yml'
@@ -10,6 +12,8 @@ on:
     branches: [main]
     paths:
       - 'infrastructure/controllers/opentelemetry-operator-observability/**'
+      - 'monitoring/prometheus-stack/kopiur-alerts.yaml'
+      - 'monitoring/prometheus-stack/tests/kopiur-alerts.test.yaml'
       - 'scripts/prepare-telemetry-rule-tests.py'
       - 'scripts/tests/test_prepare_telemetry_rule_tests.py'
       - '.github/workflows/telemetry-rule-tests.yml'
@@ -28,8 +32,12 @@ jobs:
         run: python -m unittest discover -s scripts/tests -p test_prepare_telemetry_rule_tests.py -v
       - name: Prepare alert-rule tests
         run: python scripts/prepare-telemetry-rule-tests.py /tmp/otel-rule-tests
+      - name: Prepare backup-rule tests
+        run: python scripts/prepare-telemetry-rule-tests.py /tmp/otel-rule-tests --suite kopiur
       - name: Check rules and evaluate synthetic time series
         run: |
           set -euo pipefail
           docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 check rules collector.rules.yaml
           docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 test rules collector-alerts.test.yaml
+          docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 check rules kopiur.rules.yaml
+          docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 test rules kopiur-alerts.test.yaml
