@@ -30,14 +30,14 @@ metadata:
 value: "block-for-eviction-if-contains-last-replica"
 
 ---
-# INTENTIONALLY 1: a mass-restore bootstrap overloads any engine on this hardware and faults
-# volumes faster than rebuilds drain them. Raise to 2-3 only after a passed DR drill shows headroom.
+# Two slots break the observed cross-node replica startup deadlock during drains.
+# Keep this bounded; mass-restore capacity still needs a separate drill.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: concurrent-replica-rebuild-per-node-limit
   namespace: longhorn-system
-value: "1"
+value: "2"
 
 ---
 apiVersion: longhorn.io/v1beta2
