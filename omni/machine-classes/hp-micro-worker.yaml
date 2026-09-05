@@ -1,7 +1,7 @@
 ---
 # omnictl apply -f omni/machine-classes/hp-micro-worker.yaml
 # CPU worker on the HP 600 G4 micro (192.168.10.20), in the shed behind the
-# AX86U wifi media bridge. Carries the USB radios (zigbee, sdr-adsb, sdr-blogv4).
+# AX86U wifi media bridge. Carries the SDR radios and the USB wifi adapter.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -46,5 +46,12 @@ spec:
       bios: seabios
       vga: std
       balloon: false
-      # No USB field in the provider schema: after a VM replacement re-add the
-      # zigbee, sdr-adsb and sdr-blogv4 mappings by hand (qm set ... usb3=1).
+      # Proxmox USB Resource Mappings, attached as usb0/usb1/usb2 in list order.
+      # Each name must exist in this host's Datacenter -> Resource Mappings.
+      usb_devices:
+        - mapping: sdr-blogv4
+          usb3: true
+        - mapping: sdr-adsb
+          usb3: true
+        - mapping: wifi-usb
+          usb3: true

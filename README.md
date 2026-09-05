@@ -71,13 +71,13 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
-| Omni server + `omnictl` | `v1.10.4` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.9` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
-| Kubernetes | `v1.36.4` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Omni server + `omnictl` | `v1.11.0` | `omni/omni/omni.env.example` |
+| Talos Linux | `v1.14.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Kubernetes | `v1.37.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
-| Proxmox provider | `v0.2.0@sha256:c0d068…` | `omni/proxmox-providers/docker-compose.yml` |
+| Proxmox provider | `v0.2.0-3-g7cefedd@sha256:5dcddc…` | `omni/proxmox-providers/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
 
@@ -317,7 +317,7 @@ From here, new applications are discovered automatically — add a directory wit
 > **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
 >
 > ```bash
-> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.9)
+> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.14.0)
 > talosctl -n <worker-ip> get disks               # expect a single ~800G sda (sda+sdb = STALE 2-disk layout)
 > kubectl get nodes.longhorn.io -n longhorn-system # expect 4 Ready storage nodes after Longhorn starts
 > ```
@@ -374,39 +374,72 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 - **Databases included**: every Postgres is a plain Deployment on the same kopiur pipeline (hourly tier). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
 - **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md) (the database operator guide).
 
-## Cluster Upgrades & Talos 1.13 Notes
+## Cluster Upgrades & Talos 1.14 Notes
 
-The cluster runs Talos **1.13.9**. A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
+The cluster runs Talos **1.14.0**. Two things work differently here than in older
+guides — read them before touching the cluster template.
 
-### Never pin below Talos 1.13.4
+### Install disk is an Omni resource, not a config patch
 
-1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args, so 1.13.4 is the floor — use it or a newer 1.13 patch.
+Through Talos 1.13 the install disk was set with a cluster-level
+`machine.install.disk` patch. Talos 1.14 reworked the install flow and Omni 1.11
+moved the setting into a first-class `MachineInstallDiskConfig` resource, so a
+config patch carrying `machine.install.disk` is now **silently ignored**. Neither
+cluster template ships one any more.
 
-**Observed 1.13.2 failure:** freshly provisioned nodes repeatedly failed to create pod sandboxes (`lstat /proc/.../ns/ipc: no such file or directory`, `can't find shim for sandbox`, `ttrpc: closed`). Rebooting and reinstalling Cilium didn't help; moving them to 1.13.4 restored containerd, control-plane pods, and Cilium. For a stuck rollout, reprovision one machine at a time (preserves etcd quorum for control planes):
+An already-installed machine always resolves to the disk it is running on, so
+upgrades and config changes are unaffected. The setting only matters when a
+machine is provisioned, or wiped and reinstalled — and with nothing set, Omni
+auto-picks the **smallest** eligible disk (at least 5 GB, not read-only, not a
+CD-ROM, not a member of another disk).
+
+That default is right wherever the boot disk is also the smallest disk, which is
+every machine class except the Threadripper GPU worker:
+
+| Machine class | Boot disk | Other disks | Auto-pick |
+|---|---|---|---|
+| `hp-micro` / `hp-sff` / `hp-elite` / `dell-worker` | 128 GB | 850 / 690 / 440 / 400 GB | ✅ boot disk |
+| `threadripper-gpu-worker` | 450 GB | 450 GB + **300 GB** flash | ❌ the 300 GB flash tier |
+
+The template cannot carry the override: its `install:` block lives only on
+`kind: Machine` documents keyed by machine UUID, and every machine set here is
+autoprovisioned from a machine class. Set the install disk for the GPU worker
+once in the Omni UI, or apply a `MachineInstallDiskConfig` for that machine,
+**before** reprovisioning it.
+
+### Kubernetes tracks the Talos ceiling
+
+Omni validates the pair and refuses the sync outright with `invalid kubernetes
+version "X": is not compatible with talos version "Y"`. Talos 1.14 caps
+Kubernetes at 1.37.0, which is where this cluster sits. Check what a Talos
+release allows before planning a bump:
+
+```bash
+omnictl get talosversion <version> -o yaml   # lists every compatible k8s version
+```
+
+Configure the kubelet through `machine.kubelet.extraConfig` (KubeletConfiguration),
+never `extraArgs` — since Kubernetes 1.37 the kubelet **refuses to start** if any
+deprecated cAdvisor flag is set. Three places carry the Kubernetes version and must
+move together: the cluster template, `kubeVersion` in
+`infrastructure/controllers/kopiur-operator/kustomization.yaml`, and
+`KUBERNETES_VERSION` in `.github/workflows/cluster-ci.yml`.
+
+### Never pin below Talos 1.14.0
+
+1.14 is the floor for this repo: the install-disk behavior above assumes it, and
+the templates set kube-scheduler integer args that older patch lines mis-marshal.
+
+For a stuck rollout, reprovision one machine at a time (this preserves etcd
+quorum for control planes):
 
 ```bash
 omnictl cluster machine delete <machine-id> --timeout 15m   # wait for Ready before the next
 ```
 
-### `machine.install.disk` is now mandatory
-
-Talos 1.13 replaced the old install/upgrade flow with the **LifecycleService API**. Earlier versions auto-detected a system disk during `maintenanceUpgrade`; 1.13 requires an explicit `machine.install.disk`.
-
-**Symptom if missing:** fresh VMs boot, but control planes stick in `stage=7 (UPGRADING)` with `configuptodate=false` forever, the LoadBalancer never goes healthy, and Kubernetes never bootstraps — **with no error surfaced anywhere**. The repo ships the fix as a cluster-level patch in both cluster templates:
-
-```yaml
-- name: install-disk
-  inline:
-    machine:
-      install:
-        disk: /dev/sda   # Proxmox virtio-scsi-single + scsi0 presents as /dev/sda
-```
-
-All machine classes (CP / worker / GPU) share the bus layout, so the patch goes at cluster scope. A class with a different disk presentation (e.g. NVMe passthrough → `/dev/nvme0n1`) needs a per-machineset override.
-
 ### Upgrading Omni / omnictl
 
-Run Omni and `omnictl` **on the same release** (currently `v1.10.4`, pinned in `omni/omni/omni.env.example`). When upgrading:
+Run Omni and `omnictl` **on the same release** (currently `v1.11.0`, pinned in `omni/omni/omni.env.example`). When upgrading:
 
 1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.

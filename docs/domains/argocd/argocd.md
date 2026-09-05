@@ -198,19 +198,21 @@ tested requirement.
 ## Renderer version contract
 
 CI must render with the same major/minor tool behavior as the Argo CD
-repo-server. For Argo CD `v3.4.5`, this repository pins:
+repo-server. These are pinned in `.github/workflows/cluster-ci.yml`, which is the
+source of truth — match the binaries bundled in the running Argo CD:
 
 | Tool | Version |
 |---|---|
 | Kustomize | `5.8.1` |
-| Helm | `3.19.4` |
+| Helm | `4.2.1` |
 | Kubeconform | `0.7.0` |
-| Kubernetes schema | `1.36.3` |
+| Kubernetes schema | `1.37.0` |
 
-When Argo CD moves to a release that bundles Helm 4, upgrade Argo, CI, and local
-render tooling in one review. This repository inflates many Helm charts through
-Kustomize, so a renderer-major change is a deployment change even if every
-chart version stays pinned.
+Argo CD `v3.5.0` dropped Helm 3 entirely, so repo-server renders with Helm 4.
+This repository inflates many Helm charts through Kustomize, so a renderer-major
+change is a deployment change even if every chart version stays pinned: upgrade
+Argo, CI, and local render tooling in one review. A render that only passes with
+newer or older tools is not proof that repo-server can deploy it.
 
 ## Future multi-cluster path
 

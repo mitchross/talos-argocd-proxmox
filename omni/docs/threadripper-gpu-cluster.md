@@ -185,9 +185,9 @@ removing it destroys cluster state. Instead:
 
 Talos and Kubernetes are coupled: Omni validates the pair and refuses the sync
 outright with `invalid kubernetes version "X": is not compatible with talos
-version "Y"`. Talos 1.13.9 caps Kubernetes at 1.36.4, which is where this
-cluster sits — there is no headroom until Talos 1.14 is GA and Omni's catalog
-offers it. Check what a Talos release actually allows before planning a bump:
+version "Y"`. Talos 1.14.0 caps Kubernetes at 1.37.0, which is where this
+cluster sits — no headroom until the next Talos minor. Check what a Talos
+release actually allows before planning a bump:
 
 ```bash
 omnictl get talosversion <version> -o yaml   # lists every compatible k8s version
@@ -205,8 +205,8 @@ omnictl get talosversion <version> -o yaml   # lists every compatible k8s versio
   They cannot be added to an existing machine without replacing it.
 - The Cilium L2 policy must allow the current control-plane node to announce
   VIPs.
-- The provider has no USB field. After replacing the HP micro's VM, re-add the
-  zigbee and RTL-SDR mappings by hand with `qm set`.
+- USB devices come from the machine class `usb_devices:` list (Proxmox Resource
+  Mappings). Each mapping must exist on the host that will run the VM.
 - Size a VM against the RAM its host has **now**. Moving DIMMs between machines
   leaves the guest config behind: a worker configured for more memory than its
   host holds does not fail loudly, it starves the node until kubelet stops
