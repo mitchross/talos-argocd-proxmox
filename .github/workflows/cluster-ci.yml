@@ -164,6 +164,9 @@ jobs:
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
           python3 ./scripts/validate-kopiur-coverage.py /tmp/all-manifests.yaml
 
+      - name: Test bootstrap failure handling
+        run: python3 -m unittest discover -s scripts/tests -p test_bootstrap_argocd.py -v
+
       - name: Validate VPA policy safety and coverage
         # Uses the same aggregate render as schema validation so Helm-generated
         # workloads and operator CR targets are checked, not just raw YAML.

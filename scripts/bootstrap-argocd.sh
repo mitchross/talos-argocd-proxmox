@@ -97,28 +97,16 @@ fi
 # Step 2: Install ArgoCD using Helm
 echo ""
 echo "⎈ Installing ArgoCD via Helm..."
+# Any Helm failure stops bootstrap; an old Available server is not success.
 # shellcheck disable=SC2016 # The bcrypt hash must remain literal.
-if ! helm upgrade --install argocd argo-cd \
+helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
   --version 10.7.1 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
   --timeout 10m \
-  --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'; then
-  # On a RE-RUN over an already-running ArgoCD, helm can fail with a
-  # server-side-apply conflict on argocd-secret (.data.admin.passwordMtime is
-  # owned by argocd-server once the admin password is used). That's benign:
-  # ArgoCD self-management (root.yaml below) owns argocd-secret via
-  # ServerSideApply=true. Only abort if ArgoCD isn't actually running.
-  if kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=10s > /dev/null 2>&1; then
-    echo "⚠️  Helm reported a conflict, but argocd-server is already Available."
-    echo "    This is expected on a re-run — continuing to self-management (root.yaml)."
-  else
-    echo "❌ Helm install failed and argocd-server is not Available. Aborting."
-    exit 1
-  fi
-fi
+  --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'
 
 # Step 3: Wait for CRDs to be established
 echo ""
