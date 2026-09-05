@@ -254,7 +254,13 @@ Grafana: **Shed Solar** (`shed-solar.json`, the overview page), **Solar Buffer
 Control** (the author's detailed dashboard, copied from the epsolar repo), and
 the older **Solar MPPT Monitor**. Home Assistant: the **Solar** view of the
 Homelab Power dashboard. kWh counters are the controller's own lifetime
-totals; `sensor.solar_generated_total` is the Energy dashboard's solar source.
+totals.
+
+The shed is off-grid, so keep it **out of the HA Energy dashboard**: that page
+models one house where solar feeds "Home", so adding `solar_generated_total`
+as a solar source or `shed_lab_energy` as a device inflates home consumption
+and shows 100 % self-sufficiency. The Energy dashboard is grid-only; the shed
+lives on the Solar view and the Grafana solar pages.
 
 If the Pi is down every `solar_*` sensor goes unavailable and the Prometheus
 target shows `up == 0`; nothing on the grid side is affected.
