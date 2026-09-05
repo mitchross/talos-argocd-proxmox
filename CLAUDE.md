@@ -237,8 +237,6 @@ of duplicating procedures.
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + kopiur restore-based DR default, Longhorn for availability-critical apps). Do not act on it now.
-- **kopiur is the backup system (since 2026-06-27):** 22 PVCs across 18 namespaces on the `kopiur-backup` component (count verified 2026-07-01; gitea-postgres-data pending as #23); restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; PostHog `postgres-data` joined the kopiur component 2026-07-24 (#24 — identity layer survives rebuild; DR drill pending). paperless-postgres-data + temporal-postgres-data joined 2026-08-13 (CNPG retirement).
-- **Databases (completed direction):** ALL databases are **plain Postgres + kopiur** (reference: `my-apps/development/gitea/postgres/`; two-DB example: `my-apps/development/temporal/postgres/`). CNPG fully retired 2026-08-13 per `docs/domains/cnpg/plain-postgres-migration.md`; only its Barman-bucket lifecycle cleanup remains. Crunchy PGO removed 2026-07-09 (was idle).
 
 ## Mink capture
 
