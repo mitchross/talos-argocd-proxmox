@@ -73,7 +73,7 @@ spec:
               mountPath: /config
       containers:
         - name: home-assistant
-          image: "ghcr.io/home-assistant/home-assistant:2026.9.0" # pinned (was :stable — floating tag defeats Renovate + makes rollback/diff impossible)
+          image: "ghcr.io/home-assistant/home-assistant:2026.9.1" # pinned (was :stable — floating tag defeats Renovate + makes rollback/diff impossible)
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false

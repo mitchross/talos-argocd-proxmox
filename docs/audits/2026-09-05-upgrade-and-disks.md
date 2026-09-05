@@ -45,6 +45,13 @@ state that a customized metrics listener keeps its configured endpoint.
 
 ## Disk placement follow-up
 
+The GPU VM's current ephemeral filesystem reports about 447.6 GiB total and
+272.9 GiB free, with 283 GiB of Longhorn volume capacity scheduled there.
+Simply changing its boot disk to 128 GiB would not preserve that layout. A
+smaller boot disk needs a separate allocation and restore plan for those volumes.
+The 300 GiB flash filesystem reports about 151.7 GiB free; its 415 GiB scheduled
+figure is logical thin provisioning, not 415 GiB of physical data.
+
 | Host or pool | Verified finding | Next action |
 |---|---|---|
 | HP SFF control-plane disk | A dedicated 1 TB PNY CS900 holds a 100 GiB VM disk; roughly 831 GiB of its VG was free. Etcd fsync p99 was about 49 ms in the sampled five-minute window. | Prioritize a healthy SSD with power-loss protection for this VM. Confirm latency before and after; free capacity alone does not fix synchronous-write latency. |
