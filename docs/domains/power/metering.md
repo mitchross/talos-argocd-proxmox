@@ -258,3 +258,20 @@ totals; `sensor.solar_generated_total` is the Energy dashboard's solar source.
 
 If the Pi is down every `solar_*` sensor goes unavailable and the Prometheus
 target shows `up == 0`; nothing on the grid side is affected.
+
+## Gaming sessions
+
+`binary_sensor.gaming_pc_gaming` is on while the Gaming PC plug draws more than
+`input_number.gaming_pc_active_threshold_w` (350 W; idle is ~200 W, gaming
+gaming is 450–600 W) and turns off after five quiet minutes. Three template
+feeds are integrated only while it is on:
+
+| Sensor | Meaning |
+|---|---|
+| `sensor.gaming_pc_gaming_energy` / `_cost` (+ daily/weekly/monthly/yearly meters) | kWh and USD spent gaming |
+| `sensor.gaming_pc_gaming_hours` (+ meters) | hours gamed, from integrating a 1/0 flag, so it does not depend on recorder retention |
+| `sensor.gaming_pc_idle_cost_daily` / `_monthly` | the rest of the PC's cost: total minus gaming |
+
+Grafana **Gaming PC** (`gaming-pc.json`) and the **Gaming** view of the Homelab
+Power dashboard read these. The threshold is a slider so it can be tuned without
+a deploy; a permanent change goes in `configuration.yaml`.
