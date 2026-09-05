@@ -1,5 +1,5 @@
-# talos-prod-cluster-v2: Threadripper (1 CP + 1 general worker + 1 GPU worker),
-# HP micro in the shed (wifi, USB radios), HP SFF, HP Elite and Dell (wired).
+# talos-prod-cluster-v2: HP SFF control plane; workers on SFF, Elite, Dell,
+# Threadripper (GPU), and HP micro in the shed (Wi-Fi, USB radios).
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
 #   omnictl cluster template sync -v -f cluster-template-prod-v2.yaml
@@ -9,7 +9,6 @@ name: talos-prod-cluster-v2
 labels:
   cluster-id: "2"
 kubernetes:
-  # Ceiling for Talos 1.14, and the version it ships. Omni rejects anything above it.
   version: v1.37.0
 talos:
   # Install disk is an Omni resource since 1.11, not a config patch; unset, Omni
