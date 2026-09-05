@@ -1,0 +1,25 @@
+name: Storage Evidence Tests
+on:
+  pull_request:
+    paths:
+      - 'scripts/collect-storage-evidence.py'
+      - 'scripts/tests/test_storage_evidence.py'
+      - '.github/workflows/storage-evidence-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/collect-storage-evidence.py'
+      - 'scripts/tests/test_storage_evidence.py'
+      - '.github/workflows/storage-evidence-tests.yml'
+permissions:
+  contents: read
+jobs:
+  evidence-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test with synthetic storage objects and mocked host commands
+        run: python -m unittest discover -s scripts/tests -p test_storage_evidence.py -v
