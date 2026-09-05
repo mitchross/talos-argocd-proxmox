@@ -15,7 +15,20 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - "*"
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - namespaces
+  - nodes
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
   verbs:
   - get
   - list
