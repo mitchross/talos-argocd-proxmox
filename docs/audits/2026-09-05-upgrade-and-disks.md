@@ -73,3 +73,33 @@ Kopiur snapshot for affected application data, and choose either a verified VM
 disk migration or a tested restore to new storage. Keep the source until the
 replacement passes application checks. Do not combine disk migration with the
 Talos rollout: finish one change and verify it before starting the other.
+
+## Live rollout: Longhorn rebuild queue
+
+During the rollout, the Dell drain stopped at its Longhorn instance-manager
+PDB. Application pods had left the node, but Longhorn's eviction tickets kept
+five volumes attached while their replacement replicas waited to start.
+
+Two parked SwarmUI volumes formed a circular wait: `swarmui-dlbackend` held the
+GPU node's only rebuild slot while waiting for a replica on the Elite;
+`swarmui-output` held the Elite's only slot while waiting for the GPU node.
+Both engines reported no active rebuild. Their original Dell replicas remained
+healthy. The V1 volume controller waits for all scheduled, non-failed replicas
+to run before updating the engine's replica address map; the replica controller
+counts started, not-yet-healthy replicas against the concurrency limit.
+
+The [rebuild setting](../../infrastructure/storage/longhorn/node-failure-settings.yaml)
+is raised from one to two slots per node to release this observed circular
+wait. This keeps the last-replica drain protection in place. It is a rollout
+recovery change, not proof that a full restore can sustain two simultaneous
+rebuilds or that every possible queue deadlock is eliminated.
+
+After syncing, expect the new replicas to join their engines, complete rebuilding,
+and release the eviction tickets. The Dell should then finish its normal Omni
+upgrade. Watch volume health and disk latency while this happens. If extra
+concurrency causes faults or excessive latency, revert the setting through Git,
+pause the rollout, and inspect the affected engine before retrying. Reverting to
+one while the circular wait still exists can restore the blockage.
+
+Sources: [Longhorn 1.12.1 replica concurrency controller](https://github.com/longhorn/longhorn-manager/blob/v1.12.1/controller/replica_controller.go#L525),
+[volume startup gating](https://github.com/longhorn/longhorn-manager/blob/v1.12.1/controller/volume_controller.go#L2887).
