@@ -31,5 +31,6 @@
   ],
   "disabledMcpjsonServers": [
     "claude-tempo"
-  ]
+  ],
+  "outputStyle": "Concise"
 }
