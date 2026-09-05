@@ -7,10 +7,9 @@ labels:
 kubernetes:
   version: v1.37.0
 talos:
-  # Stable 1.13 GA line — no pre-release flag needed on the Omni server for
-  # Talos itself (leave --enable-talos-pre-release-versions in place only if
-  # other pre-release components still need it).
-  version: v1.13.9
+  # Install disk is an Omni resource since 1.11, not a config patch; unset, Omni
+  # auto-picks the smallest eligible disk. See README "Cluster Upgrades".
+  version: v1.14.0
 patches:
 - name: disable-default-cni
   inline:
@@ -26,15 +25,6 @@ patches:
     kind: ResolverConfig
     nameservers:
     - address: 192.168.10.1
-# Talos 1.13 switched install/upgrade to the LifecycleService API; without an
-# explicit install.disk, fresh VMs fail with "system disk not found" in
-# maintenanceUpgrade. virtio-scsi-single + scsi0 presents as /dev/sda in all
-# three machine classes, so this is safe to apply cluster-wide.
-- name: install-disk
-  inline:
-    machine:
-      install:
-        disk: /dev/sda
 - file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:

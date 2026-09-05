@@ -1,6 +1,7 @@
 ---
 # omnictl apply -f omni/machine-classes/hp-elite-worker.yaml
 # Large CPU worker on the HP Elite Mini 600 G9 (192.168.10.22), wired LAN.
+# Carries the Zigbee coordinator.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -39,3 +40,8 @@ spec:
       bios: seabios
       vga: std
       balloon: false
+      # Proxmox USB Resource Mapping, attached as usb0.
+      # The name must exist in this host's Datacenter -> Resource Mappings.
+      usb_devices:
+        - mapping: zigbee
+          usb3: true

@@ -74,13 +74,13 @@ wait for all the Applications it generates; those reconcile independently. See
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
-| Omni server + `omnictl` | `v1.10.4` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.9` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
-| Kubernetes | `v1.36.4` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Omni server + `omnictl` | `v1.11.0` | `omni/omni/omni.env.example` |
+| Talos Linux | `v1.14.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Kubernetes | `v1.37.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.1` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.8.0` (Argo CD `v3.5.2`) | `scripts/bootstrap-argocd.sh` |
-| Proxmox provider | `v0.2.0@sha256:c0d068…` | `omni/proxmox-providers/docker-compose.yml` |
+| Proxmox provider | `v0.2.0-3-g7cefedd@sha256:5dcddc…` | `omni/proxmox-providers/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
 
@@ -124,6 +124,9 @@ Do not continue until the old machines disappear from Omni and their VMs
 disappear from Proxmox.
 
 ### 2. Apply the machine classes and provision Talos
+
+**Fresh GPU provisioning is blocked by install-disk selection.** Resolve the
+[known disk issue](docs/audits/2026-09-05-upgrade-and-disks.md) before this step.
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
 Apply all six classes before syncing the template; template sync owns the
@@ -321,7 +324,7 @@ From here, new applications are discovered automatically — add a directory wit
 > **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
 >
 > ```bash
-> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.9)
+> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.14.0)
 > talosctl -n <worker-ip> get disks               # expect a single ~800G sda (sda+sdb = STALE 2-disk layout)
 > kubectl get nodes.longhorn.io -n longhorn-system # expect 4 Ready storage nodes after Longhorn starts
 > ```
@@ -378,39 +381,58 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 - **Databases included**: every Postgres is a plain Deployment on the same kopiur pipeline (hourly tier). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
 - **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md) (the database operator guide).
 
-## Cluster Upgrades & Talos 1.13 Notes
+## Cluster Upgrades & Talos 1.14 Notes
 
-The cluster runs Talos **1.13.9**. A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
+The templates target Talos **1.14.0** and Kubernetes **1.37.0**. Committing or
+merging these files does not upgrade the running machines; Omni performs the
+rollout separately. See the [upgrade and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
+before applying the template to an existing cluster or using it for a rebuild.
 
-### Never pin below Talos 1.13.4
+### Fresh GPU provisioning needs a disk-selection fix
 
-1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args, so 1.13.4 is the floor — use it or a newer 1.13 patch.
+Omni 1.11 manages the install disk through `MachineInstallDiskConfig`;
+`machine.install.disk` patches no longer select it. Already-installed machines
+keep their detected system disk. On a fresh machine, the default selects the
+smallest eligible disk.
 
-**Observed 1.13.2 failure:** freshly provisioned nodes repeatedly failed to create pod sandboxes (`lstat /proc/.../ns/ipc: no such file or directory`, `can't find shim for sandbox`, `ttrpc: closed`). Rebooting and reinstalling Cilium didn't help; moving them to 1.13.4 restored containerd, control-plane pods, and Cilium. For a stuck rollout, reprovision one machine at a time (preserves etcd quorum for control planes):
+The GPU class has a 450 GB boot disk, another 450 GB disk, and a 300 GB flash
+disk. That default selects the flash disk. **Do not reprovision the GPU worker
+or run a full rebuild with this layout until fresh-install selection is fixed.**
+An override on today's machine is insufficient: the Proxmox provider generates
+a new UUID for a replacement, and the override belongs to the old UUID.
 
-```bash
-omnictl cluster machine delete <machine-id> --timeout 15m   # wait for Ready before the next
-```
+An in-place upgrade does not require moving these disks. The separate
+[disk plan](docs/audits/2026-09-05-upgrade-and-disks.md#disk-placement-follow-up)
+keeps the capacity decision explicit rather than shrinking a volume as part
+of a version bump.
 
-### `machine.install.disk` is now mandatory
+### Kubernetes compatibility and upgrade order
 
-Talos 1.13 replaced the old install/upgrade flow with the **LifecycleService API**. Earlier versions auto-detected a system disk during `maintenanceUpgrade`; 1.13 requires an explicit `machine.install.disk`.
+Talos 1.14 ships Kubernetes 1.37, but the shipped version is not the only
+compatible version. Check Omni's `talosversion` resource for the supported
+pairs. Keep the current Kubernetes version while upgrading Talos first; once
+Talos and its extensions are healthy, advance Kubernetes. The committed
+template records the final target, so review the template diff before syncing
+it during either stage.
 
-**Symptom if missing:** fresh VMs boot, but control planes stick in `stage=7 (UPGRADING)` with `configuptodate=false` forever, the LoadBalancer never goes healthy, and Kubernetes never bootstraps — **with no error surfaced anywhere**. The repo ships the fix as a cluster-level patch in both cluster templates:
+Keep both cluster templates, the kopiur chart's `kubeVersion`, and Cluster CI's
+`KUBERNETES_VERSION` aligned with the intended Kubernetes target. Configure the
+kubelet through `machine.kubelet.extraConfig`; Kubernetes 1.37 rejects removed
+cAdvisor command-line flags.
 
-```yaml
-- name: install-disk
-  inline:
-    machine:
-      install:
-        disk: /dev/sda   # Proxmox virtio-scsi-single + scsi0 presents as /dev/sda
-```
+### A stalled upgrade is not a reason to delete the control plane
 
-All machine classes (CP / worker / GPU) share the bus layout, so the patch goes at cluster scope. A class with a different disk presentation (e.g. NVMe passthrough → `/dev/nvme0n1`) needs a per-machineset override.
+This cluster has **one** control-plane machine. Rebooting it temporarily stops
+the Kubernetes API; deleting it removes the only etcd member. There is no
+remaining quorum. Keep it intact while diagnosing an upgrade failure, and
+follow the [recovery runbook](docs/disaster-recovery.md) if recovery is required.
+Worker replacement also needs a storage recovery plan: most Longhorn volumes
+still have only one replica. A fresh GPU replacement additionally needs the
+install-disk fix above.
 
 ### Upgrading Omni / omnictl
 
-Run Omni and `omnictl` **on the same release** (currently `v1.10.4`, pinned in `omni/omni/omni.env.example`). When upgrading:
+Run Omni and `omnictl` **on the same release** (currently `v1.11.0`, pinned in `omni/omni/omni.env.example`). When upgrading:
 
 1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.
@@ -424,7 +446,7 @@ micro sits in the shed behind a Wi-Fi media bridge.
 
 | Host | Address | CPU / RAM | Role |
 |------|---------|-----------|------|
-| Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (1x RTX 3090 passthrough) + general worker |
+| Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (1x RTX 3090 passthrough) |
 | Dell Optiplex | 192.168.10.16 | i5-8500 6c · 39 GB | CPU worker (2.5 GbE add-in NIC) |
 | HP micro (shed) | 192.168.10.20 | i5-8500T 6c · 31 GB | CPU worker, USB radios, Wi-Fi-bridged and solar-fed |
 | HP SFF (ProDesk) | 192.168.10.21 | i5-8500 6c · 63 GB | Control plane + CPU worker |
