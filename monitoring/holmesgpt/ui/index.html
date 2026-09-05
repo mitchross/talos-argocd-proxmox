@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ask the cluster</title><link rel="stylesheet" href="/style.css"></head>
+<body><main>
+<header><p class="eyebrow">HOMELAB / READ-ONLY INVESTIGATION</p><h1>Ask the cluster.</h1><p>Describe what is wrong. Your local model checks Kubernetes, metrics, logs, and traces through Holmes.</p></header>
+<section class="status"><span id="status" role="status">Checking Holmes and local model…</span><button id="refresh" type="button">Refresh status</button></section>
+<form id="investigate">
+<div class="scope"><label>Namespace <input id="namespace" placeholder="All namespaces, or e.g. radar-ng" maxlength="63"></label><label>Look back <select id="window"><option value="15m">15 minutes</option><option value="1h">1 hour</option><option value="6h">6 hours</option></select></label></div>
+<label for="question">What do you need to understand?</label><textarea id="question" required maxlength="2000" rows="4" placeholder="Why has Radar been slow? Check recent changes, errors, CPU, memory, and storage before suggesting a fix."></textarea>
+<div class="examples"><button type="button" data-question="Which applications are unhealthy? Ignore intentionally scaled-to-zero workloads and rank real problems by impact.">What's unhealthy?</button><button type="button" data-question="Check disk pressure and Longhorn volume/replica health. Separate observed storage evidence from guesses about physical disk IOPS.">Storage trouble</button><button type="button" data-question="What changed recently? Correlate Argo syncs, rollouts, events, and errors. Do not claim causation from timing alone.">What changed?</button><button type="button" data-question="Can we trust monitoring right now? Check missing targets and telemetry-pipeline errors before calling applications healthy.">Monitoring blind spots</button></div>
+<button id="submit" type="submit">Investigate with local AI</button><p class="note">One investigation at a time. No automatic repairs or cloud fallback. Results expire after 15 minutes and are not saved in your browser.</p>
+</form>
+<section id="result" hidden><h2>Investigation</h2><p id="progress" role="status"></p><pre id="answer"></pre><details id="evidence" hidden><summary>Tools used to gather evidence</summary><ul id="tools"></ul></details></section>
+<footer>Trusted LAN/VPN only—not an authenticated multi-user portal. Treat AI conclusions as hypotheses supported by the evidence shown.</footer>
+</main><script src="/app.js" defer></script></body></html>
