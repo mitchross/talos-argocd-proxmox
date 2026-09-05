@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check Cilium scrape discovery and exporter resources in rendered manifests."""
+"""Check Cilium discovery and core controller baselines in rendered manifests."""
 import argparse
 from pathlib import Path
 
@@ -39,14 +39,26 @@ def validate(objects):
         endpoints = spec.get("endpoints", [])
         if not endpoints or any(e.get("port") not in ports for e in endpoints):
             errors.append(f"{monitor_name}: endpoint must reference a named Service port")
-    for kind, name in [
-        ("DaemonSet", "kube-prometheus-stack-prometheus-node-exporter"),
-        ("Deployment", "kube-prometheus-stack-kube-state-metrics"),
+    for kind, namespace, name in [
+        ("DaemonSet", "prometheus-stack", "kube-prometheus-stack-prometheus-node-exporter"),
+        ("Deployment", "prometheus-stack", "kube-prometheus-stack-kube-state-metrics"),
+        ("DaemonSet", "kube-system", "cilium-envoy"),
+        ("Deployment", "external-secrets", "external-secrets"),
+        ("Deployment", "snapshot-controller", "snapshot-controller"),
     ]:
-        workload = index.get((kind, "prometheus-stack", name))
+        workload = index.get((kind, namespace, name))
         if not workload:
             errors.append(f"{name}: workload was not rendered")
             continue
+        if name == "snapshot-controller":
+            pod_spec = workload["spec"]["template"]["spec"]
+            spread = pod_spec.get("affinity", {}).get("podAntiAffinity", {}).get(
+                "preferredDuringSchedulingIgnoredDuringExecution", [])
+            if str(workload["spec"].get("replicas", 1)) != "2":
+                errors.append("snapshot-controller: expected two rendered replicas")
+            if not any(t.get("podAffinityTerm", {}).get("topologyKey") ==
+                       "topology.kubernetes.io/zone" for t in spread):
+                errors.append("snapshot-controller: physical-host spreading preference is missing")
         for container in workload["spec"]["template"]["spec"]["containers"]:
             resources = container.get("resources") or {}
             requests, limits = resources.get("requests") or {}, resources.get("limits") or {}
@@ -78,7 +90,7 @@ def main():
     for error in errors:
         print(f"ERROR: {error}")
     if not errors:
-        print("Cilium metrics Services match their monitors; exporter resource baselines are present.")
+        print("Cilium metrics discovery and core controller resource/replica baselines pass.")
     return int(bool(errors))
 
 
