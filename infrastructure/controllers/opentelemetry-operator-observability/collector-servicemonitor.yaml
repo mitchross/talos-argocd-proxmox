@@ -8,9 +8,17 @@ spec:
     matchNames:
       - opentelemetry
   selector:
-    matchLabels:
-      operator.opentelemetry.io/collector-monitoring-service: Exists
+    matchExpressions:
+      - key: operator.opentelemetry.io/collector-monitoring-service
+        operator: Exists
   endpoints:
     - port: monitoring
       interval: 30s
       scrapeTimeout: 10s
+      relabelings:
+        - targetLabel: telemetry_stack
+          replacement: homelab
+        - sourceLabels: [__meta_kubernetes_service_name]
+          regex: '(otel-agent|otel-gateway)-collector-monitoring'
+          targetLabel: otel_collector
+          replacement: '${1}'
