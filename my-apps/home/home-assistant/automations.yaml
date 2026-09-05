@@ -15,6 +15,7 @@
         - switch.truenas
         - switch.hp_sff
         - switch.hp_elite
+        - switch.shed_lab
       from: "on"
       to: "off"
   action:

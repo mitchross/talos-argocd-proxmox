@@ -18,6 +18,9 @@ views:
           cannot be split. Homelab switches are locked read-only by the
           `Homelab plug power-off lockout` automation; the office plugs are not.
 
+          The **Shed Lab** plug (HP micro in the shed) runs on solar: watts and kWh are
+          tracked, but it has no cost and stays out of the grid groups above.
+
       - type: entities
         title: Rate
         entities:
@@ -109,6 +112,8 @@ views:
             name: Gaming PC
           - entity: sensor.macbook_current_consumption
             name: MacBook + Monitor
+          - entity: sensor.shed_lab_current_consumption
+            name: Shed Lab (solar)
 
       - type: glance
         title: Homelab cost so far
@@ -150,6 +155,20 @@ views:
           - entity: sensor.combined_cost_monthly
             name: This Month
           - entity: sensor.combined_cost_yearly
+            name: This Year
+
+      - type: glance
+        title: Shed Lab energy (solar, no cost)
+        show_state: true
+        columns: 4
+        entities:
+          - entity: sensor.shed_lab_energy_daily
+            name: Today
+          - entity: sensor.shed_lab_energy_weekly
+            name: This Week
+          - entity: sensor.shed_lab_energy_monthly
+            name: This Month
+          - entity: sensor.shed_lab_energy_yearly
             name: This Year
 
       - type: glance
@@ -211,6 +230,8 @@ views:
             name: Gaming PC
           - entity: sensor.macbook_energy_last_month
             name: MacBook + Monitor
+          - entity: sensor.shed_lab_energy_last_month
+            name: Shed Lab (solar)
 
       - type: grid
         title: Share of combined draw
@@ -322,6 +343,8 @@ views:
             name: Gaming PC
           - entity: sensor.macbook_current_consumption
             name: MacBook + Monitor
+          - entity: sensor.shed_lab_current_consumption
+            name: Shed Lab (solar)
           - entity: sensor.homelab_total_power
             name: HOMELAB
           - entity: sensor.office_total_power
@@ -342,6 +365,7 @@ views:
           - sensor.hp_elite_energy
           - sensor.gaming_pc_energy
           - sensor.macbook_energy
+          - sensor.shed_lab_energy
 
       - type: statistics-graph
         title: Cost by month (12 months)
@@ -485,3 +509,147 @@ views:
             name: Voltage
           - entity: sensor.macbook_current
             name: Current
+          - type: section
+            label: Shed Lab (solar)
+          - entity: sensor.shed_lab_current_consumption
+            name: Power now
+          - entity: sensor.shed_lab_energy_daily
+            name: Energy today
+          - entity: sensor.shed_lab_energy_monthly
+            name: Energy this month
+          - entity: sensor.shed_lab_voltage
+            name: Voltage
+          - entity: sensor.shed_lab_current
+            name: Current
+
+  - title: Solar
+    icon: mdi:solar-power-variant
+    path: solar
+    cards:
+      - type: markdown
+        content: |
+          # Shed solar
+          Panels → **EPEVER XTRA3210N** MPPT → 12.8 V LiFePO4 bank (2× 100 Ah) →
+          **LOAD** terminal → Anker SOLIX → the shed **HP micro** (Tapo `Shed Lab`).
+          Numbers come from the rpi4's `epsolar` service, which owns the serial link
+          and the guarded LOAD automation. Nothing here costs anything on the bill.
+
+      - type: glance
+        title: Right now
+        columns: 4
+        entities:
+          - entity: sensor.solar_pv_power
+            name: Watts in (PV)
+          - entity: sensor.solar_battery_power
+            name: Battery (+charge)
+          - entity: sensor.solar_load_power
+            name: LOAD → Anker
+          - entity: sensor.shed_lab_current_consumption
+            name: HP micro (Tapo)
+          - entity: sensor.solar_battery_soc
+            name: SOC (local)
+          - entity: sensor.solar_battery_voltage
+            name: Battery V
+          - entity: sensor.solar_charging_state
+            name: Charging
+          - entity: binary_sensor.solar_load_on
+            name: LOAD
+
+      - type: gauge
+        entity: sensor.solar_battery_soc
+        name: Battery state of charge
+        min: 0
+        max: 100
+        needle: true
+        severity:
+          red: 0
+          yellow: 33
+          green: 50
+
+      - type: entities
+        title: Energy (controller counters)
+        entities:
+          - entity: sensor.solar_generated_today
+            name: Generated today
+          - entity: sensor.solar_generated_month
+            name: Generated this month
+          - entity: sensor.solar_generated_year
+            name: Generated this year
+          - entity: sensor.solar_generated_total
+            name: Generated lifetime
+          - type: section
+            label: Consumed at the LOAD terminal
+          - entity: sensor.solar_consumed_today
+            name: Consumed today
+          - entity: sensor.solar_consumed_month
+            name: Consumed this month
+          - entity: sensor.solar_consumed_total
+            name: Consumed lifetime
+          - type: section
+            label: HP micro (Tapo Shed Lab)
+          - entity: sensor.shed_lab_energy_daily
+            name: Today
+          - entity: sensor.shed_lab_energy_monthly
+            name: This month
+
+      - type: history-graph
+        title: Power flow (24h)
+        hours_to_show: 24
+        refresh_interval: 30
+        entities:
+          - entity: sensor.solar_pv_power
+            name: PV in
+          - entity: sensor.solar_load_power
+            name: LOAD out
+          - entity: sensor.solar_battery_power
+            name: Battery net
+          - entity: sensor.shed_lab_current_consumption
+            name: HP micro
+
+      - type: history-graph
+        title: Battery (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.solar_battery_voltage
+            name: Voltage
+          - entity: sensor.solar_battery_soc
+            name: SOC local
+          - entity: sensor.solar_battery_soc_controller
+            name: SOC controller
+
+      - type: statistics-graph
+        title: Generated vs consumed by day (30d)
+        chart_type: bar
+        period: day
+        days_to_show: 30
+        stat_types:
+          - change
+        entities:
+          - sensor.solar_generated_total
+          - sensor.solar_consumed_total
+          - sensor.shed_lab_energy
+
+      - type: entities
+        title: Automation and health
+        entities:
+          - entity: sensor.solar_automation_state
+            name: State
+          - entity: sensor.solar_automation_reason
+            name: Reason
+          - entity: binary_sensor.solar_automation_armed
+            name: Armed (live writes)
+          - entity: binary_sensor.solar_controller_online
+            name: Controller online
+          - entity: binary_sensor.solar_fault
+            name: Controller fault
+          - entity: sensor.solar_battery_energy_remaining
+            name: Usable energy left
+          - entity: sensor.solar_runtime_remaining
+            name: Runtime left
+          - entity: sensor.solar_battery_temperature
+            name: Battery temp
+          - entity: sensor.solar_controller_temperature
+            name: Controller temp
+          - entity: sensor.solar_last_update
+            name: Last reading
