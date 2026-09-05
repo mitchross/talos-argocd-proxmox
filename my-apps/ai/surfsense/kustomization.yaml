@@ -5,6 +5,8 @@ namespace: surfsense
 resources:
   - namespace.yaml
   - externalsecret.yaml
+  - mink-sync-externalsecret.yaml
+  - mink-sync-cronjob.yaml
   - app/pvc.yaml
   - postgres/deployment.yaml
   - postgres/service.yaml
@@ -28,6 +30,9 @@ components:
   - ../../common/kopiur-backup
 
 configMapGenerator:
+  - name: surfsense-mink-sync-script
+    files:
+      - scripts/sync-mink.py
   - name: surfsense-global-llm-config
     files:
       - global_llm_config.yaml
