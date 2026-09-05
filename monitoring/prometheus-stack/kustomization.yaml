@@ -53,6 +53,13 @@ configMapGenerator:
       labels:
         grafana_dashboard: "1"
         app.kubernetes.io/name: grafana-dashboards
+  - name: gaming-pc-dashboard
+    files:
+      - dashboards/gaming-pc.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
   - name: shed-solar-dashboard
     files:
       - dashboards/shed-solar.json

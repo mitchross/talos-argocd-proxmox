@@ -1,655 +1,1187 @@
 # YAML-mode dashboard, wired via lovelace.dashboards.homelab-power in configuration.yaml.
 # Cost = the all-in TOU rate from sensor.current_electricity_rate; long-term trends come from HA LTS.
+# Layout: `sections` views, one question per section, most important top-left. The built-in
+# Energy dashboard is the per-day ledger; this page is "what is it costing me, live".
 title: Homelab Power
 views:
+  # ───────────────────────── Overview: the money question ─────────────────────────
   - title: Overview
     icon: mdi:server-network
     path: overview
-    cards:
-      - type: markdown
-        content: |
-          # Homelab Power & Cost
-          Every box sits behind a Tapo P115 plug. **Homelab** is the five always-on
-          servers, **Office** is the Gaming PC and the MacBook, **Combined** is both.
-          Cost uses the **all-in marginal rate** (energy + delivery riders + tax),
-          which varies by season and peak/off-peak window.
-
-          The **HP SFF** plug feeds two hosts (HP 8500 + Optiplex 8500), so its draw
-          cannot be split. Homelab switches are locked read-only by the
-          `Homelab plug power-off lockout` automation; the office plugs are not.
-
-          The **Shed Lab** plug (HP micro in the shed) runs on solar: watts and kWh are
-          tracked, but it has no cost and stays out of the grid groups above.
-
-      - type: entities
-        title: Rate
-        entities:
-          - entity: sensor.current_electricity_rate
-            name: Effective rate
-          - entity: sensor.electricity_tariff_period
-            name: Tariff window
-          - entity: sensor.homelab_cost_rate
-            name: Homelab burn rate (USD/h)
-          - entity: sensor.office_cost_rate
-            name: Office burn rate (USD/h)
-          - type: section
-            label: Inputs (temporary — git is source of truth)
-          - entity: input_number.rate_summer_onpeak
-            name: Summer on-peak
-          - entity: input_number.rate_summer_offpeak
-            name: Summer off-peak
-          - entity: input_number.rate_nonsummer
-            name: Non-summer
-          - entity: input_number.rate_delivery_riders
-            name: Delivery riders
-          - entity: input_number.rate_sales_tax_pct
-            name: Sales tax
-
-      - type: entities
-        title: House (Consumers Energy)
-        entities:
-          - entity: sensor.consumers_energy_kwh_yesterday
-            name: House yesterday
-          - entity: sensor.homelab_total_energy_yesterday
-            name: Homelab yesterday
-          - entity: sensor.homelab_share_of_house
-            name: Homelab share of house
-          - entity: sensor.combined_share_of_house
-            name: Homelab + office share of house
-          - entity: sensor.consumers_energy_cost_yesterday
-            name: CE cost yesterday
-          - entity: sensor.consumers_energy_effective_rate
-            name: CE effective rate
-          - entity: sensor.current_electricity_rate
-            name: Modelled rate now
-          - type: section
-            label: Month to date and last month
-          - entity: sensor.consumers_energy_kwh_month
-            name: House this month
-          - entity: sensor.consumers_energy_cost_month
-            name: CE cost this month
-          - entity: sensor.consumers_energy_kwh_last_month
-            name: House last month
-          - entity: sensor.consumers_energy_cost_last_month
-            name: CE cost last month
-          - entity: sensor.consumers_energy_last_reading
-            name: Last CE reading
-
-      - type: statistics-graph
-        title: House vs homelab by day (30d)
-        chart_type: bar
-        period: day
-        days_to_show: 30
-        stat_types:
-          - change
-        entities:
-          - consumers_energy:grid_kwh
-          - sensor.homelab_total_energy
-          - sensor.office_total_energy
-
-      - type: glance
-        title: Live draw
-        state_color: false
-        columns: 4
-        entities:
-          - entity: sensor.homelab_total_power
-            name: HOMELAB
-          - entity: sensor.office_total_power
-            name: OFFICE
-          - entity: sensor.combined_total_power
-            name: COMBINED
-          - entity: sensor.threadripper_current_consumption
-            name: Threadripper Host
-          - entity: sensor.nas_psu_current_consumption
-            name: NAS Drive PSU
-          - entity: sensor.truenas_current_consumption
-            name: TrueNAS (DL360)
-          - entity: sensor.hp_sff_current_consumption
-            name: HP SFF + Optiplex
-          - entity: sensor.hp_elite_current_consumption
-            name: HP Elite Mini G9
-          - entity: sensor.gaming_pc_current_consumption
-            name: Gaming PC
-          - entity: sensor.macbook_current_consumption
-            name: MacBook + Monitor
-          - entity: sensor.shed_lab_current_consumption
-            name: Shed Lab (solar)
-
-      - type: glance
-        title: Homelab cost so far
-        show_state: true
-        columns: 4
-        entities:
-          - entity: sensor.homelab_cost_daily
-            name: Today
-          - entity: sensor.homelab_cost_weekly
-            name: This Week
-          - entity: sensor.homelab_cost_monthly
-            name: This Month
-          - entity: sensor.homelab_cost_yearly
-            name: This Year
-
-      - type: glance
-        title: Office cost so far
-        show_state: true
-        columns: 4
-        entities:
-          - entity: sensor.office_cost_daily
-            name: Today
-          - entity: sensor.office_cost_weekly
-            name: This Week
-          - entity: sensor.office_cost_monthly
-            name: This Month
-          - entity: sensor.office_cost_yearly
-            name: This Year
-
-      - type: glance
-        title: Combined cost so far
-        show_state: true
-        columns: 4
-        entities:
-          - entity: sensor.combined_cost_daily
-            name: Today
-          - entity: sensor.combined_cost_weekly
-            name: This Week
-          - entity: sensor.combined_cost_monthly
-            name: This Month
-          - entity: sensor.combined_cost_yearly
-            name: This Year
-
-      - type: glance
-        title: Shed Lab energy (solar, no cost)
-        show_state: true
-        columns: 4
-        entities:
-          - entity: sensor.shed_lab_energy_daily
-            name: Today
-          - entity: sensor.shed_lab_energy_weekly
-            name: This Week
-          - entity: sensor.shed_lab_energy_monthly
-            name: This Month
-          - entity: sensor.shed_lab_energy_yearly
-            name: This Year
-
-      - type: glance
-        title: Last completed month (homelab)
-        show_state: true
-        columns: 3
-        entities:
-          - entity: sensor.homelab_cost_last_month
-            name: Cost last month
-          - entity: sensor.homelab_total_energy_last_month
-            name: Energy last month
-          - entity: sensor.homelab_cost_yesterday
-            name: Cost yesterday
-
-      - type: glance
-        title: Last completed month (office)
-        show_state: true
-        columns: 3
-        entities:
-          - entity: sensor.office_cost_last_month
-            name: Cost last month
-          - entity: sensor.office_total_energy_last_month
-            name: Energy last month
-          - entity: sensor.office_cost_yesterday
-            name: Cost yesterday
-
-      - type: entities
-        title: Cost last month — per device
-        entities:
-          - entity: sensor.threadripper_cost_last_month
-            name: Threadripper Host
-          - entity: sensor.nas_psu_cost_last_month
-            name: NAS Drive PSU
-          - entity: sensor.truenas_cost_last_month
-            name: TrueNAS (DL360)
-          - entity: sensor.hp_sff_cost_last_month
-            name: HP SFF + Optiplex
-          - entity: sensor.hp_elite_cost_last_month
-            name: HP Elite Mini G9
-          - entity: sensor.gaming_pc_cost_last_month
-            name: Gaming PC
-          - entity: sensor.macbook_cost_last_month
-            name: MacBook + Monitor
-
-      - type: entities
-        title: Energy last month — per device
-        entities:
-          - entity: sensor.threadripper_energy_last_month
-            name: Threadripper Host
-          - entity: sensor.nas_psu_energy_last_month
-            name: NAS Drive PSU
-          - entity: sensor.truenas_energy_last_month
-            name: TrueNAS (DL360)
-          - entity: sensor.hp_sff_energy_last_month
-            name: HP SFF + Optiplex
-          - entity: sensor.hp_elite_energy_last_month
-            name: HP Elite Mini G9
-          - entity: sensor.gaming_pc_energy_last_month
-            name: Gaming PC
-          - entity: sensor.macbook_energy_last_month
-            name: MacBook + Monitor
-          - entity: sensor.shed_lab_energy_last_month
-            name: Shed Lab (solar)
-
+    type: sections
+    max_columns: 4
+    dense_section_placement: true
+    sections:
       - type: grid
-        title: Share of combined draw
-        columns: 4
-        square: false
         cards:
-          - type: gauge
+          - type: heading
+            heading: Right now
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.electricity_tariff_period
+                name: Tariff
+              - type: entity
+                entity: sensor.current_electricity_rate
+                name: Rate
+          - type: tile
+            entity: sensor.homelab_total_power
+            name: Homelab
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.office_total_power
+            name: Office
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.shed_lab_current_consumption
+            name: Shed (solar)
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+          - type: tile
+            entity: sensor.combined_cost_rate
+            name: Burn rate
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+      - type: grid
+        cards:
+          - type: heading
+            heading: This month
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.homelab_cost_last_month
+                name: Homelab last month
+          - type: tile
+            entity: sensor.homelab_cost_monthly
+            name: Homelab
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.office_cost_monthly
+            name: Office
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.combined_cost_monthly
+            name: Both together
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.consumers_energy_cost_month
+            name: Whole house (CE)
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: Today
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.homelab_cost_yesterday
+                name: Homelab yesterday
+          - type: tile
+            entity: sensor.homelab_cost_daily
+            name: Homelab cost
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.office_cost_daily
+            name: Office cost
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.homelab_total_energy_daily
+            name: Homelab kWh
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.office_total_energy_daily
+            name: Office kWh
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+      - type: grid
+        cards:
+          - type: heading
+            heading: Share of the house
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.consumers_energy_last_reading
+                name: CE data through
+          - type: tile
+            entity: sensor.homelab_share_of_house
+            name: Homelab
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.combined_share_of_house
+            name: Homelab + office
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.consumers_energy_kwh_yesterday
+            name: House yesterday
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.homelab_total_energy_yesterday
+            name: Homelab yesterday
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: House vs homelab, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - consumers_energy:grid_kwh
+              - sensor.homelab_total_energy
+              - sensor.office_total_energy
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Draw, last 24 hours
+            heading_style: title
+          - type: history-graph
+            title: 
+            hours_to_show: 24
+            refresh_interval: 60
+            entities:
+              - entity: sensor.homelab_total_power
+                name: Homelab
+              - entity: sensor.office_total_power
+                name: Office
+              - entity: sensor.shed_lab_current_consumption
+                name: Shed (solar)
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Where the energy goes, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - sensor.threadripper_energy
+              - sensor.nas_psu_energy
+              - sensor.truenas_energy
+              - sensor.hp_sff_energy
+              - sensor.hp_elite_energy
+              - sensor.gaming_pc_energy
+              - sensor.macbook_energy
+              - sensor.shed_lab_energy
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Cost by month
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: month
+            days_to_show: 365
+            stat_types:
+              - change
+            entities:
+              - sensor.homelab_cost
+              - sensor.office_cost
+
+  # ───────────────────────── Devices: one section per plug ─────────────────────────
+  - title: Devices
+    icon: mdi:power-plug
+    path: devices
+    type: sections
+    max_columns: 4
+    dense_section_placement: true
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Threadripper Host
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.threadripper_current_consumption
+          - type: tile
+            entity: sensor.threadripper_current_consumption
+            name: Power now
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+            icon: mdi:server
+          - type: tile
             entity: sensor.threadripper_power_share
-            name: Threadripper Host
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
+            name: Share of draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.threadripper_cost_daily
+            name: Cost today
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.threadripper_cost_monthly
+            name: This month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.threadripper_cost_last_month
+            name: Last month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: NAS Drive PSU
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.nas_psu_current_consumption
+          - type: tile
+            entity: sensor.nas_psu_current_consumption
+            name: Power now
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+            icon: mdi:harddisk
+          - type: tile
             entity: sensor.nas_psu_power_share
-            name: NAS Drive PSU
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
+            name: Share of draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.nas_psu_cost_daily
+            name: Cost today
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.nas_psu_cost_monthly
+            name: This month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.nas_psu_cost_last_month
+            name: Last month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: TrueNAS (DL360)
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.truenas_current_consumption
+          - type: tile
+            entity: sensor.truenas_current_consumption
+            name: Power now
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+            icon: mdi:nas
+          - type: tile
             entity: sensor.truenas_power_share
-            name: TrueNAS (DL360)
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
+            name: Share of draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.truenas_cost_daily
+            name: Cost today
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.truenas_cost_monthly
+            name: This month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.truenas_cost_last_month
+            name: Last month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: HP SFF + Optiplex
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.hp_sff_current_consumption
+          - type: tile
+            entity: sensor.hp_sff_current_consumption
+            name: Power now
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+            icon: mdi:desktop-tower
+          - type: tile
             entity: sensor.hp_sff_power_share
-            name: HP SFF + Optiplex
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
+            name: Share of draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.hp_sff_cost_daily
+            name: Cost today
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.hp_sff_cost_monthly
+            name: This month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.hp_sff_cost_last_month
+            name: Last month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: HP Elite Mini G9
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.hp_elite_current_consumption
+          - type: tile
+            entity: sensor.hp_elite_current_consumption
+            name: Power now
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+            icon: mdi:desktop-classic
+          - type: tile
             entity: sensor.hp_elite_power_share
-            name: HP Elite Mini G9
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
+            name: Share of draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.hp_elite_cost_daily
+            name: Cost today
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.hp_elite_cost_monthly
+            name: This month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.hp_elite_cost_last_month
+            name: Last month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: Gaming PC
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.gaming_pc_current_consumption
+          - type: tile
+            entity: sensor.gaming_pc_current_consumption
+            name: Power now
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+            icon: mdi:controller
+          - type: tile
             entity: sensor.gaming_pc_power_share
-            name: Gaming PC
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
+            name: Share of draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.gaming_pc_cost_daily
+            name: Cost today
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.gaming_pc_cost_monthly
+            name: This month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.gaming_pc_cost_last_month
+            name: Last month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: MacBook + Monitor
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.macbook_current_consumption
+          - type: tile
+            entity: sensor.macbook_current_consumption
+            name: Power now
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+            icon: mdi:laptop
+          - type: tile
             entity: sensor.macbook_power_share
-            name: MacBook + Monitor
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-
-      - type: entities
-        title: Cost today
-        entities:
-          - entity: sensor.threadripper_cost_daily
-            name: Threadripper Host
-          - entity: sensor.nas_psu_cost_daily
-            name: NAS Drive PSU
-          - entity: sensor.truenas_cost_daily
-            name: TrueNAS (DL360)
-          - entity: sensor.hp_sff_cost_daily
-            name: HP SFF + Optiplex
-          - entity: sensor.hp_elite_cost_daily
-            name: HP Elite Mini G9
-          - entity: sensor.gaming_pc_cost_daily
-            name: Gaming PC
-          - entity: sensor.macbook_cost_daily
-            name: MacBook + Monitor
-
-      - type: entities
-        title: Cost this month
-        entities:
-          - entity: sensor.threadripper_cost_monthly
-            name: Threadripper Host
-          - entity: sensor.nas_psu_cost_monthly
-            name: NAS Drive PSU
-          - entity: sensor.truenas_cost_monthly
-            name: TrueNAS (DL360)
-          - entity: sensor.hp_sff_cost_monthly
-            name: HP SFF + Optiplex
-          - entity: sensor.hp_elite_cost_monthly
-            name: HP Elite Mini G9
-          - entity: sensor.gaming_pc_cost_monthly
-            name: Gaming PC
-          - entity: sensor.macbook_cost_monthly
-            name: MacBook + Monitor
-
-      - type: history-graph
-        title: Power draw (24h)
-        hours_to_show: 24
-        refresh_interval: 30
-        entities:
-          - entity: sensor.threadripper_current_consumption
-            name: Threadripper Host
-          - entity: sensor.nas_psu_current_consumption
-            name: NAS Drive PSU
-          - entity: sensor.truenas_current_consumption
-            name: TrueNAS (DL360)
-          - entity: sensor.hp_sff_current_consumption
-            name: HP SFF + Optiplex
-          - entity: sensor.hp_elite_current_consumption
-            name: HP Elite Mini G9
-          - entity: sensor.gaming_pc_current_consumption
-            name: Gaming PC
-          - entity: sensor.macbook_current_consumption
-            name: MacBook + Monitor
-          - entity: sensor.shed_lab_current_consumption
-            name: Shed Lab (solar)
-          - entity: sensor.homelab_total_power
-            name: HOMELAB
-          - entity: sensor.office_total_power
-            name: OFFICE
-
-      - type: statistics-graph
-        title: Energy by day (30d)
-        chart_type: bar
-        period: day
-        days_to_show: 30
-        stat_types:
-          - change
-        entities:
-          - sensor.threadripper_energy
-          - sensor.nas_psu_energy
-          - sensor.truenas_energy
-          - sensor.hp_sff_energy
-          - sensor.hp_elite_energy
-          - sensor.gaming_pc_energy
-          - sensor.macbook_energy
-          - sensor.shed_lab_energy
-
-      - type: statistics-graph
-        title: Cost by month (12 months)
-        chart_type: bar
-        period: month
-        days_to_show: 365
-        stat_types:
-          - change
-        entities:
-          - sensor.threadripper_cost
-          - sensor.nas_psu_cost
-          - sensor.truenas_cost
-          - sensor.hp_sff_cost
-          - sensor.hp_elite_cost
-          - sensor.gaming_pc_cost
-          - sensor.macbook_cost
-
-      - type: statistics-graph
-        title: Homelab vs office cost by month
-        chart_type: bar
-        period: month
-        days_to_show: 365
-        stat_types:
-          - change
-        entities:
-          - sensor.homelab_cost
-          - sensor.office_cost
-
-      - type: entities
-        title: Per-device detail
-        entities:
-          - type: section
-            label: Threadripper Host
-          - entity: sensor.threadripper_current_consumption
-            name: Power now
-          - entity: sensor.threadripper_power_share
-            name: Share of combined
-          - entity: sensor.threadripper_energy_daily
-            name: Energy today
-          - entity: sensor.threadripper_cost_daily
+            name: Share of draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.macbook_cost_daily
             name: Cost today
-          - entity: sensor.threadripper_cost_monthly
-            name: Cost this month
-          - entity: sensor.threadripper_voltage
-            name: Voltage
-          - entity: sensor.threadripper_current
-            name: Current
-          - type: section
-            label: NAS Drive PSU
-          - entity: sensor.nas_psu_current_consumption
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.macbook_cost_monthly
+            name: This month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.macbook_cost_last_month
+            name: Last month
+            grid_options:
+              columns: 4
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: Shed Lab (solar)
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.shed_lab_current_consumption
+          - type: tile
+            entity: sensor.shed_lab_current_consumption
             name: Power now
-          - entity: sensor.nas_psu_power_share
-            name: Share of combined
-          - entity: sensor.nas_psu_energy_daily
-            name: Energy today
-          - entity: sensor.nas_psu_cost_daily
-            name: Cost today
-          - entity: sensor.nas_psu_cost_monthly
-            name: Cost this month
-          - entity: sensor.nas_psu_voltage
-            name: Voltage
-          - entity: sensor.nas_psu_current
-            name: Current
-          - type: section
-            label: TrueNAS (DL360)
-          - entity: sensor.truenas_current_consumption
-            name: Power now
-          - entity: sensor.truenas_power_share
-            name: Share of combined
-          - entity: sensor.truenas_energy_daily
-            name: Energy today
-          - entity: sensor.truenas_cost_daily
-            name: Cost today
-          - entity: sensor.truenas_cost_monthly
-            name: Cost this month
-          - entity: sensor.truenas_voltage
-            name: Voltage
-          - entity: sensor.truenas_current
-            name: Current
-          - type: section
-            label: HP SFF + Optiplex
-          - entity: sensor.hp_sff_current_consumption
-            name: Power now
-          - entity: sensor.hp_sff_power_share
-            name: Share of combined
-          - entity: sensor.hp_sff_energy_daily
-            name: Energy today
-          - entity: sensor.hp_sff_cost_daily
-            name: Cost today
-          - entity: sensor.hp_sff_cost_monthly
-            name: Cost this month
-          - entity: sensor.hp_sff_voltage
-            name: Voltage
-          - entity: sensor.hp_sff_current
-            name: Current
-          - type: section
-            label: HP Elite Mini G9
-          - entity: sensor.hp_elite_current_consumption
-            name: Power now
-          - entity: sensor.hp_elite_power_share
-            name: Share of combined
-          - entity: sensor.hp_elite_energy_daily
-            name: Energy today
-          - entity: sensor.hp_elite_cost_daily
-            name: Cost today
-          - entity: sensor.hp_elite_cost_monthly
-            name: Cost this month
-          - entity: sensor.hp_elite_voltage
-            name: Voltage
-          - entity: sensor.hp_elite_current
-            name: Current
-          - type: section
-            label: Gaming PC
-          - entity: sensor.gaming_pc_current_consumption
-            name: Power now
-          - entity: sensor.gaming_pc_power_share
-            name: Share of combined
-          - entity: sensor.gaming_pc_energy_daily
-            name: Energy today
-          - entity: sensor.gaming_pc_cost_daily
-            name: Cost today
-          - entity: sensor.gaming_pc_cost_monthly
-            name: Cost this month
-          - entity: sensor.gaming_pc_voltage
-            name: Voltage
-          - entity: sensor.gaming_pc_current
-            name: Current
-          - type: section
-            label: MacBook + Monitor
-          - entity: sensor.macbook_current_consumption
-            name: Power now
-          - entity: sensor.macbook_power_share
-            name: Share of combined
-          - entity: sensor.macbook_energy_daily
-            name: Energy today
-          - entity: sensor.macbook_cost_daily
-            name: Cost today
-          - entity: sensor.macbook_cost_monthly
-            name: Cost this month
-          - entity: sensor.macbook_voltage
-            name: Voltage
-          - entity: sensor.macbook_current
-            name: Current
-          - type: section
-            label: Shed Lab (solar)
-          - entity: sensor.shed_lab_current_consumption
-            name: Power now
-          - entity: sensor.shed_lab_energy_daily
-            name: Energy today
-          - entity: sensor.shed_lab_energy_monthly
-            name: Energy this month
-          - entity: sensor.shed_lab_voltage
-            name: Voltage
-          - entity: sensor.shed_lab_current
-            name: Current
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+            icon: mdi:solar-power
+          - type: tile
+            entity: sensor.shed_lab_energy_daily
+            name: kWh today
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+          - type: tile
+            entity: sensor.shed_lab_energy_monthly
+            name: kWh this month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+          - type: tile
+            entity: sensor.shed_lab_energy_last_month
+            name: kWh last month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Notes
+            heading_style: subtitle
+          - type: markdown
+            content: |
+              **HP SFF + Optiplex** share one plug, so their draw cannot be split. Homelab switches are
+              locked on by the *Homelab plug power-off lockout* automation; the office plugs are not.
+              **Shed Lab** runs on solar: kWh only, no cost, not in any group.
 
+  # ───────────────────────── House: what Consumers Energy says ─────────────────────────
+  - title: House
+    icon: mdi:home-lightning-bolt
+    path: house
+    type: sections
+    max_columns: 4
+    dense_section_placement: true
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Consumers Energy
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.consumers_energy_last_reading
+                name: Data through
+          - type: tile
+            entity: sensor.consumers_energy_kwh_yesterday
+            name: kWh yesterday
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.consumers_energy_cost_yesterday
+            name: Cost yesterday
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.consumers_energy_kwh_month
+            name: kWh this month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.consumers_energy_cost_month
+            name: Cost this month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.consumers_energy_kwh_last_month
+            name: kWh last month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.consumers_energy_cost_last_month
+            name: Cost last month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: Is the model right?
+            heading_style: title
+          - type: tile
+            entity: sensor.consumers_energy_effective_rate
+            name: CE charged (per kWh)
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.current_electricity_rate
+            name: Model says
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.homelab_share_of_house
+            name: Homelab share
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.combined_share_of_house
+            name: Homelab + office
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: House vs homelab, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 60
+            stat_types:
+              - change
+            entities:
+              - consumers_energy:grid_kwh
+              - sensor.homelab_total_energy
+              - sensor.office_total_energy
+      - type: grid
+        cards:
+          - type: heading
+            heading: How this works
+            heading_style: subtitle
+          - type: markdown
+            content: |
+              A job logs into the Consumers Energy portal every afternoon and pulls the daily usage CSV.
+              Consumers posts each day late the next morning, so **yesterday** is the newest number and
+              today is always blank on the Energy dashboard. Cost is what CE actually billed for the day.
+
+  # ───────────────────────── Solar: the shed ─────────────────────────
   - title: Solar
     icon: mdi:solar-power-variant
     path: solar
-    cards:
-      - type: markdown
-        content: |
-          # Shed solar
-          Panels → **EPEVER XTRA3210N** MPPT → 12.8 V LiFePO4 bank (2× 100 Ah) →
-          **LOAD** terminal → Anker SOLIX → the shed **HP micro** (Tapo `Shed Lab`).
-          Numbers come from the rpi4's `epsolar` service, which owns the serial link
-          and the guarded LOAD automation. Nothing here costs anything on the bill.
-
-      - type: glance
-        title: Right now
-        columns: 4
-        entities:
-          - entity: sensor.solar_pv_power
+    type: sections
+    max_columns: 4
+    dense_section_placement: true
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Right now
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.solar_charging_state
+                name: Charging
+              - type: entity
+                entity: binary_sensor.solar_load_on
+                name: LOAD
+          - type: tile
+            entity: sensor.solar_pv_power
             name: Watts in (PV)
-          - entity: sensor.solar_battery_power
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+          - type: tile
+            entity: sensor.solar_battery_power
             name: Battery (+charge)
-          - entity: sensor.solar_load_power
+            grid_options:
+              columns: 6
+              rows: 1
+            color: teal
+          - type: tile
+            entity: sensor.solar_load_power
             name: LOAD → Anker
-          - entity: sensor.shed_lab_current_consumption
+            grid_options:
+              columns: 6
+              rows: 1
+            color: orange
+          - type: tile
+            entity: sensor.shed_lab_current_consumption
             name: HP micro (Tapo)
-          - entity: sensor.solar_battery_soc
-            name: SOC (local)
-          - entity: sensor.solar_battery_voltage
-            name: Battery V
-          - entity: sensor.solar_charging_state
-            name: Charging
-          - entity: binary_sensor.solar_load_on
-            name: LOAD
-
-      - type: gauge
-        entity: sensor.solar_battery_soc
-        name: Battery state of charge
-        min: 0
-        max: 100
-        needle: true
-        severity:
-          red: 0
-          yellow: 33
-          green: 50
-
-      - type: entities
-        title: Energy (controller counters)
-        entities:
-          - entity: sensor.solar_generated_today
-            name: Generated today
-          - entity: sensor.solar_generated_month
-            name: Generated this month
-          - entity: sensor.solar_generated_year
-            name: Generated this year
-          - entity: sensor.solar_generated_total
-            name: Generated lifetime
-          - type: section
-            label: Consumed at the LOAD terminal
-          - entity: sensor.solar_consumed_today
-            name: Consumed today
-          - entity: sensor.solar_consumed_month
-            name: Consumed this month
-          - entity: sensor.solar_consumed_total
-            name: Consumed lifetime
-          - type: section
-            label: HP micro (Tapo Shed Lab)
-          - entity: sensor.shed_lab_energy_daily
-            name: Today
-          - entity: sensor.shed_lab_energy_monthly
-            name: This month
-
-      - type: history-graph
-        title: Power flow (24h)
-        hours_to_show: 24
-        refresh_interval: 30
-        entities:
-          - entity: sensor.solar_pv_power
-            name: PV in
-          - entity: sensor.solar_load_power
-            name: LOAD out
-          - entity: sensor.solar_battery_power
-            name: Battery net
-          - entity: sensor.shed_lab_current_consumption
-            name: HP micro
-
-      - type: history-graph
-        title: Battery (24h)
-        hours_to_show: 24
-        refresh_interval: 60
-        entities:
-          - entity: sensor.solar_battery_voltage
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+      - type: grid
+        cards:
+          - type: heading
+            heading: Battery
+            heading_style: title
+          - type: gauge
+            entity: sensor.solar_battery_soc
+            name: State of charge
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              red: 0
+              yellow: 33
+              green: 50
+            grid_options:
+              columns: 6
+              rows: 3
+          - type: tile
+            entity: sensor.solar_battery_voltage
             name: Voltage
-          - entity: sensor.solar_battery_soc
-            name: SOC local
-          - entity: sensor.solar_battery_soc_controller
-            name: SOC controller
-
-      - type: statistics-graph
-        title: Generated vs consumed by day (30d)
-        chart_type: bar
-        period: day
-        days_to_show: 30
-        stat_types:
-          - change
-        entities:
-          - sensor.solar_generated_total
-          - sensor.solar_consumed_total
-          - sensor.shed_lab_energy
-
-      - type: entities
-        title: Automation and health
-        entities:
-          - entity: sensor.solar_automation_state
-            name: State
-          - entity: sensor.solar_automation_reason
-            name: Reason
-          - entity: binary_sensor.solar_automation_armed
-            name: Armed (live writes)
-          - entity: binary_sensor.solar_controller_online
-            name: Controller online
-          - entity: binary_sensor.solar_fault
-            name: Controller fault
-          - entity: sensor.solar_battery_energy_remaining
+            grid_options:
+              columns: 6
+              rows: 1
+            color: teal
+          - type: tile
+            entity: sensor.solar_battery_energy_remaining
             name: Usable energy left
-          - entity: sensor.solar_runtime_remaining
+            grid_options:
+              columns: 6
+              rows: 1
+            color: teal
+          - type: tile
+            entity: sensor.solar_runtime_remaining
             name: Runtime left
-          - entity: sensor.solar_battery_temperature
+            grid_options:
+              columns: 6
+              rows: 1
+            color: teal
+          - type: tile
+            entity: sensor.solar_battery_temperature
             name: Battery temp
-          - entity: sensor.solar_controller_temperature
-            name: Controller temp
-          - entity: sensor.solar_last_update
-            name: Last reading
+            grid_options:
+              columns: 6
+              rows: 1
+            color: teal
+      - type: grid
+        cards:
+          - type: heading
+            heading: Energy (controller counters)
+            heading_style: title
+          - type: tile
+            entity: sensor.solar_generated_today
+            name: Generated today
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+          - type: tile
+            entity: sensor.solar_consumed_today
+            name: Used at LOAD today
+            grid_options:
+              columns: 6
+              rows: 1
+            color: orange
+          - type: tile
+            entity: sensor.solar_generated_month
+            name: Generated this month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+          - type: tile
+            entity: sensor.solar_consumed_month
+            name: Used this month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: orange
+          - type: tile
+            entity: sensor.solar_generated_total
+            name: Generated lifetime
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+          - type: tile
+            entity: sensor.shed_lab_energy_monthly
+            name: HP micro this month
+            grid_options:
+              columns: 6
+              rows: 1
+            color: green
+      - type: grid
+        cards:
+          - type: heading
+            heading: Automation and health
+            heading_style: title
+            badges:
+              - type: entity
+                entity: binary_sensor.solar_automation_armed
+                name: Armed
+              - type: entity
+                entity: binary_sensor.solar_controller_online
+                name: Controller
+          - type: entities
+            entities:
+              - entity: sensor.solar_automation_state
+                name: State
+              - entity: sensor.solar_automation_reason
+                name: Reason
+              - entity: binary_sensor.solar_fault
+                name: Controller fault
+              - entity: sensor.solar_controller_temperature
+                name: Controller temp
+              - entity: sensor.solar_last_update
+                name: Last reading
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Power flow, last 24 hours
+            heading_style: title
+          - type: history-graph
+            title: 
+            hours_to_show: 24
+            refresh_interval: 30
+            entities:
+              - entity: sensor.solar_pv_power
+                name: PV in
+              - entity: sensor.solar_load_power
+                name: LOAD out
+              - entity: sensor.solar_battery_power
+                name: Battery net
+              - entity: sensor.shed_lab_current_consumption
+                name: HP micro
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Battery, last 24 hours
+            heading_style: title
+          - type: history-graph
+            title: 
+            hours_to_show: 24
+            refresh_interval: 60
+            entities:
+              - entity: sensor.solar_battery_voltage
+                name: Voltage
+              - entity: sensor.solar_battery_soc
+                name: SOC local
+              - entity: sensor.solar_battery_soc_controller
+                name: SOC controller
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Generated vs used, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - sensor.solar_generated_total
+              - sensor.solar_consumed_total
+              - sensor.shed_lab_energy
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: The chain
+            heading_style: subtitle
+          - type: markdown
+            content: |
+              Panels → **EPEVER XTRA3210N** → 12.8 V LiFePO4 bank (2 × 100 Ah) → **LOAD** → Anker SOLIX →
+              the shed HP micro. The rpi4 owns the serial link and the guarded LOAD automation. Nothing
+              here costs anything on the bill.
+
+  # ───────────────────────── Gaming: sessions on the Gaming PC ─────────────────────────
+  - title: Gaming
+    icon: mdi:controller
+    path: gaming
+    type: sections
+    max_columns: 4
+    dense_section_placement: true
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Right now
+            heading_style: title
+            badges:
+              - type: entity
+                entity: binary_sensor.gaming_pc_gaming
+                name: Session
+          - type: tile
+            entity: sensor.gaming_pc_current_consumption
+            name: Draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.gaming_pc_gaming_cost_rate
+            name: Burn rate
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.gaming_pc_sessions_today
+            name: Sessions today
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.gaming_pc_cost_per_gaming_hour
+            name: Cost per hour gamed
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+      - type: grid
+        cards:
+          - type: heading
+            heading: Today
+            heading_style: title
+          - type: tile
+            entity: sensor.gaming_pc_gaming_hours_daily
+            name: Hours gamed
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.gaming_pc_gaming_energy_daily
+            name: kWh gaming
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.gaming_pc_gaming_cost_daily
+            name: Cost gaming
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.gaming_pc_idle_cost_daily
+            name: Idle tax
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+      - type: grid
+        cards:
+          - type: heading
+            heading: This month
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.gaming_pc_gaming_hours_last_month
+                name: Hours last month
+              - type: entity
+                entity: sensor.gaming_pc_gaming_cost_last_month
+                name: Cost last month
+          - type: tile
+            entity: sensor.gaming_pc_gaming_hours_monthly
+            name: Hours gamed
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.gaming_pc_gaming_energy_monthly
+            name: kWh gaming
+            grid_options:
+              columns: 6
+              rows: 1
+            color: purple
+          - type: tile
+            entity: sensor.gaming_pc_gaming_cost_monthly
+            name: Cost gaming
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.gaming_pc_idle_cost_monthly
+            name: Idle tax
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Draw and sessions, last 24 hours
+            heading_style: title
+          - type: history-graph
+            title: 
+            hours_to_show: 24
+            refresh_interval: 30
+            entities:
+              - entity: sensor.gaming_pc_current_consumption
+                name: Gaming PC
+              - entity: binary_sensor.gaming_pc_gaming
+                name: Session
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Gaming vs whole PC, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - sensor.gaming_pc_gaming_energy
+              - sensor.gaming_pc_energy
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Hours gamed, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - sensor.gaming_pc_gaming_hours
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: What counts as gaming
+            heading_style: subtitle
+          - type: markdown
+            content: |
+              A **session** is the plug drawing more than the threshold (350 W; idle is ~200 W, gaming
+              450–600 W) until five quiet minutes pass. **Idle tax** is everything the PC costs outside
+              sessions: sitting on at 200 W is about 1.4 kWh a day. Tune the threshold under Settings.
+
+  # ───────────────────────── Settings: rates and thresholds ─────────────────────────
+  - title: Settings
+    icon: mdi:tune
+    path: settings
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Electricity rate
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.current_electricity_rate
+                name: All-in now
+          - type: entities
+            entities:
+              - entity: input_number.rate_summer_onpeak
+                name: Summer on-peak
+              - entity: input_number.rate_summer_offpeak
+                name: Summer off-peak
+              - entity: input_number.rate_nonsummer
+                name: Non-summer
+              - entity: input_number.rate_delivery_riders
+                name: Delivery riders
+              - entity: input_number.rate_sales_tax_pct
+                name: Sales tax
+              - entity: sensor.electricity_tariff_period
+                name: Tariff window now
+      - type: grid
+        cards:
+          - type: heading
+            heading: Gaming sessions
+            heading_style: title
+          - type: entities
+            entities:
+              - entity: input_number.gaming_pc_active_threshold_w
+                name: Session threshold
+              - entity: binary_sensor.gaming_pc_gaming
+                name: Session now
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Good to know
+            heading_style: subtitle
+          - type: markdown
+            content: |
+              **Git is the source of truth.** These sliders reset on restart; a permanent change goes in
+              `configuration.yaml`. All-in rate = (energy + delivery riders) × (1 + tax); summer is
+              June–August with a 2–7 pm weekday on-peak window.
+
+              **Lockout.** Homelab plugs are switched back on within seconds if turned off. To power-cycle
+              one on purpose, disable the *Homelab plug power-off lockout* automation first.
+
+              **Two dashboards.** The built-in **Energy** page is the per-day ledger (grid from Consumers,
+              solar, per-device). This one is the live view with cost.

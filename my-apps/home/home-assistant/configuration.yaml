@@ -56,6 +56,7 @@ prometheus:
       - sensor.shed_lab_*
       - sensor.solar_*
       - binary_sensor.solar_*
+      - binary_sensor.gaming_pc_*
       - sensor.homelab_*
       - sensor.office_*
       - sensor.combined_*
@@ -289,6 +290,16 @@ input_number:
     unit_of_measurement: "%"
     icon: mdi:percent
     initial: 4.0
+  # The Gaming PC idles ~200 W and games at 450-600 W; above this counts as a session.
+  gaming_pc_active_threshold_w:
+    name: "Gaming PC — Active Threshold"
+    min: 200
+    max: 800
+    step: 10
+    mode: box
+    unit_of_measurement: "W"
+    icon: mdi:controller
+    initial: 350
 
 # Cost integrates a live USD/h cost-rate (power * current TOU rate), not a fixed tariff.
 # Every integral starts at 0 when first created; totals only fill in as data accumulates.
@@ -424,6 +435,37 @@ sensor:
     unit_time: h
     round: 4
     method: left
+  # --- gaming sessions: only the watts drawn while binary_sensor.gaming_pc_gaming is on ---
+  - platform: integration
+    source: sensor.gaming_pc_gaming_power
+    name: "Gaming PC Gaming Energy"
+    unique_id: gaming_pc_gaming_energy
+    unit_prefix: k
+    round: 3
+    method: left
+  - platform: integration
+    source: sensor.gaming_pc_gaming_cost_rate
+    name: "Gaming PC Gaming Cost"
+    unique_id: gaming_pc_gaming_cost
+    unit_time: h
+    round: 4
+    method: left
+  # 1 while gaming, else 0, integrated over hours = hours gamed. Survives the recorder purge.
+  - platform: integration
+    source: sensor.gaming_pc_gaming_flag
+    name: "Gaming PC Gaming Hours"
+    unique_id: gaming_pc_gaming_hours
+    unit_time: h
+    round: 3
+    method: left
+  - platform: history_stats
+    name: "Gaming PC Sessions Today"
+    unique_id: gaming_pc_sessions_today
+    entity_id: binary_sensor.gaming_pc_gaming
+    state: "on"
+    type: count
+    start: "{{ today_at() }}"
+    end: "{{ now() }}"
   - platform: integration
     source: sensor.homelab_cost_rate
     name: "Homelab Cost"
@@ -739,6 +781,55 @@ utility_meter:
     name: "Gaming PC Cost Yearly"
     source: sensor.gaming_pc_cost
     cycle: yearly
+  # Gaming sessions (energy / cost / hours while gaming)
+  gaming_pc_gaming_energy_daily:
+    name: "Gaming PC Gaming Energy Daily"
+    source: sensor.gaming_pc_gaming_energy
+    cycle: daily
+  gaming_pc_gaming_energy_weekly:
+    name: "Gaming PC Gaming Energy Weekly"
+    source: sensor.gaming_pc_gaming_energy
+    cycle: weekly
+  gaming_pc_gaming_energy_monthly:
+    name: "Gaming PC Gaming Energy Monthly"
+    source: sensor.gaming_pc_gaming_energy
+    cycle: monthly
+  gaming_pc_gaming_energy_yearly:
+    name: "Gaming PC Gaming Energy Yearly"
+    source: sensor.gaming_pc_gaming_energy
+    cycle: yearly
+  gaming_pc_gaming_cost_daily:
+    name: "Gaming PC Gaming Cost Daily"
+    source: sensor.gaming_pc_gaming_cost
+    cycle: daily
+  gaming_pc_gaming_cost_weekly:
+    name: "Gaming PC Gaming Cost Weekly"
+    source: sensor.gaming_pc_gaming_cost
+    cycle: weekly
+  gaming_pc_gaming_cost_monthly:
+    name: "Gaming PC Gaming Cost Monthly"
+    source: sensor.gaming_pc_gaming_cost
+    cycle: monthly
+  gaming_pc_gaming_cost_yearly:
+    name: "Gaming PC Gaming Cost Yearly"
+    source: sensor.gaming_pc_gaming_cost
+    cycle: yearly
+  gaming_pc_gaming_hours_daily:
+    name: "Gaming PC Gaming Hours Daily"
+    source: sensor.gaming_pc_gaming_hours
+    cycle: daily
+  gaming_pc_gaming_hours_weekly:
+    name: "Gaming PC Gaming Hours Weekly"
+    source: sensor.gaming_pc_gaming_hours
+    cycle: weekly
+  gaming_pc_gaming_hours_monthly:
+    name: "Gaming PC Gaming Hours Monthly"
+    source: sensor.gaming_pc_gaming_hours
+    cycle: monthly
+  gaming_pc_gaming_hours_yearly:
+    name: "Gaming PC Gaming Hours Yearly"
+    source: sensor.gaming_pc_gaming_hours
+    cycle: yearly
   # MacBook + Monitor
   macbook_cost_daily:
     name: "MacBook Cost Daily"
@@ -810,7 +901,85 @@ utility_meter:
 
 # Template sensors: live all-in rate, tariff window, group totals, per-device cost-rate and share.
 template:
+  # Gaming = plug draw above the threshold; 5 min of quiet ends the session (menus, loading).
+  - binary_sensor:
+      - name: "Gaming PC Gaming"
+        unique_id: gaming_pc_gaming
+        icon: mdi:controller
+        delay_off: "00:05:00"
+        state: >
+          {{ states('sensor.gaming_pc_current_consumption') | float(0)
+             > states('input_number.gaming_pc_active_threshold_w') | float(350) }}
   - sensor:
+      - name: "Gaming PC Gaming Flag"
+        unique_id: gaming_pc_gaming_flag
+        state_class: measurement
+        icon: mdi:controller
+        state: "{{ 1 if is_state('binary_sensor.gaming_pc_gaming', 'on') else 0 }}"
+
+      - name: "Gaming PC Gaming Power"
+        unique_id: gaming_pc_gaming_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ states('sensor.gaming_pc_current_consumption') | float(0)
+             if is_state('binary_sensor.gaming_pc_gaming', 'on') else 0 }}
+
+      - name: "Gaming PC Gaming Cost Rate"
+        unique_id: gaming_pc_gaming_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        icon: mdi:cash-fast
+        state: >
+          {{ (states('sensor.gaming_pc_gaming_power') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
+
+      # Idle tax: what the PC costs when nobody is gaming (total minus gaming).
+      - name: "Gaming PC Idle Cost Daily"
+        unique_id: gaming_pc_idle_cost_daily
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:sleep
+        state: >
+          {{ (states('sensor.gaming_pc_cost_daily') | float(0)
+            - states('sensor.gaming_pc_gaming_cost_daily') | float(0)) | round(4) }}
+
+      - name: "Gaming PC Idle Cost Monthly"
+        unique_id: gaming_pc_idle_cost_monthly
+        unit_of_measurement: "USD"
+        state_class: total
+        icon: mdi:sleep
+        state: >
+          {{ (states('sensor.gaming_pc_cost_monthly') | float(0)
+            - states('sensor.gaming_pc_gaming_cost_monthly') | float(0)) | round(4) }}
+
+      - name: "Gaming PC Gaming Cost Last Month"
+        unique_id: gaming_pc_gaming_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.gaming_pc_gaming_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "Gaming PC Gaming Hours Last Month"
+        unique_id: gaming_pc_gaming_hours_last_month
+        unit_of_measurement: "h"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.gaming_pc_gaming_hours_monthly', 'last_period') | float(0) | round(2) }}
+
+      - name: "Gaming PC Cost Per Gaming Hour"
+        unique_id: gaming_pc_cost_per_gaming_hour
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        icon: mdi:cash-clock
+        availability: "{{ states('sensor.gaming_pc_gaming_hours_monthly') | float(0) > 0.25 }}"
+        state: >
+          {{ (states('sensor.gaming_pc_gaming_cost_monthly') | float(0)
+            / states('sensor.gaming_pc_gaming_hours_monthly') | float(1)) | round(3) }}
+
       # now()-based templates re-render every minute; float(<bill default>) keeps this right
       # before the input_number sliders are first touched.
       # Summer is June-August: September bills at the non-summer rate.
