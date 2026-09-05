@@ -1,175 +1,117 @@
 # Storage tiers
 
-The cluster has five storage tiers, **classified by what the hardware is** — not by
-which app uses them. Pick a class by the volume's access pattern.
+**Status:** current placement contract, checked against the September 5 audit.
+Historical experiments are summarized separately below. The
+[hardware and placement review](../../audits/2026-09-05-hardware-and-placement-review.md)
+contains proposed changes; they are not deployed by this document.
 
-| Class | Backing hardware | Character | Use for |
-|-------|------------------|-----------|---------|
-| `longhorn` (**default**) | Threadripper EDILOCA NVMe plus the Dell Talos system SSD | local RWO; Threadripper tier is **read-strong**, Dell is a small Wi-Fi-site failure domain | app state, caches, read-heavy volumes, big sequential-write DBs (ClickHouse, Prometheus TSDB, Loki) |
-| `longhorn-flash` | Proxmox 2× enterprise SATA SSD, PLP, mdadm RAID1, **thick** LVM | fast local flash, **write-strong** (PLP), RWO | anything fsync-heavy: Postgres/MySQL commits, WAL, Kafka, Redis AOF, message queues |
-| `longhorn-wired-ha` | two distinct nodes/zones carrying the Longhorn `wired-storage` node tag | local V1 RWO, two synchronous replicas, survives one eligible node/disk loss | availability-critical small databases/state, paired with kopiur for disaster recovery |
-| `truenas-nfs` | TrueNAS HDD (BigTank) | network bulk, **RWX** | shared volumes, rebuildable tile/grid caches |
-| `*-smb` / static NFS | TrueNAS HDD / ai-pool SSD | network SMB/NFS shares | media libraries, model weights, hand-browsable data |
+Choose storage by access pattern, durability and required recovery behavior.
+The class name alone does not describe the physical device or prove availability.
 
-**The two local tiers have opposite strengths** (measured — see below): the enterprise
-SATA wins durable writes ~12×; the EDILOCA NVMe wins reads ~2–3×. So they are two
-distinct classes, and you choose per volume:
+| Class | Current backing / selection | Appropriate use and limitation |
+|---|---|---|
+| `longhorn` (default) | One V1 replica on an eligible Longhorn disk. Live claims span Threadripper, SFF, Elite and Dell; the latter three use dedicated data disks, not their Talos boot filesystems. | Small app state and caches with an explicit one-copy availability trade-off. Kopiur protects enrolled state, but a backup does not provide immediate failover. |
+| `longhorn-flash` | One replica selected by disk tag `flash`; currently the Threadripper's 300 GB guest disk on two mirrored HPE SATA SSDs with PLP and thick LVM | Selected write-heavy state and noisy local I/O. The mirror survives one member disk loss; it does not survive loss of the Threadripper host. |
+| `longhorn-wired-ha` | Two replicas with hard node/zone/disk separation on Longhorn nodes tagged `wired-storage` | Selected state that needs a surviving live copy. Requires healthy replicas, a working control plane, eligible compute and the rest of the application's dependencies. |
+| `truenas-nfs` | TrueNAS BigTank, HDD-backed, RWX | Shared files and bulk data where NAS downtime is accepted. Measure small-file and synchronous-write workloads before moving them here. |
+| Static NFS / SMB classes | The specific NAS share named in each PV | Media, model files and shared data. Inspect the backing dataset: BigTank and the unmirrored AI SSD pool have different failure behavior. |
 
-- **fsync-sensitive → `longhorn-flash`.** Every commit is a durable write; that is where
-  the enterprise SSD's power-loss protection pays off.
-- **read-heavy or big-sequential-write → `longhorn` (default).** The NVMe reads far
-  faster, and sequential write on this host's X399 chipset SATA is only ~65–92 MB/s.
-- **shared (RWX) → NFS/SMB.** Neither local block tier can be RWX safely.
-- **availability-critical small state → `longhorn-wired-ha`.** It trades one extra synchronous
-  local-network write for a second live copy; kopiur remains the recoverable off-cluster copy.
-- **when in doubt → `longhorn` default.**
+`longhorn-kopiur-staging-local` is a separate, disposable restore/backup staging
+mechanism. Do not select it for authoritative application data. Its
+WaitForFirstConsumer behavior and the existing Longhorn overprovisioning allowance
+support the Kopiur workflow; capacity planning must include staging claims.
 
-`longhorn-wired-ha` is opt-in and fails closed until at least two healthy,
-distinct-zone Longhorn nodes have the `wired-storage` node tag. Adding the class
-does not migrate existing PVCs; use a new or restore-before-bind PVC for adoption
-(runbook: [pvc-storageclass-migration.md](pvc-storageclass-migration.md)).
+## Placement and ownership
 
-The tag comes from the Omni cluster template: the `hp-sff`, `hp-elite`, and `dell`
-worker blocks set the `node.longhorn.io/default-node-tags` node annotation, which
-Longhorn copies onto a node whose tag list is still empty. The Wi-Fi `hp-micro`
-node and the GPU node (radar's hot `flash` disk) are left untagged on purpose.
-Longhorn never re-syncs tags from the annotation afterwards, so to change a tagged
-node later edit `spec.tags` on its `nodes.longhorn.io` object as well. Verify with:
+The active Omni template configures Longhorn data disks on SFF, Elite, Dell and
+Threadripper. The shed's disks are registered but have scheduling disabled. Dell
+is wired; the HP Micro in the shed is the machine behind the Wi-Fi media bridge.
+See the [dated physical inventory](../../audits/2026-09-05-inventory.md).
+
+The `wired-storage` tag currently includes SFF, Elite and Dell. Temporal Postgres
+is the existing two-copy user; at the audit snapshot its copies were on Dell and
+Elite. The proposed design moves durable responsibility toward SFF/Elite after
+qualification and a healthy replacement copy. That migration is not complete.
+
+The Omni `node.longhorn.io/default-node-tags` annotation initializes Longhorn
+nodes whose tag list is empty. It does not continuously reconcile tags on an
+already tagged Longhorn node. Any placement change must handle existing Longhorn
+node state through a reviewed GitOps mechanism and verify actual replica locations.
+
+Read-only inspection:
 
 ```sh
 kubectl -n longhorn-system get nodes.longhorn.io -o custom-columns='NAME:.metadata.name,TAGS:.spec.tags'
+kubectl get nodes -L topology.kubernetes.io/zone
 ```
 
-## The rule that matters most in practice: get small-block RANDOM IO off the HDD
+Expected current tags include the three wired workers above. The SFF's two Talos
+VMs share the `hp-sff` physical-host zone. A node tag is eligibility, not proof
+that an individual volume has two healthy copies.
 
-The biggest real-world storage win here is **not** flash-vs-NVMe (that difference is marginal, and
-Longhorn caps fsync ~200 IOPS on both — see below). It is **HDD-NFS → local SSD** for the right
-workload:
+Changing a StorageClass does not migrate existing PVCs. Use the
+[PVC migration runbook](pvc-storageclass-migration.md) and preserve Kopiur backup
+identity. Do not delete a PVC merely because its only replica is temporarily
+unreachable. The [storage evidence collector](collecting-storage-evidence.md)
+joins claims to actual volumes, replicas and physical-zone labels.
 
-- **Small-block RANDOM IO on HDD-backed NFS (`truenas-nfs` / SMB on BigTank) is catastrophic** —
-  measured **102 IOPS @ 310ms** on BigTank. A workload that reads/writes many small files with
-  random access (a tile renderer, a search index, a small database) will *thrash* there.
-- The same workload on **local SSD is thousands of IOPS at sub-ms** — a 20–100× win, from *either*
-  local tier. Use `longhorn-flash` for it specifically, so the thrashing lands on the separate SSD
-  spindle and stays **off** the shared NVMe disk the databases use.
-- **Large SEQUENTIAL IO on HDD-NFS is fine** — jellyfin, frigate, tubearchivist, kiwix stream large
-  media files, and HDDs do sequential throughput well (~160+ MB/s). Leave them on SMB/NFS.
+## Performance and durability
 
-So the question isn't "which apps deserve flash" — it's **"which apps do small-block random IO and
-are currently on HDD-NFS."** First mover: **radar-ng** (`tiles`/`grids`/`state`/`pmtiles`), moved
-from `truenas-nfs` (HDD) to `longhorn-flash` (SSD, RWO) on 2026-07-15. It was the textbook case — a
-tile renderer thrashing thousands of small PNG/MVT files on 102-IOPS spinning disk over NFS.
+Separate three questions: whether reads are cached, whether durable writes have
+acceptable tail latency, and whether another host retains the data after failure.
+A large ARC helps repeated reads. PLP can improve durable-write behavior. A
+second Longhorn replica adds a separate host copy and a synchronous network write.
+None of these is a substitute for the other two.
 
-### The second use of `longhorn-flash`: IO isolation for noisy write-heavy apps
+The Threadripper flash pool deliberately uses thick LVM after earlier thin-LVM
+fsync results were poor. Keep that arrangement until an equivalent end-to-end
+measurement justifies a change. The live flash tier also absorbs Radar NG,
+PostHog and monitoring I/O. Do not treat its local mirror as multi-host HA.
 
-`longhorn-flash` is also a *separate physical spindle*, so it doubles as an isolation lane. Apps
-that are **write-heavy but read-tolerant** — metrics, logs, disposable analytics — are moved here
-NOT because flash is faster (through Longhorn it isn't; ~200 fsync either way, and SATA reads
-slower), but so their heavy IO stops contending with the latency-sensitive databases on the shared
-NVMe disk. Moved 2026-07-15: **all of PostHog** (clickhouse/postgres/redis/kafka — disposable
-product analytics) and **all of monitoring** (Prometheus TSDB, Alertmanager, Grafana, Loki
-write/backend). All backup-exempt; their history is disposable (Loki/Tempo data lives on S3/RustFS
-anyway), so the migration is a clean delete+recreate.
+NAS bulk streaming and small random I/O have different costs. The historical
+HDD-backed small-file test performed poorly and helped motivate the Radar storage
+move. That is useful workload-specific evidence, not proof that every database
+or every network storage protocol must perform badly. Ten-gigabit bandwidth alone
+does not establish synchronous-write latency.
 
-Net effect: the shared NVMe disk (`longhorn` default) is left for the databases and latency-
-sensitive volumes; the flash spindle absorbs the noisy random/write-heavy IO. Two disks, workloads
-split by profile.
+At the audit snapshot, `BigTank/k8s` used `sync=disabled` for inspected app
+NFS/iSCSI descendants, while `BigTank/k8s/rustfs` explicitly used `sync=standard`.
+Choose a dataset's durability contract before comparing database performance.
+Accepting service stalls while the NAS is off does not automatically accept loss
+of acknowledged writes. No ZFS property was changed during the audit.
 
-RWX→RWO note: those PVCs were RWX only for multiple writer pods. Kubernetes RWO is per-*node*, so on
-a single-node cluster co-located pods share one RWO volume (the proven `openmeteo-data` pattern).
-Before going multi-node, pin the consumers with podAffinity or move back to a real RWX class.
+Longhorn RWO can be mounted by multiple pods on the same Kubernetes node; it is
+not a multi-node shared filesystem. Use the repository's Recreate convention for
+ordinary RWO Deployments to avoid cross-node overlapping rollout attachments.
+Longhorn also supports RWX through share-manager infrastructure, but that is not
+what these one-copy RWO classes declare. Keep NAS RWX for the existing shared-file
+use cases unless a separate migration is justified.
 
-## Do not put fsync-sensitive storage behind the network
+## Historical experiment: NAS flash over NVMe/TCP
 
-Below the tier table is the record of a network-attached flash tier that was **built,
-measured, and abandoned** — because sync writes do not survive a network hop. It is
-kept so nobody rebuilds it. The node-local `longhorn-flash` tier above is the answer
-that replaced it.
+An earlier experiment used three HPE 480 GB drives in a NAS RAIDZ1 flash pool,
+exported through NVMe/TCP. The driver attached successfully, but the recorded
+end-to-end synchronous workload delivered about 437 IOPS versus about 259 on
+that Longhorn comparison path. The run also encountered filesystem inconsistency
+after reattachment, missing dataset mounts and leaked exports. The corruption
+cause was not conclusively isolated. That combination did not justify adoption.
 
-## What we tried and what it cost
+The original write-up mixed raw-device, filesystem and end-to-end measurements,
+including latency values that should not be treated as interchangeable inverses
+of the reported IOPS. It also made general claims about all network databases
+that the experiment did not establish. Raw history remains in Git; repeat a
+controlled test before relying on a precise speedup or assigning a root cause.
 
-A `flashpool` on the NAS — 3x HPE MK000480GWCEV enterprise SATA SSD (power-loss protected),
-RAIDZ1 — exported to Kubernetes over **NVMe-oF/TCP** via `truenas-csi` v1.1.1.
+The current physical layout is two HPE drives in the Threadripper mirror and
+one HPE in the NAS boot mirror. There is no current three-drive worker flash
+pool or automatic 2.44 TB local-storage expansion. Do not recreate the retired
+NVMe/TCP experiment from historical prose.
 
-**The driver worked.** Talos v1.13 has `CONFIG_NVME_TCP=y` built in and nvme-cli ships inside the
-driver image, so it attached `/dev/nvme0n1` in a pod with **no system extension and no reboot**.
-That part was never the problem.
+## Sources of truth
 
-**The performance was.** 4K QD1 `fsync=1` — one database commit:
-
-| | IOPS | per-op |
-|---|---|---|
-| Longhorn (consumer EDILOCA NVMe, local to Proxmox) | 259 | 3.86 ms |
-| flashpool zvol, **local on the NAS** | **2,510** | 0.076 ms |
-| flashpool zvol, **over NVMe-oF** (what a pod actually gets) | **437** | **2.29 ms** |
-
-**1.7x over Longhorn.** Not the ~11x the local numbers promised.
-
-**And it is not the network.** Measured: RTT Proxmox->NAS is **0.147 ms**; ZFS on the zvol is
-**0.076 ms**. Those imply ~0.22 ms/op (~4,500 IOPS). We got **2.29 ms/op**.
-
-The ~2ms is the *chain*: every fsync becomes
-`ext4 journal write` -> `NVMe-oF FLUSH` -> `nvmet` -> `ZFS ZIL commit` -> ack — each a round trip,
-and the ZIL commit is a real write to real disks.
-
-**Why enterprise SANs don't have this problem:** a NetApp/Pure/PowerStore acknowledges a sync
-write once it lands in **battery-backed NVRAM mirrored across two controllers** (~100us), then
-destages later. It cheats, safely. ZFS is *honest* about durability and actually commits the log.
-A NAS running ZFS is not a SAN array, and asking it to behave like one produces exactly the
-numbers above.
-
-**Databases fsync on every commit.** That makes them the single worst workload to put behind a
-network. This is the opposite of the intuition that led us here ("databases are write-heavy, so
-give them the fast write tier") — the write-heaviness is precisely what the network destroys.
-
-## Three operational failures, in the first hour
-
-Recorded because any one would bite a future attempt:
-
-1. **ext4 corruption** after a detach/reattach cycle (`UNEXPECTED INCONSISTENCY / Resize inode not
-   valid`). Cause not fully isolated, but "maybe it corrupts volumes" is not acceptable under a
-   database.
-2. **Child datasets silently unmounted** (`flashpool/k8s/flash` had a mountpoint but was not
-   mounted) -> *all* provisioning failed with `[ENOENT] Path /mnt/flashpool/k8s/flash not found`.
-   This would return after every NAS reboot.
-3. **Leaked NVMe-oF exports** — `csi-*` nvmet subsystems and namespaces survived PVC deletion,
-   including from a *failed* provision. Had to be reaped by hand.
-
-## Where the flash actually belongs: local to the node
-
-The drives are not the problem — the *location* was. Raw, no stack, no network:
-
-| 4K QD1 fsync, RAW device | IOPS | avg | p99 |
-|---|---|---|---|
-| **EDILOCA EN605** (consumer NVMe — currently holds every DB) | **697** | 0.299 ms | **2.83 ms** |
-| **HPE enterprise SATA** (PLP) | **14,484** | 0.064 ms | **0.146 ms** |
-
-**20.8x — and that is the bare drive, with Longhorn and the network removed.** Longhorn turns 697
-into 259 (real overhead), but the *drive* is the primary bottleneck. The EDILOCA is DRAM-less with
-no power-loss protection; its 1M sequential write is 109 MB/s and its QD32 p99 is **78 ms**.
-
-**The fix is to put the enterprise SSDs in the Proxmox host**, on a PCIe SATA HBA (the X399
-chipset SATA ports are unreliable), and tier Longhorn with disk tags:
-
-| Disk | Wins at | Give it |
-|---|---|---|
-| EDILOCA NVMe x2 | **reads** (161k IOPS, 2310 MB/s) | app state, caches, read-heavy |
-| Enterprise SATA x3 (PLP) | **writes** (20x fsync, p99 0.146ms) | **databases** |
-
-Everything stays node-local: no network hop, no second CSI driver, no NVMe-oF, no rebuilt backup
-path. It also takes Longhorn from ~1TB to ~2.44TB, relieving the thin-pool pressure.
-
-This is also what modern Kubernetes-on-metal actually does — OpenShift Data Foundation, Portworx,
-and vSAN all pool **local** NVMe and replicate in software, rather than front a SAN. Kubernetes
-already handles replication at the app layer; shared-array semantics are redundant.
-
-## The real single point of failure for existing volumes
-
-The `longhorn` StorageClass and existing volumes still request one replica.
-Capacity on several nodes is not redundancy: selected volumes must move to two
-replicas before they survive losing a storage node. The one-copy default remains
-deliberate for ordinary and rebuildable state; high availability is opt-in.
-
-The opt-in `longhorn-wired-ha` class is the migration target for small critical
-state once the wired-node tags are deployed and verified. It never changes an
-existing volume in place.
+- [Longhorn values](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/storage/longhorn/values.yaml)
+- [Flash class](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/storage/longhorn/storageclass-flash.yaml)
+- [Wired two-copy class](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/storage/longhorn/storageclass-wired-ha.yaml)
+- [Omni disk declarations](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-prod-v2.yaml)
+- [Kopiur backup contract](kopiur-backup-architecture.md)
+- [Disaster recovery](../../disaster-recovery.md)

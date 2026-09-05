@@ -122,6 +122,10 @@ Topology spread is not a rebalance loop. If request growth repeatedly fills one
 node, first correct ceilings and placement constraints. Evaluate a descheduler
 only after classifying RWO workloads and defining which pods may be evicted.
 
+The [hardware and placement review](../../audits/2026-09-05-hardware-and-placement-review.md)
+proposes workload pools alongside these existing physical-host zones. Pool labels,
+new taints and placement migrations in that review are not deployed configuration.
+
 ## Verification
 
 Run from the repository root:
