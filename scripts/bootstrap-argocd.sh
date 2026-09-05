@@ -97,15 +97,16 @@ fi
 # Step 2: Install ArgoCD using Helm
 echo ""
 echo "⎈ Installing ArgoCD via Helm..."
-# Let argocd-server generate a fresh initial admin password on a new cluster.
 # Any Helm failure stops bootstrap; an old Available server is not success.
+# shellcheck disable=SC2016 # The bcrypt hash must remain literal.
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
   --version 10.7.1 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
-  --timeout 10m
+  --timeout 10m \
+  --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'
 
 # Step 3: Wait for CRDs to be established
 echo ""
@@ -144,6 +145,5 @@ echo "🌐 Access ArgoCD UI:"
 echo "   kubectl port-forward svc/argocd-server -n argocd 8080:443"
 echo "   Open: https://localhost:8080"
 echo ""
-echo "🔑 A fresh install stores its generated password in argocd/argocd-initial-admin-secret."
-echo "   Merging this script does not rotate the running cluster's credential; see README.md for access."
+echo "🔑 Admin password is pre-configured via Helm values (no initial-admin-secret needed)"
 echo ""
