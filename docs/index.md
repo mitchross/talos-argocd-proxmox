@@ -1,9 +1,9 @@
 # talos-argocd-proxmox
 
-A production-grade GitOps Kubernetes cluster on **Talos Linux** with
-**self-managing ArgoCD**: applications are discovered from directory
-structure, storage is backed up declaratively via PVC labels, and the whole
-cluster can be destroyed and rebuilt **unattended** — restores included.
+A GitOps Kubernetes homelab on **Talos Linux** with **self-managing ArgoCD**.
+ApplicationSets discover app directories. Per-PVC Kopiur resources declare
+backup and restore behavior. After the operator rebuilds Talos and seeds Argo,
+protected volumes restore automatically from the off-cluster repository.
 
 > Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
 > · This site renders `docs/` from that repo.
@@ -23,16 +23,22 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn V1 engine, currently 1 replica because the active
-  control-plane + worker VMs share one physical Proxmox failure domain;
-  replica count is designed to rise when workers span additional hosts
+- **Storage**: Longhorn V1, mostly one replica despite multiple physical hosts;
+  Temporal Postgres uses the wired two-replica class. NAS provides bulk files and
+  off-cluster backups. [Failure domains and disk inventory](audits/2026-09-05-inventory.md).
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: plain Postgres Deployments backed up by kopiur — hourly snapshots, restore-before-bind (CNPG retired 2026-08-13)
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
-- **AI**: vLLM serving `qwen3.8-27b` (Qwen3.8-27B AutoRound W4A16 + native vision, fp8 KV at 64K, 2-token MTP) on the sole RTX 3090. llama.cpp and image generation are parked ([model catalog](domains/ai-gpu/model-catalog.md) · [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md))
+- **AI**: llama.cpp serves `qwen3.8-27b` on the sole RTX 3090. vLLM and image
+  generation are parked. The [model catalog](domains/ai-gpu/model-catalog.md)
+  owns the current backend settings; use the [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
 
 ## Documentation
+
+The [September 5 architecture audit](audits/2026-09-05-architecture-audit.md) and
+[dated repository/host inventory](audits/2026-09-05-inventory.md) record verified
+findings, proposed fixes, and current-state differences that still need reconciliation.
 
 Every page follows the [documentation reader contract](documentation-standard.md):
 state the current posture, explain unfamiliar choices, provide verifiable steps,

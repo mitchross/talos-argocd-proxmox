@@ -26,10 +26,11 @@ Create a new application at `$ARGUMENTS` following the project's GitOps patterns
    - Use Gateway API HTTPRoute (NOT Ingress) — reference `infrastructure/networking/gateway/`
    - Use ExternalSecret for secrets (never hardcode) — reference any app with `externalsecret.yaml`
    - PVCs needing backup: use `storageClassName: longhorn` and follow `.claude/commands/add-backup.md` for the kopiur per-PVC stub + `../../common/kopiur-backup` component + restore-before-bind `dataSourceRef`
-   - GPU apps: use nodeSelector, runtimeClassName, tolerations, priorityClassName — reference `my-apps/ai/comfyui/`
+   - GPU apps: follow `my-apps/ai/CLAUDE.md` for node selection and whole-card allocation.
+   - Add an app-owned VPA or record an intentional exemption, following root `CLAUDE.md` and `docs/domains/scheduling/vpa-and-topology.md`.
 
 5. Reference examples:
-   - Minimal: `my-apps/development/nginx/`
+   - Minimal: the "Minimal Application" template in `my-apps/CLAUDE.md`
    - GPU: `my-apps/ai/comfyui/`
    - Storage + secrets: `my-apps/media/immich/`
    - Database: `my-apps/development/gitea/postgres/` (plain Postgres + kopiur)
