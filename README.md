@@ -303,7 +303,7 @@ kubectl get applications -n argocd -w
 kubectl get applications -n argocd \
   -o custom-columns=NAME:.metadata.name,WAVE:.metadata.annotations.argocd\\.argoproj\\.io/sync-wave,STATUS:.status.sync.status
 
-# (Optional) ArgoCD UI — admin password is pre-configured via the bootstrap Helm values
+# (Optional) ArgoCD UI — a fresh install generates argocd-initial-admin-secret
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 # open https://localhost:8080
 ```
@@ -363,6 +363,22 @@ omnictl serviceaccount create talos-prod-sa --use-user-role
 - `--service-account` is what gives you a bearer token; without it you get OIDC exec (the thing that expires).
 - If the key fails with signature errors, write it to a file and use `$(cat /tmp/key.txt)` instead of inline quoting.
 - Node management (upgrades, config, patches) is done through the Omni web UI.
+
+### Bootstrap authentication and failures
+
+A fresh Argo installation generates a random admin password in
+`argocd/argocd-initial-admin-secret`. Retrieve it through Lens or the Argo CLI
+(`argocd admin initial-password -n argocd`) when logging in, then change it and
+store the chosen credential in 1Password. The bootstrap script no longer seeds a
+shared password hash. This Git change does not rotate an existing cluster's
+admin credential.
+
+A Helm error stops bootstrap before applying the root Application. This includes
+SSA ownership conflicts on a rerun: an already Available server does not prove
+the requested install succeeded. Inspect the Helm error and current Argo state;
+do not treat a failed installation as a successful upgrade or delete application
+data to clear it. The running cluster continues to manage normal Argo upgrades
+through its Git-owned Application.
 
 ## Backup System
 
