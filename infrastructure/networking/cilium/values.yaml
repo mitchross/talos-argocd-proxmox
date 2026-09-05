@@ -104,6 +104,12 @@ extraConfig:
 
 # Must match the README seed flag, or a fresh bootstrap leaves envoy holding zero listeners.
 envoy:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      memory: 1Gi
   xdsMode: split
 
 # Gateway API Support

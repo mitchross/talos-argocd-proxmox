@@ -6,10 +6,10 @@ a time. **Completed 2026-08-13:** all four databases migrated and CNPG
 (operator, Barman plugin, recovery script, manual sync gates) was deleted
 from the repo. The idle Crunchy PGO operator was removed 2026-07-09.
 
-![Decision between CNPG with Barman and plain PostgreSQL with Kopiur based on the required recovery contract](../../assets/postgres-recovery-choice.svg)
+![Current plain PostgreSQL and Kopiur recovery contract, with a separate design review if PITR or database failover becomes required](../../assets/postgres-recovery-choice.svg)
 
-*Choose CNPG when PITR or operator capabilities are requirements; choose the
-plain path when simple GitOps recovery and its explicit RPO are acceptable.
+*The deployed path is plain Postgres plus Kopiur. PITR and database-level
+automatic failover would require a separate design; CNPG is retired here.
 [Open the full-size PostgreSQL decision diagram](../../assets/postgres-recovery-choice.svg).*
 
 ## Why
@@ -21,10 +21,10 @@ every cluster nuke needs the overlay flip + a post-recovery lineage-bump
 commit, plus the rustfs-lifecycle bookkeeping for abandoned lineages. The
 kopiur pattern needs **zero commits**: nuke, bootstrap, the PVC hydrates via
 restore-before-bind, Postgres WAL-recovers like a power loss, done — the same
-DR story as the other 22 backed-up PVCs.
+DR story as the other protected application PVCs.
 
 **The trade, stated honestly:** restores land on the **last snapshot** (hourly
-tier ⇒ ≤1h data loss), not any point in time. No replicas/failover (single pod,
+tier targets hourly snapshots; failures can make the recoverable point older), not any point in time. No replicas/failover (single pod,
 `Recreate`). Postgres **major** upgrades become a manual dump/restore (minors
 and patches stay Renovate-automated).
 

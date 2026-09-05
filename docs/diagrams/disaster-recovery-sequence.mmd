@@ -5,14 +5,14 @@ config:
 ---
 flowchart TB
   accTitle: Full-cluster disaster recovery sequence
-  accDescr: Git, Omni configuration, 1Password, Kopia, and Barman survive outside the cluster. Talos is rebuilt, Argo bootstraps, application data restores, and health checks prove recovery.
+  accDescr: Git, Omni configuration, 1Password, and Kopia survive outside the cluster. Talos is rebuilt, Argo bootstraps, application data restores, and health checks prove recovery.
 
   SURVIVE["`SURVIVES OUTSIDE THE CLUSTER
   Git desired state | Omni and Talos identity
-  1Password credentials | Kopia application data
-  Barman database backups and WAL`"]
+  1Password credentials | Kopia snapshots
+  protected application and Postgres volumes`"]
 
-  subgraph RECOVERY["RECOVERY CONVERGES IN ORDER"]
+  subgraph RECOVERY["RECOVERY STAGES"]
     direction LR
     FAIL["`STEP 0 - Failure event
     Talos VMs, API
@@ -23,14 +23,14 @@ flowchart TB
     API and Cilium ready`"]
     ARGO["`STEP 2 - Bootstrap Argo
     root Application lands
-    wait for Healthy`"]
+    core dependencies reconcile`"]
     DATA["`STEP 3 - Restore data
     PVCs remain Pending
-    Kopiur and Barman
-    hydrate data`"]
+    Kopiur hydrates
+    protected PVCs`"]
     PROVE["`STEP 4 - Prove recovery
     PVCs Bound
-    applications Healthy
+    app reads and writes pass
     backups resume`"]
     FAIL fail@--> TALOS
     TALOS talos@--> ARGO

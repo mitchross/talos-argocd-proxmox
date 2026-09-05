@@ -17,7 +17,7 @@ spec:
       # Fixed-size metrics sidecar — not VPA-managed.
       - containerName: postgres-exporter
         mode: "Off"
-      - containerName: "*"
+      - containerName: postgres
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:

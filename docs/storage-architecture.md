@@ -526,21 +526,22 @@ unqualified exempt reasons. A PVC with *no bundle at all* is therefore only a
 warning — Git review and the worked examples remain the guardrail for the
 negative space.
 
-**Pre-1.0 engine.** kopiur is pre-1.0 (`0.5.x` since 2026-07-04); CRD fields
-can churn. Pin the chart version and re-check `kubectl explain` after upgrades.
-The 0.5.0 breaking changes (copyMethod default flip, `verification.quick`
-reshape, metrics rename) were assessed 2026-07-04 — none affected this repo;
-see the note beside the pin in `infrastructure/controllers/kopiur-operator/kustomization.yaml`.
+**Pre-1.0 engine.** Kopiur CRD fields can change between releases. The chart
+pin lives in `infrastructure/controllers/kopiur-operator/kustomization.yaml`.
+Review the versioned CRDs and recovery behavior when upgrading it.
 
-**RPO is the schedule cadence.** Hourly at best. Databases accept this
-explicitly: crash-consistent snapshots + Postgres WAL recovery, no
-point-in-time restore (the trade made when CNPG was retired 2026-08-13).
+**Recoverable data age is the age of the latest successful snapshot.** An
+hourly schedule is a target, not a guaranteed one-hour loss bound: delayed or
+failed snapshots make it older. Databases use crash-consistent filesystem
+snapshots with Postgres WAL recovery, not continuous WAL archiving or PITR.
 
-**Restore proof is continuous but narrow.** The
-[restore canary](disaster-recovery.md#the-restore-canary) re-proves the
-delete→recreate→populate→byte-verify loop on a dedicated PVC; it does not prove
-app-level semantics (a SQLite file can restore byte-perfect and still be
-mid-transaction garbage — which is why databases don't use this path).
+**The canary proves the storage loop, not every application.** Its scheduled
+backups run automatically; the destructive
+[restore drill](disaster-recovery.md#the-restore-canary) is deliberately invoked
+by the operator. Postgres does use this backup path. A consistent snapshot
+containing PGDATA and its WAL permits crash recovery. Restored applications
+still need read/write checks, and apps spanning several PVCs need compatible
+file and database restore points. See [post-restore acceptance](disaster-recovery.md#post-restore-acceptance).
 
 ---
 

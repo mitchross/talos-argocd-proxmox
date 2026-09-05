@@ -5,16 +5,16 @@ config:
 ---
 flowchart LR
   accTitle: Argo CD bootstrap and sync-wave ordering
-  accDescr: A manual seed creates the root Application. Argo CD then discovers entrypoints and applies waves zero through six, waiting for each wave to become healthy before continuing.
+  accDescr: A manual seed creates the root Application. Root waves gate direct child Applications. ApplicationSets created in later waves generate independently reconciled Applications; they do not aggregate descendant health.
 
   subgraph BOOTSTRAP["BOOTSTRAP ONCE"]
     direction LR
     BOOT["`Manual seed: root.yaml
-    Root Application self-manages
-    Entrypoints discover Applications`"]
+    Root seed is not self-managed
+    Root manages its entrypoints`"]
   end
 
-  subgraph WAVES["HEALTH-GATED RECONCILIATION"]
+  subgraph WAVES["ROOT RESOURCE ORDER"]
     direction LR
     W01["`WAVES 0-1 - FOUNDATION
     Argo CD, Cilium, 1Password, ESO
@@ -22,12 +22,12 @@ flowchart LR
     W23["`WAVES 2-3 - RECOVERY
     Kopiur operator and CRDs
     repository, credentials, snapshot class`"]
-    W45["`WAVES 4-5 - PLATFORM
-    infrastructure and databases
-    OpenTelemetry and monitoring`"]
-    W6["`Wave 6 - User workloads
-    applications and
-    observability overlays`"]
+    W45["`WAVES 4-5 - ENTRYPOINTS
+    platform Apps and AppSets
+    generated Apps sync independently`"]
+    W6["`WAVE 6 - ENTRYPOINTS
+    workload AppSet and overlays
+    generated Apps sync independently`"]
     W01 wave12@--> W23
     W23 wave34@--> W45
     W45 wave56@--> W6
