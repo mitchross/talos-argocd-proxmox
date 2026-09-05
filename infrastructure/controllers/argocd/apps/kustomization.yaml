@@ -36,3 +36,28 @@ resources:
   - appsets/database-appset.yaml
   - appsets/monitoring-appset.yaml
   - appsets/my-apps-appset.yaml
+
+# Cache hints are relative to each Application's source.path, not the repo root.
+patches:
+  - target:
+      group: argoproj.io
+      kind: Application
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1manifest-generate-paths
+        value: .
+  - target:
+      group: argoproj.io
+      kind: ApplicationSet
+    patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations/argocd.argoproj.io~1manifest-generate-paths
+        value: .
+  - target:
+      group: argoproj.io
+      kind: ApplicationSet
+      name: my-apps
+    patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations/argocd.argoproj.io~1manifest-generate-paths
+        value: .;/my-apps/common
