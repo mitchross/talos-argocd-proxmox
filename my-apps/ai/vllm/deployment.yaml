@@ -93,7 +93,7 @@ spec:
             - --reasoning-parser
             - qwen3
             - --default-chat-template-kwargs
-            - '{"enable_thinking":true,"reasoning_effort":"low","preserve_thinking":true}'
+            - '{"enable_thinking":true,"reasoning_effort":"medium","preserve_thinking":true}'
             # Triton rejects FP8 KV on SM86; FlashInfer supports this path.
             - --attention-config
             - '{"backend":"FLASHINFER"}'

@@ -20,10 +20,11 @@ FUNCTIONS = [
         "description": "Filter: injects response_token/s + prompt_token/s into streamed usage stats",
     },
     {
+        # Keep the ID so the old global filter is updated, not left active.
         "id": "qwen_non_thinking_default",
-        "name": "Qwen3.8 Non-Thinking Default",
+        "name": "Qwen3.8 Reasoning Policy",
         "path": "/functions/qwen-no-think-filter.py",
-        "description": "Filter: forces qwen3.8-27b requests to use enable_thinking=false",
+        "description": "Filter: explicit medium default, per-request reasoning and mode-specific sampling",
     },
 ]
 
@@ -131,4 +132,3 @@ async def main():
 
 
 asyncio.run(main())
-

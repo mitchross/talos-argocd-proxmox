@@ -65,7 +65,7 @@ spec:
             - "--draft-tokens"
             - "3"
             - "--lm-head-draft"
-            # Parity with the vLLM control's enable_thinking=false default; requests re-enable per call.
+            # Parked evaluation baseline uses non-thinking; production vLLM defaults to medium.
             - "--no-thinking"
             # Schema-v8 measurement log — the benchmark harness's authoritative source
             # (NInfer has no Prometheus endpoint). emptyDir: collected live during runs.
