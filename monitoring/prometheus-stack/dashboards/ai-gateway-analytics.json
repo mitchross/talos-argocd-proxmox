@@ -1,0 +1,330 @@
+{
+  "title": "AI Gateway and Analytics",
+  "uid": "ai-gateway-analytics",
+  "schemaVersion": 39,
+  "editable": true,
+  "tags": [
+    "ai",
+    "litellm",
+    "posthog"
+  ],
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "LiteLLM metrics scrape (1 = up)",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{namespace=\"litellm\",service=\"litellm-service\"}",
+          "legendFormat": "LiteLLM"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "PostHog AI consumer members",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(redpanda_kafka_consumer_group_consumers{namespace=\"posthog\",redpanda_group=\"clickhouse-ingestion-ai\"}) or vector(0)",
+          "legendFormat": "AI consumer"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Gateway requests / second",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(requested_model) (rate(litellm_proxy_total_requests_metric_total{namespace=\"litellm\"}[$__rate_interval]))",
+          "legendFormat": "{{requested_model}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 4,
+      "title": "Gateway failed requests / second",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(requested_model) (rate(litellm_proxy_failed_requests_metric_total{namespace=\"litellm\"}[$__rate_interval]))",
+          "legendFormat": "{{requested_model}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 5,
+      "title": "Input tokens / second",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(model) (rate(litellm_input_tokens_metric_total{namespace=\"litellm\"}[$__rate_interval]))",
+          "legendFormat": "{{model}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 6,
+      "title": "Output tokens / second",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(model) (rate(litellm_output_tokens_metric_total{namespace=\"litellm\"}[$__rate_interval]))",
+          "legendFormat": "{{model}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 7,
+      "title": "Gateway total latency p95",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by(le,requested_model) (rate(litellm_request_total_latency_metric_bucket{namespace=\"litellm\"}[$__rate_interval])))",
+          "legendFormat": "{{requested_model}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 8,
+      "title": "Time to first token p95 (streaming)",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by(le,requested_model) (rate(litellm_llm_api_time_to_first_token_metric_bucket{namespace=\"litellm\"}[$__rate_interval])))",
+          "legendFormat": "{{requested_model}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 9,
+      "title": "PostHog AI queue lag (requires consumer offset)",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(clamp_min(max by(redpanda_topic,redpanda_partition) (redpanda_kafka_max_offset{namespace=\"posthog\",redpanda_namespace=\"kafka\",redpanda_topic=\"events_plugin_ingestion_ai\"}) - on(redpanda_topic,redpanda_partition) max by(redpanda_topic,redpanda_partition) (redpanda_kafka_consumer_group_committed_offset{namespace=\"posthog\",redpanda_group=\"clickhouse-ingestion-ai\",redpanda_topic=\"events_plugin_ingestion_ai\"}), 0))",
+          "legendFormat": "queued events"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {},
+      "description": "No data is not zero lag. Check AI consumer members; no consumer means events can be stranded without offsets."
+    },
+    {
+      "id": 10,
+      "title": "PostHog AI ingestion replicas",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kube_deployment_status_replicas_available{namespace=\"posthog\",deployment=\"ingestion-ai\"}",
+          "legendFormat": "available"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    }
+  ],
+  "links": [
+    {
+      "title": "vLLM Inference",
+      "url": "/d/vllm-inference"
+    },
+    {
+      "title": "PostHog",
+      "url": "https://posthog.vanillax.me"
+    }
+  ]
+}

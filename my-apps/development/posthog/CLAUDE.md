@@ -18,6 +18,7 @@ Upgrade procedure: `UPGRADE.md` (this directory).
 | `config/clickhouse/` | The single-node ClickHouse config that makes upstream migrations pass |
 | `core/clickhouse-init.yaml` | Bootstraps `sharded_events` + migration tables before migrate |
 | `core/jobs.yaml` | kafka-init (topics) + posthog-migrate (Django → CH → async `--check` gate) |
+| `core/ingestion-ai.yaml` | Dedicated `ingestion-v2` AI-topic consumer; pinned combined mode does not subscribe to AI |
 | `core/*.yaml` | App tier: web, worker, plugin-server modes, rust capture/flags services |
 | `kopiur/postgres-data.yaml` | Backup of the identity layer (see DR below) |
 
