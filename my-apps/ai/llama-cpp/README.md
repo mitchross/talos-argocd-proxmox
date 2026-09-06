@@ -1,14 +1,15 @@
 # llama.cpp — Qwen3.8-27B on one RTX 3090
 
-**Active production local-LLM backend.** vLLM remains deployed at zero replicas
-as the rollback path.
+**Parked rollback after the vLLM FP8 cutover.** The retained profile below
+is the measured one-card baseline. The [vLLM README](../vllm/README.md) owns
+the new two-card configuration and its rollout checks.
 
 - in cluster: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - canonical LAN endpoint: `https://llama.vanillax.me/v1`
 - compatibility LAN endpoint: `https://vllm.vanillax.me/v1`
 - API model: `qwen3.8-27b`
 
-## Production profile
+## Retained profile
 
 | Setting | Value |
 |---|---|
@@ -82,12 +83,10 @@ are not downloaded, synchronized or referenced by the active manifests.
 
 ## Cutover / rollback
 
-The active Kustomizations enforce `llama-cpp-server=1` and `vllm-server=0`.
-The old `vllm-service.vllm.svc.cluster.local` DNS name is retained as an
-`ExternalName` alias to llama.cpp because some persistent consumers (for
-example already-imported n8n workflows) store their endpoint outside Git.
-Git-managed consumers use `llama-cpp-service` directly.
+The Kustomizations declare `llama-cpp-server=0` and `vllm-server=1`. The
+llama.cpp Service aliases vLLM so existing app URLs remain valid. vLLM owns
+both LAN hostnames; this app's old HTTPRoute is retained but not rendered.
 
-To roll back, reverse the replica ownership, restore the vLLM HTTPRoute, and
-repoint Git-managed consumers to vLLM in one PR. Never run both GPU deployments
-at one replica on the single-card worker.
+Revert the FP8 cutover commit to restore this profile, selector Service and
+HTTPRoute together. Keep the independent Omni dual-card expansion. The
+retained download and hydration hooks preserve a reproducible GGUF rollback.

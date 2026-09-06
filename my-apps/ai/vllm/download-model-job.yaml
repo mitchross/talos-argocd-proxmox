@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vllm-download-qwen38-fp8
+  namespace: vllm
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 4
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      nodeSelector:
+        node.vanillax.dev/class: dell-worker
+      containers:
+        - name: download
+          image: python:3.13-alpine@sha256:7415fbc3c9e4979cc717d92377ab2bc7b2b4a2af1ac03cc52b5f3f88efedaf3a
+          command:
+            - python3
+            - /opt/repo-scripts/model_cache.py
+            - download
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: repo-scripts
+          configMap:
+            name: vllm-scripts
+            defaultMode: 0555
+        - name: models
+          persistentVolumeClaim:
+            claimName: vllm-download-models

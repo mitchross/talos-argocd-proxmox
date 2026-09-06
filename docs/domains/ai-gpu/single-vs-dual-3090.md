@@ -1,7 +1,7 @@
 # One 3090 vs two for Qwen3.8-27B
 
-The active backend is stock llama.cpp on one card; the chassis again holds two
-3090s. This page preserves a historical vLLM benchmark, not Flash Next results.
+The declared backend is official Qwen3.8-27B FP8 on vLLM with both 3090s.
+This page preserves a historical benchmark, not validation of the new profile.
 For the larger model, see [Flash Next feasibility](flash-next-dual-3090.md).
 
 The swap procedure lives in [`gpu-scale-swap.md`](gpu-scale-swap.md); model

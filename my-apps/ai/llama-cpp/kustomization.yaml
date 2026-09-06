@@ -11,13 +11,12 @@ resources:
   - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml
-  - httproute.yaml
   - servicemonitor.yaml
 
-# Production cutover: llama.cpp owns the sole RTX 3090; vLLM is parked at 0.
+# Retain local GGUF artifacts for rollback while vLLM owns both cards.
 replicas:
   - name: llama-cpp-server
-    count: 1
+    count: 0
 
 configMapGenerator:
   - name: llama-cpp-scripts

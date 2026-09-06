@@ -6,11 +6,10 @@ metadata:
   labels:
     app: llama-cpp-server
 spec:
-  selector:
-    app: llama-cpp-server
+  # Preserve existing app URLs; LAN HTTPRoutes target vLLM's selector Service.
+  type: ExternalName
+  externalName: vllm-service.vllm.svc.cluster.local
   ports:
-  - name: http
-    protocol: TCP
-    port: 8080
-    targetPort: http
-  type: ClusterIP
+    - name: http
+      protocol: TCP
+      port: 8080

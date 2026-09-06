@@ -3,12 +3,12 @@
 > **Status:** historical analysis. Current serving truth is in
 > [`model-catalog.md`](model-catalog.md). This page cross-references the community
 > [`noonghunna/club-3090`](https://github.com/noonghunna/club-3090) recipe repo,
-> recipe used for the active single-card configuration.
+> which informed earlier configurations.
 >
-> **Current topology (2026-09-06):** the chassis has two RTX 3090s. llama.cpp
-> serves `qwen3.8-27b` on one; the second is spare. vLLM and image generation
-> are parked. See [Flash Next feasibility](flash-next-dual-3090.md) for the
-> new two-card research. Older model and runtime recommendations below are historical.
+> **Declared profile:** official Qwen3.8-27B FP8 on vLLM, two RTX 3090s,
+> 262K ceiling, vision, no speculation. See the model catalog for rollout status
+> and [Flash Next feasibility](flash-next-dual-3090.md) for larger-model research.
+> Older model and runtime recommendations below are historical.
 
 ## TL;DR
 

@@ -6,12 +6,11 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # vLLM is parked. Preserve the old DNS name for persistent consumers whose
-  # configuration lives outside Git (for example already-imported n8n flows).
-  # Git-managed consumers use llama-cpp-service directly.
-  type: ExternalName
-  externalName: llama-cpp-service.llama-cpp.svc.cluster.local
+  type: ClusterIP
+  selector:
+    app: vllm-server
   ports:
     - name: http
       protocol: TCP
       port: 8080
+      targetPort: http

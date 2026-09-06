@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"    # after the wave-0 cache-sync hook
 spec:
-  # Active backend; owns the sole RTX 3090 (llama-cpp is parked at 0).
+  # Both cards belong to this server; llama.cpp is the parked rollback.
   replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
@@ -40,14 +40,14 @@ spec:
       initContainers:
         # Argo self-heal can apply the Deployment before its Sync hook.
         - name: wait-for-model-cache
-          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+          image: python:3.13-alpine@sha256:7415fbc3c9e4979cc717d92377ab2bc7b2b4a2af1ac03cc52b5f3f88efedaf3a
           command:
-            - /bin/sh
-            - -ec
-            - /opt/repo-scripts/wait-for-model-cache.sh
+            - python3
+            - /opt/repo-scripts/model_cache.py
+            - wait
           resources:
             requests: { cpu: 10m, memory: 16Mi }
-            limits: { memory: 64Mi }
+            limits: { memory: 128Mi }
           volumeMounts:
             - name: repo-scripts
               mountPath: /opt/repo-scripts
@@ -58,72 +58,80 @@ spec:
               readOnly: true
       containers:
         - name: vllm-server
-          # Digest-pinned (== `latest` at pin time, 2026-06). Renovate-trackable + immutable.
+          # Keep the stock runtime pinned; no community kernel overlays.
           image: vllm/vllm-openai:v0.28.0@sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
-            # Baseline B (Path B): W4A16 body + INT8 g128 lm_head + BF16 embed_tokens.
-            # Stock vLLM serves this unpatched — qwen3_5.py already passes quant_config to ParallelLMHead.
-            - "/models/Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead"
-            # served-model-name is a LIST (nargs+): the next token MUST be a flag to end it.
-            - "--served-model-name"
-            - "qwen3.8-27b"
-            - "--gpu-memory-utilization"
-            - "0.93"                                   # 0.90 left only 1.9 GiB KV (2.45 needed for 65536) — boot-verified floor; keep ≥1 GiB free for DeltaNet workspace
-            - "--max-model-len"
-            - "65536"                                  # vision tower trades context for image understanding on 24 GiB
-            - "--max-num-seqs"
-            # MTP reserves recurrent state for target and draft positions; three
-            # slots keeps one full-length request affordable on a 24 GiB card.
-            - "3"
-            - "--limit-mm-per-prompt"
-            - '{"image":1,"video":0}'                   # bound multimodal profiling and VRAM to one image per request
-            - "--async-scheduling"
-            - "--compilation-config"
-            # capture_size 4 covers max-num-seqs=3; upstream's 64 is dead VRAM at this concurrency.
+            - /models/Qwen3.8-27B-FP8-017b9c7af6b5
+            - --served-model-name
+            - qwen3.8-27b
+            - --quantization
+            - fp8
+            - --dtype
+            - bfloat16
+            - --tensor-parallel-size
+            - "2"
+            - --distributed-executor-backend
+            - mp
+            # Guest topology reports no peer access; use NCCL host transport.
+            - --disable-custom-all-reduce
+            - --gpu-memory-utilization
+            - "0.92"
+            - --max-model-len
+            - "262144"
+            - --max-num-seqs
+            - "2"
+            - --limit-mm-per-prompt
+            - '{"image":1,"video":0}'
+            - --async-scheduling
+            - --compilation-config
             - '{"max_cudagraph_capture_size":4,"custom_ops":["+rms_norm","+silu_and_mul"]}'
-            - "--enable-auto-tool-choice"              # Perplexica sends tool_choice=auto — never drop this
-            - "--tool-call-parser"
-            - "qwen3_coder"
-            - "--reasoning-parser"
-            - "qwen3"                                  # splits <think> out of content into reasoning_content
-            - "--default-chat-template-kwargs"
-            - '{"enable_thinking": false}'             # thinking OFF by default; UIs re-enable per-request
-            - "--kv-cache-dtype"
-            - "fp8_e4m3"                               # halves KV bytes/token; scales uncalibrated (1.0)
-            - "--mamba-ssm-cache-dtype"
-            - "float16"                                # halves per-sequence DeltaNet recurrent state
-            - "--enable-prefix-caching"                # the metric the single-vs-dual comparison turns on
-            - "--enable-chunked-prefill"
-            - "--max-num-batched-tokens"
-            - "2048"                                   # 8192 inflates the profiled activation peak and shrinks the pool
-            - "--speculative-config"
-            - '{"method":"mtp","num_speculative_tokens":2}'
-            - "--override-generation-config"
-            - '{"temperature":0.7,"top_p":0.8,"top_k":20,"presence_penalty":1.5}'
-            - "--enable-force-include-usage"             # usage on every stream chunk final — Open WebUI shows token stats without per-model DB config
-            - "--host"
-            - "0.0.0.0"
-            - "--port"
+            - --enable-auto-tool-choice
+            - --tool-call-parser
+            - qwen3_coder
+            - --reasoning-parser
+            - qwen3
+            - --default-chat-template-kwargs
+            - '{"enable_thinking":true,"reasoning_effort":"low","preserve_thinking":true}'
+            # Triton rejects FP8 KV on SM86; FlashInfer supports this path.
+            - --attention-config
+            - '{"backend":"FLASHINFER"}'
+            - --kv-cache-dtype
+            - fp8_e4m3
+            - --mamba-ssm-cache-dtype
+            - float16
+            - --enable-prefix-caching
+            - --enable-chunked-prefill
+            - --max-num-batched-tokens
+            - "2048"
+            # Speculation stays off until the GDN long-session faults are fixed.
+            - --override-generation-config
+            - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.0}'
+            - --enable-force-include-usage
+            - --host
+            - 0.0.0.0
+            - --port
             - "8000"
           env:
-            # GPU selection is handled by the device plugin + CDI (whole-card, time-slicing OFF).
-            # Do NOT set NVIDIA_VISIBLE_DEVICES / CUDA_VISIBLE_DEVICES — they override CDI injection.
             - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
-            - name: HF_HUB_OFFLINE          # models are local on NFS; never call the Hub at runtime
+              value: compute,utility
+            - name: HF_HUB_OFFLINE
               value: "1"
             - name: TRANSFORMERS_OFFLINE
               value: "1"
-            - name: VLLM_NO_USAGE_STATS     # no phone-home
+            - name: VLLM_NO_USAGE_STATS
               value: "1"
-            - name: OMP_NUM_THREADS         # silences the 16->1 thread warning; matches club-3090 recipe
+            - name: VLLM_WORKER_MULTIPROC_METHOD
+              value: spawn
+            - name: NCCL_P2P_DISABLE
               value: "1"
-            # Non-optional at high util: the DeltaNet prefill kernels allocate transient
-            # workspace and fragment the allocator without expandable segments.
+            - name: NCCL_CUMEM_ENABLE
+              value: "0"
+            - name: OMP_NUM_THREADS
+              value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
-              value: "expandable_segments:True"
+              value: expandable_segments:True
           ports:
             - name: http
               containerPort: 8000
@@ -147,15 +155,14 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
-            # GPU does the work; keep the CPU request low so the single 32-vCPU worker has headroom.
+            # Host RAM includes loading and shared-memory transport between GPUs.
             requests:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               cpu: "1"
-              # Weights live in GPU VRAM; host RAM steady-state is ~1.2Gi.
-              # Request 8Gi (headroom for load spikes); 64Gi limit allows burst.
+              # Keep loading headroom without reserving another full model in RAM.
               memory: 8Gi
             limits:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               memory: 64Gi
           volumeMounts:
             - name: models
