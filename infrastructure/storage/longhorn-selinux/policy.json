@@ -1,0 +1,6 @@
+{
+  "mode": "apply",
+  "claims": [
+    "posthog/clickhouse-data-clickhouse-0"
+  ]
+}

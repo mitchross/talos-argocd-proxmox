@@ -10,6 +10,8 @@ provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
 parameters:
   numberOfReplicas: "2"
   staleReplicaTimeout: "30"

@@ -59,6 +59,7 @@ spec:
       - path: infrastructure/storage/truenas-csi
       - path: infrastructure/storage/local-storage
       - path: infrastructure/storage/talos-fstrim
+      - path: infrastructure/storage/longhorn-selinux
       # NOTE: longhorn and snapshot-controller are NOT listed here.
       # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
       # snapshot-controller-app.yaml) so storage is healthy before the

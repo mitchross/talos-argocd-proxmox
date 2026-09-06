@@ -7,13 +7,14 @@ resources:
   # (deploys at wave 4 alongside the Gateway)
   - volumesnapshotclass.yaml
   - node-failure-settings.yaml
+  - storageclass-default.yaml
   # Fast local flash tier — enterprise-SSD Longhorn disk (tag `flash`).
   - storageclass-flash.yaml
   # Two-copy critical-state tier; provisioning fails closed until wired Longhorn node tags exist.
   - storageclass-wired-ha.yaml
   # Disposable kopiur snapshot clones. WFFC lets the mover pick the node before the clone is provisioned (avoids V1 clone attach race).
   - storageclass-kopiur-staging.yaml
-  # Chart-created `longhorn` StorageClass is V1-engine; do NOT route it to dataEngine:v2 (retired, see values.yaml).
+  # All StorageClasses use Talos's pod-writable SELinux context; see docs/domains/storage/selinux-mount-context.md.
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io

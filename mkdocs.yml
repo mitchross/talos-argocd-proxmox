@@ -107,6 +107,7 @@ nav:
       - Root entrypoints & sync waves: domains/argocd/entrypoints.md
   - Storage:
       - Storage architecture (source of truth): storage-architecture.md
+      - Talos SELinux audit remediation: domains/storage/selinux-mount-context.md
       - Storage model (RWO/RWX & sizing): domains/storage/storage-model-rwo-rwx-and-sizing.md
       - NAS hardware & performance reference: nas-performance.md
       - TrueNAS special-vdev stall runbook: truenas-special-vdev-stall-runbook.md

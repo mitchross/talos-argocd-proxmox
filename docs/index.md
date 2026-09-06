@@ -110,7 +110,7 @@ Backups are **kopiur** (Kopia-native operator).
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
 - **Enterprise multi-cluster planning**: [roadmap](domains/multicluster/enterprise-gitops-roadmap.md) · [concrete fleet PRD](domains/multicluster/prd.md)
 - **Networking**: [topology](domains/networking/topology.md) · [Dell Proxmox Talos worker](domains/networking/dell-proxmox-talos-worker.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
-- **Storage**: [move a PVC to another StorageClass](domains/storage/pvc-storageclass-migration.md) · [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
+- **Storage**: [Talos SELinux audit remediation](domains/storage/selinux-mount-context.md) · [move a PVC to another StorageClass](domains/storage/pvc-storageclass-migration.md) · [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
 - **Observability**: [radar-ng](domains/observability/radar-ng.md)
 - **Scheduling**: [VPA policy ownership and topology](domains/scheduling/vpa-and-topology.md)
 - **Power**: [wall-plug metering, cost model and the power-off lockout](domains/power/metering.md)
