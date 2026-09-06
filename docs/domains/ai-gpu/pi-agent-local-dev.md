@@ -1,9 +1,10 @@
 # Pi.dev Agent — local coding against Qwen3.8-27B
 
-> **Current state (2026-09-03):** the sole RTX 3090 serves `qwen3.8-27b`
-> through stock llama.cpp `b10752`, Q4_K_XL, q8_0 KV, MTP-2, native vision,
-> and a 65,536-token window. The canonical LAN endpoint is
-> `https://llama.vanillax.me/v1`.
+> **Git-declared cutover:** official Qwen3.8-27B FP8 on stock vLLM v0.28.0,
+> two RTX 3090s, FP8 KV, vision and a 262,144-token ceiling. Speculation is off.
+> Merge, Argo reconciliation and runtime checks must finish before increasing
+> workstation context metadata. The last live backend was llama.cpp at 65K.
+> The LAN endpoint stays `https://llama.vanillax.me/v1`.
 >
 > This document is for **Pi.dev / Pi coding agent**, not Raspberry Pi.
 
@@ -24,7 +25,7 @@ packages/extensions. The configuration below targets Pi 0.84.x or newer.
 
 ## 2. `~/.pi/agent/models.json`
 
-Use a dedicated custom provider for the active llama.cpp endpoint:
+Use a dedicated custom provider for the stable local inference endpoint:
 
 ```json
 {
@@ -51,7 +52,7 @@ Use a dedicated custom provider for the active llama.cpp endpoint:
       "models": [
         {
           "id": "qwen3.8-27b",
-          "name": "Qwen3.8 27B (llama.cpp, 1x3090, 65K)",
+          "name": "Qwen3.8 27B (vLLM FP8, 2x3090, 262K)",
           "reasoning": true,
           "thinkingLevelMap": {
             "off": "off",
@@ -63,7 +64,7 @@ Use a dedicated custom provider for the active llama.cpp endpoint:
             "max": null
           },
           "input": ["text", "image"],
-          "contextWindow": 65536,
+          "contextWindow": 262144,
           "maxTokens": 16384,
           "cost": {
             "input": 0,
@@ -89,7 +90,7 @@ current implementation does not also place Pi's selected effort inside the
 Qwen chat-template kwargs. `chat-template` lets this provider send both pieces
 explicitly:
 
-| Pi level | `chat_template_kwargs` sent to llama.cpp |
+| Pi level | `chat_template_kwargs` sent to the backend |
 |---|---|
 | `off` | `enable_thinking: false`, `preserve_thinking: true` |
 | `low` | `enable_thinking: true`, `reasoning_effort: low`, `preserve_thinking: true` |
@@ -181,7 +182,7 @@ alias pi-qwen-only='pi --model vanillax-llama/qwen3.8-27b --thinking medium'
 alias pi-withk3='pi --model vanillax-litellm/kimi-k3'
 ```
 
-`pi-qwen-only` always starts a fresh Qwen session on the local llama.cpp backend
+`pi-qwen-only` always starts a fresh Qwen session on the local vLLM backend
 with medium reasoning. `pi-withk3` starts on Kimi K3 through LiteLLM; because
 both models remain enabled in Pi settings, `/model` can still switch that
 session to `vanillax-llama/qwen3.8-27b` when needed.
@@ -205,7 +206,7 @@ pi-withk3 is an alias for pi --model vanillax-litellm/kimi-k3
 If an existing Pi session was created before the provider rename, resuming it
 may still show `vanillax-vllm` in the status bar because the session metadata
 stores the old provider identity. That does **not** mean the new provider config
-failed. Use a new session for clean llama.cpp validation rather than reusing an
+failed. Use a new session for clean backend validation rather than reusing an
 old `vanillax-vllm` session.
 
 ## 5. Start and verify
@@ -293,22 +294,23 @@ You should see a bash call to `date` rather than a guessed date.
 
 ## 8. Vision / screenshot test
 
-The production backend has the BF16 multimodal projector enabled. Attach a
+The production backend has the native vision encoder enabled. Attach a
 screenshot/image in Pi and ask a concrete question about it.
 
 If text works but images fail:
 
 ```bash
-kubectl -n llama-cpp logs deploy/llama-cpp-server --tail=200
-kubectl -n llama-cpp exec deploy/llama-cpp-server -- nvidia-smi
+kubectl -n vllm logs deploy/vllm-server --tail=200
+kubectl -n vllm exec deploy/vllm-server -- nvidia-smi
 ```
 
 Do not point Pi at ComfyUI for vision; `qwen3.8-27b` itself is multimodal.
 
 ## 9. Context discipline
 
-The server has one 65,536-token slot. Local token **volume** is free, but a
-single request still has a finite context window.
+The server ceiling is 262,144 tokens, with two sequences sharing the KV pool.
+This does not reserve two full-length sessions. Validate a context ladder
+before relying on near-ceiling requests.
 
 For coding agents:
 
@@ -316,7 +318,7 @@ For coding agents:
 - `/compact` before the session becomes mostly historical tool output;
 - use `/new` between unrelated tasks;
 - avoid giant generated files, lockfiles, logs, or build artifacts;
-- parallel subagents contend for the same single llama.cpp sequence slot.
+- parallel subagents contend for the same two-sequence vLLM capacity.
 
 The current backend is optimized for strong single-user interactive latency,
 not high-concurrency serving.
@@ -342,7 +344,7 @@ loading a huge MCP catalog.
 
 ```markdown
 # Environment
-- Primary local model: qwen3.8-27b on homelab llama.cpp, one RTX 3090, 65K.
+- Primary local model: qwen3.8-27b on homelab vLLM FP8, two RTX 3090s, 262K ceiling.
 - Free local token volume is not infinite context. Keep reads targeted and
   compact long sessions.
 - Prefer actual CLI/tool evidence over guessing.
@@ -367,23 +369,21 @@ remain useful; do not duplicate the whole repository policy globally.
 Pi should not carry backend tuning beyond capability metadata. Runtime tuning
 lives in:
 
-- `my-apps/ai/llama-cpp/deployment.yaml`
-- `my-apps/ai/llama-cpp/README.md`
+- `my-apps/ai/vllm/deployment.yaml`
+- `my-apps/ai/vllm/README.md`
 - `docs/domains/ai-gpu/model-catalog.md`
 
-Current measured production shape:
+Declared profile (runtime performance still to be measured):
 
 ```text
-Qwen3.8-27B UD-Q4_K_XL
-stock llama.cpp b10752
-1x RTX 3090
-65,536 context
-q8_0 target + draft KV
-MTP Q4_0, n-max=2
-BF16 vision projector
-~42-43 tok/s observed interactive decode
-~22.7 GiB VRAM under generation
-220 W cap
+Official Qwen3.8-27B-FP8
+stock vLLM v0.28.0, TP=2
+2x RTX 3090
+262,144 context ceiling
+FP8 E4M3 KV, float16 recurrent state
+MTP/speculation off
+native vision, one image per request
+220 W cap per card
 ```
 
 If the model ID remains `qwen3.8-27b`, Pi does not need a config change for a

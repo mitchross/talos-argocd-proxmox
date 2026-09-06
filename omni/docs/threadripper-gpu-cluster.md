@@ -79,7 +79,7 @@ ended the ATA errors, but a board whose chipset latches fatal PCIe errors every
 boot has not earned back the cluster's only etcd member. That host must not
 carry etcd or any single-replica data that cannot be rebuilt.
 
-It keeps the GPU worker because the RTX 3090 is physically in it, and because a
+It keeps the GPU worker because both RTX 3090s are physically in it, and because a
 GPU node is the cheapest thing to lose: the workloads are stateless inference
 services that reschedule.
 
@@ -93,7 +93,7 @@ Set up remote kernel logging before trusting any diagnosis of that host — see
 | `hp-sff-control-plane` | 4 | 12 GiB | 62 GiB | 100 GiB on its own SSD (`hp-sff-cp-vmstore`) |
 | `hp-sff-worker` | 6 | 40 GiB | (same host) | 128 GiB boot + 690 GiB Longhorn |
 | `hp-elite-worker` | 16 | 24 GiB | 30 GiB | 128 GiB boot + 440 GiB Longhorn |
-| `threadripper-gpu-worker` | 30 | 100 GiB | 125 GiB | 2x450 GiB + 300 GiB flash + RTX 3090 |
+| `threadripper-gpu-worker` | 30 | 100 GiB | 125 GiB | 2x450 GiB + 300 GiB flash + 2x RTX 3090 |
 | `dell-worker` | 4 | 30 GiB | 39 GiB | 128 GiB boot + 400 GiB Longhorn |
 | `hp-micro-worker` | 4 | 12 GiB | 15 GiB | 128 GiB boot + 850 GiB Longhorn (unschedulable) |
 
@@ -116,6 +116,25 @@ throughput, which is precisely what etcd depends on.
 The HP Elite Longhorn disk is the 512 GB Intel NVMe. SMART reported 74% wear
 when it was commissioned, with zero media/data-integrity errors; watch its wear
 and error counters and replace it before exhaustion.
+
+## GPU passthrough
+
+The `threadripper-gpu-worker` MachineClass requests `gpu-1` and `gpu-2`.
+These are Proxmox PCI resource mapping names, not CUDA device indices. Each
+mapping must identify one NVIDIA GPU, including its audio function when using
+an all-functions PCI path. Never include the AMD root complex (`00:00`): it
+has no IOMMU group and blocks VM startup.
+
+Updating the class covers future allocations. Existing VM hardware is managed
+in Proxmox by the operator; preserve the VM and its disks. Talos already loads
+all four NVIDIA modules and uses interface-independent DHCP, so a second card
+needs no extra module entry or pinned network-interface configuration.
+
+After the operator boots the VM, confirm the node is Ready and Kubernetes
+reports `nvidia.com/gpu: 2`. Check both cards through `nvidia-smi` in the
+`nvidia-powerlimit` DaemonSet; a one-card workload correctly sees only its own
+allocated card. The [Flash Next study](../../docs/domains/ai-gpu/flash-next-dual-3090.md)
+contains the memory budget and validation commands.
 
 ## Storage
 

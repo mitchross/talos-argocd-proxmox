@@ -1,8 +1,8 @@
 # One 3090 vs two for Qwen3.8-27B
 
-The active backend is again stock vLLM on a single card. This page preserves the
-earlier one-vs-two-card benchmark; the chassis now holds one 3090 permanently,
-so the two-card column is historical evidence only.
+The declared backend is official Qwen3.8-27B FP8 on vLLM with both 3090s.
+This page preserves a historical benchmark, not validation of the new profile.
+For the larger model, see [Flash Next feasibility](flash-next-dual-3090.md).
 
 The swap procedure lives in [`gpu-scale-swap.md`](gpu-scale-swap.md); model
 inventory and app wiring live in [`model-catalog.md`](model-catalog.md).
@@ -96,13 +96,12 @@ pool rather than applying the values below to it. This benchmark did not cover:
 - **Higher concurrency.** Three sequence slots were enough for the apps in this
   cluster; more consumers would need re-measuring.
 
-## Restoring two cards
+## Using the second card
 
-Revert the vLLM Deployment to `--tensor-parallel-size 2`, `nvidia.com/gpu: 2`,
-the FP8 checkpoint and `--max-model-len 262144`. Both configurations run the
-same stock digest-pinned image, and the FP8 checkpoint stays on the read-only
-model share, so no data moves and no image changes. Expect ~3 minutes for the
-pod to reload weights.
+Adding PCI passthrough does not change a pod's GPU allocation or engine flags.
+The [model catalog](model-catalog.md) owns current serving settings; use the
+[scale-swap runbook](gpu-scale-swap.md) for a GitOps model change. Do not apply
+this historical vLLM profile to Flash Next.
 
 ## Reproducing
 

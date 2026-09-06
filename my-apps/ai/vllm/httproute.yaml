@@ -13,6 +13,7 @@ spec:
     namespace: gateway
   hostnames:
   - "vllm.vanillax.me"
+  - "llama.vanillax.me"
   rules:
   - matches:
     - path:
