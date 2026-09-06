@@ -45,17 +45,8 @@ defaultSettings:
 preUpgradeChecker:
   jobEnabled: false
 persistence:
-  # -- The chart-created `longhorn` StorageClass, cluster default. NEVER rename it —
-  # 40+ PVCs, the kopiur backup contract and CLAUDE.md reference `storageClassName: longhorn`.
-  defaultClass: true
-  # -- Default replica count. Stay at 1 until a second trustworthy wired storage
-  # worker exists and is measured; off-cluster durability is kopiur backups to RustFS.
-  defaultClassReplicaCount: 1
-  # -- Default filesystem type.
-  defaultFsType: ext4
-  defaultDataLocality: best-effort
-  # -- Reclaim policy for the default storage class.
-  reclaimPolicy: Delete
+  # The chart's ConfigMap generator cannot set mountOptions; ArgoCD owns storageclass-default.yaml instead.
+  createStorageClass: false
 # -- Disable the default ingress creation, as you are managing it with a
 # separate HTTPRoute resource.
 ingress:
