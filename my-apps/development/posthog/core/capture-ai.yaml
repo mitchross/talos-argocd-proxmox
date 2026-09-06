@@ -33,6 +33,8 @@ spec:
               value: "kafka:9092"
             - name: REDIS_URL
               value: "redis://redis7:6379/"
+            - name: CAPTURE_ANALYTICS_AI_EVENTS_TOPIC
+              value: "events_plugin_ingestion_ai"
             - name: CAPTURE_MODE
               value: "events"
             - name: RUST_LOG

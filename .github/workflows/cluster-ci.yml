@@ -178,6 +178,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s scripts/tests -p test_monitoring_contract.py -v
+          python3 -m unittest discover -s scripts/tests -p test_ai_observability.py -v
+          python3 -m unittest discover -s scripts/tests -p test_qwen_reasoning.py -v
           kustomize build infrastructure/controllers/argocd --enable-helm \
             --helm-kube-version "${KUBERNETES_VERSION}" \
             --helm-api-versions monitoring.coreos.com/v1 > /tmp/argocd-with-monitoring.yaml

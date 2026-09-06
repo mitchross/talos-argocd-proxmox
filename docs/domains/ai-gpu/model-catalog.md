@@ -70,14 +70,17 @@ inspect hooks, health, vision, tools, reasoning and long-context behavior.
 - LAN: `https://llama.vanillax.me/v1` and `https://vllm.vanillax.me/v1`
 
 The llama.cpp Service aliases vLLM, preserving existing app configuration.
-Both LAN hostnames route directly to the vLLM selector Service. Consumers
-include Open WebUI, Perplexica/Vane, LiteLLM, Presenton, SurfSense, HolmesGPT,
+Both LAN hostnames route directly to the vLLM selector Service. Direct consumers
+include Perplexica/Vane, LiteLLM, Presenton, SurfSense, HolmesGPT,
 Hindsight, Project Nomad, the ComfyUI vision bridge, WorldMonitor, Keep,
 Deal Scout, Karakeep and the News Reader Temporal worker.
 
 ## Pi.dev
 
-Pi uses `vanillax-vllm/qwen3.8-27b` through `https://vllm.vanillax.me/v1`.
+Pi uses `vanillax-vllm/qwen3.8-27b` through `https://litellm.vanillax.me/v1`.
+Open WebUI uses the in-cluster LiteLLM service. Both routes collect request
+metrics and PostHog AI events; direct vLLM callers bypass that gateway.
+See [AI observability](ai-observability.md) for verification and fallback.
 The [workstation guide](pi-agent-local-dev.md) owns the provider JSON, explicit
 medium reasoning mapping, mode-specific sampler extension, compaction reserve,
 one-image history limit, validation, and rollback. Existing cloud providers

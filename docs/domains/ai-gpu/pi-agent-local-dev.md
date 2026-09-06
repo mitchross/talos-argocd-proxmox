@@ -1,7 +1,7 @@
 # Pi.dev agent on the dual-3090 backend
 
 Current workstation guide, audited 2026-09-06 against Pi **0.84.2**, its installed
-provider source, and the live vLLM endpoint. Pi is the coding agent from
+provider source, and the live LiteLLM → vLLM endpoint. Pi is the coding agent from
 [pi.dev](https://pi.dev), not Raspberry Pi. These files configure a workstation;
 cluster changes still go through Git and ArgoCD.
 
@@ -14,15 +14,17 @@ cloud providers. The audit found a stale `qwen3.6-27b` default and the built-in
 
 Back up `~/.pi/agent/models.json`, `settings.json`, and `AGENTS.md` before editing.
 Merge this provider into `models.json`; do not overwrite other providers or
-credentials. The placeholder API key is only for this endpoint's local setup.
+credentials. Use `/login` for `vanillax-vllm` and enter the LiteLLM key from
+1Password (`homelab-prod/litellm/master_key`). Pi stores it in workstation
+`auth.json`; omit `apiKey` from the provider JSON. A placeholder key fails
+against this authenticated gateway. Keep credentials out of Git.
 
 ```json
 {
   "providers": {
     "vanillax-vllm": {
-      "baseUrl": "https://vllm.vanillax.me/v1",
+      "baseUrl": "https://litellm.vanillax.me/v1",
       "api": "openai-completions",
-      "apiKey": "local-no-key-required",
       "compat": {
         "supportsDeveloperRole": false,
         "supportsReasoningEffort": false,
@@ -86,6 +88,12 @@ Preservation is on for agent continuity and unchanged-prefix reuse. Stateless
 chats may explicitly disable preservation without changing the server default.
 [Official Qwen controls](https://huggingface.co/Qwen/Qwen3.8-27B-FP8#api-usage),
 [Pi model schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md).
+
+Requests pass through LiteLLM for Prometheus metrics and PostHog AI analytics.
+The provider ID stays `vanillax-vllm`, preserving its thinking mapping and sampler
+extension. The backend is still stock vLLM with the same context and GPUs.
+[Telemetry verification and direct-access fallback](ai-observability.md) explains
+how to confirm actual event storage; successful inference alone is insufficient.
 
 ## Settings and usable context
 

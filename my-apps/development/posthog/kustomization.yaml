@@ -24,6 +24,7 @@ resources:
   - core/capture-ai.yaml
   - core/hypercache-server.yaml
   - core/ingestion.yaml
+  - core/ingestion-ai.yaml
   - core/ingestion-sessionreplay.yaml
   - core/recording-api.yaml
   - core/temporal-worker.yaml

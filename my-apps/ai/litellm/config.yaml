@@ -1,0 +1,33 @@
+model_list:
+  - model_name: qwen3.8-27b
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+      api_key: "vllm-no-key-required"
+      timeout: 1800
+    model_info:
+      # Self-hosted — pin explicitly rather than rely on LiteLLM's cost map.
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+  - model_name: kimi-k3
+    litellm_params:
+      model: moonshot/kimi-k3
+      api_key: os.environ/MOONSHOT_API_KEY
+    model_info:
+      # Kimi K3 pricing (moonshot.ai, 2026-07): $3/M input, $15/M output.
+      # Set explicitly since the model may be too new for LiteLLM's built-in cost map.
+      input_cost_per_token: 0.000003
+      output_cost_per_token: 0.000015
+
+litellm_settings:
+  callbacks: ["prometheus"]
+  # Cover long-context requests beyond the built-in 600-second histogram ceiling.
+  prometheus_latency_buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60, 120, 300, 420, 600, 900, 1200, 1800]
+  require_auth_for_metrics_endpoint: true
+  success_callback: ["posthog"]
+  failure_callback: ["posthog"]
+  # Kimi K3 rejects sampling-param overrides (temperature/top_p/etc.) — drop rather than error.
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
