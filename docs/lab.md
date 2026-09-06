@@ -32,9 +32,11 @@ the application, route, volume and documentation CSVs. The
 ## What this page knows
 
 This is the **September 5, 2026 audit snapshot**, not a live monitoring screen.
-Host hardware and disks came from read-only SSH inspection; node IPs were checked
-again while this page was prepared. Pod placement and claims use the earlier
-audit snapshot, which includes applications subsequently retired. The
+Host hardware and disks came from read-only SSH inspection. Node IPs and software
+versions were checked again at **2026-09-06 01:48 UTC** after the
+[Talos and Kubernetes upgrade](audits/2026-09-05-upgrade-and-disks.md).
+Pod placement and claims still use the earlier audit snapshot, which includes
+applications subsequently retired. The
 "what if" view explains dependencies; it does not switch machines off or prove
 a measured recovery time.
 
@@ -47,5 +49,6 @@ change after reconnecting hardware.
 The complete sanitized page inventory is downloadable inside the explorer.
 Its source is [`lab-inventory-data.js`](assets/lab-inventory-data.js); it contains
 no disk serial numbers, credentials or raw diagnostic dumps. Update that snapshot
-and its date together after hardware moves. Keep measured state separate from
+and its date together after hardware moves; `runtimeVersionsCheckedAt` records
+the separate node-version check. Keep measured state separate from
 suggestions, and check the page at desktop and phone widths before publishing.
