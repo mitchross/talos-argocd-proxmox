@@ -122,7 +122,7 @@ patches:
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
-    version: 89.2.2
+    version: 89.2.3
     releaseName: kube-prometheus-stack
     namespace: prometheus-stack
     valuesFile: values.yaml
