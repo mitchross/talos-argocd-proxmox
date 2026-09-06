@@ -138,6 +138,7 @@ patches:
       # removed gpu-network-dhcp note under gpu-workers.
       nodeLabels:
         node.vanillax.dev/class: hp-micro-worker
+        node.vanillax.dev/pool: edge
         # Own failure domain: the shed's wifi link, shared with nothing else.
         topology.kubernetes.io/zone: shed
         node.vanillax.dev/link: wifi
@@ -208,6 +209,7 @@ patches:
       # see the removed gpu-network-dhcp note under gpu-workers.
       nodeLabels:
         node.vanillax.dev/class: hp-sff-worker
+        node.vanillax.dev/pool: general
         # Own failure domain: a separate box from the Threadripper (house).
         topology.kubernetes.io/zone: hp-sff
         node.vanillax.dev/link: wired
@@ -273,6 +275,7 @@ patches:
     machine:
       nodeLabels:
         node.vanillax.dev/class: hp-elite-worker
+        node.vanillax.dev/pool: general
         topology.kubernetes.io/zone: hp-elite
         node.vanillax.dev/link: wired
       kubelet:
@@ -333,6 +336,7 @@ patches:
       # hang bug. Plain DHCP-on-all-links; never pin a NIC name.
       nodeLabels:
         node.vanillax.dev/class: dell-worker
+        node.vanillax.dev/pool: disposable
         # Own failure domain: a separate box from the Threadripper and the HPs.
         topology.kubernetes.io/zone: dell
         node.vanillax.dev/link: wired
@@ -398,6 +402,7 @@ patches:
         gpu-worker: "true"
         nvidia.com/gpu: "true"
         node.vanillax.dev/gpu-class: rtx-3090
+        node.vanillax.dev/pool: gpu
         topology.kubernetes.io/zone: house
 - name: longhorn-node-disks
   inline:
