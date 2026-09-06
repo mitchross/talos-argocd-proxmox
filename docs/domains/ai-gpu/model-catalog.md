@@ -1,79 +1,71 @@
 # AI model catalog
 
-Current model inventory, runtime ownership, and app wiring for local chat
-inference. The GPU swap procedure lives in
-[`gpu-scale-swap.md`](gpu-scale-swap.md).
+Git-declared model inventory and app wiring. The official FP8 cutover takes
+effect after the user merges and ArgoCD reconciles; runtime verification is
+still required. The last observed live backend was one-card llama.cpp.
 
-## Current state
+## Declared GPU ownership
 
-| Backend | Replicas | Cards | Served model | Status |
+| Backend | Replicas | Cards per pod | Served model | Status |
 |---|---:|---:|---|---|
-| llama.cpp | `1` | **1** | `qwen3.8-27b` | Active production backend |
-| vLLM | `0` | 1 | `qwen3.8-27b` | Parked rollback |
+| vLLM | `1` | **2** | `qwen3.8-27b` | Official FP8 production cutover |
+| llama.cpp | `0` | 1 | `qwen3.8-27b` | Retained GGUF rollback |
 | NInfer | `0` | 1 | `qwen3.8-ninfer` | Parked evaluation |
 | ComfyUI / SwarmUI | `0` | 1 | Image generation | Parked |
 
-The chassis has one RTX 3090. Exactly one GPU Deployment may have
-`replicas: 1`.
+Both RTX 3090s belong to vLLM. Other GPU workloads must remain parked;
+[GPU scale-swap](gpu-scale-swap.md) owns the procedure. Flash Next remains
+[a researched alternative](flash-next-dual-3090.md).
 
-## Active Qwen3.8 backend
-
-llama.cpp serves the canonical `qwen3.8-27b` id:
+## Official Qwen3.8-27B FP8
 
 | Property | Value |
 |---|---|
-| Engine | stock llama.cpp `b10752` CUDA12 |
-| Weights | Unsloth `Qwen3.8-27B-UD-Q4_K_XL.gguf` (~17.6 GB) |
-| Vision | BF16 Qwen3.8-27B projector |
-| KV | q8_0 K/V for target and MTP draft |
-| Context allocation | 65,536 tokens |
-| Concurrency | one sequence slot |
-| Placement | target + draft fully on RTX 3090 |
-| Speculation | MTP Q4_0, `n-max=2` |
-| Backend default | low reasoning; temp 0.7, top-p 0.8, top-k 20, min-p 0, presence-penalty 1.5 |
-| Power cap | 220 W |
+| Engine | stock vLLM `v0.28.0`, pinned digest |
+| Weights | official `Qwen/Qwen3.8-27B-FP8`, pinned revision |
+| Placement | TP=2, two RTX 3090s, no CPU weight offload |
+| KV / recurrent state | FP8 E4M3 / float16 |
+| Context ceiling | 262,144 tokens |
+| Concurrency | two sequences sharing the KV pool |
+| Vision | native encoder; one image per request, video disabled |
+| Reasoning | explicit off / low / medium / xhigh; low default |
+| Speculation | disabled; MTP deferred until long-session fixes are validated |
+| Power | 220 W per card |
 
-`b10751` fixed a Qwen3.8-27B MTP KV-initialization regression present in
-`b10745`; production uses `b10752`. The 65K window is deliberately conservative:
-stability, tools, vision, Pi.dev and multi-turn correctness matter more than
-advertising the largest context that can boot.
+The official checkpoint is about 30.89 GB (28.77 GiB). RTX 3090 uses an
+Ampere-compatible weight-only FP8 path. Host RAM is loading/transport headroom,
+not additional GPU KV capacity. 262K is a server ceiling, not a promise of two
+simultaneous full-length sessions. AutoRound INT4/W4A8 is a later speed A/B.
 
-### Measured production baseline — 2026-09-03
-
-Normal Open WebUI responses measured about **42-43 generated tok/s**. While
-generating, the single RTX 3090 reported approximately **22,740 MiB / 24,576
-MiB VRAM**, **87% GPU utilization**, and **216 W / 220 W**. These are
-real-machine observations on the Threadripper 2950X host, not synthetic maxima.
+The [canonical vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md)
+owns exact flags, source references, reasoning/sampling examples, rollout
+checks and rollback. No throughput measurement is claimed for this new profile.
 
 ## Storage and staging
 
-The TrueNAS llama.cpp share is the canonical archive. A wave -1 hook downloads
-and SHA-verifies the Q4_K_XL target, BF16 projector and Q4_0 MTP artifact; a
-wave 0 hook hydrates those files into the GPU worker's local NVMe cache. The
-serving pod mounts only the local cache.
+A Git-pinned manifest records revision, size and SHA-256 for all 77 checkpoint
+artifacts. A download hook writes the TrueNAS archive, then a cache-sync hook
+verifies and copies it to local NVMe. The serving init container requires the
+matching readiness marker and complete file inventory; serving stays offline
+from local storage. Interrupted downloads resume, while corrupt copies fail
+verification. Existing AutoRound and GGUF files remain for comparison/rollback.
 
-A revisioned ready stamp plus a serving initContainer gates startup until the
-exact local-NVMe artifact set is present. The old vLLM model and compile caches
-remain intact for rollback.
+NAS free space and export write permissions remain rollout checks; local NVMe
+had approximately 123 GiB free before staging. Follow the vLLM runbook to
+inspect hooks, health, vision, tools, reasoning and long-context behavior.
 
 ## App wiring
 
-Canonical Git-managed direct-client configuration:
-
-- endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - model: `qwen3.8-27b`
-- LAN endpoint: `https://llama.vanillax.me/v1`
+- direct endpoint: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
+- existing app alias: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
+- LAN: `https://llama.vanillax.me/v1` and `https://vllm.vanillax.me/v1`
 
-`https://vllm.vanillax.me/v1` remains a compatibility LAN hostname and also
-routes to llama.cpp. The old in-cluster
-`vllm-service.vllm.svc.cluster.local:8080` name remains an `ExternalName` alias
-for persistent clients whose configuration lives outside Git, such as already
-imported n8n workflows.
-
-Git-managed consumers should use `llama-cpp-service` directly. Current direct
-consumers include Open WebUI, Perplexica/Vane, LiteLLM, Presenton, SurfSense,
-HolmesGPT, Hindsight, Project Nomad, the ComfyUI vision bridge, WorldMonitor,
-Keep, Deal Scout, Karakeep, and the News Reader Temporal worker.
+The llama.cpp Service aliases vLLM, preserving existing app configuration.
+Both LAN hostnames route directly to the vLLM selector Service. Consumers
+include Open WebUI, Perplexica/Vane, LiteLLM, Presenton, SurfSense, HolmesGPT,
+Hindsight, Project Nomad, the ComfyUI vision bridge, WorldMonitor, Keep,
+Deal Scout, Karakeep and the News Reader Temporal worker.
 
 ## Pi.dev
 
@@ -95,10 +87,18 @@ alias pi-withk3='pi --model vanillax-litellm/kimi-k3'
 keeps Qwen available through `/model` because both are enabled in Pi settings.
 Old Pi sessions created under the retired `vanillax-vllm` provider can retain
 that provider name in session metadata; use a new session when validating the
-current llama.cpp provider.
+current provider.
+
+## Historical llama.cpp baseline — 2026-09-03
+
+Normal Open WebUI responses measured about **42-43 generated tok/s**. While
+generating, the single RTX 3090 reported approximately **22,740 MiB / 24,576
+MiB VRAM**, **87% GPU utilization**, and **216 W / 220 W**. These are
+real-machine observations on the Threadripper 2950X host, not synthetic maxima.
 
 ## Rollback
 
-The vLLM manifests, model cache and compile caches are retained. Rollback is a
-single GitOps change that flips GPU ownership, restores the vLLM route/service,
-and rewires Git-managed consumers. Never scale both backends to one.
+Revert the FP8 cutover commit through Git, retaining the earlier two-GPU
+hardware change. This restores llama.cpp's replica, selector Service and
+route, and parks vLLM. Follow the canonical vLLM runbook for verification.
+The retained caches avoid another large download.

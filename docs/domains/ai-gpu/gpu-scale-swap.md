@@ -1,6 +1,6 @@
 # GPU scale-swap runbook
 
-How to change which workload owns the sole RTX 3090 — safely, via git, in one
+How to change which workloads own the two RTX 3090s — safely, via git, in one
 commit. This is the canonical procedure; the one-liners scattered in the
 manifests all point here.
 
@@ -22,23 +22,25 @@ Two things make this safe by construction:
 
 ## Card truth table
 
-| App | Cards | `replicas` in git (current) | File |
+| App | Cards | `replicas` in git (declared) | File |
 |---|---:|---:|---|
-| **llama.cpp** (Qwen3.8-27B UD-Q4_K_XL, active) | **1** | `1` | `my-apps/ai/llama-cpp/deployment.yaml` |
-| **vLLM** (Qwen3.8-27B W4A16, rollback) | 1 | `0` | `my-apps/ai/vllm/deployment.yaml` |
+| **llama.cpp** (Qwen3.8-27B UD-Q4_K_XL, rollback) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
+| **vLLM** (official Qwen3.8-27B FP8) | **2** | `1` | `my-apps/ai/vllm/deployment.yaml` |
 | **NInfer-3090** (Qwen3.8 .ninfer, parked candidate) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
 | **ComfyUI** | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | **SwarmUI** | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (batch benchmark Jobs) | 1 | n/a | `my-apps/ai/llmfit/` |
 
-The chassis permanently has one RTX 3090. A valid steady state has exactly one
-GPU Deployment at `replicas: 1`.
+The declared FP8 profile owns both cards. It takes effect after merge and
+Argo reconciliation; there is no spare GPU while vLLM is running. Sum
+`replicas × requested cards` across active workloads; the total must not
+exceed two. Replica overrides in each `kustomization.yaml` are authoritative.
 
 ## The procedure
 
 1. Pick the target state from the truth table.
 2. Edit outgoing and incoming committed replica counts in **one PR/commit**.
-3. Push/merge and let ArgoCD self-heal to the new state.
+3. Push a PR; the user merges it, then ArgoCD reconciles the new state.
 4. Wait for the outgoing pod to release the GPU; do not "fix" the incoming
    pod while it is Pending.
 5. Verify:
@@ -53,20 +55,21 @@ kubectl -n swarmui get pods
 kubectl -n gpu-operator exec ds/nvidia-powerlimit -- nvidia-smi
 
 # Active production endpoint.
-curl -s http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/models
+curl -fsS https://vllm.vanillax.me/v1/models
 ```
 
-The LAN compatibility hostname `https://vllm.vanillax.me/v1` currently routes
-to llama.cpp too; the canonical in-cluster endpoint is `llama-cpp-service`.
+Both LAN hostnames route to vLLM. Existing in-cluster llama.cpp URLs alias
+the vLLM Service. A rollback must change replica ownership and service/route
+wiring together; see the [model catalog](model-catalog.md).
 
 ## Side effects to expect
 
-- Scaling llama.cpp to 0 removes the active chat/vision backend for Open WebUI,
+- Scaling vLLM to 0 removes the active chat/vision backend for Open WebUI,
   Perplexica, SurfSense, LiteLLM, Hindsight, Presenton, HolmesGPT, Project Nomad,
   and any Pi.dev sessions using the cluster endpoint.
-- ComfyUI's vision-to-image helper depends on the active chat backend. With one
-  card, ComfyUI and the chat backend cannot both own the GPU simultaneously.
-- llmfit Jobs require the active server parked first.
+- ComfyUI's vision-to-image helper depends on the active chat backend. While vLLM owns both
+  cards, ComfyUI cannot run alongside it.
+- Any GPU llmfit Job requires the two-card server parked first.
 
 ## Don'ts
 

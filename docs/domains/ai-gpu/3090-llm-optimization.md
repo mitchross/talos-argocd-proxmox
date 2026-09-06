@@ -3,15 +3,12 @@
 > **Status:** historical analysis. Current serving truth is in
 > [`model-catalog.md`](model-catalog.md). This page cross-references the community
 > [`noonghunna/club-3090`](https://github.com/noonghunna/club-3090) recipe repo,
-> recipe used for the active single-card configuration.
+> which informed earlier configurations.
 >
-> Last updated: 2026-08-30 (current-state banner; historical analysis retained).
->
-> ⚠️ **Current topology:** vLLM serves `qwen3.8-27b` on the sole RTX 3090 using
-> the AutoRound W4A16 dense checkpoint, native vision, fp8 KV at 64K, and
-> 2-token MTP. llama.cpp and image generation are parked. Any dual-card,
-> Qwen3.6, or old preset statement below is historical unless repeated in the
-> model catalog.
+> **Declared profile:** official Qwen3.8-27B FP8 on vLLM, two RTX 3090s,
+> 262K ceiling, vision, no speculation. See the model catalog for rollout status
+> and [Flash Next feasibility](flash-next-dual-3090.md) for larger-model research.
+> Older model and runtime recommendations below are historical.
 
 ## TL;DR
 

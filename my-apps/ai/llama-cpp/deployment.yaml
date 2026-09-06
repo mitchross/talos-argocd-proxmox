@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
-  # Active single-RTX-3090 backend. vLLM is parked at 0 by its Kustomization.
+  # Retained one-card rollback; Kustomization parks this Deployment at zero.
   replicas: 0
   strategy:
     type: Recreate

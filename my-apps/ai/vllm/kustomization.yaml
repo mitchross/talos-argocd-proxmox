@@ -9,19 +9,24 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - pvc-model-cache.yaml
+  - download-pvc.yaml
+  - download-model-job.yaml
   - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml
+  - httproute.yaml
   - servicemonitor.yaml
 
-# Production cutover: llama.cpp owns the sole RTX 3090. Keep vLLM artifacts
-# intact at zero replicas for a one-PR rollback if needed.
+# vLLM owns both cards; the retained llama.cpp Deployment stays parked.
 replicas:
   - name: vllm-server
-    count: 0
+    count: 1
 
 configMapGenerator:
   - name: vllm-scripts
     files:
-      - scripts/sync-model-cache.sh
-      - scripts/wait-for-model-cache.sh
+      - scripts/model_cache.py
+      - model-manifest.json
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
