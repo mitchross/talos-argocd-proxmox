@@ -1,6 +1,6 @@
 # GPU scale-swap runbook
 
-How to change which workload owns the sole RTX 3090 — safely, via git, in one
+How to change which workloads own the two RTX 3090s — safely, via git, in one
 commit. This is the canonical procedure; the one-liners scattered in the
 manifests all point here.
 
@@ -31,14 +31,16 @@ Two things make this safe by construction:
 | **SwarmUI** | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (batch benchmark Jobs) | 1 | n/a | `my-apps/ai/llmfit/` |
 
-The chassis permanently has one RTX 3090. A valid steady state has exactly one
-GPU Deployment at `replicas: 1`.
+The chassis has two RTX 3090s. The current steady state uses one for llama.cpp
+and leaves one spare. Sum `replicas × requested cards` across active workloads;
+the total must not exceed two. A two-card Flash Next trial must first park the
+production backend. See [the feasibility study](flash-next-dual-3090.md).
 
 ## The procedure
 
 1. Pick the target state from the truth table.
 2. Edit outgoing and incoming committed replica counts in **one PR/commit**.
-3. Push/merge and let ArgoCD self-heal to the new state.
+3. Push a PR; the user merges it, then ArgoCD reconciles the new state.
 4. Wait for the outgoing pod to release the GPU; do not "fix" the incoming
    pod while it is Pending.
 5. Verify:
@@ -66,7 +68,8 @@ to llama.cpp too; the canonical in-cluster endpoint is `llama-cpp-service`.
   and any Pi.dev sessions using the cluster endpoint.
 - ComfyUI's vision-to-image helper depends on the active chat backend. With one
   card, ComfyUI and the chat backend cannot both own the GPU simultaneously.
-- llmfit Jobs require the active server parked first.
+- A two-card llmfit Job requires the active server parked first. A one-card
+  Job can use the spare, but concurrent load invalidates comparison benchmarks.
 
 ## Don'ts
 

@@ -1,6 +1,6 @@
 # Pi.dev Agent — local coding against Qwen3.8-27B
 
-> **Current state (2026-09-03):** the sole RTX 3090 serves `qwen3.8-27b`
+> **Current state (2026-09-03):** one RTX 3090 serves `qwen3.8-27b`
 > through stock llama.cpp `b10752`, Q4_K_XL, q8_0 KV, MTP-2, native vision,
 > and a 65,536-token window. The canonical LAN endpoint is
 > `https://llama.vanillax.me/v1`.
