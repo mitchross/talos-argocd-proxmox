@@ -52,6 +52,9 @@ jobs:
       - name: Reject inline executable YAML bodies
         run: bash ./scripts/validate-no-inline-scripts.sh
 
+      - name: Test scoped Longhorn PV mount-option migration
+        run: python3 -m unittest discover -s scripts/tests -p test_longhorn_mount_options.py -v
+
   truenas-csi-contract:
     name: TrueNAS CSI Contract
     runs-on: ubuntu-latest

@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: longhorn-selinux
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - migration-job.yaml
+configMapGenerator:
+  - name: longhorn-selinux-policy
+    files:
+      - policy.json
+  - name: longhorn-selinux-scripts
+    files:
+      - scripts/reconcile.py

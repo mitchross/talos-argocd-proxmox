@@ -82,7 +82,7 @@ check "Argo CD no longer deploys Democratic CSI" \
 check "Democratic CSI directory has been removed" \
   test ! -d infrastructure/storage/democratic-csi
 check "Longhorn remains the default StorageClass" \
-  grep -qE '^[[:space:]]*defaultClass:[[:space:]]*true' infrastructure/storage/longhorn/values.yaml
+  grep -qE '^[[:space:]]+storageclass\.kubernetes\.io/is-default-class: "true"$' infrastructure/storage/longhorn/storageclass-default.yaml
 check "TrueNAS API TCP 443 is allowed by the LAN egress policy" \
   bash -c "awk '/ALLOW: TrueNAS/,/ALLOW: Wyze/' '$POLICY' | grep -qE 'port: \"443\"'"
 check "iSCSI TCP 3260 is not opened in the TrueNAS policy block" \
