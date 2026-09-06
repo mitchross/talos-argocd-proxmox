@@ -165,7 +165,7 @@ currently in **beta**. Expect some limitations and potential bugs. Please
 report issues to the [upstream
 repository](https://github.com/siderolabs/omni-infra-provider-proxmox).
 
-### Concrete beta limitations (as of Talos 1.13 / Omni 1.9)
+### Proxmox provider and machine lifecycle
 
 These are things that hit me in practice — the generic "it's beta" line
 isn't enough to plan around.
@@ -179,17 +179,18 @@ isn't enough to plan around.
   Longhorn capacity. You can still plan
   storage as Longhorn replicas or use external storage (NFS to TrueNAS,
   RustFS S3) for stateful data.
-- **Extensions must be baked into the Talos image OR declared in the
-  cluster template.** You can't "install an extension" at runtime the
-  way you would a package. Changing extensions = image rebuild in Omni +
-  node replacement. This is especially relevant for NVIDIA driver
-  swaps (production → OSS), which require rebuilding the Talos image and
-  replacing the affected nodes.
-- **`machine.install.disk` is mandatory on Talos 1.13.** Without it,
-  fresh VMs provision but stay stuck in `UPGRADING` forever (see root
-  README). This is a Talos 1.13 LifecycleService change, not a provider
-  bug, but it surfaces through the provider first. The patch is already
-  in `omni/cluster-template/cluster-template.yaml`.
+- **Manage extensions through the cluster template.** They belong to the
+  Talos image, not a runtime package installation. Omni can update extensions
+  on an existing machine; a driver change does not inherently require deleting
+  its VM. Plan for the image rollout and check driver compatibility. See
+  [Omni extension management](https://docs.siderolabs.com/omni/infrastructure-and-extensions/install-talos-linux-extensions).
+- **Omni 1.11 owns install-disk selection.** Legacy `machine.install.disk`
+  patches no longer select it. An installed machine keeps its detected system
+  disk; fresh machines default to the smallest eligible disk. With this GPU
+  class that selects the 300 GB flash disk. Do not delete/reprovision the GPU VM
+  until selection is deterministic for a replacement UUID. The
+  [upgrade and disk review](../docs/audits/2026-09-05-upgrade-and-disks.md)
+  explains the resolver, machine-specific overrides and remaining fix.
 - **No VM migration on node failure.** If a Proxmox host dies, its VMs
   don't auto-migrate to another host. You'll need Proxmox HA separately
   (cluster-level, not Omni-level) for that.
