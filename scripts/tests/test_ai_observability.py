@@ -31,7 +31,8 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(config['PLUGIN_SERVER_MODE'], 'ingestion-v2')
         topic = config['INGESTION_CONSUMER_CONSUME_TOPIC']
         self.assertEqual(config['INGESTION_CONSUMER_GROUP_ID'], 'clickhouse-ingestion-ai')
-        self.assertEqual(config['INGESTION_AI_EVENT_SPLITTING_ENABLED'], 'true')
+        # Dedicated-table reads are disabled in the live self-hosted UI.
+        self.assertEqual(config['INGESTION_AI_EVENT_SPLITTING_ENABLED'], 'false')
         for filename in ['capture.yaml', 'capture-ai.yaml']:
             capture = next(yaml.safe_load_all((ROOT / app / 'core' / filename).read_text()))
             self.assertEqual(environment(capture)['CAPTURE_ANALYTICS_AI_EVENTS_TOPIC'], topic)
