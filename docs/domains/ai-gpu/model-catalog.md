@@ -13,8 +13,10 @@ inference. The GPU swap procedure lives in
 | NInfer | `0` | 1 | `qwen3.8-ninfer` | Parked evaluation |
 | ComfyUI / SwarmUI | `0` | 1 | Image generation | Parked |
 
-The chassis has one RTX 3090. Exactly one GPU Deployment may have
-`replicas: 1`.
+The chassis has two RTX 3090s (48 GiB VRAM). The active llama.cpp Deployment
+requests one card; the other is spare. Whole-card allocations across active
+pods must total at most two. Flash Next is a researched candidate, not the
+active model; see [dual-3090 feasibility](flash-next-dual-3090.md).
 
 ## Active Qwen3.8 backend
 
@@ -101,4 +103,5 @@ current llama.cpp provider.
 
 The vLLM manifests, model cache and compile caches are retained. Rollback is a
 single GitOps change that flips GPU ownership, restores the vLLM route/service,
-and rewires Git-managed consumers. Never scale both backends to one.
+and rewires Git-managed consumers. Keep one production chat backend during a rollback; a two-card model must
+release both cards before another GPU workload starts.

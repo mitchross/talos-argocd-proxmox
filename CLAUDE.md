@@ -15,7 +15,7 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 - **llama.cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`, served model `qwen3.8-27b`) is active with Qwen3.8-27B UD-Q4_K_XL, q8_0 target/draft KV, 65K context, MTP-2, native vision, and one RTX 3090.
 - **vLLM** is the parked Qwen3.8-27B W4A16 rollback backend at `replicas: 0`; its model/cache artifacts remain intact.
 
-GPU topology: the GPU workloads use **mutually exclusive whole-card** allocations (`type: Recreate`, time-slicing disabled — never oversubscribe the card). They scale-swap by committed replica counts. Current state is llama.cpp `1`, vLLM `0`, and ComfyUI/SwarmUI `0`; the chassis has one RTX 3090. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
+GPU topology: the GPU workloads use **mutually exclusive whole-card** allocations (`type: Recreate`, time-slicing disabled — never oversubscribe the card). They scale-swap by committed replica counts. Current state is llama.cpp `1`, vLLM `0`, and ComfyUI/SwarmUI `0`; the chassis has two RTX 3090s (48 GiB VRAM); llama.cpp currently requests one card and the second is spare. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 

@@ -44,8 +44,9 @@ One active OpenAI-compatible local backend, **NOT ollama**:
 ## GPU Topology
 
 GPU workloads (vLLM, llama-cpp, ComfyUI, SwarmUI) are **mutually-exclusive
-whole-card workloads** (`type: Recreate`, time-slicing disabled). Never run two
-of them at one replica on the single RTX 3090.
+whole-card workloads** (`type: Recreate`, time-slicing disabled). The worker has
+two RTX 3090s. Total requested cards across active pods must not exceed two;
+the current llama.cpp profile uses one and the second is spare.
 
 The production AI workloads are pinned to `gpu-worker=true`. The Wi-Fi worker
 is CPU-only and deliberately does not carry that label.
@@ -87,8 +88,10 @@ spec:
             nvidia.com/gpu: "1"
 ```
 
-**GPU node is reserved for LLM RAM** — do not schedule Longhorn replicas or
-unrelated workloads there.
+**Large CPU-offloaded LLMs need reserved RAM.** The GPU node currently also
+hosts unrelated workloads and storage; do not assume it is isolated. Resolve
+competing allocations before a large-model cutover; see
+[`flash-next-dual-3090.md`](../../docs/domains/ai-gpu/flash-next-dual-3090.md).
 
 ## Debugging GPU
 
