@@ -56,7 +56,9 @@ spec:
       vga: std
       numa: true
       balloon: false
-      # One RTX 3090 (mapping gpu-1); the second card left for the OpenShift lab.
+      # Both RTX 3090s; mappings must exist on the Proxmox host before provision.
       pci_devices:
         - mapping: gpu-1
+          pcie: true
+        - mapping: gpu-2
           pcie: true
