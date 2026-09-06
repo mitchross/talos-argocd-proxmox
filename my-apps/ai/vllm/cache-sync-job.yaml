@@ -1,5 +1,4 @@
-# Hydrates node-local NVMe from NFS; name+size avoids rereading the whole
-# checkpoint on warm syncs.
+# Verify the pinned archive and local copy before publishing cache readiness.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -24,11 +23,13 @@ spec:
           effect: NoSchedule
       containers:
         - name: sync
-          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+          image: python:3.13-alpine@sha256:7415fbc3c9e4979cc717d92377ab2bc7b2b4a2af1ac03cc52b5f3f88efedaf3a
           command:
-            - /bin/sh
-            - -ec
-            - /opt/repo-scripts/sync-model-cache.sh
+            - python3
+            - /opt/repo-scripts/model_cache.py
+            - sync
+            - --target
+            - /dst
           resources:
             requests:
               cpu: 500m

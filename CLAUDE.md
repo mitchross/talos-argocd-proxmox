@@ -10,12 +10,24 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **Tech Stack**: Talos OS + ArgoCD + Cilium (Gateway API) + Longhorn + 1Password + GPU support
 
-**AI/LLM Backend**: one active OpenAI-compatible local backend plus a parked rollback, both NOT ollama:
+**AI/LLM Backend**: the Git-declared production profile is **vLLM**, with
+llama.cpp retained as a parked rollback; never Ollama.
 
-- **llama.cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`, served model `qwen3.8-27b`) is active with Qwen3.8-27B UD-Q4_K_XL, q8_0 target/draft KV, 65K context, MTP-2, native vision, and one RTX 3090.
-- **vLLM** is the parked Qwen3.8-27B W4A16 rollback backend at `replicas: 0`; its model/cache artifacts remain intact.
+- **vLLM**: official `Qwen/Qwen3.8-27B-FP8`, TP=2 on both RTX 3090s, FP8 KV,
+  native vision, 262,144-token server ceiling, explicit reasoning levels, and
+  **no MTP/speculative decoding**. The new profile needs post-merge runtime
+  verification; configuration is not a performance measurement.
+- **llama.cpp**: retained Qwen3.8-27B GGUF one-card profile at `replicas: 0`.
+- Stable API model: `qwen3.8-27b`. Direct service:
+  `http://vllm-service.vllm.svc.cluster.local:8080/v1`. Existing
+  `llama-cpp-service.llama-cpp.svc.cluster.local:8080` aliases vLLM;
+  both `llama.vanillax.me` and `vllm.vanillax.me` route to vLLM directly.
 
-GPU topology: the GPU workloads use **mutually exclusive whole-card** allocations (`type: Recreate`, time-slicing disabled — never oversubscribe the card). They scale-swap by committed replica counts. Current state is llama.cpp `1`, vLLM `0`, and ComfyUI/SwarmUI `0`; the chassis has two RTX 3090s (48 GiB VRAM); llama.cpp currently requests one card and the second is spare. App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
+Both cards use whole-card allocations (`Recreate`, time-slicing disabled),
+with the existing 220 W per-card limit. llama.cpp and image generation must
+remain parked while vLLM requests both. The AutoRound INT4 checkpoint is
+retained only for a later speed A/B. Canonical runtime/staging/rollback:
+`my-apps/ai/vllm/README.md`; app wiring: `docs/domains/ai-gpu/model-catalog.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
@@ -122,7 +134,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
-- Use **llama.cpp** (`qwen3.8-27b`, the active default for app inference) or the parked vLLM rollback backend — **never ollama**
+- Use **vLLM** (`qwen3.8-27b`, the declared default for app inference) or the parked llama.cpp rollback backend — **never ollama**
 - Use sync waves when adding infrastructure components
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
@@ -173,7 +185,7 @@ Detailed instructions load automatically when working in these directories:
 | `infrastructure/database/` | Database AppSet scope (Redis + shared support); plain-Postgres pointer |
 | `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
 | `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
-| `my-apps/ai/` | GPU workload patterns, active llama.cpp backend, parked vLLM rollback |
+| `my-apps/ai/` | GPU workload patterns, dual-card vLLM backend, parked llama.cpp rollback |
 | `my-apps/development/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
 | `monitoring/` | Monitoring pitfalls (S3 creds, ServiceMonitor selectors) |
 

@@ -1,5 +1,10 @@
 # Qwen3.8 Flash Next on two RTX 3090s
 
+> **Follow-up decision:** the selected serving profile is official Qwen3.8-27B
+> FP8 on dual-card vLLM. See the [model catalog](model-catalog.md) for cutover
+> status. The live observations below describe the earlier hardware restoration.
+
+
 **Status: researched candidate, 2026-09-06. GPU expansion is implemented;
 Flash Next is not deployed or benchmarked on this restored two-card system.**
 This study answers whether the Threadripper Talos worker can serve a Q4-class

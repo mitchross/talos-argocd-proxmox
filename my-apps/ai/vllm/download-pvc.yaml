@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vllm-download-nfs-pv
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - tcp
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+    - nconnect=16
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: vllm-download-nfs-pv
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/ai-pool/vllm"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-download-models
+  namespace: vllm
+  labels:
+    backup-exempt: "true"
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+    storage.vanillax.dev/backup-exempt-reason: "Public revision-pinned model archive; fully reproducible from Hugging Face and the committed SHA-256 manifest"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: ""
+  volumeName: vllm-download-nfs-pv
