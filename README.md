@@ -383,10 +383,14 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 
 ## Cluster Upgrades & Talos 1.14 Notes
 
-The templates target Talos **1.14.0** and Kubernetes **1.37.0**. Committing or
-merging these files does not upgrade the running machines; Omni performs the
-rollout separately. See the [upgrade and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
-before applying the template to an existing cluster or using it for a rebuild.
+All six nodes were verified Ready on Talos **1.14.0** and Kubernetes **1.37.0**
+at **2026-09-06 01:48 UTC** (September 5 evening in Detroit). The templates,
+kopiur rendering target and Cluster CI already match those versions.
+
+The [upgrade results and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
+record the Longhorn fix and recovery checks. Merging a version change still
+does not upgrade the machines; Omni performs that rollout separately. The
+fresh GPU installation problem below remains open after this successful upgrade.
 
 ### Fresh GPU provisioning needs a disk-selection fix
 
