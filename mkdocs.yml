@@ -136,6 +136,7 @@ nav:
       - Flash Next on two 3090s: domains/ai-gpu/flash-next-dual-3090.md
       - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
       - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
+      - AI gateway and analytics: domains/ai-gpu/ai-observability.md
       - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
   - Reference & ops:
       - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md

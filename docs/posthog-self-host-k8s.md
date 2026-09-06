@@ -25,6 +25,7 @@ feature flags) on any Kubernetes cluster. The reference implementation lives in
 | web | `posthog/posthog` | Django UI/API monolith | 8000 (+8001 metrics) |
 | worker | `posthog/posthog` | Celery tasks/scheduler | — |
 | plugins | `posthog/posthog-node` (`PLUGIN_SERVER_MODE` unset) | CDP / webhooks | 6738 |
+| ingestion-ai | `posthog/posthog-node` (`ingestion-v2`) | dedicated AI events → ClickHouse (required for LLM analytics) | 6738 |
 | ingestion-general | `posthog/posthog-node` (`ingestion-v2-combined`) | event ingestion pipeline | — |
 | ingestion-sessionreplay | `posthog/posthog-node` (`recordings-blob-ingestion-v2`) | replay blob writer → S3 | — |
 | recording-api | `posthog/posthog-node` (`recording-api`) | replay playback | 6738 |
@@ -54,6 +55,19 @@ currently pins — that's the only combination upstream tests.
 | hypercache-server | nothing yet — flag/survey config served from Postgres |
 | browserless (Chromium) | page screenshots (heatmap previews, exports) |
 
+The pinned Rust capture routes `$ai_*` analytics to
+`events_plugin_ingestion_ai`. The pinned Node `ingestion-v2-combined` mode
+consumes five other topics and **does not consume this one**. Our dedicated
+`ingestion-ai` Deployment uses `ingestion-v2` with an explicit topic/group and
+AI event splitting **disabled**: full AI payloads go to shared `events`, which
+the current UI reads. The live `ai-events-table-rollout` flag is false; enabling
+splitting would hide prompt/completion bodies from that read path. Its new
+group starts at the earliest retained offset, so queued
+history can drain without resetting any existing group. Both capture services
+pin the same AI topic explicitly. Keep the Node and monolith digests aligned.
+[AI observability verification](domains/ai-gpu/ai-observability.md) owns the
+end-to-end checks; an HTTP 200 capture response only confirms intake.
+
 ## 3. Boot order and init jobs
 
 Strict ordering prevents every classic first-boot failure. With ArgoCD use
@@ -72,7 +86,7 @@ wave  3  everything else
 `events_plugin_ingestion`, `exceptions_ingestion`, `clickhouse_events_json`,
 `session_recording_events`, `session_recording_events2`,
 `session_recording_snapshot_item_events`, `clickhouse_app_metrics2`,
-`logs_ingestion`, plus `ai_events_ingestion` and `clickhouse_ai_events_json`
+`logs_ingestion`, plus `events_plugin_ingestion_ai`, `ai_events_ingestion`, and `clickhouse_ai_events_json`
 if you run the LLM-analytics capture path.
 
 **migrate** runs, in order: wait for postgres + clickhouse → `manage.py migrate`

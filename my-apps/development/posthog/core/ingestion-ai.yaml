@@ -1,0 +1,126 @@
+# Dedicated AI consumer: the pinned combined mode does not subscribe to the AI topic.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion-ai
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: ingestion-ai
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: ingestion-ai
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: ingestion-ai
+    spec:
+      initContainers:
+        - name: fetch-mmdb
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:855558b8d0df0a47bad6362d356be147fad4d4e5705b82b771ec8b48a4398000
+          command:
+            - sh
+            - -c
+            - cp /app/share/GeoLite2-City.mmdb /shared/GeoLite2-City.mmdb
+          volumeMounts:
+            - name: mmdb
+              mountPath: /shared
+      containers:
+        - name: ingestion-ai
+          image: posthog/posthog-node:latest@sha256:863e76e040ad41aef79f605c33ec71f1529bddf94cfd88941c935da9bde97235
+          command:
+            - node
+            - nodejs/dist/index.js
+          volumeMounts:
+            - name: mmdb
+              mountPath: /code/share
+              readOnly: true
+          envFrom:
+            - configMapRef:
+                name: posthog-env
+          env:
+            - name: PLUGIN_SERVER_MODE
+              value: "ingestion-v2"
+            - name: INGESTION_CONSUMER_CONSUME_TOPIC
+              value: "events_plugin_ingestion_ai"
+            - name: INGESTION_CONSUMER_GROUP_ID
+              value: "clickhouse-ingestion-ai"
+            # The self-hosted UI reads shared events; splitting would hide prompt/completion bodies.
+            - name: INGESTION_AI_EVENT_SPLITTING_ENABLED
+              value: "false"
+            - name: MMDB_FILE_LOCATION
+              value: "/code/share/GeoLite2-City.mmdb"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-secret
+            - name: ENCRYPTION_SALT_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: encryption-salt-keys
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: PERSONS_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: BEHAVIORAL_COHORTS_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: OBJECT_STORAGE_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: COOKIELESS_REDIS_HOST
+              value: "redis7"
+            - name: COOKIELESS_REDIS_PORT
+              value: "6379"
+            - name: CDP_REDIS_HOST
+              value: "redis7"
+            - name: CDP_REDIS_PORT
+              value: "6379"
+          ports:
+            - containerPort: 6738
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /_ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: mmdb
+          emptyDir:
+            sizeLimit: 128Mi

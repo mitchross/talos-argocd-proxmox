@@ -1,39 +1,30 @@
-# Pi.dev Agent — local coding against Qwen3.8-27B
+# Pi.dev agent on the dual-3090 backend
 
-> **Git-declared cutover:** official Qwen3.8-27B FP8 on stock vLLM v0.28.0,
-> two RTX 3090s, FP8 KV, vision and a 262,144-token ceiling. Speculation is off.
-> Merge, Argo reconciliation and runtime checks must finish before increasing
-> workstation context metadata. The last live backend was llama.cpp at 65K.
-> The LAN endpoint stays `https://llama.vanillax.me/v1`.
->
-> This document is for **Pi.dev / Pi coding agent**, not Raspberry Pi.
+Current workstation guide, audited 2026-09-06 against Pi **0.84.2**, its installed
+provider source, and the live LiteLLM → vLLM endpoint. Pi is the coding agent from
+[pi.dev](https://pi.dev), not Raspberry Pi. These files configure a workstation;
+cluster changes still go through Git and ArgoCD.
 
-Pi is a workstation client. Nothing in `~/.pi/agent/` deploys to Kubernetes.
-The cluster owns model/runtime tuning; Pi only needs provider/model metadata
-that describes the OpenAI-compatible API and Qwen3.8's reasoning controls.
+Use **`vanillax-vllm/qwen3.8-27b`, medium thinking, preserved reasoning, native
+vision, and automatic compaction**. Keep the existing provider identity and
+cloud providers. The audit found a stale `qwen3.6-27b` default and the built-in
+`qwen-chat-template` toggle, which omitted the selected reasoning effort.
 
-## 1. Update Pi
+## Provider configuration
 
-```bash
-pi update --self
-pi update --all
-pi --version
-```
-
-`pi update --self` updates Pi itself; `pi update --all` updates Pi and installed
-packages/extensions. The configuration below targets Pi 0.84.x or newer.
-
-## 2. `~/.pi/agent/models.json`
-
-Use a dedicated custom provider for the stable local inference endpoint:
+Back up `~/.pi/agent/models.json`, `settings.json`, and `AGENTS.md` before editing.
+Merge this provider into `models.json`; do not overwrite other providers or
+credentials. Use `/login` for `vanillax-vllm` and enter the LiteLLM key from
+1Password (`homelab-prod/litellm/master_key`). Pi stores it in workstation
+`auth.json`; omit `apiKey` from the provider JSON. A placeholder key fails
+against this authenticated gateway. Keep credentials out of Git.
 
 ```json
 {
   "providers": {
-    "vanillax-llama": {
-      "baseUrl": "https://llama.vanillax.me/v1",
+    "vanillax-vllm": {
+      "baseUrl": "https://litellm.vanillax.me/v1",
       "api": "openai-completions",
-      "apiKey": "local-no-key-required",
       "compat": {
         "supportsDeveloperRole": false,
         "supportsReasoningEffort": false,
@@ -46,7 +37,7 @@ Use a dedicated custom provider for the stable local inference endpoint:
             "$var": "thinking.effort",
             "omitWhenOff": true
           },
-          "preserve_thinking": true
+          "preserve_thinking": { "$var": "thinking.enabled" }
         }
       },
       "models": [
@@ -65,7 +56,7 @@ Use a dedicated custom provider for the stable local inference endpoint:
           },
           "input": ["text", "image"],
           "contextWindow": 262144,
-          "maxTokens": 16384,
+          "maxTokens": 32768,
           "cost": {
             "input": 0,
             "output": 0,
@@ -79,312 +70,169 @@ Use a dedicated custom provider for the stable local inference endpoint:
 }
 ```
 
-### Why the explicit chat-template mapping matters
+`thinkingFormat: chat-template` resolves Pi's selected thinking level into
+Qwen's native kwargs. `supportsReasoningEffort: false` prevents a conflicting
+top-level field. The model-level mapping exposes only supported choices:
 
-Qwen3.8's upstream template accepts only `low`, `medium`, and `xhigh` when
-thinking is enabled, and defaults to `xhigh` if effort is omitted. Turning
-thinking off is a separate `enable_thinking=false` control.
+| Pi level | Thinking | Effort sent | Preserve reasoning |
+|---|---|---|---|
+| off | false | omitted | false |
+| low | true | low | true |
+| medium (normal coding) | true | medium | true |
+| xhigh (explicit difficult task) | true | xhigh | true |
 
-Pi has a built-in `qwen-chat-template` mode for the on/off toggle, but the
-current implementation does not also place Pi's selected effort inside the
-Qwen chat-template kwargs. `chat-template` lets this provider send both pieces
-explicitly:
+Qwen accepts no `high` value. Unsupported Pi levels are `null`, so the selector
+skips them. Upstream Qwen defaults to xhigh when effort is omitted; explicit
+client mapping and the server's medium fallback prevent that accident.
+Preservation is on for agent continuity and unchanged-prefix reuse. Stateless
+chats may explicitly disable preservation without changing the server default.
+[Official Qwen controls](https://huggingface.co/Qwen/Qwen3.8-27B-FP8#api-usage),
+[Pi model schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md).
 
-| Pi level | `chat_template_kwargs` sent to the backend |
-|---|---|
-| `off` | `enable_thinking: false`, `preserve_thinking: true` |
-| `low` | `enable_thinking: true`, `reasoning_effort: low`, `preserve_thinking: true` |
-| `medium` | `enable_thinking: true`, `reasoning_effort: medium`, `preserve_thinking: true` |
-| `xhigh` | `enable_thinking: true`, `reasoning_effort: xhigh`, `preserve_thinking: true` |
+Requests pass through LiteLLM for Prometheus metrics and PostHog AI analytics.
+The provider ID stays `vanillax-vllm`, preserving its thinking mapping and sampler
+extension. The backend is still stock vLLM with the same context and GPUs.
+[Telemetry verification and direct-access fallback](ai-observability.md) explains
+how to confirm actual event storage; successful inference alone is insufficient.
 
-`omitWhenOff` prevents Pi from sending the string `off` as a Qwen reasoning
-effort. Unsupported Pi levels are `null`, so the UI skips them rather than
-inventing values the model template rejects.
+## Settings and usable context
 
-Other compatibility choices:
-
-- `supportsDeveloperRole: false` keeps the agent context in an ordinary system
-  message for the local OpenAI-compatible server.
-- `supportsReasoningEffort: false` prevents a duplicate top-level
-  `reasoning_effort`; effort is deliberately carried in `chat_template_kwargs`.
-- `input: ["text", "image"]` enables Pi screenshot/image input.
-- Sampling is not set in Pi. The validated production server owns temp/top-p/
-  top-k/min-p/presence/repeat defaults.
-
-`models.json` reloads whenever `/model` is opened.
-
-## 3. Fix your existing `~/.pi/agent/settings.json`
-
-Your current file already has the right packages and uses model-specific
-`medium` reasoning. Keep those. Rename the old provider and make the current
-backend the default.
-
-The relevant result should be:
+Merge these fields into `~/.pi/agent/settings.json`; keep packages, other model
+preferences, authentication, and UI settings:
 
 ```json
 {
-  "defaultProvider": "vanillax-llama",
+  "defaultProvider": "vanillax-vllm",
   "defaultModel": "qwen3.8-27b",
   "defaultThinkingLevel": "medium",
   "modelThinkingLevels": {
-    "vanillax-llama/qwen3.8-27b": "medium"
+    "vanillax-vllm/qwen3.8-27b": "medium"
   },
-  "enabledModels": [
-    "vanillax-llama/qwen3.8-27b",
-    "vanillax-litellm/kimi-k3"
-  ]
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 49152,
+    "keepRecentTokens": 20000
+  }
 }
 ```
 
-Do **not** overwrite your whole file with that small example; preserve your
-`packages`, theme, changelog state, and other settings. Update the existing JSON
-safely with `jq`:
+The **262,144-token window includes input, tool schemas/results, images,
+reasoning, and the answer**. `maxTokens: 32768` is the output budget, not an
+extra window. Pi compacts when estimated context exceeds the window minus
+`reserveTokens`: approximately **212,992 tokens** here. The 49,152 reserve is
+our operating recommendation: 32,768 output tokens plus 16,384 for tool growth.
+It leaves the full server ceiling available while starting cleanup before a
+long tool result exhausts it. This is not an upstream-required value or a
+hard protection against arbitrarily large tool output. Compaction settings are
+global in Pi; smaller cloud models may need a project-specific override.
+
+Compaction summarizes older history and retains a recent tail. It is lossy:
+keep task decisions, file paths, verification results, and remaining work in
+a concise handoff. Use `/compact` at milestones and `/new` between unrelated
+tasks. Avoid whole-repository dumps; search and read relevant sections.
+[Pi compaction behavior](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/compaction.md),
+[settings and project overrides](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/settings.md).
+
+Two GPU cards do not mean two independent model servers. The live shared pool
+holds about 325K tokens; two simultaneous 262K sessions do not fit. Use one
+long coding session near the ceiling. A second light request can share the
+pool, but parallel agent fanout competes for the same capacity. See the
+[measured capacity audit](3090-llm-optimization.md).
+
+## Correct sampling when switching thinking off
+
+Pi's template mapping switches reasoning but does not switch sampling.
+The small repo-owned
+[Qwen sampler extension](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/qwen-sampling.ts)
+uses Pi's `before_provider_request` hook to select Qwen's six recommended
+sampling values after serialization. It applies only to
+`vanillax-vllm/qwen3.8-27b`, leaves messages/tools/template mapping intact, and
+sets mode-specific values even if a stale client temperature was selected.
+
+From the repository root, back up any existing copy, then install:
 
 ```bash
-cp ~/.pi/agent/settings.json ~/.pi/agent/settings.json.bak
-
-jq '
-  .defaultProvider = "vanillax-llama"
-  | .defaultModel = "qwen3.8-27b"
-  | .defaultThinkingLevel = "medium"
-  | .modelThinkingLevels = ((.modelThinkingLevels // {})
-      | with_entries(
-          if .key == "vanillax-vllm/qwen3.8-27b"
-          then .key = "vanillax-llama/qwen3.8-27b"
-          else . end))
-  | .modelThinkingLevels["vanillax-llama/qwen3.8-27b"] = "medium"
-  | .enabledModels = ((.enabledModels // [])
-      | map(if . == "vanillax-vllm/qwen3.8-27b"
-            then "vanillax-llama/qwen3.8-27b"
-            else . end)
-      | unique)
-' ~/.pi/agent/settings.json > ~/.pi/agent/settings.json.new \
-  && mv ~/.pi/agent/settings.json.new ~/.pi/agent/settings.json
+mkdir -p ~/.pi/agent/extensions
+cp scripts/pi/qwen-sampling.ts ~/.pi/agent/extensions/qwen-sampling.ts
 ```
 
-Then verify:
+Restart Pi or use `/reload`. Thinking requests use temperature 1.0, top-p 0.95,
+top-k 20, min-p 0, presence penalty 0, repetition penalty 1. Off requests use
+0.7, 0.8, 20, 0, 1.5, 1 respectively. The server-wide thinking sampler stays
+unchanged. Without this extension, Pi off still disables reasoning, but needs
+another per-request sampler override to match Qwen's recommendation.
+[Pi request hook](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md#before_provider_request),
+[canonical server policy and API examples](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#explicit-reasoning-and-sampling).
+
+## Vision and browser tools
+
+The current server permits **one image in the entire submitted request** and
+no video. Pi can resend images from earlier turns: one new screenshot plus an
+old screenshot can already exceed the limit. This is unrelated to the size of
+the text context window. Keep text/DOM extraction as the browser default and
+use a screenshot when visual evidence is needed.
+
+If the image limit is reached, do not blindly retry. Start `/new` with a text
+handoff and the required image. `/compact` can help only if the old image is in
+the portion discarded; a recent image may remain. Do not promise that compaction
+always resets the image count. Keep this rule in workstation `AGENTS.md`.
+
+## Recommended agent tools
+
+Start with Pi's built-in file and shell tools. Use the existing LSP integration
+for symbol/type diagnostics, a web tool for current documentation, and browser
+DevTools when the task needs a logged-in page. Keep installed packages; avoid
+adding overlapping tool suites just because the context window is larger.
+Inspect `/session` and tool output growth during long work. Small, relevant
+outputs preserve room for reasoning and reduce prefill work.
+
+Use a new session for clean validation; resumed sessions may retain their old
+model or thinking level. No provider rename, shell alias, or Pi upgrade is
+required for this configuration. The audited Homebrew installation is 0.84.2;
+update through its package manager separately when needed.
+
+## Verification and rollback
 
 ```bash
-jq '{defaultProvider,defaultModel,defaultThinkingLevel,modelThinkingLevels,enabledModels,packages}' \
-  ~/.pi/agent/settings.json
-```
-
-Current Pi supports both `defaultThinkingLevel` and per-model
-`modelThinkingLevels`; keeping the per-model value means this Qwen model starts
-at medium even if another provider later uses a different global default.
-
-## 4. Workstation launchers (`~/.zshrc`)
-
-The workstation uses two convenience aliases:
-
-```bash
-alias pi-qwen-only='pi --model vanillax-llama/qwen3.8-27b --thinking medium'
-alias pi-withk3='pi --model vanillax-litellm/kimi-k3'
-```
-
-`pi-qwen-only` always starts a fresh Qwen session on the local vLLM backend
-with medium reasoning. `pi-withk3` starts on Kimi K3 through LiteLLM; because
-both models remain enabled in Pi settings, `/model` can still switch that
-session to `vanillax-llama/qwen3.8-27b` when needed.
-
-Persist the aliases in `~/.zshrc`, then reload the shell:
-
-```bash
-source ~/.zshrc
-
-type pi-qwen-only
-type pi-withk3
-```
-
-Expected:
-
-```text
-pi-qwen-only is an alias for pi --model vanillax-llama/qwen3.8-27b --thinking medium
-pi-withk3 is an alias for pi --model vanillax-litellm/kimi-k3
-```
-
-If an existing Pi session was created before the provider rename, resuming it
-may still show `vanillax-vllm` in the status bar because the session metadata
-stores the old provider identity. That does **not** mean the new provider config
-failed. Use a new session for clean backend validation rather than reusing an
-old `vanillax-vllm` session.
-
-## 5. Start and verify
-
-Normal launch after the settings change:
-
-```bash
-pi
-```
-
-Explicit launch while validating:
-
-```bash
-pi --provider vanillax-llama --model qwen3.8-27b --thinking medium
-```
-
-Or use the workstation launcher:
-
-```bash
-pi-qwen-only
-```
-
-Check discovery:
-
-```bash
+pi --version
 pi --list-models qwen3.8-27b
+pi --provider vanillax-vllm --model qwen3.8-27b --thinking medium
 ```
 
-Expected model row:
+Expected: `vanillax-vllm`, `qwen3.8-27b`, roughly 262K context and 32K output,
+with thinking and image support. Start normally with `pi` after setting the
+defaults. Use `/model` to reload model metadata and select low, medium, xhigh,
+or off explicitly.
 
-```text
-provider        model        context  max-out  thinking  images
-vanillax-llama  qwen3.8-27b  65.5K    16.4K    yes       yes
-```
-
-Inside Pi, `/model` should show `vanillax-llama/qwen3.8-27b`, and the statusline
-should show `medium`. `/model` + Ctrl+S and `/thinking` + Ctrl+S are also valid
-ways to persist the startup selections.
-
-First tool test from a repository root:
-
-```text
-Read package.json and summarize the scripts. Do not guess; use the read tool.
-```
-
-You should see a real `read` tool call. Then test a small edit in a disposable
-branch and require Pi to run the relevant tests/typecheck.
-
-## 6. Verify reasoning control directly
+For an isolated smoke request from the repo root:
 
 ```bash
-pi --model vanillax-llama/qwen3.8-27b --thinking off \
-  "Reply with exactly: OFF_OK"
-
-pi --model vanillax-llama/qwen3.8-27b --thinking medium \
-  "What is 37*43? Give the answer and a one-line check."
+pi --no-session --no-extensions --no-skills --no-prompt-templates \
+  --no-context-files --no-tools -e ./scripts/pi/qwen-sampling.ts \
+  --provider vanillax-vllm --model qwen3.8-27b --thinking medium \
+  -p 'What is 37 times 43? Give the answer.'
 ```
 
-If Pi says `off` but the backend still emits a reasoning block, inspect the
-request/backend logs before changing model flags.
+Expected answer: 1591. Repeat with `--thinking low`, `xhigh`, and `off`.
+Inspect the emitted request when validating effort: answer length does not
+prove the selected mode. The [server acceptance matrix](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#reasoning-acceptance-checks)
+also covers tool calls, images, and multi-turn reasoning. Streaming usage must
+be present so Pi can track context; do not disable it to hide an API error.
 
-## 7. Current date/time in Pi
-
-Pi's model is not a clock. Do not trust Qwen to infer today's date from model
-training, file timestamps, or session text.
-
-For any current-date/time question, tell Pi to use its built-in bash tool:
-
-```text
-Before answering anything date/time-sensitive, run `date` (and `date -u` when
-UTC matters). Never infer the current date from model knowledge.
-```
-
-Put that rule in `~/.pi/agent/AGENTS.md` if you want it globally. It adds almost
-no context and avoids injecting a timestamp into every prompt. Your shell has
-the workstation's actual timezone, so `date` is the source of truth for Pi.
-
-Quick test:
-
-```text
-What is today's date? Verify with the shell before answering.
-```
-
-You should see a bash call to `date` rather than a guessed date.
-
-## 8. Vision / screenshot test
-
-The production backend has the native vision encoder enabled. Attach a
-screenshot/image in Pi and ask a concrete question about it.
-
-If text works but images fail:
+For offline policy checks (Node 24+ and Python with PyYAML):
 
 ```bash
-kubectl -n vllm logs deploy/vllm-server --tail=200
-kubectl -n vllm exec deploy/vllm-server -- nvidia-smi
+node --test scripts/pi/qwen-sampling.test.mjs
+uv run --with pyyaml python -m unittest discover -s scripts/tests -p test_qwen_reasoning.py -v
 ```
 
-Do not point Pi at ComfyUI for vision; `qwen3.8-27b` itself is multimodal.
+The September audit also exercised the installed Pi serializer against a local
+HTTP capture server: default/low/medium/xhigh/off produced the expected kwargs,
+sampler and usage request. A real medium request through the LAN endpoint
+returned 1591 with separate reasoning and streaming token counts. Those checks
+validate plumbing, not agent task quality.
 
-## 9. Context discipline
-
-The server ceiling is 262,144 tokens, with two sequences sharing the KV pool.
-This does not reserve two full-length sessions. Validate a context ladder
-before relying on near-ceiling requests.
-
-For coding agents:
-
-- prefer targeted `read`, `grep`, `find`, and `ls` over dumping whole trees;
-- `/compact` before the session becomes mostly historical tool output;
-- use `/new` between unrelated tasks;
-- avoid giant generated files, lockfiles, logs, or build artifacts;
-- parallel subagents contend for the same two-sequence vLLM capacity.
-
-The current backend is optimized for strong single-user interactive latency,
-not high-concurrency serving.
-
-## 10. Your installed Pi packages
-
-Your existing package list can stay. Packages/extensions add prompt/tool
-surface area, so keep only things you actually use, but there is no backend
-migration requirement to remove them.
-
-Useful maintenance:
-
-```bash
-pi list
-pi update --all
-```
-
-For Kubernetes/Talos work, native CLIs through Pi's bash tool (`kubectl`,
-`talosctl`, `argocd`, `gh`, `jq`) are usually more context-efficient than
-loading a huge MCP catalog.
-
-## 11. Optional global `~/.pi/agent/AGENTS.md`
-
-```markdown
-# Environment
-- Primary local model: qwen3.8-27b on homelab vLLM FP8, two RTX 3090s, 262K ceiling.
-- Free local token volume is not infinite context. Keep reads targeted and
-  compact long sessions.
-- Prefer actual CLI/tool evidence over guessing.
-- For current date/time, run `date` (and `date -u` for UTC); never guess it.
-
-# Kubernetes / homelab
-- GitOps only for changes: edit Git and let ArgoCD reconcile.
-- kubectl is for inspection unless explicitly told otherwise.
-- Follow repository CLAUDE.md / AGENTS.md instructions.
-- Secrets go through 1Password + ExternalSecret; never commit them.
-
-# Verification
-- Done means verified: run tests, typecheck/lint, or the real command and
-  report the result.
-```
-
-Pi discovers project context files, so this repo's existing instruction files
-remain useful; do not duplicate the whole repository policy globally.
-
-## 12. Backend source of truth
-
-Pi should not carry backend tuning beyond capability metadata. Runtime tuning
-lives in:
-
-- `my-apps/ai/vllm/deployment.yaml`
-- `my-apps/ai/vllm/README.md`
-- `docs/domains/ai-gpu/model-catalog.md`
-
-Declared profile (runtime performance still to be measured):
-
-```text
-Official Qwen3.8-27B-FP8
-stock vLLM v0.28.0, TP=2
-2x RTX 3090
-262,144 context ceiling
-FP8 E4M3 KV, float16 recurrent state
-MTP/speculation off
-native vision, one image per request
-220 W cap per card
-```
-
-If the model ID remains `qwen3.8-27b`, Pi does not need a config change for a
-runtime patch or quant replacement unless capabilities/context/reasoning change.
+To roll back workstation changes, restore the backed-up JSON/AGENTS files and
+remove the newly installed sampler extension (or restore its previous copy),
+then restart Pi. No Kubernetes rollback is needed for workstation files.
+For server-policy rollback, revert the reasoning-policy commit through Git.

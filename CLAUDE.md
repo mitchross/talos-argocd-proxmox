@@ -14,9 +14,9 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 llama.cpp retained as a parked rollback; never Ollama.
 
 - **vLLM**: official `Qwen/Qwen3.8-27B-FP8`, TP=2 on both RTX 3090s, FP8 KV,
-  native vision, 262,144-token server ceiling, explicit reasoning levels, and
-  **no MTP/speculative decoding**. The new profile needs post-merge runtime
-  verification; configuration is not a performance measurement.
+  native vision, 262,144-token server ceiling, explicit medium reasoning default, and
+  **no MTP/speculative decoding**. Live capacity and client guidance are in
+  `docs/domains/ai-gpu/3090-llm-optimization.md`; reverify after runtime changes.
 - **llama.cpp**: retained Qwen3.8-27B GGUF one-card profile at `replicas: 0`.
 - Stable API model: `qwen3.8-27b`. Direct service:
   `http://vllm-service.vllm.svc.cluster.local:8080/v1`. Existing
