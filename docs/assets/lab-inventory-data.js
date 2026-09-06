@@ -2,6 +2,7 @@ window.HOMELAB_INVENTORY = {
   "date": "2026-09-05",
   "assembledAt": "2026-09-05T21:34:13.664744+00:00",
   "sourceCommit": "cbda78a0",
+  "runtimeVersionsCheckedAt": "2026-09-06T01:48:49.025993+00:00",
   "hosts": [
     {
       "id": "sff",
@@ -59,8 +60,8 @@ window.HOMELAB_INVENTORY = {
               "size": "690 GiB"
             }
           ],
-          "talos": "Talos (v1.13.9)",
-          "kubernetes": "v1.36.4",
+          "talos": "Talos (v1.14.0)",
+          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "1passwordconnect",
@@ -198,8 +199,8 @@ window.HOMELAB_INVENTORY = {
               "size": "100 GiB"
             }
           ],
-          "talos": "Talos (v1.13.9)",
-          "kubernetes": "v1.36.4",
+          "talos": "Talos (v1.14.0)",
+          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "cert-manager",
@@ -302,8 +303,8 @@ window.HOMELAB_INVENTORY = {
               "size": "440 GiB"
             }
           ],
-          "talos": "Talos (v1.13.9)",
-          "kubernetes": "v1.36.4",
+          "talos": "Talos (v1.14.0)",
+          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "cloudflared",
@@ -491,8 +492,8 @@ window.HOMELAB_INVENTORY = {
               "size": "120 GiB"
             }
           ],
-          "talos": "Talos (v1.13.9)",
-          "kubernetes": "v1.36.4",
+          "talos": "Talos (v1.14.0)",
+          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "1passwordconnect",
@@ -743,8 +744,8 @@ window.HOMELAB_INVENTORY = {
               "size": "400 GiB"
             }
           ],
-          "talos": "Talos (v1.13.9)",
-          "kubernetes": "v1.36.4",
+          "talos": "Talos (v1.14.0)",
+          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "1passwordconnect",
@@ -943,8 +944,8 @@ window.HOMELAB_INVENTORY = {
               "size": "850 GiB"
             }
           ],
-          "talos": "Talos (v1.13.9)",
-          "kubernetes": "v1.36.4",
+          "talos": "Talos (v1.14.0)",
+          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "csi-driver-nfs",
@@ -1960,7 +1961,7 @@ window.HOMELAB_INVENTORY = {
     }
   ],
   "notes": [
-    "Host/disks from the September 5 SSH inventory; Kubernetes IPs were rechecked before page preparation; pod namespace placement is from the earlier audit snapshot.",
+    "Host/disks from the September 5 SSH inventory; Kubernetes IPs and node versions were rechecked at runtimeVersionsCheckedAt after the upgrade. Pod namespace placement and claims remain from the earlier audit snapshot.",
     "Disk capacity uses decimal GB/TB; VM allocations and RAM use GiB/MiB. Capacity bars are not disk-use measurements.",
     "NAS pool percentages use the SSH snapshot; the later dashboard uses different usable-capacity accounting.",
     "Suggested roles and outage walkthroughs are explanations, not applied policy or measured recovery tests."

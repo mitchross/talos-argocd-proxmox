@@ -8,6 +8,7 @@
     root.dataset.ready = "true";
     const state = {host: "sff", tab: "disks", proposed: false, outage: "sff", network: "private"};
     const hosts = data.hosts;
+    const versionsChecked = data.runtimeVersionsCheckedAt.slice(0, 16).replace("T", " ") + " UTC";
     const getHost = id => hosts.find(h => h.id === id);
     const button = (action, value, text, active) => `<button type="button" data-action="${action}" data-value="${escape(value)}" aria-pressed="${active}">${escape(text)}</button>`;
     root.innerHTML = `
@@ -23,12 +24,12 @@
       <div class="lab-machines" id="lab-machines" aria-label="Choose a physical machine"></div>
       <section class="lab-detail" aria-label="Selected machine" id="lab-detail"></section>
       <section class="lab-detail" id="lab-network" aria-label="Network paths and addresses"></section>
-      <div class="lab-footer"><button type="button" class="lab-action" data-action="download">Download full inventory</button><span>Snapshot: ${escape(data.date)} · VM and physical-host IPs are separate.</span></div>`;
+      <div class="lab-footer"><button type="button" class="lab-action" data-action="download">Download full inventory</button><span>Hardware snapshot: ${escape(data.date)} · Versions checked: ${escape(versionsChecked)} · VM and physical-host IPs are separate.</span></div>`;
     const $ = selector => root.querySelector(selector);
 
     function renderNav() {
       $("#lab-role-toggle").innerHTML = button("mode","current","Audit snapshot",!state.proposed)+button("mode","proposed","Suggested jobs",state.proposed);
-      $("#lab-role-caption").textContent = state.proposed ? "Suggested roles only. These placement changes have not been applied." : "September 5 snapshot, before the Talos upgrade. Choose a machine to look inside.";
+      $("#lab-role-caption").textContent = state.proposed ? "Suggested roles only. These placement changes have not been applied." : "September 5 hardware snapshot, with node versions checked after the upgrade. Choose a machine to look inside.";
       $("#lab-machines").innerHTML = hosts.map(h => `
         <button type="button" class="lab-machine" data-action="host" data-value="${escape(h.id)}" data-kind="${escape(h.kind)}" aria-pressed="${h.id===state.host}">
           <span class="lab-machine-name">${escape(h.name)}</span>

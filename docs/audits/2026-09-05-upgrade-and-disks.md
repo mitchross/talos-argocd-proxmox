@@ -1,13 +1,55 @@
 # Talos upgrade and disk review
 
-Status: upgrade preparation, with a fresh-provisioning problem still open.
-No disks have been moved and no live Omni or Talos upgrade was performed during
-this review. The [physical inventory](2026-09-05-inventory.md) records the host
-and disk measurements; these recommendations do not change the running layout.
+Status: the live Talos 1.14.0 and Kubernetes 1.37.0 upgrades are complete.
+Fresh GPU provisioning still needs a disk-selection fix. No disks were moved.
+The [physical inventory](2026-09-05-inventory.md) records the host and disk
+measurements; the [interactive lab map](../lab.md) includes the verified versions.
+
+## Verified upgrade results
+
+Omni reported Talos complete at **00:55 UTC** and Kubernetes complete at
+**00:58 UTC on September 6, 2026**. The owner subsequently rebooted the GPU
+machine again. The following checks were taken after it returned, at
+**01:48 UTC** (September 5 evening in Detroit).
+
+| Check | Observed result |
+|---|---|
+| Nodes | All six Ready on Talos 1.14.0 and Kubernetes 1.37.0 |
+| Longhorn | 66 attached volumes healthy; 12 detached with unknown robustness; none faulted or degraded |
+| Networking | Cilium and Envoy each 6/6; all three Gateways accepted and programmed |
+| Storage controllers | TrueNAS CSI nodes 6/6 and controller 1/1; snapshot controller 2/2 |
+| GPU | One allocatable NVIDIA GPU; device plugin and llama.cpp Ready |
+| Metrics | All 97 Prometheus `up` series were 1, including etcd, Cilium, node-exporter and kube-state-metrics |
+| Applications | PostHog, Radar, Loki, Prometheus and Redlib recovered; Flatnotes remains the previously deferred Nomad issue |
+
+Argo reported 96 healthy Applications and one progressing Application
+(`my-apps-project-nomad`). `my-apps-immich` and `root` were healthy but OutOfSync;
+these checks do not claim every Application has converged. Readiness and storage
+health also do not substitute for a full data-integrity check or restore drill.
+
+The last GPU worker lock was removed after its first recovery. All machine sets
+then reported zero locked updates. An Omni worker lock did **not** cancel a
+Talos upgrade request already in flight; use it to hold subsequent work, and
+check the current machine operation before assuming maintenance has stopped.
+
+For a read-only recheck from an authenticated workstation:
+
+```bash
+kubectl get nodes -o wide
+kubectl get --raw /readyz
+kubectl -n longhorn-system get volumes.longhorn.io
+omnictl get talosupgradestatuses -o yaml
+omnictl get kubernetesupgradestatuses -o yaml
+```
+
+Expect Ready nodes, `ok` from the API, healthy attached volumes, and Omni's
+`lastupgradeversion` at the intended version with no upgrade error. If a node
+or volume regresses, inspect that failure before starting another rollout.
+The [recovery runbook](../disaster-recovery.md) owns recovery procedures.
 
 ## Upgrade findings
 
-The target is Omni/omnictl 1.11.0, provider `v0.2.0-3-g7cefedd`, Talos 1.14.0,
+The reviewed target is Omni/omnictl 1.11.0, provider `v0.2.0-3-g7cefedd`, Talos 1.14.0,
 and Kubernetes 1.37.0. Upgrade Omni before the provider that uses its new
 installation-media API. Check Omni's compatible Kubernetes versions, upgrade
 Talos while retaining the current Kubernetes version, verify node readiness,
@@ -45,7 +87,7 @@ state that a customized metrics listener keeps its configured endpoint.
 
 ## Disk placement follow-up
 
-The GPU VM's current ephemeral filesystem reports about 447.6 GiB total and
+The pre-upgrade GPU filesystem sample reported about 447.6 GiB total and
 272.9 GiB free, with 283 GiB of Longhorn volume capacity scheduled there.
 Simply changing its boot disk to 128 GiB would not preserve that layout. A
 smaller boot disk needs a separate allocation and restore plan for those volumes.
@@ -89,17 +131,39 @@ to run before updating the engine's replica address map; the replica controller
 counts started, not-yet-healthy replicas against the concurrency limit.
 
 The [rebuild setting](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/storage/longhorn/node-failure-settings.yaml)
-is raised from one to two slots per node to release this observed circular
-wait. This keeps the last-replica drain protection in place. It is a rollout
-recovery change, not proof that a full restore can sustain two simultaneous
+was raised from one to two slots per node in
+[PR #2268](https://github.com/mitchross/talos-argocd-proxmox/pull/2268). This
+released the observed circular wait and kept last-replica drain protection in
+place. It is a rollout recovery change, not proof that a full restore can sustain two simultaneous
 rebuilds or that every possible queue deadlock is eliminated.
 
-After syncing, expect the new replicas to join their engines, complete rebuilding,
-and release the eviction tickets. The Dell should then finish its normal Omni
-upgrade. Watch volume health and disk latency while this happens. If extra
-concurrency causes faults or excessive latency, revert the setting through Git,
-pause the rollout, and inspect the affected engine before retrying. Reverting to
-one while the circular wait still exists can restore the blockage.
+After Argo synced, the five held attachments cleared. Longhorn removed its own
+instance-manager PDB at **23:16:41 UTC on September 5**; Omni retried and the Dell
+returned Ready on Talos 1.14.0 at **23:17:47 UTC**. No PDB, replica, PVC or VM was
+manually deleted to make this happen.
+
+If extra concurrency causes faults or excessive latency in a later rollout,
+pause further work, inspect the affected engine, and revert the setting through
+Git when appropriate. Reverting to one while the circular wait still exists can
+restore the blockage. A full Kopiur restore at concurrency two remains untested.
 
 Sources: [Longhorn 1.12.1 replica concurrency controller](https://github.com/longhorn/longhorn-manager/blob/v1.12.1/controller/replica_controller.go#L525),
 [volume startup gating](https://github.com/longhorn/longhorn-manager/blob/v1.12.1/controller/volume_controller.go#L2887).
+
+## GPU maintenance still affects ordinary services
+
+The GPU worker's last flash replicas blocked its drain. Thirteen flash-tagged
+claims had no eligible second host, including storage used by PostHog, Radar,
+Prometheus and Loki. Some of those pods ran elsewhere: moving a pod does not
+move the only copy of its data off the GPU host.
+
+The owner rebooted the existing machine. It returned on Talos 1.14.0, and the
+temporary Longhorn faults cleared as storage services returned. A later owner
+reboot also recovered. No additional drain-policy PR was needed to finish this
+upgrade. These recoveries do not establish uninterrupted service during GPU
+maintenance or make a forced stop the maintenance procedure.
+
+The remaining work is to give selected ordinary services another eligible
+storage host, or define an intentional shutdown and restart sequence for their
+consumers. Keep this separate from the fresh-install disk-selection problem:
+the successful upgrade reused the existing installation.
