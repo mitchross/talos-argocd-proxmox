@@ -9,13 +9,16 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
 - Model ID: `qwen3.8-27b`; official `Qwen/Qwen3.8-27B-FP8`.
 - vLLM v0.28.0, two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
 - **MTP/speculation stays off** pending the long-session fixes and validation.
-- Explicit thinking levels: `low`, `medium`, `xhigh`; off uses
-  `chat_template_kwargs.enable_thinking=false`.
+- Explicit thinking levels: `low`, `medium`, `xhigh`; coding/server default
+  is `medium`, preservation true. xhigh is opt-in; generic high maps to medium.
+- Off requests use `enable_thinking=false`, `preserve_thinking=false`, and
+  the separate non-thinking sampler in the vLLM runbook. Preserve the server's
+  thinking sampler; do not globally disable preserved thinking.
 - Direct URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`.
 - Existing `llama-cpp-service` URLs alias vLLM. Both LAN hostnames route to the
   vLLM selector Service, not an ExternalName backend.
-- The new profile requires post-merge runtime verification. A configured
-  context ceiling is not proof of usable context under concurrent vision load.
+- Live capacity and client guidance: `docs/domains/ai-gpu/3090-llm-optimization.md`.
+  A configured ceiling is not proof of concurrent near-ceiling vision capacity.
 - llama.cpp is the parked GGUF rollback. AutoRound is a later speed A/B only.
 
 ## GPU Topology

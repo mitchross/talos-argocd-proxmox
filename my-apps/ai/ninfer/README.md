@@ -53,7 +53,7 @@ Provenance labels: **[W]** measured on Windows RTX 3090 by the fork's release ga
   **There is no preemption concept** — overload returns 429/503 instead.
 - Sampling defaults are per-mode presets identical to our vLLM override for
   non-thinking Qwen3.8 (0.7/0.80/20/0/1.5). `--no-thinking` here matches the
-  control's `enable_thinking=false` default; requests re-enable per call.
+  historical control's `enable_thinking=false`; production vLLM now defaults to medium.
 
 ## Initial runtime profile (correctness-first)
 

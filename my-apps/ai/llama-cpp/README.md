@@ -69,7 +69,8 @@ are not downloaded, synchronized or referenced by the active manifests.
 - `GGML_CUDA_CUBLAS_COMPUTE_TYPE=fp32` avoids an Ampere multimodal cuBLAS
   failure observed during vision prefill.
 - `--image-min-tokens 1024` favors vision/grounding correctness.
-- reasoning defaults to low effort server-side. Qwen3.8 separately controls
+- The parked rollback retains low effort; production vLLM uses medium.
+  Qwen3.8 separately controls
   `enable_thinking` and reasoning effort (`low`, `medium`, `xhigh`); clients
   that expose an off switch must send `enable_thinking=false`, not merely omit
   `reasoning_effort`. The Pi.dev guide documents the exact mapping.
