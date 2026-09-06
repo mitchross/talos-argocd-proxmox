@@ -105,12 +105,44 @@ The active Omni template uses physical-host zone labels:
 | Threadripper | GPU worker | `house` |
 | Shed HP | Worker behind the media bridge | `shed` |
 
-Cloudflared uses soft `ScheduleAnyway` hostname spread. Kubernetes hostnames
-identify VMs, so the SFF's two nodes are distinct hostnames but the same physical
-failure domain. Use physical-host placement when replicas must survive a chassis
-loss. Soft spread prefers distribution without guaranteeing it or overriding
-storage, affinity and capacity constraints. Check live labels after syncing Omni;
-a Git edit alone does not update them.
+Cloudflared uses soft `ScheduleAnyway` spread and preferred anti-affinity over
+`topology.kubernetes.io/zone`, so two VMs on the SFF count as one physical host.
+Its preferred node affinity favors the `general` worker pool. These are preferences:
+other eligible workers remain usable when the HPs lack room, and several tunnel
+pods can share a surviving host. Verify actual placement; this is not a guarantee
+that every replica occupies a different chassis.
+
+### What each worker is for
+
+The Omni template declares a separate `node.vanillax.dev/pool` label:
+
+| Worker | Pool | Intended job |
+|---|---|---|
+| HP SFF and HP Elite | `general` | Everyday services and selected application state |
+| Threadripper | `gpu` | GPU workloads and selected heavy jobs |
+| Shed HP Micro | `edge` | Attached devices and permitted edge jobs |
+| Dell | `disposable` | Temporary, restartable work after required state is relocated |
+
+These labels describe intent; existing apps and Longhorn replicas are not moved
+by a label alone. In particular, the Dell still holds real data. Cloudflared is
+the first consumer and uses a soft preference. No new taints, hard app constraints,
+storage tags or control-plane scheduling changes accompany these labels.
+
+Check live labels after syncing the Omni template; merging Git does not itself
+change allocated machines. Finish the active Talos upgrade before applying another
+template change. Confirm the Omni sync preview contains the expected label changes
+without machine replacement, then check:
+
+```sh
+kubectl get nodes -L node.vanillax.dev/pool,topology.kubernetes.io/zone
+kubectl -n cloudflared get pods -o wide
+```
+
+Expected labels match the table, and all three tunnel replicas become Ready after
+the ordinary Deployment rollout. If the labels are not applied yet, preferred
+affinity still allows the tunnel pods to schedule. Rolling back the Deployment
+preference is independent of reverting the Omni labels. A label change is not a
+request to drain workers or re-provision disks.
 
 Replicated critical workloads should pair spread with a
 `PodDisruptionBudget` using `maxUnavailable: 1` and
