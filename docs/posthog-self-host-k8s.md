@@ -59,8 +59,10 @@ The pinned Rust capture routes `$ai_*` analytics to
 `events_plugin_ingestion_ai`. The pinned Node `ingestion-v2-combined` mode
 consumes five other topics and **does not consume this one**. Our dedicated
 `ingestion-ai` Deployment uses `ingestion-v2` with an explicit topic/group and
-AI event splitting: small properties go to `events`, full AI payloads to
-`ai_events`. Its new group starts at the earliest retained offset, so queued
+AI event splitting **disabled**: full AI payloads go to shared `events`, which
+the current UI reads. The live `ai-events-table-rollout` flag is false; enabling
+splitting would hide prompt/completion bodies from that read path. Its new
+group starts at the earliest retained offset, so queued
 history can drain without resetting any existing group. Both capture services
 pin the same AI topic explicitly. Keep the Node and monolith digests aligned.
 [AI observability verification](domains/ai-gpu/ai-observability.md) owns the

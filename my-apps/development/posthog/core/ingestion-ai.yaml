@@ -51,8 +51,9 @@ spec:
               value: "events_plugin_ingestion_ai"
             - name: INGESTION_CONSUMER_GROUP_ID
               value: "clickhouse-ingestion-ai"
+            # The self-hosted UI reads shared events; splitting would hide prompt/completion bodies.
             - name: INGESTION_AI_EVENT_SPLITTING_ENABLED
-              value: "true"
+              value: "false"
             - name: MMDB_FILE_LOCATION
               value: "/code/share/GeoLite2-City.mmdb"
             - name: SECRET_KEY

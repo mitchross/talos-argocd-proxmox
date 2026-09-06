@@ -58,9 +58,16 @@ The dedicated `ingestion-ai` Deployment runs the same Node digest as the
 existing ingestion service, in supported `ingestion-v2` mode with:
 
 - topic `events_plugin_ingestion_ai` and group `clickhouse-ingestion-ai`;
-- `INGESTION_AI_EVENT_SPLITTING_ENABLED=true`, routing full AI payloads to
-  `clickhouse_ai_events_json` and small properties to normal events;
+- `INGESTION_AI_EVENT_SPLITTING_ENABLED=false`, keeping full AI payloads in
+  `clickhouse_events_json` → shared `posthog.events`;
 - the same Postgres/Redis/GeoIP configuration, bounded memory, and an owned VPA.
+
+The live project's `ai-events-table-rollout` read flag is **false**. The pinned
+web resolver therefore reads shared events. Enabling event splitting would
+strip prompts/completions from that table and place them in `ai_events`, which
+the current UI does not read. Keep splitting off until a coordinated read/write
+migration is explicitly planned. An empty dedicated `ai_events` table is
+expected with this compatibility configuration; it is not a delivery failure.
 
 The pinned consumer defaults to `auto.offset.reset=earliest`, so the new group
 can process retained backlog. Expired Kafka records cannot be recovered by this
@@ -101,11 +108,13 @@ small generated image; it does not send a repository or user conversation.
 
    ```bash
    kubectl -n posthog exec deploy/clickhouse -- clickhouse-client --query "SELECT count() FROM posthog.events WHERE distinct_id = '<marker>'"
-   kubectl -n posthog exec deploy/clickhouse -- clickhouse-client --query "SELECT count() FROM posthog.ai_events WHERE distinct_id = '<marker>'"
+   kubectl -n posthog exec deploy/clickhouse -- clickhouse-client --query "SELECT count() FROM posthog.events WHERE distinct_id = '<marker>' AND JSONHas(properties, concat(char(36), 'ai_input')) AND JSONHas(properties, concat(char(36), 'ai_output_choices'))"
    ```
 
-   Expected: at least five events in each path after the consumer drains
-   (retries/at-least-once delivery can create duplicates). Find the same trace
+   Expected: at least five shared events, with full input/output properties,
+   after the consumer drains (retries/at-least-once delivery can create duplicates).
+   `char(36)` is the dollar-sign prefix in PostHog property names and avoids
+   shell expansion in the command. Find the same trace
    events in PostHog's LLM analytics for project 1, including model, usage,
    latency, and prompt/completion. If SQL has rows but the UI does not, inspect
    project/time filters and PostHog query settings separately.
@@ -122,7 +131,7 @@ GPU or model configuration. WebUI's old placeholder key will return 401 against
 LiteLLM; inspect ExternalSecret readiness, never paste the key into Git.
 
 If AI events stall, inspect `ingestion-ai` logs, Kafka group offsets, and
-ClickHouse's `kafka_ai_events_json` consumer. Keep the queue intact. Fix topic,
+ClickHouse's `kafka_events_json` consumer. Keep the queue intact. Fix topic,
 image/config, or schema mismatches through Git; do not reset offsets or recreate
 the data layer. The [PostHog guide](../../posthog-self-host-k8s.md) owns migration
 and storage recovery rules.
@@ -139,7 +148,8 @@ requests retain vLLM/GPU metrics but do not produce LiteLLM/PostHog analytics.
 - [PostHog Rust capture configuration](https://github.com/PostHog/posthog/blob/master/rust/capture/src/config.rs).
   The deployed Node image was also inspected directly: `servers/ingestion-general-server.js`,
   `ingestion/config.js`, `event-processing/split-ai-events-step.js`, and
-  `kafka/consumer.js`; current master must not substitute for pinned-image behavior.
+  `kafka/consumer.js`, plus the web `hogql_queries/ai/ai_table_resolver.py` read
+  gate; current master must not substitute for pinned-image behavior.
 - [LiteLLM application](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/litellm),
   [AI consumer](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/core/ingestion-ai.yaml),
   and [dashboard](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/dashboards/ai-gateway-analytics.json).
