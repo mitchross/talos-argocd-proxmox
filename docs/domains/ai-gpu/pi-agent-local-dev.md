@@ -1,6 +1,6 @@
 # Pi.dev agent on the dual-3090 backend
 
-Current workstation guide, audited 2026-09-06 against Pi **0.84.2**, its installed
+Current workstation guide, audited 2026-09-06 against Pi **0.85.0**, its installed
 provider source, and the live LiteLLM → vLLM endpoint. Pi is the coding agent from
 [pi.dev](https://pi.dev), not Raspberry Pi. These files configure a workstation;
 cluster changes still go through Git and ArgoCD.
@@ -192,8 +192,9 @@ outputs preserve room for reasoning and reduce prefill work.
 
 Use a new session for clean validation; resumed sessions may retain their old
 model or thinking level. No provider rename, shell alias, or Pi upgrade is
-required for this configuration. The audited Homebrew installation is 0.84.2;
-update through its package manager separately when needed.
+required for this configuration. The workstation was updated through Homebrew to 0.85.0, preserving provider,
+authentication and extension files. A fresh medium-thinking request through
+LiteLLM passed. Restart an existing Pi process to use the new executable.
 
 ## Verification and rollback
 

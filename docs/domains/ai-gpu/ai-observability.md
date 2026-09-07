@@ -18,6 +18,13 @@ self-hosted Langfuse using `langfuse_otel`, alongside its `prometheus` callback.
 PostHog's AI callbacks are removed; its deployment and existing data remain.
 Historical PostHog AI events/Kafka backlog are not imported into Langfuse.
 
+This migration covers Pi and Open WebUI. Other declared clients still call vLLM
+directly: HolmesGPT, Keep, Hindsight, SurfSense, Perplexica, Presenton,
+WorldMonitor, Deal Scout, News Reader, n8n workflows and parked ComfyUI workflows.
+Their calls do not enter LiteLLM/Langfuse. Migrating them requires app-specific
+endpoint and authentication changes; changing only the shared legacy hostname
+would break clients that still use placeholder credentials.
+
 A gateway observes model calls and tool-call responses. It does not automatically
 observe local tool execution, file changes, or every internal agent step. Use
 application instrumentation for those spans when building agents. Evaluation
