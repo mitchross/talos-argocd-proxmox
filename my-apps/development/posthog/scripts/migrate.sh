@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+python /opt/repo-scripts/patch-replay-retention.py
 echo "Waiting for Postgres..."
 TIMEOUT=120; ELAPSED=0
 until python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('db', 5432))" 2>/dev/null; do
@@ -18,6 +19,8 @@ echo "Flushing ClickHouse system logs..."
 wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
 echo "Running Django migrations..."
 python manage.py migrate --noinput
+echo "Reconciling self-hosted replay retention..."
+python /opt/repo-scripts/configure-replay-retention.py
 # MUST run AFTER manage.py migrate: posthog_person doesn't exist on a fresh DB. IF NOT EXISTS keeps it idempotent.
 echo "Applying self-hosted Postgres schema guards..."
 python - <<'PY'
@@ -48,4 +51,3 @@ echo "Running async ClickHouse migrations..."
 python manage.py run_async_migrations || true
 python manage.py run_async_migrations --check
 echo "All migrations complete"
-

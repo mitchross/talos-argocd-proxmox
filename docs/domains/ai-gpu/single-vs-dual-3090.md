@@ -31,9 +31,10 @@ ever ~76% full at peak. Decode barely moves; generation was never the bottleneck
 
 Thinking depth is a separate per-request control, not a one-vs-two-card tuning
 knob. Qwen3.8 defaults a thinking request with no explicit effort to `xhigh`,
-which can waste context regardless of GPU count. Keep vLLM non-thinking by
-default; Pi should use `medium` for normal coding, `off` for trivial work, and
-`xhigh` only for genuinely hard reasoning. See
+which can waste context regardless of GPU count. The production vLLM and Pi
+defaults explicitly use `medium` for coding, with preservation on. Choose
+`low` for lighter work, explicit `off` with its own sampler for simple chats,
+and `xhigh` only for difficult tasks. See
 [`pi-agent-local-dev.md`](pi-agent-local-dev.md).
 
 ## Why the pool is large enough
@@ -84,9 +85,10 @@ multi-minute stalls rather than a gentle slowdown.
 ## Scope of the historical result
 
 The measurement used the former **text-only** profile and covers two concurrent
-text workloads at `--max-num-seqs 3`. The active production profile now enables
-vision and conservatively caps requests at 65,536 tokens; re-measure its cache
-pool rather than applying the values below to it. This benchmark did not cover:
+text workloads at `--max-num-seqs 3`. Production now uses official FP8,
+TP=2, native vision, two sequence slots and a 262,144-token ceiling. See the
+[current capacity audit](3090-llm-optimization.md); do not apply this historical
+profile or its measurements to the current weights. This benchmark did not cover:
 
 - **Vision.** The single-card configuration runs `--language-model-only`, which
   drops the vision tower (~2.7 GB). Image input is unavailable in this mode.

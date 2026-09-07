@@ -54,6 +54,51 @@ currently pins — that's the only combination upstream tests.
 | hypercache-server | nothing yet — flag/survey config served from Postgres |
 | browserless (Chromium) | page screenshots (heatmap previews, exports) |
 
+AI telemetry now belongs to [Langfuse](domains/ai-gpu/ai-observability.md).
+PostHog is retained for product analytics, session replay, and feature flags.
+
+### Self-hosted replay retention
+
+Project 1 declares 30-day replay retention through
+`SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS=1` in `posthog-env.env`. The migration
+hook runs `scripts/configure-replay-retention.py` after Django migrations to
+reconcile that supported Team model field. It updates only the listed projects
+and skips projects that have not been created yet; their setting reconciles on
+the next ArgoCD sync after onboarding. Add another project ID to the comma-separated
+list only when that project should also use 30 days.
+
+The pinned PostHog revision
+[`065179102`](https://github.com/PostHog/posthog/blob/065179102ef87898ef952381080b55c453e7867d/posthog/api/team.py)
+rejects retention updates with `Invalid retention entitlement.` (HTTP 500)
+when a self-hosted organization lacks billing metadata. New self-hosted projects
+default to five years, so this also blocks selecting the ordinary 30-day option.
+A one-time entitlement insertion would be removed by PostHog's hourly feature
+sync. The repo therefore carries a **local compatibility patch**, not an
+upstream-supported environment switch: `scripts/patch-replay-retention.py`
+allows exactly `30d` only when the retention feature is absent and `is_cloud()`
+is false. Existing entitlements and longer-retention checks follow the original
+validator. No license or billing feature records are created.
+
+The migration hook checks the upstream validator's hash before running; web
+applies the same patch to its ephemeral container source before starting.
+Unexpected source changes fail the hook and require the
+[upgrade review](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/UPGRADE.md). The scripts are
+mounted from a generated ConfigMap, so a fresh pod repeats the declared fix.
+
+After the PR is merged and ArgoCD finishes syncing, confirm the migration Job
+reports `Project 1: replay retention set to 30d` (or `already 30d`). Open
+**Settings → Project → Session replay**, select 30 days, save, and reload.
+The team update should return HTTP 200 and the retained value should be `30d`;
+recheck after the hourly feature sync at minute 30. Capture and play a new
+recording to verify replay still works. No live retention state is changed by
+local manifest rendering or the unit tests.
+
+This changes the project's retention setting; it does not rewrite historical
+recording expiry metadata or the object store lifecycle policy. Roll back the
+startup wrapper, patch, and reconciliation through Git and ArgoCD. A Git revert
+does not restore an earlier database retention value; any desired replacement
+must be declared in a reviewed follow-up reconciliation before reenabling it.
+
 ## 3. Boot order and init jobs
 
 Strict ordering prevents every classic first-boot failure. With ArgoCD use
@@ -72,7 +117,7 @@ wave  3  everything else
 `events_plugin_ingestion`, `exceptions_ingestion`, `clickhouse_events_json`,
 `session_recording_events`, `session_recording_events2`,
 `session_recording_snapshot_item_events`, `clickhouse_app_metrics2`,
-`logs_ingestion`, plus `ai_events_ingestion` and `clickhouse_ai_events_json`
+`logs_ingestion`, plus `events_plugin_ingestion_ai`, `ai_events_ingestion`, and `clickhouse_ai_events_json`
 if you run the LLM-analytics capture path.
 
 **migrate** runs, in order: wait for postgres + clickhouse → `manage.py migrate`

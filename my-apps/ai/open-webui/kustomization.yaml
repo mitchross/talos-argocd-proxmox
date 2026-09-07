@@ -4,6 +4,7 @@ resources:
 - vpa.yaml
 - namespace.yaml
 - deployment.yaml
+- externalsecret.yaml
 # - mcpo-deployment.yaml
 - mcp-config.yaml
 - mcp-kiwix.yaml

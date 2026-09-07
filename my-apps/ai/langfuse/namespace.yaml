@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: langfuse
+  labels:
+    kopiur.home-operations.com/repo: cluster-kopia
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'

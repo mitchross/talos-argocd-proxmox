@@ -26,6 +26,11 @@ spec:
             - configMapRef:
                 name: worldmonitor-env
           env:
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: LLM_API_KEY
             # Map secret keys to the names the app expects
             - name: RELAY_SHARED_SECRET
               valueFrom:

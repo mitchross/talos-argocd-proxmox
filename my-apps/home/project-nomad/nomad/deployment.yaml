@@ -31,6 +31,11 @@ spec:
             - configMapRef:
                 name: project-nomad-config
           env:
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: LLM_API_KEY
             - name: APP_KEY
               valueFrom:
                 secretKeyRef:
@@ -58,6 +63,11 @@ spec:
             - configMapRef:
                 name: project-nomad-config
           env:
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: LLM_API_KEY
             - name: APP_KEY
               valueFrom:
                 secretKeyRef:

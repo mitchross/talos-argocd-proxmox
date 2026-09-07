@@ -36,13 +36,17 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secret
+                  key: OPENAI_API_KEY
             - name: MEILI_ADDR
               value: http://karakeep-meilisearch.karakeep.svc.cluster.local:7700
             - name: BROWSER_WEB_URL
               value: http://karakeep-chrome.karakeep.svc.cluster.local:9222
             - name: DATA_DIR
               value: /data
-              # Add OPENAI_API_KEY to the ConfigMap if necessary
           volumeMounts:
             - mountPath: /data
               name: data

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: perplexica
 
 resources:
+  - litellm-externalsecret.yaml
   - vpa.yaml
   - namespace.yaml
   - pvc.yaml

@@ -34,6 +34,13 @@ resources:
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
 
 configMapGenerator:
+  - name: ai-gateway-analytics-dashboard
+    files:
+      - dashboards/ai-gateway-analytics.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
   - name: prometheus-stack-scripts
     files:
       - scripts/prune-retired-dashboards.sh

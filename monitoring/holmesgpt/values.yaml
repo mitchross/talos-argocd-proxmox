@@ -15,12 +15,14 @@ resources:
   limits:
     memory: 2Gi
 
-# In-cluster llama.cpp is unauthenticated; "none" is the documented sentinel key.
+extraEnvVarsSecrets:
+  - holmes-litellm
+
 modelList:
   local-qwen:
     model: openai/qwen3.8-27b
-    api_base: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
-    api_key: none
+    api_base: http://litellm-service.litellm.svc.cluster.local:4000/v1
+    api_key: envRef:LITELLM_API_KEY
 
 toolsets:
   kubernetes/core:
@@ -64,11 +66,12 @@ customSkills:
         Application sync/health before suspecting runtime issues.
       - GPU workloads (vllm, llama-cpp, comfyui, swarmui) are mutually
         exclusive whole-card and scale-swapped: some at replicas=0 is NORMAL,
-        not an outage. Current default: llama-cpp=1, others 0.
+        not an outage. Current default: vllm=1 on both cards, others 0.
+        Application inference uses the authenticated LiteLLM gateway.
       - Storage: Longhorn for RWO PVCs; a Deployment with an RWO PVC uses
         Recreate strategy — brief downtime during updates is expected.
       - Backups: kopiur (SnapshotPolicy/SnapshotSchedule/Restore CRs per PVC).
-        CNPG databases use Barman to S3 instead — never kopiur.
+        Plain Postgres databases use kopiur; CNPG has been retired.
       - Loki labels are OTel semconv: k8s_namespace_name, k8s_pod_name,
         k8s_container_name, service_name. Promtail-style {namespace=...}
         selectors return no data.
@@ -82,7 +85,7 @@ customSkills:
       2. Workload state: pod events, restarts, OOMKills, probe failures.
       3. Metrics: RED/USE via Prometheus; compare against the alert window.
       4. Logs: errors in the affected namespace around first regression.
-      5. Dependencies: database (CNPG/plain postgres), PVC/Longhorn volume
+      5. Dependencies: database (plain Postgres), PVC/Longhorn volume
          health, DNS. Node-level checks only if evidence points there.
       Always state root cause with the specific evidence found, then a
       recommended next action. Say "inconclusive" rather than guessing.

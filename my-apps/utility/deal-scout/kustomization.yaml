@@ -18,3 +18,8 @@ resources:
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
 components:
   - ../../common/kopiur-backup
+
+configMapGenerator:
+  - name: deal-scout-llm-auth-scripts
+    files:
+      - scripts/prepare-litellm-auth.py

@@ -28,10 +28,20 @@ spec:
             - secretRef:
                 name: litellm-secrets
           env:
-            # In-cluster PostHog capture endpoint — bypasses the external
-            # gateway hairpin (same pattern as my-apps/media/redlib).
-            - name: POSTHOG_API_URL
-              value: "http://capture.posthog.svc.cluster.local:3000"
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-secrets
+                  key: LANGFUSE_PUBLIC_KEY
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-secrets
+                  key: LANGFUSE_SECRET_KEY
+            - name: LANGFUSE_HOST
+              value: "http://langfuse-web.langfuse.svc.cluster.local:3000"
+            - name: LANGFUSE_TRACING_ENVIRONMENT
+              value: "homelab"
           volumeMounts:
             - name: config
               mountPath: /app/config.yaml

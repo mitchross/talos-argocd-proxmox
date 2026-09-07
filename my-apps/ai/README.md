@@ -1,66 +1,27 @@
 # AI Stack Guide
 
-Local AI infrastructure running on one RTX 3090 (24 GB) in the 30-vCPU,
-100 GiB Talos GPU VM. Time-slicing is OFF; whole-card allocation is enforced
-via the GPU Operator.
+Local AI inference uses official Qwen3.8-27B FP8 on stock vLLM 0.28.0 with
+both RTX 3090s (TP=2), FP8 KV and native vision. GPU allocations are whole-card
+with time-slicing off. The server ceiling is 262,144 tokens; speculation is off.
 
-The GPU workloads (vLLM, llama-cpp, ComfyUI) use whole-card allocation
-(`type: Recreate`, no time-slicing) and scale-swap by committed replica counts.
-vLLM is active with the multimodal dense Qwen3.8-27B AutoRound W4A16; llama.cpp,
-ComfyUI, and SwarmUI are parked. Exactly one GPU workload may be active.
+Normal coding uses explicit medium reasoning with preservation enabled.
+Low is available for lighter work, xhigh is opt-in, and explicit off requests
+use their separate sampler. See [the vLLM runbook](vllm/README.md) for the
+canonical runtime, source references and reasoning acceptance checks.
 
-## Architecture
+llama.cpp, ComfyUI and SwarmUI are parked while vLLM owns both cards. The API
+model stays `qwen3.8-27b`; existing llama.cpp service URLs alias vLLM.
 
-```
-Apps / OpenWebUI ──► vLLM (replicas: 1, one 3090)
-                         └── qwen3.8-27b (chat, tools, vision; 65,536 tokens)
-
-llama.cpp (replicas: 0) ──► parked GGUF rollback backend
-```
-
-## Active LLM model
-
-vLLM serves the dense 27B checkpoint under the id every in-cluster consumer
-already sends. `Qwen3.8-Flash-Next Q4` belongs to the parked llama.cpp GGUF and
-is a different model, not an alias.
-
-| API model | Model | Think | Context | Primary Use |
-|---|---|---|---:|---|
-| `qwen3.8-27b` | Qwen3.8-27B-W4A16-AutoRound (int8 lm_head) | Off by default | 64K | Chat, tools, vision, and tasks |
-
-Source of truth: `my-apps/ai/vllm/deployment.yaml`.
-
-### Key llama-server Optimizations (parked rollback path)
-
-| Setting | Value | Why |
-|---------|-------|-----|
-| `cache-type-k = q8_0` | KV cache | Halves KV key cache VRAM (~0.002 perplexity cost) |
-| `cache-type-v = q8_0` | KV cache | Quantized KV value cache (q8_0 not q4_0 — Qwen GQA sensitive to V cache quant) |
-| `-b 4096 -ub 512` | Global | Batch sizes for prompt processing (4096 logical, 512 physical) |
-| `--parallel 1` | Global | Single-user -- maximize VRAM for context, not concurrent slots |
-| `--fit off` + `-ot` | Placement | Explicit CPU FFN placement; do not use automatic fit for the first boot |
-| `--load-mode mmap --tensor-read-lazy auto` | PLE | Demand-page tensors over 4 GiB, including the large ngram table; do not mlock it |
-| MTP | Off | Flash-Next's merged qwen4exp path does not include final MTP support |
-
-### Using with Claude Code CLI
-
-Only works while llama.cpp is the active backend — the Anthropic Messages API at
-`/v1/messages` is a llama-server feature; vLLM serves OpenAI-compatible routes
-only, so on the current backend this needs a proxy.
-
-```bash
-export ANTHROPIC_BASE_URL="http://llama.vanillax.me"
-export ANTHROPIC_AUTH_TOKEN="no-key-required"
-export ANTHROPIC_API_KEY=""
-claude --model "Qwen3.8-Flash-Next Q4"
-```
+For coding, follow the [Pi.dev setup guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md).
+The [dual-3090 capacity audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
+explains the measured memory pool and practical long-session limits.
 
 ### Using with OpenClaw / Other Tools
 
 Both backends expose the OpenAI-compatible API at `/v1/chat/completions`:
 
 ```bash
-export OPENAI_BASE_URL="http://vllm.vanillax.me/v1"
+export OPENAI_BASE_URL="https://vllm.vanillax.me/v1"
 export OPENAI_API_KEY="any-value"
 ```
 
@@ -68,7 +29,8 @@ Works with: OpenClaw, Aider, Continue.dev, OpenCode, or any OpenAI-compatible cl
 
 ## Image Generation (ComfyUI)
 
-ComfyUI runs on a dedicated RTX 3090. Models swap in/out of VRAM as workflows require.
+ComfyUI is parked while vLLM owns both cards. The workflows below are retained
+for a deliberate [GPU scale-swap](../../../docs/domains/ai-gpu/gpu-scale-swap.md).
 
 ### Text-to-Image: Z-Image-Turbo
 
@@ -239,7 +201,8 @@ The job downloads (skips existing):
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`qwen3.8-27b` with thinking off by default.
+`qwen3.8-27b`. Open WebUI now defaults to medium reasoning; lightweight tasks
+may explicitly opt out with the non-thinking policy in the vLLM runbook.
 
 ### RAG Tuning
 
@@ -264,7 +227,7 @@ IMAGE_STEPS: 9  (Z-Image-Turbo optimal)
 | Service | Internal URL | External URL |
 |---------|-------------|-------------|
 | vLLM (default LLM backend) | `vllm-service.vllm.svc:8080` | `vllm.vanillax.me` |
-| llama.cpp (parked rollback) | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me` |
+| vLLM compatibility alias | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me` |
 | Open WebUI | `open-webui-service.open-webui.svc:8080` | `open-webui.vanillax.me` |
 | ComfyUI | `comfyui-service.comfyui.svc:8188` | `comfyui.vanillax.me` |
 | SearXNG | `searxng.searxng.svc:8080` | -- |
@@ -277,18 +240,11 @@ All routes use `gateway-internal` (Cilium Gateway API). LLM and Open WebUI route
 |---------|------|------|------|
 | llama-cpp | NFS (static PV, CSI) | 150Gi | `192.168.10.133:/mnt/ai-pool/llama-cpp` |
 | ComfyUI | NFS (static PV, CSI) | 250Gi | `192.168.10.133:/mnt/BigTank/k8s/comfyui` |
-| Open WebUI | Longhorn | 5Gi | Dynamic PVC |
+| Open WebUI | Longhorn | 10Gi | Dynamic PVC |
 
 NFS mounts use `nconnect=16` over 10G for fast model loading. Performance depends on Talos kernel tuning — `read_ahead_kb` must be 16384+ (set via udev rule in cluster template) and `sunrpc.tcp_slot_table_entries` must be 128+ (set via sysctl). Without these, NFS caps at ~140 MB/s regardless of link speed.
 
 ## Caveats
-
-### KV Cache Quantization Requires Build Flag
-
-The `cache-type-k = q8_0` / `cache-type-v = q8_0` settings require flash attention enabled.
-Non-standard KV quant types (q4_0, q4_1, etc.) additionally require the image to be compiled
-with `-DGGML_CUDA_FA_ALL_QUANTS=ON`. We use q8_0 for both K and V (not q4_0) because
-Qwen GQA models are sensitive to aggressive V cache quantization (~0.2 perplexity hit with q4_0).
 
 ### ComfyUI Model Swapping
 

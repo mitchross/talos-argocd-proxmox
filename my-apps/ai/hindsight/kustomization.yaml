@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: hindsight
 
 resources:
+  - litellm-externalsecret.yaml
   - namespace.yaml
   - externalsecret.yaml
   - pvc.yaml

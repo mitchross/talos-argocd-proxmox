@@ -1,0 +1,119 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: langfuse-web
+  namespace: langfuse
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: langfuse-web
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: langfuse-web
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: '2'
+        memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: langfuse-worker
+  namespace: langfuse
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: langfuse-worker
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: langfuse-worker
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: '2'
+        memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: langfuse-postgres
+  namespace: langfuse
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: langfuse-postgres
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: postgres
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: '2'
+        memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: langfuse-clickhouse
+  namespace: langfuse
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: langfuse-clickhouse
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: clickhouse
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: '4'
+        memory: 8Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: langfuse-redis
+  namespace: langfuse
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: langfuse-redis
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: redis
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: '1'
+        memory: 1Gi

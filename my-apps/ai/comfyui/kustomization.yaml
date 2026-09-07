@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: comfyui
 
 resources:
+- litellm-externalsecret.yaml
 - namespace.yaml
 - pvc.yaml
 - deployment.yaml
