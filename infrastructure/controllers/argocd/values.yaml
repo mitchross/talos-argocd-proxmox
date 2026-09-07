@@ -6,6 +6,8 @@ configs:
     controller.status.processors: "50"
     # Performance: increase concurrent sync operations (default 10)
     controller.operation.processors: "25"
+    # Bound the whole sync operation, including retries and health waits; polling is separate.
+    controller.sync.timeout.seconds: "1800"
     # Performance: limit concurrent manifest generations to prevent OOM
     reposerver.parallelism.limit: "5"
     # Redis manifest-cache TTL (default 24h). 2026-07-19: repo-server cached
