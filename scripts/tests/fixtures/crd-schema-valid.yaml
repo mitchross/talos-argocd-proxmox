@@ -1,0 +1,22 @@
+# Positive control: the canary with timeout in its correct location.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: crd-schema-canary
+  namespace: default
+spec:
+  repository:
+    kind: ClusterRepository
+    name: cluster-kopia
+  sources:
+  - pvc:
+      name: canary
+  hooks:
+    beforeSnapshot:
+    - workloadExec:
+        podSelector:
+          matchLabels:
+            app: canary
+        container: postgres
+        command: [psql, -c, CHECKPOINT]
+        timeout: 2m
