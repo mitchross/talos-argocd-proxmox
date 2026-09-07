@@ -6,6 +6,8 @@ on:
       - 'my-apps/common/**'
       - 'scripts/validate-argocd-cache-paths.py'
       - 'scripts/tests/test_argocd_cache_paths.py'
+      - 'scripts/tests/test_argocd_sync_recovery.py'
+      - '.github/workflows/cluster-ci.yml'
       - '.github/workflows/argocd-cache-contract.yml'
   push:
     branches: [main]
@@ -14,6 +16,8 @@ on:
       - 'my-apps/common/**'
       - 'scripts/validate-argocd-cache-paths.py'
       - 'scripts/tests/test_argocd_cache_paths.py'
+      - 'scripts/tests/test_argocd_sync_recovery.py'
+      - '.github/workflows/cluster-ci.yml'
       - '.github/workflows/argocd-cache-contract.yml'
 permissions:
   contents: read
@@ -26,9 +30,22 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install PyYAML==6.0.3
+      - name: Read the shared render-tool versions
+        run: |
+          python - <<'PYTHON'
+          import os, yaml
+          with open('.github/workflows/cluster-ci.yml') as f:
+              versions = yaml.safe_load(f)['env']
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              for key in ('KUSTOMIZE_VERSION', 'HELM_VERSION'):
+                  print(f'{key}={versions[key]}', file=f)
+          PYTHON
       - uses: imranismail/setup-kustomize@v2
         with:
-          kustomize-version: '5.8.1'
+          kustomize-version: ${{ env.KUSTOMIZE_VERSION }}
+      - uses: azure/setup-helm@v4
+        with:
+          version: v${{ env.HELM_VERSION }}
       - name: Test path semantics
         run: python -m unittest discover -s scripts/tests -p test_argocd_cache_paths.py -v
       - name: Validate the rendered registry and bootstrap seed
@@ -36,3 +53,5 @@ jobs:
           set -euo pipefail
           kustomize build infrastructure/controllers/argocd/apps > /tmp/argocd-entrypoints.yaml
           python scripts/validate-argocd-cache-paths.py /tmp/argocd-entrypoints.yaml infrastructure/controllers/argocd/root.yaml
+      - name: Test rendered sync deadlines and retry recovery
+        run: python -m unittest discover -s scripts/tests -p test_argocd_sync_recovery.py -v
