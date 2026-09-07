@@ -1,86 +1,85 @@
 #!/usr/bin/env python3
-"""Convert rendered CustomResourceDefinitions into kubeconform JSON schemas.
+"""Convert rendered CRDs into strict kubeconform JSON schemas.
 
-kubeconform runs with -ignore-missing-schemas and sources CRD schemas from the
-datree CRDs-catalog, which does not carry niche charts (kopiur among them). Every
-such CR was therefore unvalidated in CI: a field name typo only failed later, at
-the API server, as an ArgoCD sync error. This closes that gap using the CRDs the
-repo already renders, so the schemas always match the chart version in git.
+Usage: generate-crd-schemas.py MANIFESTS OUT_DIR [--min-schemas N]
+Writes <out>/<group>/<kind lowercased>_<version>.json.
 
-    python3 scripts/generate-crd-schemas.py /tmp/all-manifests.yaml /tmp/crd-schemas
-
-Writes <out>/<group>/<kind lowercased>_<version>.json, the layout kubeconform's
-'{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' template resolves.
-
-THE CONVERSION IS THE WHOLE POINT: a CRD's openAPIV3Schema lists the fields that
-exist but never says "and nothing else". Rejecting unknown fields is structural
-pruning, an API server behaviour that is absent from the schema document. Handing
-kubeconform a raw extraction produces a check that validates field *types* and
-happily passes a misplaced field -- the exact bug class this exists to catch. So
-additionalProperties:false is injected recursively, except under
-x-kubernetes-preserve-unknown-fields, where the API server also stops pruning.
-
-Limits worth knowing: this is a strict subset of `kubectl apply --dry-run=server`.
-Admission webhooks and x-kubernetes-validations CEL rules are not evaluated, so a
-CR can pass here and still be rejected by the cluster.
+This is an offline field/type check, not an API-server dry run. Admission,
+CEL, defaulting and full ObjectMeta validation still require the cluster.
 """
 
+import copy
 import json
 import pathlib
 import sys
 
 import yaml
 
-# A free-form object (no properties, no declared map value type) must stay open;
-# forcing additionalProperties:false there would reject all of its content.
-def _prune(node):
+
+def _resource_fields(node: dict) -> None:
+    props = node.setdefault("properties", {})
+    props.setdefault("apiVersion", {"type": "string"})
+    props.setdefault("kind", {"type": "string"})
+    # CRD schemas do not describe the full ObjectMeta contract.
+    props["metadata"] = {"type": "object", "x-kubernetes-preserve-unknown-fields": True}
+
+
+def _convert_node(node: object, *, structural: bool = True) -> None:
     if isinstance(node, list):
         for item in node:
-            _prune(item)
+            _convert_node(item, structural=structural)
         return
     if not isinstance(node, dict):
         return
 
-    # Where the API server stops pruning, so do we.
-    if node.get("x-kubernetes-preserve-unknown-fields"):
-        return
+    if structural and node.get("x-kubernetes-embedded-resource"):
+        _resource_fields(node)
 
     props = node.get("properties")
     if isinstance(props, dict):
-        node.setdefault("additionalProperties", False)
+        # Logical branches constrain fields; only the structural schema closes them.
+        if structural and not node.get("x-kubernetes-preserve-unknown-fields"):
+            node.setdefault("additionalProperties", False)
+        # Preservation applies here, not to explicitly declared child schemas.
         for sub in props.values():
-            _prune(sub)
+            _convert_node(sub, structural=structural)
 
-    # Map value schemas (map[string]T) arrive here as a dict, not a bool.
     extra = node.get("additionalProperties")
     if isinstance(extra, dict):
-        _prune(extra)
-
-    for key in ("items", "not"):
+        _convert_node(extra, structural=structural)
+    if "items" in node:
+        _convert_node(node["items"], structural=structural)
+    for key in ("allOf", "anyOf", "oneOf", "not"):
         if key in node:
-            _prune(node[key])
-    for key in ("allOf", "anyOf", "oneOf"):
-        if key in node:
-            _prune(node[key])
+            _convert_node(node[key], structural=False)
+
+    if node.get("x-kubernetes-int-or-string") or node.get("format") == "int-or-string":
+        node["type"] = ["integer", "string"]
+        if node.get("format") == "int-or-string":
+            del node["format"]
+
+    if node.pop("nullable", False):
+        value_type = node.get("type")
+        if isinstance(value_type, str):
+            node["type"] = [value_type, "null"]
+        elif isinstance(value_type, list) and "null" not in value_type:
+            node["type"] = [*value_type, "null"]
+        # Kubernetes checks nullable nulls against type/enum, not logical branches.
+        constraints = {key: node.pop(key) for key in ("allOf", "anyOf", "oneOf", "not") if key in node}
+        if constraints:
+            node["allOf"] = [{"anyOf": [{"type": "null"}, constraints]}]
 
 
-def convert(schema):
-    """One CRD version's openAPIV3Schema -> a whole-document kubeconform schema."""
-    doc = json.loads(json.dumps(schema))  # never mutate the caller's copy
-    _prune(doc)
-    props = doc.setdefault("properties", {})
-    props.setdefault("apiVersion", {"type": "string"})
-    props.setdefault("kind", {"type": "string"})
-    # ObjectMeta is validated by the API server, not by the CRD's own schema.
-    props["metadata"] = {"type": "object", "x-kubernetes-preserve-unknown-fields": True}
-    doc.setdefault("additionalProperties", False)
+def convert(schema: dict) -> dict:
+    """Convert one CRD version without mutating its source schema."""
+    doc = copy.deepcopy(schema)
+    _resource_fields(doc)
+    _convert_node(doc)
     return doc
 
 
 def iter_crds(stream):
-    # A bare `=` in a CRD enum (Prometheus Operator matchType) parses as the
-    # rarely-used value tag, which SafeLoader rejects. Same shim as
-    # validate-kopiur-coverage.py.
+    # Prometheus Operator's bare '=' enum value uses PyYAML's value tag.
     yaml.SafeLoader.add_constructor(
         "tag:yaml.org,2002:value", lambda loader, node: loader.construct_scalar(node)
     )
@@ -124,8 +123,7 @@ def main(argv):
     written = generate(manifests, out_dir)
     print(f"Generated {len(written)} CRD schemas into {out_dir}")
 
-    # Without this the check rots silently: a moved chart path yields zero
-    # schemas, kubeconform validates nothing, and CI stays green.
+    # Missing CRD-bearing charts must not silently remove all local validation.
     if len(written) < minimum:
         print(
             f"ERROR: expected at least {minimum} CRD schemas, got {len(written)}. "
