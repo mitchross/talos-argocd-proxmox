@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-grafana
+  namespace: mcp-grafana
+  labels:
+    app: mcp-grafana
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: mcp-grafana
+  template:
+    metadata:
+      labels:
+        app: mcp-grafana
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 999
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp-grafana
+          image: grafana/mcp-grafana:1.3.0@sha256:5114852743e450fe5186b6c1712419843eb4bd295e47e64c452c3aa0fab3c42e
+          # The image bakes `--transport sse --address 0.0.0.0:8000` into its
+          # ENTRYPOINT, so `args` alone would append a second conflicting
+          # --transport. Override command to own the whole argv.
+          command: ["/app/mcp-grafana"]
+          args:
+            - --transport=streamable-http
+            # Default is localhost:8000, which accepts nothing from outside the pod.
+            - --address=0.0.0.0:8000
+            - --disable-write
+            # Empty default rejects any request carrying an Origin header, which
+            # is what we want: MCP clients are not browsers.
+            - --allowed-hosts=mcp-grafana.vanillax.me,mcp-grafana.vanillax.me:80,mcp-grafana.mcp-grafana.svc.cluster.local:8000,localhost:8000,127.0.0.1:8000
+            - --log-level=info
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: GRAFANA_URL
+              value: "http://kube-prometheus-stack-grafana.prometheus-stack.svc.cluster.local"
+          envFrom:
+            - secretRef:
+                name: mcp-grafana
+          # No documented health endpoint, and /metrics is off by default, so
+          # probe the listener itself.
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
