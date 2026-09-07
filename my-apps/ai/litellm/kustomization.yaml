@@ -8,7 +8,12 @@ resources:
   - vpa.yaml
   - namespace.yaml
   - externalsecret.yaml
-  - configmap.yaml
   - deployment.yaml
   - service.yaml
+  - servicemonitor.yaml
   - httproute.yaml
+
+configMapGenerator:
+  - name: litellm-config
+    files:
+      - config.yaml

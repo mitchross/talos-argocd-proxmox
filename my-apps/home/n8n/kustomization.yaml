@@ -6,11 +6,23 @@ labels:
       app.kubernetes.io/name: n8n
       app.kubernetes.io/managed-by: argocd
 resources:
+  - externalsecret.yaml
   - vpa.yaml
   - namespace.yaml
   - httproute.yaml
   - pvc.yaml
   - kopiur/data.yaml
+
+configMapGenerator:
+  - name: n8n-gitops-scripts
+    files:
+      - scripts/start-with-workflows.cjs
+      - scripts/route-workflows.cjs
+  - name: n8n-gitops-workflows
+    files:
+      - workflows/paperless-auto-tagger.json
+      - workflows/daily-cluster-report.json
+      - workflows/vehicle-search.json
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
 components:

@@ -5,6 +5,30 @@ image:
 
 main:
   replicaCount: 1
+  deploymentStrategy:
+    type: Recreate
+  command: ["node", "/opt/repo-scripts/start-with-workflows.cjs"]
+  extraVolumes:
+    - name: gitops-scripts
+      configMap:
+        name: n8n-gitops-scripts
+    - name: gitops-workflows
+      configMap:
+        name: n8n-gitops-workflows
+    - name: litellm-credential
+      secret:
+        secretName: n8n-litellm
+        defaultMode: 0440
+  extraVolumeMounts:
+    - name: gitops-scripts
+      mountPath: /opt/repo-scripts
+      readOnly: true
+    - name: gitops-workflows
+      mountPath: /opt/repo-workflows
+      readOnly: true
+    - name: litellm-credential
+      mountPath: /var/run/litellm
+      readOnly: true
 
   service:
     type: ClusterIP
@@ -22,6 +46,8 @@ main:
     limits:
       memory: 1Gi
   extraEnv:
+    N8N_BLOCK_ENV_ACCESS_IN_NODE:
+      value: "true"
     N8N_HOST:
       value: n8n.vanillax.me
     N8N_PORT:
@@ -79,3 +105,8 @@ main:
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
+
+worker:
+  extraEnv:
+    N8N_BLOCK_ENV_ACCESS_IN_NODE:
+      value: "true"

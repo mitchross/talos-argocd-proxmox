@@ -22,6 +22,12 @@ spec:
       # search are overwritten so user UI preferences survive each deploy.
       initContainers:
         - name: seed-config
+          env:
+            - name: LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: perplexica-litellm
+                  key: LITELLM_API_KEY
           # ghcr.io/jqlang/jq is distroless (no shell); alpine + apk jq gives us /bin/sh for the merge.
           image: alpine:3.24
           command:
@@ -59,9 +65,12 @@ spec:
             - name: SEARXNG_API_URL
               value: "http://searxng.searxng.svc.cluster.local:8080"
             - name: OPENAI_BASE_URL
-              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+              value: "http://litellm-service.litellm.svc.cluster.local:4000/v1"
             - name: OPENAI_API_KEY
-              value: "sk-no-key-required"
+              valueFrom:
+                secretKeyRef:
+                  name: perplexica-litellm
+                  key: LITELLM_API_KEY
           volumeMounts:
             - name: data
               mountPath: /home/vane/data

@@ -1,4 +1,4 @@
-# LLM agent with cluster read access gets no internet: egress only to the API server, DNS, vLLM,
+# LLM agent with cluster read access gets no internet: egress only to the API server, DNS, LiteLLM,
 # and the telemetry backends it investigates with. Ingress is unrestricted.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -24,7 +24,11 @@ spec:
               protocol: UDP
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: vllm
+            k8s:io.kubernetes.pod.namespace: litellm
+      toPorts:
+        - ports:
+            - port: "4000"
+              protocol: TCP
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: prometheus-stack

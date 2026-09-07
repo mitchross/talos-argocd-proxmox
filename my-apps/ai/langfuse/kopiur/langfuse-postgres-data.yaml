@@ -1,0 +1,80 @@
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: langfuse-postgres-data
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  sources:
+  - pvc:
+      name: langfuse-postgres-data
+  identity:
+    username: langfuse-postgres-data
+    hostname: langfuse
+  retention:
+    keepHourly: 24
+    keepDaily: 7
+    keepWeekly: 4
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+      - 999
+  hooks:
+    beforeSnapshot:
+    - workloadExec:
+        podSelector:
+          matchLabels:
+            app: langfuse-postgres
+        container: postgres
+        command:
+        - psql
+        - -v
+        - ON_ERROR_STOP=1
+        - -U
+        - langfuse
+        - -d
+        - langfuse
+        - -c
+        - CHECKPOINT
+      timeout: 2m
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: langfuse-postgres-data-hourly
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  policyRef:
+    name: langfuse-postgres-data
+  schedule:
+    cron: 16 * * * *
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: langfuse-postgres-data-restore
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  source:
+    fromPolicy:
+      name: langfuse-postgres-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+      - 999

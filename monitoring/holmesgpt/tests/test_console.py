@@ -4,12 +4,29 @@ from pathlib import Path
 import threading
 import time
 import unittest
+from unittest.mock import patch, MagicMock
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 SPEC = importlib.util.spec_from_file_location("console", Path(__file__).parents[1] / "scripts/server.py")
 console = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(console)
+
+
+class GatewayHealthTest(unittest.TestCase):
+    def test_gateway_check_requires_credentials(self):
+        with patch.object(console, "LITELLM_API_KEY", ""), patch.object(console.OPENER, "open") as request:
+            self.assertFalse(console.check_gateway())
+            request.assert_not_called()
+
+    def test_gateway_check_sends_bearer_key(self):
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        with patch.object(console, "LITELLM_API_KEY", "test-key"), patch.object(console.OPENER, "open", return_value=response) as request:
+            self.assertTrue(console.check_gateway())
+            sent = request.call_args.args[0]
+            self.assertEqual(sent.get_header("Authorization"), "Bearer test-key")
+            self.assertEqual(sent.full_url, "http://litellm-service.litellm.svc.cluster.local:4000/v1/models")
 
 
 class ManagerTest(unittest.TestCase):

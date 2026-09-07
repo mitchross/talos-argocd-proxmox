@@ -1,4 +1,6 @@
 {
+  "id": "gitopsCluster",
+  "active": false,
   "name": "Daily Cluster Report",
   "nodes": [
     {
@@ -214,14 +216,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions",
+        "url": "http://litellm-service.litellm.svc.cluster.local:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'qwen3.8-27b', messages: [ { role: 'system', content: 'You are a Kubernetes cluster health reporter. Summarize the following metrics into a concise daily report. Highlight any issues, warnings, or anomalies. Use these sections: **Nodes** (readiness, CPU, memory, disk), **Pods** (restarts, failures), **Storage** (Longhorn usage), **ArgoCD Apps** (sync/health status), **Backups** (PVC Plumber health). Keep it brief and actionable. Use markdown formatting.' }, { role: 'user', content: $json.metricsPayload } ], max_tokens: 2048, temperature: 0.3 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'qwen3.8-27b', messages: [ { role: 'system', content: 'You are a Kubernetes cluster health reporter. Summarize the following metrics into a concise daily report. Highlight any issues, warnings, or anomalies. Use these sections: **Nodes** (readiness, CPU, memory, disk), **Pods** (restarts, failures), **Storage** (Longhorn usage), **ArgoCD Apps** (sync/health status), **Backups** (PVC Plumber health). Keep it brief and actionable. Use markdown formatting.' }, { role: 'user', content: $json.metricsPayload } ], max_tokens: 2048, temperature: 0.7, top_p: 0.8, top_k: 20, min_p: 0, presence_penalty: 1.5, repetition_penalty: 1, chat_template_kwargs: { enable_thinking: false, preserve_thinking: false }, metadata: { tags: ['app:n8n', 'workflow:daily-cluster-report'], trace_name: 'n8n/daily-cluster-report' } }) }}",
         "options": {}
       },
       "id": "d0a1b2c3-0000-4000-8000-000000000012",
       "name": "LLM: Summarize Report",
+      "credentials": { "httpHeaderAuth": { "id": "gitopsLiteLLM", "name": "LiteLLM gateway" } },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [2750, 300]

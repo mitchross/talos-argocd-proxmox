@@ -1,4 +1,6 @@
 {
+  "id": "gitopsVehicles",
+  "active": false,
   "name": "Vehicle Search - Maverick / Ranger / F-150",
   "nodes": [
     {
@@ -120,10 +122,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions",
+        "url": "http://litellm-service.litellm.svc.cluster.local:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'qwen3.8-27b', messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: 'Score these listings:\\n\\n' + $json.listingText } ], max_tokens: 2048, temperature: 0.2 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'qwen3.8-27b', messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: 'Score these listings:\\n\\n' + $json.listingText } ], max_tokens: 2048, temperature: 0.7, top_p: 0.8, top_k: 20, min_p: 0, presence_penalty: 1.5, repetition_penalty: 1, chat_template_kwargs: { enable_thinking: false, preserve_thinking: false }, metadata: { tags: ['app:n8n', 'workflow:vehicle-search'], trace_name: 'n8n/vehicle-search' } }) }}",
         "options": {
           "response": {
             "response": {
@@ -134,6 +138,7 @@
       },
       "id": "f0a1b2c3-0000-4000-8000-000000000008",
       "name": "LLM: Score Listings",
+      "credentials": { "httpHeaderAuth": { "id": "gitopsLiteLLM", "name": "LiteLLM gateway" } },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1750, 250]

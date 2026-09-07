@@ -114,5 +114,5 @@ spec:
         - name: shared-temp
           emptyDir: {}
         - name: global-llm-config
-          configMap:
-            name: surfsense-global-llm-config
+          secret:
+            secretName: surfsense-llm-config

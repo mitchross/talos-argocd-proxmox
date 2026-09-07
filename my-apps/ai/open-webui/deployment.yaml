@@ -15,8 +15,7 @@ spec:
       labels:
         app: open-webui
     spec:
-      # RAG embeddings run in-pod on CPU; inference stays in llama.cpp.
-      # Prefer non-GPU nodes to reserve the sole 3090, but allow fallback.
+      # Keep CPU embeddings off the inference GPUs when possible.
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -44,6 +43,17 @@ spec:
         envFrom:
         - configMapRef:
             name: open-webui-configmap
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: open-webui-litellm
+              key: api-key
+        - name: OPENAI_API_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: open-webui-litellm
+              key: api-key
         volumeMounts:
         - name: data
           mountPath: /app/backend/data

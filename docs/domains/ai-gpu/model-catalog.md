@@ -1,14 +1,15 @@
 # AI model catalog
 
-Git-declared model inventory and app wiring. The official FP8 cutover takes
-effect after the user merges and ArgoCD reconciles; runtime verification is
-still required. The last observed live backend was one-card llama.cpp.
+Current model inventory and app wiring. Official FP8 was verified live on
+both cards on 2026-09-06. The medium fallback is the Git-declared policy;
+verify it after the reasoning-policy PR reconciles. The
+[capacity audit](3090-llm-optimization.md) records runtime evidence and limits.
 
 ## Declared GPU ownership
 
 | Backend | Replicas | Cards per pod | Served model | Status |
 |---|---:|---:|---|---|
-| vLLM | `1` | **2** | `qwen3.8-27b` | Official FP8 production cutover |
+| vLLM | `1` | **2** | `qwen3.8-27b` | Official FP8 production |
 | llama.cpp | `0` | 1 | `qwen3.8-27b` | Retained GGUF rollback |
 | NInfer | `0` | 1 | `qwen3.8-ninfer` | Parked evaluation |
 | ComfyUI / SwarmUI | `0` | 1 | Image generation | Parked |
@@ -28,7 +29,7 @@ Both RTX 3090s belong to vLLM. Other GPU workloads must remain parked;
 | Context ceiling | 262,144 tokens |
 | Concurrency | two sequences sharing the KV pool |
 | Vision | native encoder; one image per request, video disabled |
-| Reasoning | explicit off / low / medium / xhigh; low default |
+| Reasoning | explicit off / low / medium / xhigh; medium default |
 | Speculation | disabled; MTP deferred until long-session fixes are validated |
 | Power | 220 W per card |
 
@@ -39,7 +40,14 @@ simultaneous full-length sessions. AutoRound INT4/W4A8 is a later speed A/B.
 
 The [canonical vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md)
 owns exact flags, source references, reasoning/sampling examples, rollout
-checks and rollback. No throughput measurement is claimed for this new profile.
+checks and rollback. The capacity audit distinguishes smoke checks from
+performance and sustained quality measurements.
+
+Normal coding uses explicit `medium`; `low` is for lighter requests and
+`xhigh` is opt-in for difficult tasks. Preservation remains enabled for agents;
+stateless chats may disable it. Thinking-off requests send both flags false
+and the separate non-thinking sampler documented in the canonical runbook.
+Open WebUI normalizes generic `high` to medium; Pi exposes only valid efforts.
 
 ## Storage and staging
 
@@ -57,37 +65,34 @@ inspect hooks, health, vision, tools, reasoning and long-context behavior.
 ## App wiring
 
 - model: `qwen3.8-27b`
-- direct endpoint: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- existing app alias: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
-- LAN: `https://llama.vanillax.me/v1` and `https://vllm.vanillax.me/v1`
+- application gateway: `http://litellm-service.litellm.svc.cluster.local:4000/v1`
+- workstation gateway: `https://litellm.vanillax.me/v1`
+- authentication: namespace-local ExternalSecret from `litellm/master_key`
+- gateway upstream / diagnostics: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
 
-The llama.cpp Service aliases vLLM, preserving existing app configuration.
-Both LAN hostnames route directly to the vLLM selector Service. Consumers
-include Open WebUI, Perplexica/Vane, LiteLLM, Presenton, SurfSense, HolmesGPT,
-Hindsight, Project Nomad, the ComfyUI vision bridge, WorldMonitor, Keep,
-Deal Scout, Karakeep and the News Reader Temporal worker.
+All Git-declared local LLM consumers use LiteLLM: Open WebUI, Perplexica/Vane,
+Presenton, SurfSense, HolmesGPT, Hindsight, Project Nomad, ComfyUI's vision
+bridge, WorldMonitor, Keep, Deal Scout, Karakeep, News Reader and n8n workflows.
+Parked replicas and disabled workflows remain parked/disabled. Keep's provider
+appends `/v1/completions` itself, so its configured gateway URL omits `/v1`.
+The [observability runbook](ai-observability.md) covers authentication,
+persisted settings, ingestion verification and rollback.
+
+The legacy llama.cpp Service still aliases vLLM, and `llama.vanillax.me` /
+`vllm.vanillax.me` remain direct diagnostic routes. Applications must use the
+authenticated gateway to appear in Langfuse. Direct benchmark probes intentionally
+bypass gateway telemetry and must not be mistaken for application traffic.
 
 ## Pi.dev
 
-Pi.dev uses the same `qwen3.8-27b` API id through
-`https://llama.vanillax.me/v1`. The workstation configuration lives in
-[`pi-agent-local-dev.md`](pi-agent-local-dev.md). Because Qwen3.8 separates
-`enable_thinking` from its valid effort values (`low`, `medium`, `xhigh`), Pi
-uses explicit `chat_template_kwargs` so `off` really disables thinking and
-`medium` is the normal coding default.
-
-The workstation launchers are:
-
-```bash
-alias pi-qwen-only='pi --model vanillax-llama/qwen3.8-27b --thinking medium'
-alias pi-withk3='pi --model vanillax-litellm/kimi-k3'
-```
-
-`pi-qwen-only` is the clean local-Qwen path. `pi-withk3` starts on Kimi K3 but
-keeps Qwen available through `/model` because both are enabled in Pi settings.
-Old Pi sessions created under the retired `vanillax-vllm` provider can retain
-that provider name in session metadata; use a new session when validating the
-current provider.
+Pi uses `vanillax-vllm/qwen3.8-27b` through `https://litellm.vanillax.me/v1`.
+Open WebUI uses the in-cluster LiteLLM service. Both routes collect request
+metrics and Langfuse AI observations; direct vLLM callers bypass that gateway.
+See [AI observability](ai-observability.md) for verification and fallback.
+The [workstation guide](pi-agent-local-dev.md) owns the provider JSON, explicit
+medium reasoning mapping, mode-specific sampler extension, compaction reserve,
+one-image history limit, validation, and rollback. Existing cloud providers
+remain separate. Start a new session when validating changed defaults.
 
 ## Historical llama.cpp baseline — 2026-09-03
 

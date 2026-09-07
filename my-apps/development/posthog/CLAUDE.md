@@ -44,6 +44,10 @@ Upgrade procedure: `UPGRADE.md` (this directory).
    and only moves versions when upstream's `docker-compose.base.yml` pins move.
 7. **Renovate**: all PostHog images arrive as ONE grouped weekend PR
    (`posthog images`), never automerged — review it against `UPGRADE.md`.
+8. **Replay retention compatibility**: `scripts/patch-replay-retention.py`
+   permits only a missing-entitlement, self-hosted `30d` API update. Its method
+   hash guards source drift before migration; follow `UPGRADE.md` on changes.
+   `SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS` declares projects reconciled to 30d.
 
 ## DR model (why only Postgres is backed up)
 

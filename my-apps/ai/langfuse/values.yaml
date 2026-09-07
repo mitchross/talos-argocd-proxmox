@@ -1,0 +1,138 @@
+fullnameOverride: langfuse
+langfuse:
+  salt:
+    secretKeyRef:
+      name: langfuse-secrets
+      key: salt
+  encryptionKey:
+    secretKeyRef:
+      name: langfuse-secrets
+      key: encryption-key
+  nextauth:
+    url: https://langfuse.vanillax.me
+    secret:
+      secretKeyRef:
+        name: langfuse-secrets
+        key: nextauth-secret
+  features:
+    telemetryEnabled: false
+    signUpDisabled: true
+  logging:
+    format: json
+  serviceAccount:
+    automountServiceAccountToken: false
+  image:
+    tag: 4.24.0
+    pullPolicy: IfNotPresent
+  revisionHistoryLimit: 2
+  replicas: 1
+  deployment:
+    annotations:
+      argocd.argoproj.io/sync-wave: '3'
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  additionalEnv:
+  - name: LANGFUSE_S3_BATCH_EXPORT_EXTERNAL_ENDPOINT
+    value: https://langfuse-s3.vanillax.me
+  web:
+    pod:
+      additionalEnv:
+      - name: LANGFUSE_INIT_ORG_ID
+        value: vanillax
+      - name: LANGFUSE_INIT_ORG_NAME
+        value: Vanillax
+      - name: LANGFUSE_INIT_PROJECT_ID
+        value: homelab-ai
+      - name: LANGFUSE_INIT_PROJECT_NAME
+        value: Homelab AI
+      - name: LANGFUSE_INIT_USER_NAME
+        value: Mitch Ross
+      - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+        valueFrom:
+          secretKeyRef:
+            name: langfuse-secrets
+            key: public-key
+      - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: langfuse-secrets
+            key: secret-key
+      - name: LANGFUSE_INIT_USER_EMAIL
+        valueFrom:
+          secretKeyRef:
+            name: langfuse-secrets
+            key: admin-email
+      - name: LANGFUSE_INIT_USER_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: langfuse-secrets
+            key: admin-password
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        memory: 4Gi
+    pdb:
+      create: false
+  worker:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        memory: 4Gi
+    pdb:
+      create: false
+postgresql:
+  deploy: false
+  host: langfuse-postgres
+  auth:
+    username: langfuse
+    database: langfuse
+    existingSecret: langfuse-secrets
+    secretKeys:
+      userPasswordKey: postgres-password
+redis:
+  deploy: false
+  host: langfuse-redis
+  auth:
+    username: default
+    existingSecret: langfuse-secrets
+    existingSecretPasswordKey: redis-password
+clickhouse:
+  deploy: false
+  host: langfuse-clickhouse
+  database: langfuse
+  auth:
+    username: langfuse
+    existingSecret: langfuse-secrets
+    existingSecretKey: clickhouse-password
+  cluster:
+    enabled: false
+s3:
+  deploy: false
+  bucket: langfuse
+  region: us-east-1
+  endpoint: http://192.168.10.133:30292
+  forcePathStyle: true
+  accessKeyId:
+    secretKeyRef:
+      name: langfuse-secrets
+      key: s3-access-key
+  secretAccessKey:
+    secretKeyRef:
+      name: langfuse-secrets
+      key: s3-secret-key
+  eventUpload:
+    prefix: events/
+  mediaUpload:
+    enabled: true
+    prefix: media/
+    endpoint: https://langfuse-s3.vanillax.me
+  batchExport:
+    enabled: true
+    prefix: exports/

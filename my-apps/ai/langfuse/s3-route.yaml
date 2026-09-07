@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: langfuse-s3
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  ports:
+  - name: http
+    port: 9000
+    targetPort: 30292
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: langfuse-s3
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+  labels:
+    kubernetes.io/service-name: langfuse-s3
+    endpointslice.kubernetes.io/managed-by: gitops.vanillax.me
+addressType: IPv4
+ports:
+- name: http
+  protocol: TCP
+  port: 30292
+endpoints:
+- addresses:
+  - 192.168.10.133
+  conditions:
+    ready: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: langfuse-s3-route
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  parentRefs:
+  - kind: Gateway
+    name: gateway-internal-technitium
+    namespace: gateway
+  hostnames:
+  - langfuse-s3.vanillax.me
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /langfuse/media
+    - path:
+        type: PathPrefix
+        value: /langfuse/exports
+    timeouts:
+      request: 5m
+      backendRequest: 5m
+    backendRefs:
+    - name: langfuse-s3
+      port: 9000

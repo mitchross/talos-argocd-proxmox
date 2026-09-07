@@ -1,17 +1,15 @@
 # Ask the cluster console — source-only draft
 
-**Status: not deployed.** This PR adds the adapter, static UI, and offline tests
-only. It does not change Kustomization resources, Helm values, replicas, routes,
-RBAC, Cilium policies, Keep workflows, or the inference engine. Holmes remains
-in its existing desired state. The deployment write was blocked by the editing
-tool; activation is not included or claimed here.
+**Status: not deployed.** The adapter, static UI, and offline tests are retained
+source only. Holmes remains parked. Its separately managed model configuration
+now uses authenticated LiteLLM; this console still requires deployment wiring.
 
 ## Intended experience
 
 Open an internal console, ask "Why is radar-ng slow?", select a namespace/time
 window, and read an evidence-backed explanation rather than navigating a maze
 of dashboards. Holmes gathers the evidence using Kubernetes, Prometheus, Loki
-and Tempo, and the existing local llama.cpp model reasons over it.
+and Tempo, and the local Qwen model reasons over it through LiteLLM.
 
 This source is a thin standard-library Python adapter, not a new investigation
 engine. There is no new database, queue service, dependency installation, shell
@@ -43,17 +41,21 @@ python -m unittest discover -s monitoring/holmesgpt/tests -p test_console.py -v
 node --check monitoring/holmesgpt/ui/app.js
 ```
 
-The 14 tests use a mock Holmes function and a loopback HTTP server. They prove
+The tests use a mock Holmes function and a loopback HTTP server. They prove
 adapter behavior, not model tool-calling quality, effective cluster permissions,
 connectivity, or a working rollout. No Kubernetes API is contacted.
 
 ## Activation prerequisites, not changes in this PR
 
 Activation still requires a separately reviewed deployment/route/ConfigMap wiring,
-read-only Holmes RBAC and tool configuration, current llama.cpp endpoint and
+read-only Holmes RBAC and tool configuration, LiteLLM credentials and
 context/output/step budgets, and a tested network boundary. The broader existing
 cluster allow policy must not negate the intended Holmes restrictions. Preserve
 raw Alertmanager delivery and prevent an alert storm bypassing on-demand limits.
+
+Supply `LITELLM_API_KEY` from `holmes-litellm`. The console checks the fixed
+gateway `/v1/models` endpoint with Bearer authentication, failing closed when
+the key is absent. This establishes gateway access, not backend inference health.
 
 Review whether authentication is required for the actual audience. Verify cold
 start without external model/tokenizer downloads and a real evidence-gathering

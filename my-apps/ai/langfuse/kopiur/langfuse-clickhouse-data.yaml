@@ -1,0 +1,62 @@
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: langfuse-clickhouse-data
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  sources:
+  - pvc:
+      name: langfuse-clickhouse-data
+  identity:
+    username: langfuse-clickhouse-data
+    hostname: langfuse
+  retention:
+    keepHourly: 24
+    keepDaily: 7
+    keepWeekly: 4
+  mover:
+    securityContext:
+      runAsUser: 101
+      runAsGroup: 101
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 101
+      supplementalGroups:
+      - 101
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: langfuse-clickhouse-data-hourly
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  policyRef:
+    name: langfuse-clickhouse-data
+  schedule:
+    cron: 18 * * * *
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: langfuse-clickhouse-data-restore
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  source:
+    fromPolicy:
+      name: langfuse-clickhouse-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 101
+      runAsGroup: 101
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 101
+      supplementalGroups:
+      - 101
