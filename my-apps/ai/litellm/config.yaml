@@ -20,12 +20,10 @@ model_list:
       output_cost_per_token: 0.000015
 
 litellm_settings:
-  callbacks: ["prometheus"]
+  callbacks: ["prometheus", "langfuse_otel"]
   # Cover long-context requests beyond the built-in 600-second histogram ceiling.
   prometheus_latency_buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60, 120, 300, 420, 600, 900, 1200, 1800]
   require_auth_for_metrics_endpoint: true
-  success_callback: ["posthog"]
-  failure_callback: ["posthog"]
   # Kimi K3 rejects sampling-param overrides (temperature/top_p/etc.) — drop rather than error.
   drop_params: true
 

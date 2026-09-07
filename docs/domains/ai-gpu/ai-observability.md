@@ -1,155 +1,179 @@
-# AI gateway metrics and PostHog analytics
+# AI observability: Langfuse, LiteLLM and Grafana
 
-Git-declared configuration, audited 2026-09-06. Changes take effect after the
-user merges the PR and ArgoCD syncs; a healthy Deployment alone does not prove
-that metrics or AI events are being stored.
+Git-declared configuration, audited 2026-09-06. The Langfuse migration and
+PostHog retention fix require the user to merge the PR and ArgoCD to sync.
+Manifest validation is not proof of live trace ingestion.
 
-Pi and Open WebUI send requests to **LiteLLM → vLLM**. LiteLLM reports request
-counts, failures, tokens, and latency to Prometheus and sends `$ai_generation`
-events to self-hosted PostHog. vLLM separately reports engine throughput, KV
-occupancy, preemptions, and scheduling. GPU metrics remain in the GPU dashboard.
-These layers answer different questions: who called the model, what happened
-in a conversation, and what the inference hardware was doing.
+## What each service measures
+
+| Service | Role |
+|---|---|
+| Langfuse | AI inputs/outputs, generations, tokens, latency, session grouping, scores and evaluation workflows |
+| LiteLLM | Authenticated model gateway; exports generation telemetry and request metrics |
+| Prometheus / Grafana | Request failures, latency, throughput, vLLM KV capacity/preemptions and GPU utilization |
+| PostHog | Product events, funnels, feature flags and browser session replay |
+
+Pi and Open WebUI use **LiteLLM → vLLM**. LiteLLM exports observations to
+self-hosted Langfuse using `langfuse_otel`, alongside its `prometheus` callback.
+PostHog's AI callbacks are removed; its deployment and existing data remain.
+Historical PostHog AI events/Kafka backlog are not imported into Langfuse.
+
+A gateway observes model calls and tool-call responses. It does not automatically
+observe local tool execution, file changes, or every internal agent step. Use
+application instrumentation for those spans when building agents. Evaluation
+scores are also not automatic: add a small labeled dataset and explicit scoring
+before treating model speed as evidence of answer quality. This deployment does
+not enable paid judges or background model calls.
 
 ## Routes and credentials
 
 | Caller | Endpoint | Authentication |
 |---|---|---|
 | Pi | `https://litellm.vanillax.me/v1` | LiteLLM key in local Pi `auth.json` |
-| Open WebUI | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | `open-webui-litellm` Secret from 1Password |
-| LiteLLM | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | Existing local vLLM placeholder |
-| Diagnostics / other direct clients | `https://vllm.vanillax.me/v1` | Existing local vLLM placeholder; bypasses gateway analytics |
+| Open WebUI | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | `open-webui-litellm` ExternalSecret |
+| LiteLLM inference | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | Existing local placeholder |
+| LiteLLM telemetry | `http://langfuse-web.langfuse.svc.cluster.local:3000` | Langfuse project public/secret keys |
+| Langfuse UI | `https://langfuse.vanillax.me` | Initial owner credentials in 1Password |
+| Direct diagnostics | `https://vllm.vanillax.me/v1` | Bypasses gateway observations |
 
-The Pi provider ID remains `vanillax-vllm/qwen3.8-27b`; its explicit thinking
-mapping, sampler extension, compaction, and 262,144-token ceiling are unchanged.
-See the [Pi guide](pi-agent-local-dev.md). LiteLLM's Qwen timeout and internal
-HTTPRoute allow 30 minutes, matching WebUI's request timeout. Gateway latency
-histogram buckets also extend to 30 minutes; the built-in 600-second ceiling
-would understate slow-request percentile estimates. Long-context
-capacity was measured directly on vLLM; short gateway probes do not constitute
-a second full-context endurance test.
+Before merging the new app, unlock the 1Password desktop app with CLI
+integration enabled (or sign into `op`), then run:
 
-`homelab-prod/litellm/master_key` authenticates both clients and the Prometheus
-scrape. The ServiceMonitor references its namespace-local Secret. LiteLLM's
-`callbacks: ["prometheus"]` exposes `/metrics`; explicit authentication keeps
-that endpoint protected. The hash-suffixed configuration ConfigMap changes the
-Deployment's volume reference when edited, so ArgoCD rolls the pod and actually
-loads the new callbacks. PostHog success/failure callbacks remain enabled.
+```bash
+python3 scripts/bootstrap-langfuse-secrets.py
+```
 
-PostHog uses `homelab-prod/litellm/posthog_api_key`: this must be the existing
-project token from PostHog project settings. A newly generated random string
-is not a valid project key. The audit confirmed it matched project 1. LiteLLM's
-PostHog callback records prompt/completion content as well as token counts and
-latency. This is self-hosted conversation storage, not just anonymous counters.
-Local Qwen cost is recorded as zero; that excludes electricity/hardware cost.
+Expected: the item is created or existing fields are validated. The helper
+preserves existing credentials and prints no values. The Connect token used by
+External Secrets has read-only vault access and cannot perform this creation.
 
-## Why PostHog looked healthy while AI analytics were empty
+`homelab-prod/langfuse` holds `public-key`, `secret-key`, `admin-email`,
+`admin-password`, `salt`, `encryption-key`, `nextauth-secret`, and the three
+store passwords. ExternalSecrets copy them into the owning namespaces.
+Headless initialization creates the Vanillax organization and Homelab AI project
+with the same project keys used by LiteLLM. Public signup and vendor telemetry
+are disabled. Initialization only seeds missing entities; editing the seed
+password/key later is not an account/key rotation procedure. Keep the salt and
+encryption key with database backups; replacing them can make stored credentials
+unusable. Never paste secret values into manifests or smoke-test output.
 
-The audit found working vLLM metrics and LiteLLM inference, but authenticated
-LiteLLM `/metrics` returned 404. PostHog accepted both ordinary and AI captures
-with HTTP 200. Ordinary events reached ClickHouse; AI events did not.
+Prometheus authenticates `/metrics` with the existing LiteLLM master key.
+The hash-suffixed ConfigMap rolls LiteLLM on callback/configuration edits.
+Its 30-minute timeout and latency buckets preserve long-running requests.
+Local Qwen cost is recorded as zero, excluding hardware and electricity.
+Prompts and completions are stored in Langfuse, not just anonymous counters.
+Use synthetic input when verifying ingestion and set retention deliberately in
+the project settings before collecting large volumes of real conversations.
 
-Rust capture was writing AI events to `events_plugin_ingestion_ai`, which had
-122 retained messages and no consumer group at the audit snapshot. The pinned
-Node combined consumer subscribed to five other topics. `posthog.ai_events`
-had zero rows. This was a missing consumer, not an API-key or model problem.
+The [Pi guide](pi-agent-local-dev.md) remains authoritative for medium thinking,
+explicit off/low/medium/xhigh, the Qwen sampler and compaction. The model,
+FP8 weights/KV, TP=2, native vision, 262,144-token ceiling and disabled MTP remain
+unchanged. The gateway smoke test is not another full-context endurance test.
 
-The dedicated `ingestion-ai` Deployment runs the same Node digest as the
-existing ingestion service, in supported `ingestion-v2` mode with:
+## Deployment and persistence
 
-- topic `events_plugin_ingestion_ai` and group `clickhouse-ingestion-ai`;
-- `INGESTION_AI_EVENT_SPLITTING_ENABLED=false`, keeping full AI payloads in
-  `clickhouse_events_json` → shared `posthog.events`;
-- the same Postgres/Redis/GeoIP configuration, bounded memory, and an owned VPA.
+The application at `my-apps/ai/langfuse` is discovered automatically by ArgoCD.
+It pins the maintained Langfuse chart **2.1.0** and app **4.24.0**. Chart-owned
+web/worker pods use app-owned PostgreSQL, standalone ClickHouse and Valkey;
+all chart-bundled stores are disabled. This avoids adding database operators.
+The namespace and secrets precede stores; a Sync hook creates the scoped RustFS
+bucket before web and worker start. Database migrations are owned by Langfuse.
 
-The live project's `ai-events-table-rollout` read flag is **false**. The pinned
-web resolver therefore reads shared events. Enabling event splitting would
-strip prompts/completions from that table and place them in `ai_events`, which
-the current UI does not read. Keep splitting off until a coordinated read/write
-migration is explicitly planned. An empty dedicated `ai_events` table is
-expected with this compatibility configuration; it is not a delivery failure.
+PostgreSQL holds identity/project/configuration data. ClickHouse holds AI
+observations. Both have Longhorn volumes and kopiur restore-before-bind backups.
+Valkey has a persistent queue with no eviction, but is backup-exempt under repo
+policy: catastrophic queue-volume loss can lose in-flight observations even if
+S3 payloads survive. Do not describe this as a lossless messaging system.
+RustFS holds event payloads, media and exports under separate `langfuse` bucket
+prefixes. Its storage/backup lifecycle is separate from kopiur database snapshots.
+Keep all stores consistent when planning a restore; test recovery with synthetic
+observations before relying on it for enterprise-style retention guarantees.
 
-The pinned consumer defaults to `auto.offset.reset=earliest`, so the new group
-can process retained backlog. Expired Kafka records cannot be recovered by this
-change. It does not reset offsets, delete topics, or upgrade PostHog images.
+Langfuse v4 defaults to its new observations data model. The pinned LiteLLM
+container includes legacy Langfuse SDK 2.59.7, so the `langfuse` callback is
+unsuitable. Its existing `langfuse_otel` integration supplies the v4 ingestion
+header and exports to `/api/public/otel/v1/traces`. No LiteLLM upgrade or custom
+SDK/kernel is needed. Use Observations API v2 for reads; legacy traces APIs
+return 404 on fresh v4 installations.
 
-## Verify after ArgoCD sync
+## Adapter verification before deployment
 
-Prerequisites: repository checkout, `kubectl` access, and permission to read
-Prometheus/PostHog. The smoke test sends five synthetic model requests and a
-small generated image; it does not send a repository or user conversation.
+```bash
+kubectl -n litellm exec -i deploy/litellm -- python - < scripts/verify-litellm-langfuse.py
+```
 
-1. Check `my-apps-litellm`, `my-apps-open-webui`, `my-apps-posthog`, and
-   `monitoring-prometheus-stack` are Synced/Healthy in ArgoCD. Confirm the new
-   `ingestion-ai` Deployment is ready and WebUI's ExternalSecret is ready.
-2. Open Grafana's **AI Gateway and Analytics** dashboard (`/d/ai-gateway-analytics`).
-   LiteLLM scrape must be 1 and the AI consumer member count must be positive.
-   Zero traffic can be legitimate; no consumer must never be interpreted as
-   zero queue lag. Existing **vLLM Inference** remains the engine dashboard.
-3. Run the forwarding smoke test:
+Expected: PASS for the v4 endpoint/header/auth, session metadata, tool output,
+usage and zero local cost. This uses synthetic in-memory spans without making
+model requests or exporting telemetry; it catches pinned-adapter incompatibility.
+
+## Verification after ArgoCD sync
+
+1. Confirm `my-apps-langfuse`, `my-apps-litellm`, `my-apps-open-webui` and
+   `monitoring-prometheus-stack` are Synced/Healthy. Check the Langfuse
+   ExternalSecret, bucket hook, database migrations and both application pods.
+2. Sign into Langfuse using `homelab-prod/langfuse` owner credentials and open
+   **Homelab AI**. Confirm the project exists before interpreting empty charts.
+3. Send five synthetic requests through the gateway:
 
    ```bash
    kubectl -n litellm exec -i deploy/litellm -- python - < scripts/smoke-litellm.py
    ```
 
-   Expected: `PASS` for thinking off, streamed medium with usage/reasoning,
-   tool invocation, tool-result followup with preserved history, and vision.
-   Record the printed `ai-observability-...` marker. This proves inference
-   forwarding only; finish the storage check below.
-4. Wait for callback batching and ingestion, then inspect the queue:
+   Expected: PASS for thinking off, streamed medium with usage/reasoning,
+   tool invocation, preserved tool-result followup and vision. Record the
+   printed `ai-observability-...` session marker. These checks prove forwarding;
+   the next step proves telemetry delivery.
+4. Allow batching/ingestion to finish. In Langfuse Observations, filter by that
+   `session_id` and clear the default root-only filter if necessary. Expect
+   at least five generation observations named for the smoke cases, with model,
+   input/output, positive token usage and latency. Inspect the tool arguments
+   and followup result. Check the image request still appears as a generation;
+   browser media upload/download is a separate check. Retries may produce more
+   than five records. Intake HTTP success alone is insufficient.
+5. Open Grafana's **AI Gateway and Analytics** dashboard
+   (`/d/ai-gateway-analytics`). Expect LiteLLM scrape=1, request/token/latency
+   samples and available Langfuse web/worker replicas. Availability/restart
+   panels do not prove ingestion; use step 4. TTFT needs streaming traffic.
+   **vLLM Inference** and the GPU dashboard retain engine/hardware metrics.
+6. Verify backup configuration and the first successful snapshots:
 
    ```bash
-   kubectl -n posthog exec deploy/kafka -- rpk group describe clickhouse-ingestion-ai --brokers kafka:9092
+   kubectl -n langfuse get secret kopiur-rustfs
+   kubectl -n langfuse get snapshotpolicy,snapshotschedule,restore,snapshot
    ```
 
-   Expected: an active member, committed offsets, and lag draining toward zero.
-   Empty/unregistered group means the consumer is still missing or unhealthy.
-5. Verify actual event storage, replacing `<marker>` with the printed marker:
+   Expected: both database policies/restores exist and snapshots eventually
+   succeed with non-zero files. A brand-new empty PVC is not a tested restore.
 
-   ```bash
-   kubectl -n posthog exec deploy/clickhouse -- clickhouse-client --query "SELECT count() FROM posthog.events WHERE distinct_id = '<marker>'"
-   kubectl -n posthog exec deploy/clickhouse -- clickhouse-client --query "SELECT count() FROM posthog.events WHERE distinct_id = '<marker>' AND JSONHas(properties, concat(char(36), 'ai_input')) AND JSONHas(properties, concat(char(36), 'ai_output_choices'))"
-   ```
-
-   Expected: at least five shared events, with full input/output properties,
-   after the consumer drains (retries/at-least-once delivery can create duplicates).
-   `char(36)` is the dollar-sign prefix in PostHog property names and avoids
-   shell expansion in the command. Find the same trace
-   events in PostHog's LLM analytics for project 1, including model, usage,
-   latency, and prompt/completion. If SQL has rows but the UI does not, inspect
-   project/time filters and PostHog query settings separately.
-
-The Grafana gateway panels should acquire request/token/latency samples after
-the synthetic traffic. TTFT requires streaming traffic. A callback's HTTP 200
-is an intake acknowledgement, not end-to-end delivery confirmation.
+For controlled comparisons, keep prompt dataset, concurrency, input/output
+lengths, reasoning level and warm/cold-cache conditions fixed. Compare latency,
+TTFT, tokens per second, errors and a correctness score together. A higher token
+rate alone does not establish a better agent or longer usable context.
 
 ## Failure handling and rollback
 
-If inference fails through the gateway, compare the same synthetic request with
-the direct vLLM endpoint. Check LiteLLM logs and its model list before changing
-GPU or model configuration. WebUI's old placeholder key will return 401 against
-LiteLLM; inspect ExternalSecret readiness, never paste the key into Git.
+If inference fails, compare a synthetic direct vLLM request and inspect LiteLLM
+logs/model routing/ExternalSecret readiness. Keep model and GPU settings fixed
+while diagnosing gateway authentication. If telemetry stalls, inspect LiteLLM's
+OTel export errors, Langfuse web/worker logs, store connectivity and migrations.
+Do not reset queues, recreate databases or change project keys to clear errors.
 
-If AI events stall, inspect `ingestion-ai` logs, Kafka group offsets, and
-ClickHouse's `kafka_events_json` consumer. Keep the queue intact. Fix topic,
-image/config, or schema mismatches through Git; do not reset offsets or recreate
-the data layer. The [PostHog guide](../../posthog-self-host-k8s.md) owns migration
-and storage recovery rules.
+Rollback routing/callback changes through Git while retaining the Langfuse
+application's persistent stores. Removing the entire auto-discovered app can
+cascade deletion of its resources; first preserve the desired storage in Git
+and confirm backups. Pi can temporarily use direct vLLM with its local
+placeholder key, or restore its local provider/auth backup. Direct calls retain
+vLLM/GPU metrics but bypass LiteLLM and Langfuse observations.
 
-Rollback cluster changes by reverting the scoped Git commit and letting
-ArgoCD reconcile. Pi can temporarily use `https://vllm.vanillax.me/v1` with its
-local placeholder key, or restore its backed-up provider/auth files. Direct
-requests retain vLLM/GPU metrics but do not produce LiteLLM/PostHog analytics.
+PostHog remains independently maintained for product analytics and replay. Its
+30-day retention compatibility fix and verification are documented in the
+[PostHog runbook](../../posthog-self-host-k8s.md).
 
-## Sources and owning configuration
+## Upstream references
 
-- [LiteLLM Prometheus integration](https://docs.litellm.ai/docs/proxy/prometheus)
-  and [PostHog callback](https://docs.litellm.ai/docs/observability/posthog_integration).
-- [PostHog Rust capture configuration](https://github.com/PostHog/posthog/blob/master/rust/capture/src/config.rs).
-  The deployed Node image was also inspected directly: `servers/ingestion-general-server.js`,
-  `ingestion/config.js`, `event-processing/split-ai-events-step.js`, and
-  `kafka/consumer.js`, plus the web `hogql_queries/ai/ai_table_resolver.py` read
-  gate; current master must not substitute for pinned-image behavior.
-- [LiteLLM application](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/litellm),
-  [AI consumer](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/core/ingestion-ai.yaml),
-  and [dashboard](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/dashboards/ai-gateway-analytics.json).
+- [Langfuse Kubernetes deployment](https://langfuse.com/self-hosting/deployment/kubernetes-helm)
+  and [headless initialization](https://langfuse.com/self-hosting/administration/headless-initialization).
+- [Langfuse v4 compatibility and API changes](https://langfuse.com/self-hosting/upgrade/upgrade-guides/upgrade-v3-to-v4).
+- [LiteLLM Langfuse OTel integration source](https://github.com/BerriAI/litellm/blob/v1.99.1/litellm/integrations/langfuse/langfuse_otel.py)
+  (also inspected inside the pinned live image) and
+  [Prometheus integration](https://docs.litellm.ai/docs/proxy/prometheus).

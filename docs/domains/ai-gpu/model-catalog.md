@@ -79,7 +79,7 @@ Deal Scout, Karakeep and the News Reader Temporal worker.
 
 Pi uses `vanillax-vllm/qwen3.8-27b` through `https://litellm.vanillax.me/v1`.
 Open WebUI uses the in-cluster LiteLLM service. Both routes collect request
-metrics and PostHog AI events; direct vLLM callers bypass that gateway.
+metrics and Langfuse AI observations; direct vLLM callers bypass that gateway.
 See [AI observability](ai-observability.md) for verification and fallback.
 The [workstation guide](pi-agent-local-dev.md) owns the provider JSON, explicit
 medium reasoning mapping, mode-specific sampler extension, compaction reserve,

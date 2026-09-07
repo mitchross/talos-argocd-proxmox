@@ -89,7 +89,11 @@ chats may explicitly disable preservation without changing the server default.
 [Official Qwen controls](https://huggingface.co/Qwen/Qwen3.8-27B-FP8#api-usage),
 [Pi model schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md).
 
-Requests pass through LiteLLM for Prometheus metrics and PostHog AI analytics.
+Requests pass through LiteLLM for Prometheus metrics and Langfuse AI analytics.
+The Qwen sampler extension also attaches Pi’s session ID and a `pi` tag so
+generations from one coding session can be grouped in Langfuse. Explicit caller
+metadata takes precedence. Local tool execution needs separate instrumentation;
+the gateway records model requests and returned tool calls.
 The provider ID stays `vanillax-vllm`, preserving its thinking mapping and sampler
 extension. The backend is still stock vLLM with the same context and GPUs.
 [Telemetry verification and direct-access fallback](ai-observability.md) explains

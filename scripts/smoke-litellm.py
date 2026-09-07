@@ -3,7 +3,7 @@
 
 Run in the LiteLLM container (it already has LITELLM_MASTER_KEY), or set that
 variable and LITELLM_BASE_URL locally. This tests inference forwarding, not
-PostHog ingestion: verify the marker in ClickHouse separately.
+Langfuse ingestion: verify the session marker in Langfuse separately.
 """
 import base64
 import json
@@ -23,7 +23,8 @@ BASE = {
     'presence_penalty': 0.0, 'repetition_penalty': 1.0,
     'chat_template_kwargs': {'enable_thinking': True, 'preserve_thinking': True,
                             'reasoning_effort': 'medium'},
-    'metadata': {'user_id': MARKER},
+    'metadata': {'session_id': MARKER, 'trace_user_id': 'synthetic-smoke',
+                 'tags': ['smoke-test']},
 }
 
 
@@ -38,6 +39,7 @@ def reasoning(message):
 
 def call(case, **options):
     payload = BASE | options
+    payload['metadata'] = {**BASE['metadata'], 'generation_name': case, 'trace_name': case}
     request = urllib.request.Request(BASE_URL + '/chat/completions',
                                      data=json.dumps(payload).encode(), headers=HEADERS)
     with urllib.request.urlopen(request, timeout=300) as response:
@@ -73,7 +75,7 @@ def call(case, **options):
 
 
 def main():
-    print('PostHog distinct_id marker: ' + MARKER, flush=True)
+    print('Langfuse session_id marker: ' + MARKER, flush=True)
     off = call('off', messages=[{'role': 'user', 'content': 'Reply: telemetry-ok'}],
                chat_template_kwargs={'enable_thinking': False, 'preserve_thinking': False},
                temperature=0.7, top_p=0.8, presence_penalty=1.5)

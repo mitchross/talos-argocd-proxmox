@@ -18,7 +18,6 @@ Upgrade procedure: `UPGRADE.md` (this directory).
 | `config/clickhouse/` | The single-node ClickHouse config that makes upstream migrations pass |
 | `core/clickhouse-init.yaml` | Bootstraps `sharded_events` + migration tables before migrate |
 | `core/jobs.yaml` | kafka-init (topics) + posthog-migrate (Django → CH → async `--check` gate) |
-| `core/ingestion-ai.yaml` | Dedicated `ingestion-v2` AI-topic consumer; pinned combined mode does not subscribe to AI |
 | `core/*.yaml` | App tier: web, worker, plugin-server modes, rust capture/flags services |
 | `kopiur/postgres-data.yaml` | Backup of the identity layer (see DR below) |
 
@@ -45,6 +44,10 @@ Upgrade procedure: `UPGRADE.md` (this directory).
    and only moves versions when upstream's `docker-compose.base.yml` pins move.
 7. **Renovate**: all PostHog images arrive as ONE grouped weekend PR
    (`posthog images`), never automerged — review it against `UPGRADE.md`.
+8. **Replay retention compatibility**: `scripts/patch-replay-retention.py`
+   permits only a missing-entitlement, self-hosted `30d` API update. Its method
+   hash guards source drift before migration; follow `UPGRADE.md` on changes.
+   `SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS` declares projects reconciled to 30d.
 
 ## DR model (why only Postgres is backed up)
 

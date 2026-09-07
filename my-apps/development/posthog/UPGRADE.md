@@ -2,7 +2,7 @@
 
 Upstream ships continuously from `master` with zero self-host support; two past
 outages came from config drift, not code. Before bumping the monolith/node/Rust
-digests, check all four:
+digests, check all five:
 
 1. **ClickHouse config drift** — diff upstream
    [`docker/clickhouse/config.d/default.xml`](https://github.com/PostHog/posthog/blob/master/docker/clickhouse/config.d/default.xml)
@@ -16,6 +16,14 @@ digests, check all four:
    for env vars web/worker/plugins now require; add to `posthog-env.env`.
 4. **Server entrypoint** — check `bin/docker-server-unit` still honors
    `NGINX_UNIT_APP_PROCESSES` / whether `USE_GRANIAN` became the default.
+5. **Replay retention compatibility** — review the new image's
+   `TeamSerializer._verify_update_session_recording_retention_period` against
+   `scripts/patch-replay-retention.py`. Its method hash fails the migration
+   hook before a changed validator reaches web. Remove the patch when upstream
+   accepts the unlicensed self-hosted 30-day option; otherwise update the
+   reviewed fixture/hash and run
+   `python3 -m unittest discover -s my-apps/development/posthog/tests -v`
+   from the repository root. Preserve cloud and existing entitlement checks.
 
 Rules: bump `posthog/posthog` and `posthog/posthog-node` digests **in lockstep**
 (migrate job must match web/worker). Data-layer images (postgres, valkey,
