@@ -167,23 +167,28 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/filtered-manifests.yaml
 
-      - name: Verify CRD schema canary is rejected
-        # A generator that emits unpruned schemas still validates field types, so
-        # the suite above would pass while missing misplaced fields entirely.
-        # This known-bad manifest must fail, or the check is only pretending.
+      - name: Verify CRD schema controls
+        # Require a real pass and the exact timeout error; crashes/skips do not count.
         run: |
           set -euo pipefail
-          if kubeconform \
-            -strict \
-            -ignore-missing-schemas \
-            -kubernetes-version "${KUBERNETES_VERSION}" \
-            -schema-location '/tmp/crd-schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -schema-location default \
-            ./scripts/tests/fixtures/crd-schema-canary.yaml; then
-            echo "ERROR: canary passed validation - CRD schemas are not pruning unknown fields."
-            exit 1
-          fi
-          echo "Canary correctly rejected."
+          schema='/tmp/crd-schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          kubeconform -strict -summary -output json -schema-location "$schema" \
+            ./scripts/tests/fixtures/crd-schema-valid.yaml > /tmp/crd-valid.json
+          jq -e '.summary == {valid: 1, invalid: 0, errors: 0, skipped: 0}' /tmp/crd-valid.json
+
+          status=0
+          kubeconform -strict -summary -output json -schema-location "$schema" \
+            ./scripts/tests/fixtures/crd-schema-canary.yaml > /tmp/crd-canary.json || status=$?
+          cat /tmp/crd-canary.json
+          test "$status" -eq 1
+          jq -e --arg message "additional properties 'timeout' not allowed" '
+            .summary == {valid: 0, invalid: 1, errors: 0, skipped: 0} and
+            (.resources | length) == 1 and
+            .resources[0].status == "statusInvalid" and
+            .resources[0].validationErrors == [{
+              path: "/spec/hooks/beforeSnapshot/0", msg: $message
+            }]
+          ' /tmp/crd-canary.json
 
       - name: Validate kopiur backup coverage
         # Replaces the retired pvc-plumber validate-restore-contract.sh and the
