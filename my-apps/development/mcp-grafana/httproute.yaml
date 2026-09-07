@@ -1,0 +1,30 @@
+# INTERNAL route only — this hands out query access to every Grafana datasource,
+# so it must never reach gateway-external.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mcp-grafana
+  namespace: mcp-grafana
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
+      namespace: gateway
+  hostnames:
+    - "mcp-grafana.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        # Streamable-HTTP holds a long-lived session open.
+        request: 30m
+        backendRequest: 30m
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: mcp-grafana
+          port: 8000
+          weight: 1
