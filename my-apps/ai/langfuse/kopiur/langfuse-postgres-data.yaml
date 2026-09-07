@@ -42,7 +42,7 @@ spec:
         - langfuse
         - -c
         - CHECKPOINT
-      timeout: 2m
+        timeout: 2m
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
