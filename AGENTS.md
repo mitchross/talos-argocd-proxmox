@@ -1,5 +1,14 @@
 # Agent Instructions
 
+## Always use pull requests
+
+For every repository change, create a branch, commit and push that branch,
+and open a pull request. Never push directly to `main` or another default
+branch. This applies to fixes, documentation, configuration, and urgent
+deployment repairs. A request to fix or deploy something is not permission
+to bypass the PR workflow. Merge a PR only when the user explicitly asks.
+This rule takes precedence over direct-push examples in `CLAUDE.md` files.
+
 ## Repo rules live in CLAUDE.md
 
 Before changing anything in this repo, read `CLAUDE.md` in the repo root — it
