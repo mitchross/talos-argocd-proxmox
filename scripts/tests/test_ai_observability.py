@@ -98,6 +98,71 @@ class AIObservabilityTests(unittest.TestCase):
             self.assertIn(name + '=http://litellm-service.litellm.svc.cluster.local:4000/v1', env)
 
 
+class AllLLMClientsTests(unittest.TestCase):
+    APPS = [
+        'my-apps/ai/open-webui', 'my-apps/ai/hindsight', 'my-apps/ai/surfsense',
+        'my-apps/ai/perplexica', 'my-apps/ai/presenton', 'my-apps/ai/comfyui',
+        'my-apps/home/n8n', 'my-apps/home/project-nomad',
+        'my-apps/media/karakeep', 'my-apps/media/worldmonitor',
+        'my-apps/utility/deal-scout', 'my-apps/development/news-reader',
+        'monitoring/holmesgpt', 'monitoring/keep',
+    ]
+
+    def test_no_declared_client_bypasses_gateway_including_tracked_env_files(self):
+        subprocess.run(['python3', str(ROOT / 'scripts/validate-llm-gateway.py')], check=True)
+
+    def test_deal_scout_runs_patched_source_without_shadowing_init_input(self):
+        pod = read('my-apps/utility/deal-scout/deployment.yaml')['spec']['template']['spec']
+        init = next(c for c in pod['initContainers'] if c['name'] == 'prepare-llm-auth')
+        app = next(c for c in pod['containers'] if c['name'] == 'deal-scout')
+        self.assertFalse(any(m['mountPath'].startswith('/app') for m in init['volumeMounts']))
+        output = next(m for m in init['volumeMounts'] if m['mountPath'] == '/patched')
+        source = next(m for m in app['volumeMounts'] if m['mountPath'] == '/app/app.py')
+        self.assertEqual(source['name'], output['name'])
+        self.assertEqual(source['subPath'], 'app.py')
+        self.assertTrue(source['readOnly'])
+
+    def test_every_client_renders_a_consumed_gateway_credential(self):
+        for app in self.APPS:
+            with self.subTest(app=app):
+                rendered = subprocess.check_output(
+                    ['kustomize', 'build', str(ROOT / app), '--enable-helm'], text=True)
+                documents = [d for d in yaml.safe_load_all(rendered) if d]
+                credentials = []
+                for document in documents:
+                    if document['kind'] != 'ExternalSecret':
+                        continue
+                    if any(entry.get('remoteRef', {}).get('key') == 'litellm' and
+                           entry['remoteRef'].get('property') == 'master_key'
+                           for entry in document['spec'].get('data', [])):
+                        target = document['spec'].get('target', {}).get('name', document['metadata']['name'])
+                        for entry in document['spec']['data']:
+                            if entry.get('remoteRef', {}).get('key') == 'litellm':
+                                credentials.append((target, entry['secretKey']))
+                self.assertTrue(credentials, 'App has no ExternalSecret for the gateway key')
+                consumers = [d for d in documents if d['kind'] in
+                             ['Deployment', 'StatefulSet', 'Job', 'WorkerDeployment']]
+
+                def objects(value):
+                    if isinstance(value, dict):
+                        yield value
+                        for child in value.values():
+                            yield from objects(child)
+                    elif isinstance(value, list):
+                        for child in value:
+                            yield from objects(child)
+
+                nodes = list(objects(consumers))
+                for name, key in credentials:
+                    used = any(node.get('secretKeyRef', {}).get('name') == name and
+                               node['secretKeyRef'].get('key') == key for node in nodes)
+                    imported = any(node.get('secretRef', {}).get('name') == name for node in nodes)
+                    projected = any(node.get('secret', {}).get('secretName') == name for node in nodes)
+                    self.assertTrue(used or imported or projected,
+                                    f'Gateway credential {name}/{key} is not consumed')
+                self.assertIn('litellm-service.litellm.svc.cluster.local:4000', rendered)
+
+
 class LangfuseCredentialBootstrapTests(unittest.TestCase):
     def setUp(self):
         spec = importlib.util.spec_from_file_location('bootstrap', ROOT / 'scripts/bootstrap-langfuse-secrets.py')

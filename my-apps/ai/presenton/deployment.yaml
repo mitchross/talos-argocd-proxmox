@@ -15,6 +15,22 @@ spec:
       labels:
         app: presenton
     spec:
+      initContainers:
+      - name: reconcile-llm
+        image: ghcr.io/presenton/presenton:v0.9.9-beta@sha256:e1640d671e6c321021cf4096f5deb5e1c5da26b6a6881499911b531842b0d8b0
+        command: ["/opt/venv/bin/python", "/opt/repo-scripts/reconcile-llm.py"]
+        env:
+        - name: LITELLM_API_KEY
+          valueFrom: {secretKeyRef: {name: presenton-litellm, key: LITELLM_API_KEY}}
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {memory: 128Mi}
+        volumeMounts:
+        - name: data
+          mountPath: /app_data
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
       containers:
       - name: presenton
         # renovate: datasource=docker depName=ghcr.io/presenton/presenton
@@ -29,6 +45,11 @@ spec:
             memory: 1000Mi
           limits:
             memory: 4000Mi
+        env:
+        - name: CUSTOM_LLM_API_KEY
+          valueFrom: {secretKeyRef: {name: presenton-litellm, key: LITELLM_API_KEY}}
+        - name: MEM0_LLM_API_KEY
+          valueFrom: {secretKeyRef: {name: presenton-litellm, key: LITELLM_API_KEY}}
         envFrom:
         - configMapRef:
             name: presenton-config
@@ -38,6 +59,9 @@ spec:
         - name: data
           mountPath: /app_data
       volumes:
+      - name: repo-scripts
+        configMap:
+          name: presenton-llm-scripts
       - name: data
         persistentVolumeClaim:
           claimName: presenton-data

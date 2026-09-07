@@ -18,7 +18,8 @@ llama.cpp retained as a parked rollback; never Ollama.
   **no MTP/speculative decoding**. Live capacity and client guidance are in
   `docs/domains/ai-gpu/3090-llm-optimization.md`; reverify after runtime changes.
 - **llama.cpp**: retained Qwen3.8-27B GGUF one-card profile at `replicas: 0`.
-- Stable API model: `qwen3.8-27b`. Direct service:
+- Stable API model: `qwen3.8-27b`. Apps use authenticated LiteLLM at
+  `http://litellm-service.litellm.svc.cluster.local:4000/v1` for Langfuse telemetry. Direct diagnostic / gateway upstream service:
   `http://vllm-service.vllm.svc.cluster.local:8080/v1`. Existing
   `llama-cpp-service.llama-cpp.svc.cluster.local:8080` aliases vLLM;
   both `llama.vanillax.me` and `vllm.vanillax.me` route to vLLM directly.

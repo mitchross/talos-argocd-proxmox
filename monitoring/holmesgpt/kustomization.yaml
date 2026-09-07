@@ -4,6 +4,7 @@ namespace: holmesgpt
 
 resources:
   - namespace.yaml
+  - externalsecret.yaml
   - httproute.yaml
   - egress-policy.yaml
   - vpa.yaml

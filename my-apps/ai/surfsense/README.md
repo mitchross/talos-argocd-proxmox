@@ -41,14 +41,16 @@ Fields:
 
 ## Local AI
 
-SurfSense uses the active in-cluster OpenAI-compatible llama.cpp backend through its
+SurfSense uses the authenticated LiteLLM gateway to the production vLLM backend through its
 operator-owned global model catalog:
 
-- Base URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
+- Base URL: `http://litellm-service.litellm.svc.cluster.local:4000/v1`
 - Model: `qwen3.8-27b`
 - Config: `global_llm_config.yaml`, mounted at `/app/app/config/global_llm_config.yaml`
-- Context budget: 48,000 input + 16,384 output, leaving 1,152 tokens for request/tool overhead inside llama.cpp's 65,536-token window
+- Context budget: 48,000 input + 16,384 output (application budget retained; vLLM server ceiling is 262,144)
 - Billing tier: `free` — this is local infrastructure, not a metered provider
+
+The catalog is rendered by External Secrets using `litellm/master_key`, then mounted as a Secret. SurfSense does not expand environment placeholders in this file. API, worker, beat, and migrations share that rendered catalog; the existing global model ID stays `-1` so saved model selections continue working.
 
 Initial embeddings use CPU-local `sentence-transformers/all-MiniLM-L6-v2`, so SurfSense does not request a GPU.
 
@@ -128,6 +130,6 @@ Validate locally with `kustomize build my-apps/ai/surfsense` and
 
 This deployment does not use SurfSense's hosted credit wallet for local infrastructure. `selfhost.env` is materialized as `surfsense-selfhost-policy` and loaded by the API, worker, Beat, and migration containers.
 
-The policy keeps new-user wallet balance at zero and explicitly disables ETL, crawl, captcha, platform-scrape, and Stripe credit billing. This also keeps Auto mode eligible for the local `billing_tier: free` llama.cpp model instead of treating a default signup credit balance as premium-provider eligibility.
+The policy keeps new-user wallet balance at zero and explicitly disables ETL, crawl, captcha, platform-scrape, and Stripe credit billing. This also keeps Auto mode eligible for the local `billing_tier: free` vLLM model instead of treating a default signup credit balance as premium-provider eligibility.
 
 SurfSense upstream defaults new users to a $5 wallet. The versioned `surfsense-credit-policy-v1` Sync hook runs after schema migrations and idempotently resets restored or pre-policy wallet balances before the API, worker, Beat, and Zero start. Its checked-in `scripts/reconcile-credit-policy.sh` is mounted through a hash-suffixed Kustomize-generated ConfigMap, so the executable policy stays out of the Job YAML. A fresh deployment and a restored deployment therefore converge on the same no-credit policy without manual SQL.

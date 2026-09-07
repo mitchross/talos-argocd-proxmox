@@ -14,7 +14,7 @@ async function refresh() {
   byId('refresh').disabled = true;
   try {
     const state = await api('/api/status');
-    byId('status').textContent = `Holmes: ${state.holmes ? 'ready' : 'unavailable'} · Local model: ${state.local_model ? 'ready' : 'unavailable'}${state.upstream_unknown ? ' · Investigation status uncertain: see runbook' : state.busy ? ' · Investigation running' : ''}`;
+    byId('status').textContent = `Holmes: ${state.holmes ? 'ready' : 'unavailable'} · LiteLLM: ${state.local_model ? 'reachable' : 'unavailable'}${state.upstream_unknown ? ' · Investigation status uncertain: see runbook' : state.busy ? ' · Investigation running' : ''}`;
   } catch (_) {
     byId('status').textContent = 'Console status check failed. This is not evidence the cluster is healthy.';
   } finally { byId('refresh').disabled = false; }

@@ -27,7 +27,7 @@ users → https://comfyui.vanillax.me
 
 - **Namespace:** `comfyui`
 - **GPU:** one full RTX 3090 (Ampere, compute 8.6) via `runtimeClassName: nvidia`, `nvidia.com/gpu: 1`.
-- **Priority:** `gpu-workload-preemptible` — llama-cpp preempts this when it needs the GPU back.
+- **Priority:** `gpu-workload-preemptible` — vLLM owns both cards; ComfyUI remains parked at zero replicas.
 - **Strategy:** `Recreate` (mandatory — RWM SMB is fine for multi-attach in theory, but the app isn't safe to multi-write).
 
 ## Storage model — important
@@ -138,10 +138,10 @@ re-apply them from here.
 
 ## Interactions with other apps
 
-- **llama-cpp** lives on the same GPU worker. Its `gpu-workload-high`
-  priority class preempts ComfyUI's `gpu-workload-preemptible` if both
-  try to claim the GPU at the same time. If ComfyUI suddenly dies with
-  SIGTERM during an LLM burst, that's why — it's intentional.
+- **vLLM** owns both RTX 3090s. ComfyUI remains at zero replicas until a
+  deliberate GPU scale-swap. Its caption/text bridge calls LiteLLM with a
+  namespace-local External Secret; saved legacy local URLs are normalized to
+  the gateway, and credentials are never saved in workflows.
 - **Open WebUI** uses ComfyUI for image generation:
   `COMFYUI_BASE_URL=http://comfyui-service.comfyui.svc.cluster.local:8188`.
   See `my-apps/ai/open-webui/configmap.yaml`.

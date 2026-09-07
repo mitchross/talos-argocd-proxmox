@@ -22,7 +22,8 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 HOLMES = os.environ.get("HOLMES_URL", "http://holmes-holmes.holmesgpt.svc.cluster.local")
-LLM = os.environ.get("LLM_HEALTH_URL", "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/health")
+LLM = "http://litellm-service.litellm.svc.cluster.local:4000/v1/models"
+LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY", "")
 MODEL = "local-qwen"
 ASSETS = Path(os.environ.get("CONSOLE_ASSETS", str(Path(__file__).resolve().parent.parent / "ui")))
 ORIGINS = {"https://holmes.vanillax.me", "http://localhost:8080", "http://127.0.0.1:8080"}
@@ -50,18 +51,23 @@ class NoRedirect(HTTPRedirectHandler):
 OPENER = build_opener(NoRedirect())
 
 
-def check(url: str) -> bool:
+def check(url: str, api_key: str = "") -> bool:
     try:
-        with OPENER.open(Request(url, method="GET"), timeout=3) as response:
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        with OPENER.open(Request(url, headers=headers, method="GET"), timeout=3) as response:
             return response.status == 200
     except (HTTPError, URLError, OSError):
         return False
 
 
+def check_gateway() -> bool:
+    return bool(LITELLM_API_KEY) and check(LLM, LITELLM_API_KEY)
+
+
 def invoke(question: str, namespace: str, window: str) -> dict:
     # Missing/parked inference is not a reason to silently switch to a cloud model.
-    if not check(LLM):
-        raise ValueError("Local model is unavailable. Check llama.cpp and the GPU scale-swap state; no cloud fallback is configured.")
+    if not check_gateway():
+        raise ValueError("LiteLLM is unavailable or authentication failed. Check the gateway and its credentials; no cloud fallback is configured.")
     request = Request(
         HOLMES + "/api/chat",
         data=json.dumps({
@@ -191,7 +197,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/session":
             return self.respond(200, {"csrf": self.server.csrf})
         if path == "/api/status":
-            return self.respond(200, {"holmes": check(HOLMES + "/readyz"), "local_model": check(LLM), "busy": self.server.manager.busy, "upstream_unknown": self.server.manager.uncertain})
+            return self.respond(200, {"holmes": check(HOLMES + "/readyz"), "local_model": check_gateway(), "busy": self.server.manager.busy, "upstream_unknown": self.server.manager.uncertain})
         if path.startswith("/api/results/"):
             result = self.server.manager.get(path.removeprefix("/api/results/"))
             return self.respond(200 if result else 404, result or {"error": "Result expired or not found"})

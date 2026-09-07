@@ -62,10 +62,14 @@
         icon: comfyui.png
         href: https://comfyui.vanillax.me
         description: AI Image & Video Generation
-    - llama-cpp:
-        icon: meta.png
-        href: https://llama.vanillax.me
-        description: Local LLM Inference Server
+    - LiteLLM:
+        icon: litellm.png
+        href: https://litellm.vanillax.me
+        description: Local AI Gateway
+    - Langfuse:
+        icon: langfuse.png
+        href: https://langfuse.vanillax.me
+        description: AI Conversation Analytics
     - Open WebUI:
         icon: open-webui.png
         href: https://open-webui.vanillax.me

@@ -25,7 +25,7 @@
       "widgets_values": [
         "Describe this image in rich detail for use as an image generation prompt. Focus on subject, composition, lighting, colors, style, and mood. Output only the prompt text, no preamble.",
         "You are an expert image description assistant. Produce a detailed, vivid text-to-image prompt that would recreate the given image. Include subject, setting, lighting, colors, composition, artistic style, and mood. Output ONLY the prompt text with no preamble, labels, or explanation.",
-        "http://vllm-service.vllm.svc.cluster.local:8080",
+        "http://litellm-service.litellm.svc.cluster.local:4000",
         "qwen3.8-27b",
         0.6,
         4096
@@ -58,7 +58,7 @@
       ],
       "widgets_values": [
         "Describe what changes you want (e.g. make it cyberpunk, change time of day, add rain)",
-        "http://vllm-service.vllm.svc.cluster.local:8080",
+        "http://litellm-service.litellm.svc.cluster.local:4000",
         "qwen3.8-27b",
         0.6,
         4096
