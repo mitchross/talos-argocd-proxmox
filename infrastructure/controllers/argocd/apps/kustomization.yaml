@@ -61,3 +61,18 @@ patches:
       - op: add
         path: /spec/template/metadata/annotations/argocd.argoproj.io~1manifest-generate-paths
         value: .;/my-apps/common
+  # Retry against current Git without changing each app's backoff or storage safety options.
+  - target:
+      group: argoproj.io
+      kind: Application
+    patch: |-
+      - op: add
+        path: /spec/syncPolicy/retry/refresh
+        value: true
+  - target:
+      group: argoproj.io
+      kind: ApplicationSet
+    patch: |-
+      - op: add
+        path: /spec/template/spec/syncPolicy/retry/refresh
+        value: true
