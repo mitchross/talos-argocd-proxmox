@@ -129,13 +129,23 @@ jobs:
             echo "---" >> /tmp/all-manifests.yaml
           done
 
+      - name: Generate CRD schemas
+        # Without these, every CR whose CRD the datree catalog does not carry is
+        # silently skipped by -ignore-missing-schemas below (kopiur, longhorn,
+        # temporal, holmesgpt, coroot...). Schemas come from the same rendered
+        # stream, so they track the chart versions in git automatically.
+        run: |
+          set -euo pipefail
+          python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
+          python3 ./scripts/generate-crd-schemas.py \
+            /tmp/all-manifests.yaml /tmp/crd-schemas --min-schemas 100
+
       - name: Validate Kubernetes schemas
         run: |
           set -euo pipefail
           # Filter a known kubeconform false positive:
           # - Gitea Helm-rendered Service gitea-http: targetPort triggers a
           #   oneOf ambiguity in the Kubernetes Service schema.
-          # (kopiur CRDs are skipped via -ignore-missing-schemas below.)
           csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null
           : > /tmp/filtered-manifests.yaml
           for f in /tmp/doc-*; do
@@ -145,14 +155,35 @@ jobs:
             cat "$f" >> /tmp/filtered-manifests.yaml
           done
 
+          # Generated schemas first: they are the exact CRDs this repo deploys,
+          # so they win over the catalog's copy where both exist.
           kubeconform \
             -summary \
             -strict \
             -ignore-missing-schemas \
             -kubernetes-version "${KUBERNETES_VERSION}" \
+            -schema-location '/tmp/crd-schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/filtered-manifests.yaml
+
+      - name: Verify CRD schema canary is rejected
+        # A generator that emits unpruned schemas still validates field types, so
+        # the suite above would pass while missing misplaced fields entirely.
+        # This known-bad manifest must fail, or the check is only pretending.
+        run: |
+          set -euo pipefail
+          if kubeconform \
+            -strict \
+            -ignore-missing-schemas \
+            -kubernetes-version "${KUBERNETES_VERSION}" \
+            -schema-location '/tmp/crd-schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -schema-location default \
+            ./scripts/tests/fixtures/crd-schema-canary.yaml; then
+            echo "ERROR: canary passed validation - CRD schemas are not pruning unknown fields."
+            exit 1
+          fi
+          echo "Canary correctly rejected."
 
       - name: Validate kopiur backup coverage
         # Replaces the retired pvc-plumber validate-restore-contract.sh and the

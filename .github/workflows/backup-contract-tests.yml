@@ -4,6 +4,8 @@ on:
     paths:
       - 'scripts/validate-kopiur-coverage.py'
       - 'scripts/tests/test_kopiur_coverage.py'
+      - 'scripts/generate-crd-schemas.py'
+      - 'scripts/tests/test_crd_schemas.py'
       - 'my-apps/common/kopiur-backup/**'
       - '.github/workflows/backup-contract-tests.yml'
   push:
@@ -11,6 +13,8 @@ on:
     paths:
       - 'scripts/validate-kopiur-coverage.py'
       - 'scripts/tests/test_kopiur_coverage.py'
+      - 'scripts/generate-crd-schemas.py'
+      - 'scripts/tests/test_crd_schemas.py'
       - 'my-apps/common/kopiur-backup/**'
       - '.github/workflows/backup-contract-tests.yml'
 permissions:
@@ -25,3 +29,4 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install PyYAML==6.0.3
       - run: python -m unittest discover -s scripts/tests -p test_kopiur_coverage.py -v
+      - run: python -m unittest discover -s scripts/tests -p test_crd_schemas.py -v
