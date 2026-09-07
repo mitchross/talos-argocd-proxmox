@@ -129,13 +129,23 @@ jobs:
             echo "---" >> /tmp/all-manifests.yaml
           done
 
+      - name: Generate CRD schemas
+        # Without these, every CR whose CRD the datree catalog does not carry is
+        # silently skipped by -ignore-missing-schemas below (kopiur, longhorn,
+        # temporal, holmesgpt, coroot...). Schemas come from the same rendered
+        # stream, so they track the chart versions in git automatically.
+        run: |
+          set -euo pipefail
+          python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
+          python3 ./scripts/generate-crd-schemas.py \
+            /tmp/all-manifests.yaml /tmp/crd-schemas --min-schemas 100
+
       - name: Validate Kubernetes schemas
         run: |
           set -euo pipefail
           # Filter a known kubeconform false positive:
           # - Gitea Helm-rendered Service gitea-http: targetPort triggers a
           #   oneOf ambiguity in the Kubernetes Service schema.
-          # (kopiur CRDs are skipped via -ignore-missing-schemas below.)
           csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null
           : > /tmp/filtered-manifests.yaml
           for f in /tmp/doc-*; do
@@ -145,14 +155,40 @@ jobs:
             cat "$f" >> /tmp/filtered-manifests.yaml
           done
 
+          # Generated schemas first: they are the exact CRDs this repo deploys,
+          # so they win over the catalog's copy where both exist.
           kubeconform \
             -summary \
             -strict \
             -ignore-missing-schemas \
             -kubernetes-version "${KUBERNETES_VERSION}" \
+            -schema-location '/tmp/crd-schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/filtered-manifests.yaml
+
+      - name: Verify CRD schema controls
+        # Require a real pass and the exact timeout error; crashes/skips do not count.
+        run: |
+          set -euo pipefail
+          schema='/tmp/crd-schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          kubeconform -strict -summary -output json -schema-location "$schema" \
+            ./scripts/tests/fixtures/crd-schema-valid.yaml > /tmp/crd-valid.json
+          jq -e '.summary == {valid: 1, invalid: 0, errors: 0, skipped: 0}' /tmp/crd-valid.json
+
+          status=0
+          kubeconform -strict -summary -output json -schema-location "$schema" \
+            ./scripts/tests/fixtures/crd-schema-canary.yaml > /tmp/crd-canary.json || status=$?
+          cat /tmp/crd-canary.json
+          test "$status" -eq 1
+          jq -e --arg message "additional properties 'timeout' not allowed" '
+            .summary == {valid: 0, invalid: 1, errors: 0, skipped: 0} and
+            (.resources | length) == 1 and
+            .resources[0].status == "statusInvalid" and
+            .resources[0].validationErrors == [{
+              path: "/spec/hooks/beforeSnapshot/0", msg: $message
+            }]
+          ' /tmp/crd-canary.json
 
       - name: Validate kopiur backup coverage
         # Replaces the retired pvc-plumber validate-restore-contract.sh and the
