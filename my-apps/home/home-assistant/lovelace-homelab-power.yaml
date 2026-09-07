@@ -241,362 +241,279 @@ views:
     icon: mdi:power-plug
     path: devices
     type: sections
-    max_columns: 4
+    max_columns: 2
     dense_section_placement: true
     sections:
-      - type: grid
-        cards:
-          - type: heading
-            heading: Threadripper Host
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.threadripper_current_consumption
-          - type: tile
-            entity: sensor.threadripper_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-            icon: mdi:server
-          - type: tile
-            entity: sensor.threadripper_power_share
-            name: Share of draw
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.threadripper_cost_daily
-            name: Cost today
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.threadripper_cost_monthly
-            name: This month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.threadripper_cost_last_month
-            name: Last month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: grey
-      - type: grid
-        cards:
-          - type: heading
-            heading: NAS Drive PSU
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.nas_psu_current_consumption
-          - type: tile
-            entity: sensor.nas_psu_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-            icon: mdi:harddisk
-          - type: tile
-            entity: sensor.nas_psu_power_share
-            name: Share of draw
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.nas_psu_cost_daily
-            name: Cost today
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.nas_psu_cost_monthly
-            name: This month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.nas_psu_cost_last_month
-            name: Last month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: grey
-      - type: grid
-        cards:
-          - type: heading
-            heading: TrueNAS (DL360)
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.truenas_current_consumption
-          - type: tile
-            entity: sensor.truenas_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-            icon: mdi:nas
-          - type: tile
-            entity: sensor.truenas_power_share
-            name: Share of draw
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.truenas_cost_daily
-            name: Cost today
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.truenas_cost_monthly
-            name: This month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.truenas_cost_last_month
-            name: Last month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: grey
-      - type: grid
-        cards:
-          - type: heading
-            heading: HP SFF + Optiplex
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.hp_sff_current_consumption
-          - type: tile
-            entity: sensor.hp_sff_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-            icon: mdi:desktop-tower
-          - type: tile
-            entity: sensor.hp_sff_power_share
-            name: Share of draw
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.hp_sff_cost_daily
-            name: Cost today
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.hp_sff_cost_monthly
-            name: This month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.hp_sff_cost_last_month
-            name: Last month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: grey
-      - type: grid
-        cards:
-          - type: heading
-            heading: HP Elite Mini G9
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.hp_elite_current_consumption
-          - type: tile
-            entity: sensor.hp_elite_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-            icon: mdi:desktop-classic
-          - type: tile
-            entity: sensor.hp_elite_power_share
-            name: Share of draw
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.hp_elite_cost_daily
-            name: Cost today
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.hp_elite_cost_monthly
-            name: This month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.hp_elite_cost_last_month
-            name: Last month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: grey
-      - type: grid
-        cards:
-          - type: heading
-            heading: Gaming PC
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.gaming_pc_current_consumption
-          - type: tile
-            entity: sensor.gaming_pc_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-            icon: mdi:controller
-          - type: tile
-            entity: sensor.gaming_pc_power_share
-            name: Share of draw
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.gaming_pc_cost_daily
-            name: Cost today
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.gaming_pc_cost_monthly
-            name: This month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.gaming_pc_cost_last_month
-            name: Last month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: grey
-      - type: grid
-        cards:
-          - type: heading
-            heading: MacBook + Monitor
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.macbook_current_consumption
-          - type: tile
-            entity: sensor.macbook_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-            icon: mdi:laptop
-          - type: tile
-            entity: sensor.macbook_power_share
-            name: Share of draw
-            grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.macbook_cost_daily
-            name: Cost today
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.macbook_cost_monthly
-            name: This month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: amber
-          - type: tile
-            entity: sensor.macbook_cost_last_month
-            name: Last month
-            grid_options:
-              columns: 4
-              rows: 1
-            color: grey
-      - type: grid
-        cards:
-          - type: heading
-            heading: Shed Lab (solar)
-            heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.shed_lab_current_consumption
-          - type: tile
-            entity: sensor.shed_lab_current_consumption
-            name: Power now
-            grid_options:
-              columns: 6
-              rows: 1
-            color: green
-            icon: mdi:solar-power
-          - type: tile
-            entity: sensor.shed_lab_energy_daily
-            name: kWh today
-            grid_options:
-              columns: 6
-              rows: 1
-            color: green
-          - type: tile
-            entity: sensor.shed_lab_energy_monthly
-            name: kWh this month
-            grid_options:
-              columns: 6
-              rows: 1
-            color: green
-          - type: tile
-            entity: sensor.shed_lab_energy_last_month
-            name: kWh last month
-            grid_options:
-              columns: 6
-              rows: 1
-            color: green
+      # Dials, not numbers: each is scaled to that device's own ceiling, so the
+      # needle position is comparable even though 900 W and 50 W are not.
       - type: grid
         column_span: 2
+        cards:
+          - type: heading
+            heading: Drawing right now
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.homelab_total_power
+                name: Homelab
+              - type: entity
+                entity: sensor.office_total_power
+                name: Office
+          - type: gauge
+            entity: sensor.threadripper_current_consumption
+            name: Threadripper
+            min: 0
+            max: 900
+            grid_options:
+              columns: 3
+              rows: 3
+          - type: gauge
+            entity: sensor.gaming_pc_current_consumption
+            name: Gaming PC
+            min: 0
+            max: 700
+            grid_options:
+              columns: 3
+              rows: 3
+          - type: gauge
+            entity: sensor.hp_sff_current_consumption
+            name: HP SFF + Optiplex
+            min: 0
+            max: 200
+            grid_options:
+              columns: 3
+              rows: 3
+          - type: gauge
+            entity: sensor.truenas_current_consumption
+            name: TrueNAS
+            min: 0
+            max: 200
+            grid_options:
+              columns: 3
+              rows: 3
+          - type: gauge
+            entity: sensor.macbook_current_consumption
+            name: MacBook + Mon.
+            min: 0
+            max: 160
+            grid_options:
+              columns: 3
+              rows: 3
+          - type: gauge
+            entity: sensor.nas_psu_current_consumption
+            name: NAS Drive PSU
+            min: 0
+            max: 100
+            grid_options:
+              columns: 3
+              rows: 3
+          - type: gauge
+            entity: sensor.hp_elite_current_consumption
+            name: HP Elite Mini
+            min: 0
+            max: 80
+            grid_options:
+              columns: 3
+              rows: 3
+          - type: gauge
+            entity: sensor.shed_lab_current_consumption
+            name: Shed (solar)
+            min: 0
+            max: 50
+            grid_options:
+              columns: 3
+              rows: 3
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Last 24 hours — who spikes, and when
+            heading_style: title
+          - type: history-graph
+            hours_to_show: 24
+            entities:
+              - entity: sensor.threadripper_current_consumption
+                name: Threadripper
+              - entity: sensor.gaming_pc_current_consumption
+                name: Gaming PC
+              - entity: sensor.hp_sff_current_consumption
+                name: HP SFF + Optiplex
+              - entity: sensor.truenas_current_consumption
+                name: TrueNAS
+              - entity: sensor.macbook_current_consumption
+                name: MacBook + Mon.
+              - entity: sensor.nas_psu_current_consumption
+                name: NAS Drive PSU
+              - entity: sensor.hp_elite_current_consumption
+                name: HP Elite Mini
+              - entity: sensor.shed_lab_current_consumption
+                name: Shed (solar)
+      - type: grid
+        cards:
+          - type: heading
+            heading: Cost per device, by day
+            heading_style: title
+          - type: statistics-graph
+            title:
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - sensor.threadripper_cost
+              - sensor.gaming_pc_cost
+              - sensor.hp_sff_cost
+              - sensor.truenas_cost
+              - sensor.macbook_cost
+              - sensor.nas_psu_cost
+              - sensor.hp_elite_cost
+      - type: grid
+        cards:
+          - type: heading
+            heading: Energy per device, by day
+            heading_style: title
+          - type: statistics-graph
+            title:
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - sensor.threadripper_energy
+              - sensor.gaming_pc_energy
+              - sensor.hp_sff_energy
+              - sensor.truenas_energy
+              - sensor.macbook_energy
+              - sensor.nas_psu_energy
+              - sensor.hp_elite_energy
+              - sensor.shed_lab_energy
+      - type: grid
+        cards:
+          - type: heading
+            heading: Cost today
+            heading_style: subtitle
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.threadripper_cost_daily
+                name: Threadripper
+                icon: mdi:server
+              - entity: sensor.gaming_pc_cost_daily
+                name: Gaming PC
+                icon: mdi:gamepad-variant
+              - entity: sensor.hp_sff_cost_daily
+                name: HP SFF + Optiplex
+                icon: mdi:desktop-tower
+              - entity: sensor.truenas_cost_daily
+                name: TrueNAS
+                icon: mdi:nas
+              - entity: sensor.macbook_cost_daily
+                name: MacBook + Mon.
+                icon: mdi:laptop
+              - entity: sensor.nas_psu_cost_daily
+                name: NAS Drive PSU
+                icon: mdi:harddisk
+              - entity: sensor.hp_elite_cost_daily
+                name: HP Elite Mini
+                icon: mdi:desktop-classic
+      - type: grid
+        cards:
+          - type: heading
+            heading: Cost this month
+            heading_style: subtitle
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.threadripper_cost_monthly
+                name: Threadripper
+                icon: mdi:server
+              - entity: sensor.gaming_pc_cost_monthly
+                name: Gaming PC
+                icon: mdi:gamepad-variant
+              - entity: sensor.hp_sff_cost_monthly
+                name: HP SFF + Optiplex
+                icon: mdi:desktop-tower
+              - entity: sensor.truenas_cost_monthly
+                name: TrueNAS
+                icon: mdi:nas
+              - entity: sensor.macbook_cost_monthly
+                name: MacBook + Mon.
+                icon: mdi:laptop
+              - entity: sensor.nas_psu_cost_monthly
+                name: NAS Drive PSU
+                icon: mdi:harddisk
+              - entity: sensor.hp_elite_cost_monthly
+                name: HP Elite Mini
+                icon: mdi:desktop-classic
+      - type: grid
+        cards:
+          - type: heading
+            heading: Cost last month
+            heading_style: subtitle
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.threadripper_cost_last_month
+                name: Threadripper
+                icon: mdi:server
+              - entity: sensor.gaming_pc_cost_last_month
+                name: Gaming PC
+                icon: mdi:gamepad-variant
+              - entity: sensor.hp_sff_cost_last_month
+                name: HP SFF + Optiplex
+                icon: mdi:desktop-tower
+              - entity: sensor.truenas_cost_last_month
+                name: TrueNAS
+                icon: mdi:nas
+              - entity: sensor.macbook_cost_last_month
+                name: MacBook + Mon.
+                icon: mdi:laptop
+              - entity: sensor.nas_psu_cost_last_month
+                name: NAS Drive PSU
+                icon: mdi:harddisk
+              - entity: sensor.hp_elite_cost_last_month
+                name: HP Elite Mini
+                icon: mdi:desktop-classic
+      - type: grid
+        cards:
+          - type: heading
+            heading: Share of total draw
+            heading_style: subtitle
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.threadripper_power_share
+                name: Threadripper
+                icon: mdi:server
+              - entity: sensor.gaming_pc_power_share
+                name: Gaming PC
+                icon: mdi:gamepad-variant
+              - entity: sensor.hp_sff_power_share
+                name: HP SFF + Optiplex
+                icon: mdi:desktop-tower
+              - entity: sensor.truenas_power_share
+                name: TrueNAS
+                icon: mdi:nas
+              - entity: sensor.macbook_power_share
+                name: MacBook + Mon.
+                icon: mdi:laptop
+              - entity: sensor.nas_psu_power_share
+                name: NAS Drive PSU
+                icon: mdi:harddisk
+              - entity: sensor.hp_elite_power_share
+                name: HP Elite Mini
+                icon: mdi:desktop-classic
+      - type: grid
         cards:
           - type: heading
             heading: Notes
             heading_style: subtitle
           - type: markdown
             content: |
+              Each dial is scaled to that device's own 14-day peak, so a full needle
+              means "busy for this box", not "busy compared to the Threadripper".
               **HP SFF + Optiplex** share one plug, so their draw cannot be split. Homelab switches are
               locked on by the *Homelab plug power-off lockout* automation; the office plugs are not.
               **Shed Lab** runs on solar: kWh only, no cost, not in any group.
