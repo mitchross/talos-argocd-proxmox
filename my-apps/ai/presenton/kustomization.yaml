@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: presenton
 
 resources:
+- litellm-externalsecret.yaml
 - vpa.yaml
 - namespace.yaml
 - configmap.yaml
@@ -15,3 +16,8 @@ resources:
 
 components:
   - ../../common/kopiur-backup
+
+configMapGenerator:
+  - name: presenton-llm-scripts
+    files:
+      - scripts/reconcile-llm.py

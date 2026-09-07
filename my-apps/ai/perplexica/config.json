@@ -14,14 +14,17 @@
     },
     {
       "id": "llama-cpp-cluster",
-      "name": "llama.cpp (Qwen3.8-27B)",
+      "name": "LiteLLM (Qwen3.8-27B)",
       "type": "openai",
       "config": {
-        "apiKey": "sk-no-key-required",
-        "baseURL": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+        "apiKey": "",
+        "baseURL": "http://litellm-service.litellm.svc.cluster.local:4000/v1"
       },
       "chatModels": [
-        { "name": "Qwen 3.8 27B (llama.cpp, 1x3090)", "key": "qwen3.8-27b" }
+        {
+          "name": "Qwen 3.8 27B (vLLM, 2x3090)",
+          "key": "qwen3.8-27b"
+        }
       ],
       "embeddingModels": []
     }

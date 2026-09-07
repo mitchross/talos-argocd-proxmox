@@ -1,0 +1,5 @@
+nameReference:
+  - kind: ConfigMap
+    fieldSpecs:
+      - kind: WorkerDeployment
+        path: spec/template/spec/volumes/configMap/name

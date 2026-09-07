@@ -14,7 +14,8 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
 - Off requests use `enable_thinking=false`, `preserve_thinking=false`, and
   the separate non-thinking sampler in the vLLM runbook. Preserve the server's
   thinking sampler; do not globally disable preserved thinking.
-- Direct URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`.
+- Application URL: `http://litellm-service.litellm.svc.cluster.local:4000/v1`; authenticate with an ExternalSecret from `litellm/master_key`.
+- Direct diagnostic / gateway upstream URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`.
 - Existing `llama-cpp-service` URLs alias vLLM. Both LAN hostnames route to the
   vLLM selector Service, not an ExternalName backend.
 - Live capacity and client guidance: `docs/domains/ai-gpu/3090-llm-optimization.md`.

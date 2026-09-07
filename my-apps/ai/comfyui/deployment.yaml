@@ -51,6 +51,8 @@ spec:
         ports:
         - containerPort: 8188
         env:
+        - name: LITELLM_API_KEY
+          valueFrom: {secretKeyRef: {name: comfyui-litellm, key: LITELLM_API_KEY}}
         # Entrypoint already passes --listen --port 8188 --enable-manager --enable-manager-legacy-ui
         - name: CLI_ARGS
           value: ""

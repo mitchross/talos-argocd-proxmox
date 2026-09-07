@@ -4,10 +4,10 @@ metadata:
   name: presenton-config
   namespace: presenton
 data:
-  # LLM: active in-cluster llama.cpp Qwen3.8-27B backend.
+  # LLM: authenticated LiteLLM gateway for Qwen3.8-27B.
+  CAN_CHANGE_KEYS: "false"
   LLM: "custom"
-  CUSTOM_LLM_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
-  CUSTOM_LLM_API_KEY: "sk-no-key-required"
+  CUSTOM_LLM_URL: "http://litellm-service.litellm.svc.cluster.local:4000/v1"
   CUSTOM_MODEL: "qwen3.8-27b"
 
   # Image generation
@@ -23,8 +23,7 @@ data:
   # Mem0 (presentation memory) — use the same active chat backend.
   MEM0_ENABLED: "true"
   MEM0_LLM_MODEL: "qwen3.8-27b"
-  MEM0_LLM_API_KEY: "ollama"
-  MEM0_LLM_BASE_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+  MEM0_LLM_BASE_URL: "http://litellm-service.litellm.svc.cluster.local:4000/v1"
   MEM0_DIR: "/app_data/mem0"
   MEM0_EMBEDDER_PROVIDER: "fastembed"
   MEM0_EMBEDDER_MODEL: "BAAI/bge-small-en-v1.5"

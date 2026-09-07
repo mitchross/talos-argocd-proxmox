@@ -13,17 +13,37 @@ Manifest validation is not proof of live trace ingestion.
 | Prometheus / Grafana | Request failures, latency, throughput, vLLM KV capacity/preemptions and GPU utilization |
 | PostHog | Product events, funnels, feature flags and browser session replay |
 
-Pi and Open WebUI use **LiteLLM → vLLM**. LiteLLM exports observations to
+Local AI clients use **LiteLLM → vLLM**. LiteLLM exports observations to
 self-hosted Langfuse using `langfuse_otel`, alongside its `prometheus` callback.
 PostHog's AI callbacks are removed; its deployment and existing data remain.
 Historical PostHog AI events/Kafka backlog are not imported into Langfuse.
 
-This migration covers Pi and Open WebUI. Other declared clients still call vLLM
-directly: HolmesGPT, Keep, Hindsight, SurfSense, Perplexica, Presenton,
-WorldMonitor, Deal Scout, News Reader, n8n workflows and parked ComfyUI workflows.
-Their calls do not enter LiteLLM/Langfuse. Migrating them requires app-specific
-endpoint and authentication changes; changing only the shared legacy hostname
-would break clients that still use placeholder credentials.
+All Git-declared local LLM clients now target LiteLLM, including parked clients:
+
+| Clients | Gateway configuration |
+|---|---|
+| Pi, Open WebUI | Existing authenticated gateway setup; Pi includes session grouping |
+| Hindsight, Project Nomad, Karakeep, WorldMonitor | App environment settings and namespace-local ExternalSecrets |
+| SurfSense | Secret-rendered global catalog shared by API, worker and scheduler |
+| Perplexica / Vane, Presenton | Startup reconciliation updates persisted provider configuration |
+| News Reader, Deal Scout | Pinned source compatibility overlays add missing Bearer authentication |
+| n8n | Authenticated workflow requests and GitOps workflow/credential reconciliation |
+| HolmesGPT, Keep | Native provider secret interpolation; Keep uses the gateway root URL |
+| ComfyUI vision bridge | Secret-backed requests and migration of legacy saved local server URLs |
+
+Each namespace receives the existing `homelab-prod/litellm/master_key` through
+External Secrets. No keys are stored in ConfigMaps or workflow JSON. These are
+shared gateway credentials, not separate per-app budgets or access controls.
+App/session labels are available where clients supply metadata; a shared key
+alone does not identify the calling application.
+
+Parked applications remain parked. This configures their next startup without
+allocating another GPU or activating automation. Project Nomad's separate TEI
+embedding service remains separate; Karakeep's automatic vector indexing stays
+off. The migration covers local language-model requests, not every media or
+embedding service. Direct vLLM endpoints remain for gateway upstream traffic and
+explicit diagnostics. Operator-created external/cloud provider configurations
+are separate from these Git-declared local defaults.
 
 A gateway observes model calls and tool-call responses. It does not automatically
 observe local tool execution, file changes, or every internal agent step. Use
@@ -151,6 +171,42 @@ model requests or exporting telemetry; it catches pinned-adapter incompatibility
 
    Expected: both database policies/restores exist and snapshots eventually
    succeed with non-zero files. A brand-new empty PVC is not a tested restore.
+
+### Verify each application
+
+Confirm each active application's ExternalSecret is Ready and its new pod is
+healthy. Send a small synthetic request from each application's own UI or job,
+then match its model, timestamp and distinctive prompt in Langfuse. A successful
+gateway smoke test alone does not prove every application's authentication or
+saved provider settings. Do not activate parked applications for this check.
+
+| Application | Acceptance check |
+|---|---|
+| Pi / Open WebUI | Send a medium request; Pi's turns share a session. |
+| Hindsight | Exercise a small retain/reflect operation that calls the model. |
+| SurfSense | Confirm the global local model is present and use it in a chat. |
+| Perplexica / Vane | Use the retained local provider in an existing conversation; unrelated providers remain available. |
+| Presenton | Generate a small presentation with the local provider; confirm saved preferences survive restart. |
+| Project Nomad | Send a chat using the OpenAI-compatible provider; embedding health is a separate check. |
+| Karakeep | Tag/summarize a synthetic bookmark; automatic vector indexing remains disabled. |
+| WorldMonitor | Request a synthetic summary. |
+| Deal Scout / News Reader | Confirm source-preparation init succeeds, then run a synthetic digest/summary and locate its generation. |
+| n8n | Finish owner setup if fresh, inspect the imported credential and three inactive workflows, then manually test a local LLM node. |
+| Keep | Test the existing local provider with a synthetic request. |
+| HolmesGPT / ComfyUI | Verify their rendered route/secret while parked; test a console request or vision workflow only when deliberately enabled later. |
+
+n8n preserves existing activation states and refuses routing changes to an
+active workflow with unpublished edits, before importing credentials or
+workflows. Resolve that draft deliberately in n8n before retrying; see the
+[n8n runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/home/n8n/README.md). Fresh templates remain
+inactive until their non-LLM integrations are configured.
+
+Deal Scout and News Reader's pinned images lack native gateway authentication.
+Their startup overlays check the exact upstream source hash and add only Bearer
+headers. Image upgrades must reverify these adapters; a source mismatch stops
+startup instead of silently issuing unauthenticated requests. See the
+[Deal Scout](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/utility/deal-scout/README.md) and
+[News Reader](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/news-reader/README.md) runbooks.
 
 For controlled comparisons, keep prompt dataset, concurrency, input/output
 lengths, reasoning level and warm/cold-cache conditions fixed. Compare latency,

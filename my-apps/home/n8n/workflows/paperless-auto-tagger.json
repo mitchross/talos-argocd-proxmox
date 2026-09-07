@@ -1,4 +1,6 @@
 {
+  "id": "gitopsPaperless",
+  "active": false,
   "name": "Paperless Auto-Tagger",
   "nodes": [
     {
@@ -136,14 +138,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions",
+        "url": "http://litellm-service.litellm.svc.cluster.local:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'qwen3.8-27b', messages: [ { role: 'system', content: 'You are a document classifier for a personal document management system. You analyze document content and suggest relevant tags. Always respond with valid JSON only, no markdown fences, no explanation.' }, { role: 'user', content: $json.prompt } ], max_tokens: 256, temperature: 0.2 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'qwen3.8-27b', messages: [ { role: 'system', content: 'You are a document classifier for a personal document management system. You analyze document content and suggest relevant tags. Always respond with valid JSON only, no markdown fences, no explanation.' }, { role: 'user', content: $json.prompt } ], max_tokens: 256, temperature: 0.7, top_p: 0.8, top_k: 20, min_p: 0, presence_penalty: 1.5, repetition_penalty: 1, chat_template_kwargs: { enable_thinking: false, preserve_thinking: false }, metadata: { tags: ['app:n8n', 'workflow:paperless-auto-tagger'], trace_name: 'n8n/paperless-auto-tagger' } }) }}",
         "options": {}
       },
       "id": "e1f2a3b4-0000-4000-8000-000000000008",
       "name": "LLM: Classify Document",
+      "credentials": { "httpHeaderAuth": { "id": "gitopsLiteLLM", "name": "LiteLLM gateway" } },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1750, 300]

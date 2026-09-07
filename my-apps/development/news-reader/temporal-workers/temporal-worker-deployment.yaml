@@ -35,17 +35,44 @@ spec:
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
+        fsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: prepare-llm-auth
+          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.14
+          command: ["python", "/opt/repo-scripts/prepare-litellm-auth.py"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: llm-auth-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+            - name: llm-auth-source
+              mountPath: /patched
       containers:
         - name: worker
-          # Do NOT pin :latest — the controller keys build_id off the tag and cannot tell two pushes apart.
+          # Keep immutable release tags; the controller appends a hash of the full pod template.
           image: registry.vanillax.me/news-reader-temporal-worker:v1.0.14
           imagePullPolicy: IfNotPresent
           # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them here.
           env:
+            - name: LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: news-reader-secrets
+                  key: LITELLM_API_KEY
             - name: LLM_URL
-              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions"
+              value: "http://litellm-service.litellm.svc.cluster.local:4000/v1/chat/completions"
             - name: LLM_MODEL
               value: "qwen3.8-27b"
             - name: REDDIT_FRONTEND
@@ -61,3 +88,17 @@ spec:
               memory: 256Mi
             limits:
               memory: 512Mi
+
+          volumeMounts:
+            - name: llm-auth-source
+              mountPath: /app/worker.py
+              subPath: worker.py
+              readOnly: true
+      volumes:
+        - name: llm-auth-scripts
+          configMap:
+            name: news-reader-llm-auth-scripts
+            defaultMode: 0444
+        - name: llm-auth-source
+          emptyDir:
+            sizeLimit: 2Mi

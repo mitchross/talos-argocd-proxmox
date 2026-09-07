@@ -65,15 +65,23 @@ inspect hooks, health, vision, tools, reasoning and long-context behavior.
 ## App wiring
 
 - model: `qwen3.8-27b`
-- direct endpoint: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- existing app alias: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
-- LAN: `https://llama.vanillax.me/v1` and `https://vllm.vanillax.me/v1`
+- application gateway: `http://litellm-service.litellm.svc.cluster.local:4000/v1`
+- workstation gateway: `https://litellm.vanillax.me/v1`
+- authentication: namespace-local ExternalSecret from `litellm/master_key`
+- gateway upstream / diagnostics: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
 
-The llama.cpp Service aliases vLLM, preserving existing app configuration.
-Both LAN hostnames route directly to the vLLM selector Service. Direct consumers
-include Perplexica/Vane, LiteLLM, Presenton, SurfSense, HolmesGPT,
-Hindsight, Project Nomad, the ComfyUI vision bridge, WorldMonitor, Keep,
-Deal Scout, Karakeep and the News Reader Temporal worker.
+All Git-declared local LLM consumers use LiteLLM: Open WebUI, Perplexica/Vane,
+Presenton, SurfSense, HolmesGPT, Hindsight, Project Nomad, ComfyUI's vision
+bridge, WorldMonitor, Keep, Deal Scout, Karakeep, News Reader and n8n workflows.
+Parked replicas and disabled workflows remain parked/disabled. Keep's provider
+appends `/v1/completions` itself, so its configured gateway URL omits `/v1`.
+The [observability runbook](ai-observability.md) covers authentication,
+persisted settings, ingestion verification and rollback.
+
+The legacy llama.cpp Service still aliases vLLM, and `llama.vanillax.me` /
+`vllm.vanillax.me` remain direct diagnostic routes. Applications must use the
+authenticated gateway to appear in Langfuse. Direct benchmark probes intentionally
+bypass gateway telemetry and must not be mistaken for application traffic.
 
 ## Pi.dev
 

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: surfsense
 
 resources:
+  - llm-externalsecret.yaml
   - namespace.yaml
   - externalsecret.yaml
   - mink-sync-externalsecret.yaml
@@ -34,6 +35,9 @@ configMapGenerator:
     files:
       - scripts/sync-mink.py
   - name: surfsense-global-llm-config
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-1"
     files:
       - global_llm_config.yaml
   - name: surfsense-selfhost-policy
@@ -42,3 +46,19 @@ configMapGenerator:
   - name: surfsense-credit-policy-scripts
     files:
       - scripts/reconcile-credit-policy.sh
+
+configurations:
+  - kustomizeconfig.yaml
+replacements:
+  - source:
+      kind: ConfigMap
+      name: surfsense-global-llm-config
+      fieldPath: metadata.name
+    targets:
+      - select:
+          kind: Deployment
+          name: surfsense|surfsense-beat
+        fieldPaths:
+          - spec.template.metadata.annotations.llm-config-revision
+        options:
+          create: true

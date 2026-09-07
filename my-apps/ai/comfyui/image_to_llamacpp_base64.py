@@ -3,6 +3,7 @@
 import base64
 import io
 import json
+import os
 import re
 import urllib.request
 import urllib.error
@@ -10,8 +11,8 @@ import urllib.error
 import numpy as np
 from PIL import Image
 
-_DEFAULT_SERVER = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
-# Qwen 3.8 multimodal on stock llama.cpp — one model for both image-to-prompt
+_DEFAULT_SERVER = "http://litellm-service.litellm.svc.cluster.local:4000"
+# Qwen 3.8 multimodal on vLLM through LiteLLM — one model for both image-to-prompt
 # captioning and any tool/text chain that follows.
 _DEFAULT_MODEL = "qwen3.8-27b"
 
@@ -35,11 +36,22 @@ def _chat_completion(server_url, model, messages, temperature, max_tokens):
         "stream": False,
     }
 
-    url = f"{server_url.rstrip('/')}/v1/chat/completions"
+    # Existing saved workflows may still contain either retired direct service URL.
+    legacy = {"http://llama-cpp-service.llama-cpp.svc.cluster.local:8080", "http://vllm-service.vllm.svc.cluster.local:8080"}
+    server_url = server_url.rstrip("/")
+    if server_url in legacy:
+        server_url = _DEFAULT_SERVER
+    if server_url != _DEFAULT_SERVER:
+        raise ValueError("This node uses the configured LiteLLM gateway; arbitrary endpoints cannot receive its credential")
+    key = os.environ["LITELLM_API_KEY"]
+    if not key:
+        raise ValueError("LITELLM_API_KEY is empty")
+    payload["metadata"] = {"tags": ["comfyui"]}
+    url = f"{server_url}/v1/chat/completions"
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
         method="POST",
     )
 

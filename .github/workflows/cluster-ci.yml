@@ -179,6 +179,12 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s scripts/tests -p test_monitoring_contract.py -v
           python3 -m unittest discover -s scripts/tests -p test_ai_observability.py -v
+          python3 -m unittest discover -s my-apps/ai/presenton/scripts -p 'test_*.py' -v
+          python3 -m unittest discover -s my-apps/ai/comfyui/scripts -p 'test_*.py' -v
+          python3 -m unittest discover -s my-apps/utility/deal-scout/tests -v
+          python3 -m unittest discover -s my-apps/development/news-reader/tests -v
+          python3 -m unittest discover -s monitoring/holmesgpt/tests -v
+          node --test my-apps/home/n8n/tests/route-workflows.test.cjs
           python3 -m unittest discover -s my-apps/development/posthog/tests -v
           python3 -m unittest discover -s scripts/tests -p test_qwen_reasoning.py -v
           kustomize build infrastructure/controllers/argocd --enable-helm \
