@@ -9,6 +9,12 @@ export default function (pi: ExtensionAPI) {
     const off = kwargs?.enable_thinking === false;
     return {
       ...payload,
+      metadata: {
+        session_id: ctx.sessionManager.getSessionId(),
+        trace_name: "pi-agent",
+        tags: ["pi"],
+        ...(payload.metadata as Record<string, unknown> | undefined),
+      },
       temperature: off ? 0.7 : 1.0,
       top_p: off ? 0.8 : 0.95,
       top_k: 20,

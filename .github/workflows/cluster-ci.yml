@@ -179,6 +179,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s scripts/tests -p test_monitoring_contract.py -v
           python3 -m unittest discover -s scripts/tests -p test_ai_observability.py -v
+          python3 -m unittest discover -s my-apps/development/posthog/tests -v
           python3 -m unittest discover -s scripts/tests -p test_qwen_reasoning.py -v
           kustomize build infrastructure/controllers/argocd --enable-helm \
             --helm-kube-version "${KUBERNETES_VERSION}" \

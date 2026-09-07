@@ -1,0 +1,73 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: langfuse
+helmCharts:
+- name: langfuse
+  repo: https://langfuse.github.io/langfuse-k8s
+  version: 2.1.0
+  releaseName: langfuse
+  namespace: langfuse
+  valuesFile: values.yaml
+resources:
+- namespace.yaml
+- externalsecret.yaml
+- postgres.yaml
+- clickhouse.yaml
+- redis.yaml
+- httproute.yaml
+- s3-route.yaml
+- bucket-init-job.yaml
+- vpa.yaml
+- kopiur/langfuse-postgres-data.yaml
+- kopiur/langfuse-clickhouse-data.yaml
+components:
+- ../../common/kopiur-backup
+configMapGenerator:
+- name: langfuse-bucket-init
+  files:
+  - scripts/init-bucket.sh
+  - scripts/bucket-cors.json
+patches:
+- target:
+    kind: Deployment
+    name: langfuse-web
+  patch: |
+    - op: add
+      path: /spec/template/spec/containers/0/startupProbe
+      value:
+        failureThreshold: 90
+        httpGet:
+          path: /api/public/health
+          port: http
+        periodSeconds: 10
+        timeoutSeconds: 5
+- target:
+    kind: Deployment
+    name: langfuse-worker
+  patch: |
+    - op: add
+      path: /spec/template/spec/containers/0/startupProbe
+      value:
+        failureThreshold: 90
+        httpGet:
+          path: /api/health
+          port: http
+        periodSeconds: 10
+        timeoutSeconds: 5
+    - op: add
+      path: /spec/template/spec/containers/0/readinessProbe
+      value:
+        httpGet:
+          path: /api/health
+          port: http
+        periodSeconds: 10
+        timeoutSeconds: 5
+- target:
+    kind: Secret
+    name: langfuse-app
+  patch: |
+    $patch: delete
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: langfuse-app

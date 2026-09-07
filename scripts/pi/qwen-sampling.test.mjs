@@ -7,7 +7,7 @@ install({ on: (event, callback) => {
   assert.equal(event, "before_provider_request");
   handler = callback;
 } });
-const context = { model: { provider: "vanillax-vllm", id: "qwen3.8-27b" } };
+const context = { sessionManager: { getSessionId: () => "session-test" }, model: { provider: "vanillax-vllm", id: "qwen3.8-27b" } };
 
 for (const level of ["low", "medium", "xhigh", "off"]) {
   test(`${level} selects the sampler and preserves agent history`, () => {
@@ -41,4 +41,14 @@ test("other providers and models remain untouched", () => {
     { ...context.model, id: "other-model" }]) {
     assert.equal(handler({ payload: { temperature: 0.2 } }, { model }), undefined);
   }
+});
+
+
+test("requests in a Pi session share telemetry metadata without losing caller fields", () => {
+  const result = handler({ payload: {} }, context);
+  assert.deepEqual(result.metadata, { session_id: "session-test", trace_name: "pi-agent", tags: ["pi"] });
+  const metadata = { session_id: "caller-session", tags: ["custom"], trace_user_id: "operator" };
+  const overridden = handler({ payload: { metadata } }, context);
+  assert.deepEqual(overridden.metadata, { trace_name: "pi-agent", ...metadata });
+  assert.deepEqual(metadata.tags, ["custom"]);
 });

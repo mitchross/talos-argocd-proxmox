@@ -24,7 +24,6 @@ resources:
   - core/capture-ai.yaml
   - core/hypercache-server.yaml
   - core/ingestion.yaml
-  - core/ingestion-ai.yaml
   - core/ingestion-sessionreplay.yaml
   - core/recording-api.yaml
   - core/temporal-worker.yaml
@@ -36,11 +35,14 @@ resources:
 configMapGenerator:
   - name: posthog-scripts
     files:
+      - scripts/configure-replay-retention.py
       - scripts/copy-geoip.sh
       - scripts/init-clickhouse.sh
       - scripts/init-kafka.sh
       - scripts/migrate.sh
+      - scripts/patch-replay-retention.py
       - scripts/start-kafka.sh
+      - scripts/start-web.sh
       - scripts/sync-remote-config.sh
   - name: posthog-env
     envs:

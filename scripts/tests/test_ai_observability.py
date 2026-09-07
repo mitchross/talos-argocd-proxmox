@@ -1,9 +1,13 @@
 """Check the wiring that previously allowed healthy pods with missing telemetry."""
+import contextlib
+import importlib.util
+import io
 import json
 from pathlib import Path
 import re
 import subprocess
 import unittest
+from unittest.mock import patch
 
 import yaml
 
@@ -23,25 +27,25 @@ def environment(document):
 
 
 class AIObservabilityTests(unittest.TestCase):
-    def test_ai_capture_topics_have_a_supported_consumer_and_bootstrap(self):
-        app = 'my-apps/development/posthog/'
-        consumer = read(app + 'core/ingestion-ai.yaml')
-        config = environment(consumer)
-        # Combined mode hardcodes its subscriptions and ignores the topic override.
-        self.assertEqual(config['PLUGIN_SERVER_MODE'], 'ingestion-v2')
-        topic = config['INGESTION_CONSUMER_CONSUME_TOPIC']
-        self.assertEqual(config['INGESTION_CONSUMER_GROUP_ID'], 'clickhouse-ingestion-ai')
-        # Dedicated-table reads are disabled in the live self-hosted UI.
-        self.assertEqual(config['INGESTION_AI_EVENT_SPLITTING_ENABLED'], 'false')
-        for filename in ['capture.yaml', 'capture-ai.yaml']:
-            capture = next(yaml.safe_load_all((ROOT / app / 'core' / filename).read_text()))
-            self.assertEqual(environment(capture)['CAPTURE_ANALYTICS_AI_EVENTS_TOPIC'], topic)
-        bootstrap = (ROOT / app / 'scripts/init-kafka.sh').read_text()
-        topics = re.search(r'for topic in (.*); do', bootstrap).group(1).split()
-        self.assertIn(topic, topics)
-        self.assertIn('clickhouse_ai_events_json', topics)
-        self.assertEqual(container(consumer)['image'], container(read(app + 'core/ingestion.yaml'))['image'])
-        self.assertIn('core/ingestion-ai.yaml', read(app + 'kustomization.yaml')['resources'])
+    def test_langfuse_uses_v4_otel_and_shared_project_credentials(self):
+        app = 'my-apps/ai/litellm/'
+        config = read(app + 'config.yaml')['litellm_settings']
+        self.assertEqual(config['callbacks'], ['prometheus', 'langfuse_otel'])
+        self.assertNotIn('success_callback', config)
+        self.assertNotIn('failure_callback', config)
+        env = environment(read(app + 'deployment.yaml'))
+        self.assertEqual(env['LANGFUSE_HOST'], 'http://langfuse-web.langfuse.svc.cluster.local:3000')
+        self.assertNotIn('POSTHOG_API_URL', env)
+        fields = {x['secretKey']: x['remoteRef'] for x in read(app + 'externalsecret.yaml')['spec']['data']}
+        for field in ['PUBLIC', 'SECRET']:
+            self.assertEqual(fields['LANGFUSE_' + field + '_KEY'],
+                             {'key': 'langfuse', 'property': field.lower() + '-key'})
+        self.assertNotIn('POSTHOG_API_KEY', fields)
+        # An old Secret must not start the new callback without project credentials.
+        deployment = container(read(app + 'deployment.yaml'))
+        refs = {x['name']: x.get('valueFrom', {}).get('secretKeyRef') for x in deployment['env']}
+        for name in ['LANGFUSE_PUBLIC_KEY', 'LANGFUSE_SECRET_KEY']:
+            self.assertEqual(refs[name], {'name': 'litellm-secrets', 'key': name})
 
     def test_metrics_auth_and_webui_use_the_actual_gateway_secret_source(self):
         app = 'my-apps/ai/litellm/'
@@ -50,8 +54,6 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertTrue(config['require_auth_for_metrics_endpoint'])
         self.assertEqual(sorted(set(config['prometheus_latency_buckets'])), config['prometheus_latency_buckets'])
         self.assertGreaterEqual(max(config['prometheus_latency_buckets']), 1800)
-        self.assertIn('posthog', config['success_callback'])
-        self.assertIn('posthog', config['failure_callback'])
         endpoint = read(app + 'servicemonitor.yaml')['spec']['endpoints'][0]
         secret = read(app + 'externalsecret.yaml')
         auth = endpoint['authorization']['credentials']
@@ -94,6 +96,46 @@ class AIObservabilityTests(unittest.TestCase):
         env = (ROOT / 'my-apps/ai/open-webui/open-webui-configmap.env').read_text()
         for name in ['OPENAI_API_BASE_URL', 'OPENAI_API_BASE_URLS']:
             self.assertIn(name + '=http://litellm-service.litellm.svc.cluster.local:4000/v1', env)
+
+
+class LangfuseCredentialBootstrapTests(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location('bootstrap', ROOT / 'scripts/bootstrap-langfuse-secrets.py')
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
+
+    def test_existing_credentials_are_never_rotated(self):
+        item = {'fields': [{'label': name, 'value': 'retained'} for name in self.module.REQUIRED]}
+        with patch.object(self.module, 'op', side_effect=[[{'id': 'existing', 'title': 'langfuse'}], item]) as op:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.module.main()
+        self.assertEqual(op.call_count, 2)
+        self.assertFalse(any('create' in call.args for call in op.call_args_list))
+
+    def test_missing_existing_fields_fail_without_replacement(self):
+        with patch.object(self.module, 'op', side_effect=[[{'id': 'existing', 'title': 'langfuse'}], {'fields': []}]) as op:
+            with self.assertRaisesRegex(SystemExit, 'Existing item preserved'):
+                self.module.main()
+        self.assertEqual(op.call_count, 2)
+
+    def test_duplicate_item_titles_are_rejected(self):
+        with patch.object(self.module, 'op', return_value=[{'title': 'langfuse'}, {'title': 'langfuse'}]) as op:
+            with self.assertRaisesRegex(SystemExit, 'Multiple langfuse items'):
+                self.module.main()
+        self.assertEqual(op.call_count, 1)
+
+    def test_generated_credentials_use_stdin_and_do_not_appear_in_output(self):
+        output = io.StringIO()
+        with patch.object(self.module, 'op', side_effect=[[], {'email': 'test@example.invalid'}, {'id': 'created'}]) as op:
+            with contextlib.redirect_stdout(output):
+                self.module.main()
+        fields = {f['label']: f['value'] for f in op.call_args.kwargs['payload']['fields']}
+        self.assertEqual(set(fields), self.module.REQUIRED)
+        self.assertRegex(fields['encryption-key'], r'^[0-9a-f]{64}$')
+        self.assertRegex(fields['redis-password'], r'^[0-9a-f]{64}$')
+        for value in fields.values():
+            self.assertNotIn(value, output.getvalue())
+        self.assertEqual(op.call_args.args, ('item', 'create', '--vault', 'homelab-prod'))
 
 
 if __name__ == '__main__':

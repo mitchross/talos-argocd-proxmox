@@ -30,7 +30,7 @@ spec:
         command:
         - /bin/sh
         - -c
-        - ./bin/docker-server
+        - /opt/repo-scripts/start-web.sh
         envFrom:
         - configMapRef:
             name: posthog-env
@@ -136,6 +136,15 @@ spec:
             memory: 4Gi
           limits:
             memory: 12Gi
+        volumeMounts:
+        - name: repo-scripts
+          mountPath: /opt/repo-scripts
+          readOnly: true
+      volumes:
+      - name: repo-scripts
+        configMap:
+          name: posthog-scripts
+          defaultMode: 0555
 ---
 apiVersion: v1
 kind: Service
