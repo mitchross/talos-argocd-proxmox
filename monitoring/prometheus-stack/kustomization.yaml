@@ -16,7 +16,6 @@ resources:
   - admission-webhook-alerts.yaml # API-server-side webhook reachability; pod health cannot prove it
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
-  - performance-cockpit-dashboard.yaml # Default Grafana home: plain-English cluster performance triage
   - app-performance-dashboard.yaml # Two-selector workload investigation with correlated Loki errors
   - posthog-performance-dashboard.yaml # PostHog web/Postgres/Kafka/ClickHouse root-cause decoder
   - gpu-dashboard.yaml # Grafana dashboard
@@ -37,6 +36,14 @@ configMapGenerator:
   - name: ai-gateway-analytics-dashboard
     files:
       - dashboards/ai-gateway-analytics.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
+  # Default Grafana home: plain-English cluster performance triage.
+  - name: performance-cockpit-dashboard
+    files:
+      - dashboards/performance-cockpit.json
     options:
       labels:
         grafana_dashboard: "1"
