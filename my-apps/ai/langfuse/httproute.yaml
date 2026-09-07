@@ -41,7 +41,11 @@ spec:
   hostnames:
   - langfuse.vanillax.me
   rules:
-  - filters:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
     - type: RequestRedirect
       requestRedirect:
         scheme: https
