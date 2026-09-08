@@ -111,16 +111,16 @@ class AllLLMClientsTests(unittest.TestCase):
     def test_no_declared_client_bypasses_gateway_including_tracked_env_files(self):
         subprocess.run(['python3', str(ROOT / 'scripts/validate-llm-gateway.py')], check=True)
 
-    def test_deal_scout_runs_patched_source_without_shadowing_init_input(self):
+    def test_deal_scout_authenticates_without_a_source_overlay(self):
+        # Auth used to be an init container that rewrote app.py against a pinned
+        # source hash. The image reads the key itself since v0.13.0; reinstating
+        # the overlay would fail that hash check and never start the pod.
         pod = read('my-apps/utility/deal-scout/deployment.yaml')['spec']['template']['spec']
-        init = next(c for c in pod['initContainers'] if c['name'] == 'prepare-llm-auth')
         app = next(c for c in pod['containers'] if c['name'] == 'deal-scout')
-        self.assertFalse(any(m['mountPath'].startswith('/app') for m in init['volumeMounts']))
-        output = next(m for m in init['volumeMounts'] if m['mountPath'] == '/patched')
-        source = next(m for m in app['volumeMounts'] if m['mountPath'] == '/app/app.py')
-        self.assertEqual(source['name'], output['name'])
-        self.assertEqual(source['subPath'], 'app.py')
-        self.assertTrue(source['readOnly'])
+        self.assertEqual(pod.get('initContainers', []), [])
+        self.assertFalse(any(m['mountPath'].startswith('/app') for m in app['volumeMounts']))
+        key = next(e for e in app['env'] if e['name'] == 'LITELLM_API_KEY')
+        self.assertEqual(key['valueFrom']['secretKeyRef']['key'], 'LITELLM_API_KEY')
 
     def test_every_client_renders_a_consumed_gateway_credential(self):
         for app in self.APPS:
