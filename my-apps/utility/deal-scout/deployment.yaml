@@ -26,27 +26,6 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
-      initContainers:
-        - name: prepare-llm-auth
-          image: ghcr.io/mitchross/deal-scout:v0.12.4@sha256:2a5bddfb0bc536fd44d979a572000f9e14d3b18e21e8d878dde048056cb0898d
-          command: ["python", "/opt/repo-scripts/prepare-litellm-auth.py"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            readOnlyRootFilesystem: true
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
-              memory: 128Mi
-          volumeMounts:
-            - name: llm-auth-scripts
-              mountPath: /opt/repo-scripts
-              readOnly: true
-            - name: llm-auth-source
-              mountPath: /patched
       containers:
         - name: deal-scout
           # Source: github.com/mitchross/deal-scout, dashboard/
@@ -105,22 +84,11 @@ spec:
             limits:
               memory: 256Mi
           volumeMounts:
-            - name: llm-auth-source
-              mountPath: /app/app.py
-              subPath: app.py
-              readOnly: true
             - name: data
               mountPath: /data
             - name: tmp
               mountPath: /tmp
       volumes:
-        - name: llm-auth-scripts
-          configMap:
-            name: deal-scout-llm-auth-scripts
-            defaultMode: 0444
-        - name: llm-auth-source
-          emptyDir:
-            sizeLimit: 2Mi
         - name: data
           persistentVolumeClaim:
             claimName: deal-scout-data
