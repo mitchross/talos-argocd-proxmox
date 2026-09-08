@@ -14,6 +14,9 @@ spec:
   resourcePolicy:
     containerPolicies:
     - containerName: langfuse-web
+      # Node event loop stalls at VPA's idle-usage CPU (23m) and trips Langfuse's 30s Redis watchdog into a reconnect spiral.
+      minAllowed:
+        cpu: '1'
       controlledResources:
       - cpu
       - memory
@@ -38,6 +41,9 @@ spec:
   resourcePolicy:
     containerPolicies:
     - containerName: langfuse-worker
+      # Same Redis-watchdog stall as langfuse-web; idle usage is not a safe CPU floor here.
+      minAllowed:
+        cpu: '1'
       controlledResources:
       - cpu
       - memory
@@ -110,6 +116,9 @@ spec:
   resourcePolicy:
     containerPolicies:
     - containerName: redis
+      # Single-threaded; starving its CPU share delays replies past the clients' socket timeout.
+      minAllowed:
+        cpu: '200m'
       controlledResources:
       - cpu
       - memory
