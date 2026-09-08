@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: immich-machine-learning
   namespace: immich
+  annotations:
+    # Client-side apply clears legacy rollingUpdate fields when switching to Recreate.
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: machine-learning
@@ -10,6 +13,7 @@ spec:
   replicas: 1
   strategy:
     type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app.kubernetes.io/name: immich

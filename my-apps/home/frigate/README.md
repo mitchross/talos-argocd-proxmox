@@ -11,6 +11,94 @@ The setup involves three main components:
 2.  **Frigate Deployment**: The deployment is configured to pass these credentials as environment variables to the Frigate container.
 3.  **Frigate `config.yml`**: The configuration file defines the `go2rtc` streams using the `nest:` provider, which uses the environment variables to authenticate with Google's API.
 
+## Runtime and upgrade
+
+Git declares Frigate **0.18.0-rc2**, pinned by image digest, with one replica on
+`node.vanillax.dev/class: hp-elite-worker` (the HP Elite i5-13500T). Detection
+uses the bundled SSD MobileNet model through **OpenVINO on CPU**. Video decode
+and the existing Nest H.264 re-encode streams also use CPU. The six Nest
+streams retain their keyframe workaround; camera stability on this release
+must be checked after deployment.
+
+### Nest go2rtc override
+
+Frigate's stock go2rtc 1.9.14 connected to Google but repeatedly lost usable
+frames with missing H.264 parameter sets and local RTSP 404 errors. This
+application supplies [bober10113's session-fix branch](https://github.com/bober10113/go2rtc/tree/codex/b101-nest-sessionfix)
+at commit `222d37fef8bdc2c8ce2c304fe5a2d5d3b27eb5dc`. The fork adds per-stream
+session state, recurring renewal, keyframe requests and recovery coordination
+for the derived FFmpeg streams. It is a community fork, not an upstream release.
+
+`go2rtc-image/Dockerfile` builds that exact revision. The image workflow tests
+PRs and publishes `ghcr.io/mitchross/frigate-go2rtc` only from `main`. Change
+`go2rtc-image/VERSION` and the init-container image tag together when changing
+the image; published tags are not overwritten. The first rollout may wait in
+`ImagePullBackOff` until the main-branch image build finishes. The GHCR package
+must be public for the cluster's anonymous pull; if a first publish creates a
+private package, set package visibility to public before expecting the init
+container to start.
+
+The init container copies the binary to an `emptyDir`. Frigate mounts it
+read-only at its supported `/config/go2rtc` override path. Nothing is written
+to the backed-up config PVC, so a rollback does not leave a custom binary
+behind. VPA targets the Frigate container by name.
+
+Verify the startup log identifies `1.9.14+dev.222d37f`, all six cameras maintain
+nonzero FPS, and successful `ExtendWebRtcStream` operations continue through
+multiple five-minute session windows. Pod readiness alone is insufficient.
+The pre-merge single-camera trial is evidence for this source revision, not
+proof of long-term stability across every Nest model or on the HP node.
+
+To return to bundled go2rtc, revert the override commit through a PR. That
+removes the init container and binary mount while retaining Frigate RC2 and
+the database. The next pod uses the bundled binary automatically. This
+rollback can restore the known Nest frame-drop problem, but does not require
+a database downgrade.
+
+The Talos VM currently advertises no Intel GPU device or Intel GPU resource.
+OpenVINO supports Intel integrated GPUs, but switching `device` to `GPU` alone
+will not expose the physical GPU. GPU acceleration requires a separate
+Proxmox passthrough change, Talos Intel driver/firmware support, and container
+access to the render device. Once verified, OpenVINO can use `GPU` and FFmpeg
+can use VAAPI. With FFmpeg 8, go2rtc hardware transcodes also require an explicit
+`go2rtc.ffmpeg.global: "-vaapi_device /dev/dri/renderD128"` (using the verified
+render path).
+
+Sources: [0.18 RC2 release and breaking changes](https://github.com/blakeblackshear/frigate/discussions/24215),
+[OpenVINO support](https://github.com/blakeblackshear/frigate/blob/v0.18.0-rc2/docs/docs/configuration/object_detectors.md#openvino-detector),
+[FFmpeg 8 hardware transcoding](https://github.com/blakeblackshear/frigate/blob/v0.18.0-rc2/docs/docs/troubleshooting/go2rtc.md#hardware-accelerated-transcoding-with-ffmpeg-8).
+
+The ConfigMap remains the Git-owned configuration; make configuration changes
+through PRs. The file declares schema version `0.18-0` and is validated directly
+against the RC image, because Frigate cannot migrate the mounted ConfigMap in
+place. UI configuration writes are not supported with this mount.
+
+Before upgrade, verify a successful `frigate-config` kopiur snapshot (the
+config PVC includes `frigate.db`). The stopped deployment had successful daily
+snapshots before this upgrade was prepared. Keep that pre-upgrade snapshot
+for rollback: a newer database may not work with an older image.
+
+After merge:
+
+```bash
+kubectl -n frigate rollout status deployment/frigate --timeout=180s
+kubectl -n frigate get pods -o wide
+kubectl -n argocd get application my-apps-frigate
+kubectl -n frigate logs deployment/frigate --since=5m
+```
+
+Expect a ready Frigate pod on the HP Elite, ArgoCD Synced/Healthy, a running
+OpenVINO detector, and no repeated MQTT authentication or FFmpeg restart
+errors. Use the stream check below to verify all six cameras receive frames;
+pod readiness alone does not establish that cameras or recordings work.
+
+To stop a failing rollout, submit a PR setting `replicas: 0`. To return to the
+older release, revert the upgrade through a PR and restore the pre-upgrade
+config/database snapshot if database migrations ran; follow the
+[backup/restore architecture](../../../docs/domains/storage/kopiur-backup-architecture.md).
+Do not mount a migrated database into the older image without a compatible
+restore.
+
 ## Credentials and Setup Process
 
 This integration requires a one-time, manual setup process to obtain the necessary credentials from Google.

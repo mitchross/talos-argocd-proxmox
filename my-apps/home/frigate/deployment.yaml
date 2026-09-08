@@ -4,7 +4,7 @@ metadata:
   name: frigate
   namespace: frigate
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -15,15 +15,35 @@ spec:
       labels:
         app: frigate
     spec:
-      # Keep Frigate on the Dell because its camera traffic stays in the yard
-      # failure domain. The Dell is CPU-only; decode falls back to software.
+      # The HP Elite exposes its i5-13500T CPU, but no Intel GPU in the Talos VM.
       nodeSelector:
-        node.vanillax.dev/class: dell-worker
+        node.vanillax.dev/class: hp-elite-worker
+      initContainers:
+      - name: install-go2rtc
+        image: ghcr.io/mitchross/frigate-go2rtc:b101-222d37f-v1
+        command: ["/bin/cp", "/go2rtc", "/custom/go2rtc"]
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 64Mi
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: go2rtc-binary
+          mountPath: /custom
       containers:
       - name: frigate
-        # Renovate off until the Nest WebRTC keyframe-starvation regression (seen on 0.17.2) is bisected.
+        # Keep the release candidate pinned until Nest streaming is verified.
         # renovate: ignore
-        image: ghcr.io/blakeblackshear/frigate:0.17.2
+        image: ghcr.io/blakeblackshear/frigate:0.18.0-rc2@sha256:9678a83a76e4730ac7d9ea7428370e32ae656d6b312aaad30d6c69f3fef14d35
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
@@ -84,6 +104,11 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
         volumeMounts:
+        # Frigate supports /config/go2rtc; the override is rebuilt on every pod start.
+        - name: go2rtc-binary
+          mountPath: /config/go2rtc
+          subPath: go2rtc
+          readOnly: true
         - name: config-dir
           mountPath: /config
         - name: frigate-config-volume
@@ -96,6 +121,8 @@ spec:
         # - name: usb
         #   mountPath: /dev/bus/usb
       volumes:
+      - name: go2rtc-binary
+        emptyDir: {}
       - name: config-dir
         persistentVolumeClaim:
           claimName: frigate-config
