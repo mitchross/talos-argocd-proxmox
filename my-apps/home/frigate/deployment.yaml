@@ -18,6 +18,7 @@ spec:
       # The HP Elite exposes its i5-13500T CPU, but no Intel GPU in the Talos VM.
       nodeSelector:
         node.vanillax.dev/class: hp-elite-worker
+        feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
       initContainers:
       - name: install-go2rtc
         image: ghcr.io/mitchross/frigate-go2rtc:b101-222d37f-v1
@@ -118,8 +119,8 @@ spec:
           mountPath: /media
         - name: cache
           mountPath: /dev/shm
-        # - name: usb
-        #   mountPath: /dev/bus/usb
+        - name: coral-usb
+          mountPath: /dev/bus/usb
       volumes:
       - name: go2rtc-binary
         emptyDir: {}
@@ -137,7 +138,8 @@ spec:
         emptyDir:
           medium: Memory
           sizeLimit: 4Gi
-      # - name: usb
-      #   hostPath:
-      #     path: /dev/bus/usb
-      #     type: Directory
+      # Coral re-enumerates after firmware loading; mount the bus, not one device number.
+      - name: coral-usb
+        hostPath:
+          path: /dev/bus/usb
+          type: Directory

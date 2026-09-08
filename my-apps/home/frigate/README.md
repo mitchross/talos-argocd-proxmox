@@ -15,10 +15,41 @@ The setup involves three main components:
 
 Git declares Frigate **0.18.0-rc2**, pinned by image digest, with one replica on
 `node.vanillax.dev/class: hp-elite-worker` (the HP Elite i5-13500T). Detection
-uses the bundled SSD MobileNet model through **OpenVINO on CPU**. Video decode
+uses the bundled **USB Coral EdgeTPU** model. Video decode
 and the existing Nest H.264 re-encode streams also use CPU. The six Nest
 streams retain their keyframe workaround; camera stability on this release
 must be checked after deployment.
+
+### USB Coral detector
+
+The HP Talos VM receives the USB Coral through Proxmox passthrough. Frigate
+mounts `/dev/bus/usb` and uses `detectors.coral` with `type: edgetpu` and
+`device: usb`. Its pinned image supplies `/edgetpu_model.tflite`: a 320×320
+RGB, NHWC, uint8-input SSD-family model with `/labelmap.txt`. The previous
+OpenVINO XML model and BGR preprocessing are incompatible with this detector.
+
+The pod requires the existing `custom-usb.coral-tpu` node label as well as
+the HP node class. The NodeFeatureRule recognizes both the bootloader vendor
+`1a6e` and initialized vendor `18d1`. The full USB IDs are `1a6e:089a` before
+initialization and `18d1:9302` afterward. Mounting the entire USB bus accommodates
+device-number changes during firmware loading. Proxmox passthrough must also
+survive that re-enumeration; a physical-port mapping can avoid tying it to just
+one vendor/product identity.
+
+Use USB 3 and verify the device remains visible after the first inference.
+See Frigate's [Coral setup](https://docs.frigate.video/configuration/object_detectors/#edge-tpu-detector)
+and [USB troubleshooting](https://docs.frigate.video/troubleshooting/edgetpu/).
+
+After merge and sync, check the pod becomes Ready, logs report `TPU found`,
+and `/api/stats` reports a running `coral` detector with nonzero inference
+speed. A USB label alone proves enumeration, not successful inference. Video
+FPS and playable recordings must still be verified separately; Coral performs
+object detection and does not repair Nest video transport or decoding.
+
+If the device disappears, check Proxmox passthrough and the node label first.
+To roll back, revert this detector/model, USB mount, and Coral selector change
+through a PR to restore the prior CPU OpenVINO configuration. Do not pair the
+OpenVINO XML model with an EdgeTPU detector.
 
 ### Nest go2rtc override
 
@@ -88,7 +119,7 @@ kubectl -n frigate logs deployment/frigate --since=5m
 ```
 
 Expect a ready Frigate pod on the HP Elite, ArgoCD Synced/Healthy, a running
-OpenVINO detector, and no repeated MQTT authentication or FFmpeg restart
+Coral detector, and no repeated MQTT authentication or FFmpeg restart
 errors. Use the stream check below to verify all six cameras receive frames;
 pod readiness alone does not establish that cameras or recordings work.
 
