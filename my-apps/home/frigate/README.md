@@ -173,12 +173,63 @@ kitchen-nest: nest/webrtc - 9016256 bytes
 living-room-nest: nest/webrtc - 10817595 bytes
 ```
 
-### Current Camera Configuration
+### Camera inventory and live views
 
-All cameras are configured with WebRTC protocol:
-- `backyard-nest`: WebRTC
-- `garage-inside-nest`: WebRTC
-- `garage-outside-nest`: WebRTC
-- `front-porch-nest`: WebRTC
-- `kitchen-nest`: WebRTC
-- `living-room-nest`: WebRTC 
+The operator identified these models; Google's device list confirms the names
+and mappings below. All seven devices advertise only `WEB_RTC` through SDM.
+
+| Google Home name | Operator-reported model / power | Frigate camera |
+| --- | --- | --- |
+| Kitchen camera | Nest Cam Indoor, wired | `kitchen` |
+| Living Room camera | Nest Cam Indoor, wired | `living-room` |
+| Backyard camera | Nest Cam Indoor, wired | `backyard` |
+| Garage Inside | Nest Cam Indoor, wired | `garage-inside` |
+| Garage camera | Nest Cam Battery, external cable power | `garage-outside` |
+| Front Porch doorbell | Nest Doorbell Battery, house doorbell wiring | `front-porch` |
+| Front Porch doorbell 2 | Nest Doorbell Wired, 3rd generation | Not configured |
+
+Each camera's `live.streams` explicitly selects its existing `-sub` stream.
+Without this mapping, Frigate defaults to a stream named after the camera,
+which does not exist in this configuration. Recording and detection already
+use `-sub`, explaining how recordings can work while live viewing fails.
+These derived streams provide video only at 5 FPS; this correction does not
+add audio or increase live resolution. See [Frigate live stream selection](https://docs.frigate.video/configuration/live/#setting-streams-for-live-ui).
+
+The battery doorbell remains battery-operated with house wiring supplying a
+trickle charge. Its zero-day continuous retention setting does not stop the
+active detect/record input. Google's session extension exception for battery
+doorbells also applies despite that wiring. The externally powered garage
+camera is a different case. See [Google power behavior](https://support.google.com/googlehome/answer/11830989?hl=en)
+and [SDM live-session rules](https://developers.google.com/nest/device-access/traits/device/camera-live-stream#extendwebrtcstream).
+
+### Frigate Pending after a VPA eviction
+
+If all feeds stop and the pod is Pending, check scheduling before debugging
+Nest credentials:
+
+```bash
+kubectl -n frigate get pods
+kubectl -n frigate get events --sort-by=.lastTimestamp
+kubectl -n frigate get vpa frigate -o yaml
+kubectl describe node talos-prod-cluster-v2-hp-elite-workers-rgkw5s
+```
+
+A verified outage followed `ResizeDeferred`, `EvictedByVPA`, then
+`FailedScheduling: Insufficient memory`: VPA requested 3,481,230,109 bytes
+when the pinned HP node had only 3,339,704,223 bytes of unreserved memory.
+Actual memory usage was lower; scheduler reservations caused the rejection.
+
+The Frigate policy caps memory requests at 3 GiB, retains `RequestsOnly` and
+the 12 GiB runtime limit, and excludes the fixed-size binary installer.
+Its earlier sync wave applies the policy before the Deployment rollout.
+This cap fits the observed reservations with about 114 MiB remaining; it is
+not a capacity guarantee if other workloads grow. Recheck placement and node
+usage before increasing it or adding another continuously decoded camera.
+
+After merge and sync, expect a Ready replacement with a memory request no
+greater than 3 GiB. If an existing Pending pod retains the old request, wait
+for the new capped VPA recommendation before recreating that Pending pod.
+Then verify camera FPS and fresh recordings across multiple five-minute Nest
+sessions. A Ready pod alone does not prove stream recovery. Roll back policy
+changes through a PR, recognizing that restoring the old ceiling can repeat
+the scheduling outage.
