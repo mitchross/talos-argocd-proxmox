@@ -11,6 +11,59 @@ The setup involves three main components:
 2.  **Frigate Deployment**: The deployment is configured to pass these credentials as environment variables to the Frigate container.
 3.  **Frigate `config.yml`**: The configuration file defines the `go2rtc` streams using the `nest:` provider, which uses the environment variables to authenticate with Google's API.
 
+## Runtime and upgrade
+
+Git declares Frigate **0.18.0-rc2**, pinned by image digest, with one replica on
+`node.vanillax.dev/class: hp-elite-worker` (the HP Elite i5-13500T). Detection
+uses the bundled SSD MobileNet model through **OpenVINO on CPU**. Video decode
+and the existing Nest H.264 re-encode streams also use CPU. The six Nest
+streams retain their keyframe workaround; camera stability on this release
+must be checked after deployment.
+
+The Talos VM currently advertises no Intel GPU device or Intel GPU resource.
+OpenVINO supports Intel integrated GPUs, but switching `device` to `GPU` alone
+will not expose the physical GPU. GPU acceleration requires a separate
+Proxmox passthrough change, Talos Intel driver/firmware support, and container
+access to the render device. Once verified, OpenVINO can use `GPU` and FFmpeg
+can use VAAPI. With FFmpeg 8, go2rtc hardware transcodes also require an explicit
+`go2rtc.ffmpeg.global: "-vaapi_device /dev/dri/renderD128"` (using the verified
+render path).
+
+Sources: [0.18 RC2 release and breaking changes](https://github.com/blakeblackshear/frigate/discussions/24215),
+[OpenVINO support](https://github.com/blakeblackshear/frigate/blob/v0.18.0-rc2/docs/docs/configuration/object_detectors.md#openvino-detector),
+[FFmpeg 8 hardware transcoding](https://github.com/blakeblackshear/frigate/blob/v0.18.0-rc2/docs/docs/troubleshooting/go2rtc.md#hardware-accelerated-transcoding-with-ffmpeg-8).
+
+The ConfigMap remains the Git-owned configuration; make configuration changes
+through PRs. The file declares schema version `0.18-0` and is validated directly
+against the RC image, because Frigate cannot migrate the mounted ConfigMap in
+place. UI configuration writes are not supported with this mount.
+
+Before upgrade, verify a successful `frigate-config` kopiur snapshot (the
+config PVC includes `frigate.db`). The stopped deployment had successful daily
+snapshots before this upgrade was prepared. Keep that pre-upgrade snapshot
+for rollback: a newer database may not work with an older image.
+
+After merge:
+
+```bash
+kubectl -n frigate rollout status deployment/frigate --timeout=180s
+kubectl -n frigate get pods -o wide
+kubectl -n argocd get application my-apps-frigate
+kubectl -n frigate logs deployment/frigate --since=5m
+```
+
+Expect a ready Frigate pod on the HP Elite, ArgoCD Synced/Healthy, a running
+OpenVINO detector, and no repeated MQTT authentication or FFmpeg restart
+errors. Use the stream check below to verify all six cameras receive frames;
+pod readiness alone does not establish that cameras or recordings work.
+
+To stop a failing rollout, submit a PR setting `replicas: 0`. To return to the
+older release, revert the upgrade through a PR and restore the pre-upgrade
+config/database snapshot if database migrations ran; follow the
+[backup/restore architecture](../../../docs/domains/storage/kopiur-backup-architecture.md).
+Do not mount a migrated database into the older image without a compatible
+restore.
+
 ## Credentials and Setup Process
 
 This integration requires a one-time, manual setup process to obtain the necessary credentials from Google.
