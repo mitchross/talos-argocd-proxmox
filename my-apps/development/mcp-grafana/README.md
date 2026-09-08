@@ -27,9 +27,12 @@ cannot be used to change dashboards even if it leaks.
 
 ```bash
 claude mcp add --transport http mcp-grafana \
-  https://mcp-grafana.vanillax.me \
-  --header "Authorization: Bearer <server_token>"
+  https://mcp-grafana.vanillax.me/mcp \
+  --header "Authorization: Bearer $(op read 'op://homelab-prod/mcp-grafana/server_token')"
 ```
+
+The path matters: the server serves MCP at **`/mcp`**, not at the root. A bare
+hostname returns 404 and the client reports only that it could not connect.
 
 ## Why it is shaped this way
 

@@ -1,9 +1,10 @@
+version: "0.18-0"
 mqtt:
   host: mosquitto.frigate
   port: 1883
   topic_prefix: frigate
-  user: "${FRIGATE_MQTT_USER}"
-  password: "${FRIGATE_MQTT_PASSWORD}"
+  user: "{FRIGATE_MQTT_USER}"
+  password: "{FRIGATE_MQTT_PASSWORD}"
 database:
   path: /config/frigate.db
 ui:
@@ -50,8 +51,7 @@ model:
   labelmap_path: /openvino-model/coco_91cl_bkgr.txt
 ffmpeg:
   input_args: preset-rtsp-generic
-  # The Dell worker is CPU-only. Omitting hwaccel_args deliberately selects
-  # software decode; detection also remains OpenVINO-on-CPU.
+  # Intel GPU passthrough is not configured; decode and OpenVINO use the HP CPU.
   # Nest streams carry Opus audio; MP4 recordings need AAC. This preset
   # transcodes audio to AAC for the record role (without it, recordings are
   # silent or fail to mux the Opus track).

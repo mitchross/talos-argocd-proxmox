@@ -14,10 +14,22 @@ cloud providers. The audit found a stale `qwen3.6-27b` default and the built-in
 
 Back up `~/.pi/agent/models.json`, `settings.json`, and `AGENTS.md` before editing.
 Merge this provider into `models.json`; do not overwrite other providers or
-credentials. Use `/login` for `vanillax-vllm` and enter the LiteLLM key from
-1Password (`homelab-prod/litellm/master_key`). Pi stores it in workstation
-`auth.json`; omit `apiKey` from the provider JSON. A placeholder key fails
-against this authenticated gateway. Keep credentials out of Git.
+credentials. `vanillax-vllm` is a custom `models.json` provider, so `/login`
+cannot configure it -- that picker offers only Pi's built-in providers, and a
+custom provider ID never appears in the list. Supply the LiteLLM key from
+1Password (`homelab-prod/litellm/master_key`) through the provider's `apiKey`
+field, which resolves `"$VAR"` and `"!command"` values as well as literals:
+
+```text
+"apiKey": "$LITELLM_API_KEY"
+```
+
+Export that variable from a file outside Git (the workstation uses `~/.ai-keys`,
+sourced by `.zshrc`), or read it directly with
+`"apiKey": "!op read 'op://homelab-prod/litellm/master_key'"`. Resolution order
+is CLI `--api-key`, `auth.json`, environment variable, then the `models.json`
+value. A placeholder key fails against this authenticated gateway. Keep
+credentials out of Git.
 
 ```json
 {
@@ -25,6 +37,7 @@ against this authenticated gateway. Keep credentials out of Git.
     "vanillax-vllm": {
       "baseUrl": "https://litellm.vanillax.me/v1",
       "api": "openai-completions",
+      "apiKey": "$LITELLM_API_KEY",
       "compat": {
         "supportsDeveloperRole": false,
         "supportsReasoningEffort": false,
