@@ -20,7 +20,7 @@ custom provider ID never appears in the list. Supply the LiteLLM key from
 1Password (`homelab-prod/litellm/master_key`) through the provider's `apiKey`
 field, which resolves `"$VAR"` and `"!command"` values as well as literals:
 
-```json
+```text
 "apiKey": "$LITELLM_API_KEY"
 ```
 

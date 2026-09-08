@@ -86,7 +86,9 @@ class AIObservabilityTests(unittest.TestCase):
         blocks = [json.loads(b) for b in re.findall(r'```json\n(.*?)\n```', guide, re.S)]
         provider = next(b['providers']['vanillax-vllm'] for b in blocks if 'providers' in b)
         self.assertEqual(provider['baseUrl'], 'https://litellm.vanillax.me/v1')
-        self.assertNotIn('apiKey', provider)
+        # /login cannot configure a custom provider, so the key is supplied
+        # here; it must stay an indirection, never a literal secret.
+        self.assertRegex(provider['apiKey'], r'^[$!]')
         model = provider['models'][0]
         config = read('my-apps/ai/litellm/config.yaml')
         route = next(m for m in config['model_list'] if m['model_name'] == model['id'])
