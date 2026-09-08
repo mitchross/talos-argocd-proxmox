@@ -202,6 +202,28 @@ doorbells also applies despite that wiring. The externally powered garage
 camera is a different case. See [Google power behavior](https://support.google.com/googlehome/answer/11830989?hl=en)
 and [SDM live-session rules](https://developers.google.com/nest/device-access/traits/device/camera-live-stream#extendwebrtcstream).
 
+### Garage outside and kitchen recovery trial
+
+The externally powered battery-model garage camera and wired kitchen camera
+use a 90-second FFmpeg retry interval as a recovery trial. On the deployed Nest bridge,
+an independent reader took 40.33 seconds to decode its first frame and then
+decoded 50 frames without errors, while Frigate repeatedly restarted its reader
+after 20 seconds and produced no fresh recordings. A kitchen reader separately
+decoded ten frames without errors in 68.18 seconds during the same failure.
+
+In Frigate RC2, `retry_interval` gates watchdog restarts as well as initial
+watchdog startup. It does not change the hard-coded 20-second stale-frame
+threshold, so an offline status or stale-frame message can precede an actual
+restart. This trial trades slower retries of genuine failures for more time to
+finish Nest recovery; it does not fix session negotiation or keyframe delivery.
+
+After merge and sync, verify `garage-outside` and `kitchen` reach their
+configured 5 FPS and create fresh, decodable recordings across at least two session renewals.
+Check live playback after reopening the viewer as well. If it remains offline
+or recovery regresses, remove the affected camera's `retry_interval` through a PR to
+restore the default 10-second interval. Keep the other cameras at their current
+intervals until this trial establishes a benefit.
+
 ### Frigate Pending after a VPA eviction
 
 If all feeds stop and the pod is Pending, check scheduling before debugging
