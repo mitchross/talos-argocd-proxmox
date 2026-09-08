@@ -18,6 +18,27 @@ spec:
       # The HP Elite exposes its i5-13500T CPU, but no Intel GPU in the Talos VM.
       nodeSelector:
         node.vanillax.dev/class: hp-elite-worker
+      initContainers:
+      - name: install-go2rtc
+        image: ghcr.io/mitchross/frigate-go2rtc:b101-222d37f-v1
+        command: ["/bin/cp", "/go2rtc", "/custom/go2rtc"]
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 64Mi
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: go2rtc-binary
+          mountPath: /custom
       containers:
       - name: frigate
         # Keep the release candidate pinned until Nest streaming is verified.
@@ -83,6 +104,11 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
         volumeMounts:
+        # Frigate supports /config/go2rtc; the override is rebuilt on every pod start.
+        - name: go2rtc-binary
+          mountPath: /config/go2rtc
+          subPath: go2rtc
+          readOnly: true
         - name: config-dir
           mountPath: /config
         - name: frigate-config-volume
@@ -95,6 +121,8 @@ spec:
         # - name: usb
         #   mountPath: /dev/bus/usb
       volumes:
+      - name: go2rtc-binary
+        emptyDir: {}
       - name: config-dir
         persistentVolumeClaim:
           claimName: frigate-config

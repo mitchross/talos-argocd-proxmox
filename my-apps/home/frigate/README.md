@@ -20,6 +20,41 @@ and the existing Nest H.264 re-encode streams also use CPU. The six Nest
 streams retain their keyframe workaround; camera stability on this release
 must be checked after deployment.
 
+### Nest go2rtc override
+
+Frigate's stock go2rtc 1.9.14 connected to Google but repeatedly lost usable
+frames with missing H.264 parameter sets and local RTSP 404 errors. This
+application supplies [bober10113's session-fix branch](https://github.com/bober10113/go2rtc/tree/codex/b101-nest-sessionfix)
+at commit `222d37fef8bdc2c8ce2c304fe5a2d5d3b27eb5dc`. The fork adds per-stream
+session state, recurring renewal, keyframe requests and recovery coordination
+for the derived FFmpeg streams. It is a community fork, not an upstream release.
+
+`go2rtc-image/Dockerfile` builds that exact revision. The image workflow tests
+PRs and publishes `ghcr.io/mitchross/frigate-go2rtc` only from `main`. Change
+`go2rtc-image/VERSION` and the init-container image tag together when changing
+the image; published tags are not overwritten. The first rollout may wait in
+`ImagePullBackOff` until the main-branch image build finishes. The GHCR package
+must be public for the cluster's anonymous pull; if a first publish creates a
+private package, set package visibility to public before expecting the init
+container to start.
+
+The init container copies the binary to an `emptyDir`. Frigate mounts it
+read-only at its supported `/config/go2rtc` override path. Nothing is written
+to the backed-up config PVC, so a rollback does not leave a custom binary
+behind. VPA targets the Frigate container by name.
+
+Verify the startup log identifies `1.9.14+dev.222d37f`, all six cameras maintain
+nonzero FPS, and successful `ExtendWebRtcStream` operations continue through
+multiple five-minute session windows. Pod readiness alone is insufficient.
+The pre-merge single-camera trial is evidence for this source revision, not
+proof of long-term stability across every Nest model or on the HP node.
+
+To return to bundled go2rtc, revert the override commit through a PR. That
+removes the init container and binary mount while retaining Frigate RC2 and
+the database. The next pod uses the bundled binary automatically. This
+rollback can restore the known Nest frame-drop problem, but does not require
+a database downgrade.
+
 The Talos VM currently advertises no Intel GPU device or Intel GPU resource.
 OpenVINO supports Intel integrated GPUs, but switching `device` to `GPU` alone
 will not expose the physical GPU. GPU acceleration requires a separate
