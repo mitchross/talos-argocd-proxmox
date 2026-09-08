@@ -4,6 +4,8 @@ kind: VerticalPodAutoscaler
 metadata:
   name: frigate
   namespace: frigate
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   targetRef:
     apiVersion: apps/v1
@@ -19,7 +21,10 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "4"
-          memory: 8Gi
+          # Larger reservations stranded the replacement on the pinned HP node.
+          memory: 3Gi
+      - containerName: install-go2rtc
+        mode: "Off"
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler

@@ -197,7 +197,7 @@ cameras:
       fps: 5
     record:
       enabled: true
-      # Disable continuous recording — doorbell battery can't sustain 24/7 streaming
+      # Zero continuous retention still leaves detect/record streaming active.
       continuous:
         days: 0
       motion:
