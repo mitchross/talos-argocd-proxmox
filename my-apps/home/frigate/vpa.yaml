@@ -14,7 +14,7 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: frigate
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
