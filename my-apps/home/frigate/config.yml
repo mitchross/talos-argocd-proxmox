@@ -162,6 +162,8 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
+      # This Nest feed took 40 seconds to decode after attachment; avoid restart churn.
+      retry_interval: 90
       input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-outside-sub
