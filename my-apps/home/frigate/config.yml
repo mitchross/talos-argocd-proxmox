@@ -246,6 +246,8 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
+      # A separate reader decoded successfully after 68 seconds during recovery.
+      retry_interval: 90
       input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/kitchen-sub
