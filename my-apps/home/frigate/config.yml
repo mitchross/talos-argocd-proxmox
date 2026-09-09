@@ -57,42 +57,37 @@ ffmpeg:
     record: preset-record-generic-audio-aac
 # go2rtc with Nest cameras via direct SDM API
 go2rtc:
+  ffmpeg:
+    # Preserve startup reference frames while Nest codec parameters arrive.
+    nest-buffered: "-threads 2 -analyzeduration 20000000 -probesize 20000000 -timeout 60000000 -rtsp_transport tcp -i {input}"
+    # At 5 FPS, the default GOP of 50 makes new consumers wait up to ten seconds.
+    h264: "-c:v libx264 -threads 2 -g 5 -keyint_min 5 -sc_threshold 0 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p"
   streams:
-    # Nest cameras via Google SDM API (direct WebRTC). Each *-nest raw stream
-    # feeds an *-sub ffmpeg re-encode; cameras consume the CLEAN *-sub.
-    # WHY: Nest's H264 is AUD-less with irregular keyframes, so Frigate's own
-    # ffmpeg fails INSTANTLY with "Invalid data found" on a cold producer —
-    # probe/timeout tuning does NOT help (it fails before the probe window;
-    # verified @kancelott's 50M/50M/60s still errors). go2rtc's ffmpeg: module
-    # stays connected (internal retries, no exec starttimeout), keeps the Nest
-    # producer warm, and the forced scale = full decode+encode = clean
-    # keyframes Frigate consumes fine. Pattern from frigate #17527 (@edse).
-    # (preload was tried and dropped — bundled go2rtc 1.9.10 didn't hold the
-    # WebRTC producers warm.)
+    # Each raw Nest WebRTC stream feeds a buffered H264 re-encode for live/detect/record.
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
     backyard-sub:
-    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
+    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
     garage-inside-sub:
-    - "ffmpeg:garage-inside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
+    - "ffmpeg:garage-inside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
     garage-outside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv2h0W3viecoGaYuzNnJYw5JpuFl22mo6_2OxWG7xIs8fTPCL0uwgrIOU8WEm7IiTIOQ_cgyzkh18OaR6nBzlTUWQ0&protocols=WEB_RTC&video=h264&audio=opus"
     garage-outside-sub:
-    - "ffmpeg:garage-outside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
+    - "ffmpeg:garage-outside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
     front-porch-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtOw3n2_DdhAm0wdt_NFRX7r04GI3RgzvQ2l2jt7KrpS7kCuvSvUtlDAmDCxg9nqMYUMEQz2IaXjtYJmT3A7gH1vPQ&protocols=WEB_RTC&video=h264&audio=opus"
     front-porch-sub:
-    - "ffmpeg:front-porch-nest#video=h264#width=480#height=640#raw=-fpsmax 5"
+    - "ffmpeg:front-porch-nest#video=h264#width=480#height=640#raw=-fpsmax 5#input=nest-buffered"
     living-room-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEvWU1Xm4--F8EQvLgj32449ix_pnGNv82a1xR6gJoWCsdxUyyWk1b3C9Aox-hLzJtQ2rp85L1F_BAw1HYaMgaLIa5U&protocols=WEB_RTC&video=h264&audio=opus"
     living-room-sub:
-    - "ffmpeg:living-room-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
+    - "ffmpeg:living-room-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
     kitchen-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
     kitchen-sub:
-    - "ffmpeg:kitchen-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
+    - "ffmpeg:kitchen-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
 cameras:
   # Wyze camera via wyze-bridge (disabled - Wyze API auth broken)
   # shed:

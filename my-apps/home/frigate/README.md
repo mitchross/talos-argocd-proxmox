@@ -51,6 +51,31 @@ To roll back, revert this detector/model, USB mount, and Coral selector change
 through a PR to restore the prior CPU OpenVINO configuration. Do not pair the
 OpenVINO XML model with an EdgeTPU detector.
 
+### Buffered Nest video input
+
+The six Nest re-encoders use `#input=nest-buffered`, defined under
+`go2rtc.ffmpeg`. The template keeps FFmpeg's input buffering, allows a
+20-second/20-MB codec probe, uses RTSP over TCP with a 60-second socket timeout,
+and limits decoder threads to two. The H264 encoder also uses two threads and
+emits a keyframe every five frames (one second at the configured 5 FPS).
+
+The previous go2rtc RTSP defaults combined `nobuffer`, `low_delay`, a five-second
+socket timeout, and a 50-frame output GOP. During the offline-feed incident,
+raw video sometimes decoded quickly while a derived stream took 28 seconds to
+attach, longer than Frigate's 20-second no-frame watchdog. An isolated buffered
+restream decoded 1,001 frames over 200 seconds without FFmpeg warnings; two
+additional direct Nest sessions each decoded 150 frames without warnings.
+Another test ended with an RTSP disconnect, and two streams failed to start.
+These tests validate the combined settings on the successful feeds, not which
+individual option caused the failures; they do not establish long-term
+reliability across all cameras.
+
+After deployment, verify sustained camera FPS and newly recorded playable
+segments through multiple Nest renewals. Coral detector health alone is not a
+camera-health check. If this configuration regresses capture, revert the
+`go2rtc.ffmpeg` templates and all six `#input=nest-buffered` selectors together
+through a PR; keep the Coral detector and USB mount in place.
+
 ### Nest go2rtc override
 
 Frigate's stock go2rtc 1.9.14 connected to Google but repeatedly lost usable
