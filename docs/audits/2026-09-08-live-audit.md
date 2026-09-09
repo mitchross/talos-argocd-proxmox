@@ -1,25 +1,46 @@
 # The 2026 homelab inspection
 
-**Purpose:** assess the running lab from physical disks through Proxmox, Talos,
-Longhorn, applications and recovery, then identify the repairs worth doing.
-**Status:** dated inspection and proposed repair plan; repairs are not deployed by
-this report. **Evidence:** September 8 evening EDT / September 8–9 UTC, starting
-23:41 UTC; individual samples retain their timestamps. The Git baseline was
-`89f63c864`. This follows the September 5 audit and verifies what actually runs.
+Measured September 8–9, 2026. Physical disks → Proxmox → Talos → applications → recovery.
 
-[Open the interactive inspection](../assets/inspection/index.html) to inspect
-all seven physical machines, 24 drives, six Talos nodes, nine configured guests
-(including stopped guests and Datacenter Manager), resource sizing, VPA,
-replicas, PVCs and application health. The explorer contains a downloadable
-sanitized inventory. [The previous lab tour](../lab.md) remains a historical
-September 5 snapshot.
+<div class="report-summary">
+<article class="report-status bad"><span>Repair first</span><strong>2 reclaim storms</strong><p>Temporal recovery and DCGM repeatedly reread executable pages.</p></article>
+<article class="report-status watch"><span>Plan replacement</span><strong>74% wear used</strong><p>Elite’s Intel data NVMe. Current allocations need more than 480 GB.</p></article>
+<article class="report-status good"><span>Working</span><strong>VPA is active</strong><p>About 124 in-place updates over 24 hours. Fixed limits still matter.</p></article>
+<article class="report-status watch"><span>Failure exposure</span><strong>78 / 80 single-copy</strong><p>Longhorn volume configuration. Only one current PVC has two copies.</p></article>
+</div>
 
-The lab has useful hardware and working automation. The most urgent faults are
-**two memory-constrained processes repeatedly rereading executable pages from
-disk, broken application data files, a failed backup, and gaps between reported
-health and actual service recovery**. A blanket hardware replacement would miss
-those faults. There are also real reasons to improve the control-plane storage
-and plan the Elite data-drive replacement.
+<div class="report-chart-grid">
+<figure class="report-chart"><figcaption>Small-write latency</figcaption><p>100 paced 8 KiB fsync samples per path · p99 · 0–200 ms scale</p>
+<div class="report-chart-row"><span>HPE mirror / Longhorn</span><span class="report-track" aria-hidden="true"><span class="report-fill good" style="width:3.675%"></span></span><strong>7.35 ms</strong></div>
+<div class="report-chart-row"><span>Dell SSD / Longhorn</span><span class="report-track" aria-hidden="true"><span class="report-fill watch" style="width:6.280%"></span></span><strong>12.56 ms</strong></div>
+<div class="report-chart-row"><span>GPU boot / Longhorn</span><span class="report-track" aria-hidden="true"><span class="report-fill bad" style="width:86.060%"></span></span><strong>172.12 ms</strong></div>
+</figure>
+<figure class="report-chart"><figcaption>NVMe endurance consumed</figcaption><p>Reported lifetime wear · 0–100% · not a predicted failure date</p>
+<div class="report-chart-row"><span>Elite data / Intel</span><span class="report-track" aria-hidden="true"><span class="report-fill watch" style="width:74.000%"></span></span><strong>74 %</strong></div>
+<div class="report-chart-row"><span>GPU model cache</span><span class="report-track" aria-hidden="true"><span class="report-fill neutral" style="width:20.000%"></span></span><strong>20 %</strong></div>
+<div class="report-chart-row"><span>GPU boot</span><span class="report-track" aria-hidden="true"><span class="report-fill neutral" style="width:14.000%"></span></span><strong>14 %</strong></div>
+<div class="report-chart-row"><span>Pi boot</span><span class="report-track" aria-hidden="true"><span class="report-fill neutral" style="width:13.000%"></span></span><strong>13 %</strong></div>
+<div class="report-chart-row"><span>Shed boot</span><span class="report-track" aria-hidden="true"><span class="report-fill neutral" style="width:4.000%"></span></span><strong>4 %</strong></div>
+<div class="report-chart-row"><span>Elite boot / WD</span><span class="report-track" aria-hidden="true"><span class="report-fill neutral" style="width:1.000%"></span></span><strong>1 %</strong></div>
+</figure>
+</div>
+
+The GPU boot path has severe tail latency under the observed reclaim load.
+Fix the memory budgets, then repeat the measurement. These short probes are
+not maximum-throughput tests or proof of power-loss durability.
+
+[Open the interactive inventory](../assets/inspection/index.html){ .md-button .md-button--primary }
+[Open Diagnostics Hardware Report in the lab GUI](../lab.md){ .md-button }
+
+??? info "Scope, evidence and inspection status"
+
+    This report assesses seven physical hosts, 24 drives, six Talos nodes,
+    nine configured guests, VPA, replicas, PVCs, application health and recovery.
+    It is a dated inspection and proposed repair plan; repairs are not deployed
+    by this report. Collection began at 23:41 UTC on September 8; individual
+    samples retain their timestamps. Git baseline: `89f63c864`.
+    The [previous lab tour](../lab.md) preserves the September 5 snapshot.
+    The downloadable interactive inventory contains the sanitized measurements.
 
 ## 1. Disks: condition, placement and replacement priorities
 
@@ -427,6 +448,12 @@ proof the service can perform its job.
   lengthening timeouts. Keep critical state off that edge path.
 
 ### Backups and restore evidence
+
+<figure class="report-chart"><figcaption>Coverage at inspection</figcaption><p>Fractions use different denominators; green Argo status does not prove application recovery.</p>
+<div class="report-chart-row"><span>Argo healthy apps · 96/100</span><span class="report-track" aria-hidden="true"><span class="report-fill neutral" style="width:96.000%"></span></span><strong>96 %</strong></div>
+<div class="report-chart-row"><span>Backups within cadence · 34/35</span><span class="report-track" aria-hidden="true"><span class="report-fill good" style="width:97.100%"></span></span><strong>97.1 %</strong></div>
+<div class="report-chart-row"><span>PostgreSQL scraped · 3/10</span><span class="report-track" aria-hidden="true"><span class="report-fill bad" style="width:30.000%"></span></span><strong>30 %</strong></div>
+</figure>
 
 90 PVCs: 35 matched SnapshotPolicies, 46 explicit backup exemptions, nine live
 classification gaps (six Coroot, two Loki, registry). A classification gap does

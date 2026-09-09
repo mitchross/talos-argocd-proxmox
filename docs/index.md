@@ -1,22 +1,10 @@
 # talos-argocd-proxmox
 
-<div class="docs-hero" markdown>
+A GitOps Kubernetes homelab on **Talos Linux**, managed through **ArgoCD**.
+Hardware inventory, measured diagnostics, architecture and operating runbooks.
 
-<span class="docs-eyebrow">The homelab field guide</span>
-
-## Build it. Understand it. Keep it healthy.
-
-A GitOps Kubernetes homelab on **Talos Linux** with **self-managing ArgoCD**.
-Follow the hardware, understand the controllers, and use the runbooks to keep
-services and protected data recoverable.
-
-<div class="docs-actions" markdown>
-
-[Explore the lab](lab.md){ .md-button .md-button--primary }
-[Read the easy guide](easy-guide.md){ .md-button }
-
-</div>
-</div>
+[Explore the lab](lab.md){ .md-button }
+[Diagnostics hardware report](audits/2026-09-08-live-audit.md){ .md-button .md-button--primary }
 
 ApplicationSets discover app directories. Per-PVC Kopiur resources declare
 backup and restore behavior. After the operator rebuilds Talos and seeds Argo,
