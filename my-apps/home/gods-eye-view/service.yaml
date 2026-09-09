@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gods-eye-view
+spec:
+  selector:
+    app.kubernetes.io/name: gods-eye-view
+  ports:
+    - name: http
+      port: 4173
+      targetPort: http
