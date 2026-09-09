@@ -7,7 +7,6 @@ resources:
   - externalsecret.yaml
   - postgres/deployment.yaml
   - postgres/service.yaml
-  - postgres/metrics.yaml
   - postgres/pvc.yaml
   - httproute.yaml
   - vpa.yaml
