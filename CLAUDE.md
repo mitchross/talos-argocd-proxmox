@@ -197,6 +197,7 @@ Detailed instructions load automatically when working in these directories:
 | `/project:new-app <category/name>` | Guided workflow for adding a new application |
 | `/project:add-backup <app-path>` | Add automatic backup to PVC(s) |
 | `/project:new-database <app-name>` | Create a database (plain Postgres + kopiur — the only pattern) |
+| `/i-have-adhd` | Opt-in output style (`.claude/skills/i-have-adhd/`). Explicit invocation only — never auto-load it. Codex reaches the same file via the `.agents/skills/` symlink; see `AGENTS.md` § Skills |
 
 ## Reference Examples
 
