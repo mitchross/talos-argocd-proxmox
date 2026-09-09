@@ -1,0 +1,8 @@
+id,name,ip,model,board,role,nodeIps,zone,cpu,logicalCpus,ramGiB,availableGiB
+sff,HP SFF,192.168.10.21,HP ProDesk 600 G4 SFF,83EE,Control plane + general worker,192.168.10.79 / .150,hp-sff,Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz,6,62.6,12.3
+elite,HP Elite Mini,192.168.10.22,HP Elite Mini 600 G9 Desktop PC,8AC6,General worker + Datacenter Manager,192.168.10.172,hp-elite,13th Gen Intel(R) Core(TM) i5-13500T,20,30.6,6.7
+gpu,Threadripper,192.168.10.14,To Be Filled By O.E.M.,X399 Taichi,Dual RTX 3090 + heavy workloads,192.168.10.80,house,AMD Ryzen Threadripper 2950X 16-Core Processor,32,125.7,19.1
+dell,Dell OptiPlex,192.168.10.16,OptiPlex 7060,0NC2VH,Temporary compute; still holds application data,192.168.10.177,dell,Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz,6,39.0,7.5
+shed,HP Shed,192.168.10.20,HP ProDesk 600 G4 DM,83EF,Attached devices behind Wi-Fi bridge,192.168.10.156,shed,Intel(R) Core(TM) i5-8500T CPU @ 2.10GHz,6,31.1,23.5
+nas,TrueNAS DL360,192.168.10.133,ProLiant DL360 Gen9,ProLiant DL360 Gen9,Shared files + RustFS backups,—,nas,Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz,28,377.6,147.2
+pi,Raspberry Pi 5,192.168.10.15,Raspberry Pi5,,Omni + Technitium DNS,—,pi,Cortex-A76,4,7.7,6.6
