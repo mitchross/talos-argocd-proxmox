@@ -24,3 +24,13 @@ files yourself; do not wait for the user to mention or attach them.
 Keep Mink updated during substantive work. Hooks may track session state automatically, but durable decisions, verified root causes, runbooks, and gotchas require explicit note capture with `mink note` or `/mink:note`.
 
 Use `mink note --project talos-argocd-proxmox --category resources` for durable references and `--category projects` for active decisions or followups. Do not capture routine edits, raw command output, or unverified hypotheses. Mention saved Mink note paths in the final response.
+
+## Skills
+
+Repo skills live in `.claude/skills/<name>/SKILL.md`. `.agents/skills/<name>` is a
+symlink to the same directory so Codex discovers them on its project scan (Codex
+follows symlinked skill folders); there is one copy, not two — edit the file under
+`.claude/skills/`.
+
+Skills here are opt-in only. Do not load one from task context: wait for the reader
+to ask by name (`/i-have-adhd` in Claude Code, `$i-have-adhd` or `/skills` in Codex).
