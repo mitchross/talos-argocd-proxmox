@@ -1,6 +1,23 @@
 # talos-argocd-proxmox
 
+<div class="docs-hero" markdown>
+
+<span class="docs-eyebrow">The homelab field guide</span>
+
+## Build it. Understand it. Keep it healthy.
+
 A GitOps Kubernetes homelab on **Talos Linux** with **self-managing ArgoCD**.
+Follow the hardware, understand the controllers, and use the runbooks to keep
+services and protected data recoverable.
+
+<div class="docs-actions" markdown>
+
+[Explore the lab](lab.md){ .md-button .md-button--primary }
+[Read the easy guide](easy-guide.md){ .md-button }
+
+</div>
+</div>
+
 ApplicationSets discover app directories. Per-PVC Kopiur resources declare
 backup and restore behavior. After the operator rebuilds Talos and seeds Argo,
 protected volumes restore automatically from the off-cluster repository.
@@ -17,6 +34,49 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
     The whole cluster can be destroyed and rebuilt with every protected volume
     restored automatically from the off-cluster Kopia repository — no manual storage
     steps. See [disaster recovery](disaster-recovery.md).
+
+## Under the hood
+
+**Measured September 8, 2026, beginning 23:41 UTC.** This is a recorded inspection,
+not a live status feed. Open **Diagnostics Hardware Report** in the
+[lab explorer](lab.md) for disk health, benchmarks, workloads and repair priorities.
+
+<div class="docs-stats" role="group" aria-label="September 8 inspection coverage">
+<div class="docs-stat"><strong>7</strong><span>physical hosts</span></div>
+<div class="docs-stat"><strong>24</strong><span>physical drives</span></div>
+<div class="docs-stat"><strong>6</strong><span>Talos nodes</span></div>
+<div class="docs-stat"><strong>90</strong><span>persistent volume claims</span></div>
+</div>
+
+<div class="docs-chart-grid">
+<figure class="docs-chart docs-chart--cpu">
+<figcaption>Container CPU use</figcaption>
+<span class="docs-chart-subtitle">Observed use as a percentage of each node’s allocatable capacity · 0–100%</span>
+<div class="docs-chart-row" title="SFF control plane: 0.66 of 3.95 vCPU"><span>SFF control plane</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 16.63%"></span></span><span class="docs-chart-value">16.6%</span></div>
+<div class="docs-chart-row" title="Dell worker: 1.60 of 5.95 vCPU"><span>Dell worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 26.97%"></span></span><span class="docs-chart-value">27.0%</span></div>
+<div class="docs-chart-row" title="GPU worker: 5.24 of 29.95 vCPU"><span>GPU worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 17.48%"></span></span><span class="docs-chart-value">17.5%</span></div>
+<div class="docs-chart-row" title="Elite worker: 0.97 of 15.95 vCPU"><span>Elite worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 6.06%"></span></span><span class="docs-chart-value">6.1%</span></div>
+<div class="docs-chart-row" title="Shed worker: 0.09 of 3.95 vCPU"><span>Shed worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 2.38%"></span></span><span class="docs-chart-value">2.4%</span></div>
+<div class="docs-chart-row" title="SFF worker: 1.17 of 5.95 vCPU"><span>SFF worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 19.74%"></span></span><span class="docs-chart-value">19.7%</span></div>
+</figure>
+<figure class="docs-chart docs-chart--memory">
+<figcaption>Container memory use</figcaption>
+<span class="docs-chart-subtitle">Observed use as a percentage of each node’s allocatable capacity · 0–100%</span>
+<div class="docs-chart-row" title="SFF control plane: 4.93 of 11.07 GiB"><span>SFF control plane</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 44.54%"></span></span><span class="docs-chart-value">44.5%</span></div>
+<div class="docs-chart-row" title="Dell worker: 9.82 of 28.89 GiB"><span>Dell worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 33.98%"></span></span><span class="docs-chart-value">34.0%</span></div>
+<div class="docs-chart-row" title="GPU worker: 36.33 of 97.67 GiB"><span>GPU worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 37.20%"></span></span><span class="docs-chart-value">37.2%</span></div>
+<div class="docs-chart-row" title="Elite worker: 10.42 of 22.98 GiB"><span>Elite worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 45.36%"></span></span><span class="docs-chart-value">45.4%</span></div>
+<div class="docs-chart-row" title="Shed worker: 1.39 of 23.39 GiB"><span>Shed worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 5.94%"></span></span><span class="docs-chart-value">5.9%</span></div>
+<div class="docs-chart-row" title="SFF worker: 12.05 of 38.68 GiB"><span>SFF worker</span><span class="docs-chart-track" aria-hidden="true"><span class="docs-chart-fill" style="width: 31.15%"></span></span><span class="docs-chart-value">31.1%</span></div>
+</figure>
+</div>
+
+<p class="docs-chart-note">Container working-set memory and container CPU usage from the inspection;
+these exclude host overhead and do not measure disk wait or per-container memory pressure.
+Aggregate headroom can coexist with a badly constrained Job.</p>
+
+[Read the measured findings](audits/2026-09-08-live-audit.md) ·
+[Download the source inventory](assets/inspection/inventory.json)
 
 ## Stack
 

@@ -1,0 +1,102 @@
+/* Shared colors follow documentation-standard.md; charts are dated snapshots. */
+:root,
+body[data-md-color-scheme="default"][data-md-color-primary] {
+  --docs-navy: #16384b;
+  --docs-cyan: #087e8b;
+  --docs-green: #23734f;
+  --docs-coral: #b64b39;
+  --docs-amber: #966000;
+  --docs-surface: #ffffff;
+  --docs-tint: #edf6f6;
+  --docs-border: #d2e1e5;
+  --md-primary-fg-color: #16384b;
+  --md-accent-fg-color: #087e8b;
+  --md-typeset-a-color: #086d79;
+  --md-default-bg-color: #f8fafb;
+}
+body[data-md-color-scheme="slate"][data-md-color-primary] {
+  --docs-navy: #d4e9f4;
+  --docs-cyan: #69d5df;
+  --docs-green: #8cdbaf;
+  --docs-coral: #ffa997;
+  --docs-amber: #f6cc76;
+  --docs-surface: #1d2b3b;
+  --docs-tint: #213a46;
+  --docs-border: #385367;
+  --md-primary-fg-color: #142b3d;
+  --md-accent-fg-color: #69d5df;
+  --md-typeset-a-color: #80dce5;
+  --md-default-bg-color: #172331;
+  --md-default-fg-color: #e0e9ef;
+  --md-default-fg-color--light: #b8cbd8;
+}
+.md-header { background: linear-gradient(110deg, #16384b, #12616b); }
+.md-typeset h1 { color: var(--docs-navy); font-weight: 750; letter-spacing: -.035em; }
+.md-typeset h2 {
+  color: var(--docs-navy); font-weight: 700;
+  padding: .4rem .65rem; border-left: .2rem solid var(--docs-cyan);
+  background: linear-gradient(90deg, var(--docs-tint), transparent);
+  border-radius: 0 .35rem .35rem 0;
+}
+.md-typeset h3 { color: var(--docs-cyan); font-weight: 650; }
+.md-nav--primary .md-nav__item--nested > label.md-nav__link,
+.md-nav--primary .md-nav__item--nested > .md-nav__link { color: var(--docs-cyan); }
+.md-nav--primary .md-nav__link--active {
+  background: var(--docs-tint); border-radius: .2rem;
+  box-shadow: -.18rem 0 0 var(--docs-cyan); padding-left: .3rem;
+}
+.md-typeset table:not([class]) { background: var(--docs-surface); border-color: var(--docs-border); border-radius: .4rem; }
+.md-typeset table:not([class]) th { background: var(--docs-tint); color: var(--docs-navy); border-bottom: 2px solid var(--docs-cyan); }
+.md-typeset table:not([class]) tbody tr:nth-child(even) { background: color-mix(in srgb, var(--docs-tint) 45%, transparent); }
+.md-typeset table:not([class]) td { border-color: var(--docs-border); }
+.md-typeset blockquote { color: var(--md-default-fg-color--light); background: var(--docs-tint); padding: .5rem .8rem; border-color: var(--docs-cyan); border-radius: 0 .4rem .4rem 0; }
+.md-typeset .grid.cards > ul > li {
+  background: var(--docs-surface); border: 1px solid var(--docs-border);
+  border-top: .2rem solid var(--docs-cyan); border-radius: .6rem;
+  box-shadow: 0 .15rem .6rem #16384b08;
+}
+.md-typeset .grid.cards > ul > li:nth-child(4n + 2) { border-top-color: var(--docs-green); }
+.md-typeset .grid.cards > ul > li:nth-child(4n + 3) { border-top-color: var(--docs-coral); }
+.md-typeset .grid.cards > ul > li:nth-child(4n + 4) { border-top-color: var(--docs-amber); }
+.md-typeset .tabbed-labels { background: var(--docs-tint); border-radius: .45rem .45rem 0 0; }
+.md-typeset a:focus-visible { outline: 3px solid var(--docs-cyan); outline-offset: 3px; }
+.docs-hero {
+  background: linear-gradient(125deg, #16384b 0%, #12616b 75%, #087e8b 100%);
+  padding: 1.4rem; border-radius: .85rem; color: #e7f4f5;
+  margin: 0 0 1.5rem; box-shadow: 0 .5rem 1.4rem #16384b14;
+}
+.md-typeset .docs-hero h2 { color: #fff; background: none; border: 0; padding: 0; margin: .25rem 0 .65rem; font-size: 1.55rem; line-height: 1.2; }
+.docs-eyebrow { font-size: .61rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.docs-hero p { max-width: 42rem; }
+.docs-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.md-typeset .docs-hero .md-button { color: #fff; border-color: #b3dee5; border-radius: .35rem; padding: .5em 1em; }
+.md-typeset .docs-hero .md-button--primary { background: #dbf4ed; border-color: #dbf4ed; color: #16384b; }
+.md-typeset .docs-hero .md-button:hover { background: #fff; color: #16384b; border-color: #fff; }
+.docs-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .65rem; margin: 1rem 0; }
+.docs-stat { background: var(--docs-surface); border: 1px solid var(--docs-border); border-top: .2rem solid var(--docs-cyan); border-radius: .5rem; padding: .8rem; }
+.docs-stat strong { display: block; color: var(--docs-navy); font-size: 1.65rem; line-height: 1.2; }
+.docs-stat span { font-size: .67rem; color: var(--md-default-fg-color--light); }
+.docs-stat:nth-child(2) { border-top-color: var(--docs-green); }
+.docs-stat:nth-child(3) { border-top-color: var(--docs-amber); }
+.docs-stat:nth-child(4) { border-top-color: var(--docs-coral); }
+.docs-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin: 1rem 0; }
+.docs-chart { background: var(--docs-surface); border: 1px solid var(--docs-border); border-radius: .6rem; padding: .9rem; margin: 0; min-width: 0; }
+.docs-chart figcaption { color: var(--docs-navy); font-size: .8rem; font-weight: 700; margin-bottom: .3rem; }
+.docs-chart-subtitle { display: block; color: var(--md-default-fg-color--light); font-size: .63rem; margin: .2rem 0 .8rem; }
+.docs-chart-row { display: grid; grid-template-columns: 5.8rem 1fr 2.5rem; gap: .4rem; align-items: center; margin: .55rem 0; font-size: .65rem; }
+.docs-chart-track { height: .58rem; border-radius: .18rem; background: var(--docs-tint); overflow: hidden; }
+.docs-chart-fill { display: block; height: 100%; background: var(--docs-cyan); border-radius: .18rem; }
+.docs-chart--memory .docs-chart-fill { background: var(--docs-green); }
+.docs-chart-value { text-align: right; font-variant-numeric: tabular-nums; }
+.docs-chart-note { font-size: .66rem; color: var(--md-default-fg-color--light); }
+@media (max-width: 40rem) {
+  .docs-chart-grid { grid-template-columns: 1fr; }
+  .docs-stats { grid-template-columns: repeat(2, 1fr); }
+  .docs-hero { padding: 1rem; }
+  .md-typeset .docs-hero h2 { font-size: 1.3rem; }
+}
+@media print {
+  .docs-hero { background: #edf6f6; color: #16384b; box-shadow: none; }
+  .md-typeset .docs-hero h2 { color: #16384b; }
+  .docs-chart, .docs-stat { break-inside: avoid; }
+}

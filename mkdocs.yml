@@ -83,6 +83,7 @@ extra_css:
   - assets/nav-tweaks.css
   - assets/diagram-docs.css
   - assets/motion.css
+  - assets/docs-theme.css
 
 extra_javascript:
   - assets/lab-inventory-data.js
