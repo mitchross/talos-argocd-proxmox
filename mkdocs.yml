@@ -95,6 +95,7 @@ extra_javascript:
 
 # 8 top-level sections. Long topics nest one level so no section feels crowded.
 nav:
+  - Diagnostics Hardware Report: diagnostics.md
   - Overview & architecture:
       - Home — the big picture: index.md
       - Explore the lab: lab.md

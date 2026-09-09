@@ -4,7 +4,7 @@ A GitOps Kubernetes homelab on **Talos Linux**, managed through **ArgoCD**.
 Hardware inventory, measured diagnostics, architecture and operating runbooks.
 
 [Explore the lab](lab.md){ .md-button }
-[Diagnostics hardware report](audits/2026-09-08-live-audit.md){ .md-button .md-button--primary }
+[Diagnostics Hardware Report](diagnostics.md){ .md-button .md-button--primary }
 
 ApplicationSets discover app directories. Per-PVC Kopiur resources declare
 backup and restore behavior. After the operator rebuilds Talos and seeds Argo,
@@ -26,8 +26,8 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 ## Under the hood
 
 **Measured September 8, 2026, beginning 23:41 UTC.** This is a recorded inspection,
-not a live status feed. Open **Diagnostics Hardware Report** in the
-[lab explorer](lab.md) for disk health, benchmarks, workloads and repair priorities.
+not a live status feed. Open [Diagnostics Hardware Report](diagnostics.md)
+from the main sidebar for disk health, benchmarks, workloads and repair priorities.
 
 <div class="docs-stats" role="group" aria-label="September 8 inspection coverage">
 <div class="docs-stat"><strong>7</strong><span>physical hosts</span></div>
