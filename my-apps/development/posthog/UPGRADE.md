@@ -30,27 +30,3 @@ Rules: bump `posthog/posthog` and `posthog/posthog-node` digests **in lockstep**
 redpanda, clickhouse) only move when upstream's compose pins move. Gate =
 `run_async_migrations --check` in the migrate hook; a failed check fails the
 sync before app pods roll.
-
-
-## PostgreSQL security exception (September 2026)
-
-The live inspection found PostgreSQL 15.12 vulnerable to
-[CVE-2026-14669](https://www.postgresql.org/support/security/CVE-2026-14669/).
-Upstream Compose still pins 15.12. The repair uses the fixed **15.19-alpine**
-image, pinned by digest, as a narrow same-major security exception to the
-Compose-pin rule above. Application images, schema hooks and preload settings
-remain compatible with the existing deployment.
-
-Before merge, confirm a recent successful PostgreSQL Kopiur snapshot. Argo uses
-Recreate, so expect a brief database interruption. After rollout, verify
-`SHOW server_version`, `SELECT count(*) FROM pg_stat_statements`, login and a
-representative dashboard/feature-flag operation. The corrected Service labels
-must also produce a successful PostgreSQL scrape.
-
-A local isolated 15.12 data directory reopened on 15.19 with 1,000 fixture rows,
-an identical ordered content checksum and a working pg_stat_statements
-extension. This validates the image transition, not restoration of production
-identity data. A fresh isolated restore remains a follow-up. On startup failure,
-preserve the PVC and inspect logs; do not delete or initialize over it. A Git
-revert can restore the previous same-major image but reintroduces the security
-exposure. Never switch PostgreSQL major versions against this data directory.

@@ -226,7 +226,6 @@ jobs:
           python3 -m unittest discover -s monitoring/keep/tests -v
           python3 -m unittest discover -s my-apps/ai/surfsense/scripts -p test_recovery.py -v
           python3 -m unittest discover -s my-apps/home/project-nomad/flatnotes/scripts -p test_recover_index.py -v
-          python3 my-apps/media/immich/tests/check_postgres_upgrade.py
           kustomize build infrastructure/controllers/argocd --enable-helm \
             --helm-kube-version "${KUBERNETES_VERSION}" \
             --helm-api-versions monitoring.coreos.com/v1 > /tmp/argocd-with-monitoring.yaml

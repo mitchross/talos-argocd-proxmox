@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: db
-        image: postgres:15.19-alpine@sha256:fe0737ba566a2c5b2a28f34433c0a423261900ec17b9bf7ad115e1aae7e57f1b
+        image: postgres:15.12-alpine@sha256:ef9d1517df69c4d27dbb9ddcec14f431a2442628603f4e9daa429b92ae6c3cd1
         # PostHog's hourly monitoring task queries pg_stat_statements; preload the
         # library so the migrate job's CREATE EXTENSION works (stops hourly log errors).
         args:
@@ -54,12 +54,6 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 30
-        startupProbe:
-          exec:
-            command: ["pg_isready", "-U", "posthog", "-d", "posthog"]
-          periodSeconds: 5
-          timeoutSeconds: 5
-          failureThreshold: 60
         readinessProbe:
           exec:
             command:
@@ -118,9 +112,6 @@ kind: Service
 metadata:
   name: db
   namespace: posthog
-  labels:
-    app.kubernetes.io/name: posthog
-    app.kubernetes.io/component: db
 spec:
   ports:
   - name: postgres

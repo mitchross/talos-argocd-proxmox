@@ -36,28 +36,6 @@ tests:
   - eval_time: 10m
     alertname: PodMemoryReclaimThrashing
     exp_alerts: []
-- name: absent exporter alerts while healthy and intentionally parked databases do not
-  interval: 1m
-  input_series:
-  - series: kube_deployment_spec_replicas{namespace="posthog",deployment="db"}
-    values: 1+0x20
-  - series: kube_deployment_spec_replicas{namespace="hindsight",deployment="hindsight-db"}
-    values: 0+0x20
-  - series: kube_deployment_spec_replicas{namespace="gitea",deployment="gitea-postgres"}
-    values: 1+0x20
-  - series: pg_up{namespace="gitea"}
-    values: 1+0x20
-  alert_rule_test:
-  - eval_time: 16m
-    alertname: PostgreSQLMonitoringMissing
-    exp_alerts:
-    - exp_labels:
-        namespace: posthog
-        severity: warning
-      exp_annotations:
-        summary: Postgres monitoring is missing or unhealthy in posthog
-        description: A desired Postgres Deployment has no successful pg_up sample. Check exporter credentials,
-          named Service ports and ServiceMonitor labels. An absent target never appears in up == 0.
 - name: stalled recovery job alerts after its runtime deadline
   interval: 1m
   input_series:

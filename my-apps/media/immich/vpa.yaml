@@ -86,5 +86,3 @@ spec:
         maxAllowed:
           cpu: "2"
           memory: 2Gi
-      - containerName: postgres-exporter
-        mode: "Off"

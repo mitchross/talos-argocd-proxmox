@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: surfsense
 
 resources:
-  - postgres/metrics.yaml
   - llm-externalsecret.yaml
   - namespace.yaml
   - externalsecret.yaml

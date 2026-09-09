@@ -84,36 +84,6 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
-        - name: postgres-exporter
-          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
-          securityContext:
-            runAsUser: 65534
-            runAsGroup: 65534
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-              - ALL
-          env:
-          - name: DATA_SOURCE_URI
-            value: 127.0.0.1:5432/surfsense?sslmode=disable
-          - name: DATA_SOURCE_USER
-            value: surfsense
-          - name: DATA_SOURCE_PASS
-            valueFrom:
-              secretKeyRef:
-                name: surfsense-secrets
-                key: DB_PASSWORD
-          ports:
-          - name: metrics
-            containerPort: 9187
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
-              memory: 128Mi
       volumes:
         - name: postgres-data
           persistentVolumeClaim:

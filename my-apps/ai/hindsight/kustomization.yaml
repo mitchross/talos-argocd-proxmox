@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: hindsight
 
 resources:
-  - postgres-metrics.yaml
   - litellm-externalsecret.yaml
   - namespace.yaml
   - externalsecret.yaml
