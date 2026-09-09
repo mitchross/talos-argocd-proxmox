@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: temporal-inactive-version-retirement
+rules:
+  - apiGroups: [temporal.io]
+    resources: [workerdeployments]
+    resourceNames: [deal-scout]
+    verbs: [get]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: temporal-inactive-version-retirement
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: temporal-inactive-version-retirement
+subjects:
+  - kind: ServiceAccount
+    name: temporal-worker-maintenance
+    namespace: temporal-worker-controller

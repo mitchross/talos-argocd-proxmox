@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: temporal-worker-maintenance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: temporal-worker-maintenance
+rules:
+  - apiGroups: [batch]
+    resources: [cronjobs]
+    resourceNames: [temporal-worker-controller-identity-recovery]
+    verbs: [get]
+  - apiGroups: [batch]
+    resources: [jobs]
+    resourceNames: [temporal-worker-controller-identity-recovery-29814005]
+    verbs: [get, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: temporal-worker-maintenance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: temporal-worker-maintenance
+subjects:
+  - kind: ServiceAccount
+    name: temporal-worker-maintenance
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temporal-retire-stuck-recovery
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  activeDeadlineSeconds: 120
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: temporal-worker-maintenance
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: retire-stuck-job
+          image: python:3.13-alpine@sha256:7415fbc3c9e4979cc717d92377ab2bc7b2b4a2af1ac03cc52b5f3f88efedaf3a
+          command: [python3, -B, -u, /scripts/retire_stuck_recovery.py]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: temporal-worker-maintenance-scripts
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: temporal-inactive-version-retirement
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 240
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          serviceAccountName: temporal-worker-maintenance
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: temporal-cli
+              image: temporalio/admin-tools:1.31.2@sha256:dbc5fcd6ee8f0f4d808bf765af9a87dea9d8a283abfdcfbd2fc148496ba66107
+              command: [cp, /usr/local/bin/temporal, /tools/temporal]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+          containers:
+            - name: retire-inactive-versions
+              image: python:3.13-alpine@sha256:7415fbc3c9e4979cc717d92377ab2bc7b2b4a2af1ac03cc52b5f3f88efedaf3a
+              command: [python3, -B, -u, /scripts/retire_inactive_versions.py]
+              env:
+                - name: TEMPORAL_ADDRESS
+                  value: temporal-frontend.temporal.svc.cluster.local:7233
+                - name: TEMPORAL_NAMESPACE
+                  value: default
+                - name: DRY_RUN
+                  value: "false"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 768Mi
+                limits:
+                  memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: tools
+                  mountPath: /tools
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: temporal-worker-maintenance-scripts
+            - name: tools
+              emptyDir:
+                sizeLimit: 1Gi
