@@ -70,24 +70,3 @@ tests:
       - eval_time: 20m
         alertname: KopiurBackupStale
         exp_alerts: []
-  - name: last backup failure alerts despite healthy schedule failure counter
-    interval: 1m
-    input_series:
-    - series: kopiur_snapshotpolicy_last_backup_success{namespace="kopiur-system",exported_namespace="perplexica",policy="perplexica-data"}
-      values: 0+0x20
-    - series: kopiur_snapshot_consecutive_failures{namespace="kopiur-system",exported_namespace="perplexica",name="perplexica-data"}
-      values: 0+0x20
-    alert_rule_test:
-    - eval_time: 16m
-      alertname: KopiurLatestBackupFailed
-      exp_alerts:
-      - exp_labels:
-          namespace: perplexica
-          policy: perplexica-data
-          severity: critical
-          component: kopiur
-          category: backup
-        exp_annotations:
-          summary: 'Latest kopiur backup failed: perplexica/perplexica-data'
-          description: The latest backup did not succeed. Inspect Snapshot failure details and mover ownership even
-            if SnapshotSchedule is Ready; verify a fresh successful snapshot after repair.

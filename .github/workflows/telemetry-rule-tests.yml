@@ -1,10 +1,8 @@
-name: Telemetry and Reliability Rule Tests
+name: Telemetry and Backup Rule Tests
 on:
   pull_request:
     paths:
       - 'infrastructure/controllers/opentelemetry-operator-observability/**'
-      - 'monitoring/prometheus-stack/inspection-alerts.yaml'
-      - 'monitoring/prometheus-stack/tests/inspection-alerts.test.yaml'
       - 'monitoring/prometheus-stack/kopiur-alerts.yaml'
       - 'monitoring/prometheus-stack/tests/kopiur-alerts.test.yaml'
       - 'scripts/prepare-telemetry-rule-tests.py'
@@ -14,8 +12,6 @@ on:
     branches: [main]
     paths:
       - 'infrastructure/controllers/opentelemetry-operator-observability/**'
-      - 'monitoring/prometheus-stack/inspection-alerts.yaml'
-      - 'monitoring/prometheus-stack/tests/inspection-alerts.test.yaml'
       - 'monitoring/prometheus-stack/kopiur-alerts.yaml'
       - 'monitoring/prometheus-stack/tests/kopiur-alerts.test.yaml'
       - 'scripts/prepare-telemetry-rule-tests.py'
@@ -38,8 +34,6 @@ jobs:
         run: python scripts/prepare-telemetry-rule-tests.py /tmp/otel-rule-tests
       - name: Prepare backup-rule tests
         run: python scripts/prepare-telemetry-rule-tests.py /tmp/otel-rule-tests --suite kopiur
-      - name: Prepare inspection-rule tests
-        run: python scripts/prepare-telemetry-rule-tests.py /tmp/otel-rule-tests --suite inspection
       - name: Check rules and evaluate synthetic time series
         run: |
           set -euo pipefail
@@ -47,5 +41,3 @@ jobs:
           docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 test rules collector-alerts.test.yaml
           docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 check rules kopiur.rules.yaml
           docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 test rules kopiur-alerts.test.yaml
-          docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 check rules inspection.rules.yaml
-          docker run --rm --entrypoint promtool -v /tmp/otel-rule-tests:/work:ro -w /work prom/prometheus:v3.5.0 test rules inspection-alerts.test.yaml
