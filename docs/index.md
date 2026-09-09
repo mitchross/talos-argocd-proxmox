@@ -39,6 +39,9 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 [**Explore the lab →**](lab.md) Click through the machines, IPs, disks, VMs and
 what depends on each host. Includes the proposed jobs for each machine.
 
+For the latest measured state, open the [September 8 live inspection](audits/2026-09-08-live-audit.md)
+and its [interactive device and workload inventory](assets/inspection/index.html).
+
 Start with the [hardware, disk placement and GitOps review](audits/2026-09-05-hardware-and-placement-review.md)
 for the engineering recommendation, proposed workload pools and disk move priorities.
 Those proposals are explicitly separate from deployed state.

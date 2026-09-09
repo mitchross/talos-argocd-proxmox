@@ -97,6 +97,7 @@ nav:
   - Overview & architecture:
       - Home — the big picture: index.md
       - Explore the lab: lab.md
+      - Live inspection — September 8, 2026: audits/2026-09-08-live-audit.md
       - The easy guide (explain it to anyone): easy-guide.md
       - Documentation reader contract: documentation-standard.md
       - Architecture audit — September 2026: audits/2026-09-05-architecture-audit.md

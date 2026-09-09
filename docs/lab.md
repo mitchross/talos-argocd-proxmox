@@ -1,5 +1,10 @@
 # Come have a look around the lab
 
+The newer [September 8 live inspection](audits/2026-09-08-live-audit.md) includes
+the full disk inventory, measured bottlenecks, VPA, replicas, recovery findings
+and an [interactive inspection dashboard](assets/inspection/index.html).
+The tour below preserves the earlier September 5 snapshot.
+
 The HPs do the everyday work. The Threadripper has the 3090. The shed talks to
 radios over a Wi-Fi bridge. TrueNAS holds the big files and backups, and a Pi
 runs Omni and DNS. Click a machine to see what is inside it, or explore the
