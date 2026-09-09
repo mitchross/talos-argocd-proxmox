@@ -10,6 +10,7 @@ spec:
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 240
       backoffLimit: 1
       ttlSecondsAfterFinished: 3600
       template:
@@ -42,9 +43,10 @@ spec:
               resources:
                 requests:
                   cpu: 10m
-                  memory: 32Mi
+                  memory: 768Mi
                 limits:
-                  memory: 128Mi
+                  # The 550 MiB CLI thrashed its executable cache under a 128 MiB cap.
+                  memory: 1Gi
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
