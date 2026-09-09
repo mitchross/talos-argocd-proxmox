@@ -1,0 +1,69 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: inspection-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: inspection.reliability
+      interval: 30s
+      rules:
+        - alert: PodMemoryReclaimThrashing
+          # Pod-parent cgroups retain the pressure history across container restarts.
+          expr: >-
+            (max by (namespace, pod, node) (
+              rate(container_memory_workingset_refault_file_total{pod!="",container=""}[5m])
+            ) > 1000)
+            and on (namespace, pod, node)
+            (max by (namespace, pod, node) (
+              rate(container_pressure_memory_waiting_seconds_total{pod!="",container=""}[5m])
+            ) > 0.10)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Memory reclaim is thrashing {{ $labels.namespace }}/{{ $labels.pod }}"
+            description: "Over 1000 file-page refaults/sec and 10% memory pressure for five minutes. Inspect the pod and container memory budgets, memory.stat and disk reads; zero OOM kills does not rule out this fault."
+        - alert: TemporalRecoveryJobStalled
+          expr: >-
+            (time() - max by (namespace, job_name) (
+              kube_job_status_start_time{namespace="temporal-worker-controller",job_name=~"temporal-worker-controller-identity-recovery-.*"}
+            ) > 300)
+            and on (namespace, job_name)
+            (max by (namespace, job_name) (
+              kube_job_status_active{namespace="temporal-worker-controller"}
+            ) > 0)
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Temporal recovery Job {{ $labels.job_name }} exceeded five minutes"
+            description: "The four-minute active deadline should stop this Job. Check its live template and resource budget; an older active Job is not changed when the CronJob template syncs."
+        - alert: PostgreSQLMonitoringMissing
+          # These ten namespaces currently have one application-owned Postgres each, including two differently named Deployments.
+          expr: >-
+            (max by (namespace) (
+              kube_deployment_spec_replicas{deployment=~".*-postgres|hindsight-db"}
+              or kube_deployment_spec_replicas{namespace="posthog",deployment="db"}
+            ) > 0)
+            unless on (namespace)
+            (max by (namespace) (pg_up) == 1)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Postgres monitoring is missing or unhealthy in {{ $labels.namespace }}"
+            description: "A desired Postgres Deployment has no successful pg_up sample. Check exporter credentials, named Service ports and ServiceMonitor labels. An absent target never appears in up == 0."
+        - alert: AlertmanagerWebhookDeliveryFailed
+          expr: sum by (namespace, integration) (increase(alertmanager_notifications_failed_total{integration="webhook"}[5m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Alertmanager webhook delivery failed"
+            description: "A webhook notification failed. Inspect Alertmanager and Keep logs, including database connectivity; Keep 0.52.1 can misreport database failures as HTTP 401. This alert uses the same receiver and is also visible directly in Prometheus/Grafana."

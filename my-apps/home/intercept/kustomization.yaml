@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: intercept
 
 resources:
+  - postgres/metrics.yaml
   - namespace.yaml
   - postgres-secret.yaml
   - pvc.yaml

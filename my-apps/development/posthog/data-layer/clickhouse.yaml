@@ -134,6 +134,9 @@ kind: Service
 metadata:
   name: clickhouse
   namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: clickhouse
 spec:
   ports:
   - port: 8123

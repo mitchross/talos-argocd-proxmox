@@ -9,6 +9,7 @@ helmCharts:
   namespace: langfuse
   valuesFile: values.yaml
 resources:
+- postgres-metrics.yaml
 - namespace.yaml
 - externalsecret.yaml
 - postgres.yaml

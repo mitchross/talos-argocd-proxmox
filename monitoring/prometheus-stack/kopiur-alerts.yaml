@@ -36,6 +36,21 @@ spec:
               Inspect policy {{ $labels.policy }} and its failed Snapshots:
               kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshot
               Check source volume health, repository access, and mover permissions.
+        - alert: KopiurLatestBackupFailed
+          # Schedule Ready and consecutive_failures can stay healthy after a mover permission failure.
+          expr: >-
+            min by (namespace, policy) (
+              label_replace(kopiur_snapshotpolicy_last_backup_success,
+                "namespace", "$1", "exported_namespace", "(.+)")
+            ) == 0
+          for: 15m
+          labels:
+            severity: critical
+            component: kopiur
+            category: backup
+          annotations:
+            summary: "Latest kopiur backup failed: {{ $labels.namespace }}/{{ $labels.policy }}"
+            description: "The latest backup did not succeed. Inspect Snapshot failure details and mover ownership even if SnapshotSchedule is Ready; verify a fresh successful snapshot after repair."
         - alert: KopiurBackupStale
           # The 26h threshold covers daily schedules; it is not an hourly recovery-point guarantee.
           expr: >-

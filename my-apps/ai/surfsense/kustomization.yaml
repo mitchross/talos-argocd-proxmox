@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: surfsense
 
 resources:
+  - postgres/metrics.yaml
   - llm-externalsecret.yaml
   - namespace.yaml
   - externalsecret.yaml
@@ -31,6 +32,10 @@ components:
   - ../../common/kopiur-backup
 
 configMapGenerator:
+  - name: surfsense-recovery-scripts
+    files:
+      - scripts/recover-redis-aof.sh
+      - scripts/worker-ready.py
   - name: surfsense-mink-sync-script
     files:
       - scripts/sync-mink.py

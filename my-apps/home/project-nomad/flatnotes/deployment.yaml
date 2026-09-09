@@ -18,9 +18,37 @@ spec:
         app: project-nomad-flatnotes
     spec:
       enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: preserve-damaged-index
+          image: dullage/flatnotes:v5.5.5
+          command: [timeout, "180", python, /opt/recovery/recover-index.py]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - {name: flatnotes-data, mountPath: /data}
+            - {name: recovery, mountPath: /opt/recovery, readOnly: true}
       containers:
         - name: flatnotes
           image: dullage/flatnotes:v5.5.5
+          startupProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 3
           env:
             - name: FLATNOTES_AUTH_TYPE
               value: "password"
@@ -40,6 +68,10 @@ spec:
             - name: flatnotes-data
               mountPath: /data
       volumes:
+        - name: recovery
+          configMap:
+            name: flatnotes-recovery-script
+            defaultMode: 0444
         - name: flatnotes-data
           persistentVolumeClaim:
             claimName: flatnotes-data

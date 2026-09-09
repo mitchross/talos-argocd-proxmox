@@ -7,20 +7,35 @@ resources:
   - externalsecret.yaml
   - postgres/deployment.yaml
   - postgres/service.yaml
+  - postgres/metrics.yaml
   - postgres/pvc.yaml
   - httproute.yaml
   - vpa.yaml
+
+configMapGenerator:
+  - name: keep-backend-health
+    files:
+      - scripts/readiness.py
 
 helmCharts:
   - name: keep
     repo: https://keephq.github.io/helm-charts
     version: 0.1.96
     releaseName: keep
+    namespace: keep
     valuesFile: values.yaml
     includeCRDs: true
 
 # Chart's pre-delete hook Job deletes every keep-* secret; ArgoCD would run it on every sync and nuke keep-db-secret.
 patches:
+  # Explicit namespace binds the generated ConfigMap hash into the chart Deployment.
+  - target:
+      kind: Deployment
+      name: keep-backend
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: keep
   - target:
       kind: Job
       name: delete-keep-secrets

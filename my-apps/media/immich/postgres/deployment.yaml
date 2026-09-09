@@ -22,11 +22,58 @@ spec:
       terminationGracePeriodSeconds: 60
       securityContext:
         fsGroup: 999 # postgres uid:gid in the official image
+      initContainers:
+        - name: postgres-extension-base
+          image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          command: ["/bin/sh", "/scripts/stage-postgres-extensions.sh", "base"]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: postgres-extensions
+              mountPath: /staged
+            - name: postgres-extension-scripts
+              mountPath: /scripts
+              readOnly: true
+        - name: immich-vector-extensions
+          image: ghcr.io/immich-app/postgres:17-vectorchord0.4.3@sha256:79b95b795f0911e95ffa4d092a2162c4d81a984d5629bc8f786afe0bc0657671
+          command: ["/bin/sh", "/scripts/stage-postgres-extensions.sh", "immich"]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: postgres-extensions
+              mountPath: /staged
+            - name: postgres-extension-scripts
+              mountPath: /scripts
+              readOnly: true
       containers:
         - name: postgres
-          # Immich's own image preloads vchord — a stock postgres image CANNOT run immich; keep vectorchord aligned with immich-server.
-          # Pin MAJOR: a major bump needs a manual dump/restore (data dirs are not major-version compatible).
-          image: ghcr.io/immich-app/postgres:17-vectorchord0.4.3@sha256:79b95b795f0911e95ffa4d092a2162c4d81a984d5629bc8f786afe0bc0657671
+          # Retain the tested vector extensions while patching the PostgreSQL 17 server independently.
+          image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          args: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
           securityContext:
             runAsUser: 999
             runAsGroup: 999
@@ -88,7 +135,63 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+            - name: postgres-extensions
+              mountPath: /usr/share/postgresql/17/extension
+              subPath: share/extension
+              readOnly: true
+            - name: postgres-extensions
+              mountPath: /usr/lib/postgresql/17/lib/vector.so
+              subPath: lib/vector.so
+              readOnly: true
+            - name: postgres-extensions
+              mountPath: /usr/lib/postgresql/17/lib/vchord.so
+              subPath: lib/vchord.so
+              readOnly: true
+            - name: postgres-config
+              mountPath: /etc/postgresql
+              readOnly: true
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_SOURCE_URI
+              value: "127.0.0.1:5432/immich?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: username
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: password
+          ports:
+            - containerPort: 9187
+              name: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: immich-postgres-data
+        - name: postgres-extensions
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: postgres-extension-scripts
+          configMap:
+            name: immich-postgres-scripts
+        - name: postgres-config
+          configMap:
+            name: immich-postgres-config

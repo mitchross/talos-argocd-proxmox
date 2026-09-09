@@ -100,14 +100,25 @@ spec:
             - {name: CELERY_MAX_WORKERS, value: "4"}
             - {name: CELERY_MIN_WORKERS, value: "1"}
             - {name: CELERY_MAX_TASKS_PER_CHILD, value: "50"}
+          readinessProbe:
+            exec:
+              command: [python, /opt/recovery/worker-ready.py]
+            periodSeconds: 30
+            timeoutSeconds: 8
+            failureThreshold: 3
           resources:
             requests: {cpu: 500m, memory: 1Gi}
             limits: {memory: 8Gi}
           volumeMounts:
+            - {name: recovery, mountPath: /opt/recovery, readOnly: true}
             - {name: object-store, mountPath: /app/.local_object_store}
             - {name: shared-temp, mountPath: /shared_tmp}
             - {name: global-llm-config, mountPath: /app/app/config/global_llm_config.yaml, subPath: global_llm_config.yaml, readOnly: true}
       volumes:
+        - name: recovery
+          configMap:
+            name: surfsense-recovery-scripts
+            defaultMode: 0444
         - name: object-store
           persistentVolumeClaim:
             claimName: surfsense-object-store
