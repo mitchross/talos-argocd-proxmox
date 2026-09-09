@@ -21,10 +21,17 @@ resources:
   - postgres/pvc.yaml
   - postgres/service.yaml
   - postgres/deployment.yaml
+  - postgres/metrics.yaml
   - kopiur/library.yaml
   - kopiur/immich-postgres-data.yaml
 
 configMapGenerator:
+  - name: immich-postgres-scripts
+    files:
+      - scripts/stage-postgres-extensions.sh
+  - name: immich-postgres-config
+    files:
+      - postgres/postgresql.conf
   - name: immich-scripts
     files:
       - scripts/prepare-library.sh

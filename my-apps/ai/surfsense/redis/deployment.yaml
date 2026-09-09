@@ -24,6 +24,22 @@ spec:
         # volumes mount root-owned, so give the pod the Redis group on /data.
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: preserve-and-repair-aof
+          image: redis:8-alpine
+          command: [timeout, "180", /bin/sh, /opt/recovery/recover-redis-aof.sh]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: recovery, mountPath: /opt/recovery, readOnly: true}
       containers:
         - name: redis
           image: redis:8-alpine
@@ -45,6 +61,10 @@ spec:
             - name: data
               mountPath: /data
       volumes:
+        - name: recovery
+          configMap:
+            name: surfsense-recovery-scripts
+            defaultMode: 0444
         - name: data
           persistentVolumeClaim:
             claimName: surfsense-redis-data

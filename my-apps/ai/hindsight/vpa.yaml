@@ -32,6 +32,8 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: postgres
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
+      - containerName: postgres-exporter
+        mode: "Off"

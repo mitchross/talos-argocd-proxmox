@@ -48,3 +48,47 @@ Bearer header, and appended request path were also checked with a mock transport
 Sources: [environment expansion](https://github.com/keephq/keep/blob/v0.52.1/keep/parser/parser.py),
 [startup provider updates](https://github.com/keephq/keep/blob/v0.52.1/keep/providers/providers_service.py),
 [vLLM URL and authorization behavior](https://github.com/keephq/keep/blob/v0.52.1/keep/providers/vllm_provider/vllm_provider.py).
+
+## Database restart and misleading HTTP 401
+
+The September 8 live inspection traced three rejected Alertmanager deliveries
+into Keep's `NoAuthVerifier.get_api_key` lookup: stale PostgreSQL connections
+raised `OperationalError`, which Keep 0.52.1 translated into HTTP 401. The
+placeholder credential was present and valid for the configured NOAUTH mode.
+The live `KEEP_DB_PRE_PING_ENABLED` setting was false, and `/healthcheck`
+unconditionally returned 200 while database queries failed.
+
+The Git repair enables connection validation on checkout and replaces only
+readiness with [a bounded HTTP plus read-only SQL probe](scripts/readiness.py).
+Liveness remains the HTTP worker check, so a database outage withdraws the
+backend from its Service without continuously restarting it. The probe uses
+the existing database Secret and never prints connection errors. The backend
+namespace patch lets Kustomize bind the generated ConfigMap's hash-suffixed
+name into the chart's otherwise unnamespaced Deployment.
+
+After Argo sync, with read access to the `keep` namespace:
+
+```sh
+kubectl -n keep rollout status deployment/keep-backend --timeout=180s
+kubectl -n keep exec deployment/keep-backend -c keep -- python /opt/keep-health/readiness.py
+```
+
+Both commands should succeed. Check that normal Alertmanager deliveries arrive
+and that `increase(alertmanager_notifications_failed_total{integration="webhook"}[15m])`
+is zero after the rollout window. A probe success is not an end-to-end delivery
+test. During the next planned database restart, verify the backend temporarily
+loses readiness and recovers without a trail of stale-connection 401 responses.
+Do not restart the production database just to test this change.
+
+Connection validation repairs stale pooled connections; it cannot guarantee a
+request survives a database failure during the request or before readiness
+withdraws the endpoint. Keep's upstream exception classification remains a
+limitation. The new delivery-failure alert is also visible directly in
+Prometheus/Grafana because its own receiver can be unavailable. Roll back by
+reverting this change through a PR; this restores the shallow readiness check
+and its original failure exposure.
+
+Sources: [Keep connection configuration](https://github.com/keephq/keep/blob/v0.52.1/keep/api/core/db_utils.py),
+[NOAUTH verifier](https://github.com/keephq/keep/blob/v0.52.1/keep/identitymanager/identity_managers/noauth/noauth_authverifier.py),
+[authentication exception handling](https://github.com/keephq/keep/blob/v0.52.1/keep/identitymanager/authverifierbase.py),
+[SQLAlchemy connection validation and limits](https://docs.sqlalchemy.org/en/20/core/pooling.html#disconnect-handling-pessimistic).

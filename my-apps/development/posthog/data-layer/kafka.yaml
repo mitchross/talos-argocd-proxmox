@@ -107,6 +107,9 @@ kind: Service
 metadata:
   name: kafka
   namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: kafka
 spec:
   clusterIP: None
   ports:

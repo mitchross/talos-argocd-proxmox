@@ -10,7 +10,8 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - {containerName: '*', controlledValues: RequestsOnly}
+      - {containerName: postgres, controlledValues: RequestsOnly}
+      - {containerName: postgres-exporter, mode: 'Off'}
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler

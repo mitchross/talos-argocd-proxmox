@@ -127,7 +127,7 @@ spec:
       rules:
         # kube-state-metrics emits `condition` in LOWERCASE ("true"); condition="True" matches nothing and this fires for every Running pod.
         # phase series are 0/1 per phase — filter == 1 or non-Running pods match via their value-0 row.
-        - alert: PodNetworkUnavailable
+        - alert: PodRunningNotReady
           expr: |
             (kube_pod_status_phase{phase="Running"} == 1)
             unless on (namespace, pod)
@@ -136,5 +136,5 @@ spec:
           labels:
             severity: warning
           annotations:
-            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} network may be unavailable"
-            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is running but not ready, which may indicate network issues."
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is running but not ready"
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has failed readiness for ten minutes. Inspect readiness probes, dependencies and container logs; this signal does not establish a network fault."

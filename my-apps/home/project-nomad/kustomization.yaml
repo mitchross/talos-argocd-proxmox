@@ -57,6 +57,9 @@ components:
   - ../../common/kopiur-backup
 
 configMapGenerator:
+  - name: flatnotes-recovery-script
+    files:
+      - flatnotes/scripts/recover-index.py
   - name: project-nomad-scripts
     files:
       - scripts/migrate.sh
