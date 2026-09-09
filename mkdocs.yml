@@ -95,7 +95,6 @@ extra_javascript:
 
 # 8 top-level sections. Long topics nest one level so no section feels crowded.
 nav:
-  - Diagnostics Hardware Report: diagnostics.md
   - Overview & architecture:
       - Home — the big picture: index.md
       - Explore the lab: lab.md
@@ -149,3 +148,4 @@ nav:
       - Multicluster — PRD: domains/multicluster/prd.md
       - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
       - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
+  - Diagnostics Hardware Report: diagnostics.md
