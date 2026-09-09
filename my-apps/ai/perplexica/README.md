@@ -15,21 +15,3 @@ startup. Local Transformers embeddings and SearXNG remain unchanged.
 
 After rollout, run a search and check its calls in
 [AI observability](../../../docs/domains/ai-gpu/ai-observability.md).
-
-### Backup ownership
-
-The Vane image runs as uid 0. The credential-bearing `config.json` is therefore
-root-owned mode 0600; the existing SQLite file is uid/gid 568 mode 0664. Both the
-SnapshotPolicy and Restore mover use **uid 0, gid 568**, with supplemental group
-568 and the namespace's `privileged-movers` annotation. This lets the mover read
-the config as its owner and SQLite through its group, while dropping all
-capabilities. It does **not** grant access to arbitrary non-root mode-0600 files.
-Do not revert the mover to uid 568 while the seed and application still run as
-root, or make the API-key-bearing config world-readable.
-
-After rollout, the next scheduled Snapshot must reach `Succeeded` with nonzero
-files and include config plus SQLite. Prove recovery using an isolated restore
-PVC/application before calling backups fixed. If an upstream image changes its
-runtime user or creates differently owned private files, revisit this contract.
-Rollback is the previous mover identity; it restores the known backup failure,
-so retain the repaired identity unless the runtime ownership is changed too.

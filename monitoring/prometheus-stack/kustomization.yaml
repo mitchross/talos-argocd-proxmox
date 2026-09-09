@@ -9,7 +9,6 @@ resources:
   - grafana-http-route.yaml
   - prometheus-http-route.yaml
   - custom-alerts.yaml
-  - inspection-alerts.yaml
   - custom-servicemonitors.yaml
   - longhorn-alerts.yaml # volume/node health (was longhorn-backup-alerts.yaml; dead backup-target alerts dropped 2026-07-06)
   - kopiur-alerts.yaml # kopiur backup staleness/failure alerts (the follow-up promised when volsync-alerts were retired 2026-06-27)

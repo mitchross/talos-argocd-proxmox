@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare collector, backup or inspection alert rules and fixtures for promtool."""
+"""Prepare collector or backup alert rules and fixtures for promtool."""
 import argparse
 from pathlib import Path
 import sys
@@ -26,7 +26,7 @@ def prepare_tests(source_dir: Path, output_dir: Path, suite: str = "collector") 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output_dir", type=Path, help="Directory for promtool input files")
-    parser.add_argument("--suite", choices=("collector", "kopiur", "inspection"), default="collector")
+    parser.add_argument("--suite", choices=("collector", "kopiur"), default="collector")
     args = parser.parse_args()
     try:
         source_dir = SOURCE_DIR if args.suite == "collector" else REPO_ROOT / "monitoring/prometheus-stack"

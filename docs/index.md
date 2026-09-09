@@ -124,6 +124,3 @@ the label-driven backup contract, the off-cluster repository, the
 restore-canary idea, the sync-wave bootstrap — but the image tags, hostnames,
 and 1Password item names are not. Start with
 [storage-architecture.md](storage-architecture.md).
-
-The [September 2026 repair rollout](audits/2026-09-09-repair-rollout.md) tracks
-the immediate software repairs, deployment checks and remaining hardware work.

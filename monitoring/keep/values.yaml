@@ -61,26 +61,6 @@ backend:
       memory: 512Mi
     limits:
       memory: 1Gi
-  extraVolumes:
-    - name: backend-health
-      configMap:
-        name: keep-backend-health
-  extraVolumeMounts:
-    - name: backend-health
-      mountPath: /opt/keep-health
-      readOnly: true
-  healthCheck:
-    enabled: true
-    probes:
-      readinessProbe:
-        httpGet: null
-        exec:
-          command: [python, /opt/keep-health/readiness.py]
-        initialDelaySeconds: 10
-        periodSeconds: 5
-        timeoutSeconds: 5
-        failureThreshold: 1
-        successThreshold: 1
   provision:
     providers:
       llama-cpp-local:
