@@ -10,9 +10,22 @@ radios over a Wi-Fi bridge. TrueNAS holds the big files and backups, and a Pi
 runs Omni and DNS. Click a machine to see what is inside it, or explore the
 private, public and shed network paths below.
 
-<div id="lab-explorer">
-  <p>The interactive inventory is loading. The <a href="../audits/2026-09-05-inventory/">full written inventory</a> is also available.</p>
-</div>
+=== "Lab Explorer"
+
+    <div id="lab-explorer">
+      <p>The interactive inventory is loading. The <a href="../audits/2026-09-05-inventory/">full written inventory</a> is also available.</p>
+    </div>
+
+=== "Diagnostics Hardware Report"
+
+    The September 8 inspection follows physical drives through hosts, nodes,
+    workloads and recovery. Use the seven stages inside the report to explore
+    measured health, benchmarks and repair recommendations.
+
+    [Open the report full screen](assets/inspection/index.html){ .md-button .md-button--primary }
+    [Read the written audit](audits/2026-09-08-live-audit.md){ .md-button }
+
+    <iframe src="../assets/inspection/index.html" title="Diagnostics Hardware Report — September 8, 2026" loading="lazy" style="width:100%;height:85vh;min-height:600px;border:1px solid var(--md-default-fg-color--lightest);border-radius:12px;"></iframe>
 
 ## What I would change first
 
