@@ -12,6 +12,7 @@ resources:
   - temporal-workers/temporal-connection.yaml
   - temporal-workers/ebay-externalsecret.yaml
   - temporal-workers/temporal-worker-deployment.yaml
+  - temporal-retirement-rbac.yaml
   - vpa.yaml
   - kopiur/deal-scout-data.yaml
 

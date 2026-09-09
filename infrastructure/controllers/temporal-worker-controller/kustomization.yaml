@@ -5,11 +5,17 @@ namespace: temporal-worker-controller
 resources:
   - namespace.yaml
   - manager-identity-recovery.yaml
+  - maintenance.yaml
 
 configMapGenerator:
   - name: temporal-worker-controller-identity-recovery-scripts
     files:
       - recover-manager-identity.sh=scripts/recover-manager-identity.sh
+  - name: temporal-worker-maintenance-scripts
+    files:
+      - scripts/maintenance.py
+      - scripts/retire_inactive_versions.py
+      - scripts/retire_stuck_recovery.py
 
 # Two OCI charts: CRDs (upgradeable independently) and the controller itself.
 helmCharts:
