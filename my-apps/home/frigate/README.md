@@ -80,10 +80,20 @@ through a PR; keep the Coral detector and USB mount in place.
 
 Frigate's stock go2rtc 1.9.14 connected to Google but repeatedly lost usable
 frames with missing H.264 parameter sets and local RTSP 404 errors. This
-application supplies [bober10113's session-fix branch](https://github.com/bober10113/go2rtc/tree/codex/b101-nest-sessionfix)
-at commit `222d37fef8bdc2c8ce2c304fe5a2d5d3b27eb5dc`. The fork adds per-stream
+application supplies [bober10113's recovery follow-up](https://github.com/bober10113/go2rtc/tree/codex/b101-v63-recovery-followup)
+at commit `ec152af109f3f2ead77b81650772444a91d3fb44`. The fork adds per-stream
 session state, recurring renewal, keyframe requests and recovery coordination
-for the derived FFmpeg streams. It is a community fork, not an upstream release.
+for the derived FFmpeg streams. The follow-up separates successful-publish
+observation from retry cooldown, rejects stale recovery callbacks, avoids
+repeating completed video warm-up, bounds command-slot waiting, closes failed
+WebRTC peers, and classifies Google errors without logging arbitrary response
+bodies. It is a community fork, not an upstream release.
+
+The publish regression test reproduces an incorrect 45-second cooldown on the
+previous `222d37f` revision and passes on this revision. The image build runs
+that test plus Nest command-admission, error-redaction, and failed-peer cleanup
+regressions. This fixes verified recovery defects; it does not guarantee that
+Google will make every camera available.
 
 `go2rtc-image/Dockerfile` builds that exact revision. The image workflow tests
 PRs and publishes `ghcr.io/mitchross/frigate-go2rtc` only from `main`. Change
@@ -99,11 +109,16 @@ read-only at its supported `/config/go2rtc` override path. Nothing is written
 to the backed-up config PVC, so a rollback does not leave a custom binary
 behind. VPA targets the Frigate container by name.
 
-Verify the startup log identifies `1.9.14+dev.222d37f`, all six cameras maintain
+Verify the startup log identifies `1.9.14+dev.ec152af`, all six cameras maintain
 nonzero FPS, and successful `ExtendWebRtcStream` operations continue through
 multiple five-minute session windows. Pod readiness alone is insufficient.
-The pre-merge single-camera trial is evidence for this source revision, not
-proof of long-term stability across every Nest model or on the HP node.
+The isolated pre-merge trial still saw a stream disconnect and a doorbell
+capture timeout despite successful session requests. Sustained production
+recovery and recording continuity remain rollout acceptance checks.
+
+To roll back this follow-up, revert the source pin, image VERSION and
+init-container tag together through a PR to `b101-222d37f-v1`. Keep the buffered
+input templates and Coral configuration in place.
 
 To return to bundled go2rtc, revert the override commit through a PR. That
 removes the init container and binary mount while retaining Frigate RC2 and
