@@ -1,0 +1,30 @@
+all:
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  children:
+    physical_linux:
+      children:
+        proxmox:
+          vars:
+            ansible_user: root
+          hosts:
+            gpu:
+              ansible_host: 192.168.10.14
+            dell:
+              ansible_host: 192.168.10.16
+            sff:
+              ansible_host: 192.168.10.21
+            elite:
+              ansible_host: 192.168.10.22
+            shed:
+              ansible_host: 192.168.10.20
+        management:
+          hosts:
+            pi:
+              ansible_host: 192.168.10.15
+              ansible_user: vanillax
+    appliances:
+      hosts:
+        nas:
+          ansible_host: 192.168.10.133
+          ansible_user: truenas_admin

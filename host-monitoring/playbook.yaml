@@ -1,0 +1,25 @@
+- name: Export physical Linux host and drive metrics
+  hosts: physical_linux
+  become: true
+  serial: 1
+  vars:
+    node_exporter_version: 1.12.1
+    node_exporter_web_listen_address: "{{ ansible_host }}:9100"
+    node_exporter_enabled_collectors: []
+    node_exporter_disabled_collectors:
+      - textfile
+    smartctl_exporter_version: 0.14.0
+    smartctl_exporter_web_listen_address: "{{ ansible_host }}:9633"
+    # SMART ioctls require root; the upstream Ansible role defaults to an unprivileged user.
+    smartctl_exporter_system_user: root
+    smartctl_exporter_system_group: root
+    smartctl_exporter_smartctl_interval: 60s
+    smartctl_exporter_smartctl_rescan: 5m
+  pre_tasks:
+    - name: Ensure the standard SMART utility is installed
+      ansible.builtin.package:
+        name: smartmontools
+        state: present
+  roles:
+    - prometheus.prometheus.node_exporter
+    - prometheus.prometheus.smartctl_exporter
