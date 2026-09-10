@@ -17721,7 +17721,7 @@
   ],
   "baselineAt": "2026-09-08T23:41:00Z",
   "reinspection": {
-    "checkedAt": "2026-09-10T23:17:00Z",
+    "checkedAt": "2026-09-10T23:29:32Z",
     "disks": {
       "checkedAt": "2026-09-10T22:29:19.108847+00:00",
       "label": "September 10 reinspection",
@@ -17790,7 +17790,7 @@
       "limitations": "The application table below remains the September 9 inventory. Use Grafana/Argo for current status; this page is a dated service record."
     },
     "health": {
-      "checkedAt": "2026-09-10T23:15:00Z",
+      "checkedAt": "2026-09-10T23:29:32Z",
       "label": "September 10 reinspection",
       "status": "danger",
       "summary": "Redis and Flatnotes repairs are verified; SurfSense PostgreSQL integrity and two attachment faults remain.",
@@ -17799,9 +17799,10 @@
         "SurfSense remains in recovery: its PostgreSQL source filesystem has confirmed ext4 corruption, not just a broken backup clone. The 22:47 backup clone failed filesystem checks; the prior 21:49 backup succeeded. PostgreSQL answering queries does not establish filesystem integrity. The 49.2 MB native dump from 23:01 UTC is preserved locally and on the NAS with matching hashes. At 23:06 UTC an isolated restore and database/index checks passed across 75 user tables. Original role ownership and ACL restoration were not tested; the source filesystem remains unrepaired.",
         "Flatnotes was repaired at 22:38 UTC: health OK and its rebuilt index opens with zero documents. No Markdown notes existed in the inspected data, so this is restored operation\u2014not recovered notes.",
         "Open WebUI and Intercept PostgreSQL still fail attachment: snapshot metadata files are zero bytes and reach EOF, while replica data images remain present. No repair is claimed, and this is not proof of failed physical media or a particular hardware cause. At 23:11\u201323:15 UTC, their exact last successful backups restored in isolation: Open WebUI main/Chroma SQLite integrity checks passed; Intercept PostgreSQL 18.6 recovered normally and passed 327 heap and 502 B-tree checks. These are tested recovery points, not production repairs. Potential gaps before the 22:03 fault are nearly 19 hours and about 2 minutes respectively; full application behavior and Kubernetes cutover were not tested.",
-        "PostHog capacity and Perplexica permissions are in open PR #2350. Ingestion, retention, a successful new backup and a real isolated restore remain pending merge and verification."
+        "PostHog capacity and Perplexica permissions are in open PR #2350. Ingestion, retention, a successful new backup and a real isolated restore remain pending merge and verification.",
+        "At 23:27\u201323:29 UTC, 67 mounted ext4 filesystems were checked: 66 reported zero recorded errors; only the known SurfSense PostgreSQL filesystem had errors (34, unchanged since 22:19). Counts by worker: SFF 17, Elite 7, Dell 10, Shed 1 and GPU 32. No additional matching kernel storage errors were found on the four non-GPU workers; XFS boot log recovery alone does not establish corruption."
       ],
-      "limitations": "Stop migrations and broad replication while source integrity is unresolved. Successful Redis checks do not certify SurfSense PostgreSQL or its backups. Historical workload/backup tables below retain their September 9 date."
+      "limitations": "Stop migrations and broad replication while source integrity is unresolved. Successful Redis checks do not certify SurfSense PostgreSQL or its backups. Historical workload/backup tables below retain their September 9 date. This sweep reads mounted-filesystem counters and filtered kernel logs; it is not offline fsck or a full media scan. The detached, failed Open WebUI/Intercept volumes are excluded."
     },
     "plan": {
       "checkedAt": "2026-09-10T23:17:00Z",
@@ -17832,7 +17833,7 @@
           "priority": "P1",
           "priorityLabel": "Fix current outage",
           "title": "Open WebUI / Intercept: repair attachment metadata",
-          "state": "Unresolved",
+          "state": "Backup restore proven; production still broken",
           "evidence": "Zero-byte Longhorn snapshot metadata causes EOF; data images still exist. Both last successful backups passed isolated database restore checks at 23:11\u201323:15 UTC. Open WebUI main/Chroma SQLite passed; Intercept passed native WAL recovery and 327 heap/502 B-tree checks.",
           "action": "Preserve the original replica images and choose a reviewed recovery path. The tested backups leave possible gaps of nearly 19 hours for Open WebUI and about 2 minutes for Intercept; production remains unchanged. Validate application behavior after cutover; no physical-disk replacement diagnosis is established.",
           "verify": "Volumes attach and each app reads its intended data; verify fresh backups.",
@@ -19853,5 +19854,5 @@
       "Two copies tolerate one host loss, not corruption, two losses, or loss of the sole control plane. Resolve flash-only selectors and verify actual restores before placement changes."
     ]
   },
-  "postRebootCheckedAt": "2026-09-10T23:17:00Z"
+  "postRebootCheckedAt": "2026-09-10T23:29:32Z"
 }
