@@ -12,7 +12,7 @@ resources:
 helmCharts:
   - name: holmes
     repo: https://robusta-charts.storage.googleapis.com
-    version: 0.40.0
+    version: 0.41.0
     releaseName: holmes
     valuesFile: values.yaml
     includeCRDs: true
