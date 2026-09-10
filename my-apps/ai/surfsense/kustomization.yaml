@@ -30,6 +30,37 @@ resources:
 components:
   - ../../common/kopiur-backup
 
+# Pause writers before preserving the damaged PostgreSQL filesystem; keep PostgreSQL running for the final dump.
+patches:
+  - target:
+      kind: Deployment
+      name: surfsense|surfsense-beat|surfsense-zero
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target:
+      kind: CronJob
+      name: surfsense-mink-sync
+    patch: |-
+      - op: add
+        path: /spec/suspend
+        value: true
+  - target:
+      kind: SnapshotPolicy
+      name: surfsense-postgres-data
+    patch: |-
+      - op: add
+        path: /spec/suspend
+        value: true
+  - target:
+      kind: Job
+      name: surfsense-migrations|surfsense-credit-policy-v1
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/argocd.argoproj.io~1hook
+        value: Skip
+
 configMapGenerator:
   - name: surfsense-mink-sync-script
     files:
