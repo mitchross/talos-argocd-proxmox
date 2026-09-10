@@ -21,7 +21,7 @@ spec:
         feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
       initContainers:
       - name: install-go2rtc
-        image: ghcr.io/mitchross/frigate-go2rtc:b101-ec152af-v1
+        image: ghcr.io/mitchross/frigate-go2rtc:b101-ec152af-v2
         command: ["/bin/cp", "/go2rtc", "/custom/go2rtc"]
         resources:
           requests:
