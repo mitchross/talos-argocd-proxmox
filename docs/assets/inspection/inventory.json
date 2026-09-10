@@ -17721,7 +17721,7 @@
   ],
   "baselineAt": "2026-09-08T23:41:00Z",
   "reinspection": {
-    "checkedAt": "2026-09-10T23:06:00Z",
+    "checkedAt": "2026-09-10T23:17:00Z",
     "disks": {
       "checkedAt": "2026-09-10T22:29:19.108847+00:00",
       "label": "September 10 reinspection",
@@ -17790,7 +17790,7 @@
       "limitations": "The application table below remains the September 9 inventory. Use Grafana/Argo for current status; this page is a dated service record."
     },
     "health": {
-      "checkedAt": "2026-09-10T23:06:00Z",
+      "checkedAt": "2026-09-10T23:15:00Z",
       "label": "September 10 reinspection",
       "status": "danger",
       "summary": "Redis and Flatnotes repairs are verified; SurfSense PostgreSQL integrity and two attachment faults remain.",
@@ -17798,13 +17798,13 @@
         "SurfSense Redis was repaired at 22:43 UTC and verified at 22:55: PONG, persistence checks passed, and 33 recent tasks observed. The native checker discarded 11,773 bytes from the bad AOF tail; original files are retained locally and on the NAS.",
         "SurfSense remains in recovery: its PostgreSQL source filesystem has confirmed ext4 corruption, not just a broken backup clone. The 22:47 backup clone failed filesystem checks; the prior 21:49 backup succeeded. PostgreSQL answering queries does not establish filesystem integrity. The 49.2 MB native dump from 23:01 UTC is preserved locally and on the NAS with matching hashes. At 23:06 UTC an isolated restore and database/index checks passed across 75 user tables. Original role ownership and ACL restoration were not tested; the source filesystem remains unrepaired.",
         "Flatnotes was repaired at 22:38 UTC: health OK and its rebuilt index opens with zero documents. No Markdown notes existed in the inspected data, so this is restored operation\u2014not recovered notes.",
-        "Open WebUI and Intercept PostgreSQL still fail attachment: snapshot metadata files are zero bytes and reach EOF, while replica data images remain present. No repair is claimed, and this is not proof of failed physical media or a particular hardware cause.",
+        "Open WebUI and Intercept PostgreSQL still fail attachment: snapshot metadata files are zero bytes and reach EOF, while replica data images remain present. No repair is claimed, and this is not proof of failed physical media or a particular hardware cause. At 23:11\u201323:15 UTC, their exact last successful backups restored in isolation: Open WebUI main/Chroma SQLite integrity checks passed; Intercept PostgreSQL 18.6 recovered normally and passed 327 heap and 502 B-tree checks. These are tested recovery points, not production repairs. Potential gaps before the 22:03 fault are nearly 19 hours and about 2 minutes respectively; full application behavior and Kubernetes cutover were not tested.",
         "PostHog capacity and Perplexica permissions are in open PR #2350. Ingestion, retention, a successful new backup and a real isolated restore remain pending merge and verification."
       ],
       "limitations": "Stop migrations and broad replication while source integrity is unresolved. Successful Redis checks do not certify SurfSense PostgreSQL or its backups. Historical workload/backup tables below retain their September 9 date."
     },
     "plan": {
-      "checkedAt": "2026-09-10T23:06:00Z",
+      "checkedAt": "2026-09-10T23:17:00Z",
       "label": "September 10 reinspection",
       "status": "warning",
       "summary": "Keep the Dell, repair active data faults, and add selective protection before buying another host.",
@@ -17812,7 +17812,9 @@
         "Completed: Temporal/DCGM resource repairs, SFF post-reboot latency verification, SurfSense Redis repair and Flatnotes index repair. Completed operation is separate from proof of complete data recovery.",
         "Next: preserve and recover SurfSense PostgreSQL, resolve Open WebUI/Intercept attachment metadata, and review PR #2350. Verify application behavior, filesystem integrity and real backup restores.",
         "The initial selective-copy tier needs $0 of new hardware. Elite\u2019s 1 TB compatible NVMe is planned preventive work; a DDR4 tall NUC 13ANH with 32 GB is an optional future Dell replacement, not an immediate purchase.",
-        "Retiring Dell now removes the spare wired rebuild destination. The current X399 runbook excludes etcd on the GPU host; enough aggregate RAM does not override that hardware constraint."
+        "Retiring Dell now removes the spare wired rebuild destination. The current X399 runbook excludes etcd on the GPU host; enough aggregate RAM does not override that hardware constraint.",
+        "For three physical control planes, keeping Dell and upgrading Elite to 64 GiB DDR5 provides more recovery room than replacing Dell with a 32 GiB mini. A mini with an 8 GiB control plane has only about 16 GiB for its worker after host reserve, not the earlier 24 GiB worker-only budget. These are unimplemented planning options; 8 GiB control-plane sizing still needs validation.",
+        "Check the shutdown workflow before another host reboot: observed shutdown/reboot overlap deserves correction, but the installed UI and any causal connection to corruption remain unverified."
       ],
       "limitations": "Capacity and hardware choices below are not implemented. Each disk migration, VM resize or replication change needs its own reviewed procedure and acceptance checks.",
       "findings": [
@@ -17831,10 +17833,20 @@
           "priorityLabel": "Fix current outage",
           "title": "Open WebUI / Intercept: repair attachment metadata",
           "state": "Unresolved",
-          "evidence": "Zero-byte Longhorn snapshot metadata causes EOF; data images still exist.",
-          "action": "Preserve the originals and validate a supported recovery path before changing metadata. No physical-disk replacement diagnosis is established.",
+          "evidence": "Zero-byte Longhorn snapshot metadata causes EOF; data images still exist. Both last successful backups passed isolated database restore checks at 23:11\u201323:15 UTC. Open WebUI main/Chroma SQLite passed; Intercept passed native WAL recovery and 327 heap/502 B-tree checks.",
+          "action": "Preserve the original replica images and choose a reviewed recovery path. The tested backups leave possible gaps of nearly 19 hours for Open WebUI and about 2 minutes for Intercept; production remains unchanged. Validate application behavior after cutover; no physical-disk replacement diagnosis is established.",
           "verify": "Volumes attach and each app reads its intended data; verify fresh backups.",
           "status": "danger"
+        },
+        {
+          "priority": "P1",
+          "priorityLabel": "Check before maintenance",
+          "title": "Wait for guests to stop before rebooting a host",
+          "state": "Observed overlap; cause not established",
+          "evidence": "September 10 logs on all four wired hosts show guest shutdown requests followed by host reboot only 7\u20138 seconds later. Proxmox then reported shutdown-lock timeouts and volume-deactivation errors; original tasks eventually reported OK. Reviewed public ProxCenter inventory reboot code in v1.4.8 and the source identifying as v1.4.9 waits a fixed five seconds after asynchronous guest requests without checking completion. The installed UI/version and action used are unverified; neither this overlap nor the source defect proves forced termination or the corruption cause.",
+          "action": "Before another reboot, complete Talos/storage maintenance, wait for successful guest shutdown tasks and freshly verify every guest is stopped. Abort on failure or timeout. Reboot one physical host at a time and pass cluster/application health checks before the next; increasing a fixed sleep is not the fix.",
+          "verify": "Confirm the actual UI/version and action used. A maintenance rehearsal waits for stopped guests, records clean completion without overlapping shutdowns, and verifies node, storage and app recovery before another host proceeds.",
+          "status": "warning"
         },
         {
           "priority": "P1",
@@ -19841,5 +19853,5 @@
       "Two copies tolerate one host loss, not corruption, two losses, or loss of the sole control plane. Resolve flash-only selectors and verify actual restores before placement changes."
     ]
   },
-  "postRebootCheckedAt": "2026-09-10T23:06:00Z"
+  "postRebootCheckedAt": "2026-09-10T23:17:00Z"
 }

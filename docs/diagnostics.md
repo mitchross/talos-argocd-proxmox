@@ -45,6 +45,19 @@ and unmerged in this inspection: PostHog's proposed 8→32 GiB claim and Perplex
 permissions are not yet verified repairs. Ingestion, retention, fresh backups
 and isolated restores still need acceptance checks after deployment.
 
+The Open WebUI and Intercept backups passed isolated database restore checks
+on September 10 at 23:11–23:15 UTC; production remains unrepaired. Those recovery
+points leave possible gaps of nearly 19 hours and about 2 minutes before the
+attachment fault, respectively. Application behavior and production cutover
+still need verification.
+
+Before another host reboot, wait for successful guest shutdown tasks and verify
+the guests are stopped; proceed one physical host at a time with health checks.
+The report records overlapping shutdowns. Reviewed
+[ProxCenter inventory reboot code](https://github.com/adminsyspro/proxcenter-ui/blob/a1555e8f06c3c48be8c0174b5950901894b7528b/frontend/src/app/%28dashboard%29/infrastructure/inventory/components/InventoryDialogs.tsx#L1380)
+uses a fixed five-second wait, but the installed UI/version and action used remain
+unverified. This does not establish that the workflow caused the corruption.
+
 A disk move or replacement needs a separate reviewed migration with verified
 backups and surviving replicas. See the [storage architecture](storage-architecture.md)
 and [disaster recovery runbook](disaster-recovery.md) for the recovery requirements.
