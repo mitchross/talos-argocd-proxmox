@@ -18,10 +18,12 @@ spec:
     keepWeekly: 6
     keepMonthly: 3
   mover:
+    # config.json is 0:568/0600; db.sqlite is 568:568/0664.
+    # UID 0 reads the config; GID 568 reads the database without DAC capabilities.
     securityContext:
-      runAsUser: 568
+      runAsUser: 0
       runAsGroup: 568
-      runAsNonRoot: true
+      runAsNonRoot: false
     podSecurityContext:
       fsGroup: 568
       supplementalGroups:
@@ -51,10 +53,11 @@ spec:
       name: perplexica-data
       offset: 0
   mover:
+    # Restore as the root-running application, retaining the shared data group.
     securityContext:
-      runAsUser: 568
+      runAsUser: 0
       runAsGroup: 568
-      runAsNonRoot: true
+      runAsNonRoot: false
     podSecurityContext:
       fsGroup: 568
       supplementalGroups:
