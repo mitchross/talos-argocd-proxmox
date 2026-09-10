@@ -1,9 +1,17 @@
 # Diagnostics Hardware Report
 
-The September 9 reinspection covers physical drives, hosts, Talos nodes,
-resource use, replicas, applications and recovery. Click any drive for the
-reason behind its recommendation, urgency, impact and replacement constraints.
-Each section dates its current observations and retains repair history separately.
+The September 10 post-reboot inspection covers drives, hosts, Talos nodes,
+applications and recovery. **Keep the Dell for now:** normal compute demand fits,
+but its spare wired failure domain matters when another machine fails. The
+**Repair plan** tab shows the capacity budget, selective data-copy proposal and
+RAM reuse options. These hardware and placement changes are not implemented.
+
+The SFF control-plane SSD now meets the sampled etcd latency targets; replacement
+is no longer the immediate recommendation. SurfSense Redis and Flatnotes were
+repaired, while SurfSense PostgreSQL has confirmed filesystem corruption.
+Longhorn attachment metadata, PostHog capacity and backup/restore work also
+remain. Resolve data integrity before migrations or broad copy changes.
+Flatnotes had no Markdown notes to recover. Detailed September 8/9 tables retain their dates beneath the newer inspection summaries.
 
 [Open full screen](assets/inspection/index.html){ .md-button .md-button--primary }
 [Open in Grafana](https://grafana.vanillax.me/d/homelab-diagnostics){ .md-button }
@@ -18,13 +26,24 @@ memory come from standard collectors on each machine. Kubernetes health,
 Longhorn copies, application disk space and backup results come from the
 cluster's existing collectors.
 
-The host collectors must be installed from the reviewed
+All 14 physical collectors were reachable on September 10 at 22:29 UTC, and
+all 24 drives reported passing SMART status. The installation source is the reviewed
 [host monitoring configuration](https://github.com/mitchross/talos-argocd-proxmox/tree/main/host-monitoring).
-That configuration includes installation, verification and rollback. Merging
-the dashboard alone does not install software on Proxmox or TrueNAS. Until a
-collector is running, Grafana shows missing readings; it does not substitute
-the inspection's old numbers. A drive reporting a passing self-check still
+That configuration includes installation, verification and rollback. If a
+collector becomes unavailable, Grafana shows missing readings; it does not
+substitute the inspection's old numbers. A drive reporting a passing self-check still
 needs its errors, temperature and performance considered.
+
+The initial proposal protects 32 selected app volumes with two copies, adding
+about **25.82 GiB of current data** and **414 GiB of scheduled claims**. Existing
+storage has room for that tier with explicit growth and staging allowances;
+it does not require buying drives first. A compatible **1 TB Elite NVMe** remains
+a preventive purchase: 74% endurance used is not a failure probability.
+
+[PR #2350](https://github.com/mitchross/talos-argocd-proxmox/pull/2350) is open
+and unmerged in this inspection: PostHog's proposed 8→32 GiB claim and Perplexica
+permissions are not yet verified repairs. Ingestion, retention, fresh backups
+and isolated restores still need acceptance checks after deployment.
 
 A disk move or replacement needs a separate reviewed migration with verified
 backups and surviving replicas. See the [storage architecture](storage-architecture.md)
