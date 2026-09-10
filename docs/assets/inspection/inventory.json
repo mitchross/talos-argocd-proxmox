@@ -395,7 +395,7 @@
       "model": "ProLiant DL360 Gen9",
       "board": "ProLiant DL360 Gen9",
       "role": "Shared files + RustFS backups",
-      "nodeIps": "\u2014",
+      "nodeIps": "—",
       "zone": "nas",
       "cpu": "Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz",
       "logicalCpus": 28,
@@ -517,7 +517,7 @@
       "model": "Raspberry Pi5",
       "board": null,
       "role": "Omni + Technitium DNS",
-      "nodeIps": "\u2014",
+      "nodeIps": "—",
       "zone": "pi",
       "cpu": "Cortex-A76",
       "logicalCpus": 4,
@@ -545,7 +545,7 @@
       "model": "PNY CS900 1TB SSD",
       "bytes": 1000204886016,
       "role": "Control-plane storage",
-      "path": "PNY \u2192 hp-sff-cp \u2192 VM101 scsi0 100GiB \u2192 Talos .79 sda6 \u2192 etcd",
+      "path": "PNY → hp-sff-cp → VM101 scsi0 100GiB → Talos .79 sda6 → etcd",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -599,31 +599,32 @@
       "changes": {},
       "assessment": {
         "priority": "P1",
-        "verdict": "Investigate control-plane latency",
-        "reason": "The etcd commit path was slow; the SSD is one candidate, not a proven sole cause.",
+        "verdict": "Find why cluster storage is slow",
+        "reason": "The cluster is slow to save its settings. This SSD may be involved, but we haven’t proved it’s faulty. Check disk delays and CPU load before replacing it.",
         "evidence": [
-          "Baseline etcd p99 was 43.8 ms (worst sampled 59.9 ms over 24 hours); host CPU contention is a separate candidate.",
-          "September 9 at 22:00 UTC: etcd fsync p99 42.26 ms and backend commit p99 60.52 ms; source attribution still requires physical/CPU correlation.",
-          "Fresh hardware check 2026-09-09T22:01:42.472617+00:00: SMART overall passed; temperature 33\u00b0C; power-on hours 24,616 h.",
-          "Fresh 55-second passive I/O: reads 0.027 MiB/s, writes 0.761 MiB/s, queue 0.257; workload-dependent, not a saturation benchmark."
+          "Original check: the slowest 1% cutoff for the cluster database (etcd) was 43.8 ms; the worst sampled cutoff was 59.9 ms over 24 hours. Competing demands for the physical machine’s CPU could also cause delays.",
+          "September 9 at 22:00 UTC: 99% of etcd disk saves finished within 42.26 ms and 99% of database updates within 60.52 ms. Compare these delays with the physical disk and CPU measurements before blaming a component.",
+          "Fresh hardware check 2026-09-09T22:01:42.472617+00:00: built-in health check passed; temperature 33°C; power-on hours 24,616 h.",
+          "Disk activity watched for 55 seconds: reads 0.027 MiB/s, writes 0.761 MiB/s, average unfinished requests 0.257; this reflects the apps running then, not the disk’s maximum speed."
         ],
-        "impact": "Slow or unavailable etcd can delay API writes and reconciliation across the cluster.",
+        "impact": "Slow saves can make Kubernetes take longer to accept changes or restart and move apps. If this database becomes unavailable, cluster management can stop working.",
         "options": [
-          "Compare etcd fsync with physical latency and Proxmox CPU steal under the same workload.",
-          "If storage remains the bottleneck, move the control-plane disk to compatible storage with documented power-loss protection."
+          "Measure database saves, physical-disk write times and time the VM waits for Proxmox CPU at the same time.",
+          "If the disk is still the cause, move the cluster-management VM’s storage to a compatible drive with documented protection against power-loss data loss."
         ],
         "constraints": [
-          "The control-plane guest disk is 100 GiB; verify source volume layout and recovery before migration.",
-          "Do not split the working enterprise mirror merely to obtain a drive."
+          "The cluster-management VM has a 100 GiB disk. Confirm how its data is laid out and how to recover it before moving it.",
+          "Do not take one drive from a working duplicate-data pair just to obtain a replacement."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.472617+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.472617+00:00",
+        "priorityLabel": "Investigate soon"
       },
-      "action": "Investigate control-plane latency",
+      "action": "Find why cluster storage is slow",
       "note": "The etcd commit path was slow; the SSD is one candidate, not a proven sole cause.",
       "baselineSample": {
         "readIops": 0.2,
@@ -643,7 +644,7 @@
       "model": "PNY CS900 1TB SSD",
       "bytes": 1000204886016,
       "role": "Proxmox + SFF worker",
-      "path": "PNY \u2192 pve \u2192 VM100 scsi0 128GiB + scsi1 690GiB \u2192 Talos .150 boot + Longhorn",
+      "path": "PNY → pve → VM100 scsi0 128GiB + scsi1 690GiB → Talos .150 boot + Longhorn",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -697,16 +698,16 @@
       "changes": {},
       "assessment": {
         "priority": "P2",
-        "verdict": "Keep; improve placement",
-        "reason": "One consumer SSD carries the host, worker boot, and persistent application data. The concern is shared failure impact, not a measured dead disk.",
+        "verdict": "Keep; spread important data",
+        "reason": "One SSD runs the physical machine, starts its Kubernetes worker and stores app data. If it fails, all three are affected. No current drive failure was measured.",
         "evidence": [
-          "The baseline sample averaged 1.18 ms writes and queue 0.24; SMART passed, but endurance was not reported.",
-          "Fresh hardware check 2026-09-09T22:01:42.513087+00:00: SMART overall passed; temperature 33\u00b0C; power-on hours 24,791 h.",
-          "Fresh 55-second passive I/O: reads 0.034 MiB/s, writes 1.755 MiB/s, queue 0.255; workload-dependent, not a saturation benchmark."
+          "The original check averaged 1.18 ms per write and 0.24 unfinished requests. The built-in health check passed, but no write-life estimate was reported.",
+          "Fresh hardware check 2026-09-09T22:01:42.513087+00:00: built-in health check passed; temperature 33°C; power-on hours 24,791 h.",
+          "Disk activity watched for 55 seconds: reads 0.034 MiB/s, writes 1.755 MiB/s, average unfinished requests 0.255; this reflects the apps running then, not the disk’s maximum speed."
         ],
-        "impact": "A single drive loss can stop the SFF worker and its local Longhorn replicas.",
+        "impact": "Losing this drive can stop the SFF Kubernetes worker and lose the Longhorn data copies stored on it.",
         "options": [
-          "Keep it while moving sole important replicas to independent hosts.",
+          "Keep it while moving only copies of important data to independent hosts.",
           "Consider separating boot and data during a planned rebuild."
         ],
         "constraints": [
@@ -714,13 +715,14 @@
           "Count surviving copies by physical host before moving data."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.513087+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.513087+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Keep; improve placement",
+      "action": "Keep; spread important data",
       "note": "One consumer SSD carries the host, worker boot, and persistent application data. The concern is shared failure impact, not a measured dead disk.",
       "baselineSample": {
         "readIops": 4.467,
@@ -740,7 +742,7 @@
       "model": "INTEL SSDPEKNW512G8",
       "bytes": 512110190592,
       "role": "Elite application data + PDM",
-      "path": "Intel \u2192 hp-elite-vmstore \u2192 VM100 scsi1 440GiB + CT101 rootfs10GiB \u2192 Longhorn + PDM .151",
+      "path": "Intel → hp-elite-vmstore → VM100 scsi1 440GiB + CT101 rootfs10GiB → Longhorn + PDM .151",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -799,31 +801,32 @@
       },
       "assessment": {
         "priority": "P2",
-        "verdict": "Plan replacement",
-        "reason": "74% of rated endurance was consumed. That justifies a planned replacement budget, not an emergency failure declaration.",
+        "verdict": "Budget for replacement",
+        "reason": "The drive reports 74% of its rated write life used. Plan its replacement, but the current health readings do not show an emergency failure.",
         "evidence": [
-          "Baseline: 74% endurance used, 100% available spare, zero media errors, 56,495 power-on hours.",
-          "Fresh hardware check 2026-09-09T22:01:42.495027+00:00: SMART overall passed; temperature 37\u00b0C; power-on hours 56,517 h; endurance used 74%; media errors 0.",
-          "Fresh 55-second passive I/O: reads 0.088 MiB/s, writes 57.754 MiB/s, queue 0.768; workload-dependent, not a saturation benchmark.",
-          "Counter change since baseline: unsafeShutdowns 539 \u2192 540. The counter alone does not establish timing or cause."
+          "Baseline: 74% of rated write life used, 100% available spare, zero data read/write errors, 56,495 power-on hours.",
+          "Fresh hardware check 2026-09-09T22:01:42.495027+00:00: built-in health check passed; temperature 37°C; power-on hours 56,517 h; of rated write life used 74%; data read/write errors 0.",
+          "Disk activity watched for 55 seconds: reads 0.088 MiB/s, writes 57.754 MiB/s, average unfinished requests 0.768; this reflects the apps running then, not the disk’s maximum speed.",
+          "Counter change since baseline: unclean shutdown count 539 → 540. The counter alone does not establish timing or cause."
         ],
-        "impact": "This drive contains Elite application replicas and the Proxmox Datacenter Manager container.",
+        "impact": "This drive holds Elite app data copies and runs Proxmox Datacenter Manager.",
         "options": [
           "Schedule replacement with a compatible larger NVMe, using verified backups and independent data copies.",
-          "Trend endurance, spare capacity, media errors and write rate until the maintenance window."
+          "Watch write-life usage, reserve flash, new data errors and how much is written until scheduled maintenance."
         ],
         "constraints": [
-          "The allocated 440 GiB guest data disk plus 10 GiB PDM rootfs exceeds a 480 GB drive\u2019s roughly 447 GiB raw capacity.",
+          "The VM has 440 GiB assigned for data; Proxmox Datacenter Manager has another 10 GiB system disk. Together these exceed the roughly 447 GiB raw capacity of a 480 GB replacement.",
           "Confirm the exact M.2 slot, protocol and drive dimensions; a SATA enterprise spare is not an NVMe drop-in."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.495027+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.495027+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Plan replacement",
+      "action": "Budget for replacement",
       "note": "74% of rated endurance was consumed. That justifies a planned replacement budget, not an emergency failure declaration.",
       "baselineSample": {
         "readIops": 1.333,
@@ -843,7 +846,7 @@
       "model": "WDC PC SN530 SDBPMPZ-256G-1101",
       "bytes": 256060514304,
       "role": "Proxmox + Elite boot",
-      "path": "WD \u2192 pve thin pool \u2192 VM100 scsi0 128GiB \u2192 Talos .172 sda6",
+      "path": "WD → pve thin pool → VM100 scsi0 128GiB → Talos .172 sda6",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -906,14 +909,14 @@
       },
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep; watch power history",
-        "reason": "Low reported wear and zero media errors support keeping the drive. Unsafe shutdowns need a trend and power-path investigation.",
+        "verdict": "Keep; check shutdown history",
+        "reason": "Reported wear is low and there are no data read/write errors. Keep the drive; watch whether unclean shutdowns keep increasing and check power if they do.",
         "evidence": [
-          "Baseline: 1% endurance used, zero media errors, 3,074 unsafe shutdowns, one error-log entry.",
-          "Fresh hardware check 2026-09-09T22:01:42.524555+00:00: SMART overall passed; temperature 44\u00b0C; power-on hours 12,588 h; endurance used 2%; media errors 0.",
-          "Fresh 55-second passive I/O: reads 0.080 MiB/s, writes 0.415 MiB/s, queue 0.075; workload-dependent, not a saturation benchmark.",
-          "Counter change since baseline: enduranceUsedPct 1 \u2192 2. The counter alone does not establish timing or cause.",
-          "Counter change since baseline: unsafeShutdowns 3074 \u2192 3075. The counter alone does not establish timing or cause."
+          "Baseline: 1% of rated write life used, zero data read/write errors, 3,074 unsafe shutdowns, one error-log entry.",
+          "Fresh hardware check 2026-09-09T22:01:42.524555+00:00: built-in health check passed; temperature 44°C; power-on hours 12,588 h; of rated write life used 2%; data read/write errors 0.",
+          "Disk activity watched for 55 seconds: reads 0.080 MiB/s, writes 0.415 MiB/s, average unfinished requests 0.075; this reflects the apps running then, not the disk’s maximum speed.",
+          "Counter change since baseline: estimated write-life usage 1 → 2. The counter alone does not establish timing or cause.",
+          "Counter change since baseline: unclean shutdown count 3074 → 3075. The counter alone does not establish timing or cause."
         ],
         "impact": "Loss stops the Elite host/worker boot path even though application data uses a separate SSD.",
         "options": [
@@ -923,17 +926,18 @@
         "constraints": [
           "Keep the 128 GiB guest boot allocation and host layout in the recovery plan.",
           "The 3,074 unsafe shutdowns are historical, not 3,074 current faults.",
-          "The endurance estimate crossed 1% to 2%; integer rounding does not establish a 1%-per-day wear rate."
+          "Estimated write-life usage rose from a rounded 1% to 2%. That does not show it is wearing out by 1% each day."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.524555+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.524555+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep; watch power history",
-      "note": "Low reported wear and zero media errors support keeping the drive. Unsafe shutdowns need a trend and power-path investigation.",
+      "action": "Keep; check shutdown history",
+      "note": "Low reported wear and zero data read/write errors support keeping the drive. Unsafe shutdowns need a trend and power-path investigation.",
       "baselineSample": {
         "readIops": 1.283,
         "writeIops": 6.791,
@@ -952,7 +956,7 @@
       "model": "PNY CS900 1TB SSD",
       "bytes": 1000204886016,
       "role": "Proxmox boot",
-      "path": "PNY \u2192 pve root + mostly unused thin pool",
+      "path": "PNY → pve root + mostly unused thin pool",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1007,13 +1011,13 @@
       "assessment": {
         "priority": "P3",
         "verdict": "Keep",
-        "reason": "The Proxmox boot SATA SSD was quiet and was not the source of the GPU guest read storm.",
+        "reason": "This starts Proxmox on the GPU machine. It was quiet while a different drive suffered the excessive reads, so that incident gives no reason to replace it.",
         "evidence": [
-          "Baseline physical queue 0.001 and writes 0.41 ms; SMART passed.",
-          "Fresh hardware check 2026-09-09T22:01:42.815578+00:00: SMART overall passed; temperature 33\u00b0C; power-on hours 24,805 h.",
-          "Fresh 55-second passive I/O: reads 0.136 MiB/s, writes 0.041 MiB/s, queue 0.002; workload-dependent, not a saturation benchmark."
+          "Baseline physical queue 0.001 and writes 0.41 ms; built-in health check passed.",
+          "Fresh hardware check 2026-09-09T22:01:42.815578+00:00: built-in health check passed; temperature 33°C; power-on hours 24,805 h.",
+          "Disk activity watched for 55 seconds: reads 0.136 MiB/s, writes 0.041 MiB/s, average unfinished requests 0.002; this reflects the apps running then, not the disk’s maximum speed."
         ],
-        "impact": "Failure stops the hypervisor even if guest data disks survive.",
+        "impact": "Losing this drive stops Proxmox, even if the separate VM data disks survive.",
         "options": [
           "Keep it in the boot role.",
           "Maintain host configuration recovery and trend SMART counters."
@@ -1022,11 +1026,12 @@
           "Identify by model/serial and storage mapping; do not confuse this SATA disk with the guest boot NVMe."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.815578+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.815578+00:00",
+        "priorityLabel": "Keep and monitor"
       },
       "action": "Keep",
       "note": "The Proxmox boot SATA SSD was quiet and was not the source of the GPU guest read storm.",
@@ -1048,7 +1053,7 @@
       "model": "MK000480GWCEV",
       "bytes": 480103981056,
       "role": "Enterprise mirror member A",
-      "path": "HPE sdb + sdc \u2192 md0 RAID1 \u2192 ssd-ent \u2192 VM103 scsi2 300GiB + scsi3 120GiB",
+      "path": "HPE sdb + sdc → md0 RAID1 → ssd-ent → VM103 scsi2 300GiB + scsi3 120GiB",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1102,31 +1107,32 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep mirror intact",
-        "reason": "This working enterprise SSD is one half of a RAID1 set; taking it as a spare would reduce current redundancy.",
+        "verdict": "Keep both duplicate-data drives",
+        "reason": "This SSD and its partner hold matching data copies. It is already doing a useful job; taking it as a spare would leave only one copy in that pair.",
         "evidence": [
-          "Baseline zero reallocations and approximately 0.15 ms average writes.",
-          "Fresh hardware check 2026-09-09T22:01:42.868327+00:00: SMART overall passed; temperature 16\u00b0C; power-on hours 52,852 h; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 0.061 MiB/s, writes 3.369 MiB/s, queue 0.021; workload-dependent, not a saturation benchmark.",
-          "Fresh mirror check: md0 RAID1 has both members active, 2/2 [UU]."
+          "Baseline zero bad sectors replaced and approximately 0.15 ms average writes.",
+          "Fresh hardware check 2026-09-09T22:01:42.868327+00:00: built-in health check passed; temperature 16°C; power-on hours 52,852 h; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 0.061 MiB/s, writes 3.369 MiB/s, average unfinished requests 0.021; this reflects the apps running then, not the disk’s maximum speed.",
+          "Both drives in the md0 duplicate-data pair are active: RAID1 2/2 [UU]."
         ],
-        "impact": "The mirror carries GPU worker Longhorn flash and an additional guest disk. Both members still share one chassis.",
+        "impact": "The duplicate-data pair stores GPU-worker app data and an additional virtual disk. Both physical drives are still in one machine.",
         "options": [
           "Keep both members in service.",
-          "If replacing a member later, verify mirror health and complete rebuild before touching its partner."
+          "If replacing one drive later, wait until its data has been fully copied back before touching its partner."
         ],
         "constraints": [
-          "Two 480 GB members form a mirror, not 960 GB usable storage.",
+          "Both 480 GB drives hold the same data, so together they do not provide 960 GB of usable space.",
           "VM103 allocations are 300 GiB + 120 GiB; verify ownership of the additional 120 GiB device."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.868327+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.868327+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep mirror intact",
+      "action": "Keep both duplicate-data drives",
       "note": "This working enterprise SSD is one half of a RAID1 set; taking it as a spare would reduce current redundancy.",
       "baselineSample": {
         "readIops": 5.574,
@@ -1146,7 +1152,7 @@
       "model": "MK000480GWCEV",
       "bytes": 480103981056,
       "role": "Enterprise mirror member B",
-      "path": "HPE sdb + sdc \u2192 md0 RAID1 \u2192 ssd-ent \u2192 VM103 scsi2 300GiB + scsi3 120GiB",
+      "path": "HPE sdb + sdc → md0 RAID1 → ssd-ent → VM103 scsi2 300GiB + scsi3 120GiB",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1200,17 +1206,17 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep mirror intact",
-        "reason": "No measured media fault warrants breaking this working mirror. The unmounted guest device needs ownership tracing before reuse.",
+        "verdict": "Keep both duplicate-data drives",
+        "reason": "No measured drive fault justifies breaking this duplicate-data pair. An extra virtual disk is not mounted, but its contents must be identified before reusing it.",
         "evidence": [
-          "Baseline zero reallocations and approximately 0.16 ms average writes.",
-          "Fresh hardware check 2026-09-09T22:01:42.909923+00:00: SMART overall passed; temperature 17\u00b0C; power-on hours 48,127 h; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 3.369 MiB/s, queue 0.022; workload-dependent, not a saturation benchmark.",
-          "Fresh mirror check: md0 RAID1 has both members active, 2/2 [UU]."
+          "Baseline zero bad sectors replaced and approximately 0.16 ms average writes.",
+          "Fresh hardware check 2026-09-09T22:01:42.909923+00:00: built-in health check passed; temperature 17°C; power-on hours 48,127 h; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 3.369 MiB/s, average unfinished requests 0.022; this reflects the apps running then, not the disk’s maximum speed.",
+          "Both drives in the md0 duplicate-data pair are active: RAID1 2/2 [UU]."
         ],
         "impact": "Removing this member leaves the same Longhorn flash data dependent on its partner.",
         "options": [
-          "Preserve RAID1 redundancy.",
+          "Keep both matching data copies in the RAID1 pair.",
           "Trace the additional 120 GiB guest disk before deciding whether its capacity can be reclaimed."
         ],
         "constraints": [
@@ -1218,14 +1224,15 @@
           "No active Talos mount was observed for the additional 120 GiB; absence of a mount does not prove empty data."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.909923+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.909923+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep mirror intact",
-      "note": "No measured media fault warrants breaking this working mirror. The unmounted guest device needs ownership tracing before reuse.",
+      "action": "Keep both duplicate-data drives",
+      "note": "No measured fault in the drive’s stored data warrants breaking this working mirror. The unmounted guest device needs ownership tracing before reuse.",
       "baselineSample": {
         "readIops": 3.958,
         "writeIops": 108.455,
@@ -1244,7 +1251,7 @@
       "model": "EDILOCA EN605 512GB",
       "bytes": 512110190592,
       "role": "AI model cache",
-      "path": "EDILOCA nvme0n1 \u2192 VG nvme1-vmstore \u2192 VM103 scsi1 450GiB \u2192 Talos sdb1 /var/mnt/ai-model-cache",
+      "path": "EDILOCA nvme0n1 → VG nvme1-vmstore → VM103 scsi1 450GiB → Talos sdb1 /var/mnt/ai-model-cache",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1298,12 +1305,12 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep model cache",
-        "reason": "This model-cache NVMe was nearly idle during the read storm on the other NVMe. It has no reported media errors.",
+        "verdict": "Keep for downloaded AI models",
+        "reason": "This drive was nearly idle while the other NVMe was overloaded. It has no reported data read/write errors; keep it for models you can restore or download again.",
         "evidence": [
-          "Baseline 20% endurance used, zero media errors, queue 0.001, temperature 54\u00b0C.",
-          "Fresh hardware check 2026-09-09T22:01:42.955682+00:00: SMART overall passed; temperature 54\u00b0C; power-on hours 22,129 h; endurance used 20%; media errors 0.",
-          "Fresh 55-second passive I/O: reads 0.082 MiB/s, writes 0.000 MiB/s, queue 0.001; workload-dependent, not a saturation benchmark."
+          "Baseline 20% of rated write life used, zero data read/write errors, average unfinished requests 0.001, temperature 54°C.",
+          "Fresh hardware check 2026-09-09T22:01:42.955682+00:00: built-in health check passed; temperature 54°C; power-on hours 22,129 h; of rated write life used 20%; data read/write errors 0.",
+          "Disk activity watched for 55 seconds: reads 0.082 MiB/s, writes 0.000 MiB/s, average unfinished requests 0.001; this reflects the apps running then, not the disk’s maximum speed."
         ],
         "impact": "Loss removes the cached models and can prevent inference until they are restored or downloaded.",
         "options": [
@@ -1315,14 +1322,15 @@
           "VM103 scsi1 is 450 GiB on a 512 GB device; check real capacity before any swap."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.955682+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.955682+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep model cache",
-      "note": "This model-cache NVMe was nearly idle during the read storm on the other NVMe. It has no reported media errors.",
+      "action": "Keep for downloaded AI models",
+      "note": "This model-cache NVMe was nearly idle during the read storm on the other NVMe. It has no reported data read/write errors.",
       "baselineSample": {
         "readIops": 0.6,
         "writeIops": 0.0,
@@ -1341,7 +1349,7 @@
       "model": "EDILOCA EN605 512GB",
       "bytes": 512110190592,
       "role": "GPU VM boot + ephemeral + some Longhorn",
-      "path": "EDILOCA nvme1n1 \u2192 VG nvme0-vmstore \u2192 VM103 scsi0 450GiB \u2192 Talos sda4 /var",
+      "path": "EDILOCA nvme1n1 → VG nvme0-vmstore → VM103 scsi0 450GiB → Talos sda4 /var",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1395,32 +1403,33 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep; trend repaired workload",
-        "reason": "The severe queueing was associated with undersized Temporal/DCGM memory budgets. Those repairs reduced the measured load; replacement is not justified by that incident alone.",
+        "verdict": "Keep; repairs reduced the overload",
+        "reason": "Temporal and DCGM had too little memory and repeatedly read from this disk. Increasing their memory reduced the measured overload. That incident alone does not justify replacing the SSD.",
         "evidence": [
-          "Before: 732 MiB/s reads and queue 527. After repair: sampled queues 0.085, 8.128 and 1.617; same-PVC fsync p99 improved 172.125\u219213.653 ms.",
+          "Before: 732 MiB/s reads and queue 527. After repair: sampled queues 0.085, 8.128 and 1.617; save wait on the same app disk (slowest 1% cutoff) improved 172.125→13.653 ms.",
           "Three scheduled Temporal runs completed in four seconds after a 1 GiB limit and 240-second deadline. DCGM received 2 GiB.",
-          "Latest reinspection at 21:59\u201322:00 UTC: Temporal four-second completion; DCGM zero restarts since 05:11; Grafana zero restarts since 14:08; no reclaim in a 91-second sample.",
-          "Fresh hardware check 2026-09-09T22:01:42.993081+00:00: SMART overall passed; temperature 54\u00b0C; power-on hours 16,724 h; endurance used 14%; media errors 0.",
-          "Fresh 55-second passive I/O: reads 0.082 MiB/s, writes 0.599 MiB/s, queue 0.013; workload-dependent, not a saturation benchmark."
+          "Latest reinspection at 21:59–22:00 UTC: Temporal four-second completion; DCGM zero restarts since 05:11; Grafana zero restarts since 14:08; no forced memory recycling in a 91-second sample.",
+          "Fresh hardware check 2026-09-09T22:01:42.993081+00:00: built-in health check passed; temperature 54°C; power-on hours 16,724 h; of rated write life used 14%; data read/write errors 0.",
+          "Disk activity watched for 55 seconds: reads 0.082 MiB/s, writes 0.599 MiB/s, average unfinished requests 0.013; this reflects the apps running then, not the disk’s maximum speed."
         ],
-        "impact": "This disk holds GPU worker boot, ephemeral data and some Longhorn replicas, so heavy reads affect several services.",
+        "impact": "This starts the GPU worker and stores its temporary files and some app data copies. Heavy reads here can slow several services.",
         "options": [
           "Keep the drive and compare equivalent workload windows after memory repairs.",
-          "Move important sole replicas off the boot disk when planning placement improvements."
+          "Move important only data copies off the boot disk when planning placement improvements."
         ],
         "constraints": [
           "Physical nvme1n1 maps to VG nvme0-vmstore and VM103 scsi0.",
-          "Read amplification is not flash write-endurance consumption; 43 TB read does not mean 43 TB written."
+          "Reading data repeatedly does not wear flash in the same way as writing it. The recorded 43 TB read does not mean 43 TB was written."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.993081+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.993081+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep; trend repaired workload",
+      "action": "Keep; repairs reduced the overload",
       "note": "The severe queueing was associated with undersized Temporal/DCGM memory budgets. Those repairs reduced the measured load; replacement is not justified by that incident alone.",
       "baselineSample": {
         "readIops": 10986.575,
@@ -1476,7 +1485,7 @@
       "model": "Samsung SSD 850 EVO 500GB",
       "bytes": 500107862016,
       "role": "Dell Longhorn data",
-      "path": "Samsung \u2192 dell-ssd-vmstore \u2192 VM100 scsi1 400GiB \u2192 Talos .177 sdb1",
+      "path": "Samsung → dell-ssd-vmstore → VM100 scsi1 400GiB → Talos .177 sdb1",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1565,31 +1574,32 @@
       },
       "assessment": {
         "priority": "P2",
-        "verdict": "Reduce critical data dependence",
-        "reason": "Age and historical interface errors justify watching the link and reducing dependence on this temporary host, not declaring present media failure.",
+        "verdict": "Move the only copies of important data",
+        "reason": "This older drive has historical connection errors, but no measured current failure. Reduce dependence on the temporary Dell machine and watch for new cable or connection errors.",
         "evidence": [
-          "Baseline 74,175 hours, zero reallocations/uncorrected errors, CRC 8,162 unchanged since September 5.",
-          "Fresh hardware check 2026-09-09T22:01:42.624237+00:00: SMART overall passed; temperature 31\u00b0C; power-on hours 74,197 h; CRC total 8,162; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 57.363 MiB/s, writes 0.010 MiB/s, queue 0.471; workload-dependent, not a saturation benchmark."
+          "Baseline 74,175 hours, zero bad sectors replaced/uncorrected errors, connection-error total 8,162 unchanged since September 5.",
+          "Fresh hardware check 2026-09-09T22:01:42.624237+00:00: built-in health check passed; temperature 31°C; power-on hours 74,197 h; lifetime connection-error total 8,162; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 57.363 MiB/s, writes 0.010 MiB/s, average unfinished requests 0.471; this reflects the apps running then, not the disk’s maximum speed."
         ],
         "impact": "Sole Longhorn copies on this disk cannot survive its loss or removal of the Dell host.",
         "options": [
-          "Move sole important copies to intended long-term hosts.",
-          "Trend CRC errors and inspect SATA cabling if the count increases."
+          "Move only copies of important data to intended long-term hosts.",
+          "Trend connection errors (CRC) and inspect SATA cabling if the count increases."
         ],
         "constraints": [
           "Current guest data disk is 400 GiB.",
-          "Normalized wear value 71 is not the same as 71% endurance used; historical CRC totals are not an error rate."
+          "Normalized wear value 71 is not the same as 71% of rated write life used; historical lifetime connection-error totals are not an error rate."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.624237+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.624237+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Reduce critical data dependence",
-      "note": "Age and historical interface errors justify watching the link and reducing dependence on this temporary host, not declaring present media failure.",
+      "action": "Move the only copies of important data",
+      "note": "Age and historical interface errors justify watching the link and reducing dependence on this temporary host, not declaring present failure of the drive’s stored data.",
       "baselineSample": {
         "readIops": 0.692,
         "writeIops": 1.108,
@@ -1608,7 +1618,7 @@
       "model": "APPLE SSD SM0256G",
       "bytes": 251000193024,
       "role": "Proxmox + Dell boot",
-      "path": "Apple \u2192 pve \u2192 VM100 scsi0 128GiB \u2192 Talos .177 sda6",
+      "path": "Apple → pve → VM100 scsi0 128GiB → Talos .177 sda6",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1662,12 +1672,12 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep; inspect adapter if symptoms recur",
-        "reason": "The adapter is an owner concern. Collected counters did not establish a current cable or media fault.",
+        "verdict": "Keep; check adapter if trouble returns",
+        "reason": "The adapter is a concern you raised. The readings do not show a current cable or drive fault; check it if disconnects or new errors appear.",
         "evidence": [
-          "Baseline 34,865 hours, zero reallocations, pending sectors and CRC errors.",
-          "Fresh hardware check 2026-09-09T22:01:42.650870+00:00: SMART overall passed; temperature 32\u00b0C; power-on hours 34,887 h; CRC total 0; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 0.068 MiB/s, writes 0.245 MiB/s, queue 0.023; workload-dependent, not a saturation benchmark."
+          "Baseline 34,865 hours, zero bad sectors replaced, pending sectors and connection errors (CRC).",
+          "Fresh hardware check 2026-09-09T22:01:42.650870+00:00: built-in health check passed; temperature 32°C; power-on hours 34,887 h; lifetime connection-error total 0; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 0.068 MiB/s, writes 0.245 MiB/s, average unfinished requests 0.023; this reflects the apps running then, not the disk’s maximum speed."
         ],
         "impact": "The Apple SSD carries host and Dell worker boot; data survives separately only if its data drive and copies remain healthy.",
         "options": [
@@ -1679,14 +1689,15 @@
           "Check adapter protocol and physical fit before choosing a replacement."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:01:42.650870+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:01:42.650870+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep; inspect adapter if symptoms recur",
-      "note": "The adapter is an owner concern. Collected counters did not establish a current cable or media fault.",
+      "action": "Keep; check adapter if trouble returns",
+      "note": "The adapter is an owner concern. Collected counters did not establish a current cable or fault in the drive’s stored data.",
       "baselineSample": {
         "readIops": 0.767,
         "writeIops": 3.283,
@@ -1705,7 +1716,7 @@
       "model": "PNY CS900 1TB SSD",
       "bytes": 1000204886016,
       "role": "Shed data device",
-      "path": "PNY \u2192 hp-ssd-vmstore \u2192 VM100 scsi1 850GiB \u2192 Talos .156 sdb1",
+      "path": "PNY → hp-ssd-vmstore → VM100 scsi1 850GiB → Talos .156 sdb1",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1729,16 +1740,16 @@
       "unavailableReason": "Shed host unreachable; no fresh drive observation.",
       "assessment": {
         "priority": "P2",
-        "verdict": "Potential reuse; verify ownership",
-        "reason": "Scheduling was disabled with zero Longhorn replicas at baseline, but 17.6 GB of filesystem use was unexplained. This is a candidate, not a free spare.",
+        "verdict": "Possible spare; identify its data first",
+        "reason": "The original check found no Longhorn data copies here, but 17.6 GB of files remained unexplained. It may be reusable; it is not yet a confirmed empty spare.",
         "evidence": [
-          "Baseline Longhorn scheduling disabled and zero replicas; approximately 17.6 GB of filesystem use remained.",
+          "At the original check, Longhorn was not allowed to place new data copies here and had zero existing copies. About 17.6 GB of files still occupied the disk.",
           "September 9 at 22:00 UTC: Shed node Ready=Unknown after last heartbeat 18:16:38 UTC. Current drive health could not be inferred from node status.",
-          "No fresh SMART or I/O data. Current drive condition is unknown; baseline values are retained separately."
+          "No new built-in health report or disk-activity measurements. Current drive condition is unknown; baseline values are retained separately."
         ],
         "impact": "Unidentified files may be lost if the drive is erased. The Shed host is a separate availability concern.",
         "options": [
-          "When the host is reachable, inspect files and mounts read-only and confirm no remaining replicas.",
+          "When the host is reachable, inspect files and mounts read-only and confirm no app data copies remain.",
           "Reuse only after ownership and recovery requirements are resolved."
         ],
         "constraints": [
@@ -1746,13 +1757,14 @@
           "Current host reachability must be restored before confirming reuse eligibility."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Baseline identity/path verified; current device health unverified while the host is unreachable.",
-        "checkedAt": "2026-09-09T22:00:12.277868+00:00"
+        "confidence": "The original drive identity and path were checked. Current health is unknown while Shed is unreachable.",
+        "checkedAt": "2026-09-09T22:00:12.277868+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Potential reuse; verify ownership",
+      "action": "Possible spare; identify its data first",
       "note": "Scheduling was disabled with zero Longhorn replicas at baseline, but 17.6 GB of filesystem use was unexplained. This is a candidate, not a free spare.",
       "baselineSample": {
         "readIops": 0.4,
@@ -1772,7 +1784,7 @@
       "model": "SK hynix BC501 HFM256GDJTNG-8310A",
       "bytes": 256060514304,
       "role": "Proxmox + edge worker boot",
-      "path": "Hynix \u2192 pve \u2192 VM100 scsi0 128GiB \u2192 Talos .156 sda6",
+      "path": "Hynix → pve → VM100 scsi0 128GiB → Talos .156 sda6",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1796,14 +1808,14 @@
       "unavailableReason": "Shed host unreachable; no fresh drive observation.",
       "assessment": {
         "priority": "P2",
-        "verdict": "Check host availability; keep disk",
-        "reason": "The baseline SSD had low wear and no media errors. Current Shed availability must be diagnosed separately from disk condition.",
+        "verdict": "Check the offline machine first",
+        "reason": "This boot drive had low wear and no data read/write errors at the original check. Shed is now unreachable, so current disk health is unknown; an offline machine does not prove a bad disk.",
         "evidence": [
-          "Baseline 4% endurance used and zero media errors.",
+          "Baseline 4% of rated write life used and zero data read/write errors.",
           "September 9 at 22:00 UTC: Shed node Ready=Unknown after last heartbeat 18:16:38 UTC. Current drive health could not be inferred from node status.",
-          "No fresh SMART or I/O data. Current drive condition is unknown; baseline values are retained separately."
+          "No new built-in health report or disk-activity measurements. Current drive condition is unknown; baseline values are retained separately."
         ],
-        "impact": "This boots the edge worker on a Wi-Fi-dependent host; it should not carry required quorum or sole critical replicas.",
+        "impact": "This starts the edge Kubernetes worker on a machine that depends on Wi-Fi. Avoid making cluster coordination or the only copy of critical data depend on it.",
         "options": [
           "Restore or explain host/network reachability first.",
           "Keep this boot device unless fresh disk evidence identifies a fault."
@@ -1813,14 +1825,15 @@
           "An unreachable host does not establish a failed NVMe."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Baseline identity/path verified; current device health unverified while the host is unreachable.",
-        "checkedAt": "2026-09-09T22:00:12.277868+00:00"
+        "confidence": "The original drive identity and path were checked. Current health is unknown while Shed is unreachable.",
+        "checkedAt": "2026-09-09T22:00:12.277868+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Check host availability; keep disk",
-      "note": "The baseline SSD had low wear and no media errors. Current Shed availability must be diagnosed separately from disk condition.",
+      "action": "Check the offline machine first",
+      "note": "The baseline SSD had low wear and no data read/write errors. Current Shed availability must be diagnosed separately from disk condition.",
       "baselineSample": {
         "readIops": 0.4,
         "writeIops": 1.217,
@@ -1839,7 +1852,7 @@
       "model": "Samsung SSD 860 EVO 1TB",
       "bytes": 1000204886016,
       "role": "AI pool stripe member",
-      "path": "Samsung860 \u2192 ai-pool top-level vdev \u2192 model/cache/proxmox-flash datasets",
+      "path": "Samsung860 → ai-pool top-level vdev → model/cache/proxmox-flash datasets",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1893,13 +1906,13 @@
       "changes": {},
       "assessment": {
         "priority": "P2",
-        "verdict": "Keep; review striped pool",
-        "reason": "This is a live top-level member of the three-drive AI pool. The pool has no redundancy across its SSD vdevs.",
+        "verdict": "Keep; protect the AI drive group",
+        "reason": "This is one of three drives that split the AI-pool data between them, without duplicate copies. Losing any one can lose the whole pool, even while all drives pass their health checks.",
         "evidence": [
-          "Baseline Samsung 860 EVO had four historical CRC errors; the architectural risk is the nonredundant pool.",
-          "Fresh hardware check 2026-09-09T22:00:22.266876+00:00: SMART overall passed; temperature 30\u00b0C; power-on hours 47,150 h; CRC total 4; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.000 MiB/s, queue 0.000; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline Samsung 860 EVO had four historical connection errors (CRC); the architectural risk is the nonredundant pool.",
+          "Fresh hardware check 2026-09-09T22:00:22.266876+00:00: built-in health check passed; temperature 30°C; power-on hours 47,150 h; lifetime connection-error total 4; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.000 MiB/s, average unfinished requests 0.000; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
         "impact": "Loss of any one member can lose the entire pool and its dependent datasets.",
         "options": [
@@ -1907,17 +1920,18 @@
           "Migrate important state or redesign the pool with verified recovery before any disk removal."
         ],
         "constraints": [
-          "A stripe member cannot be borrowed as a spare.",
-          "AI-pool currently has sync=standard. Separate BigTank/k8s datasets remain sync=disabled; compare durability policies before ranking latency."
+          "This drive holds a required part of AI-pool’s data; it cannot be borrowed as a spare.",
+          "AI-pool honors requests to save permanently (sync=standard). The separate BigTank/k8s shares can confirm saves early (sync=disabled), so their response times are not directly comparable."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:22.266876+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:22.266876+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Keep; review striped pool",
+      "action": "Keep; protect the AI drive group",
       "note": "This is a live top-level member of the three-drive AI pool. The pool has no redundancy across its SSD vdevs.",
       "baselineSample": {
         "readIops": 0.0,
@@ -1937,7 +1951,7 @@
       "model": "T-FORCE 512GB",
       "bytes": 512110190592,
       "role": "NAS boot mirror member",
-      "path": "T-FORCE + HPE \u2192 boot-pool mirror",
+      "path": "T-FORCE + HPE → boot-pool mirror",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -1991,31 +2005,32 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep boot mirror",
-        "reason": "This is an active boot-pool mirror member, not unallocated spare capacity.",
+        "verdict": "Keep the NAS boot pair",
+        "reason": "This drive helps start the NAS and has a partner holding a matching copy. It is in use, not a spare.",
         "evidence": [
-          "Baseline SMART passed; paired with the HPE SSD in boot-pool.",
-          "Fresh hardware check 2026-09-09T22:00:22.316532+00:00: SMART overall passed; temperature 33\u00b0C; power-on hours 26,883 h.",
-          "Fresh 55-second passive I/O: reads 0.007 MiB/s, writes 0.333 MiB/s, queue 0.008; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline built-in health check passed; paired with the HPE SSD in boot-pool.",
+          "Fresh hardware check 2026-09-09T22:00:22.316532+00:00: built-in health check passed; temperature 33°C; power-on hours 26,883 h.",
+          "Disk activity watched for 55 seconds: reads 0.007 MiB/s, writes 0.333 MiB/s, average unfinished requests 0.008; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
-        "impact": "A single member failure can be tolerated by the mirror; removing both loses NAS boot.",
+        "impact": "The NAS can start from the remaining boot drive if one fails; removing both loses that ability.",
         "options": [
           "Keep the pair and verify boot-pool health.",
           "If changing one member, replace and resilver before touching the other."
         ],
         "constraints": [
           "Vendor-specific wear counters were not validated as percentage-life forecasts.",
-          "Protect NAS configuration separately from the boot mirror."
+          "Keep a separate backup of the NAS settings as well as the two matching boot drives."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:22.316532+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:22.316532+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep boot mirror",
+      "action": "Keep the NAS boot pair",
       "note": "This is an active boot-pool mirror member, not unallocated spare capacity.",
       "baselineSample": {
         "readIops": 0.0,
@@ -2035,7 +2050,7 @@
       "model": "MK000480GWCEV",
       "bytes": 480103981056,
       "role": "NAS boot mirror member",
-      "path": "HPE + T-FORCE \u2192 boot-pool mirror",
+      "path": "HPE + T-FORCE → boot-pool mirror",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2089,17 +2104,17 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep boot mirror",
-        "reason": "The third HPE enterprise SSD in the lab is already serving NAS boot. It is not a free donor for the control plane.",
+        "verdict": "Keep the NAS boot pair",
+        "reason": "This HPE SSD is already helping start the NAS. Taking it for Kubernetes would remove one of the NAS boot copies.",
         "evidence": [
-          "Baseline SMART passed; live boot-pool mirror member with T-FORCE.",
-          "Fresh hardware check 2026-09-09T22:00:22.359428+00:00: SMART overall passed; temperature 21\u00b0C; power-on hours 55,508 h; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 0.001 MiB/s, writes 0.333 MiB/s, queue 0.006; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline built-in health check passed; working alongside T-FORCE as the NAS duplicate-data boot pair.",
+          "Fresh hardware check 2026-09-09T22:00:22.359428+00:00: built-in health check passed; temperature 21°C; power-on hours 55,508 h; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 0.001 MiB/s, writes 0.333 MiB/s, average unfinished requests 0.006; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
         "impact": "Removing it degrades NAS boot redundancy until a replacement resilvers.",
         "options": [
-          "Leave it in the boot mirror.",
+          "Keep it paired with the other NAS boot drive.",
           "Only consider reuse after a verified replacement and completed boot-pool resilver."
         ],
         "constraints": [
@@ -2107,13 +2122,14 @@
           "Do not count the same physical SSD as spare hardware in another plan."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:22.359428+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:22.359428+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep boot mirror",
+      "action": "Keep the NAS boot pair",
       "note": "The third HPE enterprise SSD in the lab is already serving NAS boot. It is not a free donor for the control plane.",
       "baselineSample": {
         "readIops": 0.008,
@@ -2133,7 +2149,7 @@
       "model": "P3-512",
       "bytes": 512110190592,
       "role": "AI pool stripe member",
-      "path": "P3-512 \u2192 ai-pool top-level vdev",
+      "path": "P3-512 → ai-pool top-level vdev",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2187,31 +2203,32 @@
       "changes": {},
       "assessment": {
         "priority": "P2",
-        "verdict": "Keep; review striped pool",
-        "reason": "No pending or uncorrectable sectors were reported, but this disk is a single required member of a nonredundant AI pool.",
+        "verdict": "Keep; protect the AI drive group",
+        "reason": "The drive reports no sectors waiting for repair or uncorrectable errors. The bigger concern is AI-pool: losing this drive can lose the pool because its three drives do not hold duplicate copies.",
         "evidence": [
-          "Baseline no pending or uncorrectable sectors; top-level ai-pool vdev.",
-          "Fresh hardware check 2026-09-09T22:00:22.389786+00:00: SMART overall passed; temperature 30\u00b0C; power-on hours 7,704 h; CRC total 0; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.000 MiB/s, queue 0.000; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Original check: no sectors waiting for repair or uncorrectable errors. This drive holds a required part of ai-pool’s data.",
+          "Fresh hardware check 2026-09-09T22:00:22.389786+00:00: built-in health check passed; temperature 30°C; power-on hours 7,704 h; lifetime connection-error total 0; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.000 MiB/s, average unfinished requests 0.000; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
         "impact": "A failed or removed member threatens the full AI pool, not just its share of files.",
         "options": [
           "Keep the drive while classifying datasets and validating recovery.",
-          "Move durable data off the striped pool before repurposing members."
+          "Move data you need to keep off AI-pool before reusing any of its drives."
         ],
         "constraints": [
           "Raw vendor wear fields are not treated as percentages.",
-          "A stripe cannot be made safe by simply pulling one disk."
+          "Removing one drive from this split-data pool can lose data; it does not make the pool safer."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:22.389786+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:22.389786+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Keep; review striped pool",
+      "action": "Keep; protect the AI drive group",
       "note": "No pending or uncorrectable sectors were reported, but this disk is a single required member of a nonredundant AI pool.",
       "baselineSample": {
         "readIops": 0.0,
@@ -2231,7 +2248,7 @@
       "model": "HP SSD S700 500GB",
       "bytes": 500107862016,
       "role": "AI pool stripe member",
-      "path": "HP S700 \u2192 ai-pool top-level vdev",
+      "path": "HP S700 → ai-pool top-level vdev",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2310,32 +2327,33 @@
       },
       "assessment": {
         "priority": "P2",
-        "verdict": "Inspect link and cooling; trend",
-        "reason": "Historical CRC and a vendor runtime-bad-block field merit investigation, but zero reallocations/uncorrected errors did not establish media failure.",
+        "verdict": "Check the connection; watch drive errors",
+        "reason": "Old connection errors and the vendor’s bad-block count deserve follow-up. No replaced sectors or uncorrected errors were reported, so the evidence does not establish a failed drive.",
         "evidence": [
-          "Baseline 46\u00b0C, CRC 816, runtime-bad-block raw 16, zero reallocations/uncorrected errors.",
-          "Fresh hardware check 2026-09-09T22:00:22.439066+00:00: SMART overall passed; temperature 41\u00b0C; power-on hours 50,546 h; CRC total 816; reallocated sectors 0.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.000 MiB/s, queue 0.000; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline 46°C, connection-error total 816, vendor runtime-bad-block count 16, zero bad sectors replaced/uncorrected errors.",
+          "Fresh hardware check 2026-09-09T22:00:22.439066+00:00: built-in health check passed; temperature 41°C; power-on hours 50,546 h; lifetime connection-error total 816; bad sectors replaced 0.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.000 MiB/s, average unfinished requests 0.000; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
-        "impact": "As an AI-pool stripe member, a real device or link failure can affect the entire pool.",
+        "impact": "AI-pool depends on this drive; a drive or connection failure can affect the whole pool.",
         "options": [
-          "Trend CRC/runtime counters and inspect cabling and airflow during maintenance.",
+          "Watch for increases in the connection-error and vendor bad-block counts. Inspect cables and airflow during maintenance.",
           "Prioritize recovery coverage for durable data before considering replacement."
         ],
         "constraints": [
-          "CRC 816 and raw runtime-bad-block 16 are historical/vendor-specific values.",
-          "Do not remove a live stripe member to test another host."
+          "The 816 connection errors are a historical total. The vendor’s bad-block field is 16; its meaning depends on the manufacturer.",
+          "Do not remove this working AI-pool drive to test it in another machine."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:22.439066+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:22.439066+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Inspect link and cooling; trend",
-      "note": "Historical CRC and a vendor runtime-bad-block field merit investigation, but zero reallocations/uncorrected errors did not establish media failure.",
+      "action": "Check the connection; watch drive errors",
+      "note": "Historical CRC and a vendor runtime-bad-block field merit investigation, but zero bad sectors replaced/uncorrected errors did not establish failure of the drive’s stored data.",
       "baselineSample": {
         "readIops": 0.0,
         "writeIops": 0.0,
@@ -2354,7 +2372,7 @@
       "model": "ST10000NM0096",
       "bytes": 10000831348736,
       "role": "Secondary local backup pool",
-      "path": "Seagate10TB \u2192 Backup10T single-disk vdev",
+      "path": "Seagate10TB → Backup10T single-disk vdev",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2414,13 +2432,13 @@
       "changes": {},
       "assessment": {
         "priority": "P2",
-        "verdict": "Keep; strengthen recovery boundary",
-        "reason": "The secondary backup disk had no measured media fault, but it is a single-disk pool in the same NAS as primary storage.",
+        "verdict": "Keep; add a separate recovery copy",
+        "reason": "No drive fault was measured, but these backups live on one disk in the same NAS as the primary data. They cannot protect against losing the entire NAS.",
         "evidence": [
-          "Baseline 57,533 hours, zero grown defects and zero uncorrected reads/writes.",
-          "Fresh hardware check 2026-09-09T22:00:22.504047+00:00: SMART overall passed; temperature 33\u00b0C; power-on hours 57,556 h.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.000 MiB/s, queue 0.000; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline 57,533 hours, zero newly recorded bad spots and zero uncorrected reads/writes.",
+          "Fresh hardware check 2026-09-09T22:00:22.504047+00:00: built-in health check passed; temperature 33°C; power-on hours 57,556 h.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.000 MiB/s, average unfinished requests 0.000; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
         "impact": "NAS power, appliance loss or a disk failure can remove this local recovery copy.",
         "options": [
@@ -2428,18 +2446,19 @@
           "Maintain an independent copy outside this appliance for important data."
         ],
         "constraints": [
-          "Backup10T is a single-disk vdev; it has no disk redundancy.",
+          "Backup10T uses one physical drive, with no second drive holding a matching copy.",
           "A second dataset or pool in one NAS is not an independent appliance failure domain."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:22.504047+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:22.504047+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Keep; strengthen recovery boundary",
-      "note": "The secondary backup disk had no measured media fault, but it is a single-disk pool in the same NAS as primary storage.",
+      "action": "Keep; add a separate recovery copy",
+      "note": "The secondary backup disk had no measured fault in the drive’s stored data, but it is a single-disk pool in the same NAS as primary storage.",
       "baselineSample": {
         "readIops": 0.0,
         "writeIops": 0.0,
@@ -2458,7 +2477,7 @@
       "model": "HUH721010AL4200",
       "bytes": 10000831348736,
       "role": "BigTank mirror0 member",
-      "path": "HGST10TB sdg + sdi \u2192 BigTank mirror0",
+      "path": "HGST10TB sdg + sdi → BigTank mirror0",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2520,31 +2539,32 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep mirror member",
-        "reason": "The collected health and temperature support continued use in the existing mirror.",
+        "verdict": "Keep this duplicate-data drive",
+        "reason": "The recorded health and temperature support keeping it. Its partner holds a matching copy; preserve that pair during maintenance.",
         "evidence": [
-          "Baseline 38\u00b0C, zero grown defects and uncorrected errors.",
-          "Fresh hardware check 2026-09-09T22:00:23.435764+00:00: SMART overall passed; temperature 37\u00b0C; power-on hours 7,527 h.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.637 MiB/s, queue 0.023; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline 38°C, zero newly recorded bad spots and uncorrected errors.",
+          "Fresh hardware check 2026-09-09T22:00:23.435764+00:00: built-in health check passed; temperature 37°C; power-on hours 7,527 h.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.637 MiB/s, average unfinished requests 0.023; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
-        "impact": "This is one half of BigTank mirror0; partner health determines tolerance during replacement.",
+        "impact": "This and its partner hold matching data in BigTank mirror0. The partner must remain healthy while replacing either drive.",
         "options": [
           "Keep and trend health during scrub workloads.",
-          "Verify the matching mirror partner and pool state before any service."
+          "Identify the partner drive and check both copies before maintenance."
         ],
         "constraints": [
           "Partner is physical sdi; use persistent identity rather than Linux letter alone.",
-          "A mirror is availability protection, not protection against deletion or NAS-wide loss."
+          "Two matching copies can survive one drive failing. They do not protect against deleting data or losing the whole NAS."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:23.435764+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:23.435764+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep mirror member",
+      "action": "Keep this duplicate-data drive",
       "note": "The collected health and temperature support continued use in the existing mirror.",
       "baselineSample": {
         "readIops": 0.017,
@@ -2564,7 +2584,7 @@
       "model": "HUH721010AL4200",
       "bytes": 10000831348736,
       "role": "BigTank mirror1 member",
-      "path": "HGST10TB sdj + sdh \u2192 BigTank mirror1",
+      "path": "HGST10TB sdj + sdh → BigTank mirror1",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2626,32 +2646,33 @@
       "changes": {},
       "assessment": {
         "priority": "P2",
-        "verdict": "Inspect cooling",
-        "reason": "54\u00b0C was the warmest BigTank reading. Improve or verify airflow and load trends before diagnosing drive failure.",
+        "verdict": "Check cooling",
+        "reason": "At 54°C this was the warmest BigTank drive. Check fans and airflow, then watch temperature during normal work. This reading alone does not prove drive damage.",
         "evidence": [
-          "Baseline 54\u00b0C with zero grown defects and uncorrected errors.",
-          "Fresh hardware check 2026-09-09T22:00:24.143127+00:00: SMART overall passed; temperature 54\u00b0C; power-on hours 14,207 h.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.587 MiB/s, queue 0.019; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline 54°C with zero newly recorded bad spots and uncorrected errors.",
+          "Fresh hardware check 2026-09-09T22:00:24.143127+00:00: built-in health check passed; temperature 54°C; power-on hours 14,207 h.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.587 MiB/s, average unfinished requests 0.019; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
-        "impact": "Thermal trouble on this mirror1 member reduces the margin while its partner carries the data.",
+        "impact": "If heat causes this drive to fail, BigTank mirror1 would depend on its one remaining partner.",
         "options": [
           "Inspect external enclosure airflow and fan operation.",
           "Trend temperature through a normal scrub before choosing hardware replacement."
         ],
         "constraints": [
-          "Partner is sdj; avoid simultaneous service on both mirror1 members.",
+          "The matching drive is sdj in mirror1; do not take both out of service together.",
           "No model-specific over-temperature threshold was established in this report."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:24.143127+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:24.143127+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Inspect cooling",
-      "note": "54\u00b0C was the warmest BigTank reading. Improve or verify airflow and load trends before diagnosing drive failure.",
+      "action": "Check cooling",
+      "note": "54°C was the warmest BigTank reading. Improve or verify airflow and load trends before diagnosing drive failure.",
       "baselineSample": {
         "readIops": 0.075,
         "writeIops": 13.94,
@@ -2670,7 +2691,7 @@
       "model": "HUH721010AL4200",
       "bytes": 10000831348736,
       "role": "BigTank mirror0 member",
-      "path": "HGST10TB sdg + sdi \u2192 BigTank mirror0",
+      "path": "HGST10TB sdg + sdi → BigTank mirror0",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2732,15 +2753,15 @@
       "changes": {},
       "assessment": {
         "priority": "P2",
-        "verdict": "Inspect cooling",
-        "reason": "49\u00b0C merits airflow review alongside the warmer drives; the collected error counters did not show failure.",
+        "verdict": "Check cooling",
+        "reason": "At 49°C this drive deserves an airflow check alongside the warmer drives. The recorded errors do not show a failed drive.",
         "evidence": [
-          "Baseline 49\u00b0C, zero grown defects and uncorrected errors.",
-          "Fresh hardware check 2026-09-09T22:00:24.862385+00:00: SMART overall passed; temperature 49\u00b0C; power-on hours 7,793 h.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.637 MiB/s, queue 0.024; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline 49°C, zero newly recorded bad spots and uncorrected errors.",
+          "Fresh hardware check 2026-09-09T22:00:24.862385+00:00: built-in health check passed; temperature 49°C; power-on hours 7,793 h.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.637 MiB/s, average unfinished requests 0.024; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
-        "impact": "This is BigTank mirror0\u2019s partner; preserve redundancy while servicing cooling or cabling.",
+        "impact": "This holds a matching copy in BigTank mirror0. Keep one healthy copy available while working on cooling or cables.",
         "options": [
           "Improve or verify airflow across the drive enclosure.",
           "Trend temperatures and pool errors through a scrub."
@@ -2750,14 +2771,15 @@
           "A warm snapshot alone does not prove the disk exceeded its specification."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:24.862385+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:24.862385+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Inspect cooling",
-      "note": "49\u00b0C merits airflow review alongside the warmer drives; the collected error counters did not show failure.",
+      "action": "Check cooling",
+      "note": "49°C merits airflow review alongside the warmer drives; the collected error counters did not show failure.",
       "baselineSample": {
         "readIops": 0.05,
         "writeIops": 12.315,
@@ -2776,7 +2798,7 @@
       "model": "HUH721010AL4200",
       "bytes": 10000831348736,
       "role": "BigTank mirror1 member",
-      "path": "HGST10TB sdj + sdh \u2192 BigTank mirror1",
+      "path": "HGST10TB sdj + sdh → BigTank mirror1",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2838,32 +2860,33 @@
       "changes": {},
       "assessment": {
         "priority": "P2",
-        "verdict": "Inspect cooling",
-        "reason": "The latest 51\u00b0C reading remains a reason to inspect cooling and trend the device, not proof of media damage.",
+        "verdict": "Check cooling",
+        "reason": "The latest reading was 51°C. Check shared airflow and watch it under load; the temperature alone does not prove drive damage.",
         "evidence": [
-          "Baseline 52\u00b0C, zero grown defects and uncorrected errors.",
-          "Fresh hardware check 2026-09-09T22:00:25.575095+00:00: SMART overall passed; temperature 51\u00b0C; power-on hours 14,478 h.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.587 MiB/s, queue 0.020; workload-dependent, not a saturation benchmark.",
-          "Fresh NAS check: all four pools ONLINE with no known data errors. Pool topology and sync policy were rechecked separately from the drive health."
+          "Baseline 52°C, zero newly recorded bad spots and uncorrected errors.",
+          "Fresh hardware check 2026-09-09T22:00:25.575095+00:00: built-in health check passed; temperature 51°C; power-on hours 14,478 h.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.587 MiB/s, average unfinished requests 0.020; this reflects the apps running then, not the disk’s maximum speed.",
+          "NAS check: all four drive groups report ONLINE with no known data errors. How their copies are arranged and when they confirm writes were checked separately."
         ],
-        "impact": "Mirror1 depends on this device and sdh, which was also warm.",
+        "impact": "BigTank mirror1 holds matching data on this drive and sdh; both were warm.",
         "options": [
-          "Inspect shared airflow affecting both mirror1 members.",
+          "Check the airflow shared by both drives in mirror1.",
           "Watch temperatures under normal scrub and backup workloads."
         ],
         "constraints": [
-          "Do not service both mirror members together.",
+          "Do not take both matching-copy drives out of service together.",
           "Confirm model limits from the exact drive specification before labeling an over-temperature event."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:25.575095+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:25.575095+00:00",
+        "priorityLabel": "Plan maintenance"
       },
-      "action": "Inspect cooling",
-      "note": "The latest 51\u00b0C reading remains a reason to inspect cooling and trend the device, not proof of media damage.",
+      "action": "Check cooling",
+      "note": "The latest 51°C reading remains a reason to inspect cooling and trend the device, not proof of media damage.",
       "baselineSample": {
         "readIops": 0.058,
         "writeIops": 13.924,
@@ -2882,7 +2905,7 @@
       "model": "Patriot M.2 P300 256GB",
       "bytes": 256060514304,
       "role": "Pi boot + management data",
-      "path": "PatriotP300 \u2192 root filesystem \u2192 Omni + DNS containers",
+      "path": "PatriotP300 → root filesystem → Omni + DNS containers",
       "mappingCheckedAt": "2026-09-08T23:53:00Z",
       "baselineSmart": {
         "passed": true,
@@ -2930,12 +2953,12 @@
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep; watch power history",
-        "reason": "Media health was good; the large historical unsafe-shutdown count points to checking the power and shutdown path.",
+        "verdict": "Keep; check shutdown history",
+        "reason": "The drive reported good data health. Its large lifetime count of unclean shutdowns calls for checking power and shutdown behavior, not an automatic disk replacement.",
         "evidence": [
-          "Baseline 13% endurance used, 33\u00b0C, zero media errors, 2,231 unsafe shutdowns.",
-          "Fresh hardware check 2026-09-09T22:00:22.743589+00:00: SMART overall passed; temperature 34\u00b0C; power-on hours 13,345 h; endurance used 13%; media errors 0.",
-          "Fresh 55-second passive I/O: reads 0.000 MiB/s, writes 0.154 MiB/s, queue 0.008; workload-dependent, not a saturation benchmark."
+          "Baseline 13% of rated write life used, 33°C, zero data read/write errors, 2,231 unsafe shutdowns.",
+          "Fresh hardware check 2026-09-09T22:00:22.743589+00:00: built-in health check passed; temperature 34°C; power-on hours 13,345 h; of rated write life used 13%; data read/write errors 0.",
+          "Disk activity watched for 55 seconds: reads 0.000 MiB/s, writes 0.154 MiB/s, average unfinished requests 0.008; this reflects the apps running then, not the disk’s maximum speed."
         ],
         "impact": "This boots the Pi and its management services, including Omni and DNS containers.",
         "options": [
@@ -2943,17 +2966,18 @@
           "Verify management-service recovery independent of this boot disk."
         ],
         "constraints": [
-          "13% endurance used is not a failure threshold.",
+          "13% of rated write life used is not a failure threshold.",
           "The Pi used a directly read NVMe health log; missing smartctl did not mean missing device health."
         ],
         "verify": [
-          "Recheck the same persistent drive identity, health counters and relevant workload under comparable load.",
-          "Before a move or replacement, confirm recoverable backups and independent surviving replicas."
+          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
+          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
         ],
-        "confidence": "Hardware identity and baseline observations verified; replacement decisions distinguish measured symptoms from preventive changes.",
-        "checkedAt": "2026-09-09T22:00:22.743589+00:00"
+        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
+        "checkedAt": "2026-09-09T22:00:22.743589+00:00",
+        "priorityLabel": "Keep and monitor"
       },
-      "action": "Keep; watch power history",
+      "action": "Keep; check shutdown history",
       "note": "Media health was good; the large historical unsafe-shutdown count points to checking the power and shutdown path.",
       "baselineSample": {
         "readIops": 0.0,
@@ -13969,7 +13993,7 @@
       ],
       "backup_policy": null,
       "backup_exempt": "true",
-      "backup_exempt_reason": "MQTT broker \u2014 retained messages and ACLs rebuild on client reconnect; not worth backing up",
+      "backup_exempt_reason": "MQTT broker — retained messages and ACLs rebuild on client reconnect; not worth backing up",
       "last_success": null,
       "latest_snapshot_state": null,
       "latest_snapshot_failure_class": null
@@ -14967,7 +14991,7 @@
       ],
       "backup_policy": null,
       "backup_exempt": "true",
-      "backup_exempt_reason": "Paperless consume inbox; transient \u2014 files move to /media after ingestion",
+      "backup_exempt_reason": "Paperless consume inbox; transient — files move to /media after ingestion",
       "last_success": null,
       "latest_snapshot_state": null,
       "latest_snapshot_failure_class": null
@@ -15159,7 +15183,7 @@
       ],
       "backup_policy": null,
       "backup_exempt": "true",
-      "backup_exempt_reason": "PostHog data is disposable/rebuildable in this homelab; do not back up. Valkey cache (allkeys-lru, no RDB/AOF) \u2014 nothing to preserve.",
+      "backup_exempt_reason": "PostHog data is disposable/rebuildable in this homelab; do not back up. Valkey cache (allkeys-lru, no RDB/AOF) — nothing to preserve.",
       "last_success": null,
       "latest_snapshot_state": null,
       "latest_snapshot_failure_class": null
@@ -15191,7 +15215,7 @@
       ],
       "backup_policy": null,
       "backup_exempt": "true",
-      "backup_exempt_reason": "PostHog data is disposable/rebuildable in this homelab; do not back up. Redpanda runs --unsafe-bypass-fsync with ~1h retention + auto_create_topics \u2014 log is ephemeral/rebuildable.",
+      "backup_exempt_reason": "PostHog data is disposable/rebuildable in this homelab; do not back up. Redpanda runs --unsafe-bypass-fsync with ~1h retention + auto_create_topics — log is ephemeral/rebuildable.",
       "last_success": null,
       "latest_snapshot_state": null,
       "latest_snapshot_failure_class": null
@@ -16292,7 +16316,7 @@
       ],
       "backup_policy": null,
       "backup_exempt": "true",
-      "backup_exempt_reason": "Redis cache data \u2014 reseeded from upstream sources on demand",
+      "backup_exempt_reason": "Redis cache data — reseeded from upstream sources on demand",
       "last_success": null,
       "latest_snapshot_state": null,
       "latest_snapshot_failure_class": null
@@ -17008,8 +17032,8 @@
       "p50Ms": 5.005924991564825,
       "p95Ms": 6.256469001527876,
       "p99Ms": 7.345167017774656,
-      "durability": "fsync requested through Longhorn",
-      "note": "100 paced 8 KiB append + fsync samples; own file removed."
+      "durability": "Asked Longhorn to save permanently before confirming (fsync)",
+      "note": "100 spaced-out saves: add 8 KiB, then request a permanent save (fsync). The temporary test file was removed."
     },
     {
       "name": "Dell Samsung / Longhorn",
@@ -17017,8 +17041,8 @@
       "p50Ms": 9.773800993571058,
       "p95Ms": 12.147155997809023,
       "p99Ms": 12.55956501699984,
-      "durability": "fsync requested through Longhorn",
-      "note": "100 paced 8 KiB append + fsync samples; own file removed."
+      "durability": "Asked Longhorn to save permanently before confirming (fsync)",
+      "note": "100 spaced-out saves: add 8 KiB, then request a permanent save (fsync). The temporary test file was removed."
     },
     {
       "name": "GPU boot NVMe / Longhorn",
@@ -17026,8 +17050,8 @@
       "p50Ms": 5.925896024564281,
       "p95Ms": 107.80592099763453,
       "p99Ms": 172.1249000111129,
-      "durability": "fsync requested through Longhorn",
-      "note": "100 paced 8 KiB append + fsync samples; own file removed."
+      "durability": "Asked Longhorn to save permanently before confirming (fsync)",
+      "note": "100 spaced-out saves: add 8 KiB, then request a permanent save (fsync). The temporary test file was removed."
     },
     {
       "name": "NAS SMB / CSI",
@@ -17035,8 +17059,8 @@
       "p50Ms": 3.40812501963228,
       "p95Ms": 4.674086987506598,
       "p99Ms": 4.879145009908825,
-      "durability": "ZFS sync disabled",
-      "note": "Acknowledgement only; not a durable-commit comparison."
+      "durability": "Can confirm before data is safely stored (ZFS sync disabled)",
+      "note": "Times the “saved” reply, not proof the data reached permanent storage."
     },
     {
       "name": "NAS BigTank / direct",
@@ -17044,8 +17068,8 @@
       "p50Ms": 7.139610999729484,
       "p95Ms": 19.36121901962906,
       "p99Ms": 27.321287023369223,
-      "durability": "ZFS sync standard",
-      "note": "Server-local filesystem probe; excludes network/CSI. Own file removed."
+      "durability": "Honors requests to save permanently (ZFS sync standard)",
+      "note": "Test ran directly on the NAS, excluding the network and Kubernetes storage driver. The temporary test file was removed."
     },
     {
       "name": "NAS AI pool / direct",
@@ -17053,8 +17077,8 @@
       "p50Ms": 1.2461610022000968,
       "p95Ms": 3.183707012794912,
       "p99Ms": 3.2503740512765944,
-      "durability": "ZFS sync standard",
-      "note": "Server-local filesystem probe; excludes network/CSI. Own file removed."
+      "durability": "Honors requests to save permanently (ZFS sync standard)",
+      "note": "Test ran directly on the NAS, excluding the network and Kubernetes storage driver. The temporary test file was removed."
     }
   ],
   "namespaceCosts": [
@@ -17579,35 +17603,35 @@
       "status": "warning",
       "summary": "22 drives rechecked; two Shed drives remain unavailable.",
       "evidence": [
-        "All 22 freshly inspected drives report SMART overall pass / no NVMe critical warning. The two unreachable Shed disks are explicitly unknown.",
-        "The GPU boot NVMe is quiet in a fresh 55-second sample: 0.082 MiB/s reads, queue 0.013 and 1.10% busy. The Temporal/DCGM read storm is absent in this window.",
-        "Elite data NVMe remains 74% endurance used. Its boot NVMe estimate crossed 1%\u21922%; both unsafe-shutdown counters rose by one, without identifying cause.",
-        "Control-plane etcd fsync p99 remains 42.26 ms; its dedicated physical SSD averaged about 2.02 ms writes. Correlate tail latency with CPU steal before assigning a single cause.",
-        "NAS pools are ONLINE with no known data errors. AI-pool stripe exposure, single-disk Backup10T, warm BigTank drives and inherited sync=disabled remain architectural concerns."
+        "All 22 reachable drives passed their built-in health check (SMART), or reported no critical NVMe warning. The two Shed drives could not be checked; their current condition is unknown.",
+        "The GPU boot SSD was quiet during a 55-second check: 0.082 MiB/s read, 0.013 unfinished requests on average and 1.10% busy. The earlier Temporal/DCGM overload was absent during this check.",
+        "Elite’s data drive still reports 74% of rated write life used. Its boot drive’s rounded estimate rose from 1% to 2%. Each drive recorded one additional unclean shutdown; the cause is unknown.",
+        "Cluster-management storage is still slow: 99% of etcd saves finished within 42.26 ms. The physical SSD averaged about 2.02 ms per write. These measure different operations; check CPU competition too before blaming the SSD.",
+        "All NAS drive groups report ONLINE with no known data errors. Remaining concerns are AI-pool losing data if one drive fails, backups on a single disk in the same NAS, warm BigTank drives and some shares confirming saves before the data is safely stored."
       ],
-      "limitations": "Physical identity matched on 21 Proxmox/NAS drives and Pi model/device; the VM and guest mount paths retain their baseline mapping timestamp. Passive I/O reflects current workload, not maximum performance."
+      "limitations": "Drive identities matched the original check on 21 Proxmox/NAS disks; the Pi model and device also matched. The paths from disks through VMs to apps still use the original mapping date. Observed disk activity reflects the work running then, not maximum speed."
     },
     "resources": {
       "checkedAt": "2026-09-09T22:00:12.277868+00:00",
-      "summary": "VPA is making changes; fixed limits still require deliberate sizing.",
+      "summary": "Automatic sizing is working; app memory ceilings still need to be set sensibly.",
       "evidence": [
-        "130 VPA policies observed. Prometheus estimates about 58 in-place pod updates, 58 applied admission adjustments and one eviction over 24 hours. These are counter-rate estimates, not exact event counts.",
-        "Five of six nodes are Ready. Shed readiness and pressure conditions are Unknown; missing usage is not zero load.",
-        "Grafana main container uses about 389 MiB under its deployed 2 GiB limit. DCGM uses about 526 MiB under 2 GiB; neither reclaimed pages in the 91-second sample.",
-        "Control-plane CPU steal is about 6.0%; SFF worker steal about 7.5%. This keeps hypervisor contention in the control-plane latency investigation.",
-        "Fresh physical MemAvailable: Threadripper 18.71 GiB, Dell 7.48 GiB, SFF 12.16 GiB, Elite 5.05 GiB, NAS 47.15 GiB and Pi 6.05 GiB. NAS ARC uses 315.60 GiB as cache with no recorded memory throttles; ARC allocation alone is not application pressure."
+        "130 automatic-sizing policies (VPA) were observed. Over 24 hours, counters estimate about 58 updates to running pods, 58 sizing changes when pods were admitted and one pod removed for an update. These are estimates, not exact event counts.",
+        "Five of six Kubernetes nodes reported Ready. Shed could not report its health or usage; a missing reading does not mean an idle machine.",
+        "Grafana uses about 389 MiB of its 2 GiB memory limit. DCGM uses about 526 MiB of 2 GiB. Neither showed the previous memory-recycling behavior in the 91-second check.",
+        "The cluster-management VM spent about 6.0% of time waiting for Proxmox to give it CPU; the SFF worker about 7.5%. This competition could contribute to slow cluster-management saves.",
+        "Available machine memory: Threadripper 18.71 GiB, Dell 7.48 GiB, SFF 12.16 GiB, Elite 5.05 GiB, NAS 47.15 GiB and Pi 6.05 GiB. The NAS uses 315.60 GiB as a disk cache (ARC), with no recorded memory throttling. That cache alone does not mean apps are short of memory."
       ],
       "status": "good",
       "label": "Current reinspection",
-      "limitations": "Usage and VPA recommendations are current. Host DIMMs and any explicitly dated placement policy details remain baseline observations."
+      "limitations": "App usage and sizing suggestions were checked again. Memory-stick details and placement rules explicitly marked as original still come from the earlier inspection."
     },
     "spread": {
       "checkedAt": "2026-09-09T22:00:12.277868+00:00",
-      "summary": "Most volumes still have only one configured Longhorn copy.",
+      "summary": "79 of 81 Longhorn app disks are configured to keep only one data copy.",
       "evidence": [
-        "81 Longhorn volumes observed: 79 configured with one copy and two with two copies, including retained volumes. All currently attached volumes report healthy.",
-        "Shed is unavailable; Intercept requires the RTL-SDR USB label found only on that host, so moving an ordinary pod cannot restore the missing hardware.",
-        "The tables below refresh current workload replicas, actual pod hosts, PVC replica counts and disk paths. A healthy single-copy volume has met its configuration, not gained redundancy."
+        "81 Longhorn storage volumes were observed, including retained old volumes: 79 configured for one copy and two for two copies. All volumes currently connected to apps report healthy.",
+        "Shed is unreachable. Intercept needs the RTL-SDR USB receiver attached only to Shed; moving the app alone cannot move that hardware.",
+        "The tables show current app copies, which machines run them, and where their data copies live. A one-copy disk marked Healthy is meeting its settings; it still has no second copy if that drive or machine is lost."
       ],
       "status": "warning",
       "label": "Current reinspection",
@@ -17617,15 +17641,15 @@
       "checkedAt": "2026-09-09T22:00:12.277868+00:00",
       "summary": "Temporal, DCGM and Grafana repairs are still holding.",
       "evidence": [
-        "Temporal: latest completed 21:55 UTC run succeeded in four seconds with 1 GiB limit and 240-second deadline. The 22:00 capture caught the following Job just starting.",
-        "DCGM: running since 05:11 UTC with zero restarts; 4,030/4,030 successful scrapes. About 526 MiB in use; parent and container limits are both 2 GiB.",
-        "Grafana: running since 14:08 UTC with zero restarts. 941/942 scrapes succeeded; the single failed scrape preceded the new container start during rollout.",
-        "Both DCGM and Grafana added zero file refaults, direct reclaim, limit events or full memory stalls in a 91-second direct cgroup sample ending 21:59 UTC.",
-        "Fresh physical GPU boot SSD at 22:01\u201322:02 UTC: 0.082 MiB/s reads, queue 0.013 and 0.61 ms average reads; no severe queueing during this 55-second sample."
+        "Temporal recovery: the latest completed run at 21:55 UTC finished in four seconds. It has a 1 GiB memory limit and must finish within 240 seconds. At the 22:00 check, the next run was just starting.",
+        "DCGM GPU monitoring: running since 05:11 UTC without restarting; all 4,030 of 4,030 monitoring reads succeeded. It uses about 526 MiB, with 2 GiB memory ceilings on both the pod and its container.",
+        "Grafana: running since 14:08 UTC without restarting. 941 of 942 monitoring reads succeeded; the one failure occurred during the rollout, before the new container started.",
+        "DCGM and Grafana showed none of the previous memory-pressure symptoms in a 91-second check ending 21:59 UTC: no new discarded-file pages read back, forced memory reclamation, memory-limit events or full memory stalls.",
+        "GPU boot SSD at 22:01–22:02 UTC: 0.082 MiB/s read, 0.013 unfinished requests on average and 0.61 ms average read wait. There was no severe disk backlog during this 55-second check."
       ],
       "status": "good",
       "label": "Current reinspection",
-      "limitations": "A healthy sampled window and sustained pod uptime are strong repair evidence, not proof that all storage latency is solved."
+      "limitations": "Successful runs and no restarts support the repairs. A short quiet check does not prove every storage delay is fixed."
     },
     "argo": {
       "checkedAt": "2026-09-09T22:00:12.277868+00:00",
@@ -17641,12 +17665,12 @@
     },
     "health": {
       "checkedAt": "2026-09-09T22:00:12.277868+00:00",
-      "summary": "PostHog\u2019s broker PVC is full; existing data and backup faults remain.",
+      "summary": "PostHog’s app disk is full; the Redis, Flatnotes and backup problems remain.",
       "evidence": [
-        "PostHog Redpanda\u2019s 8 GiB PVC has zero available bytes and aborts with No space left on device. Ingestion-general and property-defs-rs fail behind it. The GPU host filesystem still has about 268 GB free: this is an application-volume boundary.",
-        "Intercept is Pending because its only RTL-SDR host, Shed, is unavailable. SurfSense Redis still has the same AOF corruption; Flatnotes still fails opening its Whoosh index.",
-        "Perplexica is the only failed latest snapshot among 35 policies. Last success was September 7 at 03:10 UTC, about 66.8 hours before this capture; the mover cannot read root-owned mode-0600 config.json.",
-        "The other 34 policies have successful latest snapshots. Kopia reports 1,412 index blobs above its 1,000 threshold despite recorded quick and full maintenance."
+        "PostHog’s message queue (Redpanda) has filled its 8 GiB app disk and stops with No space left on device. Ingestion-general and property-defs-rs fail behind it. The physical GPU machine still has about 268 GB free; the smaller disk assigned to this app is full.",
+        "Intercept is waiting because its only radio-receiver machine, Shed, is unavailable. SurfSense Redis still cannot read its damaged write log (AOF); Flatnotes still cannot open its search index (Whoosh).",
+        "Perplexica has the only failed latest backup among 35 policies. Its last success was September 7 at 03:10 UTC, about 66.8 hours before this check. The backup process cannot read config.json because only its root owner has permission (mode 0600).",
+        "The other 34 policies have successful latest backups. Kopia reports 1,412 backup-index pieces, above its warning threshold of 1,000, even though quick and full maintenance have run."
       ],
       "status": "danger",
       "label": "Current reinspection",
@@ -17666,66 +17690,73 @@
       "findings": [
         {
           "priority": "P1",
-          "title": "PostHog: restore broker disk headroom",
+          "title": "PostHog: give its full app disk more room",
           "state": "Active outage",
-          "evidence": "8 GiB Redpanda PVC is full; application ingestion is failing.",
-          "action": "Review the backing pool and expand the PVC through Git, then inspect effective retention and backlog. Do not delete queue data by default.",
-          "verify": "Broker becomes Ready, disk has sustainable free headroom, ingestion resumes and backlog drains.",
-          "status": "danger"
+          "evidence": "Redpanda’s 8 GiB app disk is full; PostHog cannot process incoming data.",
+          "action": "Check available storage, then enlarge the app disk through Git. Check how long it keeps data and whether queued work is draining. Preserve the queued data.",
+          "verify": "The message queue starts, stays below full, and PostHog processes incoming data again.",
+          "status": "danger",
+          "priorityLabel": "Fix current outage"
         },
         {
           "priority": "P1",
-          "title": "Shed / Intercept: restore the hardware path",
+          "title": "Shed / Intercept: bring the receiver machine back",
           "state": "Active outage",
-          "evidence": "Shed node is Unknown and the only eligible RTL-SDR host.",
-          "action": "Establish whether shutdown was intentional; inspect power/link/host reachability or deliberately relocate the physical SDR.",
-          "verify": "Node and device are available; Intercept schedules and its real receiver path works.",
-          "status": "danger"
+          "evidence": "Shed is unreachable and is the only machine with the required RTL-SDR USB receiver.",
+          "action": "Find out whether the shutdown was intentional. Check power and the network, or deliberately move the physical receiver to another suitable machine.",
+          "verify": "The machine and receiver are available, and Intercept can receive real radio data.",
+          "status": "danger",
+          "priorityLabel": "Fix current outage"
         },
         {
           "priority": "P1",
-          "title": "Control-plane storage: investigate continuing latency",
-          "state": "Measured latency",
-          "evidence": "Current etcd fsync p99 42.26 ms and backend commit p99 60.52 ms.",
-          "action": "Correlate physical write latency with Proxmox CPU steal before selecting a disk migration.",
-          "verify": "Repeat a comparable window with improved etcd latency and no loss of control-plane responsiveness.",
-          "status": "danger"
+          "title": "Cluster-management storage: find the cause of slow saves",
+          "state": "Slow saves measured",
+          "evidence": "99% of etcd disk saves finished within 42.26 ms; 99% of database updates within 60.52 ms. The SSD is not proven faulty.",
+          "action": "Compare physical-disk write times with time the VM waits for Proxmox CPU before deciding to move or replace a disk.",
+          "verify": "Repeat the check under similar load: database saves are faster and Kubernetes responds normally.",
+          "status": "danger",
+          "priorityLabel": "Investigate soon"
         },
         {
           "priority": "P2",
-          "title": "Perplexica: repair backup ownership",
+          "title": "Perplexica: let its backup process read the data",
           "state": "Backup gap",
-          "evidence": "Latest backup PermissionDenied; last good snapshot approximately 66.8 hours old.",
-          "action": "Correct mover ownership using the documented root-owned-data exception; preserve application permissions.",
-          "verify": "A fresh scheduled snapshot succeeds and an isolated restore reads the expected data.",
-          "status": "warning"
+          "evidence": "The latest backup was denied file access. The last successful backup was about 66.8 hours old.",
+          "action": "Use the documented backup setting for root-owned data, while preserving the app’s required file permissions.",
+          "verify": "A new scheduled backup succeeds, and an isolated restore can read the expected data.",
+          "status": "warning",
+          "priorityLabel": "Plan maintenance"
         },
         {
           "priority": "P2",
-          "title": "Redis and Flatnotes: deliberate one-time data recovery",
+          "title": "Redis and Flatnotes: recover the damaged data files",
           "state": "Unresolved",
-          "evidence": "Redis AOF corruption and Whoosh index EOF recur.",
-          "action": "Preserve originals, use the native repair/rebuild procedure, and keep recovery out of permanent startup scripts.",
-          "verify": "Redis loads its intended state; Flatnotes lists and searches preserved notes; application functions pass.",
-          "status": "warning"
+          "evidence": "Redis cannot load its write log (AOF). Flatnotes reaches an unexpected end of its search index (Whoosh EOF).",
+          "action": "Preserve the originals, then use each app’s repair or index-rebuild procedure once. Do not add permanent startup repair scripts.",
+          "verify": "Redis loads the intended data. Flatnotes lists and searches the preserved notes.",
+          "status": "warning",
+          "priorityLabel": "Plan maintenance"
         },
         {
           "priority": "P2",
-          "title": "Kopia: inspect index compaction",
+          "title": "Kopia: check why backup-index cleanup is behind",
           "state": "Maintenance warning",
-          "evidence": "1,412 index blobs; maintenance runs are recorded.",
-          "action": "Review compaction/epoch behavior and maintenance history before changing intervals or taking over leases.",
-          "verify": "Index health improves while ordinary backups and a restore remain successful.",
-          "status": "warning"
+          "evidence": "There are 1,412 backup-index pieces, despite recorded maintenance runs.",
+          "action": "Review why maintenance is not combining the pieces as expected before changing its schedule or taking over maintenance ownership.",
+          "verify": "The index warning clears while normal backups and a restore still succeed.",
+          "status": "warning",
+          "priorityLabel": "Plan maintenance"
         },
         {
           "priority": "P3",
-          "title": "Temporal / DCGM / Grafana: continue observation",
+          "title": "Temporal / DCGM / Grafana: watch the successful repairs",
           "state": "Verified repaired",
-          "evidence": "Correct limits deployed; latest runtime checks are healthy.",
-          "action": "Keep the merged budgets and monitor comparable workload/backup windows.",
-          "verify": "Scheduled recovery completes; exporter and Grafana stay healthy without renewed reclaim storms.",
-          "status": "good"
+          "evidence": "The corrected memory limits are deployed and the latest checks passed.",
+          "action": "Keep the merged memory settings. Check them again during comparable app activity and backups.",
+          "verify": "Temporal recovery completes on schedule; GPU monitoring and Grafana remain available without excessive memory recycling or disk reads.",
+          "status": "good",
+          "priorityLabel": "Keep and monitor"
         }
       ]
     }
@@ -17736,23 +17767,23 @@
       "state": "Verified repaired",
       "pr": 2307,
       "before": "128 MiB; one Job stuck more than 25 hours",
-      "after": "768 MiB request / 1 GiB limit / 240-second deadline. Latest completed 21:55 UTC run succeeded in four seconds.",
+      "after": "768 MiB reserved / 1 GiB limit / 240-second deadline. Latest completed 21:55 UTC run succeeded in four seconds.",
       "checkedAt": "2026-09-09T22:00:12.277868+00:00"
     },
     {
       "name": "DCGM exporter",
       "state": "Verified repaired",
       "pr": 2307,
-      "before": "512 MiB; sustained reclaim, stalled scrapes and restarts",
-      "after": "1 GiB request / 2 GiB limit. Zero restarts since 05:11 UTC; 4,030/4,030 successful scrapes; zero reclaim in the latest 91-second sample.",
+      "before": "512 MiB; repeatedly freed and reloaded memory, missed monitoring reads and restarted",
+      "after": "1 GiB reserved / 2 GiB limit. Zero restarts since 05:11 UTC; 4,030/4,030 successful monitoring reads; no forced memory recycling in the latest 91-second sample.",
       "checkedAt": "2026-09-09T22:00:12.277868+00:00"
     },
     {
       "name": "Grafana",
       "state": "Verified repaired",
       "pr": 2310,
-      "before": "1 GiB main-container limit with intermittent reclaim",
-      "after": "2 GiB main-container limit. Zero restarts since 14:08 UTC; about 389 MiB in use and zero reclaim in the latest 91-second sample.",
+      "before": "1 GiB main-container limit with occasional forced memory recycling",
+      "after": "2 GiB main-container limit. Zero restarts since 14:08 UTC; about 389 MiB in use and no forced memory recycling in the latest 91-second sample.",
       "checkedAt": "2026-09-09T22:00:12.277868+00:00"
     }
   ],
@@ -19163,7 +19194,7 @@
     }
   ],
   "datasetDates": {
-    "resources": "2026-09-09T22:00\u201322:04 UTC",
+    "resources": "2026-09-09T22:00–22:04 UTC",
     "spread": "2026-09-09T22:00:12.277868+00:00",
     "apps": "2026-09-09T22:00:12.277868+00:00",
     "workloads": "2026-09-09T22:00:12.277868+00:00",
@@ -19366,5 +19397,5 @@
     ]
   },
   "physicalCheckedAt": "2026-09-09T22:02:38.048037+00:00",
-  "requestMetricScope": "Sum of regular-container requests for Pending/Running pods with an assigned node; includes known reservations on unreachable Shed. Excludes init-container maxima and pod overhead, so this is not exact scheduler accounting."
+  "requestMetricScope": "Sum of regular app-container reservations for Pending/Running pods with an assigned node; includes known reservations on unreachable Shed. Excludes init-container maxima and pod overhead, so this is not exact scheduler accounting."
 }
