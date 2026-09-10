@@ -11,7 +11,9 @@ webhookCertificate:
 
 # Chart releases do not advance appVersion monotonically, so pin the controller independently.
 image:
-  tag: v1.9.0
+  # Use the upstream image again once temporalio/temporal-worker-controller#577 ships.
+  repository: ghcr.io/mitchross/temporal-worker-controller
+  tag: v1.10.1-inactive-1ea3da5@sha256:2d04646414a6adbf0c7a946b01128e046941cd5d07c7dd95a11c568d1950915e
 
 # Top-level, not under `controller:` — the chart has no such key and ignores it.
 # Two managers contend for the same ManagerIdentity, so keep this at 1.
