@@ -19,3 +19,30 @@ spec:
         - ports:
             - port: "9090"
               protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-prometheus-to-physical-exporters
+  namespace: prometheus-stack
+spec:
+  description: Allow Prometheus to scrape the physical host and disk collectors.
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+      operator.prometheus.io/name: kube-prometheus-stack-prometheus
+  egress:
+    - toCIDR:
+        - 192.168.10.14/32
+        - 192.168.10.16/32
+        - 192.168.10.20/32
+        - 192.168.10.21/32
+        - 192.168.10.22/32
+        - 192.168.10.15/32
+        - 192.168.10.133/32
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
+            - port: "9633"
+              protocol: TCP
