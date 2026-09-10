@@ -12,15 +12,8 @@ resources:
   - temporal-workers/temporal-connection.yaml
   - temporal-workers/ebay-externalsecret.yaml
   - temporal-workers/temporal-worker-deployment.yaml
-  - temporal-version-retirement.yaml
   - vpa.yaml
   - kopiur/deal-scout-data.yaml
-
-configMapGenerator:
-  - name: temporal-version-retirement-scripts
-    files:
-      - scripts/maintenance.py
-      - scripts/retire_inactive_versions.py
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
 components:
