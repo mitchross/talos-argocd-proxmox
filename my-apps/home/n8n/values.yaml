@@ -1,7 +1,9 @@
 image:
   repository: n8nio/n8n
   pullPolicy: IfNotPresent
-  tag: "latest"
+  # Pinned (was :latest — floating tag defeats Renovate + makes rollback/diff impossible).
+  # Renovate helm-values manager tracks minor/patch bumps from here.
+  tag: "2.36.7"
 
 main:
   replicaCount: 1
