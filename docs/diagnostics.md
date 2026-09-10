@@ -34,6 +34,12 @@ collector becomes unavailable, Grafana shows missing readings; it does not
 substitute the inspection's old numbers. A drive reporting a passing self-check still
 needs its errors, temperature and performance considered.
 
+The September 10 mounted-filesystem sweep at 23:27–23:29 UTC found **66 of 67
+ext4 filesystems with zero recorded errors**. SurfSense PostgreSQL had the only
+known nonzero counter: 34 errors, unchanged since 22:19. This was a read-only
+counter/log check, not offline fsck or a full media scan; detached Open WebUI
+and Intercept volumes were excluded.
+
 The initial proposal protects 32 selected app volumes with two copies, adding
 about **25.82 GiB of current data** and **414 GiB of scheduled claims**. Existing
 storage has room for that tier with explicit growth and staging allowances;
