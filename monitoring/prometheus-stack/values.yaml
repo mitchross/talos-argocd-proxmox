@@ -61,6 +61,95 @@ prometheus:
     # Control-plane jobs discover CP nodes via kubernetes_sd role:node, never static IPs (cluster is destroyed/recreated via Omni).
     # Needs the control-plane-performance machineconfig patch (etcd 2381, controller-manager 10257, scheduler 10259 on 0.0.0.0); job names must match the chart's default rules/dashboards.
     additionalScrapeConfigs:
+      # Physical hosts use standard exporters declared in host-monitoring/.
+      - job_name: physical-node
+        scrape_interval: 30s
+        scrape_timeout: 10s
+        static_configs:
+          - targets: ["192.168.10.14:9100"]
+            labels:
+              physical_host: threadripper
+              host_type: proxmox
+          - targets: ["192.168.10.16:9100"]
+            labels:
+              physical_host: dell
+              host_type: proxmox
+          - targets: ["192.168.10.21:9100"]
+            labels:
+              physical_host: hp-sff
+              host_type: proxmox
+          - targets: ["192.168.10.22:9100"]
+            labels:
+              physical_host: hp-elite
+              host_type: proxmox
+          - targets: ["192.168.10.20:9100"]
+            labels:
+              physical_host: hp-shed
+              host_type: proxmox
+          - targets: ["192.168.10.133:9100"]
+            labels:
+              physical_host: truenas
+              host_type: nas
+          - targets: ["192.168.10.15:9100"]
+            labels:
+              physical_host: pi
+              host_type: management
+        metric_relabel_configs:
+          - source_labels: [device]
+            regex: "(?:/dev/)?(.+)"
+            target_label: disk
+            replacement: "${1}"
+          # SMART identifies NVMe controllers; diskstats identifies their namespaces.
+          - source_labels: [disk]
+            regex: "(nvme[0-9]+)n[0-9]+"
+            target_label: disk
+            replacement: "${1}"
+          - action: labeldrop
+            regex: "serial|serial_number|wwn"
+      - job_name: physical-smartctl
+        scrape_interval: 60s
+        scrape_timeout: 45s
+        static_configs:
+          - targets: ["192.168.10.14:9633"]
+            labels:
+              physical_host: threadripper
+              host_type: proxmox
+          - targets: ["192.168.10.16:9633"]
+            labels:
+              physical_host: dell
+              host_type: proxmox
+          - targets: ["192.168.10.21:9633"]
+            labels:
+              physical_host: hp-sff
+              host_type: proxmox
+          - targets: ["192.168.10.22:9633"]
+            labels:
+              physical_host: hp-elite
+              host_type: proxmox
+          - targets: ["192.168.10.20:9633"]
+            labels:
+              physical_host: hp-shed
+              host_type: proxmox
+          - targets: ["192.168.10.133:9633"]
+            labels:
+              physical_host: truenas
+              host_type: nas
+          - targets: ["192.168.10.15:9633"]
+            labels:
+              physical_host: pi
+              host_type: management
+        metric_relabel_configs:
+          - source_labels: [device]
+            regex: "(?:/dev/)?(.+)"
+            target_label: disk
+            replacement: "${1}"
+          # SMART identifies NVMe controllers; diskstats identifies their namespaces.
+          - source_labels: [disk]
+            regex: "(nvme[0-9]+)n[0-9]+"
+            target_label: disk
+            replacement: "${1}"
+          - action: labeldrop
+            regex: "serial|serial_number|wwn"
       # rpi4 in the shed: the epsolar service (github.com/mitchross/epsolar) serves both the
       # legacy epever_* and the epsolar_*/solar_buffer_* metrics on 8080. 9812 is retired.
       - job_name: 'epever-solar'
@@ -389,6 +478,9 @@ kube-state-metrics:
       - apiGroups: ["autoscaling.k8s.io"]
         resources: ["verticalpodautoscalers"]
         verbs: ["list", "watch"]
+      - apiGroups: ["longhorn.io"]
+        resources: ["volumes"]
+        verbs: ["list", "watch"]
   customResourceState:
     enabled: true
     config:
@@ -514,6 +606,21 @@ kube-state-metrics:
                     labelsFromPath:
                       container: [containerName]
                     valueFrom: [uncappedTarget, cpu]
+          - groupVersionKind:
+              group: longhorn.io
+              version: v1beta2
+              kind: Volume
+            metricNamePrefix: kube_customresource
+            labelsFromPath:
+              namespace: [metadata, namespace]
+              volume: [metadata, name]
+            metrics:
+              - name: longhorn_volume_desired_replicas
+                help: Configured replica target for each Longhorn volume.
+                each:
+                  type: Gauge
+                  gauge:
+                    path: [spec, numberOfReplicas]
 # Prometheus Operator Configuration
 prometheusOperator:
   enabled: true
