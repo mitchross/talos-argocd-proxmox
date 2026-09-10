@@ -17,7 +17,7 @@ spec:
     spec:
       initContainers:
       - name: reconcile-llm
-        image: ghcr.io/presenton/presenton:v0.9.9-beta@sha256:e1640d671e6c321021cf4096f5deb5e1c5da26b6a6881499911b531842b0d8b0
+        image: ghcr.io/presenton/presenton:v0.9.9-beta@sha256:5be6a412a6674ad5f579a74a791e41eeab8364c2d069bc8a4f161414190cc965
         command: ["/opt/venv/bin/python", "/opt/repo-scripts/reconcile-llm.py"]
         env:
         - name: LITELLM_API_KEY
@@ -34,7 +34,7 @@ spec:
       containers:
       - name: presenton
         # renovate: datasource=docker depName=ghcr.io/presenton/presenton
-        image: ghcr.io/presenton/presenton:v0.9.9-beta@sha256:e1640d671e6c321021cf4096f5deb5e1c5da26b6a6881499911b531842b0d8b0
+        image: ghcr.io/presenton/presenton:v0.9.9-beta@sha256:5be6a412a6674ad5f579a74a791e41eeab8364c2d069bc8a4f161414190cc965
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
