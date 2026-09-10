@@ -17721,7 +17721,7 @@
   ],
   "baselineAt": "2026-09-08T23:41:00Z",
   "reinspection": {
-    "checkedAt": "2026-09-10T23:01:00Z",
+    "checkedAt": "2026-09-10T23:06:00Z",
     "disks": {
       "checkedAt": "2026-09-10T22:29:19.108847+00:00",
       "label": "September 10 reinspection",
@@ -17790,13 +17790,13 @@
       "limitations": "The application table below remains the September 9 inventory. Use Grafana/Argo for current status; this page is a dated service record."
     },
     "health": {
-      "checkedAt": "2026-09-10T23:01:00Z",
+      "checkedAt": "2026-09-10T23:06:00Z",
       "label": "September 10 reinspection",
       "status": "danger",
       "summary": "Redis and Flatnotes repairs are verified; SurfSense PostgreSQL integrity and two attachment faults remain.",
       "evidence": [
         "SurfSense Redis was repaired at 22:43 UTC and verified at 22:55: PONG, persistence checks passed, and 33 recent tasks observed. The native checker discarded 11,773 bytes from the bad AOF tail; original files are retained locally and on the NAS.",
-        "SurfSense remains in recovery: its PostgreSQL source filesystem has confirmed ext4 corruption, not just a broken backup clone. The 22:47 backup clone failed filesystem checks; the prior 21:49 backup succeeded. PostgreSQL answering queries does not establish filesystem integrity. A native 49 MB database dump completed at 23:01 UTC; isolated restore validation is still pending. Retain it and the last successful backup before repair.",
+        "SurfSense remains in recovery: its PostgreSQL source filesystem has confirmed ext4 corruption, not just a broken backup clone. The 22:47 backup clone failed filesystem checks; the prior 21:49 backup succeeded. PostgreSQL answering queries does not establish filesystem integrity. The 49.2 MB native dump from 23:01 UTC is preserved locally and on the NAS with matching hashes. At 23:06 UTC an isolated restore and database/index checks passed across 75 user tables. Original role ownership and ACL restoration were not tested; the source filesystem remains unrepaired.",
         "Flatnotes was repaired at 22:38 UTC: health OK and its rebuilt index opens with zero documents. No Markdown notes existed in the inspected data, so this is restored operation\u2014not recovered notes.",
         "Open WebUI and Intercept PostgreSQL still fail attachment: snapshot metadata files are zero bytes and reach EOF, while replica data images remain present. No repair is claimed, and this is not proof of failed physical media or a particular hardware cause.",
         "PostHog capacity and Perplexica permissions are in open PR #2350. Ingestion, retention, a successful new backup and a real isolated restore remain pending merge and verification."
@@ -17804,7 +17804,7 @@
       "limitations": "Stop migrations and broad replication while source integrity is unresolved. Successful Redis checks do not certify SurfSense PostgreSQL or its backups. Historical workload/backup tables below retain their September 9 date."
     },
     "plan": {
-      "checkedAt": "2026-09-10T23:01:00Z",
+      "checkedAt": "2026-09-10T23:06:00Z",
       "label": "September 10 reinspection",
       "status": "warning",
       "summary": "Keep the Dell, repair active data faults, and add selective protection before buying another host.",
@@ -17821,8 +17821,8 @@
           "priorityLabel": "Fix data integrity",
           "title": "SurfSense PostgreSQL: preserve data, then recover the filesystem",
           "state": "Confirmed source corruption",
-          "evidence": "Source ext4 reports double-free and block-bitmap corruption; a later backup clone fails filesystem checks even though PostgreSQL still answers queries.",
-          "action": "The native database dump completed at 23:01 UTC; validate an isolated restore and retain the last successful backup. Plan supported offline recovery before migrations or broad copy changes. Redis repair remains separately verified.",
+          "evidence": "Source ext4 reports double-free and block-bitmap corruption; a later backup clone fails filesystem checks even though PostgreSQL still answers queries. The preserved native dump passed an isolated restore and database/index checks at 23:06 UTC (75 user tables); original ownership and ACL restoration were not tested.",
+          "action": "Retain the verified logical dump and the last successful backup. Plan supported offline recovery of the still-corrupt source filesystem before migrations or broad copy changes. Redis repair remains separately verified.",
           "verify": "A restored database opens and validates, the filesystem is sound, and a fresh backup plus isolated restore succeeds.",
           "status": "danger"
         },
@@ -19841,5 +19841,5 @@
       "Two copies tolerate one host loss, not corruption, two losses, or loss of the sole control plane. Resolve flash-only selectors and verify actual restores before placement changes."
     ]
   },
-  "postRebootCheckedAt": "2026-09-10T23:01:00Z"
+  "postRebootCheckedAt": "2026-09-10T23:06:00Z"
 }
