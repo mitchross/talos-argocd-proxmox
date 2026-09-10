@@ -23,3 +23,14 @@ configMapGenerator:
   - name: intercept-scripts
     files:
       - scripts/initialize-data.sh
+
+# Recovery must never bind an empty volume when no backup matches.
+patches:
+  - target:
+      group: kopiur.home-operations.com
+      kind: Restore
+      name: intercept-postgres-data-restore
+    patch: |-
+      - op: replace
+        path: /spec/policy/onMissingSnapshot
+        value: Fail

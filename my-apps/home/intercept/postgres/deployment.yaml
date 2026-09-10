@@ -84,4 +84,4 @@ spec:
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: intercept-postgres-data
+            claimName: intercept-postgres-recovered
