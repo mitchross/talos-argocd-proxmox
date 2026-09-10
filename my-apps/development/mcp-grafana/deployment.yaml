@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: mcp-grafana
-          image: grafana/mcp-grafana:1.3.0@sha256:5114852743e450fe5186b6c1712419843eb4bd295e47e64c452c3aa0fab3c42e
+          image: grafana/mcp-grafana:1.4.0@sha256:13cf62271d456750e3371051a7e3927339ad956f3ac5e7b998a943472b48be1c
           # The image bakes `--transport sse --address 0.0.0.0:8000` into its
           # ENTRYPOINT, so `args` alone would append a second conflicting
           # --transport. Override command to own the whole argv.
