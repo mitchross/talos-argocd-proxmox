@@ -61,4 +61,4 @@ spec:
           name: qwen-no-think-filter
       - name: data
         persistentVolumeClaim:
-          claimName: storage
+          claimName: storage-recovered

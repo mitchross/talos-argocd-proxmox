@@ -65,7 +65,7 @@ spec:
       volumes:
       - name: data
         persistentVolumeClaim:
-          claimName: storage
+          claimName: storage-recovered
       - name: frontend-loader
         configMap:
           name: open-webui-loader
