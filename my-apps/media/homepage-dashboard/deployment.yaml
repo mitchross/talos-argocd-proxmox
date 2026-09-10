@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: homepage
-          image: ghcr.io/gethomepage/homepage:v2.2.0
+          image: ghcr.io/gethomepage/homepage:v2.3.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
