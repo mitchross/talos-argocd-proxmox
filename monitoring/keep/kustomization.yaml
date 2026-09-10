@@ -14,7 +14,7 @@ resources:
 helmCharts:
   - name: keep
     repo: https://keephq.github.io/helm-charts
-    version: 0.1.96
+    version: 0.1.97
     releaseName: keep
     valuesFile: values.yaml
     includeCRDs: true
