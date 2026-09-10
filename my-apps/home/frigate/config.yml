@@ -28,9 +28,22 @@ motion:
 record:
   enabled: true
   continuous:
-    days: 3
+    days: 0
   motion:
-    days: 3
+    days: 0
+  alerts:
+    pre_capture: 60
+    post_capture: 180
+    retain:
+      days: 10
+      # Keep quiet footage inside the pre/post window too.
+      mode: all
+  detections:
+    pre_capture: 60
+    post_capture: 180
+    retain:
+      days: 10
+      mode: all
 # Object detection is now disabled by default in 0.16.0+
 detect:
   enabled: true
@@ -191,12 +204,6 @@ cameras:
       height: 640
       fps: 5
     record:
-      enabled: true
-      # Zero continuous retention still leaves detect/record streaming active.
-      continuous:
-        days: 0
-      motion:
-        days: 3
       alerts:
         retain:
           days: 14
