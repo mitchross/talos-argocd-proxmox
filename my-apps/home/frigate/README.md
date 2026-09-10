@@ -20,6 +20,34 @@ and the existing Nest H.264 re-encode streams also use CPU. The six Nest
 streams retain their keyframe workaround; camera stability on this release
 must be checked after deployment.
 
+### Event recording
+
+[config.yml](config.yml) retains alert and detection recordings with 60 seconds
+before the event and 180 seconds after it ends. Frigate 0.18 RC2 limits
+`pre_capture` to 60 seconds. `retain.mode: all` preserves quiet segments within
+that window. Recordings remain available for 10 days, or 14 days for
+`front-porch`; overlapping events can produce a longer continuous stretch.
+
+Both continuous and general motion retention are zero. Clips therefore follow
+Frigate's object review events using each camera's existing tracked objects,
+not every pixel change from shadows or moving plants. The camera streams,
+decoding, detection, and temporary recording cache remain active so the
+pre-event footage is available. This reduces persistent recording writes during
+quiet periods; it does not fix Nest reconnect failures or reduce camera battery
+use. Changing retention also lets cleanup expire older footage that no longer
+matches the policy.
+
+After merge and sync, check both `alerts` and `detections` in `/api/config`
+show `pre_capture: 60`, `post_capture: 180`, and `retain.mode: all` for all
+cameras. After at least a minute of healthy streaming, trigger a tracked object
+event and verify playback covers the lead-in, activity, and three-minute tail.
+Quiet periods outside event windows should not accumulate saved recordings.
+Missing camera frames cannot be recovered by changing retention.
+
+To restore continuous history, revert this recording-policy change through a
+PR. Cleanup-deleted footage cannot be restored by changing the policy back.
+See [Frigate recording retention](https://docs.frigate.video/configuration/record/).
+
 ### USB Coral detector
 
 The HP Talos VM receives the USB Coral through Proxmox passthrough. Frigate
