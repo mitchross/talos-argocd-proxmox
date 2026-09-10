@@ -37,3 +37,35 @@
   padding-top: 0.05rem;
   padding-bottom: 0.05rem;
 }
+
+/* Keep both reading modes in the hardware report's warm palette. */
+body[data-md-color-scheme="default"][data-md-color-primary] {
+  --md-primary-fg-color: #29251f;
+  --md-accent-fg-color: #a65324;
+  --md-typeset-a-color: #9b471c;
+  --md-default-bg-color: #faf8f3;
+  --md-default-fg-color: #29251f;
+  --md-default-fg-color--light: #70695f;
+  --md-code-bg-color: #eee9df;
+}
+body[data-md-color-scheme="slate"][data-md-color-primary] {
+  --md-hue: 35;
+  --md-primary-fg-color: #211f1b;
+  --md-accent-fg-color: #e4a66c;
+  --md-typeset-a-color: #efb77f;
+  --md-default-bg-color: #211f1c;
+  --md-default-fg-color: #eae5dc;
+  --md-default-fg-color--light: #c8c0b4;
+  --md-default-fg-color--lightest: #4d473e;
+  --md-code-bg-color: #332f29;
+  --md-code-fg-color: #eae5dc;
+}
+body[data-md-color-scheme="slate"] .md-button:not(.md-button--primary) {
+  color: var(--md-typeset-a-color);
+  border-color: currentColor;
+}
+body[data-md-color-scheme="slate"] .md-button--primary {
+  background: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+  color: var(--md-default-bg-color);
+}

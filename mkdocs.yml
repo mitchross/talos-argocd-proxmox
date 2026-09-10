@@ -29,15 +29,15 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: brown
+      accent: deep orange
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: brown
+      accent: deep orange
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -92,7 +92,7 @@ extra_javascript:
   # Without it every page renders fully static — never blank.
   - assets/motion.js
 
-# 8 top-level sections. Long topics nest one level so no section feels crowded.
+# Long topics nest one level; Diagnostics is the final section.
 nav:
   - Overview & architecture:
       - Home — the big picture: index.md
@@ -146,3 +146,5 @@ nav:
       - Multicluster — PRD: domains/multicluster/prd.md
       - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
       - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
+
+  - Diagnostics Hardware Report: diagnostics.md
