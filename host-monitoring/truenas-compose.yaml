@@ -1,0 +1,40 @@
+services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    read_only: true
+    mem_limit: 256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - --web.listen-address=192.168.10.133:9100
+      - --path.rootfs=/host
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.udev.data=/host/run/udev/data
+      - --no-collector.textfile
+    volumes:
+      - /:/host:ro,rslave
+  smartctl-exporter:
+    image: docker.io/prometheuscommunity/smartctl-exporter:v0.14.0@sha256:cfe22c36d7d2fac48ebf619707305acb65eb0fb670656eb80f356e606d782bc1
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    user: "0:0"
+    privileged: true
+    read_only: true
+    mem_limit: 256m
+    command:
+      - --web.listen-address=192.168.10.133:9633
+      - --smartctl.interval=60s
+      - --smartctl.rescan=5m
+      - --smartctl.powermode-check=standby
+    volumes:
+      # Mount live /dev at /dev: a container-created device list can retain removed drives.
+      - /dev:/dev:ro,rslave
+      - /sys:/sys:ro
+      - /run/udev:/run/udev:ro
