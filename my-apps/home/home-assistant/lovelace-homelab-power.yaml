@@ -1299,6 +1299,19 @@ views:
               - entity: binary_sensor.gaming_pc_gaming
                 name: Session now
       - type: grid
+        cards:
+          - type: heading
+            heading: Air conditioning
+            heading_style: title
+          - type: entities
+            entities:
+              - entity: input_number.ac_cooling_wattage
+                name: Assumed cooling wattage
+              - entity: input_number.ac_house_baseline_kwh
+                name: House baseline (non-AC)
+              - entity: binary_sensor.ac_cooling
+                name: Compressor now
+      - type: grid
         column_span: 2
         cards:
           - type: heading
