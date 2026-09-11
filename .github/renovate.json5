@@ -94,7 +94,7 @@
       prCreation: 'immediate',
     },
     {
-      description: 'Cilium never automerges — read the release notes and roll it deliberately.',
+      description: 'Cilium never automerges — a CNI bump is major-risk. Every 1.20.x carries an unfixed, unreported split-xDS stale-policy NACK that wedges a node CNI on mass pod restart (recovery: delete that node\'s cilium-agent pod); 1.21 delta-split may address it — verify before rolling.',
       matchPackageNames: [
         'cilium',
       ],
