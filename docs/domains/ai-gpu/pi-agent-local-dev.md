@@ -161,8 +161,8 @@ pool, but parallel agent fanout competes for the same capacity. See the
 Pi's template mapping switches reasoning but does not switch sampling.
 The small repo-owned
 [Qwen sampler extension](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/qwen-sampling.ts)
-uses Pi's `before_provider_request` hook to select Qwen's six recommended
-sampling values after serialization. It applies only to
+uses Pi's `before_provider_request` hook to select the deployment's six
+mode-specific sampling values after serialization. It applies only to
 `vanillax-vllm/qwen3.8-27b`, leaves messages/tools/template mapping intact, and
 sets mode-specific values even if a stale client temperature was selected.
 
@@ -174,9 +174,13 @@ cp scripts/pi/qwen-sampling.ts ~/.pi/agent/extensions/qwen-sampling.ts
 ```
 
 Restart Pi or use `/reload`. Thinking requests use temperature 1.0, top-p 0.95,
-top-k 20, min-p 0, presence penalty 0, repetition penalty 1. Off requests use
-0.7, 0.8, 20, 0, 1.5, 1 respectively. The server-wide thinking sampler stays
-unchanged. Without this extension, Pi off still disables reasoning, but needs
+top-k 20, min-p 0, presence penalty 0, repetition penalty **1.05**. Off requests
+use 0.7, 0.8, 20, 0, 1.5, **1.0** respectively. The thinking penalty is a local,
+community-reported mitigation candidate, not Qwen's official default or a
+proven fix. It matches the server and WebUI policy; see the runbook's caveats.
+After pulling a sampler update, repeat the copy above and `/reload`: Git/Argo
+cannot update an already installed workstation copy. Without this extension,
+Pi off still disables reasoning, but needs
 another per-request sampler override to match Qwen's recommendation.
 [Pi request hook](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md#before_provider_request),
 [canonical server policy and API examples](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#explicit-reasoning-and-sampling).

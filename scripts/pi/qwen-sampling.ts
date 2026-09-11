@@ -24,7 +24,7 @@ export default function (pi: ExtensionAPI) {
       top_k: 20,
       min_p: 0.0,
       presence_penalty: off ? 1.5 : 0.0,
-      repetition_penalty: 1.0,
+      repetition_penalty: off ? 1.0 : 1.05,
     };
   });
 }

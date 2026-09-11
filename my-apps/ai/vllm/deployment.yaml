@@ -109,16 +109,17 @@ spec:
             - --prefix-match-unit
             - "16"
             - --enable-chunked-prefill
-            # 8192 matches the club-3090 2x3090 reference; their A/B found it
-            # concurrency-neutral vs 2048 at max-num-seqs 2, ~4x prefill steps.
+            # Aggregate scheduling budget: 8192 tokens across up to two requests.
+            # The 4096 threshold below caps each request's prefill chunk; it is
+            # active even with max-num-seqs=2. Benchmark latency and KV headroom.
             - --max-num-batched-tokens
             - "8192"
             - --long-prefill-token-threshold
             - "4096"
             # Speculation stays off until the GDN long-session faults are fixed.
-            # repetition_penalty 1.05: community-measured stable band (1.05-1.10)
-            # for the EOS-mid-think empty-answer failure; 1.0 sits at the U-curve
-            # center where ~17-38% of xhigh calls return empty content (QwenLM/Qwen3.8#216).
+            # Local thinking policy: community-reported mitigation candidate,
+            # not an upstream default or proven fix (QwenLM/Qwen3.8#216).
+            # Keep WebUI/Pi thinking=1.05 and off=1.0 in sync with this default.
             - --override-generation-config
             - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.05}'
             - --enable-force-include-usage
@@ -144,7 +145,7 @@ spec:
             - name: OMP_NUM_THREADS
               value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
-              value: expandable_segments:True,max_split_size_mb:512
+              value: expandable_segments:True
           ports:
             - name: http
               containerPort: 8000
