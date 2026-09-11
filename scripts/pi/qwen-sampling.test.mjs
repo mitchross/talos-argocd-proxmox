@@ -22,19 +22,39 @@ for (const level of ["low", "medium", "xhigh", "off"]) {
       tools: [{ type: "function", function: { name: "lookup" } }],
       max_tokens: 32768,
       temperature: 9,
+      repetition_penalty: 1.2,
     };
     const result = handler({ payload }, context);
     assert.deepEqual(
       [result.temperature, result.top_p, result.top_k, result.min_p,
         result.presence_penalty, result.repetition_penalty],
-      off ? [0.7, 0.8, 20, 0, 1.5, 1] : [1, 0.95, 20, 0, 0, 1],
+      off ? [0.7, 0.8, 20, 0, 1.5, 1] : [1, 0.95, 20, 0, 0, 1.05],
     );
     for (const key of ["messages", "tools", "chat_template_kwargs", "max_tokens"]) {
       assert.equal(result[key], payload[key]);
     }
     assert.equal(payload.temperature, 9);
+    assert.equal(payload.repetition_penalty, 1.2);
   });
 }
+
+test("omitted kwargs use the thinking policy without changing template defaults", () => {
+  const payload = { repetition_penalty: 1.0 };
+  const result = handler({ payload }, context);
+  assert.equal(result.repetition_penalty, 1.05);
+  assert.equal(result.temperature, 1.0);
+  assert.equal("chat_template_kwargs" in result, false);
+  assert.deepEqual(payload, { repetition_penalty: 1.0 });
+});
+
+test("switching off and back on does not retain the previous mode's penalty", () => {
+  let payload = { chat_template_kwargs: { enable_thinking: true, reasoning_effort: "medium" } };
+  for (const enabled of [true, false, true]) {
+    payload = { ...payload, chat_template_kwargs: { enable_thinking: enabled } };
+    payload = handler({ payload }, context);
+    assert.equal(payload.repetition_penalty, enabled ? 1.05 : 1.0);
+  }
+});
 
 test("other providers and models keep their sampler but still get traced", () => {
   for (const model of [undefined, { ...context.model, provider: "vanillax-litellm", id: "kimi-k3" },

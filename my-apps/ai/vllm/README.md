@@ -1,9 +1,10 @@
 # vLLM — official Qwen3.8-27B FP8 on two RTX 3090s
 
-**Live production backend, verified 2026-09-06.** Official FP8 is loaded on
-both cards. The [capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
-records measured KV capacity and request checks. The medium fallback in this
-PR takes effect after merge and Argo reconciliation; live probes sent medium explicitly.
+**Git-declared backend and operating policy.** The
+[2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
+records measurements of the earlier v0.28.0 deployment, with medium sent
+explicitly. It is not a benchmark of the v0.29.0 tunables below. Confirm the
+running arguments and repeat acceptance after merge and Argo reconciliation.
 
 | Setting | Value |
 |---|---|
@@ -17,7 +18,7 @@ PR takes effect after merge and Argo reconciliation; live probes sent medium exp
 | Attention | FlashInfer explicitly selected for Ampere FP8 KV |
 | KV / recurrent state | `fp8_e4m3` / float16 |
 | GPU utilization budget | 0.92 per GPU |
-| Prefill | chunked, 8,192 tokens per batch |
+| Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
 | Reasoning | on, explicit `medium` default; `low` and `xhigh` per request |
 | Speculation | **off**; no MTP or external drafter |
@@ -109,6 +110,33 @@ client/default behavior; it does not claim a universal cure for thinking loops.
 `xhigh` and cautions that lower effort can cause more retries in agent tasks.
 [Official FP8 history](https://huggingface.co/Qwen/Qwen3.8-27B-FP8/commits/main)
 
+## Tuning policy and evidence limits
+
+`--max-num-batched-tokens 8192` is the aggregate scheduling budget;
+`--long-prefill-token-threshold 4096` caps the prefill chunk of each request.
+That cap is active even at two sequence slots. A single long prompt therefore
+does not receive 8,192-token chunks. Alignment, available tokens, vision and
+other scheduler constraints can reduce chunks further. This is an intentional
+8192/4096 profile, not a claim of four times fewer steps or a measured speedup.
+[Versioned scheduler](https://github.com/vllm-project/vllm/blob/v0.29.0/vllm/v1/core/sched/scheduler.py).
+
+`align` and `prefix-match-unit=16` explicitly pin cache behavior; the latter is
+matching granularity, not a recurrent-state checkpoint every 16 tokens.
+Retain `expandable_segments:True` without a split-size override. Allocator
+fragmentation tuning needs measurements, not just a copied reference setting.
+[PyTorch allocator guidance](https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf).
+
+Thinking `repetition_penalty=1.05` is a **local mitigation candidate**, not the
+official Qwen default of 1.0 or an established fix. The author of
+[Qwen3.8 issue 216](https://github.com/QwenLM/Qwen3.8/issues/216) corrected earlier
+claims: low/medium are not universally immune, and the reported narrow penalty
+band and extraction scores do not establish coding/tool/vision quality.
+The suspected EOS-inside-thinking mechanism is not a confirmed root cause.
+Keep medium as the default and validate all supported modes, not just xhigh.
+The server value is a fallback, not an enforced floor: explicit client values
+win. WebUI and the Pi extension therefore use 1.05 for every thinking effort
+and 1.0 for off. Update server, clients, tests and docs together.
+
 ## Reasoning acceptance checks
 
 Before live tests, inspect the **running** Deployment args and request payloads.
@@ -158,13 +186,21 @@ legacy `qwen_non_thinking_default` function ID now updates in place to the
 reasoning policy; Pi must retain its explicit mapping and medium startup level.
 Generic `high` must become medium in WebUI or be unavailable in Pi. Clear stale
 per-chat presets that explicitly request xhigh. Stored user/client settings
-outside Git still require payload inspection after rollout.
+outside Git still require payload inspection after rollout. Verify the WebUI
+PostSync function-loader job succeeds; it loads the updated filter into WebUI.
+Refresh an installed Pi extension using the copy command and `/reload` in the
+Pi guide. In both clients, inspect the outgoing sampler as well as kwargs:
+1.05 for default/low/medium/xhigh, 1.0 for off, including through LiteLLM.
+A successful request alone does not show which penalty reached vLLM.
 
 The offline tests check policy resolution and preservation of tool/image/history
 payloads, not model quality. Actual tool/vision/multi-turn generation must pass
 after merge. Treat output truncation (`finish_reason=length`) as inconclusive,
-not a successful reasoning check. Stop on loops, malformed tool output or lost
-history and inspect payloads before changing runtime flags. Roll back this
+not a successful reasoning check. Repeat representative coding, tool and image
+requests with a sufficient output budget. Flag a completed empty final answer
+with no tool calls; empty content accompanying a valid tool call is normal.
+Stop on loops, malformed tool output or lost history and inspect payloads
+before changing runtime flags. Roll back this
 reasoning-policy commit through Git if needed; it does not alter backend sizing.
 
 ## Reproducible staging
@@ -235,8 +271,13 @@ that near-ceiling vision is verified. Run the existing
 prefill/decode, cache preemptions, GPU peaks, and a sustained multi-turn soak.
 Test a context ladder before claiming 262K usability. Prefix caching makes
 warm prompts cheaper; unique-prefix tests are needed for genuine prefill.
-The 8,192-token prefill batch matches the club-3090 2x3090 reference (their
-A/B found it concurrency-neutral vs 2,048 at max-num-seqs 2).
+Compare the prior 2,048-token budget against the 8,192 aggregate / 4,096
+per-request profile using the same prompts, output budgets and sampler. Test
+one fresh long prompt, two fresh prompts, and a long prefill arriving during
+decode. Record time to first token, inter-token latency, preemptions, available
+KV capacity and peak memory. Do not reuse the September 6 pool measurements
+as proof of capacity after changing prefill workspace. Prefix-hit counters
+alone do not establish correctness or a latency improvement.
 
 Stop on staging/hash failure, insufficient KV pool, OOM/Xid, broken tool or
 vision output, or repeated preemptions. Do not enable MTP to rescue a failing
@@ -245,7 +286,11 @@ routing configuration; they do not establish new runtime performance.
 
 ## Rollback
 
-Revert the FP8 cutover commit through Git, preserving the prior hardware
+For this tuning policy, revert its commits through Git and restore the previous
+Pi extension copy, then reload Pi. That retains vLLM and the current model;
+do not revert the entire FP8 cutover merely to undo sampler/prefill tuning.
+
+For a full backend rollback, revert the FP8 cutover commit through Git, preserving the prior hardware
 expansion. That restores llama.cpp's replica, selector Service, both-hostname
 HTTPRoute and vLLM's old alias/zero replicas. Argo releases vLLM's two cards
 before the retained one-card GGUF profile can run. Verify the model ID and
