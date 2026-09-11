@@ -6,6 +6,7 @@ resources:
   - ns.yaml
   - loki-http-route.yaml
   - externalsecret.yaml
+  - write-pvc.yaml
 # OSS Loki chart lives at grafana-community/helm-charts; grafana/helm-charts went GEL-only at v7.0.0.
 helmCharts:
   - name: loki
