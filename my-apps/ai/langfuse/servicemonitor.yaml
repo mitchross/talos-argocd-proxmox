@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: langfuse-clickhouse
+  namespace: langfuse
+spec:
+  selector:
+    matchLabels:
+      app: langfuse-clickhouse
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

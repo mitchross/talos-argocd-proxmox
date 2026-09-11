@@ -1,0 +1,108 @@
+rule_files:
+  - langfuse.rules.yaml
+evaluation_interval: 1m
+tests:
+  - name: a failed-insert storm fires once it has persisted, not on a single rejection
+    interval: 1m
+    input_series:
+      - series: ClickHouseProfileEvents_FailedInsertQuery{job="langfuse-clickhouse",instance="10.244.0.5:9363"}
+        values: '0+0x10 10+12x40'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: LangfuseClickHouseInsertsFailing
+        exp_alerts: []
+      - eval_time: 45m
+        alertname: LangfuseClickHouseInsertsFailing
+        exp_alerts:
+          - exp_labels:
+              job: langfuse-clickhouse
+              instance: 10.244.0.5:9363
+              severity: critical
+              component: langfuse
+              category: observability
+            exp_annotations:
+              summary: 'Langfuse ClickHouse is rejecting inserts'
+              description: |
+                180 failed INSERT(s) in 15m. langfuse-worker drops the
+                whole batch on failure, so traces are being destroyed, not queued.
+
+                Actions:
+                1. kubectl -n langfuse logs deploy/langfuse-worker --tail=50 | grep -i error
+                2. A ClickHouse version bump is the usual cause — a changed parsing
+                   default rejects what Langfuse has always sent. Check the release:
+                   SELECT version, c.1, c.4 FROM system.settings_changes
+                     ARRAY JOIN changes AS c WHERE version = '<new version>'
+                3. Restore the old behaviour in my-apps/ai/langfuse/clickhouse-settings.xml
+  - name: a busy gateway with no inserts is the silent-loss case
+    interval: 1m
+    input_series:
+      - series: litellm_proxy_total_requests_metric_total{requested_model="qwen3.8-27b",job="litellm"}
+        values: '0+2x120'
+      - series: ClickHouseProfileEvents_InsertedRows{job="langfuse-clickhouse",instance="10.244.0.5:9363"}
+        values: '5000+0x120'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: LangfuseIngestionStalled
+        exp_alerts: []
+      - eval_time: 100m
+        alertname: LangfuseIngestionStalled
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: langfuse
+              category: observability
+            exp_annotations:
+              summary: 'LiteLLM is serving requests but Langfuse ingested nothing for an hour'
+              description: |
+                The gateway handled 120 requests in the last hour while
+                ClickHouse inserted no rows. Traces for that window are lost.
+
+                Actions:
+                1. kubectl -n langfuse get pods
+                2. kubectl -n langfuse logs deploy/langfuse-worker --tail=50
+                3. Confirm the blob store is reachable — event upload precedes the insert:
+                   kubectl -n langfuse logs job/langfuse-init-bucket
+  - name: healthy ingestion alongside a busy gateway stays quiet
+    interval: 1m
+    input_series:
+      - series: litellm_proxy_total_requests_metric_total{requested_model="qwen3.8-27b",job="litellm"}
+        values: '0+2x120'
+      - series: ClickHouseProfileEvents_InsertedRows{job="langfuse-clickhouse",instance="10.244.0.5:9363"}
+        values: '5000+40x120'
+      - series: ClickHouseProfileEvents_FailedInsertQuery{job="langfuse-clickhouse",instance="10.244.0.5:9363"}
+        values: '0+0x120'
+      - series: up{job="langfuse-clickhouse",instance="10.244.0.5:9363"}
+        values: '1+0x120'
+    alert_rule_test:
+      - eval_time: 100m
+        alertname: LangfuseIngestionStalled
+        exp_alerts: []
+      - eval_time: 100m
+        alertname: LangfuseClickHouseInsertsFailing
+        exp_alerts: []
+      - eval_time: 100m
+        alertname: LangfuseClickHouseMetricsDown
+        exp_alerts: []
+  - name: a missing scrape target fires so the loss alerts are not silently blind
+    interval: 1m
+    input_series:
+      - series: up{job="litellm",instance="10.244.0.9:4000"}
+        values: '1+0x40'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: LangfuseClickHouseMetricsDown
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: LangfuseClickHouseMetricsDown
+        exp_alerts:
+          - exp_labels:
+              job: langfuse-clickhouse
+              severity: warning
+              component: langfuse
+              category: observability
+            exp_annotations:
+              summary: 'Langfuse ClickHouse metrics endpoint is down'
+              description: |
+                Prometheus cannot scrape langfuse-clickhouse. Either ClickHouse is
+                down or the prometheus config/Service/ServiceMonitor changed. Both
+                trace-loss alerts above are blind while this fires.

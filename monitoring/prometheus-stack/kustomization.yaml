@@ -12,6 +12,7 @@ resources:
   - custom-servicemonitors.yaml
   - longhorn-alerts.yaml # volume/node health (was longhorn-backup-alerts.yaml; dead backup-target alerts dropped 2026-07-06)
   - kopiur-alerts.yaml # kopiur backup staleness/failure alerts (the follow-up promised when volsync-alerts were retired 2026-06-27)
+  - langfuse-alerts.yaml # LLM trace loss: ClickHouse insert failures + busy-gateway/no-ingest cross-check
   - argocd-sync-alerts.yaml # ArgoCD control-plane + app-state alerts (stale-sync incident 2026-05-29)
   - admission-webhook-alerts.yaml # API-server-side webhook reachability; pod health cannot prove it
   - dcgm-exporter.yaml # DCGM GPU monitoring
