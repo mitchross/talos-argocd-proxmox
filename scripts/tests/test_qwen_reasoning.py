@@ -27,13 +27,23 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(kwargs, body['extra_body']['chat_template_kwargs'])
         self.assertEqual(body['reasoning_effort'], effort if enabled else None)
         self.assertEqual(body['extra_body']['reasoning_effort'], effort if enabled else None)
+        expected = dict(temperature=1.0 if enabled else 0.7,
+                        top_p=0.95 if enabled else 0.8, top_k=20, min_p=0.0,
+                        presence_penalty=0.0 if enabled else 1.5,
+                        repetition_penalty=1.05 if enabled else 1.0)
+        for target in (body, body['extra_body']):
+            self.assertEqual({key: target[key] for key in expected}, expected)
+        if enabled:
+            deployment = yaml.safe_load((ROOT / 'my-apps/ai/vllm/deployment.yaml').read_text())
+            args = deployment['spec']['template']['spec']['containers'][0]['args']
+            self.assertEqual(json.loads(args[args.index('--override-generation-config') + 1]), expected)
 
     async def test_default_request_has_explicit_medium_and_preserves_history(self):
         body = await self.request()
         self.assert_mode(body)
         self.assertEqual([body[k] for k in ['temperature', 'top_p', 'top_k',
                                           'min_p', 'presence_penalty', 'repetition_penalty']],
-                         [1.0, 0.95, 20, 0.0, 0.0, 1.0])
+                         [1.0, 0.95, 20, 0.0, 0.0, 1.05])
 
     async def test_explicit_efforts_survive_both_forwarding_shapes(self):
         for effort in ['low', 'medium', 'xhigh']:
@@ -42,6 +52,17 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
                             dict(extra_body={'chat_template_kwargs': {'reasoning_effort': effort}})]:
                 with self.subTest(effort=effort, options=options):
                     self.assert_mode(await self.request(**options), effort)
+
+    async def test_stale_penalties_cannot_override_either_forwarding_shape(self):
+        for effort in ('low', 'medium', 'xhigh', 'none'):
+            for nested in (False, True):
+                with self.subTest(effort=effort, nested=nested):
+                    options = dict(repetition_penalty=1.2,
+                                   extra_body={'repetition_penalty': 0.5})
+                    (options['extra_body'] if nested else options)['reasoning_effort'] = effort
+                    body = await self.request(**options)
+                    enabled = effort != 'none'
+                    self.assert_mode(body, effort, enabled=enabled, preserve=enabled)
 
     async def test_generic_high_maps_to_medium_and_invalid_effort_fails(self):
         self.assert_mode(await self.request(reasoning_effort='high'))
@@ -105,7 +126,21 @@ class DeclaredPolicyTests(unittest.TestCase):
         self.assertEqual(defaults, dict(enable_thinking=True, reasoning_effort='medium', preserve_thinking=True))
         sampler = json.loads(args[args.index('--override-generation-config') + 1])
         self.assertEqual(sampler, dict(temperature=1.0, top_p=0.95, top_k=20, min_p=0.0,
-                                      presence_penalty=0.0, repetition_penalty=1.0))
+                                      presence_penalty=0.0, repetition_penalty=1.05))
+
+    def test_prefill_budget_cache_policy_and_allocator_are_explicit(self):
+        deployment = yaml.safe_load((ROOT / 'my-apps/ai/vllm/deployment.yaml').read_text())
+        container = deployment['spec']['template']['spec']['containers'][0]
+        args = container['args']
+        expected = {'--max-num-batched-tokens': '8192',
+                    '--long-prefill-token-threshold': '4096',
+                    '--max-num-seqs': '2', '--max-model-len': '262144',
+                    '--mamba-cache-mode': 'align', '--prefix-match-unit': '16'}
+        for flag, value in expected.items():
+            self.assertEqual(args[args.index(flag) + 1], value)
+        self.assertFalse(any(arg.startswith('--speculative-config') for arg in args))
+        env = {entry['name']: entry.get('value') for entry in container['env']}
+        self.assertEqual(env['PYTORCH_CUDA_ALLOC_CONF'], 'expandable_segments:True')
 
     def test_pi_mapping_exposes_only_valid_efforts_and_explicit_off(self):
         doc = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
