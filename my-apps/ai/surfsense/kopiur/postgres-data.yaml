@@ -1,14 +1,14 @@
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
-  name: surfsense-postgres-data
+  name: surfsense-postgres-data-v2
   namespace: surfsense
 spec:
   sources:
     - pvc:
-        name: surfsense-postgres-data
+        name: surfsense-postgres-data-v2
   identity:
-    username: surfsense-postgres-data
+    username: surfsense-postgres-data-v2
     hostname: surfsense
   hooks:
     beforeSnapshot:
@@ -35,23 +35,23 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: surfsense-postgres-data-hourly
+  name: surfsense-postgres-data-v2-hourly
   namespace: surfsense
 spec:
   policyRef:
-    name: surfsense-postgres-data
+    name: surfsense-postgres-data-v2
   schedule:
     cron: "47 * * * *"
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore
 metadata:
-  name: surfsense-postgres-data-restore
+  name: surfsense-postgres-data-v2-restore
   namespace: surfsense
 spec:
   source:
     fromPolicy:
-      name: surfsense-postgres-data
+      name: surfsense-postgres-data-v2
       offset: 0
   mover:
     securityContext:

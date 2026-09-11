@@ -57,7 +57,7 @@ replacements:
     targets:
       - select:
           kind: Deployment
-          name: surfsense|surfsense-beat
+          name: surfsense-v2|surfsense-beat-v2
         fieldPaths:
           - spec.template.metadata.annotations.llm-config-revision
         options:
