@@ -1,0 +1,72 @@
+# Trace-loss detection from langfuse-clickhouse:9363 (endpoint enabled in my-apps/ai/langfuse/clickhouse-prometheus.xml).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: langfuse-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: langfuse.ingestion
+      rules:
+        - alert: LangfuseClickHouseInsertsFailing
+          # The worker drops the batch on insert failure — every failure here is telemetry destroyed, not retried.
+          expr: increase(ClickHouseProfileEvents_FailedInsertQuery{job="langfuse-clickhouse"}[15m]) > 0
+          for: 15m
+          labels:
+            severity: critical
+            component: langfuse
+            category: observability
+          annotations:
+            summary: "Langfuse ClickHouse is rejecting inserts"
+            description: |
+              {{ $value }} failed INSERT(s) in 15m. langfuse-worker drops the
+              whole batch on failure, so traces are being destroyed, not queued.
+
+              Actions:
+              1. kubectl -n langfuse logs deploy/langfuse-worker --tail=50 | grep -i error
+              2. A ClickHouse version bump is the usual cause — a changed parsing
+                 default rejects what Langfuse has always sent. Check the release:
+                 SELECT version, c.1, c.4 FROM system.settings_changes
+                   ARRAY JOIN changes AS c WHERE version = '<new version>'
+              3. Restore the old behaviour in my-apps/ai/langfuse/clickhouse-settings.xml
+        - alert: LangfuseIngestionStalled
+          # Cross-check: the gateway is busy, so traces should be landing whatever the cause of the gap.
+          expr: >-
+            sum(increase(litellm_proxy_total_requests_metric_total[1h])) > 10
+            and on()
+            sum(increase(ClickHouseProfileEvents_InsertedRows{job="langfuse-clickhouse"}[1h])) == 0
+          for: 15m
+          labels:
+            severity: warning
+            component: langfuse
+            category: observability
+          annotations:
+            summary: "LiteLLM is serving requests but Langfuse ingested nothing for an hour"
+            description: |
+              The gateway handled {{ $value }} requests in the last hour while
+              ClickHouse inserted no rows. Traces for that window are lost.
+
+              Actions:
+              1. kubectl -n langfuse get pods
+              2. kubectl -n langfuse logs deploy/langfuse-worker --tail=50
+              3. Confirm the blob store is reachable — event upload precedes the insert:
+                 kubectl -n langfuse logs job/langfuse-init-bucket
+        - alert: LangfuseClickHouseMetricsDown
+          expr: up{job="langfuse-clickhouse"} == 0 or absent(up{job="langfuse-clickhouse"})
+          for: 15m
+          labels:
+            severity: warning
+            component: langfuse
+            category: observability
+          annotations:
+            summary: "Langfuse ClickHouse metrics endpoint is down"
+            description: |
+              Prometheus cannot scrape langfuse-clickhouse. Either ClickHouse is
+              down or the prometheus config/Service/ServiceMonitor changed. Both
+              trace-loss alerts above are blind while this fires.
