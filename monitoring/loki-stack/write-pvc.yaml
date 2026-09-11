@@ -1,0 +1,21 @@
+# Expand the stable writer claim directly; the StatefulSet's 10Gi template is immutable.
+# On bootstrap this claim is created before the StatefulSet and reused by loki-write-0.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-loki-write-0
+  namespace: loki-stack
+  labels:
+    app.kubernetes.io/component: write
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Loki write-ahead log; persisted log history is stored in S3"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-flash
+  resources:
+    requests:
+      storage: 20Gi
