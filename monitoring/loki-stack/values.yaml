@@ -50,6 +50,10 @@ loki:
     compaction_interval: 10m
     delete_request_store: s3
 deploymentMode: SimpleScalable
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
 backend:
   replicas: 1
   # Write-path WAL/cache only; log data lives on S3. Backup-exempt, rebuilds from S3.

@@ -1,3 +1,6 @@
+serviceMonitor:
+  enabled: true
+  interval: 30s
 tempo:
   receivers:
     otlp:
