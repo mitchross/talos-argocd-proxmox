@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: surfsense-postgres
+  name: surfsense-postgres-v2
   namespace: surfsense
   labels:
     app: surfsense-postgres
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   replicas: 1
   strategy:
@@ -87,4 +87,4 @@ spec:
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: surfsense-postgres-data
+            claimName: surfsense-postgres-data-v2

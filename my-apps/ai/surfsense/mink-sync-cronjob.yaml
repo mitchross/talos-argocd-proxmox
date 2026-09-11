@@ -4,11 +4,12 @@ metadata:
   name: surfsense-mink-sync
   namespace: surfsense
   annotations:
-    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-wave: "6"
 spec:
   schedule: "17 */6 * * *"
   timeZone: Etc/UTC
-  suspend: false
+  # Reconnect the importer to a fresh account/workspace before enabling it.
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 600
   successfulJobsHistoryLimit: 2
