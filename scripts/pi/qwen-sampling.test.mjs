@@ -36,10 +36,16 @@ for (const level of ["low", "medium", "xhigh", "off"]) {
   });
 }
 
-test("other providers and models remain untouched", () => {
-  for (const model of [undefined, { ...context.model, provider: "moonshot" },
+test("other providers and models keep their sampler but still get traced", () => {
+  for (const model of [undefined, { ...context.model, provider: "vanillax-litellm", id: "kimi-k3" },
     { ...context.model, id: "other-model" }]) {
-    assert.equal(handler({ payload: { temperature: 0.2 } }, { model }), undefined);
+    const result = handler({ payload: { temperature: 0.2 } },
+      { ...context, model });
+    assert.equal(result.temperature, 0.2);
+    for (const key of ["top_p", "top_k", "min_p", "presence_penalty", "repetition_penalty"]) {
+      assert.equal(key in result, false);
+    }
+    assert.deepEqual(result.metadata, { session_id: "session-test", trace_name: "pi-agent", tags: ["pi"] });
   }
 });
 
