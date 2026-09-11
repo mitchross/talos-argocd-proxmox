@@ -612,7 +612,7 @@ views:
             color: amber
           - type: tile
             entity: sensor.ac_share_of_house_yesterday
-            name: AC share
+            name: AC bill share
             grid_options:
               columns: 6
               rows: 1
