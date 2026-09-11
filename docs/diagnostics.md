@@ -62,11 +62,12 @@ production remains unrepaired. Their checked recovery points leave possible
 gaps of nearly 19 hours and about 2 minutes before the attachment fault.
 Native restores use the latest available backup.
 
-ProxCenter **1.4.9 arm64 is verified on the Pi**. The report records overlapping
-shutdowns, and reviewed
-[ProxCenter inventory reboot code](https://github.com/adminsyspro/proxcenter-ui/blob/a1555e8f06c3c48be8c0174b5950901894b7528b/frontend/src/app/%28dashboard%29/infrastructure/inventory/components/InventoryDialogs.tsx#L1380)
-uses a fixed five-second wait. The controller needs confirmed guest completion
-and per-host health gates. The exact user action and any causal connection to
+ProxCenter **1.4.9 arm64 is verified on the Pi**. Read-only inspection of the
+running frontend itself confirmed three node-power paths that discard guest
+shutdown errors and wait a fixed five seconds before host power action. The
+report records overlapping shutdowns; the behavior also appears in the
+[ProxCenter inventory reboot code](https://github.com/adminsyspro/proxcenter-ui/blob/a1555e8f06c3c48be8c0174b5950901894b7528b/frontend/src/app/%28dashboard%29/infrastructure/inventory/components/InventoryDialogs.tsx#L1380).
+The controller needs confirmed guest completion and per-host health gates. The exact user action and any causal connection to
 corruption remain unproven.
 
 Hardware purchases and placement changes remain separate proposals, dependent
