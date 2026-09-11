@@ -102,12 +102,25 @@ spec:
             - --mamba-ssm-cache-dtype
             - float16
             - --enable-prefix-caching
+            # v0.29.0 already defaults to align with prefix caching on; stated
+            # explicitly to match the club-3090 reference and pin the behavior.
+            - --mamba-cache-mode
+            - align
+            - --prefix-match-unit
+            - "16"
             - --enable-chunked-prefill
+            # 8192 matches the club-3090 2x3090 reference; their A/B found it
+            # concurrency-neutral vs 2048 at max-num-seqs 2, ~4x prefill steps.
             - --max-num-batched-tokens
-            - "2048"
+            - "8192"
+            - --long-prefill-token-threshold
+            - "4096"
             # Speculation stays off until the GDN long-session faults are fixed.
+            # repetition_penalty 1.05: community-measured stable band (1.05-1.10)
+            # for the EOS-mid-think empty-answer failure; 1.0 sits at the U-curve
+            # center where ~17-38% of xhigh calls return empty content (QwenLM/Qwen3.8#216).
             - --override-generation-config
-            - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.0}'
+            - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.05}'
             - --enable-force-include-usage
             - --host
             - 0.0.0.0
@@ -131,7 +144,7 @@ spec:
             - name: OMP_NUM_THREADS
               value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
-              value: expandable_segments:True
+              value: expandable_segments:True,max_split_size_mb:512
           ports:
             - name: http
               containerPort: 8000

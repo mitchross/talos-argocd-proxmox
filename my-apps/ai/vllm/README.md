@@ -9,7 +9,7 @@ PR takes effect after merge and Argo reconciliation; live probes sent medium exp
 |---|---|
 | Model | Official `Qwen/Qwen3.8-27B-FP8`, no Unsloth/GGUF conversion |
 | Revision | `017b9c7af6b5689d5dd426a76e0bc077eb5ca20a` |
-| Runtime | stock vLLM `v0.28.0`, existing immutable image digest |
+| Runtime | stock vLLM `v0.29.0`, existing immutable image digest |
 | GPUs | 2 × RTX 3090, tensor parallel 2, multiprocessing executor |
 | Interconnect | no custom all-reduce; NCCL P2P disabled; shared host transport |
 | Context ceiling | 262,144 tokens, native model limit, no RoPE extrapolation |
@@ -17,7 +17,7 @@ PR takes effect after merge and Argo reconciliation; live probes sent medium exp
 | Attention | FlashInfer explicitly selected for Ampere FP8 KV |
 | KV / recurrent state | `fp8_e4m3` / float16 |
 | GPU utilization budget | 0.92 per GPU |
-| Prefill | chunked, 2,048 tokens per batch |
+| Prefill | chunked, 8,192 tokens per batch |
 | Vision | native encoder; one image per request, video disabled |
 | Reasoning | on, explicit `medium` default; `low` and `xhigh` per request |
 | Speculation | **off**; no MTP or external drafter |
@@ -91,7 +91,7 @@ hard reasoning-token budget or a substitute for `enable_thinking=false`.
 | `top_k` | 20 | 20 |
 | `min_p` | 0.0 | 0.0 |
 | `presence_penalty` | 0.0 | 1.5 |
-| `repetition_penalty` | 1.0 | 1.0 |
+| `repetition_penalty` | 1.05 | 1.0 |
 
 Changing the thinking flag alone does not switch vLLM's sampler. Direct
 clients must send all six non-thinking values when opting out. Open WebUI's
@@ -235,7 +235,8 @@ that near-ceiling vision is verified. Run the existing
 prefill/decode, cache preemptions, GPU peaks, and a sustained multi-turn soak.
 Test a context ladder before claiming 262K usability. Prefix caching makes
 warm prompts cheaper; unique-prefix tests are needed for genuine prefill.
-The 2,048-token prefill batch favors interactive latency over peak bulk prefill.
+The 8,192-token prefill batch matches the club-3090 2x3090 reference (their
+A/B found it concurrency-neutral vs 2,048 at max-num-seqs 2).
 
 Stop on staging/hash failure, insufficient KV pool, OOM/Xid, broken tool or
 vision output, or repeated preemptions. Do not enable MTP to rescue a failing
