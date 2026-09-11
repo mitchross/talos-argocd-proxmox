@@ -19,6 +19,16 @@ spec:
         app.kubernetes.io/component: kafka-init
     spec:
       restartPolicy: OnFailure
+      initContainers:
+      - name: configure-segment-size
+        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
+        command: ["rpk", "cluster", "config", "set", "log_segment_size=67108864", "--no-confirm", "-X", "admin.hosts=kafka:9644"]
+      - name: configure-segment-roll
+        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
+        command: ["rpk", "cluster", "config", "set", "log_segment_ms=3600000", "--no-confirm", "-X", "admin.hosts=kafka:9644"]
+      - name: configure-disk-headroom
+        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
+        command: ["rpk", "cluster", "config", "set", "storage_min_free_bytes=1073741824", "--no-confirm", "-X", "admin.hosts=kafka:9644"]
       containers:
       - name: kafka-init
         image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
