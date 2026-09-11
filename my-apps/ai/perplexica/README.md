@@ -21,4 +21,4 @@ After rollout, run a search and check its calls in
 `config.json` is root-owned with mode `0600`; the database is group-readable by GID 568.
 Backup and restore movers use UID 0 / GID 568 under the [root-owned data exception](../../../docs/domains/storage/kopiur-mover-permissions.md).
 This grants no extra capabilities and requires no ownership rewrite.
-Rollout verification includes a completed backup and an isolated restore with configuration parsing, SQLite integrity, and file-readability checks.
+Existing Kopiur schedules run backups; rollout verification checks the native controller results.
