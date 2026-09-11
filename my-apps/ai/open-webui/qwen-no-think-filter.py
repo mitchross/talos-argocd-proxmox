@@ -35,7 +35,8 @@ class Filter:
 
         sampler = dict(temperature=1.0 if enabled else 0.7,
                        top_p=0.95 if enabled else 0.8, top_k=20, min_p=0.0,
-                       presence_penalty=0.0 if enabled else 1.5, repetition_penalty=1.0)
+                       presence_penalty=0.0 if enabled else 1.5,
+                       repetition_penalty=1.05 if enabled else 1.0)
         for target in (body, extra_body):
             # Block WebUI's later fill-if-absent from restoring a stale effort.
             target["reasoning_effort"] = kwargs.get("reasoning_effort")
