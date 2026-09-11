@@ -12,13 +12,13 @@ resources:
 helmCharts:
   - name: external-dns
     repo: https://kubernetes-sigs.github.io/external-dns
-    version: 1.21.1 # renovate: helm=kubernetes-sigs/external-dns
+    version: 1.22.0 # renovate: helm=kubernetes-sigs/external-dns
     releaseName: external-dns
     namespace: external-dns
     valuesFile: values.yaml
   - name: external-dns
     repo: https://kubernetes-sigs.github.io/external-dns
-    version: 1.21.1 # renovate: helm=kubernetes-sigs/external-dns
+    version: 1.22.0 # renovate: helm=kubernetes-sigs/external-dns
     releaseName: external-dns-technitium
     namespace: external-dns
     valuesFile: values-technitium.yaml
