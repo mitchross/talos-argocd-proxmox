@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: surfsense-postgres-data
+  name: surfsense-postgres-data-v2
   namespace: surfsense
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
@@ -11,11 +11,11 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn
+  storageClassName: longhorn-wired-ha
   resources:
     requests:
       storage: 20Gi
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
-    name: surfsense-postgres-data-restore
+    name: surfsense-postgres-data-v2-restore

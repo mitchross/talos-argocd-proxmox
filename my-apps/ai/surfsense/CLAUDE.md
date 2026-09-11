@@ -36,11 +36,16 @@ Do not split these child folders into independent Argo Applications unless there
 Argo health gates each wave before advancing:
 
 1. `ExternalSecret` wave **-1** — materialize `surfsense-secrets` before consumers start.
-2. Postgres + Redis wave **0** — PVC/Restore resources reconcile in the same application sync; restore-before-bind keeps backed-up PVCs Pending until Kopiur hydrates them.
-3. `app/migrations-job.yaml` wave **1** — schema/publication migration hook runs only after the data layer is healthy.
-4. `app/credit-policy-job.yaml` wave **2** — reconcile restored or pre-policy wallets after the user table exists.
-5. API+worker, Celery beat, and Zero wave **3**.
-6. Frontend wave **4**.
+2. PVCs and their passive Kopiur Restores wave **0** — remain together for restore-before-bind.
+3. Postgres (`surfsense-postgres-v2`) + Redis (`surfsense-redis-v2`) wave **1** — initialize or recover the data layer.
+4. `app/migrations-job.yaml` wave **2** — schema/publication migration hook.
+5. `app/credit-policy-job.yaml` wave **3** — reconcile wallets after the user table exists.
+6. API+worker (`surfsense-v2`), beat (`surfsense-beat-v2`), and Zero (`surfsense-zero-v2`) wave **4**.
+7. Frontend wave **5**; Mink import CronJob wave **6**.
+
+The v2 claim and backup identities intentionally start a new data lineage. The existing importer is suspended until its credentials and workspace match the fresh account. Future restores use the latest v2 backup normally.
+
+During the one-time identity transition, every old claim-consuming Deployment is pruned, including Postgres and Redis. Old application writers begin pruning before the data layer; PVC protection waits for their consumers to terminate. Argo recomputes reverse prune waves between passes, so the transition does not assume old PVCs retain a fixed prune wave. All old claim holders remain eligible for deletion before the new data-layer Deployments apply in wave 1. Service selectors stay stable; VPAs target the new Deployment names.
 
 Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The repo's restore-before-bind model intentionally lets the Restore/populator/PVC reconcile together while Argo waits for the workload to become healthy.
 
@@ -62,8 +67,8 @@ Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The
 
 ## Storage choices
 
-- Postgres: `longhorn` RWO — current repo standard for app/database block storage; Kopiur restore-before-bind.
-- Object/knowledge store: `longhorn` RWO — API+worker co-location removes the need for RWX.
+- Postgres: `longhorn-wired-ha` RWO — two replicas on distinct wired storage nodes; Kopiur restore-before-bind.
+- Object/knowledge store: `longhorn-wired-ha` RWO — two wired replicas; API+worker co-location removes the need for RWX.
 - Redis: `longhorn` RWO — ordinary restart continuity only; backup-exempt.
 - Zero/shared temp: `emptyDir`.
 

@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: surfsense
+  name: surfsense-v2
   namespace: surfsense
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   replicas: 1
   strategy:
@@ -110,7 +110,7 @@ spec:
       volumes:
         - name: object-store
           persistentVolumeClaim:
-            claimName: surfsense-object-store
+            claimName: surfsense-object-store-v2
         - name: shared-temp
           emptyDir: {}
         - name: global-llm-config
