@@ -17721,7 +17721,7 @@
   ],
   "baselineAt": "2026-09-08T23:41:00Z",
   "reinspection": {
-    "checkedAt": "2026-09-11T01:29:28+00:00",
+    "checkedAt": "2026-09-11T01:29:46Z",
     "disks": {
       "checkedAt": "2026-09-10T22:29:19.108847+00:00",
       "label": "September 10 reinspection",
@@ -17805,7 +17805,7 @@
       "limitations": "Live measurements above retain their own times; the subsequent SurfSense reset decision is a pending GitOps change, not a completed repair. Historical workload/backup tables remain September 9 records. The mounted-filesystem sweep is not offline fsck or a full media scan and excludes the detached, failed Open WebUI/Intercept volumes."
     },
     "plan": {
-      "checkedAt": "2026-09-11T01:29:28+00:00",
+      "checkedAt": "2026-09-11T01:29:46Z",
       "label": "Updated repair decisions",
       "status": "warning",
       "summary": "Use native GitOps changes for the app repairs; keep Dell and defer hardware spending.",
@@ -17815,7 +17815,7 @@
         "The initial selective-copy tier needs $0 of new hardware. Elite\u2019s 1 TB compatible NVMe is planned preventive work; a DDR4 tall NUC 13ANH with 32 GB is an optional future Dell replacement, not an immediate purchase.",
         "Retiring Dell now removes the spare wired rebuild destination. The current X399 runbook excludes etcd on the GPU host; enough aggregate RAM does not override that hardware constraint.",
         "For three physical control planes, keeping Dell and upgrading Elite to 64 GiB DDR5 provides more recovery room than replacing Dell with a 32 GiB mini. A mini with an 8 GiB control plane has only about 16 GiB for its worker after host reserve, not the earlier 24 GiB worker-only budget. These are unimplemented planning options; 8 GiB control-plane sizing still needs validation.",
-        "ProxCenter 1.4.9 arm64 is verified on the Pi. The inventory reboot source has an unsafe fixed-wait flow; the exact user action and any causal connection to corruption remain unproven."
+        "ProxCenter 1.4.9 arm64 is verified on the Pi, and the running frontend itself contains the fixed-five-second node-power flow. The exact user action and any causal connection to corruption remain unproven."
       ],
       "limitations": "Native GitOps resources and existing controllers own the application changes. Hardware, VM sizing and broader copy placement remain proposals.",
       "findings": [
@@ -17844,7 +17844,7 @@
           "priorityLabel": "Check before maintenance",
           "title": "ProxCenter: wait for completed guest shutdown",
           "state": "Observed overlap; cause not established",
-          "evidence": "September 10 logs on all four wired hosts show guest shutdown requests followed by host reboot only 7\u20138 seconds later, with shutdown-lock timeouts and volume-deactivation errors despite eventual task OK results. ProxCenter 1.4.9 arm64 is verified running on the Pi. Reviewed public inventory reboot source uses a fixed five-second wait without guest-completion checks. The exact user click, forced termination and any corruption cause remain unproven.",
+          "evidence": "September 10 logs on all four wired hosts show guest shutdown requests followed by host reboot only 7\u20138 seconds later, with shutdown-lock timeouts and volume-deactivation errors despite eventual task OK results. ProxCenter 1.4.9 arm64 is verified running on the Pi. Read-only inspection at 01:29 UTC on September 11 confirmed that the running frontend itself contains three node-power branches that discard guest-shutdown request errors, wait a fixed five seconds and then request host power action without guest-completion checks. The exact user click, forced termination and any corruption cause remain unproven.",
           "action": "The reboot controller needs completion-based guest shutdown, abort-on-error behavior and a per-host cluster health gate; this is an upstream controller change.",
           "verify": "The native workflow confirms completed shutdown and stopped guests before host reboot, then confirms node/storage/app recovery before advancing to another host.",
           "status": "warning"
