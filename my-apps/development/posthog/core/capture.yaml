@@ -185,7 +185,7 @@ spec:
               mountPath: /share
       containers:
         - name: feature-flags
-          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:b0d6884bdd9942b72b8722efbf289a07d2b0e8a26947470584da381a46e7e811
+          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:b18bbe7ee20276cf0395cc649fe9d90c2c7d0ef836dd30c8789b3a09de73a8cc
           env:
             - name: PGPASSWORD
               valueFrom:
