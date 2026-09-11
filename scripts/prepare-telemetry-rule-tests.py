@@ -26,7 +26,7 @@ def prepare_tests(source_dir: Path, output_dir: Path, suite: str = "collector") 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output_dir", type=Path, help="Directory for promtool input files")
-    parser.add_argument("--suite", choices=("collector", "kopiur"), default="collector")
+    parser.add_argument("--suite", choices=("collector", "kopiur", "langfuse"), default="collector")
     args = parser.parse_args()
     try:
         source_dir = SOURCE_DIR if args.suite == "collector" else REPO_ROOT / "monitoring/prometheus-stack"

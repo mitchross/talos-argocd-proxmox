@@ -40,6 +40,8 @@ spec:
           containerPort: 8123
         - name: native
           containerPort: 9000
+        - name: metrics
+          containerPort: 9363
         env:
         - name: CLICKHOUSE_DB
           value: langfuse
@@ -65,6 +67,10 @@ spec:
         - name: settings
           mountPath: /etc/clickhouse-server/users.d/langfuse-settings.xml
           subPath: clickhouse-settings.xml
+          readOnly: true
+        - name: settings
+          mountPath: /etc/clickhouse-server/config.d/langfuse-prometheus.xml
+          subPath: clickhouse-prometheus.xml
           readOnly: true
         startupProbe:
           httpGet:
@@ -121,6 +127,8 @@ kind: Service
 metadata:
   name: langfuse-clickhouse
   namespace: langfuse
+  labels:
+    app: langfuse-clickhouse
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 spec:
@@ -133,3 +141,6 @@ spec:
   - name: native
     port: 9000
     targetPort: native
+  - name: metrics
+    port: 9363
+    targetPort: metrics
