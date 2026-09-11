@@ -305,6 +305,8 @@ median implied value, then commit it as `initial:` in `configuration.yaml`
 `ac_cooling_cost_last_month` + `combined_*` + baseline should land within ~10–15%
 of the CE bill; the wattage is an estimate (±20 % on a variable-speed unit).
 CE data is one day late, so every house comparison is yesterday-vs-yesterday.
+Because the 3 min `delay_off` over-counts runtime on short cycles, implied watts
+reads low on those days — calibrate from long, sustained cooling days.
 
 Dashboards: the **Cooling** view of the Homelab Power dashboard and the AC tile
 on its House view; `sensor.ac_*` / `binary_sensor.ac_cooling` are in the
