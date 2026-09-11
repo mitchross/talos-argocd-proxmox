@@ -3,11 +3,9 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 // Pi's thinking toggle changes template kwargs, but does not switch Qwen's sampler.
 export default function (pi: ExtensionAPI) {
   pi.on("before_provider_request", (event, ctx) => {
-    if (ctx.model?.provider !== "vanillax-vllm" || ctx.model.id !== "qwen3.8-27b") return;
     const payload = event.payload as Record<string, unknown>;
-    const kwargs = payload.chat_template_kwargs as Record<string, unknown> | undefined;
-    const off = kwargs?.enable_thinking === false;
-    return {
+    // Tag every provider, not just vLLM: a Ctrl+P swap to K3 must stay in the same Langfuse session.
+    const traced = {
       ...payload,
       metadata: {
         session_id: ctx.sessionManager.getSessionId(),
@@ -15,6 +13,12 @@ export default function (pi: ExtensionAPI) {
         tags: ["pi"],
         ...(payload.metadata as Record<string, unknown> | undefined),
       },
+    };
+    if (ctx.model?.provider !== "vanillax-vllm" || ctx.model.id !== "qwen3.8-27b") return traced;
+    const kwargs = payload.chat_template_kwargs as Record<string, unknown> | undefined;
+    const off = kwargs?.enable_thinking === false;
+    return {
+      ...traced,
       temperature: off ? 0.7 : 1.0,
       top_p: off ? 0.8 : 0.95,
       top_k: 20,

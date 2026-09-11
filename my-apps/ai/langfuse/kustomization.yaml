@@ -27,6 +27,9 @@ configMapGenerator:
   files:
   - scripts/init-bucket.sh
   - scripts/bucket-cors.json
+- name: langfuse-clickhouse-settings
+  files:
+  - clickhouse-settings.xml
 patches:
 - target:
     kind: Deployment

@@ -1,0 +1,8 @@
+<clickhouse>
+  <profiles>
+    <default>
+      <!-- ClickHouse 26.8 reads a bare JSON number for DateTime64 as seconds; Langfuse sends microseconds, so every insert overflows and the worker drops the batch. -->
+      <input_format_read_datetime_number_as_raw_value>1</input_format_read_datetime_number_as_raw_value>
+    </default>
+  </profiles>
+</clickhouse>

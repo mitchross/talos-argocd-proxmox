@@ -61,6 +61,11 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/clickhouse
+        # subPath, not a directory mount: the image's entrypoint writes default-user.xml into this dir at start.
+        - name: settings
+          mountPath: /etc/clickhouse-server/users.d/langfuse-settings.xml
+          subPath: clickhouse-settings.xml
+          readOnly: true
         startupProbe:
           httpGet:
             path: /ping
@@ -86,6 +91,9 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: langfuse-clickhouse-data
+      - name: settings
+        configMap:
+          name: langfuse-clickhouse-settings
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
