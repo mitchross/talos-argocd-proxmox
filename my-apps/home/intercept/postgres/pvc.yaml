@@ -4,10 +4,13 @@ metadata:
   name: intercept-postgres-data
   namespace: intercept
   annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Preserved failed volume; recovery uses intercept-postgres-recovered."
     # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff;
     # the AppSet ignoreDifferences handles the live comparison.
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    argocd.argoproj.io/sync-options: ServerSideApply=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false,Prune=false,Delete=false
+  labels:
+    backup-exempt: "true"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -15,6 +18,27 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: intercept-postgres-data-restore
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intercept-postgres-recovered
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+  namespace: intercept
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: longhorn-wired-ha
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

@@ -51,3 +51,14 @@ configMapGenerator:
 - name: mcp-kiwix-config
   files:
   - config.json=mcp-kiwix-config.json
+
+# Recovery must never bind an empty volume when no backup matches.
+patches:
+  - target:
+      group: kopiur.home-operations.com
+      kind: Restore
+      name: storage-restore
+    patch: |-
+      - op: replace
+        path: /spec/policy/onMissingSnapshot
+        value: Fail

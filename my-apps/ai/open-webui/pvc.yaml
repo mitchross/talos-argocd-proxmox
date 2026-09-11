@@ -5,11 +5,13 @@ metadata:
   name: storage
   namespace: open-webui
   annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Preserved failed volume; recovery uses storage-recovered."
     # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
     # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    argocd.argoproj.io/sync-options: ServerSideApply=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false,Prune=false,Delete=false
   labels:
+    backup-exempt: "true"
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
 spec:
@@ -20,6 +22,27 @@ spec:
       storage: 10Gi
   storageClassName: longhorn
   # kopiur restore-before-bind: Pending until the Restore populator hydrates it; CRs in kopiur/storage.yaml.
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: storage-restore
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: storage-recovered
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+  namespace: open-webui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn-wired-ha
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
