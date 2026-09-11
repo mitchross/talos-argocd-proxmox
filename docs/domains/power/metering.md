@@ -281,3 +281,31 @@ feeds are integrated only while it is on:
 Grafana **Gaming PC** (`gaming-pc.json`) and the **Gaming** view of the Homelab
 Power dashboard read these. The threshold is a slider so it can be tuned without
 a deploy; a permanent change goes in `configuration.yaml`.
+
+## AC cooling (modeled)
+
+The central AC has no plug meter, so its cost is **modeled**, not measured:
+`binary_sensor.ac_cooling` is on while the Google Nest (`climate.hallway_hallway`)
+reports `hvac_action: cooling` (fan-only runs read `fan` and are not counted),
+and the runtime is priced at `input_number.ac_cooling_wattage` (placeholder 3500 W)
+× the live TOU rate — the same integration pipeline as the gaming sessions.
+
+| Sensor | What it holds |
+|---|---|
+| `sensor.ac_cooling_energy` / `_cost` / `_hours` (+ daily/weekly/monthly/yearly meters) | Modeled AC kWh, USD, and cooling hours |
+| `sensor.ac_cooling_cost_yesterday` / `_cost_last_month`, `_hours_*`, `_energy_last_month` | Finished periods, from `last_period` |
+| `sensor.ac_cost_per_cooling_hour` | Month-to-date USD per cooling hour |
+| `sensor.ac_share_of_house_yesterday` | AC cost as a % of the CE-billed house cost yesterday |
+| `sensor.ac_implied_watts_yesterday` | **Calibration gauge**: (CE house kWh − metered plugs − `input_number.ac_house_baseline_kwh`) ÷ cooling hours |
+
+**Calibration loop:** on 2–3 hot days with no dryer/oven/EV, compare
+`ac_implied_watts_yesterday` to `ac_cooling_wattage`; nudge the slider toward the
+median implied value, then commit it as `initial:` in `configuration.yaml`
+(Git is source of truth; the UI slider resets on HA restart). Month-end check:
+`ac_cooling_cost_last_month` + `combined_*` + baseline should land within ~10–15%
+of the CE bill; the wattage is an estimate (±20 % on a variable-speed unit).
+CE data is one day late, so every house comparison is yesterday-vs-yesterday.
+
+Dashboards: the **Cooling** view of the Homelab Power dashboard and the AC tile
+on its House view; `sensor.ac_*` / `binary_sensor.ac_cooling` are in the
+Prometheus filter globs, so Grafana can read them.
