@@ -1,0 +1,10 @@
+<clickhouse>
+  <!-- Off by default in the image; without it a failed-insert storm (dropped traces) is invisible to Prometheus. -->
+  <prometheus>
+    <endpoint>/metrics</endpoint>
+    <port>9363</port>
+    <metrics>true</metrics>
+    <events>true</events>
+    <asynchronous_metrics>true</asynchronous_metrics>
+  </prometheus>
+</clickhouse>

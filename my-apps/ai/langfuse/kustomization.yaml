@@ -16,6 +16,7 @@ resources:
 - redis.yaml
 - httproute.yaml
 - s3-route.yaml
+- servicemonitor.yaml
 - bucket-init-job.yaml
 - vpa.yaml
 - kopiur/langfuse-postgres-data.yaml
@@ -30,6 +31,7 @@ configMapGenerator:
 - name: langfuse-clickhouse-settings
   files:
   - clickhouse-settings.xml
+  - clickhouse-prometheus.xml
 patches:
 - target:
     kind: Deployment
