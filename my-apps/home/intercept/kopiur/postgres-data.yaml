@@ -7,7 +7,8 @@ metadata:
 spec:
   sources:
     - pvc:
-        name: intercept-postgres-data
+        name: intercept-postgres-recovered
+      sourcePathOverride: /pvc/intercept-postgres-data
   identity:
     username: intercept-postgres-data
     hostname: intercept
@@ -55,6 +56,7 @@ spec:
     fromPolicy:
       name: intercept-postgres-data
       offset: 0
+      sourcePath: /pvc/intercept-postgres-data
   mover:
     securityContext:
       runAsUser: 999

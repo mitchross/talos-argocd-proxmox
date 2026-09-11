@@ -9,7 +9,8 @@ metadata:
 spec:
   sources:
     - pvc:
-        name: storage
+        name: storage-recovered
+      sourcePathOverride: /pvc/storage
   identity:
     username: storage
     hostname: open-webui
@@ -50,6 +51,7 @@ spec:
     fromPolicy:
       name: storage
       offset: 0
+      sourcePath: /pvc/storage
   mover:
     securityContext:
       runAsUser: 568
