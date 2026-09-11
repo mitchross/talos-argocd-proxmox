@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: surfsense-redis
+  name: surfsense-redis-v2
   namespace: surfsense
   labels:
     app: surfsense-redis
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   replicas: 1
   strategy:
@@ -47,4 +47,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: surfsense-redis-data
+            claimName: surfsense-redis-data-v2

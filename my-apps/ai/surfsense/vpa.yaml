@@ -4,7 +4,7 @@ metadata:
   name: surfsense-postgres
   namespace: surfsense
 spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-postgres}
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-postgres-v2}
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -18,7 +18,7 @@ metadata:
   name: surfsense-redis
   namespace: surfsense
 spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-redis}
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-redis-v2}
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -32,7 +32,7 @@ metadata:
   name: surfsense
   namespace: surfsense
 spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense}
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-v2}
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -47,7 +47,7 @@ metadata:
   name: surfsense-beat
   namespace: surfsense
 spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-beat}
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-beat-v2}
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -61,7 +61,7 @@ metadata:
   name: surfsense-zero
   namespace: surfsense
 spec:
-  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-zero}
+  targetRef: {apiVersion: apps/v1, kind: Deployment, name: surfsense-zero-v2}
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
