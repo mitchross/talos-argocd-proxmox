@@ -3,7 +3,7 @@ image:
   pullPolicy: IfNotPresent
   # Pinned (was :latest — floating tag defeats Renovate + makes rollback/diff impossible).
   # Renovate helm-values manager tracks minor/patch bumps from here.
-  tag: "2.39.2"
+  tag: "2.39.4"
 
 main:
   replicaCount: 1
