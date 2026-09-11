@@ -9,8 +9,10 @@ RAM reuse options. These hardware and placement changes are not implemented.
 The SFF control-plane SSD now meets the sampled etcd latency targets; replacement
 is no longer the immediate recommendation. SurfSense Redis and Flatnotes were
 repaired, while SurfSense PostgreSQL has confirmed filesystem corruption.
-Longhorn attachment metadata, PostHog capacity and backup/restore work also
-remain. Resolve data integrity before migrations or broad copy changes.
+The selected plan now starts SurfSense completely fresh through GitOps,
+superseding filesystem repair or restoration of its old app state. Open WebUI
+and Intercept use native backup restoration; PostHog capacity and Perplexica
+backup permissions are separate native fixes.
 Flatnotes had no Markdown notes to recover. Detailed September 8/9 tables retain their dates beneath the newer inspection summaries.
 
 [Open full screen](assets/inspection/index.html){ .md-button .md-button--primary }
@@ -44,26 +46,29 @@ The initial proposal protects 32 selected app volumes with two copies, adding
 about **25.82 GiB of current data** and **414 GiB of scheduled claims**. Existing
 storage has room for that tier with explicit growth and staging allowances;
 it does not require buying drives first. A compatible **1 TB Elite NVMe** remains
-a preventive purchase: 74% endurance used is not a failure probability.
+a preventive purchase: 74% endurance used is not a failure probability. The
+capacity estimate predates the recovery PRs; replacement claims and retained
+originals must be included in the final placement budget.
 
-[PR #2350](https://github.com/mitchross/talos-argocd-proxmox/pull/2350) is open
-and unmerged in this inspection: PostHog's proposed 8→32 GiB claim and Perplexica
-permissions are not yet verified repairs. Ingestion, retention, fresh backups
-and isolated restores still need acceptance checks after deployment.
+The open repair PRs use native GitOps resources and existing controllers:
 
-The Open WebUI and Intercept backups passed isolated database restore checks
-on September 10 at 23:11–23:15 UTC; production remains unrepaired. Those recovery
-points leave possible gaps of nearly 19 hours and about 2 minutes before the
-attachment fault, respectively. Application behavior and production cutover
-still need verification.
+- [PR #2350](https://github.com/mitchross/talos-argocd-proxmox/pull/2350): PostHog's 8→32 GiB claim and Perplexica backup permissions, with native scheduled backups.
+- [PR #2352](https://github.com/mitchross/talos-argocd-proxmox/pull/2352): Argo/Kopiur restore Open WebUI and Intercept onto new two-copy storage while retaining their old failed data.
+- [PR #2353](https://github.com/mitchross/talos-argocd-proxmox/pull/2353): discard all SurfSense app state, provision fresh PVCs and retain native future backups. The earlier filesystem-repair plan is superseded.
 
-Before another host reboot, wait for successful guest shutdown tasks and verify
-the guests are stopped; proceed one physical host at a time with health checks.
-The report records overlapping shutdowns. Reviewed
+These changes are not yet deployed. The historical Open WebUI and Intercept
+isolated database restore checks passed at 23:11–23:15 UTC on September 10;
+production remains unrepaired. Their checked recovery points leave possible
+gaps of nearly 19 hours and about 2 minutes before the attachment fault.
+Native restores use the latest available backup.
+
+ProxCenter **1.4.9 arm64 is verified on the Pi**. The report records overlapping
+shutdowns, and reviewed
 [ProxCenter inventory reboot code](https://github.com/adminsyspro/proxcenter-ui/blob/a1555e8f06c3c48be8c0174b5950901894b7528b/frontend/src/app/%28dashboard%29/infrastructure/inventory/components/InventoryDialogs.tsx#L1380)
-uses a fixed five-second wait, but the installed UI/version and action used remain
-unverified. This does not establish that the workflow caused the corruption.
+uses a fixed five-second wait. The controller needs confirmed guest completion
+and per-host health gates. The exact user action and any causal connection to
+corruption remain unproven.
 
-A disk move or replacement needs a separate reviewed migration with verified
-backups and surviving replicas. See the [storage architecture](storage-architecture.md)
+Hardware purchases and placement changes remain separate proposals, dependent
+on recoverable data and adequate surviving capacity. See the [storage architecture](storage-architecture.md)
 and [disaster recovery runbook](disaster-recovery.md) for the recovery requirements.
