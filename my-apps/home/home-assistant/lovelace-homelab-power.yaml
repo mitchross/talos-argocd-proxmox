@@ -610,6 +610,13 @@ views:
               columns: 6
               rows: 1
             color: amber
+          - type: tile
+            entity: sensor.ac_share_of_house_yesterday
+            name: AC share
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
       - type: grid
         column_span: 2
         cards:
@@ -1043,6 +1050,212 @@ views:
               A **session** is the plug drawing more than the threshold (350 W; idle is ~200 W, gaming
               450–600 W) until five quiet minutes pass. **Idle tax** is everything the PC costs outside
               sessions: sitting on at 200 W is about 1.4 kWh a day. Tune the threshold under Settings.
+
+  # ───────────────────────── Cooling: central AC (Nest-modeled) ─────────────────────────
+  - title: Cooling
+    icon: mdi:snowflake
+    path: cooling
+    type: sections
+    max_columns: 4
+    dense_section_placement: true
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Right now
+            heading_style: title
+            badges:
+              - type: entity
+                entity: climate.hallway_hallway
+                name: Thermostat
+              - type: entity
+                entity: binary_sensor.ac_cooling
+                name: Compressor
+          - type: tile
+            entity: sensor.ac_cooling_power
+            name: Est. draw
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.ac_cooling_cost_rate
+            name: Burn rate
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.ac_cooling_hours_daily
+            name: Cooling hours today
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.ac_cost_per_cooling_hour
+            name: Cost per cooling hour
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+      - type: grid
+        cards:
+          - type: heading
+            heading: Today
+            heading_style: title
+          - type: tile
+            entity: sensor.ac_cooling_hours_daily
+            name: Hours cooling
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.ac_cooling_energy_daily
+            name: kWh cooling
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.ac_cooling_cost_daily
+            name: Cost cooling
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+      - type: grid
+        cards:
+          - type: heading
+            heading: This month
+            heading_style: title
+            badges:
+              - type: entity
+                entity: sensor.ac_cooling_hours_last_month
+                name: Hours last month
+              - type: entity
+                entity: sensor.ac_cooling_cost_last_month
+                name: Cost last month
+          - type: tile
+            entity: sensor.ac_cooling_hours_monthly
+            name: Hours cooling
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.ac_cooling_energy_monthly
+            name: kWh cooling
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.ac_cooling_cost_monthly
+            name: Cost cooling
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+      - type: grid
+        cards:
+          - type: heading
+            heading: Share of the house
+            heading_style: title
+          - type: tile
+            entity: sensor.ac_share_of_house_yesterday
+            name: AC share of bill
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: sensor.ac_cooling_cost_yesterday
+            name: AC cost yesterday
+            grid_options:
+              columns: 6
+              rows: 1
+            color: amber
+          - type: tile
+            entity: sensor.consumers_energy_cost_yesterday
+            name: House cost yesterday
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: sensor.consumers_energy_effective_rate
+            name: CE charged (per kWh)
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Cooling vs house, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 60
+            stat_types:
+              - change
+            entities:
+              - consumers_energy:grid_kwh
+              - sensor.ac_cooling_energy
+              - sensor.combined_total_energy
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Cooling hours, by day
+            heading_style: title
+          - type: statistics-graph
+            title: 
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            entities:
+              - sensor.ac_cooling_hours
+      - type: grid
+        cards:
+          - type: heading
+            heading: Is the model right?
+            heading_style: title
+          - type: tile
+            entity: sensor.ac_implied_watts_yesterday
+            name: Implied watts (yesterday)
+            grid_options:
+              columns: 6
+              rows: 1
+            color: blue
+          - type: tile
+            entity: input_number.ac_cooling_wattage
+            name: Assumed wattage
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: tile
+            entity: input_number.ac_house_baseline_kwh
+            name: House baseline
+            grid_options:
+              columns: 6
+              rows: 1
+            color: grey
+          - type: markdown
+            content: |
+              The AC has no meter, so cost = **Nest cooling runtime × assumed wattage × live TOU
+              rate**. While the Nest reports `cooling`, the assumed draw is integrated at the live
+              rate. **Calibrate** on hot days with no dryer/oven/EV: nudge *assumed wattage* toward
+              *implied watts*, then commit the value as `initial:` in configuration.yaml.
+              CE data is one day late, so every house comparison is yesterday-vs-yesterday.
 
   # ───────────────────────── Settings: rates and thresholds ─────────────────────────
   - title: Settings
