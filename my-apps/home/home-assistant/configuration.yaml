@@ -64,6 +64,9 @@ prometheus:
       - sensor.electricity_tariff_period
       # House-level data pushed by the consumers-energy-sync CronJob.
       - sensor.consumers_energy_*
+      # AC cooling (modeled from the Nest hvac_action, not plug-metered).
+      - sensor.ac_*
+      - binary_sensor.ac_cooling
       # StuckAtPrototype AirCube Zigbee air-quality monitor (temp/humidity/eCO2/
       # tVOC + rssi/lqi). Feeds the aircube-dashboard.json Grafana dashboard.
       - sensor.stuckatprototype_aircube_*
@@ -300,6 +303,28 @@ input_number:
     unit_of_measurement: "W"
     icon: mdi:controller
     initial: 350
+  # Central AC has no dedicated meter: cost = Nest cooling runtime x this estimate
+  # x the live TOU rate. Calibrate against sensor.ac_implied_watts_yesterday.
+  ac_cooling_wattage:
+    name: "AC — Cooling Wattage (assumed)"
+    min: 500
+    max: 6000
+    step: 50
+    mode: box
+    unit_of_measurement: "W"
+    icon: mdi:air-conditioner
+    initial: 3500
+  # Unmetered non-AC household draw (fridge, water heater, lights), estimated from a
+  # mild no-cooling CE day; subtracted before attributing the residual to the AC.
+  ac_house_baseline_kwh:
+    name: "AC — House Baseline (non-AC kWh/day)"
+    min: 0
+    max: 80
+    step: 0.5
+    mode: box
+    unit_of_measurement: "kWh"
+    icon: mdi:home-minus
+    initial: 15
 
 # Cost integrates a live USD/h cost-rate (power * current TOU rate), not a fixed tariff.
 # Every integral starts at 0 when first created; totals only fill in as data accumulates.
@@ -455,6 +480,29 @@ sensor:
     source: sensor.gaming_pc_gaming_flag
     name: "Gaming PC Gaming Hours"
     unique_id: gaming_pc_gaming_hours
+    unit_time: h
+    round: 3
+    method: left
+  # --- AC cooling: modeled draw while the Nest reports hvac_action == 'cooling' ---
+  - platform: integration
+    source: sensor.ac_cooling_power
+    name: "AC Cooling Energy"
+    unique_id: ac_cooling_energy
+    unit_prefix: k
+    round: 3
+    method: left
+  - platform: integration
+    source: sensor.ac_cooling_cost_rate
+    name: "AC Cooling Cost"
+    unique_id: ac_cooling_cost
+    unit_time: h
+    round: 4
+    method: left
+  # 1 while cooling, else 0, integrated over hours = cooling hours. Survives the recorder purge.
+  - platform: integration
+    source: sensor.ac_cooling_flag
+    name: "AC Cooling Hours"
+    unique_id: ac_cooling_hours
     unit_time: h
     round: 3
     method: left
@@ -830,6 +878,55 @@ utility_meter:
     name: "Gaming PC Gaming Hours Yearly"
     source: sensor.gaming_pc_gaming_hours
     cycle: yearly
+  # AC cooling (energy / cost / hours while the Nest cools)
+  ac_cooling_energy_daily:
+    name: "AC Cooling Energy Daily"
+    source: sensor.ac_cooling_energy
+    cycle: daily
+  ac_cooling_energy_weekly:
+    name: "AC Cooling Energy Weekly"
+    source: sensor.ac_cooling_energy
+    cycle: weekly
+  ac_cooling_energy_monthly:
+    name: "AC Cooling Energy Monthly"
+    source: sensor.ac_cooling_energy
+    cycle: monthly
+  ac_cooling_energy_yearly:
+    name: "AC Cooling Energy Yearly"
+    source: sensor.ac_cooling_energy
+    cycle: yearly
+  ac_cooling_cost_daily:
+    name: "AC Cooling Cost Daily"
+    source: sensor.ac_cooling_cost
+    cycle: daily
+  ac_cooling_cost_weekly:
+    name: "AC Cooling Cost Weekly"
+    source: sensor.ac_cooling_cost
+    cycle: weekly
+  ac_cooling_cost_monthly:
+    name: "AC Cooling Cost Monthly"
+    source: sensor.ac_cooling_cost
+    cycle: monthly
+  ac_cooling_cost_yearly:
+    name: "AC Cooling Cost Yearly"
+    source: sensor.ac_cooling_cost
+    cycle: yearly
+  ac_cooling_hours_daily:
+    name: "AC Cooling Hours Daily"
+    source: sensor.ac_cooling_hours
+    cycle: daily
+  ac_cooling_hours_weekly:
+    name: "AC Cooling Hours Weekly"
+    source: sensor.ac_cooling_hours
+    cycle: weekly
+  ac_cooling_hours_monthly:
+    name: "AC Cooling Hours Monthly"
+    source: sensor.ac_cooling_hours
+    cycle: monthly
+  ac_cooling_hours_yearly:
+    name: "AC Cooling Hours Yearly"
+    source: sensor.ac_cooling_hours
+    cycle: yearly
   # MacBook + Monitor
   macbook_cost_daily:
     name: "MacBook Cost Daily"
@@ -910,6 +1007,16 @@ template:
         state: >
           {{ states('sensor.gaming_pc_current_consumption') | float(0)
              > states('input_number.gaming_pc_active_threshold_w') | float(350) }}
+      # Nest compressor running. Fan-only reads 'fan' and is not counted; delay_off
+      # absorbs the 1-3 min hvac_action lag. Sole thermostat id reference: if the
+      # climate entity is renamed in the UI, change it only here.
+      - name: "AC Cooling"
+        unique_id: ac_cooling
+        device_class: cold
+        icon: mdi:snowflake
+        delay_off: "00:03:00"
+        state: >
+          {{ state_attr('climate.hallway_hallway', 'hvac_action') == 'cooling' }}
   - sensor:
       - name: "Gaming PC Gaming Flag"
         unique_id: gaming_pc_gaming_flag
@@ -979,6 +1086,109 @@ template:
         state: >
           {{ (states('sensor.gaming_pc_gaming_cost_monthly') | float(0)
             / states('sensor.gaming_pc_gaming_hours_monthly') | float(1)) | round(3) }}
+
+      # --- AC cooling (modeled from the Nest, not plug-metered) ---
+      - name: "AC Cooling Flag"
+        unique_id: ac_cooling_flag
+        state_class: measurement
+        state: "{{ 1 if is_state('binary_sensor.ac_cooling', 'on') else 0 }}"
+
+      - name: "AC Cooling Power"
+        unique_id: ac_cooling_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ states('input_number.ac_cooling_wattage') | float(3500)
+             if is_state('binary_sensor.ac_cooling', 'on') else 0 }}
+
+      - name: "AC Cooling Cost Rate"
+        unique_id: ac_cooling_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        icon: mdi:cash-fast
+        state: >
+          {{ (states('sensor.ac_cooling_power') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
+
+      - name: "AC Cooling Cost Yesterday"
+        unique_id: ac_cooling_cost_yesterday
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.ac_cooling_cost_daily', 'last_period') | float(0) | round(4) }}
+
+      - name: "AC Cooling Cost Last Month"
+        unique_id: ac_cooling_cost_last_month
+        unit_of_measurement: "USD"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.ac_cooling_cost_monthly', 'last_period') | float(0) | round(4) }}
+
+      - name: "AC Cooling Hours Yesterday"
+        unique_id: ac_cooling_hours_yesterday
+        unit_of_measurement: "h"
+        state_class: total
+        state: >
+          {{ state_attr('sensor.ac_cooling_hours_daily', 'last_period') | float(0) | round(2) }}
+
+      - name: "AC Cooling Hours Last Month"
+        unique_id: ac_cooling_hours_last_month
+        unit_of_measurement: "h"
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.ac_cooling_hours_monthly', 'last_period') | float(0) | round(2) }}
+
+      - name: "AC Cooling Energy Last Month"
+        unique_id: ac_cooling_energy_last_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        icon: mdi:calendar-check
+        state_class: total
+        state: >
+          {{ state_attr('sensor.ac_cooling_energy_monthly', 'last_period') | float(0) | round(3) }}
+
+      - name: "AC Cost Per Cooling Hour"
+        unique_id: ac_cost_per_cooling_hour
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        icon: mdi:cash-clock
+        availability: "{{ states('sensor.ac_cooling_hours_monthly') | float(0) > 0.25 }}"
+        state: >
+          {{ (states('sensor.ac_cooling_cost_monthly') | float(0)
+            / states('sensor.ac_cooling_hours_monthly') | float(1)) | round(3) }}
+
+      - name: "AC Share Of House Yesterday"
+        unique_id: ac_share_of_house_yesterday
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:home-percent
+        availability: "{{ states('sensor.consumers_energy_cost_yesterday') | is_number and states('sensor.ac_cooling_cost_yesterday') | is_number }}"
+        state: >
+          {% set house = states('sensor.consumers_energy_cost_yesterday') | float(0) %}
+          {% if house > 0 %}
+            {{ (states('sensor.ac_cooling_cost_yesterday') | float(0) / house * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      # Calibration gauge: watts implied by the CE bill (house minus metered plugs
+      # minus baseline, over cooling hours). Tune ac_cooling_wattage toward its median.
+      - name: "AC Implied Watts Yesterday"
+        unique_id: ac_implied_watts_yesterday
+        unit_of_measurement: "W"
+        state_class: measurement
+        icon: mdi:air-conditioner
+        availability: >
+          {{ states('sensor.consumers_energy_kwh_yesterday') | is_number
+             and states('sensor.ac_cooling_hours_yesterday') | float(0) > 0.25 }}
+        state: >
+          {% set h = states('sensor.ac_cooling_hours_yesterday') | float(0) %}
+          {% set resid = (states('sensor.consumers_energy_kwh_yesterday') | float(0)
+            - states('sensor.combined_total_energy_yesterday') | float(0)
+            - states('input_number.ac_house_baseline_kwh') | float(15)) %}
+          {{ (resid / h * 1000) | round(0) if resid > 0 else 0 }}
 
       # now()-based templates re-render every minute; float(<bill default>) keeps this right
       # before the input_number sliders are first touched.
