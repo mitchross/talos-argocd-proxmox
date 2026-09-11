@@ -232,6 +232,58 @@ sensor.gaming_pc_cost_monthly:
 sensor.gaming_pc_cost_yearly:
   friendly_name: Gaming PC Cost Yearly
 
+# ---------- AC Cooling (ac_*) — modeled from the Nest, not plug-metered ----------
+sensor.ac_cooling_power:
+  friendly_name: AC Cooling Power
+sensor.ac_cooling_energy:
+  friendly_name: AC Cooling Energy
+sensor.ac_cooling_cost:
+  friendly_name: AC Cooling Cost
+sensor.ac_cooling_cost_rate:
+  friendly_name: AC Cooling Cost Rate
+sensor.ac_cooling_hours:
+  friendly_name: AC Cooling Hours
+sensor.ac_cooling_energy_daily:
+  friendly_name: AC Cooling Energy Daily
+sensor.ac_cooling_energy_weekly:
+  friendly_name: AC Cooling Energy Weekly
+sensor.ac_cooling_energy_monthly:
+  friendly_name: AC Cooling Energy Monthly
+sensor.ac_cooling_energy_yearly:
+  friendly_name: AC Cooling Energy Yearly
+sensor.ac_cooling_cost_daily:
+  friendly_name: AC Cooling Cost Daily
+sensor.ac_cooling_cost_weekly:
+  friendly_name: AC Cooling Cost Weekly
+sensor.ac_cooling_cost_monthly:
+  friendly_name: AC Cooling Cost Monthly
+sensor.ac_cooling_cost_yearly:
+  friendly_name: AC Cooling Cost Yearly
+sensor.ac_cooling_hours_daily:
+  friendly_name: AC Cooling Hours Daily
+sensor.ac_cooling_hours_weekly:
+  friendly_name: AC Cooling Hours Weekly
+sensor.ac_cooling_hours_monthly:
+  friendly_name: AC Cooling Hours Monthly
+sensor.ac_cooling_hours_yearly:
+  friendly_name: AC Cooling Hours Yearly
+sensor.ac_cooling_cost_yesterday:
+  friendly_name: AC Cooling Cost Yesterday
+sensor.ac_cooling_cost_last_month:
+  friendly_name: AC Cooling Cost Last Month
+sensor.ac_cooling_energy_last_month:
+  friendly_name: AC Cooling Energy Last Month
+sensor.ac_cooling_hours_yesterday:
+  friendly_name: AC Cooling Hours Yesterday
+sensor.ac_cooling_hours_last_month:
+  friendly_name: AC Cooling Hours Last Month
+sensor.ac_cost_per_cooling_hour:
+  friendly_name: AC Cooling Cost Per Cooling Hour
+sensor.ac_share_of_house_yesterday:
+  friendly_name: AC Cooling Share Of House
+sensor.ac_implied_watts_yesterday:
+  friendly_name: AC Cooling Implied Watts
+
 # ---------- MacBook + Monitor (macbook_*) ----------
 sensor.macbook_current_consumption:
   friendly_name: MacBook + Monitor Power
