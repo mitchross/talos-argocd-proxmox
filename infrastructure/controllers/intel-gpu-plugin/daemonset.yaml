@@ -14,9 +14,12 @@ spec:
       labels:
         app.kubernetes.io/name: intel-gpu-plugin
     spec:
-      # Only hp-elite has a passed-through iGPU; the label comes from the Omni machine class.
+      # NFD labels any node with a real Intel VGA device; the QEMU virtual VGA is
+      # vendor 1234, so this only matches hosts that actually passed an iGPU through.
       nodeSelector:
-        node.vanillax.dev/gpu-class: intel-igpu
+        feature.node.kubernetes.io/pci-0300_8086.present: "true"
+      tolerations:
+      - operator: Exists
       containers:
       - name: intel-gpu-plugin
         image: intel/intel-gpu-plugin:0.36.0@sha256:2db679be62b52ac985169084ca711cab6e6c59fe543ab2ddee58163d6f8d29e0
