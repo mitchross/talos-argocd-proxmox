@@ -269,12 +269,15 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# Intel iGPU (00:02.0, 8086:4680) passed through from the host; drives Jellyfin QSV and Immich OpenVINO.
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
 - name: hp-elite-worker
   inline:
     machine:
       nodeLabels:
         node.vanillax.dev/class: hp-elite-worker
+        node.vanillax.dev/gpu-class: intel-igpu
         node.vanillax.dev/pool: general
         topology.kubernetes.io/zone: hp-elite
         node.vanillax.dev/link: wired
