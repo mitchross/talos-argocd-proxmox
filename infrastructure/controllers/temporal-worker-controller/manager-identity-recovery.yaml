@@ -25,7 +25,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: recover-manager-identity
-              image: temporalio/admin-tools:1.31.2@sha256:dbc5fcd6ee8f0f4d808bf765af9a87dea9d8a283abfdcfbd2fc148496ba66107
+              image: temporalio/admin-tools:1.32.0@sha256:a9f84fb9a374b2374fe2e67c8efc0468ff3f1c66c8a0b14597ec86e349e62bca
               imagePullPolicy: IfNotPresent
               command:
                 - /scripts/recover-manager-identity.sh
