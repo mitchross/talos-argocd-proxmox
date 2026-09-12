@@ -39,6 +39,7 @@ spec:
       # (in nvidia-gpu-operator) now owns the device plugin on top of the
       # CDI-based driver/toolkit shipped by Talos system extensions.
       - path: infrastructure/controllers/nvidia-gpu-operator
+      - path: infrastructure/controllers/intel-gpu-plugin
       - path: infrastructure/controllers/metrics-server
       # NOTE: keda and temporal-worker-controller are NOT listed here.
       # They have dedicated standalone Applications at Wave 4
