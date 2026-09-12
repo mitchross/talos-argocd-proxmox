@@ -24,16 +24,12 @@ spec:
         app.kubernetes.io/name: immich
         app.kubernetes.io/component: machine-learning
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: immich
-            topologyKey: kubernetes.io/hostname
+      # Pinned to the node holding the passed-through Intel iGPU.
+      nodeSelector:
+        node.vanillax.dev/gpu-class: intel-igpu
       containers:
       - name: machine-learning
-        image: ghcr.io/immich-app/immich-machine-learning:v3.2.0@sha256:f8b2869891c861a58dde969d86e7ea8a186e6059a55886632ee3249e51fb574a
+        image: ghcr.io/immich-app/immich-machine-learning:v3.2.0-openvino@sha256:6387b84ab42da139191c3db686faead6555ab8cac6466d1d20be955735961b98
         ports:
         - name: http
           containerPort: 3003
@@ -49,14 +45,14 @@ spec:
           value: "/cache"
         - name: HF_XET_CACHE
           value: "/cache/huggingface-xet"
-        - name: IMMICH_MEDIA_LOCATION
-          value: /library
         resources:
           requests:
             cpu: 100m
             memory: 256Mi
+            gpu.intel.com/i915: 1
           limits:
             memory: 4Gi
+            gpu.intel.com/i915: 1
         livenessProbe:
           httpGet:
             path: /ping
@@ -84,18 +80,9 @@ spec:
         volumeMounts:
         - name: cache
           mountPath: /cache
-        - name: library
-          mountPath: /library
-        - name: nfs-photos
-          mountPath: /mnt/photos
-          readOnly: true
       volumes:
+      # Model cache only. ML receives image bytes over HTTP from the server, so it
+      # must NOT mount the RWO library PVC — that would Multi-Attach across nodes.
       - name: cache
         persistentVolumeClaim:
           claimName: immich-ml-cache
-      - name: library
-        persistentVolumeClaim:
-          claimName: library
-      - name: nfs-photos
-        persistentVolumeClaim:
-          claimName: nfs-photos

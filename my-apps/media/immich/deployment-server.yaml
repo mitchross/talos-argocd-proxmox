@@ -21,14 +21,8 @@ spec:
         app.kubernetes.io/name: immich
         app.kubernetes.io/component: server
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: immich
-                app.kubernetes.io/component: machine-learning
-            topologyKey: kubernetes.io/hostname
+      # No podAffinity on machine-learning: ML is pinned to the iGPU node while the
+      # server stays where the CPU is. They talk over the ClusterIP Service.
       initContainers:
       # An empty library fails immich's integrity check (missing .immich markers); idempotently seed subdirs + markers.
       - name: init-library-markers
