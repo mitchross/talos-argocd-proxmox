@@ -3,7 +3,7 @@ server:
   # Chart default tag lags Temporal server patches by weeks; bump here. A chart bump only wins if its default exceeds this.
   image:
     repository: temporalio/server
-    tag: 1.31.2
+    tag: 1.32.0
     pullPolicy: IfNotPresent
   replicaCount: 1
   resources:
