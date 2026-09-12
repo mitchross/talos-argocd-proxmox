@@ -24,9 +24,8 @@ spec:
         app.kubernetes.io/name: immich
         app.kubernetes.io/component: machine-learning
     spec:
-      # Pinned to the node holding the passed-through Intel iGPU.
       nodeSelector:
-        node.vanillax.dev/gpu-class: intel-igpu
+        feature.node.kubernetes.io/pci-0300_8086.present: "true"
       containers:
       - name: machine-learning
         image: ghcr.io/immich-app/immich-machine-learning:v3.2.0-openvino@sha256:6387b84ab42da139191c3db686faead6555ab8cac6466d1d20be955735961b98
