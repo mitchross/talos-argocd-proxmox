@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: intel-gpu-plugin
+  namespace: intel-gpu-plugin
+  labels:
+    app.kubernetes.io/name: intel-gpu-plugin
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: intel-gpu-plugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: intel-gpu-plugin
+    spec:
+      # NFD labels any node with a real Intel VGA device; the QEMU virtual VGA is
+      # vendor 1234, so this only matches hosts that actually passed an iGPU through.
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_8086.present: "true"
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: intel-gpu-plugin
+        image: intel/intel-gpu-plugin:0.36.0@sha256:2db679be62b52ac985169084ca711cab6e6c59fe543ab2ddee58163d6f8d29e0
+        # One physical iGPU advertised as 4 slots so Jellyfin QSV and Immich OpenVINO can share it.
+        args:
+        - -shared-dev-num
+        - "4"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        volumeMounts:
+        - name: devfs
+          mountPath: /dev/dri
+          readOnly: true
+        - name: sysfs
+          mountPath: /sys/class/drm
+          readOnly: true
+        - name: kubeletsockets
+          mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+      - name: devfs
+        hostPath:
+          path: /dev/dri
+      - name: sysfs
+        hostPath:
+          path: /sys/class/drm
+      - name: kubeletsockets
+        hostPath:
+          path: /var/lib/kubelet/device-plugins

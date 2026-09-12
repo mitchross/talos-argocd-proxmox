@@ -201,6 +201,8 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# Intel iGPU passed through from the host; NFD then labels the node pci-0300_8086.present.
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
 - name: hp-sff-worker
   inline:
@@ -269,6 +271,8 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# Intel iGPU passed through from the host; NFD then labels the node pci-0300_8086.present.
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
 - name: hp-elite-worker
   inline:
@@ -328,6 +332,8 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# Intel iGPU passed through from the host; NFD then labels the node pci-0300_8086.present.
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
 - name: dell-worker
   inline:
