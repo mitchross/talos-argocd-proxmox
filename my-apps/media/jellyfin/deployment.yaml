@@ -15,6 +15,9 @@ spec:
       labels:
         app: jellyfin
     spec:
+      # Intel QSV transcoding: only nodes with a passed-through iGPU carry this NFD label.
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_8086.present: "true"
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -37,8 +40,10 @@ spec:
             requests:
               cpu: 500m
               memory: 2Gi
+              gpu.intel.com/i915: 1
             limits:
               memory: 6Gi
+              gpu.intel.com/i915: 1
           envFrom:
             - configMapRef:
                 name: jellyfin-env
