@@ -31,6 +31,10 @@ def machine_patch(doc: dict) -> dict:
     for patch in doc.get("patches", []):
         inline = patch.get("inline", {})
         machine = inline.get("machine", {}) if isinstance(inline, dict) else {}
+        if isinstance(inline, dict) and inline.get("kind") == "KubeNodeConfig":
+            machine = {"nodeLabels": inline.get("labels", {}),
+                       "nodeAnnotations": inline.get("annotations", {}),
+                       "nodeTaints": inline.get("taints", {})}
         for key in result:
             values = machine.get(key, {})
             if not isinstance(values, dict):
