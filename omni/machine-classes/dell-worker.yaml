@@ -1,6 +1,6 @@
 ---
 # omnictl apply -f omni/machine-classes/dell-worker.yaml
-# CPU-only worker on the Dell OptiPlex 7060 (192.168.10.16), wired 2.5GbE.
+# Worker on the Dell OptiPlex 7060 (192.168.10.16), wired 2.5GbE.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -48,3 +48,7 @@ spec:
       bios: seabios
       vga: std
       balloon: false
+      # Proxmox PCI resource mapping for this host's Intel iGPU.
+      pci_devices:
+        - mapping: intel-igpu
+          pcie: true
