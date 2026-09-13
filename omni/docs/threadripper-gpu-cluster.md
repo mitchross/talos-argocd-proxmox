@@ -93,9 +93,15 @@ Set up remote kernel logging before trusting any diagnosis of that host — see
 | `hp-sff-control-plane` | 4 | 12 GiB | 62 GiB | 100 GiB on its own SSD (`hp-sff-cp-vmstore`) |
 | `hp-sff-worker` | 6 | 40 GiB | (same host) | 128 GiB boot + 690 GiB Longhorn |
 | `hp-elite-worker` | 16 | 24 GiB | 30 GiB | 128 GiB boot + 440 GiB Longhorn |
-| `threadripper-gpu-worker` | 30 | 100 GiB | 125 GiB | 2x450 GiB + 300 GiB flash + 2x RTX 3090 |
+| `threadripper-gpu-worker` | 30 | 100 GiB | 125 GiB | 16 GiB boot + 434 GiB EPHEMERAL + 450 GiB models + 300 GiB flash; 2x RTX 3090 |
 | `dell-worker` | 4 | 30 GiB | 39 GiB | 128 GiB boot + 400 GiB Longhorn |
 | `hp-micro-worker` | 4 | 12 GiB | 15 GiB | 128 GiB boot + 850 GiB Longhorn (unschedulable) |
+
+The GPU's boot and EPHEMERAL disks total the existing 450 GiB NVMe0 allocation.
+Measured `/var` usage was 253 GiB, leaving about 181 GiB before filesystem
+overhead. The control-plane template reserves 32 GiB ETCD and 64 GiB EPHEMERAL
+on its existing 100 GiB disk; this isolates capacity, with no promised I/O gain.
+These sizes apply to replacement VMs; rollback requires reprovisioning, not shrinking.
 
 Two ceilings are load-bearing:
 

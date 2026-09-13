@@ -1,8 +1,4 @@
-# talos-prod-cluster-v2: HP SFF control plane; workers on SFF, Elite, Dell,
-# Threadripper (GPU), and HP micro in the shed (Wi-Fi, USB radios).
-# See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
-#
-#   omnictl cluster template sync -v -f cluster-template-prod-v2.yaml
+# Fresh Talos 1.14 rebuild template; do not sync onto the existing 1.13 generation contract.
 ---
 kind: Cluster
 name: talos-prod-cluster-v2
@@ -11,27 +7,21 @@ labels:
 kubernetes:
   version: v1.37.0
 talos:
-  # Install disk is an Omni resource since 1.11, not a config patch; unset, Omni
-  # auto-picks the SMALLEST disk — wrong on the GPU worker (300G flash < 450G boot).
   version: v1.14.0
 patches:
-- name: disable-default-cni
+# KubeletConfig cannot express extraMounts; keep the supported legacy kubelet for Longhorn.
+- name: legacy-kubelet-mounts
   inline:
-    cluster:
-      network:
-        cni:
-          name: none
-      proxy:
-        disabled: true
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    $patch: delete
 - name: dns-resolver
   inline:
     apiVersion: v1alpha1
     kind: ResolverConfig
     nameservers:
     - address: 192.168.10.1
-# NEVER remove: without this the inner VXLAN TCP checksum is never completed
-# and cross-node pod TCP silently black-holes (Tcp: InCsumErrors, no drops
-# logged). Check with `talosctl get ethernetstatus`.
+# Disabling these offloads prevents the observed cross-node VXLAN TCP checksum failures.
 - name: vxlan-inner-checksum
   inline:
     apiVersion: v1alpha1
@@ -70,8 +60,10 @@ patches:
   inline:
     machine:
       kubelet:
-        # Trim the image cache long before the 10%-free eviction line: a full
-        # nodefs taints the node AND flips every Longhorn disk on it NotReady.
+        # Keep aligned with kubernetes.version.
+        image: ghcr.io/siderolabs/kubelet:v1.37.0
+        defaultRuntimeSeccompProfileEnabled: true
+        disableManifestsDirectory: true
         extraConfig:
           imageGCHighThresholdPercent: 70
           imageGCLowThresholdPercent: 55
@@ -86,37 +78,76 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
+- name: disable-flannel
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeFlannelCNIConfig
+    $patch: delete
+- name: disable-kube-proxy
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeProxyConfig
+    enabled: false
 - name: hp-sff-topology
   inline:
-    machine:
-      # etcd lives on the HP SFF, off the Threadripper: that host hard-locks
-      # with no panic and no logs, twice inside nine hours.
-      nodeLabels:
-        topology.kubernetes.io/zone: hp-sff
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      topology.kubernetes.io/zone: hp-sff
+- name: control-plane-api-server
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeAPIServerConfig
+    extraArgs:
+      max-requests-inflight: "800"
+      max-mutating-requests-inflight: "400"
+- name: control-plane-controller-manager
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeControllerManagerConfig
+    extraArgs:
+      concurrent-deployment-syncs: "10"
+      concurrent-replicaset-syncs: "10"
+      concurrent-namespace-syncs: "20"
+      bind-address: 0.0.0.0
+- name: control-plane-scheduler
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeSchedulerConfig
+    extraArgs:
+      kube-api-qps: "100"
+      bind-address: 0.0.0.0
 - name: control-plane-performance
   inline:
     cluster:
-      apiServer:
-        extraArgs:
-          max-requests-inflight: "800"
-          max-mutating-requests-inflight: "400"
       etcd:
         extraArgs:
           quota-backend-bytes: "8589934592"
           snapshot-count: "5000"
-          auto-compaction-mode: "periodic"
-          auto-compaction-retention: "5m"
-          listen-metrics-urls: "http://0.0.0.0:2381"
-      controllerManager:
-        extraArgs:
-          concurrent-deployment-syncs: "10"
-          concurrent-replicaset-syncs: "10"
-          concurrent-namespace-syncs: "20"
-          bind-address: "0.0.0.0"
-      scheduler:
-        extraArgs:
-          kube-api-qps: "100"
-          bind-address: "0.0.0.0"
+          auto-compaction-mode: periodic
+          auto-compaction-retention: 5m
+          listen-metrics-urls: http://0.0.0.0:2381
+- name: control-plane-ephemeral
+  inline:
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: EPHEMERAL
+    provisioning:
+      diskSelector:
+        match: system_disk
+      minSize: 64GiB
+      maxSize: 64GiB
+# Bound EPHEMERAL above so ETCD can reserve space on the same 100 GiB system disk.
+- name: control-plane-etcd
+  inline:
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: ETCD
+    provisioning:
+      diskSelector:
+        match: system_disk
+      minSize: 32GiB
+      maxSize: 32GiB
 ---
 kind: Workers
 name: hp-micro-workers
@@ -130,42 +161,42 @@ systemExtensions:
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
 patches:
+# Keep the Wi-Fi worker tainted and both Longhorn disks unschedulable.
 - name: hp-micro-worker
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: hp-micro-worker
+      node.vanillax.dev/pool: edge
+      topology.kubernetes.io/zone: shed
+      node.vanillax.dev/link: wifi
+    taints:
+      node.vanillax.dev/link: wifi:NoSchedule
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: hp-micro-worker-machine
+  inline:
     machine:
-      # Shed, behind the AX86U wifi media bridge. Plain DHCP-on-all-links is
-      # kept (it works through the bridge); never pin a NIC name — see the
-      # removed gpu-network-dhcp note under gpu-workers.
-      nodeLabels:
-        node.vanillax.dev/class: hp-micro-worker
-        node.vanillax.dev/pool: edge
-        # Own failure domain: the shed's wifi link, shared with nothing else.
-        topology.kubernetes.io/zone: shed
-        node.vanillax.dev/link: wifi
-      # Bad wifi: only pods that tolerate this land here (USB-bound apps, DaemonSets).
-      nodeTaints:
-        node.vanillax.dev/link: wifi:NoSchedule
       kubelet:
-        nodeIP:
-          validSubnets:
-          - 192.168.10.0/24
         extraConfig:
           serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
+# This annotation replaces the full Longhorn disk list; include the disabled default disk.
 - name: hp-micro-longhorn-disks
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-micro-ssd","path":"/var/mnt/longhorn-hp-micro-ssd","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":["hp-micro-ssd"]}]
+- name: hp-micro-longhorn-disks-machine
+  inline:
     machine:
-      # All-or-nothing annotation: every disk the node should register must be
-      # listed here. Omitting talos-ephemeral does not leave it at defaults —
-      # it leaves the node with zero usable disks.
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      # hp-micro-ssd stays unschedulable: a replica here puts app data behind the shed wifi
-      # (the Dell collected 32 single replicas that way). Opt in later via a tagged StorageClass.
-      nodeAnnotations:
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-micro-ssd","path":"/var/mnt/longhorn-hp-micro-ssd","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":["hp-micro-ssd"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
@@ -181,10 +212,6 @@ patches:
     kind: UserVolumeConfig
     name: longhorn-hp-micro-ssd
     provisioning:
-      # Size is the only thing distinguishing this 850 GiB scsi1 device from
-      # the 64 GiB boot disk. Do NOT add a `disk.transport == 'scsi'` clause:
-      # Proxmox virtio-scsi disks never match it and the volume silently goes
-      # unprovisioned.
       diskSelector:
         match: "!system_disk && disk.size >= 700u * GB"
       minSize: 700GB
@@ -201,43 +228,42 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-# Intel iGPU passed through from the host; NFD then labels the node pci-0300_8086.present.
 - siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
 - name: hp-sff-worker
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: hp-sff-worker
+      node.vanillax.dev/pool: general
+      topology.kubernetes.io/zone: hp-sff
+      node.vanillax.dev/link: wired
+      coroot.vanillax.dev/enabled: "true"
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: hp-sff-worker-machine
+  inline:
     machine:
-      # House, wired 2.5GbE. Plain DHCP-on-all-links; never pin a NIC name —
-      # see the removed gpu-network-dhcp note under gpu-workers.
-      nodeLabels:
-        node.vanillax.dev/class: hp-sff-worker
-        node.vanillax.dev/pool: general
-        # Own failure domain: a separate box from the Threadripper (house).
-        topology.kubernetes.io/zone: hp-sff
-        node.vanillax.dev/link: wired
-        # Coroot backend + agents pin here (monitoring/coroot nodeSelector).
-        coroot.vanillax.dev/enabled: "true"
       kubelet:
-        nodeIP:
-          validSubnets:
-          - 192.168.10.0/24
         extraConfig:
           serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
 - name: hp-sff-longhorn-disks
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-node-tags: '["wired-storage"]'
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]}]
+- name: hp-sff-longhorn-disks-machine
+  inline:
     machine:
-      # All-or-nothing annotation: every disk the node should register must be
-      # listed here. Omitting talos-ephemeral does not leave it at defaults —
-      # it leaves the node with zero usable disks.
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        # Node tag (not a disk tag) selecting longhorn-wired-ha replicas; applies only while the Longhorn node has no tags.
-        node.longhorn.io/default-node-tags: '["wired-storage"]'
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
@@ -253,8 +279,6 @@ patches:
     kind: UserVolumeConfig
     name: longhorn-hp-sff-ssd
     provisioning:
-      # Size alone distinguishes the 690 GiB scsi1 device from the 128 GiB boot
-      # disk. No `disk.transport` clause: virtio-scsi never matches it.
       diskSelector:
         match: "!system_disk && disk.size >= 600u * GB"
       minSize: 600GB
@@ -271,36 +295,41 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-# Intel iGPU passed through from the host; NFD then labels the node pci-0300_8086.present.
 - siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
 - name: hp-elite-worker
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: hp-elite-worker
+      node.vanillax.dev/pool: general
+      topology.kubernetes.io/zone: hp-elite
+      node.vanillax.dev/link: wired
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: hp-elite-worker-machine
+  inline:
     machine:
-      nodeLabels:
-        node.vanillax.dev/class: hp-elite-worker
-        node.vanillax.dev/pool: general
-        topology.kubernetes.io/zone: hp-elite
-        node.vanillax.dev/link: wired
       kubelet:
-        nodeIP:
-          validSubnets:
-          - 192.168.10.0/24
         extraConfig:
           serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
 - name: hp-elite-longhorn-disks
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-node-tags: '["wired-storage"]'
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-elite-nvme","path":"/var/mnt/longhorn-hp-elite-nvme","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-elite-nvme"]}]
+- name: hp-elite-longhorn-disks-machine
+  inline:
     machine:
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      # The Intel SSD is healthy but already reports 74% lifetime wear.
-      nodeAnnotations:
-        # Node tag (not a disk tag) selecting longhorn-wired-ha replicas; applies only while the Longhorn node has no tags.
-        node.longhorn.io/default-node-tags: '["wired-storage"]'
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-elite-nvme","path":"/var/mnt/longhorn-hp-elite-nvme","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-elite-nvme"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
@@ -332,41 +361,41 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-# Intel iGPU passed through from the host; NFD then labels the node pci-0300_8086.present.
 - siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
 - name: dell-worker
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: dell-worker
+      node.vanillax.dev/pool: disposable
+      topology.kubernetes.io/zone: dell
+      node.vanillax.dev/link: wired
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: dell-worker-machine
+  inline:
     machine:
-      # Wired 2.5GbE (rtl8125b); the onboard I219 is unused after its e1000e
-      # hang bug. Plain DHCP-on-all-links; never pin a NIC name.
-      nodeLabels:
-        node.vanillax.dev/class: dell-worker
-        node.vanillax.dev/pool: disposable
-        # Own failure domain: a separate box from the Threadripper and the HPs.
-        topology.kubernetes.io/zone: dell
-        node.vanillax.dev/link: wired
       kubelet:
-        nodeIP:
-          validSubnets:
-          - 192.168.10.0/24
         extraConfig:
           serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
 - name: dell-longhorn-disks
   inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-node-tags: '["wired-storage"]'
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]}]
+- name: dell-longhorn-disks-machine
+  inline:
     machine:
-      # All-or-nothing annotation: every disk the node should register must be
-      # listed here. Omitting talos-ephemeral does not leave it at defaults —
-      # it leaves the node with zero usable disks.
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        # Node tag (not a disk tag) selecting longhorn-wired-ha replicas; applies only while the Longhorn node has no tags.
-        node.longhorn.io/default-node-tags: '["wired-storage"]'
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
@@ -382,8 +411,6 @@ patches:
     kind: UserVolumeConfig
     name: longhorn-dell-ssd
     provisioning:
-      # Size alone distinguishes the 400 GiB scsi1 device from the 128 GiB boot
-      # disk. No `disk.transport` clause: virtio-scsi never matches it.
       diskSelector:
         match: "!system_disk && disk.size >= 350u * GB"
       minSize: 350GB
@@ -394,7 +421,6 @@ name: gpu-workers
 machineClass:
   name: threadripper-gpu-worker
   size: 1
-# Do not add nfs-utils to GPU nodes; use the CSI NFS path instead.
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
@@ -403,21 +429,23 @@ systemExtensions:
 patches:
 - name: gpu-worker-labels
   inline:
-    machine:
-      nodeLabels:
-        gpu-worker: "true"
-        nvidia.com/gpu: "true"
-        node.vanillax.dev/gpu-class: rtx-3090
-        node.vanillax.dev/pool: gpu
-        topology.kubernetes.io/zone: house
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      gpu-worker: "true"
+      nvidia.com/gpu: "true"
+      node.vanillax.dev/gpu-class: rtx-3090
+      node.vanillax.dev/pool: gpu
+      topology.kubernetes.io/zone: house
 - name: longhorn-node-disks
   inline:
-    machine:
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash"]}]
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash"]}]
 - file: patches/threadripper-gpu-workers.yaml
 - name: kubelet-performance
   inline:
@@ -438,29 +466,17 @@ patches:
           - bind
           - rshared
           - rw
-# The 450GB NVMe disk is the AI model cache, not Longhorn: llama.cpp mmaps GGUF weights
-# from here, so page-cache misses are local NVMe reads instead of NFS round trips.
+# Exact GiB sizes keep the 434 GiB EPHEMERAL, 450 GiB model and 300 GiB flash selectors disjoint.
 - name: ai-model-cache-volume
   inline:
     apiVersion: v1alpha1
     kind: UserVolumeConfig
     name: ai-model-cache
     provisioning:
-      # Size is the only thing separating this from the 300GB ssd-flash disk — both are
-      # virtio-scsi disks reporting the same model to Talos. Do not drop the bound.
       diskSelector:
-        match: "!system_disk && disk.size >= 400u * GB"
-      minSize: 400GB
+        match: '!system_disk && disk.size == 450u * GiB'
+      minSize: 400GiB
       grow: true
-# Fast local flash tier: a 300GB Proxmox disk on `ssd-ent` — 2x HPE MK000480GWCEV
-# enterprise SATA SSDs (power-loss protected) in mdadm RAID1, exposed as a **thick**
-# LVM VG. Backs the `longhorn-flash` StorageClass via Longhorn disk tag `flash`.
-#
-# Measured 4K QD1 fsync (a durable write / DB commit): 3,069 IOPS @ 0.32ms here, vs
-# 259 IOPS @ 1.25ms on the default EDILOCA-backed disk. ~12x.
-#
-# The 300GB size is load-bearing: it is what separates this disk from the 450GB
-# longhorn-nvme1 disk in the selectors above. Do not resize it without fixing both.
 - name: longhorn-ssd-flash-volume
   inline:
     apiVersion: v1alpha1
@@ -468,6 +484,17 @@ patches:
     name: longhorn-ssd-flash
     provisioning:
       diskSelector:
-        match: "!system_disk && disk.size >= 250u * GB && disk.size < 400u * GB"
-      minSize: 250GB
+        match: '!system_disk && disk.size == 300u * GiB'
+      minSize: 250GiB
+      grow: true
+# /var stays on NVMe0; the separate 16 GiB boot disk is uniquely smallest for Omni.
+- name: gpu-ephemeral-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: EPHEMERAL
+    provisioning:
+      diskSelector:
+        match: '!system_disk && disk.size == 434u * GiB'
+      minSize: 400GiB
       grow: true
