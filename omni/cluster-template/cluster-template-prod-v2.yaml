@@ -2,7 +2,7 @@
 # Threadripper (GPU), and HP micro in the shed (Wi-Fi, USB radios).
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
-#   omnictl cluster template sync -v -f cluster-template-prod-v2.yaml
+#   omnictl cluster template sync -f cluster-template-prod-v2.yaml
 ---
 kind: Cluster
 name: talos-prod-cluster-v2
