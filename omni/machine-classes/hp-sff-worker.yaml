@@ -44,3 +44,7 @@ spec:
       bios: seabios
       vga: std
       balloon: false
+      # Proxmox PCI resource mapping for this host's Intel iGPU.
+      pci_devices:
+        - mapping: intel-igpu
+          pcie: true
