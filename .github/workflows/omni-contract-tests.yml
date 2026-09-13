@@ -41,7 +41,7 @@ jobs:
           gh release download "$talos_version" --repo siderolabs/talos --pattern talosctl-linux-amd64 --dir "$RUNNER_TEMP"
           gh release download "$talos_version" --repo siderolabs/talos --pattern sha256sum.txt --dir "$RUNNER_TEMP"
           cd "$RUNNER_TEMP"
-          rg ' talosctl-linux-amd64$' sha256sum.txt > talosctl-checksum.txt
+          grep ' talosctl-linux-amd64$' sha256sum.txt > talosctl-checksum.txt
           test -s talosctl-checksum.txt
           sha256sum --check talosctl-checksum.txt
           install -m 0755 talosctl-linux-amd64 "$RUNNER_TEMP/talosctl"
