@@ -105,6 +105,11 @@ explains why a healthy but empty registry cannot start those applications.
 
 ### Talos 1.14 fresh-install differences
 
+The [measured disk and partition study](audits/2026-09-12-rebuild-disk-study.md)
+proposes a small GPU boot disk with EPHEMERAL on a separate virtual disk, and
+a reserved ETCD partition on the control plane. These proposals are not yet
+implemented and do not clear the pre-nuke gates.
+
 Read the [Talos 1.14 release notes](https://github.com/siderolabs/talos/releases/tag/v1.14.0)
 and [Omni 1.11 release notes](https://github.com/siderolabs/omni/releases/tag/v1.11.0)
 alongside the current template. An upgraded installation and a fresh one have
