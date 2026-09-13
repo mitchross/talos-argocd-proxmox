@@ -111,6 +111,42 @@ This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
 placeholder commands or omitted flags.
 
+### 0. Check recovery and fresh provisioning before deleting anything
+
+Complete the [pre-nuke checklist](docs/disaster-recovery.md#pre-nuke-checklist)
+while the old cluster is still available. Keep the NAS containing RustFS and
+application files, and the Pi hosting Omni/DNS, outside the wipe.
+
+**The GPU installation blocker applies before step 1.** The current GPU
+MachineClass declares a 450 GiB boot disk, a 450 GiB model disk, and a 300 GiB
+flash disk. Omni 1.11 selects the smallest eligible disk on a fresh machine,
+so this layout installs onto the flash disk. A successful in-place upgrade
+or template validation does not prove a safe fresh installation. Resolve
+[disk selection](#fresh-gpu-provisioning-needs-a-disk-selection-fix) for a new
+machine UUID before destroying the existing cluster.
+
+Recover the private, gitignored
+`omni/cluster-template/patches/docker-hub-auth.yaml` onto the workstation that
+will run the rebuild. A fresh Git checkout does not contain this credential
+patch. Keep a protected off-cluster copy with the bootstrap credentials; never
+commit it or print its contents in logs.
+
+Validate from the same checkout that will provision the replacement:
+
+```bash
+omnictl cluster template validate \
+  -f omni/cluster-template/cluster-template-prod-v2.yaml
+omnictl cluster template sync \
+  -f omni/cluster-template/cluster-template-prod-v2.yaml \
+  --dry-run
+```
+
+Both commands must succeed. Review any planned resource changes before
+continuing. Do not add `-v`: verbose template output can disclose the inline
+registry credential. These checks establish template validity and the planned
+Omni changes, not backup integrity, disk-selection safety, or host capacity.
+If any prerequisite fails, keep the old cluster running and correct it first.
+
 ### 1. Remove the old cluster
 
 Skip this step when provisioning for the first time.
@@ -145,10 +181,10 @@ omnictl get machineclasses
 
 omnictl cluster template validate \
   -f omni/cluster-template/cluster-template-prod-v2.yaml
-omnictl cluster template sync -v \
+omnictl cluster template sync \
   -f omni/cluster-template/cluster-template-prod-v2.yaml \
   --dry-run
-omnictl cluster template sync -v \
+omnictl cluster template sync \
   -f omni/cluster-template/cluster-template-prod-v2.yaml
 
 omnictl get machinerequeststatuses -w
