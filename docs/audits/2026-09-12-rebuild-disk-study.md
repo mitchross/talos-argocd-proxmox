@@ -1,10 +1,10 @@
 # Rebuild disk and partition study — September 12, 2026
 
-**Status: measured recommendation; not implemented.** The owner confirmed that
+**Status: implemented in the rebuild branch; not applied to live machines.** The owner confirmed that
 the rebuild replaces the Talos cluster through Omni while the physical hosts,
 NAS/RustFS, Pi-hosted Omni/DNS, and external recovery files remain. Recommendations
 must have measured evidence. The [pre-nuke gates](../disaster-recovery.md#pre-nuke-checklist)
-still apply, including the unresolved fresh Kubernetes-config migration.
+still apply, including the Kubernetes restore drill and final backup cutoff.
 
 ## Recommendation
 
@@ -16,8 +16,9 @@ current `/var` capacity. On the control plane, reserve **32 GiB for ETCD and
 provides capacity isolation; no latency improvement from repartitioning the
 same SSD has been measured.
 
-These are replacement-layout proposals. No live disk, machine class, Talos
-configuration, or storage policy was changed during the study.
+The rebuild branch now declares these replacement layouts and migrates the
+conflicting Kubernetes patches. No live disk, MachineClass or Talos configuration
+has been changed; applying the replacement template to the old cluster is unsupported.
 
 ## Measurements and limits
 
@@ -84,7 +85,7 @@ The replacement must also change all three Talos data selectors. The current
 model selector (`disk.size >= 400u * GB`) would match both the new 434 GiB disk
 and the model disk. Use distinct measured virtual sizes, for example:
 
-| Volume | Candidate selector |
+| Volume | Replacement selector |
 |---|---|
 | EPHEMERAL | `!system_disk && disk.size == 434u * GiB` |
 | ai-model-cache | `!system_disk && disk.size == 450u * GiB` |
@@ -176,18 +177,23 @@ No new synthetic write benchmark or physical disk migration was performed.
 
 ## Validation and adoption boundary
 
-The proposed CP partition documents and GPU volume documents passed
-`talosctl v1.14.0 gen config --talos-version v1.14.0` followed by
-`talosctl validate --mode metal` with synthetic secrets. Size arithmetic and
-selector separation were checked. These checks validate configuration syntax;
-they are not a successful Omni fresh-VM install, full-template validation, or
-restoration test.
+The original partition-only checks have been superseded by generation and
+native `talosctl v1.14.0 validate --mode metal` for all six complete machine
+roles, including the private registry patch in local validation. Omni template
+validation and the resource dry run also pass. The regression checks cover
+uniquely smallest boot disks, exact selector matches, disjoint data targets,
+control-plane partition capacity, node placement and Longhorn's kubelet bind.
 
-Implementation needs the GPU MachineClass change, matching volume selectors,
-fresh Kubernetes-config migration, and a provision/restore check together.
-Before deleting the cluster, the replacement must show the intended system
-disk and volume mount paths, adequate free space, working CSI/GPU devices,
-and a valid Kopiur populator drill. Keep the old cluster until the pre-nuke
-gates are satisfied. Roll back a candidate layout by discarding only its test
-VM and returning to the preserved configuration; never attempt an in-place
-filesystem shrink as rollback.
+CI performs the same fresh generation with synthetic secrets, skipping only
+the private registry credential file. Run
+`python scripts/validate-omni-fresh-configs.py --include-private-patches` locally
+to include it. The [fresh-install notes](../disaster-recovery.md#talos-114-fresh-install-differences)
+explain why the legacy kubelet mount fields remain and why the beta `/var`
+`noexec` workaround is unnecessary on final 1.14.0.
+
+No fresh VM, CSI/GPU workload or Kubernetes restore drill has been exercised
+with this replacement layout. Verify the actual system disk, mount paths and
+free space when provisioning. The existing cluster keeps its old generation
+contract; do not sync this fresh-only template onto it. Roll back by discarding
+only the replacement test VM and reprovisioning from the preserved configuration;
+never attempt an in-place filesystem shrink.
