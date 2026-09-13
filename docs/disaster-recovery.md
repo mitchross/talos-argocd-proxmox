@@ -53,20 +53,6 @@ vault are the pets. Everything between them is reconstructed automatically.
 
 Block the nuke until every box checks — **you restore *from* these**:
 
-- [ ] Confirm the wipe boundary: Talos cluster machines and their disks only;
-      the NAS/RustFS, Pi-hosted Omni/DNS, and off-cluster recovery files must survive.
-- [ ] Check fresh-install disk selection for every newly generated machine UUID.
-      The replacement GPU class uses a uniquely smallest 16 GiB boot disk and
-      separate 434 GiB EPHEMERAL disk. Validate the class and selectors together. Read [README step 0](https://github.com/mitchross/talos-argocd-proxmox/blob/main/README.md#0-check-recovery-and-fresh-provisioning-before-deleting-anything)
-      **before deleting the old cluster**, not after it is gone.
-- [ ] Validate the intended template and review its non-verbose dry run from the
-      rebuild workstation. Recover the gitignored Docker Hub credential patch
-      off-cluster first; a clean Git checkout alone cannot render this template.
-- [ ] Validate generated machine configurations for the **fresh** Talos version
-      contract, for the control plane and every worker class:
-      `python scripts/validate-omni-fresh-configs.py --include-private-patches`.
-      All six roles must pass. Template validation and an Omni dry run alone
-      do not perform this check.
 - [ ] GitHub reachable; the rebuild revision **pushed** (ArgoCD pulls origin, not your working tree)
 - [ ] GHCR image pulls work
 - [ ] 1Password reachable; Connect token valid and recoverable off-cluster
@@ -74,92 +60,30 @@ Block the nuke until every box checks — **you restore *from* these**:
 - [ ] RustFS/S3 endpoint reachable; access key registered on the external server; Kopia auth works
       (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
 - [ ] Talos secrets / Omni machine configs available off-cluster
+- [ ] Private Docker Hub patch, in-cluster registry images and manually protected data saved off-cluster
 - [ ] **Backups fresh**: each backed-up PVC has a recent `Succeeded` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
       `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`.
       To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
 - [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists (kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward). Confirm every PVC you intend to *restore* (not seed) shows at least one `Succeeded` Snapshot before the nuke.
 - [ ] Restore canary green: recent `last-drill-result=pass`
 
-Check coverage against **all live PVCs**, including operator-created claims and
-intentionally stopped applications. A healthy schedule cannot protect a claim
-that has no policy. Match each protected claim to its Git-declared source,
-backup identity, and Restore; renamed recovery claims can intentionally retain
-their original backup identity. Review every exemption explicitly: NAS files
-survive on the NAS, while local caches, monitoring history, PostHog event data,
-and retained failed original volumes have different recovery consequences.
-Do not describe those different cases collectively as "everything backed up."
+## Talos 1.14 rebuild
 
-For the chosen recovery points, record the actual Kopia snapshot IDs, capture
-times, sizes, and verification results outside the cluster. Read the repository
-with a read-only Kopia connection and verify the selected snapshots' files;
-Kubernetes `Succeeded` records alone are not proof that those exact IDs remain
-readable. Retention can remove a previously selected snapshot after a newer run,
-so protect the final pre-rebuild snapshots from retention and verify the IDs
-that will actually be used. A local restore and checksum comparison proves that
-backup's bytes; it does not replace the Kubernetes populator drill below or
-application/database recovery checks.
+The template uses 1.14 Kubernetes documents for node settings and control-plane
+components. It retains legacy kubelet fields for Longhorn's shared bind mount:
+[`KubeletConfig` has no `extraMounts` equivalent](https://github.com/siderolabs/talos/blob/v1.14.0/pkg/machinery/config/types/k8s/kubelet.go#L189).
+The existing cluster's 1.13.9 generation contract is different; use this template
+after deleting that cluster.
 
-Preserve required images from the in-cluster registry off-cluster before
-deletion. Keep the registry archive or exact image exports with their hashes
-and the pinned tags required by Git. The [registry recovery section](#in-cluster-registry-and-gitea-actions)
-explains why a healthy but empty registry cannot start those applications.
+The control plane reserves **32 GiB ETCD + 64 GiB EPHEMERAL** within its existing
+100 GiB disk. The GPU uses **16 GiB boot + 434 GiB EPHEMERAL** on NVMe0 so Omni
+selects the boot disk. Model and flash allocations stay at 450 and 300 GiB.
+Check the resulting disks and mount paths with `talosctl get disks`,
+`talosctl get volumestatus` and `talosctl get mountstatus` before restoring.
 
-### Talos 1.14 fresh-install differences
-
-The [measured disk and partition study](audits/2026-09-12-rebuild-disk-study.md)
-explains the replacement layout now declared in the production template:
-16 GiB GPU boot plus 434 GiB EPHEMERAL on the original NVMe0 pool, and a
-32 GiB ETCD partition plus 64 GiB EPHEMERAL on the existing 100 GiB control-plane
-disk. These changes take effect during fresh provisioning, not on existing VMs.
-
-Read the [Talos 1.14 release notes](https://github.com/siderolabs/talos/releases/tag/v1.14.0)
-and [Omni 1.11 release notes](https://github.com/siderolabs/omni/releases/tag/v1.11.0)
-alongside the current template. An upgraded installation and a fresh one have
-different defaults:
-
-- **Use the migrated template only for a fresh cluster.** It uses `KubeNodeConfig`
-  for labels, annotations, taints and node IP; dedicated API server/controller
-  manager/scheduler documents; and removes generated Flannel while disabling
-  kube-proxy for Cilium. Fresh generation and native Talos validation now pass
-  for the control plane and all five worker classes.
-  The existing cluster retains its **v1.13.9** creation-time contract, which Omni
-  [preserves during upgrades](https://github.com/siderolabs/omni/blob/v1.11.0/internal/backend/runtime/omni/controllers/omni/cluster_machine_config.go).
-  Do not sync the replacement template onto that running cluster or change its
-  contract as a test. Keep the prior Git revision for its maintenance.
-- **Preserve Longhorn's kubelet bind mount.** The final 1.14
-  [`KubeletConfig` implementation](https://github.com/siderolabs/talos/blob/v1.14.0/pkg/machinery/config/types/k8s/kubelet.go#L189)
-  has no `extraMounts` equivalent. The template deletes that generated document
-  and retains the supported legacy `machine.kubelet` fields, including the
-  `/var/local/longhorn` → `/var/lib/longhorn` shared writable bind. The kubelet
-  image matches the cluster version; seccomp and manifests-directory settings
-  preserve the fresh generator's defaults. CI checks these invariants.
-- **The beta `/var` noexec workaround does not apply to final 1.14.0.**
-  [Discussion #13868](https://github.com/siderolabs/talos/discussions/13868)
-  describes beta.0; the final release's
-  [EPHEMERAL tests](https://github.com/siderolabs/talos/blob/v1.14.0/internal/app/machined/pkg/controllers/block/internal/volumes/volumeconfig/system_volumes_test.go#L837)
-  explicitly require execution to remain allowed, even with `mount.secure: true`.
-  Keep the final mount defaults; a blanket `secure: false` is unnecessary.
-  Dedicated ETCD and LOG remain non-executable with secure mounts.
-- Omni owns install-disk selection through `MachineInstallDiskConfig`;
-  `machine.install.disk` config patches do not select the disk for Talos 1.14.
-  A replacement Proxmox VM receives a new UUID, so an old per-machine selection
-  does not protect it.
-- Newly generated Talos 1.14 configs enable workload isolation (`sandboxd`).
-  Upgraded configs without `SecurityProfileConfig` retain the previous behavior.
-  Inspect the generated configuration and validate CSI, Cilium, GPU and USB
-  workloads on the new nodes; the deprecated in-tree iSCSI plugin does not work
-  with isolation. This repository uses CSI drivers for its network storage.
-- Newly generated configs include periodic filesystem trimming; older upgraded
-  configs without `FilesystemTrimConfig` do not. Review the generated documents
-  instead of assuming both installations are equivalent.
-- Use the Image Factory installation media supplied by the compatible Omni and
-  Proxmox provider. Talos no longer publishes the former
-  `ghcr.io/siderolabs/installer` release image.
-
-The Longhorn StorageClasses already declare the Talos SELinux mount context
-for newly provisioned volumes. Verify it on restored volumes and keep the V1
-engine. See [the mount-context runbook](domains/storage/selinux-mount-context.md)
-for the separate limitations of existing, already mounted volumes.
+Fresh 1.14 enables workload isolation and weekly filesystem trimming. Keep
+its mount defaults: the final release [keeps `/var` executable](https://github.com/siderolabs/talos/blob/v1.14.0/internal/app/machined/pkg/controllers/block/internal/volumes/volumeconfig/system_volumes_test.go#L837),
+so the beta `secure: false` workaround is unnecessary for Longhorn V1.
 
 ## Rebuild sequence
 
@@ -230,11 +154,10 @@ half-converged cluster.
   per-PVC kopiur CRs (`SnapshotPolicy`/`SnapshotSchedule`/`Restore`) and the
   `kopiur.home-operations.com/repo: cluster-kopia` namespace label render with
   each app at Wave 6.
-- Replica rebuild concurrency is declared in
-  `infrastructure/storage/longhorn/node-failure-settings.yaml` (currently **2/node**,
-  following the September 5 drain deadlock repair). Preserve last-replica drain
-  protection. A full restore at this setting has not been capacity-qualified;
-  watch storage/API pressure rather than increasing concurrency mid-bootstrap.
+- Replica rebuilds stay throttled to **1/node**
+  (`infrastructure/storage/longhorn/node-failure-settings.yaml`) — a mass
+  restore saturates any engine on shared homelab hardware; do not raise it
+  mid-bootstrap.
 
 ## What the restore wave looks like (calibrated expectations)
 

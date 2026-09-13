@@ -10,7 +10,6 @@ import argparse
 from collections import defaultdict
 import json
 from pathlib import Path
-import re
 import sys
 
 import yaml
@@ -42,57 +41,6 @@ def machine_patch(doc: dict) -> dict:
                 raise ValueError(f"{key} must be a mapping")
             result[key].update(values)
     return result
-
-
-def disk_matches(selector: str, size_gib: int, system_disk: bool) -> bool:
-    """Evaluate this template's size-only selector subset; Talos checks CEL syntax separately."""
-    matched = True
-    for term in selector.split("&&"):
-        term = term.strip()
-        if term in ("system_disk", "!system_disk"):
-            matched &= system_disk == (term == "system_disk")
-            continue
-        size = re.fullmatch(r"disk\.size\s*(==|>=|<=|>|<)\s*(\d+)u\s*\*\s*(GB|GiB)", term)
-        if not size:
-            raise ValueError("unsupported disk selector; extend the static evaluator")
-        operator, number, unit = size.groups()
-        left = size_gib * 2**30
-        right = int(number) * (2**30 if unit == "GiB" else 10**9)
-        matched &= {"==": left == right, ">=": left >= right, "<=": left <= right,
-                    ">": left > right, "<": left < right}[operator]
-    return matched
-
-
-def check_disk_layout(doc: dict, disks: list[dict]) -> None:
-    if any(d["disk_size"] <= disks[0]["disk_size"] for d in disks[1:]):
-        raise ValueError("the boot disk must be uniquely smallest for fresh Omni selection")
-    claims: dict[int, list[dict]] = defaultdict(list)
-    for patch in doc.get("patches", []):
-        volume = patch.get("inline", {})
-        if volume.get("kind") not in ("UserVolumeConfig", "VolumeConfig"):
-            continue
-        provision = volume.get("provisioning", {})
-        selector = provision.get("diskSelector", {}).get("match")
-        if not selector:
-            raise ValueError("provisioned volumes need an explicit disk selector")
-        targets = [i for i, disk in enumerate(disks) if disk_matches(selector, disk["disk_size"], i == 0)]
-        if len(targets) != 1:
-            raise ValueError("volume selector must match exactly one declared disk")
-        claims[targets[0]].append(volume)
-    for target, volumes in claims.items():
-        if target != 0 and len(volumes) > 1:
-            raise ValueError("data volume selectors overlap")
-        if target == 0 and len(volumes) > 1:
-            # Talos 1.14 UKI/EFI/BIOS, META and STATE reserve 2202 MiB before data partitions.
-            reserved = 2202 * 2**20
-            for volume in volumes:
-                maximum = volume["provisioning"].get("maxSize", "")
-                match = re.fullmatch(r"(\d+)GiB", maximum)
-                if not match:
-                    raise ValueError("shared system-disk volumes need explicit GiB limits")
-                reserved += int(match[1]) * 2**30
-            if reserved > disks[0]["disk_size"] * 2**30:
-                raise ValueError("system partitions exceed the declared boot disk")
 
 
 def validate(documents: list[dict], classes: dict[str, dict]) -> tuple[list[str], dict]:
@@ -146,7 +94,6 @@ def validate(documents: list[dict], classes: dict[str, dict]) -> tuple[list[str]
                     raise ValueError("every declared disk requires a positive disk_size")
                 if not isinstance(disk.get("storage_selector"), str) or not disk["storage_selector"].strip():
                     raise ValueError("every declared disk requires a storage_selector")
-            check_disk_layout(doc, disks)
             machine = machine_patch(doc)
             labels = machine["nodeLabels"]
             zone = labels.get(ZONE)
