@@ -111,6 +111,11 @@ This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
 placeholder commands or omitted flags.
 
+Before deleting, complete the [backup checklist](docs/disaster-recovery.md#pre-nuke-checklist)
+and recover the private `omni/cluster-template/patches/docker-hub-auth.yaml`.
+Keep NAS/RustFS and Omni/DNS running. This template targets a fresh Talos 1.14
+cluster; see the [1.14 rebuild changes](docs/disaster-recovery.md#talos-114-rebuild).
+
 ### 1. Remove the old cluster
 
 Skip this step when provisioning for the first time.
@@ -124,9 +129,6 @@ Do not continue until the old machines disappear from Omni and their VMs
 disappear from Proxmox.
 
 ### 2. Apply the machine classes and provision Talos
-
-**Fresh GPU provisioning is blocked by install-disk selection.** Resolve the
-[known disk issue](docs/audits/2026-09-05-upgrade-and-disks.md) before this step.
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
 Apply all six classes before syncing the template; template sync owns the
@@ -145,10 +147,10 @@ omnictl get machineclasses
 
 omnictl cluster template validate \
   -f omni/cluster-template/cluster-template-prod-v2.yaml
-omnictl cluster template sync -v \
+omnictl cluster template sync \
   -f omni/cluster-template/cluster-template-prod-v2.yaml \
   --dry-run
-omnictl cluster template sync -v \
+omnictl cluster template sync \
   -f omni/cluster-template/cluster-template-prod-v2.yaml
 
 omnictl get machinerequeststatuses -w
@@ -390,25 +392,14 @@ kopiur rendering target and Cluster CI already match those versions.
 The [upgrade results and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
 record the Longhorn fix and recovery checks. Merging a version change still
 does not upgrade the machines; Omni performs that rollout separately. The
-fresh GPU installation problem below remains open after this successful upgrade.
+replacement disk layout below takes effect when new VMs are provisioned.
 
-### Fresh GPU provisioning needs a disk-selection fix
+### Fresh GPU disk layout
 
-Omni 1.11 manages the install disk through `MachineInstallDiskConfig`;
-`machine.install.disk` patches no longer select it. Already-installed machines
-keep their detected system disk. On a fresh machine, the default selects the
-smallest eligible disk.
-
-The GPU class has a 450 GB boot disk, another 450 GB disk, and a 300 GB flash
-disk. That default selects the flash disk. **Do not reprovision the GPU worker
-or run a full rebuild with this layout until fresh-install selection is fixed.**
-An override on today's machine is insufficient: the Proxmox provider generates
-a new UUID for a replacement, and the override belongs to the old UUID.
-
-An in-place upgrade does not require moving these disks. The separate
-[disk plan](docs/audits/2026-09-05-upgrade-and-disks.md#disk-placement-follow-up)
-keeps the capacity decision explicit rather than shrinking a volume as part
-of a version bump.
+The GPU gets a 16 GiB boot disk and 434 GiB `/var` disk on NVMe0, plus its
+existing 450 GiB model and 300 GiB flash allocations. The smallest disk is now
+the boot disk, matching Omni's default selection. Physical drives stay put;
+see [sizing](omni/docs/threadripper-gpu-cluster.md#sizing).
 
 ### Kubernetes compatibility and upgrade order
 
@@ -431,8 +422,7 @@ the Kubernetes API; deleting it removes the only etcd member. There is no
 remaining quorum. Keep it intact while diagnosing an upgrade failure, and
 follow the [recovery runbook](docs/disaster-recovery.md) if recovery is required.
 Worker replacement also needs a storage recovery plan: most Longhorn volumes
-still have only one replica. A fresh GPU replacement additionally needs the
-install-disk fix above.
+still have only one replica.
 
 ### Upgrading Omni / omnictl
 

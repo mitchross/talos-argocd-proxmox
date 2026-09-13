@@ -60,11 +60,30 @@ Block the nuke until every box checks — **you restore *from* these**:
 - [ ] RustFS/S3 endpoint reachable; access key registered on the external server; Kopia auth works
       (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
 - [ ] Talos secrets / Omni machine configs available off-cluster
+- [ ] Private Docker Hub patch, in-cluster registry images and manually protected data saved off-cluster
 - [ ] **Backups fresh**: each backed-up PVC has a recent `Succeeded` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
       `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`.
       To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
 - [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists (kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward). Confirm every PVC you intend to *restore* (not seed) shows at least one `Succeeded` Snapshot before the nuke.
 - [ ] Restore canary green: recent `last-drill-result=pass`
+
+## Talos 1.14 rebuild
+
+The template uses 1.14 Kubernetes documents for node settings and control-plane
+components. It retains legacy kubelet fields for Longhorn's shared bind mount:
+[`KubeletConfig` has no `extraMounts` equivalent](https://github.com/siderolabs/talos/blob/v1.14.0/pkg/machinery/config/types/k8s/kubelet.go#L189).
+The existing cluster's 1.13.9 generation contract is different; use this template
+after deleting that cluster.
+
+The control plane reserves **32 GiB ETCD + 64 GiB EPHEMERAL** within its existing
+100 GiB disk. The GPU uses **16 GiB boot + 434 GiB EPHEMERAL** on NVMe0 so Omni
+selects the boot disk. Model and flash allocations stay at 450 and 300 GiB.
+Check the resulting disks and mount paths with `talosctl get disks`,
+`talosctl get volumestatus` and `talosctl get mountstatus` before restoring.
+
+Fresh 1.14 enables workload isolation and weekly filesystem trimming. Keep
+its mount defaults: the final release [keeps `/var` executable](https://github.com/siderolabs/talos/blob/v1.14.0/internal/app/machined/pkg/controllers/block/internal/volumes/volumeconfig/system_volumes_test.go#L837),
+so the beta `secure: false` workaround is unnecessary for Longhorn V1.
 
 ## Rebuild sequence
 
