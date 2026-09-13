@@ -62,6 +62,10 @@ Block the nuke until every box checks — **you restore *from* these**:
 - [ ] Validate the intended template and review its non-verbose dry run from the
       rebuild workstation. Recover the gitignored Docker Hub credential patch
       off-cluster first; a clean Git checkout alone cannot render this template.
+- [ ] Validate generated machine configurations for the **fresh** Talos version
+      contract, for the control plane and every worker class. The current
+      template fails this check on 1.14; see the next section. Template validation
+      and a dry run against an upgraded cluster do not perform this check.
 - [ ] GitHub reachable; the rebuild revision **pushed** (ArgoCD pulls origin, not your working tree)
 - [ ] GHCR image pulls work
 - [ ] 1Password reachable; Connect token valid and recoverable off-cluster
@@ -106,6 +110,23 @@ and [Omni 1.11 release notes](https://github.com/siderolabs/omni/releases/tag/v1
 alongside the current template. An upgraded installation and a fresh one have
 different defaults:
 
+- **Fresh configuration generation is currently blocked.** On September 12,
+  2026, `talosctl v1.14.0 gen config --talos-version v1.14.0` with the active
+  template's common and per-role patches produced configs rejected by
+  `talosctl validate --mode metal`: eight conflicts on the control plane and
+  three on each of the five worker classes. Legacy `machine.kubelet` and
+  `cluster.network` settings conflict with newly generated `KubeletConfig`,
+  `KubeNodeConfig`, and `KubeNetworkConfig` documents; the control plane also
+  conflicts on API server, controller manager, scheduler, proxy, and Flannel
+  configuration. These patches need a reviewed migration and passing generated
+  configuration checks before rebuilding.
+  The live cluster's `ClusterConfigVersion` remains **v1.13.9**. Omni
+  [preserves the creation-time contract](https://github.com/siderolabs/omni/blob/v1.11.0/internal/backend/runtime/omni/controllers/omni/cluster_machine_config.go)
+  and [generates from that contract](https://github.com/siderolabs/omni/blob/v1.11.0/client/pkg/machineconfig/machineconfig.go),
+  so the successful in-place upgrade does not prove fresh 1.14 compatibility.
+  Do not change that live contract to test a rebuild. Generate offline with
+  synthetic secrets, apply all common plus role-specific patches, and validate
+  every role; keep generated credentials private.
 - Omni owns install-disk selection through `MachineInstallDiskConfig`;
   `machine.install.disk` config patches do not select the disk for Talos 1.14.
   A replacement Proxmox VM receives a new UUID, so an old per-machine selection
