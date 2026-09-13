@@ -40,6 +40,10 @@ spec:
       bios: seabios
       vga: std
       balloon: false
+      # Proxmox mapping: HP Elite 0000:00:02.0 (8086:4680), shared by Immich and Jellyfin.
+      pci_devices:
+        - mapping: intel-igpu
+          pcie: true
       # Proxmox USB Resource Mapping, attached as usb0.
       # The name must exist in this host's Datacenter -> Resource Mappings.
       usb_devices:
