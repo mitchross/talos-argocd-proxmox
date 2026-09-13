@@ -97,11 +97,11 @@ Set up remote kernel logging before trusting any diagnosis of that host — see
 | `dell-worker` | 4 | 30 GiB | 39 GiB | 128 GiB boot + 400 GiB Longhorn |
 | `hp-micro-worker` | 4 | 12 GiB | 15 GiB | 128 GiB boot + 850 GiB Longhorn (unschedulable) |
 
-The GPU sizes above describe replacement VMs. Boot and EPHEMERAL together
-retain the existing 450 GiB NVMe0 allocation; model and flash pools stay put.
-The control-plane template reserves 32 GiB ETCD and 64 GiB EPHEMERAL within its
-100 GiB disk. [Evidence and limits](../../docs/audits/2026-09-12-rebuild-disk-study.md)
-include the current usage measurements and why repartitioning promises no speedup.
+The GPU's boot and EPHEMERAL disks total the existing 450 GiB NVMe0 allocation.
+Measured `/var` usage was 253 GiB, leaving about 181 GiB before filesystem
+overhead. The control-plane template reserves 32 GiB ETCD and 64 GiB EPHEMERAL
+on its existing 100 GiB disk; this isolates capacity, with no promised I/O gain.
+These sizes apply to replacement VMs; rollback requires reprovisioning, not shrinking.
 
 Two ceilings are load-bearing:
 

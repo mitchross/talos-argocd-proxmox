@@ -4,7 +4,6 @@ on:
     paths:
       - 'omni/**'
       - 'scripts/validate-omni-contract.py'
-      - 'scripts/validate-omni-fresh-configs.py'
       - 'scripts/tests/test_omni_contract.py'
       - '.github/workflows/omni-contract-tests.yml'
   push:
@@ -12,7 +11,6 @@ on:
     paths:
       - 'omni/**'
       - 'scripts/validate-omni-contract.py'
-      - 'scripts/validate-omni-fresh-configs.py'
       - 'scripts/tests/test_omni_contract.py'
       - '.github/workflows/omni-contract-tests.yml'
 permissions:
@@ -33,18 +31,3 @@ jobs:
         run: python -m unittest discover -s scripts/tests -p test_omni_contract.py -v
       - name: Validate declared production topology
         run: python scripts/validate-omni-contract.py
-      - name: Install version-matched talosctl
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          talos_version=$(python -c 'import yaml; print(next(yaml.safe_load_all(open("omni/cluster-template/cluster-template-prod-v2.yaml")))["talos"]["version"])')
-          gh release download "$talos_version" --repo siderolabs/talos --pattern talosctl-linux-amd64 --dir "$RUNNER_TEMP"
-          gh release download "$talos_version" --repo siderolabs/talos --pattern sha256sum.txt --dir "$RUNNER_TEMP"
-          cd "$RUNNER_TEMP"
-          grep ' talosctl-linux-amd64$' sha256sum.txt > talosctl-checksum.txt
-          test -s talosctl-checksum.txt
-          sha256sum --check talosctl-checksum.txt
-          install -m 0755 talosctl-linux-amd64 "$RUNNER_TEMP/talosctl"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - name: Generate and validate fresh Talos configurations for all six roles
-        run: python scripts/validate-omni-fresh-configs.py

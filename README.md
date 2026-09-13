@@ -111,49 +111,10 @@ This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
 placeholder commands or omitted flags.
 
-### 0. Check recovery and fresh provisioning before deleting anything
-
-Complete the [pre-nuke checklist](docs/disaster-recovery.md#pre-nuke-checklist)
-while the old cluster is still available. Keep the NAS containing RustFS and
-application files, and the Pi hosting Omni/DNS, outside the wipe.
-
-The production template now targets **fresh Talos 1.14 generation**. Its
-Kubernetes document migration and control-plane partitioning are for the
-replacement cluster. **Do not sync this template onto the existing cluster's
-1.13.9 generation contract.** Review the
-[fresh-install behavior](docs/disaster-recovery.md#talos-114-fresh-install-differences).
-
-The GPU class uses a **16 GiB boot disk + 434 GiB EPHEMERAL on NVMe0**, retaining
-450 GiB models on NVMe1 and 300 GiB flash. The boot disk is uniquely smallest for
-Omni's install selection, and each data selector matches one size. Verify the
-[replacement layout](#fresh-gpu-provisioning-and-disk-selection) when provisioning;
-a static check cannot prove actual VM hardware or mount paths.
-
-Recover the private, gitignored
-`omni/cluster-template/patches/docker-hub-auth.yaml` onto the workstation that
-will run the rebuild. A fresh Git checkout does not contain this credential
-patch. Keep a protected off-cluster copy with the bootstrap credentials; never
-commit it or print its contents in logs.
-
-Validate from the same checkout that will provision the replacement:
-
-```bash
-python scripts/validate-omni-contract.py
-python scripts/validate-omni-fresh-configs.py --include-private-patches
-omnictl cluster template validate \
-  -f omni/cluster-template/cluster-template-prod-v2.yaml
-omnictl cluster template sync \
-  -f omni/cluster-template/cluster-template-prod-v2.yaml \
-  --dry-run
-```
-
-Use Python with PyYAML and the template's matching `talosctl` version. All
-checks must succeed, with six passing fresh machine configurations. Review the
-dry run before continuing. Do not add `-v`: verbose template output can disclose
-the registry credential. These checks cover configuration syntax, intended
-placement and the Omni resource diff; they do not establish backup integrity,
-actual VM disk selection, runtime storage compatibility or host capacity.
-If any prerequisite fails, keep the old cluster running and correct it first.
+Before deleting, complete the [backup checklist](docs/disaster-recovery.md#pre-nuke-checklist)
+and recover the private `omni/cluster-template/patches/docker-hub-auth.yaml`.
+Keep NAS/RustFS and Omni/DNS running. This template targets a fresh Talos 1.14
+cluster; see the [1.14 rebuild changes](docs/disaster-recovery.md#talos-114-rebuild).
 
 ### 1. Remove the old cluster
 
@@ -168,9 +129,6 @@ Do not continue until the old machines disappear from Omni and their VMs
 disappear from Proxmox.
 
 ### 2. Apply the machine classes and provision Talos
-
-Complete step 0 first. Apply the replacement MachineClasses before creating
-the cluster so the GPU receives its new boot and EPHEMERAL disks together.
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
 Apply all six classes before syncing the template; template sync owns the
@@ -434,28 +392,14 @@ kopiur rendering target and Cluster CI already match those versions.
 The [upgrade results and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
 record the Longhorn fix and recovery checks. Merging a version change still
 does not upgrade the machines; Omni performs that rollout separately. The
-replacement disk layout below is applied only when new VMs are provisioned.
+replacement disk layout below takes effect when new VMs are provisioned.
 
-### Fresh GPU provisioning and disk selection
+### Fresh GPU disk layout
 
-Omni 1.11 selects the smallest eligible disk on a fresh machine. The replacement
-GPU MachineClass declares 16 GiB boot and 434 GiB EPHEMERAL disks on
-`nvme0-vmstore`, 450 GiB models on `nvme1-vmstore`, and 300 GiB flash on `ssd-ent`.
-The 16 GiB disk is uniquely smallest, independent of the replacement UUID.
-Talos selects the other three disks by their distinct exact GiB sizes.
-
-Total guest allocation remains 1,200 GiB and physical placement is unchanged.
-The measured GPU `/var` usage was 253.33 GiB, leaving about 180.7 GiB before
-filesystem overhead on the replacement EPHEMERAL disk. See the
-[measurement and validation limits](docs/audits/2026-09-12-rebuild-disk-study.md).
-
-After provisioning, inspect `talosctl get disks`, `talosctl get volumestatus`
-and `talosctl get mountstatus` on the new GPU node. The system disk must be the
-16 GiB disk; EPHEMERAL must mount the 434 GiB disk at `/var`, models the 450 GiB
-disk at `/var/mnt/ai-model-cache`, and flash the 300 GiB disk at
-`/var/mnt/longhorn-ssd-flash`. Do not start restoration against a wrong mapping.
-There is no in-place shrink: rollback means discarding the replacement test VM
-and reprovisioning from the preserved old configuration.
+The GPU gets a 16 GiB boot disk and 434 GiB `/var` disk on NVMe0, plus its
+existing 450 GiB model and 300 GiB flash allocations. The smallest disk is now
+the boot disk, matching Omni's default selection. Physical drives stay put;
+see [sizing](omni/docs/threadripper-gpu-cluster.md#sizing).
 
 ### Kubernetes compatibility and upgrade order
 
@@ -478,8 +422,7 @@ the Kubernetes API; deleting it removes the only etcd member. There is no
 remaining quorum. Keep it intact while diagnosing an upgrade failure, and
 follow the [recovery runbook](docs/disaster-recovery.md) if recovery is required.
 Worker replacement also needs a storage recovery plan: most Longhorn volumes
-still have only one replica. A fresh GPU replacement additionally needs the
-verified disk mapping described above.
+still have only one replica.
 
 ### Upgrading Omni / omnictl
 

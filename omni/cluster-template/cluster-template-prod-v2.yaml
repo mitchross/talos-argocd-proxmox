@@ -3,7 +3,7 @@
 kind: Cluster
 name: talos-prod-cluster-v2
 labels:
-  cluster-id: '2'
+  cluster-id: "2"
 kubernetes:
   version: v1.37.0
 talos:
@@ -35,24 +35,24 @@ patches:
   inline:
     machine:
       sysctls:
-        fs.inotify.max_user_watches: '1048576'
-        fs.inotify.max_user_instances: '8192'
-        fs.file-max: '2097152'
-        vm.swappiness: '10'
-        vm.max_map_count: '524288'
-        net.core.somaxconn: '65535'
-        net.core.rmem_max: '67108864'
-        net.core.wmem_max: '67108864'
+        fs.inotify.max_user_watches: "1048576"
+        fs.inotify.max_user_instances: "8192"
+        fs.file-max: "2097152"
+        vm.swappiness: "10"
+        vm.max_map_count: "524288"
+        net.core.somaxconn: "65535"
+        net.core.rmem_max: "67108864"
+        net.core.wmem_max: "67108864"
         net.ipv4.tcp_congestion_control: bbr
-        net.ipv4.tcp_fastopen: '3'
+        net.ipv4.tcp_fastopen: "3"
         net.ipv4.tcp_rmem: 4096 87380 33554432
         net.ipv4.tcp_wmem: 4096 65536 33554432
-        net.ipv4.tcp_slow_start_after_idle: '0'
-        net.ipv4.tcp_mtu_probing: '1'
-        net.ipv4.tcp_tw_reuse: '1'
-        net.core.netdev_max_backlog: '16384'
-        sunrpc.tcp_slot_table_entries: '128'
-        sunrpc.tcp_max_slot_table_entries: '65536'
+        net.ipv4.tcp_slow_start_after_idle: "0"
+        net.ipv4.tcp_mtu_probing: "1"
+        net.ipv4.tcp_tw_reuse: "1"
+        net.core.netdev_max_backlog: "16384"
+        sunrpc.tcp_slot_table_entries: "128"
+        sunrpc.tcp_max_slot_table_entries: "65536"
       udev:
         rules:
         - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="131072"
@@ -60,7 +60,7 @@ patches:
   inline:
     machine:
       kubelet:
-        # Keep aligned with kubernetes.version; the fresh-config check enforces this.
+        # Keep aligned with kubernetes.version.
         image: ghcr.io/siderolabs/kubelet:v1.37.0
         defaultRuntimeSeccompProfileEnabled: true
         disableManifestsDirectory: true
@@ -99,31 +99,31 @@ patches:
     apiVersion: v1alpha1
     kind: KubeAPIServerConfig
     extraArgs:
-      max-requests-inflight: '800'
-      max-mutating-requests-inflight: '400'
+      max-requests-inflight: "800"
+      max-mutating-requests-inflight: "400"
 - name: control-plane-controller-manager
   inline:
     apiVersion: v1alpha1
     kind: KubeControllerManagerConfig
     extraArgs:
-      concurrent-deployment-syncs: '10'
-      concurrent-replicaset-syncs: '10'
-      concurrent-namespace-syncs: '20'
+      concurrent-deployment-syncs: "10"
+      concurrent-replicaset-syncs: "10"
+      concurrent-namespace-syncs: "20"
       bind-address: 0.0.0.0
 - name: control-plane-scheduler
   inline:
     apiVersion: v1alpha1
     kind: KubeSchedulerConfig
     extraArgs:
-      kube-api-qps: '100'
+      kube-api-qps: "100"
       bind-address: 0.0.0.0
 - name: control-plane-performance
   inline:
     cluster:
       etcd:
         extraArgs:
-          quota-backend-bytes: '8589934592'
-          snapshot-count: '5000'
+          quota-backend-bytes: "8589934592"
+          snapshot-count: "5000"
           auto-compaction-mode: periodic
           auto-compaction-retention: 5m
           listen-metrics-urls: http://0.0.0.0:2381
@@ -213,7 +213,7 @@ patches:
     name: longhorn-hp-micro-ssd
     provisioning:
       diskSelector:
-        match: '!system_disk && disk.size >= 700u * GB'
+        match: "!system_disk && disk.size >= 700u * GB"
       minSize: 700GB
       grow: true
 ---
@@ -239,7 +239,7 @@ patches:
       node.vanillax.dev/pool: general
       topology.kubernetes.io/zone: hp-sff
       node.vanillax.dev/link: wired
-      coroot.vanillax.dev/enabled: 'true'
+      coroot.vanillax.dev/enabled: "true"
     nodeIP:
       validSubnets:
       - 192.168.10.0/24
@@ -280,7 +280,7 @@ patches:
     name: longhorn-hp-sff-ssd
     provisioning:
       diskSelector:
-        match: '!system_disk && disk.size >= 600u * GB'
+        match: "!system_disk && disk.size >= 600u * GB"
       minSize: 600GB
       grow: true
 ---
@@ -346,7 +346,7 @@ patches:
     name: longhorn-hp-elite-nvme
     provisioning:
       diskSelector:
-        match: '!system_disk && disk.size >= 400u * GB'
+        match: "!system_disk && disk.size >= 400u * GB"
       minSize: 400GB
       grow: true
 ---
@@ -412,7 +412,7 @@ patches:
     name: longhorn-dell-ssd
     provisioning:
       diskSelector:
-        match: '!system_disk && disk.size >= 350u * GB'
+        match: "!system_disk && disk.size >= 350u * GB"
       minSize: 350GB
       grow: true
 ---
@@ -432,8 +432,8 @@ patches:
     apiVersion: v1alpha1
     kind: KubeNodeConfig
     labels:
-      gpu-worker: 'true'
-      nvidia.com/gpu: 'true'
+      gpu-worker: "true"
+      nvidia.com/gpu: "true"
       node.vanillax.dev/gpu-class: rtx-3090
       node.vanillax.dev/pool: gpu
       topology.kubernetes.io/zone: house
