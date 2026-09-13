@@ -26,6 +26,7 @@ spec:
     spec:
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_8086.present: "true"
+        node.vanillax.dev/class: hp-elite-worker
       containers:
       - name: machine-learning
         image: ghcr.io/immich-app/immich-machine-learning:v3.2.0-openvino@sha256:6387b84ab42da139191c3db686faead6555ab8cac6466d1d20be955735961b98
