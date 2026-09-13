@@ -125,6 +125,13 @@ or template validation does not prove a safe fresh installation. Resolve
 [disk selection](#fresh-gpu-provisioning-needs-a-disk-selection-fix) for a new
 machine UUID before destroying the existing cluster.
 
+The active template also has a second blocker: its legacy Kubernetes patches
+conflict with newly generated Talos 1.14 configuration documents. Read the
+[fresh-install findings](docs/disaster-recovery.md#talos-114-fresh-install-differences).
+Resolve the patch migration and validate generated configs for all six machine
+roles before proceeding; the existing upgraded cluster retains its 1.13.9
+generation contract.
+
 Recover the private, gitignored
 `omni/cluster-template/patches/docker-hub-auth.yaml` onto the workstation that
 will run the rebuild. A fresh Git checkout does not contain this credential
@@ -144,7 +151,8 @@ omnictl cluster template sync \
 Both commands must succeed. Review any planned resource changes before
 continuing. Do not add `-v`: verbose template output can disclose the inline
 registry credential. These checks establish template validity and the planned
-Omni changes, not backup integrity, disk-selection safety, or host capacity.
+Omni changes, not fresh machine-config compatibility, backup integrity,
+disk-selection safety, or host capacity.
 If any prerequisite fails, keep the old cluster running and correct it first.
 
 ### 1. Remove the old cluster
@@ -161,8 +169,8 @@ disappear from Proxmox.
 
 ### 2. Apply the machine classes and provision Talos
 
-**Fresh GPU provisioning is blocked by install-disk selection.** Resolve the
-[known disk issue](docs/audits/2026-09-05-upgrade-and-disks.md) before this step.
+**Fresh provisioning is blocked by machine-config compatibility and GPU
+install-disk selection.** Resolve both issues in step 0 before this step.
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
 Apply all six classes before syncing the template; template sync owns the
