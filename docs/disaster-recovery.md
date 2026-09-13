@@ -55,17 +55,18 @@ Block the nuke until every box checks — **you restore *from* these**:
 
 - [ ] Confirm the wipe boundary: Talos cluster machines and their disks only;
       the NAS/RustFS, Pi-hosted Omni/DNS, and off-cluster recovery files must survive.
-- [ ] Resolve fresh-install disk selection for every newly generated machine UUID.
-      The current GPU class is blocked: its 300 GiB flash disk is smaller than its
-      450 GiB boot disk. Read [README step 0](https://github.com/mitchross/talos-argocd-proxmox/blob/main/README.md#0-check-recovery-and-fresh-provisioning-before-deleting-anything)
+- [ ] Check fresh-install disk selection for every newly generated machine UUID.
+      The replacement GPU class uses a uniquely smallest 16 GiB boot disk and
+      separate 434 GiB EPHEMERAL disk. Validate the class and selectors together. Read [README step 0](https://github.com/mitchross/talos-argocd-proxmox/blob/main/README.md#0-check-recovery-and-fresh-provisioning-before-deleting-anything)
       **before deleting the old cluster**, not after it is gone.
 - [ ] Validate the intended template and review its non-verbose dry run from the
       rebuild workstation. Recover the gitignored Docker Hub credential patch
       off-cluster first; a clean Git checkout alone cannot render this template.
 - [ ] Validate generated machine configurations for the **fresh** Talos version
-      contract, for the control plane and every worker class. The current
-      template fails this check on 1.14; see the next section. Template validation
-      and a dry run against an upgraded cluster do not perform this check.
+      contract, for the control plane and every worker class:
+      `python scripts/validate-omni-fresh-configs.py --include-private-patches`.
+      All six roles must pass. Template validation and an Omni dry run alone
+      do not perform this check.
 - [ ] GitHub reachable; the rebuild revision **pushed** (ArgoCD pulls origin, not your working tree)
 - [ ] GHCR image pulls work
 - [ ] 1Password reachable; Connect token valid and recoverable off-cluster
@@ -106,32 +107,39 @@ explains why a healthy but empty registry cannot start those applications.
 ### Talos 1.14 fresh-install differences
 
 The [measured disk and partition study](audits/2026-09-12-rebuild-disk-study.md)
-proposes a small GPU boot disk with EPHEMERAL on a separate virtual disk, and
-a reserved ETCD partition on the control plane. These proposals are not yet
-implemented and do not clear the pre-nuke gates.
+explains the replacement layout now declared in the production template:
+16 GiB GPU boot plus 434 GiB EPHEMERAL on the original NVMe0 pool, and a
+32 GiB ETCD partition plus 64 GiB EPHEMERAL on the existing 100 GiB control-plane
+disk. These changes take effect during fresh provisioning, not on existing VMs.
 
 Read the [Talos 1.14 release notes](https://github.com/siderolabs/talos/releases/tag/v1.14.0)
 and [Omni 1.11 release notes](https://github.com/siderolabs/omni/releases/tag/v1.11.0)
 alongside the current template. An upgraded installation and a fresh one have
 different defaults:
 
-- **Fresh configuration generation is currently blocked.** On September 12,
-  2026, `talosctl v1.14.0 gen config --talos-version v1.14.0` with the active
-  template's common and per-role patches produced configs rejected by
-  `talosctl validate --mode metal`: eight conflicts on the control plane and
-  three on each of the five worker classes. Legacy `machine.kubelet` and
-  `cluster.network` settings conflict with newly generated `KubeletConfig`,
-  `KubeNodeConfig`, and `KubeNetworkConfig` documents; the control plane also
-  conflicts on API server, controller manager, scheduler, proxy, and Flannel
-  configuration. These patches need a reviewed migration and passing generated
-  configuration checks before rebuilding.
-  The live cluster's `ClusterConfigVersion` remains **v1.13.9**. Omni
-  [preserves the creation-time contract](https://github.com/siderolabs/omni/blob/v1.11.0/internal/backend/runtime/omni/controllers/omni/cluster_machine_config.go)
-  and [generates from that contract](https://github.com/siderolabs/omni/blob/v1.11.0/client/pkg/machineconfig/machineconfig.go),
-  so the successful in-place upgrade does not prove fresh 1.14 compatibility.
-  Do not change that live contract to test a rebuild. Generate offline with
-  synthetic secrets, apply all common plus role-specific patches, and validate
-  every role; keep generated credentials private.
+- **Use the migrated template only for a fresh cluster.** It uses `KubeNodeConfig`
+  for labels, annotations, taints and node IP; dedicated API server/controller
+  manager/scheduler documents; and removes generated Flannel while disabling
+  kube-proxy for Cilium. Fresh generation and native Talos validation now pass
+  for the control plane and all five worker classes.
+  The existing cluster retains its **v1.13.9** creation-time contract, which Omni
+  [preserves during upgrades](https://github.com/siderolabs/omni/blob/v1.11.0/internal/backend/runtime/omni/controllers/omni/cluster_machine_config.go).
+  Do not sync the replacement template onto that running cluster or change its
+  contract as a test. Keep the prior Git revision for its maintenance.
+- **Preserve Longhorn's kubelet bind mount.** The final 1.14
+  [`KubeletConfig` implementation](https://github.com/siderolabs/talos/blob/v1.14.0/pkg/machinery/config/types/k8s/kubelet.go#L189)
+  has no `extraMounts` equivalent. The template deletes that generated document
+  and retains the supported legacy `machine.kubelet` fields, including the
+  `/var/local/longhorn` → `/var/lib/longhorn` shared writable bind. The kubelet
+  image matches the cluster version; seccomp and manifests-directory settings
+  preserve the fresh generator's defaults. CI checks these invariants.
+- **The beta `/var` noexec workaround does not apply to final 1.14.0.**
+  [Discussion #13868](https://github.com/siderolabs/talos/discussions/13868)
+  describes beta.0; the final release's
+  [EPHEMERAL tests](https://github.com/siderolabs/talos/blob/v1.14.0/internal/app/machined/pkg/controllers/block/internal/volumes/volumeconfig/system_volumes_test.go#L837)
+  explicitly require execution to remain allowed, even with `mount.secure: true`.
+  Keep the final mount defaults; a blanket `secure: false` is unnecessary.
+  Dedicated ETCD and LOG remain non-executable with secure mounts.
 - Omni owns install-disk selection through `MachineInstallDiskConfig`;
   `machine.install.disk` config patches do not select the disk for Talos 1.14.
   A replacement Proxmox VM receives a new UUID, so an old per-machine selection

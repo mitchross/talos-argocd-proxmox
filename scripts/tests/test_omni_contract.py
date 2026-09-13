@@ -19,6 +19,54 @@ def fixtures():
 
 
 class OmniContractTests(unittest.TestCase):
+    def test_multidocument_placement_preserves_wifi_rules(self):
+        docs, classes = fixtures()
+        docs[1]["patches"] = [{"inline": {"apiVersion": "v1alpha1", "kind": "KubeNodeConfig",
+            "labels": {contract.ZONE: "shed", contract.LINK: "wifi"},
+            "taints": {contract.LINK: "wifi:NoSchedule"},
+            "annotations": {contract.DISKS: '[{"name":"data","path":"/data","allowScheduling":false}]'}}}]
+        self.assertFalse(contract.validate(docs, classes)[0])
+        docs[1]["patches"][0]["inline"]["taints"] = {}
+        self.assertTrue(contract.validate(docs, classes)[0])
+
+    def test_fresh_install_rejects_smaller_or_equal_data_disk(self):
+        for extra_size in (300, 450):
+            with self.subTest(extra_size=extra_size), self.assertRaises(ValueError):
+                contract.check_disk_layout({}, [{"disk_size": 450}, {"disk_size": extra_size}])
+
+    def test_gpu_old_model_selector_matches_two_replacement_disks(self):
+        doc = {"patches": [{"inline": {"kind": "UserVolumeConfig", "name": "models",
+            "provisioning": {"diskSelector": {"match": "!system_disk && disk.size >= 400u * GB"}}}}]}
+        disks = [{"disk_size": size} for size in (16, 434, 450, 300)]
+        with self.assertRaises(ValueError):
+            contract.check_disk_layout(doc, disks)
+        doc["patches"][0]["inline"]["provisioning"]["diskSelector"]["match"] = "!system_disk && disk.size == 450u * GiB"
+        contract.check_disk_layout(doc, disks)
+
+    def test_selectors_require_a_match_and_cannot_share_data_disks(self):
+        volume = {"inline": {"kind": "VolumeConfig", "name": "EPHEMERAL",
+            "provisioning": {"diskSelector": {"match": "!system_disk && disk.size == 434u * GiB"}}}}
+        with self.assertRaises(ValueError):
+            contract.check_disk_layout({"patches": [volume]}, [{"disk_size": 16}, {"disk_size": 450}])
+        with self.assertRaises(ValueError):
+            contract.check_disk_layout({"patches": [volume, deepcopy(volume)]},
+                                       [{"disk_size": 16}, {"disk_size": 434}])
+
+    def test_cp_partition_budget_includes_boot_overhead(self):
+        doc = {"patches": [{"inline": {"kind": "VolumeConfig", "name": name,
+            "provisioning": {"diskSelector": {"match": "system_disk"}, "maxSize": size}}}
+            for name, size in (("EPHEMERAL", "64GiB"), ("ETCD", "32GiB"))]}
+        contract.check_disk_layout(doc, [{"disk_size": 100}])
+        with self.assertRaises(ValueError):
+            contract.check_disk_layout(doc, [{"disk_size": 96}])
+        del doc["patches"][0]["inline"]["provisioning"]["maxSize"]
+        with self.assertRaises(ValueError):
+            contract.check_disk_layout(doc, [{"disk_size": 100}])
+
+    def test_unsupported_selector_is_not_silently_accepted(self):
+        with self.assertRaises(ValueError):
+            contract.disk_matches('disk.transport == "nvme"', 450, False)
+
     def test_valid_contract_and_declared_budget(self):
         errors, totals = contract.validate(*fixtures())
         self.assertEqual(errors, [])
