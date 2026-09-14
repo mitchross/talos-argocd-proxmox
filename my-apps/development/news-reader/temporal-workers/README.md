@@ -1,135 +1,61 @@
-# news-reader-temporal-worker
+# News Reader Temporal workers
 
-ArgoCD app that deploys the news-reader Temporal worker into the cluster.
-Application code (workflows + activities + Dockerfile + Gitea CI) lives in
-the monorepo at
-[`gitea.vanillax.me/vanillax/news-reader`](https://gitea.vanillax.me/vanillax/news-reader)
-under `temporal/`. This dir is **only Kubernetes plumbing**.
+This directory is part of the `news-reader` Argo application. It deploys a
+namespace-scoped `Connection` and `WorkerDeployment` into **`news-reader`**;
+application code and the image build live in
+[the News Reader repository](https://gitea.vanillax.me/vanillax/news-reader/src/branch/main/temporal).
 
-For the conceptual walkthrough of Temporal + Worker Versioning, read the
-companion docs:
+**Status:** release contract. Use the [safe deployment runbook](../../../../docs/domains/temporal/safe-deployments.md)
+for validation, old-version retention, and recovery of already-pinned runs.
+The [Temporal server](../../temporal/README.md) is a separate application.
 
-- App-side: `temporal/README.md` in the news-reader monorepo
-- Server-side: [`../temporal/README.md`](../temporal/README.md)
+## Release flow
 
----
+1. Build and test the application image, which includes LiteLLM authentication
+   and registers `NewsDeploymentSmokeWorkflow`. Record its source revision.
+2. Open a GitOps PR updating the digest-pinned image in
+   [the worker manifest](temporal-worker-deployment.yaml). The controller derives
+   the Build ID from the pod template; it is not simply the image tag.
+3. After approval and merge, the candidate gate runs a bounded authenticated
+   inference and RSS fixture check. Only a passing gate permits the existing
+   10%/2-minute, then 50%/5-minute ramp to progress to full traffic.
+4. Inspect `Ready`, gate outcomes and current/target Build IDs. A failed gate
+   blocks promotion. Publish a corrected candidate through another PR.
 
-## Files
+New finite digest workflows are pinned for each run. The long-lived user-state
+workflow carries state and requests an upgrade at Continue-as-New. Existing
+runs retain their previous policy until their own safe boundary or an explicitly
+reviewed recovery. A brief ramp does not by itself prove meaningful work ran.
 
-```
-kustomization.yaml          # Kustomize app (no Helm); 3 resources
-namespace.yaml              # `news-reader-temporal-worker` namespace
-temporal-connection.yaml    # CR: how to reach the Temporal frontend (in-cluster, no mTLS)
-temporal-worker-deployment.yaml  # CR: the actual worker, managed by Temporal Worker Controller
-```
+## Configuration lifetime
 
----
+New pods use authentication packaged in the image. The app's
+[Kustomization](../kustomization.yaml) deliberately retains the **unchanged**
+legacy script generator for older versions that mount its hashed ConfigMap.
+Do not edit or remove that script until every referencing Deployment is retired,
+including versions scaled to zero for recovery. Keep app pruning enabled.
 
-## Wiring at a glance
+Retirement starts from **Drained**, not promotion. With the installed v1.10.1
+controller and these settings, scale-down is eligible after 10 minutes and
+version deletion after **70 minutes** (the two delays are added). Actual deletion
+also requires zero replicas and eligibility; old pinned runs can delay drainage.
 
-```mermaid
-flowchart LR
-    subgraph repo[gitea.vanillax.me/vanillax/news-reader]
-        CODE[temporal/app/worker.py<br/>+ Dockerfile]
-        GHA[.gitea/workflows/<br/>build-temporal-worker.yml]
-    end
+## Read-only checks
 
-    REG[registry.vanillax.me/<br/>news-reader-temporal-worker:vX.Y.Z]
-
-    subgraph talos[gitea.vanillax.me/vanillax/talos-argocd-proxmox]
-        REN[self-hosted Renovate]
-        TWD[my-apps/development/news-reader-temporal-worker/<br/>temporal-worker-deployment.yaml]
-    end
-
-    subgraph cluster[Talos cluster]
-        WC[temporal-worker-controller<br/>infrastructure/controllers/]
-        DEP[apps/v1 Deployment<br/>news-digest-vX.Y.Z]
-        T[Temporal server<br/>my-apps/development/temporal/]
-    end
-
-    CODE --> GHA
-    GHA --> REG
-    REG --> REN
-    REN -->|dashboard approval + reviewed PR| TWD
-    TWD --> WC
-    WC --> DEP
-    DEP -->|long-poll news-digest task queue| T
-    WC -->|RegisterWorkerVersion| T
-```
-
-The hop **Renovate → reviewed talos repo PR → ArgoCD sync** is what closes
-the loop. The self-hosted Renovate config scans
-`registry.vanillax.me/v2/<image>/tags/list`; when it sees a new semver tag,
-the dependency must first be approved on the self-hosted Dependency Dashboard.
-Renovate then opens a PR that edits the `image:` line in
-`temporal-worker-deployment.yaml`; merge remains manual.
-
----
-
-## What the Temporal Worker Controller does (in this dir's context)
-
-The controller (deployed under
-`infrastructure/controllers/temporal-worker-controller/`) is the operator
-that watches `TemporalWorkerDeployment` CRs. When you bump the image
-field in `temporal-worker-deployment.yaml`:
-
-1. Controller calls the Temporal server's `WorkerDeployment` API to
-   **register the new `build_id`** (the new image tag).
-2. Creates a **new `apps/v1 Deployment`** named like `news-digest-vX.Y.Z`
-   with the new image. Replicas: 1 (per `spec.replicas`).
-3. Both old and new Pods now poll the `news-digest` task queue. The
-   Temporal server decides which build_id gets each task per the workflow
-   type's `versioning_behavior` (AUTO_UPGRADE / PINNED) and the ramp
-   percentages in `spec.rollout`.
-4. After 100% + `spec.sunset.scaledownDelay`, scales the old `Deployment`
-   to 0. After `spec.sunset.deleteDelay`, deletes it entirely.
-
-Result: zero-disruption rollouts even for forever-running workflows.
-
----
-
-## Why a separate namespace per worker?
-
-Each worker app gets its own k8s namespace (`news-reader-temporal-worker`,
-plus the radar-ng worker has its own namespace too). Reasons:
-
-- The `TemporalConnection` CR is namespace-scoped — having one per
-  worker means each app can tune connection config without affecting
-  siblings.
-- ResourceQuota / NetworkPolicy can be applied per worker.
-- ArgoCD App boundaries map cleanly to namespaces.
-
-The Temporal *server* namespace (`temporal` k8s namespace, `default`
-Temporal namespace) is separate — workers reach it via the cluster-local
-`temporal-frontend.temporal.svc.cluster.local:7233` Service.
-
----
-
-## Operations
+Run with `kubectl` configured for this cluster:
 
 ```bash
-# Show the CRs
-kubectl -n news-reader-temporal-worker get temporalworkerdeployment,temporalconnection
-
-# Show all underlying versioned Deployments (one per active build_id)
-kubectl -n news-reader-temporal-worker get deployments
-# news-digest-v1.0.1   1/1 Running   ...
-# news-digest-v1.0.2   1/1 Running   ...   (during a rollout)
-
-# Tail logs of whichever Deployment is the current version
-kubectl -n news-reader-temporal-worker logs -l app=news-reader-temporal-worker --tail=100 -f
-
-# Watch the rollout from Temporal's side (best UX is the Web UI)
-# → temporal.vanillax.me → Deployments → news-digest
+kubectl -n news-reader get workerdeployments,connections
+kubectl -n news-reader get workerdeployment news-digest -o yaml
+kubectl -n news-reader get deployments
+kubectl -n news-reader logs -l app=news-reader-temporal-worker --tail=100
 ```
 
----
+Expect current-generation status, a completed gate and `Ready=True` after the
+ramp. Old versioned Deployments can remain present while their workflows finish.
+If promotion fails, follow the [central recovery procedure](../../../../docs/domains/temporal/safe-deployments.md#rollback-and-existing-pinned-runs);
+reverting traffic does not rescue workflows already pinned to a faulty build.
 
-## Future work
-
-The Temporal-on-K8s blog post recommends **backlog-based autoscaling**
-(KEDA on `ApproximateBacklogCount` or `schedule_to_start_latency`) for
-real workloads. This worker is currently `replicas: 1` because traffic
-is one user. To wire that up later, add a `WorkerResourceTemplate`
-wrapping an HPA targeting `ApproximateBacklogCount` — see the example
-at <https://github.com/temporalio/temporal-worker-controller/blob/main/examples/wrt-hpa-backlog.yaml>.
+Per-version autoscaling is deferred until this single-user workload needs it.
+Use `WorkerResourceTemplate` for a future HPA instead of targeting a generated
+Deployment name directly.

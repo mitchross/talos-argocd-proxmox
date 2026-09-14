@@ -1,5 +1,5 @@
 # One WorkerDeployment per Temporal task queue (plan Phase 1). Every pool polls only its own queue;
-# Schedules route to these per-role queues (USE_ISOLATED_TASK_QUEUES=1 in the shared ConfigMap).
+# Release settings are embedded in each pod template by release-env-patch.yaml.
 # Exactly one pool seeds Schedules: aux carries SEED_SCHEDULES=1, every other pool keeps SKIP_SCHEDULE_SEED=1.
 # All pools share the RWO tiles/grids/state volumes, so they must land on tile-server's node (podAffinity).
 # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them via env.
@@ -22,6 +22,8 @@ spec:
     temporalNamespace: default
   rollout:
     strategy: AllAtOnce
+    gate:
+      workflowType: RadarDeploymentSmokeWorkflow
   sunset:
     scaledownDelay: 10m
     deleteDelay: 1h
@@ -58,7 +60,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:sha-eeaf8c218a9560f2cdabb2e799a9a8645e9c3614@sha256:311c3cfe8c0ebf5bfe7cf25b08321ba22daca0c67a2b87eec378b1c44e20408c
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -74,15 +76,18 @@ spec:
             - { name: GRID_DIR, value: /data/grids }
             - { name: STATE_DIR, value: /data/state }
             - { name: PUSH_DISABLED, value: "1" }
-          envFrom:
-            - configMapRef: { name: radar-ng-temporal-config }
-          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          # Local event-loop liveness is independent of Temporal connectivity.
           livenessProbe:
             exec:
-              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+              command: [sh, -c, "test $(find /tmp/worker-alive -mmin -3)"]
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            periodSeconds: 30
+            failureThreshold: 2
           volumeMounts:
             - { name: tiles, mountPath: /data/tiles }
             - { name: grids, mountPath: /data/grids }
@@ -116,6 +121,8 @@ spec:
     temporalNamespace: default
   rollout:
     strategy: AllAtOnce
+    gate:
+      workflowType: RadarDeploymentSmokeWorkflow
   sunset:
     scaledownDelay: 10m
     deleteDelay: 1h
@@ -152,7 +159,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:sha-eeaf8c218a9560f2cdabb2e799a9a8645e9c3614@sha256:311c3cfe8c0ebf5bfe7cf25b08321ba22daca0c67a2b87eec378b1c44e20408c
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -168,15 +175,18 @@ spec:
             - { name: GRID_DIR, value: /data/grids }
             - { name: STATE_DIR, value: /data/state }
             - { name: PUSH_DISABLED, value: "1" }
-          envFrom:
-            - configMapRef: { name: radar-ng-temporal-config }
-          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          # Local event-loop liveness is independent of Temporal connectivity.
           livenessProbe:
             exec:
-              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+              command: [sh, -c, "test $(find /tmp/worker-alive -mmin -3)"]
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            periodSeconds: 30
+            failureThreshold: 2
           volumeMounts:
             - { name: tiles, mountPath: /data/tiles }
             - { name: grids, mountPath: /data/grids }
@@ -210,6 +220,8 @@ spec:
     temporalNamespace: default
   rollout:
     strategy: AllAtOnce
+    gate:
+      workflowType: RadarDeploymentSmokeWorkflow
   sunset:
     scaledownDelay: 10m
     deleteDelay: 1h
@@ -246,7 +258,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:sha-eeaf8c218a9560f2cdabb2e799a9a8645e9c3614@sha256:311c3cfe8c0ebf5bfe7cf25b08321ba22daca0c67a2b87eec378b1c44e20408c
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -262,15 +274,18 @@ spec:
             - { name: GRID_DIR, value: /data/grids }
             - { name: STATE_DIR, value: /data/state }
             - { name: PUSH_DISABLED, value: "1" }
-          envFrom:
-            - configMapRef: { name: radar-ng-temporal-config }
-          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          # Local event-loop liveness is independent of Temporal connectivity.
           livenessProbe:
             exec:
-              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+              command: [sh, -c, "test $(find /tmp/worker-alive -mmin -3)"]
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            periodSeconds: 30
+            failureThreshold: 2
           volumeMounts:
             - { name: tiles, mountPath: /data/tiles }
             - { name: grids, mountPath: /data/grids }
@@ -304,6 +319,8 @@ spec:
     temporalNamespace: default
   rollout:
     strategy: AllAtOnce
+    gate:
+      workflowType: RadarDeploymentSmokeWorkflow
   sunset:
     scaledownDelay: 10m
     deleteDelay: 1h
@@ -340,7 +357,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:sha-eeaf8c218a9560f2cdabb2e799a9a8645e9c3614@sha256:311c3cfe8c0ebf5bfe7cf25b08321ba22daca0c67a2b87eec378b1c44e20408c
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -357,15 +374,18 @@ spec:
             - { name: GRID_DIR, value: /data/grids }
             - { name: STATE_DIR, value: /data/state }
             - { name: PUSH_DISABLED, value: "1" }
-          envFrom:
-            - configMapRef: { name: radar-ng-temporal-config }
-          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          # Local event-loop liveness is independent of Temporal connectivity.
           livenessProbe:
             exec:
-              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+              command: [sh, -c, "test $(find /tmp/worker-alive -mmin -3)"]
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            periodSeconds: 30
+            failureThreshold: 2
           volumeMounts:
             - { name: tiles, mountPath: /data/tiles }
             - { name: grids, mountPath: /data/grids }
@@ -399,6 +419,8 @@ spec:
     temporalNamespace: default
   rollout:
     strategy: AllAtOnce
+    gate:
+      workflowType: RadarDeploymentSmokeWorkflow
   sunset:
     scaledownDelay: 10m
     deleteDelay: 1h
@@ -435,7 +457,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.30
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:sha-eeaf8c218a9560f2cdabb2e799a9a8645e9c3614@sha256:311c3cfe8c0ebf5bfe7cf25b08321ba22daca0c67a2b87eec378b1c44e20408c
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -451,15 +473,18 @@ spec:
             - { name: GRID_DIR, value: /data/grids }
             - { name: STATE_DIR, value: /data/state }
             - { name: PUSH_DISABLED, value: "1" }
-          envFrom:
-            - configMapRef: { name: radar-ng-temporal-config }
-          # The worker touches this file only while Temporal check_health succeeds; a 4-h poll blackout once left a Ready pod doing nothing.
+          # Local event-loop liveness is independent of Temporal connectivity.
           livenessProbe:
             exec:
-              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+              command: [sh, -c, "test $(find /tmp/worker-alive -mmin -3)"]
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            periodSeconds: 30
+            failureThreshold: 2
           volumeMounts:
             - { name: state, mountPath: /data/state }
             - { name: grids, mountPath: /data/grids, readOnly: true }

@@ -1,5 +1,8 @@
 # radar-ng operations
 
+For worker releases, configuration retention, functional gates and stateful
+handoff, use the [Temporal safe deployment runbook](../../../docs/domains/temporal/safe-deployments.md).
+
 ## Temporal controller ownership after a namespace rebuild
 
 The Temporal Worker Controller identity ends with the UID of its Kubernetes
@@ -56,29 +59,18 @@ kubectl -n temporal exec deploy/temporal-admintools -- \
   --workflow-id '<workflow-id>'
 ```
 
-If—and only if—the execution is pinned to a build with no surviving poller,
-terminate that execution with an explicit reason. Do not bulk-terminate healthy
-current-build work. The schedule will fire again; trigger observed MRMS once if
-the tile volume is empty and freshness must be restored immediately:
+A missing poller is a recovery signal, not permission to discard the execution.
+First restore the retained version's workers and release dependencies through
+GitOps. If that is impossible, follow the [selected pinned-run recovery procedure](../../../docs/domains/temporal/safe-deployments.md#rollback-and-existing-pinned-runs),
+including replay and explicit approval of the execution and destination.
 
-```sh
-kubectl -n temporal exec deploy/temporal-admintools -- \
-  temporal workflow terminate \
-  --address temporal-frontend.temporal.svc.cluster.local:7233 \
-  --namespace default \
-  --workflow-id '<orphaned-workflow-id>' \
-  --reason 'retired pinned worker build'
+For a replaceable scheduled ingestion job, termination and a fresh trigger may
+be acceptable only after its owner approves losing that run and checks for
+partial writes. Do not apply that shortcut to `WatchStormWorkflow`: it owns
+business state and buffered alerts. Do not bulk-terminate workflows.
 
-kubectl -n temporal exec deploy/temporal-admintools -- \
-  temporal schedule trigger \
-  --address temporal-frontend.temporal.svc.cluster.local:7233 \
-  --namespace default \
-  --schedule-id ingest-mrms-base
-```
-
-Recovery is complete only after the replacement workflow shows the current
-build, `/api/health` is `ok`, and `manifest.json` advertises a recent radar
-frame with every configured palette.
+Recovery requires both resumed scheduling and correct output: inspect the
+execution's assigned build, `/api/health`, and recent `manifest.json` frames.
 
 ## Task queues and Schedule seeding
 
@@ -86,7 +78,7 @@ Each role owns its own queue: `radar-ng-mrms`, `radar-ng-nowcast`,
 `radar-ng-hrrr`, `radar-ng-aux`, and `radar-ng-alerts`. Open-Meteo activities
 run on `radar-ng-open-meteo`. The single-process `radar-ng` queue is retired.
 
-`USE_ISOLATED_TASK_QUEUES=1` in `radar-ng-temporal-config` makes seeding write
+`USE_ISOLATED_TASK_QUEUES=1` in `temporal-workers/release-env-patch.yaml` makes seeding write
 each Schedule to its own role queue. Exactly one pool seeds: `aux` carries
 `SEED_SCHEDULES=1` and also runs the read-only stall observer. Every other pool
 keeps `SKIP_SCHEDULE_SEED=1`. Two seeders race each other, so never set
@@ -104,9 +96,8 @@ done
 ```
 
 Expected: each schedule names its role queue, and every role queue lists both
-workflow and activity pollers. A queue with zero pollers silently drops work:
-schedules fire, the workflow task is never picked up, and the execution times
-out with no error anywhere except stale data.
+workflow and activity pollers. A queue with zero pollers leaves tasks waiting. Schedules can fire while
+executions make no progress, so queue latency and stale output must be monitored.
 
 Never point a Schedule at a queue before its poller exists. When adding a role,
 deploy the pool first, confirm its pollers, then let `aux` reseed.

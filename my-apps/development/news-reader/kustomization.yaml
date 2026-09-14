@@ -13,6 +13,7 @@ resources:
   - temporal-workers/temporal-connection.yaml
   - temporal-workers/temporal-worker-deployment.yaml
 
+# Retained unchanged for old worker pods; remove only after their versions are retired.
 configMapGenerator:
   - name: news-reader-llm-auth-scripts
     files:
