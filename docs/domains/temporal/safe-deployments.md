@@ -54,8 +54,11 @@ checking references. Do not edit the frozen script or remove it at promotion.
 
 Application pruning stays enabled. Credential rotation remains a separate
 lifecycle: environment-based secrets require replacement pods to pick up a new
-value. Digest pins prevent registry tag reuse from changing an old worker's code.
-The registry must also retain the referenced image layers.
+value. Radar and Deal Scout pin image digests. News Reader always uses plain
+`vMAJOR.MINOR.PATCH` release tags for both images, with no SHA tag or digest
+suffix in manifests. Its publishers must never overwrite a release tag; record
+the verified digest and source revision in the PR. The registry must retain
+every referenced image's layers.
 
 ## Before merging a release
 
@@ -69,13 +72,15 @@ operator's explicit approval. No direct Kubernetes template edits are needed.
    V1→V2 with alerts on both sides of handoff; it uses SDK 1.30.0 against a local
    Temporal dev server. Production here declares server 1.32.0; the local CLI
    1.8.3 embeds 1.31.2, so the first staged rollout must verify that combination.
-2. Pin each candidate by digest and enable its registered gate in the **same**
-   GitOps PR. A gate against an older image that lacks the workflow will block.
+2. Publish each candidate and enable its registered gate in the **same** GitOps
+   PR. Radar and Deal Scout use digest pins; News Reader uses a unique published
+   semantic version. A gate against an older image lacking the workflow blocks.
    Record the image's source revision. Branch candidate images can be reviewed
    without merging application source first; stable release promotion follows
    the application's normal release pipeline after review. When that pipeline
    publishes a stable tag, update the SHA-tagged reference by PR to the stable
    tag and its verified digest; semver-only Renovate rules may skip SHA tags.
+   News Reader never uses SHA-based image references, including for candidates.
 3. Render and test from the Talos repository root:
 
    ```bash
@@ -85,8 +90,9 @@ operator's explicit approval. No direct Kubernetes template edits are needed.
    python -m unittest discover -s scripts/tests -p test_temporal_deployments.py -v
    ```
 
-   Expect changed worker templates, registered gate names, image digests, the
-   unchanged legacy ConfigMaps, and passing Lua health/config-lifetime tests.
+   Expect changed worker templates, registered gate names, the required image
+   reference formats, unchanged legacy ConfigMaps, and passing Lua health and
+   configuration-lifetime tests.
 4. Check overlap capacity and placement. The declared five Radar pools request
    6.75 CPU / 11 GiB for one generation; two complete generations need 13.5 CPU /
    22 GiB, before other apps. They share tile-server placement and RWO volumes.

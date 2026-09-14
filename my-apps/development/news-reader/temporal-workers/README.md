@@ -13,7 +13,7 @@ The [Temporal server](../../temporal/README.md) is a separate application.
 
 1. Build and test the application image, which includes LiteLLM authentication
    and registers `NewsDeploymentSmokeWorkflow`. Record its source revision.
-2. Open a GitOps PR updating the digest-pinned image in
+2. Publish a unique `vMAJOR.MINOR.PATCH` image and open a GitOps PR updating it in
    [the worker manifest](temporal-worker-deployment.yaml). The controller derives
    the Build ID from the pod template; it is not simply the image tag.
 3. After approval and merge, the candidate gate runs a bounded authenticated
@@ -28,6 +28,11 @@ runs retain their previous policy until their own safe boundary or an explicitly
 reviewed recovery. A brief ramp does not by itself prove meaningful work ran.
 
 ## Configuration lifetime
+
+Both News Reader images always use plain semantic release tags in GitOps.
+Record source revisions and verified digests in the PR; image references have
+no SHA tag or digest suffix. Never replace the contents of a published version.
+See the [app release policy](../CLAUDE.md).
 
 New pods use authentication packaged in the image. The app's
 [Kustomization](../kustomization.yaml) deliberately retains the **unchanged**
