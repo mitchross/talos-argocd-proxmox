@@ -1,0 +1,121 @@
+# Kustomize copies these values into every worker pod template, so config changes create a version.
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: USE_ISOLATED_TASK_QUEUES
+    value: '1'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: PALETTES
+    value: classic,muted,vivid
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: BACKLOG_PER_CYCLE
+    value: '1'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: MRMS_RENDER_WORKERS
+    value: '3'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: MRMS_PREFIX
+    value: CONUS/MergedBaseReflectivityQC_00.50
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: FORECAST_HOURS
+    value: '18'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: EXTENDED_FORECAST_HOURS
+    value: '48'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: HRRR_ENABLED_LAYERS
+    value: radar-hrrr
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NOWCAST_HORIZON_MIN
+    value: '60'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NOWCAST_STEP_MIN
+    value: '5'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NOWCAST_INPUT_FRAMES
+    value: '4'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NOWCAST_GRID_INPUT_LAYER
+    value: radar-nowcast-input
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NOWCAST_SCIENCE_GRID_MAX_CELLS
+    value: '7000000'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NOWCAST_MAX_INPUT_GAP_MIN
+    value: '6'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NOWCAST_ALLOW_PERSISTENCE_FALLBACK
+    value: '0'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: WATCH_RADIUS_KM
+    value: '20'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: INTENSIFY_DBZ_DELTA
+    value: '10'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: DISSIPATE_DBZ_DELTA
+    value: '10'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: HAIL_DBZ_THRESHOLD
+    value: '60'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NWS_ALERTS_URL
+    value: https://api.weather.gov/alerts/active?status=actual
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: NWS_USER_AGENT
+    value: (radar-ng, mitch@vanillax.me)
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: TROPICAL_FEED_URL
+    value: https://www.nhc.noaa.gov/CurrentStorms.json
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: LIGHTNING_RETENTION_MIN
+    value: '15'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: LIGHTNING_FLUSH_S
+    value: '2.0'

@@ -14,6 +14,8 @@ spec:
   rollout:
     # Ramp only controls where NEW workflows start; AUTO_UPGRADE in-flight workflows migrate on their own.
     strategy: Progressive
+    gate:
+      workflowType: NewsDeploymentSmokeWorkflow
     steps:
       - rampPercentage: 10                    # 10% of new workflows → new version
         pauseDuration: 2m                     # then hold for 2 minutes
@@ -21,7 +23,7 @@ spec:
         pauseDuration: 5m                     # hold 5 minutes
       # the final 100% is implicit after the last step's pause
   sunset:
-    # Delays start only after Temporal reports the old version Drained (no PINNED workflows left).
+    # v1.10.1 waits 10m to scale down and 70m total to delete, measured from Drained.
     scaledownDelay: 10m
     deleteDelay: 1h
   template:
@@ -38,31 +40,10 @@ spec:
         fsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
-      initContainers:
-        - name: prepare-llm-auth
-          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.14
-          command: ["python", "/opt/repo-scripts/prepare-litellm-auth.py"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            readOnlyRootFilesystem: true
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
-              memory: 128Mi
-          volumeMounts:
-            - name: llm-auth-scripts
-              mountPath: /opt/repo-scripts
-              readOnly: true
-            - name: llm-auth-source
-              mountPath: /patched
       containers:
         - name: worker
-          # Keep immutable release tags; the controller appends a hash of the full pod template.
-          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.14
+          # Pin the reviewed source image; the controller hashes the full pod template for its Build ID.
+          image: registry.vanillax.me/news-reader-temporal-worker:sha-4d48e49bb906b39721ca6a57871bf31103007b41@sha256:0011bb2bcbc82daf4e0b8cb23b4a9457f7b2fcc0d4dabfd696526903bb6c1b10
           imagePullPolicy: IfNotPresent
           # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them here.
           env:
@@ -88,17 +69,3 @@ spec:
               memory: 256Mi
             limits:
               memory: 512Mi
-
-          volumeMounts:
-            - name: llm-auth-source
-              mountPath: /app/worker.py
-              subPath: worker.py
-              readOnly: true
-      volumes:
-        - name: llm-auth-scripts
-          configMap:
-            name: news-reader-llm-auth-scripts
-            defaultMode: 0444
-        - name: llm-auth-source
-          emptyDir:
-            sizeLimit: 2Mi

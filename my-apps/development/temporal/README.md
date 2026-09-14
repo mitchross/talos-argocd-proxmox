@@ -3,7 +3,7 @@
 Self-hosted Temporal server for the cluster. This directory deploys the
 **server**; application workers (e.g. `news-reader-temporal-worker`,
 `radar-ng`'s temporal worker) live in their own sibling dirs and connect
-in via `TemporalConnection` CRs from the
+in via `Connection` CRs from the
 [Temporal Worker Controller](../../../infrastructure/controllers/temporal-worker-controller/).
 
 Read this *with* `news-reader/temporal/README.md` (in the news-reader
@@ -11,11 +11,14 @@ repo) — together they cover server side + app side of the same system.
 
 ---
 
+Worker release gates, retained configuration and pinned-run recovery are covered
+by the [safe deployment runbook](../../../docs/domains/temporal/safe-deployments.md).
+
 ## What this dir deploys
 
 ```mermaid
 flowchart LR
-    subgraph chart[Helm chart go.temporal.io/helm-charts@1.6.0]
+    subgraph chart[Helm chart go.temporal.io/helm-charts@1.7.0]
         FE[frontend<br/>:7233 gRPC]
         HIST[history]
         MATCH[matching]
@@ -165,7 +168,7 @@ StorageClass again is a restore-before-bind recreation, see
 helmCharts:
   - name: temporal
     repo: https://go.temporal.io/helm-charts
-    version: 1.6.0          # chart version — renovate auto-bumps via .github/renovate.json5
+    version: 1.7.0          # chart version — renovate auto-bumps via .github/renovate.json5
     valuesFile: values.yaml
 
 # values.yaml (excerpt)
@@ -213,7 +216,7 @@ Important distinction (this confuses everyone the first time):
 | Thing | Where | What it manages |
 |---|---|---|
 | **Temporal server** | `my-apps/development/temporal/` (this dir) | The server itself — frontend, history, matching, web, server-worker. Deployed via the official Helm chart. |
-| **Temporal Worker Controller** | `infrastructure/controllers/temporal-worker-controller/` | A *Kubernetes controller* (CRD-based). Watches your `TemporalWorkerDeployment` CRs and turns each into a versioned `apps/v1 Deployment`. Handles Worker Versioning rollouts. |
+| **Temporal Worker Controller** | `infrastructure/controllers/temporal-worker-controller/` | A *Kubernetes controller* (CRD-based). Watches your `WorkerDeployment` CRs and turns each into a versioned `apps/v1 Deployment`. Handles Worker Versioning rollouts. |
 
 You can run the server without the worker controller — workers would
 just be plain Deployments and you'd lose progressive rollouts. We use
@@ -225,12 +228,13 @@ both because Worker Versioning is the whole point.
 
 | App | Path |
 |---|---|
-| `news-reader-temporal-worker` (news-digest task queue) | `my-apps/development/news-reader-temporal-worker/` |
-| `radar-ng` workers | `my-apps/development/radar-ng/temporal-worker-deployment.yaml` |
+| `news-reader-temporal-worker` (news-digest task queue) | `my-apps/development/news-reader/temporal-workers/` |
+| `radar-ng` workers | `my-apps/development/radar-ng/temporal-workers/worker-pools.yaml` |
+| `deal-scout` worker | `my-apps/utility/deal-scout/temporal-workers/temporal-worker-deployment.yaml` |
 
-Each ships its own `TemporalConnection` CR pointing at
+Each ships its own `Connection` CR pointing at
 `temporal-frontend.temporal.svc.cluster.local:7233` and its own
-`TemporalWorkerDeployment` CR. They're independent Apps in ArgoCD.
+`WorkerDeployment` CR. They're independent Apps in ArgoCD.
 
 ---
 
