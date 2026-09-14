@@ -1,4 +1,4 @@
-# Temporal Worker Controller (Public Preview): TemporalWorkerDeployment CRs automate Worker Versioning.
+# Temporal Worker Controller: WorkerDeployment CRs manage overlapping worker versions.
 
 # cert-manager issues the webhook cert. Cluster already has cert-manager
 # (wave 4) and this is the Temporal-recommended path.
