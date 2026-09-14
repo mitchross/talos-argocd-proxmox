@@ -215,24 +215,46 @@ configs:
         end
       end
       return hs
-    # Maps Temporal's Ready condition into Argo CD health: True becomes Healthy,
-    # PlanExecutionFailed becomes Degraded, and unresolved states stay Progressing.
+    # Report current-generation rollout failures, including failed candidate gate workflows.
     resource.customizations.health.temporal.io_WorkerDeployment: |
-      hs = {}
-      hs.status = "Progressing"
-      hs.message = "Waiting for Temporal WorkerDeployment reconciliation"
-      if obj.status ~= nil and obj.status.conditions ~= nil then
-        for _, c in ipairs(obj.status.conditions) do
-          if c.type == "Ready" then
-            hs.message = c.message or c.reason or hs.message
-            if c.status == "True" then
-              hs.status = "Healthy"
-            elseif c.reason == "PlanExecutionFailed" then
-              hs.status = "Degraded"
-            end
-            return hs
-          end
+      local hs = {status = "Progressing", message = "Waiting for Temporal WorkerDeployment reconciliation"}
+      if obj.status == nil then return hs end
+      local generation = obj.metadata and obj.metadata.generation
+      if generation ~= nil and obj.status.observedGeneration ~= generation then
+        hs.message = "Waiting for controller to observe the new generation"
+        return hs
+      end
+      local ready = nil
+      local progressing = nil
+      for _, c in ipairs(obj.status.conditions or {}) do
+        if generation == nil or c.observedGeneration == generation then
+          if c.type == "Ready" then ready = c end
+          if c.type == "Progressing" then progressing = c end
         end
+      end
+      if ready ~= nil and ready.status == "True" then
+        return {status = "Healthy", message = ready.message or ready.reason}
+      end
+      local target = obj.status.targetVersion or {}
+      for _, gate in ipairs(target.testWorkflows or {}) do
+        if gate.status == "Failed" or gate.status == "Canceled" or gate.status == "Terminated" or gate.status == "TimedOut" then
+          return {status = "Degraded", message = "Candidate gate " .. (gate.workflowID or "unknown") .. ": " .. gate.status}
+        end
+      end
+      if progressing ~= nil and progressing.status == "False" and progressing.reason ~= "RolloutComplete" then
+        return {status = "Degraded", message = progressing.message or progressing.reason}
+      end
+      local errors = {
+        ConnectionNotFound = true, ClusterConnectionUnsupported = true,
+        AuthSecretInvalid = true, TemporalClientCreationFailed = true,
+        TemporalStateFetchFailed = true, PlanGenerationFailed = true,
+        PlanExecutionFailed = true, InvalidSpec = true
+      }
+      if ready ~= nil then
+        hs.message = ready.message or ready.reason or hs.message
+        if ready.status == "False" and errors[ready.reason] then hs.status = "Degraded" end
+      elseif progressing ~= nil then
+        hs.message = progressing.message or progressing.reason or hs.message
       end
       return hs
 # Argo CD server settings

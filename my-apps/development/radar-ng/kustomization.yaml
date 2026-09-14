@@ -29,3 +29,9 @@ configMapGenerator:
   - name: radar-ng-scripts
     files:
       - scripts/wait-for-basemap.sh
+
+patches:
+  - path: temporal-workers/release-env-patch.yaml
+    target:
+      group: temporal.io
+      kind: WorkerDeployment

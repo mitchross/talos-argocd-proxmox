@@ -36,6 +36,9 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 
 ## Documentation
 
+For worker releases, use the [Temporal safe deployment runbook](domains/temporal/safe-deployments.md):
+candidate gates, retained configuration, stateful handoff, and pinned-run recovery.
+
 [**Explore the lab →**](lab.md) Click through the machines, IPs, disks, VMs and
 what depends on each host. Includes the proposed jobs for each machine.
 

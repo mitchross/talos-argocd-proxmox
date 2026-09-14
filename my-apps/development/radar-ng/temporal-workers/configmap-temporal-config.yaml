@@ -1,4 +1,4 @@
-# Non-secret worker tunables, envFrom'd into the worker container (bump CONFIG_REV in the WorkerDeployment to roll).
+# Frozen compatibility config for retained worker versions; new workers embed release settings.
 apiVersion: v1
 kind: ConfigMap
 metadata:
