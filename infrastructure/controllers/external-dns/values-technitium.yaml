@@ -18,6 +18,8 @@ txtPrefix: "external-dns-"
 
 # Route and Gateway filters isolate this instance from public Cloudflare DNS.
 extraArgs:
+  # Match the existing Gateway and HTTPRoute annotations to preserve DNS targets.
+  - --annotation-prefix=external-dns.alpha.kubernetes.io/
   - --gateway-label-filter=external-dns-gateway=gateway-internal-technitium
   - --rfc2136-host=192.168.10.15
   - --rfc2136-port=53

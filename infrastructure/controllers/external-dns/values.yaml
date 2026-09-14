@@ -29,6 +29,8 @@ txtPrefix: "external-dns-" # Prefix for TXT records
 # CRITICAL: Label-based filtering using CLI args for reliability
 # Only process HTTPRoutes with external-dns=true label
 extraArgs:
+  # Match the existing Gateway and HTTPRoute annotations to preserve DNS targets.
+  - --annotation-prefix=external-dns.alpha.kubernetes.io/
   - --label-filter=external-dns=true
   - --gateway-label-filter=external-dns-gateway=gateway-external
   - --cloudflare-proxied  # Enable Cloudflare proxy for all records
