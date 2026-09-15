@@ -32,6 +32,14 @@ def lua(value):
 
 
 class TemporalDeploymentTests(unittest.TestCase):
+    def test_controller_uses_official_release_with_status_fix(self):
+        values = yaml.safe_load((ROOT / "infrastructure/controllers/temporal-worker-controller/values.yaml").read_text())
+        image = values["image"]
+        self.assertEqual(image["repository"], "temporalio/temporal-worker-controller")
+        self.assertRegex(image["tag"], r"^v[0-9]+\.[0-9]+\.[0-9]+(?:@sha256:[a-f0-9]{64})?$")
+        version = tuple(int(part) for part in image["tag"].split("@", 1)[0][1:].split("."))
+        self.assertGreaterEqual(version, (1, 10, 0), "The upstream baseline must include the #554 status fix")
+
     def test_all_candidate_images_follow_release_policy_and_are_gated(self):
         workers = [obj for path in (RADAR, NEWS, ROOT / "my-apps/utility/deal-scout")
                    for obj in render(path) if obj["kind"] == "WorkerDeployment"]
