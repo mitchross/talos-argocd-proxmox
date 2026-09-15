@@ -44,8 +44,8 @@ See [ArgoCD entrypoints](entrypoints.md) for the concrete files.
 | `2` | kopiur operator (CRDs + controller + webhook; volume populator) |
 | `3` | kopiur config (ClusterRepository `cluster-kopia` + credential fanout + VolumeSnapshotClass) |
 | `4` | KEDA core, Temporal worker, infrastructure and database AppSets |
-| `5` | OpenTelemetry operator core, monitoring AppSet including `kube-prometheus-stack` |
-| `6` | KEDA observability, OpenTelemetry operator observability, workload AppSet |
+| `5` | Monitoring AppSet including `kube-prometheus-stack` |
+| `6` | OpenTelemetry operator, observability overlays, workload AppSet |
 
 cert-manager is Wave `1` so webhook-cert consumers in later waves can start. The kopiur operator is Wave `2` (CRDs + controller + webhook), with its repo/credential config at Wave `3`. KEDA and OpenTelemetry ServiceMonitor resources render from Wave `6` observability overlays.
 
@@ -69,6 +69,10 @@ For example, creating the monitoring AppSet at wave 5 does not prove that
 Prometheus CRDs exist before the root reaches wave 6. Observability overlays
 must tolerate that cold-start gap and reconcile after the CRDs arrive. Keep
 monitoring out of the core bootstrap dependency chain.
+
+The OTEL Application is created at wave 6 alongside the workload AppSet, so
+an unavailable Collector cannot hold back workload discovery. Its own health
+and sync failures remain visible in Argo CD.
 
 ### The Restore Gating Loop
 

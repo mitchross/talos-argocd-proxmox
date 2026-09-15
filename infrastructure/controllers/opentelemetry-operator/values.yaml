@@ -5,8 +5,7 @@ manager:
       memory: 128Mi
     limits:
       memory: 256Mi
-  # A chart-rendered ServiceMonitor races the kube-prometheus-stack CRD install (both wave 5) on a fresh nuke.
-  # It lives in opentelemetry-operator-observability (wave 6) instead. Do NOT re-enable here.
+  # Keep optional ServiceMonitors separate so missing monitoring CRDs cannot block the Collector app.
   serviceMonitor:
     enabled: false
 

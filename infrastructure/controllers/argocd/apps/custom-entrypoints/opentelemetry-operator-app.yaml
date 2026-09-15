@@ -1,13 +1,11 @@
-# OpenTelemetry Operator
-# Standalone App at Wave 5 to ensure cert-manager (Wave 4) is ready
-# for admission webhook certificates
+# Create alongside workloads so Collector health cannot gate their discovery.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: opentelemetry-operator
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-wave: "6"
     argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/opentelemetry-operator
   labels:
     app.kubernetes.io/part-of: infrastructure
