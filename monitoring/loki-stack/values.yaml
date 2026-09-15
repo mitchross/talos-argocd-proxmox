@@ -43,6 +43,15 @@ loki:
     ingestion_burst_size_mb: 64
     # 24h + compactor retention below: longer retention buried RustFS in S3 objects.
     retention_period: 24h
+    retention_stream:
+      - selector: '{service_name=~"talos-system|host-journal"}'
+        priority: 1
+        period: 168h
+    otlp_config:
+      resource_attributes:
+        attributes_config:
+          - action: index_label
+            attributes: [host.name]
   # Without retention_enabled + delete_request_store, retention_period is a soft mark — chunks are never deleted.
   compactor:
     retention_enabled: true

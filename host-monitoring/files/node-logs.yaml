@@ -1,0 +1,85 @@
+extensions:
+  file_storage:
+    directory: /var/lib/otelcol-contrib/storage
+    create_directory: true
+    fsync: true
+    compaction:
+      on_start: true
+receivers:
+  journald:
+    directory: /var/log/journal
+    start_at: beginning
+    # Without --merge, journalctl --follow restricts replay to the current boot.
+    merge: true
+    priority: info
+    storage: file_storage
+    convert_message_bytes: true
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 0s
+    operators:
+      # Collector retry messages must not feed back into the same failed exporter.
+      - type: filter
+        expr: 'body._SYSTEMD_UNIT == "otelcol-contrib.service"'
+      - type: move
+        from: body
+        to: attributes.journal
+      - type: copy
+        from: attributes.journal.MESSAGE
+        to: body
+      - type: severity_parser
+        parse_from: attributes.journal.PRIORITY
+        mapping:
+          fatal: ["0", "1", "2"]
+          error: "3"
+          warn: "4"
+          info: ["5", "6"]
+          debug: "7"
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 160
+    spike_limit_mib: 32
+  resource:
+    attributes:
+      - key: service.name
+        value: host-journal
+        action: upsert
+      - key: host.name
+        value: ${env:NODE_LOG_HOST}
+        action: upsert
+exporters:
+  otlphttp/loki:
+    endpoint: http://192.168.10.48/otlp
+    headers:
+      X-Scope-OrgID: "1"
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 0s
+    sending_queue:
+      storage: file_storage
+      num_consumers: 1
+      sizer: bytes
+      queue_size: 67108864
+      block_on_overflow: true
+      batch:
+        flush_timeout: 1s
+        min_size: 65536
+        max_size: 262144
+service:
+  extensions: [file_storage]
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: ${env:NODE_LOG_IP}
+                port: 8889
+  pipelines:
+    logs:
+      receivers: [journald]
+      processors: [memory_limiter, resource]
+      exporters: [otlphttp/loki]

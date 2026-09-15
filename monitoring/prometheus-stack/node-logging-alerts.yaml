@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-logging-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+spec:
+  groups:
+    - name: node.logs
+      rules:
+        - alert: NodeRebootDetected
+          expr: |
+            changes(node_boot_time_seconds[15m]) > 0
+            or
+            ((time() - node_boot_time_seconds >= 0) and (time() - node_boot_time_seconds < 600))
+          labels:
+            severity: info
+          annotations:
+            summary: "Node {{ $labels.instance }} rebooted"
+            description: "The boot timestamp changed or uptime is under ten minutes. This includes planned reboots; inspect node logs to determine the cause."
+            dashboard_url: https://grafana.vanillax.me/d/node-crash-logs
+        - alert: NodeKernelOOMKill
+          expr: increase(node_vmstat_oom_kill[5m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kernel OOM kill on {{ $labels.instance }}"
+            description: "The kernel killed a process for memory exhaustion. Inspect the matching physical host or Talos logs."
+            dashboard_url: https://grafana.vanillax.me/d/node-crash-logs
+        - alert: PhysicalNodeLogsExportFailing
+          expr: increase({__name__=~"otelcol_exporter_send_failed_log_records(_total)?",job="physical-logs"}[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node log delivery failing on {{ $labels.physical_host }}"
+            description: "The host Collector is retrying failed exports. Check Loki reachability and the persistent queue before it fills."
+            dashboard_url: https://grafana.vanillax.me/d/node-crash-logs

@@ -4,8 +4,10 @@
 
 ```
 OTEL Collector Agent (DaemonSet)  →  OTEL Collector Gateway (Deployment)  →  Loki (logs)
-  per node: filelog only               k8sattributes, batch
+  per node: pod filelog                k8sattributes, batch
 External radar-ng mobile SDK      →                                      →  Tempo (traces)
+Talos kernel/services → node-local OTEL TCP receiver + disk queue → Loki
+Proxmox/Pi journal → native OTEL Collector + disk queue → Loki
 ```
 
 External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
@@ -23,7 +25,8 @@ External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
 
 Do not add blanket auto-instrumentation or OTEL Kubernetes metrics. Prometheus
 already owns cluster/application metrics, while the OTEL agents own container
-logs. Add application tracing only for a named consumer and an explicit query
+and node logs. Host deployment and crash-log limits: `host-monitoring/LOGGING.md`.
+Add application tracing only for a named consumer and an explicit query
 or dashboard; send it to the gateway, not the per-node log agents.
 
 ## Common Pitfalls

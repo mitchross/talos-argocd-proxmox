@@ -9,6 +9,7 @@ resources:
   - grafana-http-route.yaml
   - prometheus-http-route.yaml
   - custom-alerts.yaml
+  - node-logging-alerts.yaml
   - custom-servicemonitors.yaml
   - longhorn-alerts.yaml # volume/node health (was longhorn-backup-alerts.yaml; dead backup-target alerts dropped 2026-07-06)
   - kopiur-alerts.yaml # kopiur backup staleness/failure alerts (the follow-up promised when volsync-alerts were retired 2026-06-27)
@@ -34,6 +35,13 @@ resources:
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
 
 configMapGenerator:
+  - name: node-crash-logs-dashboard
+    files:
+      - dashboards/node-crash-logs.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
   - name: hardware-diagnostics-dashboard
     files:
       - dashboards/hardware-diagnostics.json
