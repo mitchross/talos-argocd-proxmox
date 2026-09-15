@@ -1,5 +1,8 @@
 # Physical host metrics
 
+For persistent host journals, Talos kernel/service logs, and the Grafana
+**Nodes / Crash logs** dashboard, see [LOGGING.md](LOGGING.md).
+
 This configuration supplies continuous physical disk, CPU, memory and I/O
 metrics to the existing Prometheus/Grafana stack. It is a proposed deployment
 until the PR is merged and the steps below are completed. These hosts are

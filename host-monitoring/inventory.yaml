@@ -10,19 +10,25 @@ all:
           hosts:
             gpu:
               ansible_host: 192.168.10.14
+              physical_host: threadripper
             dell:
               ansible_host: 192.168.10.16
+              physical_host: dell
             sff:
               ansible_host: 192.168.10.21
+              physical_host: hp-sff
             elite:
               ansible_host: 192.168.10.22
+              physical_host: hp-elite
             shed:
               ansible_host: 192.168.10.20
+              physical_host: hp-shed
         management:
           hosts:
             pi:
               ansible_host: 192.168.10.15
               ansible_user: vanillax
+              physical_host: pi
     appliances:
       hosts:
         nas:

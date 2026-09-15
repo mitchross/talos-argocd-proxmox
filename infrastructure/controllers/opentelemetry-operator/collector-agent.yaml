@@ -5,6 +5,12 @@ metadata:
   namespace: opentelemetry
 spec:
   mode: daemonset
+  # The Kubernetes distribution omits tcp_log; Talos sends JSON lines to node-local loopback.
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.158.0
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  securityContext:
+    runAsUser: 0
   serviceAccount: otel-agent
   tolerations:
   - operator: Exists
@@ -15,10 +21,16 @@ spec:
     limits:
       memory: 1Gi
   volumeMounts:
+  - name: node-log-queue
+    mountPath: /var/lib/otel-node-logs
   - name: varlogpods
     mountPath: /var/log/pods
     readOnly: true
   volumes:
+  - name: node-log-queue
+    hostPath:
+      path: /var/local/otel-node-logs
+      type: DirectoryOrCreate
   - name: varlogpods
     hostPath:
       path: /var/log/pods
@@ -28,7 +40,37 @@ spec:
       fieldRef:
         fieldPath: spec.nodeName
   config:
+    extensions:
+      file_storage/node_logs:
+        directory: /var/lib/otel-node-logs
+        create_directory: true
+        fsync: true
+        compaction:
+          on_start: true
     receivers:
+      tcp_log/talos:
+        listen_address: 127.0.0.1:6050
+        max_log_size: 256KiB
+        max_connections: 64
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        resource:
+          service.name: talos-system
+          host.name: EXPR(env("K8S_NODE_NAME"))
+          k8s.node.name: EXPR(env("K8S_NODE_NAME"))
+        operators:
+        - type: json_parser
+          timestamp:
+            parse_from: attributes["talos-time"]
+            layout_type: gotime
+            layout: '2006-01-02T15:04:05.999999999Z07:00'
+          severity:
+            parse_from: attributes["talos-level"]
+        - type: move
+          from: attributes.msg
+          to: body
+          if: 'attributes.msg != nil'
       # Scrape pod logs from filesystem (more reliable than K8s API)
       filelog:
         include:
@@ -82,6 +124,24 @@ spec:
         send_batch_max_size: 1024
 
     exporters:
+      # Persist system logs before batching; pod logs retain their existing gateway pipeline.
+      otlphttp/node_logs:
+        endpoint: http://loki-gateway.loki-stack.svc.cluster.local/otlp
+        headers:
+          X-Scope-OrgID: "1"
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          storage: file_storage/node_logs
+          num_consumers: 1
+          sizer: bytes
+          queue_size: 33554432
+          block_on_overflow: true
+          batch:
+            flush_timeout: 1s
+            min_size: 65536
+            max_size: 262144
       # Forward application logs to the gateway
       otlp/gateway:
         endpoint: otel-gateway-collector.opentelemetry.svc.cluster.local:4317
@@ -95,10 +155,15 @@ spec:
           queue_size: 64
 
     service:
+      extensions: [file_storage/node_logs]
       telemetry:
         logs:
           level: warn
       pipelines:
+        logs/node:
+          receivers: [tcp_log/talos]
+          processors: [memory_limiter]
+          exporters: [otlphttp/node_logs]
         logs:
           receivers: [filelog]
           processors: [memory_limiter, batch]
