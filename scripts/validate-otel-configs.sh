@@ -1,25 +1,10 @@
 #!/usr/bin/env bash
-# Validate OpenTelemetry Collector configs in the repo.
-#
-# Today's root-sync-jam (2026-04-20) was caused by an orphaned
-# `k8sobjects` reference in the logs pipeline's receivers list after the
-# receiver itself was deleted (VPA ripout collateral damage). The
-# collector refused to boot with "invalid configuration: references
-# receiver k8sobjects which is not configured" — 9 hours of
-# CrashLoopBackOff before anyone noticed.
-#
-# This script renders each OpenTelemetryCollector CR in the repo,
-# extracts the `.spec.config` (which IS a raw otelcol config YAML),
-# and runs `otelcol validate` on it. Any pipeline/receiver/exporter
-# mismatch is caught at CI time instead of mid-sync.
-#
-# Requires: kustomize, python3 + pyyaml, docker (for the otelcol-contrib
-# image which carries all the receivers/processors we use).
+# Validate rendered Collector configs with their deployment images.
+# Requires: kustomize, python3 + pyyaml, docker, openssl.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OTEL_DIR="${REPO_ROOT}/infrastructure/controllers/opentelemetry-operator"
-OTEL_IMAGE="${OTEL_IMAGE:-otel/opentelemetry-collector-contrib:0.148.0}"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
@@ -27,25 +12,36 @@ echo "[otel-validate] rendering $OTEL_DIR"
 kustomize build --enable-helm "$OTEL_DIR" > "$WORK/rendered.yaml"
 
 # Extract each OpenTelemetryCollector CR's .spec.config into its own file.
-python3 <<PYEOF
-import yaml, os
-work = "$WORK"
+python3 - "$WORK" <<'PYEOF'
+import sys, yaml
+work = sys.argv[1]
 count = 0
 with open(f"{work}/rendered.yaml") as f:
-    for doc in yaml.safe_load_all(f):
-        if not doc:
-            continue
-        if doc.get("kind") != "OpenTelemetryCollector":
-            continue
-        name = doc["metadata"]["name"]
-        cfg = doc.get("spec", {}).get("config")
-        if cfg is None:
-            continue
-        out = f"{work}/{name}.yaml"
-        with open(out, "w") as o:
-            yaml.safe_dump(cfg, o, default_flow_style=False)
-        print(f"[otel-validate] extracted {name} → {out}")
-        count += 1
+    docs = [doc for doc in yaml.safe_load_all(f) if doc]
+default_images = {
+    arg.split("=", 1)[1]
+    for doc in docs if doc.get("kind") == "Deployment"
+    for container in doc["spec"]["template"]["spec"]["containers"]
+    for arg in container.get("args", [])
+    if arg.startswith("--collector-image=")
+}
+for doc in docs:
+    if doc.get("kind") != "OpenTelemetryCollector":
+        continue
+    name = doc["metadata"]["name"]
+    spec = doc["spec"]
+    image = spec.get("image")
+    if not image:
+        if len(default_images) != 1:
+            raise SystemExit(f"[otel-validate] FAIL: cannot resolve image for {name}")
+        image = next(iter(default_images))
+    out = f"{work}/{name}.yaml"
+    with open(out, "w") as o:
+        yaml.safe_dump(spec["config"], o, default_flow_style=False)
+    with open(f"{work}/{name}.image", "w") as o:
+        o.write(image)
+    print(f"[otel-validate] extracted {name} → {out}")
+    count += 1
 if count == 0:
     raise SystemExit("[otel-validate] FAIL: no OpenTelemetryCollector CRs found in render")
 PYEOF
@@ -74,15 +70,17 @@ fail=0
 for cfg in "$WORK"/*.yaml; do
   case "$(basename "$cfg")" in rendered.yaml) continue;; esac
   name="$(basename "$cfg" .yaml)"
+  image="${OTEL_IMAGE:-$(cat "$WORK/$name.image")}"
   echo ""
-  echo "[otel-validate] validating $name"
+  echo "[otel-validate] validating $name with $image"
   # Mount the dummy SA dir over the in-container path receivers look for.
   if ! docker run --rm --user "$(id -u):$(id -g)" \
        -v "$WORK:/cfg:ro" \
        -v "$WORK/sa:/var/run/secrets/kubernetes.io/serviceaccount:ro" \
        -e KUBERNETES_SERVICE_HOST=127.0.0.1 \
        -e KUBERNETES_SERVICE_PORT=443 \
-       "$OTEL_IMAGE" \
+       -e K8S_NODE_NAME=validation-node \
+       "$image" \
        validate --config="/cfg/$(basename "$cfg")"; then
     echo "[otel-validate] ❌ FAIL: $name"
     fail=1
