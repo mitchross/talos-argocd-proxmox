@@ -19,6 +19,9 @@
       ansible.builtin.apt:
         deb: "/var/cache/{{ otel_package }}"
         policy_rc_d: 101
+      # The package calls systemctl directly, bypassing policy-rc.d.
+      environment:
+        SYSTEMD_OFFLINE: "1"
       notify: Restart node log collector
 
     - name: Permit the Collector to read the system journal
@@ -86,6 +89,16 @@
         name: otelcol-contrib
         enabled: true
         state: started
+      when: not ansible_check_mode
+
+    - name: Verify the Collector metrics endpoint
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8889/metrics"
+        use_proxy: false
+      register: collector_metrics
+      until: collector_metrics.status == 200
+      retries: 5
+      delay: 3
       when: not ansible_check_mode
 
   handlers:
