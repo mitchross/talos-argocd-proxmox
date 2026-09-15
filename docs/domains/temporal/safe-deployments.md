@@ -18,10 +18,45 @@ contains the versioned worker and state-preserving handoff.
 | Area | Keep or improve |
 |---|---|
 | Server | Keep the persistent Temporal/Postgres/kopiur setup and schema-hook ordering. It is a single Postgres instance, not database HA. A declared backup is not a demonstrated recovery. |
-| Controller | Keep `WorkerDeployment` / `Connection`, separate controller and CRD charts, and the pinned inactive-retirement fork. [Upstream PR 577](https://github.com/temporalio/temporal-worker-controller/pull/577) was still open at review; do not remove the fix with an upstream image swap. |
+| Controller | Keep `WorkerDeployment` / `Connection` and separate controller/CRD charts. Use the official `temporalio/temporal-worker-controller:v1.10.1` release, including upstream #554, rather than the custom inactive-retirement fork. See the upstream verification procedure below. |
 | Worker identity | Keep workload-specific queues and overlapping worker versions. New finite News Reader and Deal Scout runs use `PINNED`; short duration does not guarantee safe replay. |
 | Long-lived state | Radar carries frame/notification state, lifetime counters, and queued alerts through Continue-as-New. Only the per-run bound counter resets. Existing pinned runs need a separate, reviewed migration. |
 | Promotion | All seven versioned worker resources declare a candidate gate. Existing ramps remain; Radar retains `AllAtOnce`, which controls promotion while old versions coexist. |
+
+### Official controller baseline
+
+The declared image is the official **v1.10.1** release. It contains the
+[#554 status-consistency fix](https://github.com/temporalio/temporal-worker-controller/pull/554)
+shipped in [v1.10.0](https://github.com/temporalio/temporal-worker-controller/releases/tag/v1.10.0),
+plus [v1.10.1's namespace-scoped watch fix](https://github.com/temporalio/temporal-worker-controller/releases/tag/v1.10.1).
+This follows the request to verify upstream in
+[#577](https://github.com/temporalio/temporal-worker-controller/pull/577#issuecomment-5676359536)
+without downgrading the fork's v1.10.1 base. The custom #577 patch is **not**
+included, and returning upstream is not evidence that its distinct Inactive
+retirement case is fixed.
+
+Only the controller image changes. Keep the existing charts, CRDs, controller
+identity/recovery job, worker templates, gates, rollout settings, and retained
+configuration. Reconciliation can still act on existing worker versions when
+the new controller starts; unchanged worker templates are not a no-op guarantee.
+
+After approval, merge, and Argo sync, use read-only checks:
+
+```bash
+kubectl -n temporal-worker-controller get deployments -o wide
+kubectl -n temporal-worker-controller get pods -o json | jq '.items[] | {pod: .metadata.name, containers: [.status.containerStatuses[]? | {name, image, imageID, ready}]}'
+kubectl get workerdeployments -A -o yaml
+```
+
+Expect the controller container to use the official v1.10.1 image and be Ready.
+Verify current and target versions, gate results, and pinned-workflow progress;
+record controller/server versions and any deprecated Inactive versions that
+remain after pollers stop. Test the never-promoted V1-to-V2 retirement case in
+an isolated namespace with synthetic work before reporting it resolved upstream.
+Do not purge version records, force-delete Deployments, or migrate pinned runs
+just to make the inventory clean. If reconciliation or worker progress regresses,
+stop further releases, collect conditions/logs, and revert this image change
+through a reviewed GitOps PR; do not change live routing or CRDs as a shortcut.
 
 ### A lifecycle correction
 
@@ -206,7 +241,7 @@ does not replace correct version retirement.
 
 ## Sources of truth
 
-- [Controller values and retained fork](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/values.yaml)
+- [Official controller image values](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/values.yaml)
 - [Argo health mapping](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/argocd/values.yaml)
 - [News worker manifest](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/news-reader/temporal-workers/temporal-worker-deployment.yaml)
 - [Radar worker pools](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/temporal-workers/worker-pools.yaml)
