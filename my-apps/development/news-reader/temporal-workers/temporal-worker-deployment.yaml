@@ -43,7 +43,7 @@ spec:
       containers:
         - name: worker
           # Never overwrite a release tag; the controller hashes the full pod template for its Build ID.
-          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.15
+          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.16
           imagePullPolicy: IfNotPresent
           # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them here.
           env:
