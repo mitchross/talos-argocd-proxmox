@@ -5,6 +5,11 @@ metadata:
   namespace: opentelemetry
 spec:
   mode: daemonset
+  # Allow logging updates on the remaining nodes when one of six nodes is offline.
+  daemonSetUpdateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
   # The Kubernetes distribution omits tcp_log; Talos sends JSON lines to node-local loopback.
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.158.0
   hostNetwork: true
@@ -46,6 +51,7 @@ spec:
         create_directory: true
         fsync: true
         compaction:
+          directory: /var/lib/otel-node-logs
           on_start: true
     receivers:
       tcp_log/talos:

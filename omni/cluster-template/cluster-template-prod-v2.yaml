@@ -9,19 +9,6 @@ kubernetes:
 talos:
   version: v1.14.0
 patches:
-- name: node-service-logs
-  inline:
-    machine:
-      logging:
-        destinations:
-        - endpoint: tcp://127.0.0.1:6050
-          format: json_lines
-- name: node-kernel-logs
-  inline:
-    apiVersion: v1alpha1
-    kind: KmsgLogConfig
-    name: grafana
-    url: tcp://127.0.0.1:6050
 # KubeletConfig cannot express extraMounts; keep the supported legacy kubelet for Longhorn.
 - name: legacy-kubelet-mounts
   inline:
@@ -80,6 +67,19 @@ patches:
         extraConfig:
           imageGCHighThresholdPercent: 70
           imageGCLowThresholdPercent: 55
+- name: node-service-logs
+  inline:
+    machine:
+      logging:
+        destinations:
+        - endpoint: tcp://127.0.0.1:6050
+          format: json_lines
+- name: node-kernel-logs
+  inline:
+    apiVersion: v1alpha1
+    kind: KmsgLogConfig
+    name: grafana
+    url: tcp://127.0.0.1:6050
 ---
 kind: ControlPlane
 machineClass:

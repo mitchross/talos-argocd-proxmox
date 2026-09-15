@@ -4,6 +4,7 @@ extensions:
     create_directory: true
     fsync: true
     compaction:
+      directory: /var/lib/otelcol-contrib/storage
       on_start: true
 receivers:
   journald:
