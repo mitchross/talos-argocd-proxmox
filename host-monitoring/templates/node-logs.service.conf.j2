@@ -1,0 +1,6 @@
+[Service]
+Environment=NODE_LOG_HOST={{ physical_host }}
+Environment=NODE_LOG_IP={{ ansible_host }}
+Environment=GOMEMLIMIT=192MiB
+StateDirectory=otelcol-contrib
+MemoryMax=256M
