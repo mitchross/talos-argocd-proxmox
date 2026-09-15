@@ -106,6 +106,27 @@ prometheus:
             replacement: "${1}"
           - action: labeldrop
             regex: "serial|serial_number|wwn"
+      - job_name: physical-logs
+        scrape_interval: 30s
+        static_configs:
+          - targets: ["192.168.10.14:8889"]
+            labels:
+              physical_host: threadripper
+          - targets: ["192.168.10.16:8889"]
+            labels:
+              physical_host: dell
+          - targets: ["192.168.10.21:8889"]
+            labels:
+              physical_host: hp-sff
+          - targets: ["192.168.10.22:8889"]
+            labels:
+              physical_host: hp-elite
+          - targets: ["192.168.10.20:8889"]
+            labels:
+              physical_host: hp-shed
+          - targets: ["192.168.10.15:8889"]
+            labels:
+              physical_host: pi
       - job_name: physical-smartctl
         scrape_interval: 60s
         scrape_timeout: 45s

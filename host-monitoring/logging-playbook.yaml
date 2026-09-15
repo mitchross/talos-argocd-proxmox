@@ -1,0 +1,102 @@
+- name: Forward physical Linux journals to Loki
+  hosts: physical_linux
+  become: true
+  serial: 1
+  vars:
+    otel_version: "0.158.0"
+    otel_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_facts.architecture] }}"
+    otel_package: "otelcol-contrib_{{ otel_version }}_linux_{{ otel_arch }}.deb"
+    otel_release: "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v{{ otel_version }}"
+  tasks:
+    - name: Download the pinned upstream Collector package
+      ansible.builtin.get_url:
+        url: "{{ otel_release }}/{{ otel_package }}"
+        checksum: "sha256:{{ otel_release }}/{{ otel_package }}.sha256"
+        dest: "/var/cache/{{ otel_package }}"
+        mode: "0644"
+
+    - name: Install without starting the package's default receivers
+      ansible.builtin.apt:
+        deb: "/var/cache/{{ otel_package }}"
+        policy_rc_d: 101
+      notify: Restart node log collector
+
+    - name: Permit the Collector to read the system journal
+      ansible.builtin.user:
+        name: otelcol-contrib
+        groups: systemd-journal
+        append: true
+      notify: Restart node log collector
+
+    - name: Create configuration directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - /etc/systemd/journald.conf.d
+        - /etc/systemd/system/otelcol-contrib.service.d
+
+    - name: Retain bounded journals across host boots
+      ansible.builtin.copy:
+        src: files/node-journal.conf
+        dest: /etc/systemd/journald.conf.d/60-node-logs.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart persistent journal
+
+    - name: Configure journal collection and persistent export queue
+      ansible.builtin.copy:
+        src: files/node-logs.yaml
+        dest: /etc/otelcol-contrib/config.yaml
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart node log collector
+
+    - name: Set host identity and bound Collector resources
+      ansible.builtin.template:
+        src: node-logs.service.conf.j2
+        dest: /etc/systemd/system/otelcol-contrib.service.d/node-logs.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart node log collector
+
+    - name: Validate before restarting the Collector
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/otelcol-contrib
+          - validate
+          - --config=/etc/otelcol-contrib/config.yaml
+      environment:
+        NODE_LOG_HOST: "{{ physical_host }}"
+        NODE_LOG_IP: "{{ ansible_host }}"
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Apply journal and Collector handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Enable the Collector at boot
+      ansible.builtin.systemd_service:
+        name: otelcol-contrib
+        enabled: true
+        state: started
+      when: not ansible_check_mode
+
+  handlers:
+    - name: Restart persistent journal
+      ansible.builtin.systemd_service:
+        name: systemd-journald
+        state: restarted
+
+    - name: Restart node log collector
+      ansible.builtin.systemd_service:
+        name: otelcol-contrib
+        daemon_reload: true
+        state: restarted
+        enabled: true
