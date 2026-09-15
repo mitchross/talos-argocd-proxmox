@@ -457,7 +457,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:sha-eeaf8c218a9560f2cdabb2e799a9a8645e9c3614@sha256:311c3cfe8c0ebf5bfe7cf25b08321ba22daca0c67a2b87eec378b1c44e20408c
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:sha-e31144491b891e391e4de22ca6f3d31d6c81e87a@sha256:af8acc3736770f819e92a05a0a07dc4786b382d436a6769b7d4949f610c25a59
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
