@@ -42,8 +42,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          # Pin the reviewed source image; the controller hashes the full pod template for its Build ID.
-          image: registry.vanillax.me/news-reader-temporal-worker:sha-4d48e49bb906b39721ca6a57871bf31103007b41@sha256:0011bb2bcbc82daf4e0b8cb23b4a9457f7b2fcc0d4dabfd696526903bb6c1b10
+          # Never overwrite a release tag; the controller hashes the full pod template for its Build ID.
+          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.15
           imagePullPolicy: IfNotPresent
           # Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them here.
           env:

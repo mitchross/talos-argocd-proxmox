@@ -32,15 +32,20 @@ def lua(value):
 
 
 class TemporalDeploymentTests(unittest.TestCase):
-    def test_all_candidate_images_are_immutable_and_gated(self):
+    def test_all_candidate_images_follow_release_policy_and_are_gated(self):
         workers = [obj for path in (RADAR, NEWS, ROOT / "my-apps/utility/deal-scout")
                    for obj in render(path) if obj["kind"] == "WorkerDeployment"]
         self.assertEqual(len(workers), 7)
         for worker in workers:
             with self.subTest(worker=worker["metadata"]["name"]):
                 for container in worker["spec"]["template"]["spec"]["containers"]:
-                    self.assertRegex(container["image"], r"@sha256:[a-f0-9]{64}$")
+                    if worker["metadata"]["namespace"] == "news-reader":
+                        self.assertRegex(container["image"], r"^registry\.vanillax\.me/news-reader-temporal-worker:v[0-9]+\.[0-9]+\.[0-9]+$")
+                    else:
+                        self.assertRegex(container["image"], r"@sha256:[a-f0-9]{64}$")
                 self.assertTrue(worker["spec"]["rollout"]["gate"]["workflowType"])
+        frontend = next(obj for obj in render(NEWS) if obj["kind"] == "Deployment" and obj["metadata"]["name"] == "news-reader")
+        self.assertRegex(frontend["spec"]["template"]["spec"]["containers"][0]["image"], r"^registry\.vanillax\.me/news-reader:v[0-9]+\.[0-9]+\.[0-9]+$")
 
     def test_radar_config_changes_versioned_templates_and_keeps_legacy_config(self):
         original = render(RADAR)
