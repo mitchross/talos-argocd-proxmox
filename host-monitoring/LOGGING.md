@@ -6,6 +6,13 @@ Select a physical host or Talos node; search for `panic`, `watchdog`, `oom`,
 `I/O error`, or `shutdown`. Journal fields, including `_BOOT_ID` and
 `_SYSTEMD_UNIT`, remain attached to each physical-host log record.
 
+Logging is an optional add-on. Talos and Proxmox boot and run without
+Collectors, Loki, or Grafana. A Talos cluster rebuild keeps the physical-host
+collectors installed; the normal Omni template restores Talos forwarding and
+Argo redeploys cluster monitoring. No host playbook rerun is needed unless
+the host OS or logging configuration changes. While Loki is down, local
+queues and journals retain what fits; older logs can be lost.
+
 Talos sends service and kernel JSON lines to its local OTEL agent on
 `127.0.0.1:6050`. The agent labels the originating node and sends directly to
 Loki. Physical Linux hosts use the upstream OTEL Contrib Debian package,
@@ -13,17 +20,19 @@ reading the system journal as an unprivileged user in `systemd-journal`.
 The existing Ansible inventory covers five Proxmox hosts and the management
 Pi. TrueNAS is an appliance and is not changed by this playbook.
 
-## Deploy after merge
+## Initial enablement
 
 Argo deploys the Collector, Loki retention, Grafana dashboard and alerts.
-Then enable logging on all Talos machine sets from the repository root:
+For an existing cluster, sync the updated Omni template once to enable Talos
+forwarding. Fresh rebuilds get this configuration through their normal
+template sync:
 
 ```sh
 omnictl cluster template sync -f omni/cluster-template/cluster-template-prod-v2.yaml
 ```
 
-Install host logging through the committed playbook, one host at a time
-(`serial: 1`). This installs a service and configures journald; it does not
+Optionally install host logging once through the committed playbook, one host
+at a time (`serial: 1`). This installs a service and configures journald; it does not
 reboot hosts or change VMs. Existing SSH and sudo access are required:
 
 ```sh

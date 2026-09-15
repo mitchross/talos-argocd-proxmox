@@ -32,7 +32,7 @@ The review map for everything directly rendered by the root Application from `in
 | `custom-entrypoints/vertical-pod-autoscaler-observability-app.yaml` | Application | 6 | Optional VPA PodMonitor and alerts after monitoring CRDs exist | No, keeps observability out of core |
 | `custom-entrypoints/temporal-worker-controller-app.yaml` | Application | 4 | Standalone to isolate its render from the AppSet generator | Maybe, if AppSet render stays stable |
 | `custom-entrypoints/strimzi-app.yaml` | Application | 4 | Kafka CRDs/operator must precede wave-6 Kafka resources; standalone destination `kafka` also avoids the infrastructure AppSet's basename→namespace assumption (`strimzi` would be wrong) | No, both ordering and destination namespace are exceptional |
-| `custom-entrypoints/opentelemetry-operator-app.yaml` | Application | 5 | Core operator after cert-manager; ServiceMonitor kept out of core | Maybe, if cert-manager dependency is otherwise enforced |
+| `custom-entrypoints/opentelemetry-operator-app.yaml` | Application | 6 | Optional telemetry alongside workloads; health cannot gate workload discovery | Maybe; preserve its bootstrap independence |
 | `custom-entrypoints/keda-observability-app.yaml` | Application | 6 | Optional KEDA ServiceMonitor resources after monitoring CRDs exist | No, keeps observability out of core |
 | `custom-entrypoints/vpa-system-policies-app.yaml` | Application | 6 | VPA policies for the small set of bootstrap/system workloads without a co-located owner | No, ownership exception is explicit |
 | `custom-entrypoints/opentelemetry-operator-observability-app.yaml` | Application | 6 | Optional OpenTelemetry ServiceMonitor after monitoring CRDs exist | No, keeps observability out of core |
