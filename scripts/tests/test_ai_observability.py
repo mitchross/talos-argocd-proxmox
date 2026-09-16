@@ -107,15 +107,58 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(kimi['maxTokens'], 131_072)
         self.assertEqual(kimi['cost'], {'input': 3, 'output': 15,
                                         'cacheRead': 0.3, 'cacheWrite': 0})
+        auto_provider = providers['vanillax-auto']
+        self.assertEqual(auto_provider['baseUrl'], provider['baseUrl'])
+        self.assertRegex(auto_provider['apiKey'], r'^[$!]')
+        self.assertFalse(auto_provider['compat']['supportsReasoningEffort'])
+        auto_model = auto_provider['models'][0]
+        self.assertEqual(auto_model['id'], 'pi-auto')
+        self.assertEqual(auto_model['contextWindow'], 262144)
+        self.assertEqual(auto_model['maxTokens'], 32768)
+        self.assertEqual(auto_model['cost'], kimi['cost'])
         self.assertIn('CachyOS workstation inventory', guide)
         self.assertIn('@narumitw/pi-subagents` 3.0.1', guide)
         self.assertIn('diff -u ~/.pi/agent/extensions/qwen-sampling.ts', guide)
         self.assertIn('pi-withk3', guide)
-        self.assertIn('--models $QWEN,$K3', guide)
+        self.assertIn('--models $AUTO', guide)
 
         env = (ROOT / 'my-apps/ai/open-webui/open-webui-configmap.env').read_text()
         for name in ['OPENAI_API_BASE_URL', 'OPENAI_API_BASE_URLS']:
             self.assertIn(name + '=http://litellm-service.litellm.svc.cluster.local:4000/v1', env)
+
+    def test_pi_auto_router_keeps_easy_work_local_and_escalates_hard_work(self):
+        config = read('my-apps/ai/litellm/config.yaml')
+        routes = {route['model_name']: route for route in config['model_list']}
+        auto = routes['pi-auto']
+        params = auto['litellm_params']
+        self.assertEqual(params['model'], 'auto_router/complexity_router')
+        self.assertTrue(params['drop_params'])
+        router = params['complexity_router_config']
+        self.assertEqual(router['tiers'], {
+            'SIMPLE': 'qwen3.8-27b',
+            'MEDIUM': 'qwen3.8-27b',
+            'COMPLEX': 'kimi-k3',
+            'REASONING': 'kimi-k3',
+        })
+        self.assertEqual(router['classification_mode'], 'user_turn')
+        self.assertFalse(router['session_affinity'])
+        self.assertFalse(router['return_raw_model_name'])
+        self.assertEqual(params['complexity_router_default_model'], 'qwen3.8-27b')
+        self.assertEqual(auto['model_info'], {
+            'max_input_tokens': 229376,
+            'max_output_tokens': 32768,
+        })
+        self.assertEqual(routes['qwen3.8-27b']['litellm_params']['api_base'],
+                         'http://vllm-service.vllm.svc.cluster.local:8080/v1')
+        self.assertEqual(routes['kimi-k3']['litellm_params']['model'], 'moonshot/kimi-k3')
+        image = container(read('my-apps/ai/litellm/deployment.yaml'))['image']
+        self.assertEqual(image, 'ghcr.io/berriai/litellm:v1.101.0')
+
+        guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
+        self.assertIn('SIMPLE` / `MEDIUM`', guide)
+        self.assertIn('COMPLEX` / `REASONING`', guide)
+        self.assertIn('classification_mode: user_turn', guide)
+        self.assertIn('beta', guide.lower())
 
 
 class AllLLMClientsTests(unittest.TestCase):

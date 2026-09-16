@@ -2,8 +2,9 @@
 
 Current local and external model inventory plus app wiring. Official FP8 was
 verified live on both cards on 2026-09-06. Kimi K3 is a paid Moonshot API route,
-not a second local GPU model. The medium Qwen fallback is the Git-declared
-policy; reverify it after vLLM or client-policy changes. The
+not a second local GPU model. `pi-auto` is a LiteLLM virtual model that chooses
+between those two routes; it is not a third model. The medium Qwen fallback is
+the Git-declared policy; reverify it after vLLM or client-policy changes. The
 [capacity audit](3090-llm-optimization.md) records runtime evidence and limits.
 
 ## Declared GPU ownership
@@ -73,6 +74,27 @@ K3 cannot be switched to non-thinking mode.
 and [pricing page](https://www.kimi.ai/help/kimi-api/api-pricing) own the
 upstream capabilities and prices.
 
+## Pi Auto Router
+
+| Property | Value |
+|---|---|
+| Gateway model | `pi-auto` |
+| LiteLLM implementation | beta `auto_router/complexity_router` in pinned `v1.101.0` |
+| Local tiers | `SIMPLE`, `MEDIUM` → `qwen3.8-27b` |
+| Paid tiers | `COMPLEX`, `REASONING` → `kimi-k3` |
+| Empty/default route | `qwen3.8-27b` |
+| Classification boundary | each new human turn; continuation/tool calls keep that turn's model |
+| Session pin | off; a later human turn may select the other backend |
+| Advertised limits | 229,376 input plus 32,768 output; Pi uses a 262,144-token total window |
+
+The built-in heuristic adds no classifier model call. One request is served by
+one backend; this is complexity selection, not response splitting or a
+Qwen-to-Kimi failure fallback. A complex or reasoning turn sends the full
+submitted context to Moonshot and incurs Kimi cost. The forced `qwen3.8-27b`
+and `kimi-k3` routes remain available when automatic selection is inappropriate.
+[LiteLLM Auto Routing](https://docs.litellm.ai/docs/proxy/auto_routing) documents
+the beta classifier and decision metadata.
+
 ## Storage and staging
 
 A Git-pinned manifest records revision, size and SHA-256 for all 77 checkpoint
@@ -88,7 +110,7 @@ inspect hooks, health, vision, tools, reasoning and long-context behavior.
 
 ## App wiring
 
-- gateway models: local `qwen3.8-27b` and external `kimi-k3`
+- gateway models: local `qwen3.8-27b`, external `kimi-k3`, and virtual `pi-auto`
 - application gateway: `http://litellm-service.litellm.svc.cluster.local:4000/v1`
 - workstation gateway: `https://litellm.vanillax.me/v1`
 - authentication: namespace-local ExternalSecret from `litellm/master_key`
@@ -111,18 +133,19 @@ bypass gateway telemetry and must not be mistaken for application traffic.
 ## Pi.dev
 
 Pi defaults to `vanillax-vllm/qwen3.8-27b` through
-`https://litellm.vanillax.me/v1`. `pik` creates a Kimi-only session;
-`pi-withk3` starts on Qwen and scopes both models for Ctrl+P switching. The same
-repo-owned extension supplies session metadata to both providers but rewrites
-sampling only for Qwen. Open WebUI and the other Git-declared apps continue to
-use local Qwen unless their model is explicitly changed.
+`https://litellm.vanillax.me/v1`. `pik` creates a forced Kimi-only session;
+`pi-withk3` requests `vanillax-auto/pi-auto`, allowing LiteLLM to select Qwen or
+Kimi per human turn. The same repo-owned extension supplies session metadata to
+all Pi providers but rewrites sampling only for direct Qwen requests. Open
+WebUI and the other Git-declared apps continue to use local Qwen unless their
+model is explicitly changed.
 
-Both Pi routes collect LiteLLM metrics and Langfuse AI observations; direct
+All three Pi routes collect LiteLLM metrics and Langfuse AI observations; direct
 vLLM callers bypass that gateway. See [AI observability](ai-observability.md)
 for verification and fallback. The [workstation guide](pi-agent-local-dev.md)
-owns both provider blocks, launchers, model-switch boundary, Qwen reasoning and
-sampling, compaction, validation, and rollback. Start a new session when the
-new backend should not inherit the old model's conversation.
+owns the three provider blocks, launchers, automatic-routing boundary, Qwen
+reasoning and sampling, compaction, validation, and rollback. Start a new
+session when a possible Kimi turn should not inherit local-only conversation.
 
 ## Rollback
 

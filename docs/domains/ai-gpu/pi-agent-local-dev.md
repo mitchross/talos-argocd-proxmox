@@ -7,10 +7,12 @@ workstation; cluster changes still go through Git and ArgoCD.
 
 Bare `pi` and `pi-qwen-only` use the self-hosted
 **`vanillax-vllm/qwen3.8-27b`** path by default. `pik` selects paid, cloud-hosted
-**`vanillax-litellm/kimi-k3`** only. `pi-withk3` starts on local Qwen and scopes
-both models so Ctrl+P can swap between them without leaving the Pi session.
-Both paths enter the authenticated LiteLLM gateway and share Langfuse session
-tracing, but only Qwen is served by this cluster's vLLM and RTX 3090s.
+**`vanillax-litellm/kimi-k3`** only. `pi-withk3` selects the
+**`vanillax-auto/pi-auto`** virtual model: LiteLLM automatically keeps
+`SIMPLE` / `MEDIUM` work on local Qwen and sends `COMPLEX` / `REASONING` work
+to Kimi K3. All paths enter the authenticated LiteLLM gateway and share
+Langfuse session tracing, but only Qwen is served by this cluster's vLLM and
+RTX 3090s.
 
 ## CachyOS workstation inventory
 
@@ -28,13 +30,14 @@ manifests:
 | Request hook | `~/.pi/agent/extensions/qwen-sampling.ts` |
 | Subagents | `@narumitw/pi-subagents` 3.0.1 |
 
-The scan found three local drift items. The installed Kimi display name still
+The scan found four local drift items. The installed Kimi display name still
 says "logged to PostHog" even though LiteLLM now exports to Langfuse; the JSON
 below supplies the corrected label. Workstation `AGENTS.md` says
-`pi-withk3` runs Kimi, but the actual alias starts on Qwen and merely makes Kimi
-available through Ctrl+P; use the launcher table below as current truth. The
-installed sampler also predates the repo's thinking penalty change and still
-uses `repetition_penalty=1.0` in both modes. Recopy the extension and reload Pi
+`pi-withk3` runs Kimi, while the audited alias starts on Qwen and merely makes
+Kimi available through Ctrl+P. It must be replaced with the auto-router alias
+below after the `pi-auto` gateway route is merged and healthy. The installed
+sampler also predates the repo's thinking penalty change and still uses
+`repetition_penalty=1.0` in both modes. Recopy the extension and reload Pi
 before claiming that the workstation uses the repo-declared 1.05 thinking
 policy.
 
@@ -42,7 +45,7 @@ policy.
 
 Back up `~/.pi/agent/models.json`, `settings.json`, and `AGENTS.md` before editing.
 Merge these providers into `models.json`; do not overwrite other providers or
-credentials. Both are custom `models.json` providers, so `/login` cannot
+credentials. All three are custom `models.json` providers, so `/login` cannot
 configure them -- that picker offers only Pi's built-in providers, and custom
 provider IDs never appear in the list. Supply the shared LiteLLM key from
 1Password (`homelab-prod/litellm/master_key`) through the provider's `apiKey`
@@ -127,6 +130,42 @@ credentials out of Git.
           }
         }
       ]
+    },
+    "vanillax-auto": {
+      "baseUrl": "https://litellm.vanillax.me/v1",
+      "api": "openai-completions",
+      "apiKey": "$LITELLM_API_KEY",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "supportsUsageInStreaming": true,
+        "maxTokensField": "max_tokens"
+      },
+      "models": [
+        {
+          "id": "pi-auto",
+          "name": "Pi Auto (LiteLLM: local Qwen or Kimi K3)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": null,
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cacheRead": 0.3,
+            "cacheWrite": 0
+          }
+        }
+      ]
     }
   }
 }
@@ -169,14 +208,56 @@ through LiteLLM. Do not interpret Pi's status-bar level as proof of the upstream
 K3 effort, and do not try to switch K3 thinking off. Capture the serialized
 request before documenting or depending on an effort override.
 
+## Automatic Qwen / Kimi routing
+
+`pi-auto` is a LiteLLM complexity-router alias, not a third inference backend.
+The deployed LiteLLM `v1.101.0` policy is:
+
+| Classified tier | Selected gateway model | Actual compute |
+|---|---|---|
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b` | local vLLM on the two RTX 3090s |
+| `COMPLEX`, `REASONING` | `kimi-k3` | paid Moonshot API |
+| no classifiable human ask / classifier default | `qwen3.8-27b` | local vLLM on the two RTX 3090s |
+
+The built-in heuristic classifier adds no model call. With
+`classification_mode: user_turn`, LiteLLM classifies each new human ask and
+carries that decision through the assistant/tool continuation requests for that
+turn. `session_affinity` remains false, so the next human ask can select the
+other backend. This is automatic model selection, not load balancing: one
+completion goes to one backend and is never split across Qwen and Kimi.
+
+The router is a beta LiteLLM feature. Its decision is policy, not a guarantee
+of task quality or privacy: any ask classified `COMPLEX` or `REASONING`, plus
+the conversation context and tool schema sent with it, leaves the cluster and
+incurs Kimi charges. Use `pi` or `pi-qwen-only` when content must remain local,
+and `pik` when Kimi must be forced. Check LiteLLM's `ComplexityRouter` decision
+log or Langfuse `routing_decision` metadata to see the chosen model; Pi continues
+to display the `pi-auto` alias. The Pi entry deliberately reports the safe
+shared 262,144-token total context and 32,768-token output limits; LiteLLM
+advertises 229,376 maximum input tokens so that full output allowance still
+fits inside Qwen's window.
+[LiteLLM Auto Routing](https://docs.litellm.ai/docs/proxy/auto_routing) owns the
+beta behavior and configuration contract.
+
+Pi cannot price two possible upstreams in one static model entry. The
+`vanillax-auto/pi-auto` entry therefore shows Kimi's rates as a conservative
+upper bound; local-Qwen turns will look paid in Pi even though their actual API
+cost is zero. LiteLLM and Langfuse are authoritative for routed model and
+actual request cost. The auto provider suppresses a client
+`reasoning_effort`: Qwen uses the server's fixed medium default and K3 uses its
+upstream default. The single exposed Pi level is descriptive, not an override
+of either backend.
+
 Requests pass through LiteLLM for Prometheus metrics and Langfuse AI analytics.
-The repo-owned extension attaches Pi's session ID and a `pi` tag to both
-providers, so a Ctrl+P swap in `pi-withk3` stays grouped in one Langfuse session.
-Its Qwen sampling rewrite applies only to `vanillax-vllm/qwen3.8-27b`; it leaves
-Kimi sampling untouched. Explicit caller metadata takes precedence. Local tool
-execution needs separate instrumentation; the gateway records model requests
-and returned tool calls. Keep both provider IDs stable: the Qwen name gates the
-sampler, and the Kimi name is referenced by the workstation launchers.
+The repo-owned extension attaches Pi's session ID and a `pi` tag to all three
+providers, so both branches of `pi-auto` stay grouped in one Langfuse session.
+Its Qwen sampling rewrite applies only to direct
+`vanillax-vllm/qwen3.8-27b` requests; auto-routed Qwen uses the matching server
+default, while LiteLLM drops unsupported sampling parameters before Kimi.
+Explicit caller metadata takes precedence. Local tool execution needs separate
+instrumentation; the gateway records model requests and returned tool calls.
+Keep all provider and model IDs stable: the Qwen name gates the direct sampler,
+and the three model names are referenced by LiteLLM or the workstation launchers.
 [Telemetry verification and direct-access fallback](ai-observability.md) explains
 how to confirm actual event storage; successful inference alone is insufficient.
 
@@ -230,17 +311,18 @@ the saved default.
 
 ## Workstation launchers and model switching
 
-The workstation keeps three launchers in `~/.zshrc`:
+After `pi-auto` is healthy in LiteLLM, keep these three launchers in `~/.zshrc`:
 
 ```bash
 # Provider name is load-bearing: scripts/pi/qwen-sampling.ts only fires on
 # vanillax-vllm, so a renamed provider silently drops Qwen's sampler.
 QWEN=vanillax-vllm/qwen3.8-27b
 K3=vanillax-litellm/kimi-k3
+AUTO=vanillax-auto/pi-auto
 alias pi-qwen-only="pi --model $QWEN --thinking medium --models $QWEN"
 alias pik="pi --model $K3 --models $K3"
-alias pi-withk3="pi --model $QWEN --thinking medium --models $QWEN,$K3"
-unset QWEN K3
+alias pi-withk3="pi --model $AUTO --thinking medium --models $AUTO"
+unset QWEN K3 AUTO
 ```
 
 | Launcher | Starts on | Ctrl+P scope | Use it for |
@@ -248,23 +330,26 @@ unset QWEN K3
 | `pi` | local Qwen, medium | local Qwen only | normal, private, zero-API-cost work |
 | `pi-qwen-only` | local Qwen, medium | local Qwen only | an explicit clean local session |
 | `pik` | Kimi K3 | Kimi K3 only | a deliberate paid-cloud K3 session |
-| `pi-withk3` | local Qwen, medium | Qwen and Kimi K3 | start local, then switch only when the task benefits from K3 |
+| `pi-withk3` | `pi-auto` | `pi-auto` only | let LiteLLM select local Qwen or paid Kimi for each human turn |
 
-`pi-withk3` does **not** start on Kimi. Press Ctrl+P to switch to K3 and back;
-the Pi session ID and Langfuse grouping stay the same across the swap. Model
-context and token accounting change to the selected model. Use `/new` when the
-new backend should not inherit the prior model's conversation or sensitive
-content.
+`pi-withk3` no longer uses Ctrl+P to choose the backend. Pi always requests
+`pi-auto`; LiteLLM chooses Qwen or Kimi behind that stable alias. Use the
+separate `pi-qwen-only` or `pik` launcher to override the policy. Because a
+later human turn can move the same session from Qwen to Kimi, start `/new`
+before a cloud-eligible task when the previous local conversation contains
+sensitive content that must not be forwarded.
 
 ## Subagents and Kimi second opinions
 
 The installed `@narumitw/pi-subagents` 3.0.1 package makes children inherit the
 current session's provider and model. There is no separate per-job model catalog.
-Spawning while Qwen is selected creates Qwen children; spawning after a Ctrl+P
-switch to Kimi creates paid Kimi children. Keep Kimi fanout bounded and explicit.
+Under `pi-withk3`, children inherit `vanillax-auto/pi-auto`, and LiteLLM
+classifies their human asks with the same policy. One fanout can therefore
+produce a mixture of local and paid requests. Keep auto-routed fanout bounded
+and verify its decisions in Langfuse.
 
-Use `pik` for an isolated Kimi second opinion. Use `pi-withk3` when one session
-must retain history while moving between local Qwen and Kimi. The workstation
+Use `pik` for an isolated, forced Kimi second opinion. Use `pi-withk3` when
+LiteLLM should choose between local Qwen and Kimi automatically. The workstation
 `AGENTS.md` guidance should describe that distinction instead of saying that
 `pi-withk3` starts on Kimi. Subagents are for independent, bounded work that
 benefits from a separate context; they are not a reason to multiply paid Kimi
@@ -349,18 +434,22 @@ Restart an existing Pi process after changing provider metadata or launchers.
 pi --version
 pi --list-models qwen3.8-27b
 pi --list-models kimi-k3
+pi --list-models pi-auto
 pi --provider vanillax-vllm --model qwen3.8-27b --thinking medium
+pi --provider vanillax-auto --model pi-auto --thinking medium
 type pi-qwen-only
 type pik
 type pi-withk3
 ```
 
 Expected: Qwen reports roughly 262K context and 32K output; Kimi reports 1M
-context and roughly 131K output. Both report thinking and image support. The
-three aliases must expand to the provider/model and `--models` scopes shown
-above. Start normally with `pi`; use `pik` or `pi-withk3` only when cloud
-processing and Kimi's API cost are acceptable. Use `/model` to reload model
-metadata; Qwen exposes low, medium, xhigh and off explicitly.
+context and roughly 131K output; `pi-auto` reports the safe 262K/32K
+intersection. All report thinking and image support. The three aliases must
+expand to the provider/model and `--models` scopes shown above. Start normally
+with `pi`; use `pik` or `pi-withk3` only when cloud processing and Kimi's API
+cost are acceptable. Use `/model` to reload model metadata; direct Qwen exposes
+low, medium, xhigh and off explicitly, while `pi-auto` exposes only its fixed
+medium label.
 
 For an isolated smoke request from the repo root:
 
@@ -391,14 +480,17 @@ returned 1591 with separate reasoning and streaming token counts. Those checks
 validate plumbing, not agent task quality.
 
 A Kimi generation is deliberately absent from the automatic smoke test because
-it is paid external work. When intentionally testing `pik`, use synthetic
-content, confirm the response model is `kimi-k3`, then verify its generation in
-Langfuse. Stop if Pi reports an invalid `reasoning_effort`; the current guide
-does not promise K3 effort remapping.
+it is paid external work. After rollout, first use LiteLLM's Auto Router test UI
+to check simple and complex classification without dispatching the selected
+model. When intentionally testing `pik` or a Kimi-classified `pi-withk3` turn,
+use synthetic content, then verify `routing_decision.routed_model=kimi-k3` and
+the generation in Langfuse. Stop if Pi reports an invalid `reasoning_effort`;
+the current guide does not promise K3 effort remapping.
 
 To roll back workstation changes, restore the backed-up JSON/AGENTS files and
 remove the newly installed sampler extension (or restore its previous copy),
 then restart Pi. No Kubernetes rollback is needed for workstation files.
-Removing only the Kimi provider and its two Kimi-capable aliases leaves the
-local Qwen path intact. For server-policy rollback, revert the reasoning-policy
-commit through Git.
+Removing the Kimi and auto providers plus their two Kimi-capable aliases leaves
+the local Qwen path intact. Reverting the `pi-auto` LiteLLM route and restoring
+the old manual `pi-withk3` alias returns selection to Ctrl+P. For server-policy
+rollback, revert the reasoning-policy commit through Git.
