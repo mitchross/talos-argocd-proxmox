@@ -4,7 +4,7 @@ namespace: langfuse
 helmCharts:
 - name: langfuse
   repo: https://langfuse.github.io/langfuse-k8s
-  version: 2.1.0
+  version: 2.1.1
   releaseName: langfuse
   namespace: langfuse
   valuesFile: values.yaml
