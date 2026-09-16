@@ -25,7 +25,7 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: beat
-          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          image: ghcr.io/modsetter/surfsense-backend:0.0.40
           envFrom:
             - configMapRef:
                 name: surfsense-selfhost-policy

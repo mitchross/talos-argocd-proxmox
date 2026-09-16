@@ -29,7 +29,7 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: api
-          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          image: ghcr.io/modsetter/surfsense-backend:0.0.40
           ports:
             - name: http
               containerPort: 8000
@@ -76,7 +76,7 @@ spec:
             - {name: shared-temp, mountPath: /shared_tmp}
             - {name: global-llm-config, mountPath: /app/app/config/global_llm_config.yaml, subPath: global_llm_config.yaml, readOnly: true}
         - name: worker
-          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          image: ghcr.io/modsetter/surfsense-backend:0.0.40
           envFrom:
             - configMapRef:
                 name: surfsense-selfhost-policy

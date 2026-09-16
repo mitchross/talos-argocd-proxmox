@@ -18,7 +18,7 @@ spec:
           command: [sh, -c, 'until nc -z db 5432; do sleep 2; done']
       containers:
         - name: migrations
-          image: ghcr.io/modsetter/surfsense-backend:0.0.39
+          image: ghcr.io/modsetter/surfsense-backend:0.0.40
           envFrom:
             - configMapRef:
                 name: surfsense-selfhost-policy
