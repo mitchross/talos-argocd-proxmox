@@ -107,6 +107,9 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(kimi['maxTokens'], 131_072)
         self.assertEqual(kimi['cost'], {'input': 3, 'output': 15,
                                         'cacheRead': 0.3, 'cacheWrite': 0})
+        self.assertIn('CachyOS workstation inventory', guide)
+        self.assertIn('@narumitw/pi-subagents` 3.0.1', guide)
+        self.assertIn('diff -u ~/.pi/agent/extensions/qwen-sampling.ts', guide)
         self.assertIn('pi-withk3', guide)
         self.assertIn('--models $QWEN,$K3', guide)
 
