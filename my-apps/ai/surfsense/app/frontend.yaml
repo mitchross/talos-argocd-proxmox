@@ -25,7 +25,7 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: frontend
-          image: ghcr.io/modsetter/surfsense-web:0.0.39
+          image: ghcr.io/modsetter/surfsense-web:0.0.40
           ports:
             - name: http
               containerPort: 3000
