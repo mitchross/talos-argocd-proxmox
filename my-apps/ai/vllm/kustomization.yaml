@@ -17,7 +17,7 @@ resources:
   - httproute.yaml
   - servicemonitor.yaml
 
-# vLLM owns both cards; the retained llama.cpp Deployment stays parked.
+# vLLM owns both RTX 3090s; it is the only GPU inference backend.
 replicas:
   - name: vllm-server
     count: 1

@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"    # after the wave-0 cache-sync hook
 spec:
-  # Both cards belong to this server; llama.cpp is the parked rollback.
+  # Both cards belong to this server; no other GPU workload may run alongside it.
   replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
@@ -181,7 +181,7 @@ spec:
           volumeMounts:
             - name: models
               mountPath: /models
-              subPath: vllm          # shares the NVMe volume with llama-cpp's GGUF tree
+              subPath: vllm          # weights live under /vllm on the shared NVMe volume
               readOnly: true
             - name: dshm
               mountPath: /dev/shm        # kept: torch still uses it; default 64Mi is too small

@@ -16,16 +16,16 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
   thinking sampler; do not globally disable preserved thinking.
 - Application URL: `http://litellm-service.litellm.svc.cluster.local:4000/v1`; authenticate with an ExternalSecret from `litellm/master_key`.
 - Direct diagnostic / gateway upstream URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`.
-- Existing `llama-cpp-service` URLs alias vLLM. Both LAN hostnames route to the
-  vLLM selector Service, not an ExternalName backend.
+- Both LAN hostnames (`vllm.vanillax.me`, `llama.vanillax.me`) route to the vLLM
+  selector Service.
 - Live capacity and client guidance: `docs/domains/ai-gpu/3090-llm-optimization.md`.
   A configured ceiling is not proof of concurrent near-ceiling vision capacity.
-- llama.cpp is the parked GGUF rollback. AutoRound is a later speed A/B only.
+- AutoRound is a later speed A/B only.
 
 ## GPU Topology
 
 Whole-card allocations, time-slicing disabled, `Recreate` strategy. vLLM
-requests both RTX 3090s; llama.cpp, ComfyUI and SwarmUI remain at zero replicas.
+requests both RTX 3090s; ComfyUI and SwarmUI remain at zero replicas.
 Use committed replica counts and the
 [scale-swap runbook](../../../docs/domains/ai-gpu/gpu-scale-swap.md).
 

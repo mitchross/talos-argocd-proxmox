@@ -3,7 +3,7 @@ kind: PriorityClass
 metadata:
   name: gpu-workload-high
   annotations:
-    description: "High priority for primary AI workloads (llama-cpp)"
+    description: "High priority for primary AI workloads (vLLM)"
 value: 1000
 globalDefault: false
 ---
@@ -21,7 +21,7 @@ kind: PriorityClass
 metadata:
   name: gpu-workload-preemptible
   annotations:
-    description: "Low priority for secondary AI workloads (ComfyUI) - preempted by llama-cpp"
+    description: "Low priority for secondary AI workloads (ComfyUI) - preempted by vLLM"
 value: 50
 globalDefault: false
 preemptionPolicy: PreemptLowerPriority

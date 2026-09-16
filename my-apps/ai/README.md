@@ -9,8 +9,8 @@ Low is available for lighter work, xhigh is opt-in, and explicit off requests
 use their separate sampler. See [the vLLM runbook](vllm/README.md) for the
 canonical runtime, source references and reasoning acceptance checks.
 
-llama.cpp, ComfyUI and SwarmUI are parked while vLLM owns both cards. The API
-model stays `qwen3.8-27b`; existing llama.cpp service URLs alias vLLM.
+ComfyUI and SwarmUI are parked while vLLM owns both cards. The API model is
+`qwen3.8-27b`.
 
 For coding, follow the [Pi.dev setup guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md).
 The [dual-3090 capacity audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
@@ -193,7 +193,7 @@ The job downloads (skips existing):
 | `K8S_FLAG` | `True` | Kubernetes-specific optimizations |
 | `THREAD_POOL_SIZE` | `500` | Default 40 causes freezes under load |
 | `CHAT_RESPONSE_STREAM_DELTA_CHUNK_SIZE` | `5` | Batch 5 tokens per SSE push -- less overhead |
-| `MODELS_CACHE_TTL` | `300` | Cache model list 5 min -- stops hammering llama-server |
+| `MODELS_CACHE_TTL` | `300` | Cache model list 5 min -- stops hammering the backend |
 | `ENABLE_BASE_MODELS_CACHE` | `False` | Avoid retaining a stale model catalog during the evaluation |
 | `AIOHTTP_CLIENT_TIMEOUT` | `1800` | 30 min to match HTTPRoute timeout |
 | `ENABLE_AUTOCOMPLETE_GENERATION` | `False` | Was firing on every keystroke -- high load, low value |
@@ -226,8 +226,7 @@ IMAGE_STEPS: 9  (Z-Image-Turbo optimal)
 
 | Service | Internal URL | External URL |
 |---------|-------------|-------------|
-| vLLM (default LLM backend) | `vllm-service.vllm.svc:8080` | `vllm.vanillax.me` |
-| vLLM compatibility alias | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me` |
+| vLLM (LLM backend) | `vllm-service.vllm.svc:8080` | `vllm.vanillax.me`, `llama.vanillax.me` |
 | Open WebUI | `open-webui-service.open-webui.svc:8080` | `open-webui.vanillax.me` |
 | ComfyUI | `comfyui-service.comfyui.svc:8188` | `comfyui.vanillax.me` |
 | SearXNG | `searxng.searxng.svc:8080` | -- |
@@ -238,7 +237,7 @@ All routes use `gateway-internal` (Cilium Gateway API). LLM and Open WebUI route
 
 | Service | Type | Size | Path |
 |---------|------|------|------|
-| llama-cpp | NFS (static PV, CSI) | 150Gi | `192.168.10.133:/mnt/ai-pool/llama-cpp` |
+| vLLM | NFS (static PV, CSI) | 1Ti | `192.168.10.133:/mnt/ai-pool/vllm` |
 | ComfyUI | NFS (static PV, CSI) | 250Gi | `192.168.10.133:/mnt/BigTank/k8s/comfyui` |
 | Open WebUI | Longhorn | 10Gi | Dynamic PVC |
 
