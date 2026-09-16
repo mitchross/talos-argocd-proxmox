@@ -12,6 +12,32 @@ both models so Ctrl+P can swap between them without leaving the Pi session.
 Both paths enter the authenticated LiteLLM gateway and share Langfuse session
 tracing, but only Qwen is served by this cluster's vLLM and RTX 3090s.
 
+## CachyOS workstation inventory
+
+The 2026-09-16 audit inspected `vanillax-gaming-linux`, not only the GitOps
+manifests:
+
+| Item | Current workstation state |
+|---|---|
+| OS | CachyOS rolling release, Arch-based |
+| Pi | 0.85.1 under `mise`'s Node 24.14.1 installation |
+| Launchers | interactive zsh aliases in `~/.zshrc`; no Pi user systemd service |
+| Providers | `~/.pi/agent/models.json` |
+| Defaults and Ctrl+P scope | `~/.pi/agent/settings.json` |
+| Workstation instructions | `~/.pi/agent/AGENTS.md` |
+| Request hook | `~/.pi/agent/extensions/qwen-sampling.ts` |
+| Subagents | `@narumitw/pi-subagents` 3.0.1 |
+
+The scan found three local drift items. The installed Kimi display name still
+says "logged to PostHog" even though LiteLLM now exports to Langfuse; the JSON
+below supplies the corrected label. Workstation `AGENTS.md` says
+`pi-withk3` runs Kimi, but the actual alias starts on Qwen and merely makes Kimi
+available through Ctrl+P; use the launcher table below as current truth. The
+installed sampler also predates the repo's thinking penalty change and still
+uses `repetition_penalty=1.0` in both modes. Recopy the extension and reload Pi
+before claiming that the workstation uses the repo-declared 1.05 thinking
+policy.
+
 ## Provider configuration
 
 Back up `~/.pi/agent/models.json`, `settings.json`, and `AGENTS.md` before editing.
@@ -230,6 +256,20 @@ context and token accounting change to the selected model. Use `/new` when the
 new backend should not inherit the prior model's conversation or sensitive
 content.
 
+## Subagents and Kimi second opinions
+
+The installed `@narumitw/pi-subagents` 3.0.1 package makes children inherit the
+current session's provider and model. There is no separate per-job model catalog.
+Spawning while Qwen is selected creates Qwen children; spawning after a Ctrl+P
+switch to Kimi creates paid Kimi children. Keep Kimi fanout bounded and explicit.
+
+Use `pik` for an isolated Kimi second opinion. Use `pi-withk3` when one session
+must retain history while moving between local Qwen and Kimi. The workstation
+`AGENTS.md` guidance should describe that distinction instead of saying that
+`pi-withk3` starts on Kimi. Subagents are for independent, bounded work that
+benefits from a separate context; they are not a reason to multiply paid Kimi
+requests.
+
 Two GPU cards do not mean two independent model servers. The live shared pool
 holds about 325K tokens; two simultaneous 262K sessions do not fit. Use one
 long coding session near the ceiling. A second light request can share the
@@ -262,6 +302,16 @@ After pulling a sampler update, repeat the copy above and `/reload`: Git/Argo
 cannot update an already installed workstation copy. Without this extension,
 Pi off still disables reasoning, but needs
 another per-request sampler override to match Qwen's recommendation.
+
+On CachyOS, confirm the installed copy matches the repository after copying:
+
+```bash
+diff -u ~/.pi/agent/extensions/qwen-sampling.ts scripts/pi/qwen-sampling.ts
+```
+
+Expected: no output. The 2026-09-16 audit produced a one-line difference until
+the copy step: the installed hook used `1.0`, while the repository uses `1.05`
+for thinking and `1.0` for off.
 [Pi request hook](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md#before_provider_request),
 [canonical server policy and API examples](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#explicit-reasoning-and-sampling).
 
