@@ -12,12 +12,14 @@ validation is not proof of live trace ingestion.
 | Prometheus / Grafana | Request failures, latency, throughput, vLLM KV capacity/preemptions and GPU utilization |
 | PostHog | Product events, funnels, feature flags and browser session replay |
 
-Local-model traffic uses **LiteLLM → vLLM**. Pi can also select paid Kimi K3,
-which follows **Pi → LiteLLM → Moonshot** and does not touch the local GPUs.
-LiteLLM exports observations from both routes to self-hosted Langfuse using
-`langfuse_otel`, alongside its `prometheus` callback. PostHog's AI callbacks are
-removed; its deployment and existing data remain. Historical PostHog AI
-events/Kafka backlog are not imported into Langfuse.
+Local-model traffic uses **LiteLLM → vLLM**. Pi can force paid Kimi K3, which
+follows **Pi → LiteLLM → Moonshot** and does not touch the local GPUs. Its
+`pi-auto` virtual model also lets LiteLLM classify each new human turn: lower
+tiers use local Qwen, while `COMPLEX` and `REASONING` use Kimi. LiteLLM exports
+observations and routing-decision metadata from both upstreams to self-hosted
+Langfuse using `langfuse_otel`, alongside its `prometheus` callback. PostHog's
+AI callbacks are removed; its deployment and existing data remain. Historical
+PostHog AI events/Kafka backlog are not imported into Langfuse.
 
 All Git-declared local LLM clients now target LiteLLM, including parked clients:
 
@@ -44,10 +46,12 @@ embedding service remains separate; Karakeep's automatic vector indexing stays
 off. The migration covers local language-model requests, not every media or
 embedding service. Direct vLLM endpoints remain for gateway upstream traffic and
 explicit diagnostics. The Git-declared `kimi-k3` route is the external-model
-exception: Pi opts into it explicitly, prompts leave the cluster, and Moonshot
+exception: Pi opts into it directly with `pik` or into its beta complexity
+policy with `pi-withk3`; prompts routed there leave the cluster and Moonshot
 bills the request. Other operator-created cloud providers remain separate from
-these Git-declared defaults. No application silently falls back from local Qwen
-to Kimi.
+these Git-declared defaults. No application uses Kimi as a failure fallback:
+`pi-auto` is an explicit model whose classifier deliberately chooses an
+upstream before dispatch.
 
 A gateway observes model calls and tool-call responses. It does not automatically
 observe local tool execution, file changes, or every internal agent step. Use
@@ -62,6 +66,7 @@ not enable paid judges or background model calls.
 |---|---|---|
 | Pi → local Qwen | `https://litellm.vanillax.me/v1` | LiteLLM key from workstation environment / `models.json` |
 | Pi → Kimi K3 | `https://litellm.vanillax.me/v1` | Same LiteLLM key; gateway uses `MOONSHOT_API_KEY` upstream |
+| Pi → `pi-auto` | `https://litellm.vanillax.me/v1` | Same LiteLLM key; classifier selects one of the two rows above |
 | Open WebUI | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | `open-webui-litellm` ExternalSecret |
 | LiteLLM → Qwen | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | Existing local placeholder |
 | LiteLLM → Kimi | Moonshot API | `litellm-secrets` ExternalSecret |
@@ -99,11 +104,11 @@ Use synthetic input when verifying ingestion and set retention deliberately in
 the project settings before collecting large volumes of real conversations.
 
 The [Pi guide](pi-agent-local-dev.md) remains authoritative for the local-only,
-Kimi-only and dual-model launchers; Ctrl+P switching; Qwen's medium default,
-explicit off/low/medium/xhigh, sampler and compaction; and Kimi's paid-cloud
-boundary. The local model, FP8 weights/KV, TP=2, native vision, 262,144-token
-ceiling and disabled MTP remain unchanged. The gateway smoke test is not
-another full-context endurance test and does not spend money on Kimi.
+Kimi-only and auto-routed launchers; Qwen's medium default, explicit
+off/low/medium/xhigh, sampler and compaction; and Kimi's paid-cloud boundary.
+The local model, FP8 weights/KV, TP=2, native vision, 262,144-token ceiling and
+disabled MTP remain unchanged. The gateway smoke test is not another
+full-context endurance test and does not spend money on Kimi.
 
 ## Deployment and persistence
 

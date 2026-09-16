@@ -18,6 +18,27 @@ model_list:
       # Set explicitly since the model may be too new for LiteLLM's built-in cost map.
       input_cost_per_token: 0.000003
       output_cost_per_token: 0.000015
+  - model_name: pi-auto
+    litellm_params:
+      model: auto_router/complexity_router
+      drop_params: true
+      complexity_router_config:
+        # Keep ordinary Pi work local; send only the two higher complexity
+        # tiers to the paid Kimi route.
+        tiers:
+          SIMPLE: qwen3.8-27b
+          MEDIUM: qwen3.8-27b
+          COMPLEX: kimi-k3
+          REASONING: kimi-k3
+        # Reclassify each human ask, but keep one model through its tool loop.
+        classification_mode: user_turn
+        session_affinity: false
+        return_raw_model_name: false
+      complexity_router_default_model: qwen3.8-27b
+    model_info:
+      # Reserve the 32K output allowance inside Qwen's 262K total window.
+      max_input_tokens: 229376
+      max_output_tokens: 32768
 
 litellm_settings:
   callbacks: ["prometheus", "langfuse_otel"]
