@@ -22,7 +22,7 @@ spec:
       - operator: Exists
       containers:
       - name: intel-gpu-plugin
-        image: intel/intel-gpu-plugin:0.36.0@sha256:2db679be62b52ac985169084ca711cab6e6c59fe543ab2ddee58163d6f8d29e0
+        image: intel/intel-gpu-plugin:0.37.0@sha256:7001200071db10587fc31184eedda4f5cf291efba737adf85a8c80539f7fa5e1
         # One physical iGPU advertised as 4 slots so Jellyfin QSV and Immich OpenVINO can share it.
         args:
         - -shared-dev-num
