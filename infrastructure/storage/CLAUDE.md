@@ -8,7 +8,6 @@
 | `longhorn-wired-ha` | Opt-in two-replica V1 RWO storage across distinct trusted wired nodes/zones. Use only after at least two Longhorn nodes carry the `wired-storage` node tag; provisioning deliberately fails before that prerequisite. Availability-critical small databases/state, always paired with kopiur. Existing PVCs do not migrate when their StorageClass changes. |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
-| `nfs-llama-cpp-10g` | NFS 10G for LLM models |
 | `smb-csi` | Windows shares |
 | `local-path` | Node-local fast storage |
 

@@ -10,7 +10,6 @@ verify it after the reasoning-policy PR reconciles. The
 | Backend | Replicas | Cards per pod | Served model | Status |
 |---|---:|---:|---|---|
 | vLLM | `1` | **2** | `qwen3.8-27b` | Official FP8 production |
-| llama.cpp | `0` | 1 | `qwen3.8-27b` | Retained GGUF rollback |
 | NInfer | `0` | 1 | `qwen3.8-ninfer` | Parked evaluation |
 | ComfyUI / SwarmUI | `0` | 1 | Image generation | Parked |
 
@@ -78,8 +77,8 @@ appends `/v1/completions` itself, so its configured gateway URL omits `/v1`.
 The [observability runbook](ai-observability.md) covers authentication,
 persisted settings, ingestion verification and rollback.
 
-The legacy llama.cpp Service still aliases vLLM, and `llama.vanillax.me` /
-`vllm.vanillax.me` remain direct diagnostic routes. Applications must use the
+`llama.vanillax.me` and `vllm.vanillax.me` are direct diagnostic routes onto the
+same vLLM Service. Applications must use the
 authenticated gateway to appear in Langfuse. Direct benchmark probes intentionally
 bypass gateway telemetry and must not be mistaken for application traffic.
 
@@ -94,16 +93,8 @@ medium reasoning mapping, mode-specific sampler extension, compaction reserve,
 one-image history limit, validation, and rollback. Existing cloud providers
 remain separate. Start a new session when validating changed defaults.
 
-## Historical llama.cpp baseline — 2026-09-03
-
-Normal Open WebUI responses measured about **42-43 generated tok/s**. While
-generating, the single RTX 3090 reported approximately **22,740 MiB / 24,576
-MiB VRAM**, **87% GPU utilization**, and **216 W / 220 W**. These are
-real-machine observations on the Threadripper 2950X host, not synthetic maxima.
-
 ## Rollback
 
-Revert the FP8 cutover commit through Git, retaining the earlier two-GPU
-hardware change. This restores llama.cpp's replica, selector Service and
-route, and parks vLLM. Follow the canonical vLLM runbook for verification.
-The retained caches avoid another large download.
+vLLM is the only GPU inference backend. Revert the offending commit through Git
+and let the staging hooks re-run against the retained cache; follow the canonical
+vLLM runbook for verification.

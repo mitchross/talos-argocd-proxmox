@@ -15,7 +15,7 @@ BACKEND = re.compile(r'https?://(?:vllm-service(?:\.vllm(?:\.svc(?:\.cluster\.lo
                      r'(?:vllm|llama)\.vanillax\.me)(?=[:/\s\"\x27]|$)')
 SUFFIXES = {'.yaml', '.yml', '.json', '.env'}
 ALLOWED = {'my-apps/ai/litellm/config.yaml'}
-BACKEND_DIRS = ('my-apps/ai/vllm/', 'my-apps/ai/llama-cpp/')
+BACKEND_DIRS = ('my-apps/ai/vllm/',)
 
 
 def violations(paths):

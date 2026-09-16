@@ -24,7 +24,6 @@ Two things make this safe by construction:
 
 | App | Cards | `replicas` in git (declared) | File |
 |---|---:|---:|---|
-| **llama.cpp** (Qwen3.8-27B UD-Q4_K_XL, rollback) | 1 | `0` | `my-apps/ai/llama-cpp/deployment.yaml` |
 | **vLLM** (official Qwen3.8-27B FP8) | **2** | `1` | `my-apps/ai/vllm/deployment.yaml` |
 | **NInfer-3090** (Qwen3.8 .ninfer, parked candidate) | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
 | **ComfyUI** | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
@@ -46,7 +45,6 @@ exceed two. Replica overrides in each `kustomization.yaml` are authoritative.
 5. Verify:
 
 ```bash
-kubectl -n llama-cpp get pods
 kubectl -n vllm get pods
 kubectl -n comfyui get pods
 kubectl -n swarmui get pods
@@ -58,9 +56,8 @@ kubectl -n gpu-operator exec ds/nvidia-powerlimit -- nvidia-smi
 curl -fsS https://vllm.vanillax.me/v1/models
 ```
 
-Both LAN hostnames route to vLLM. Existing in-cluster llama.cpp URLs alias
-the vLLM Service. A rollback must change replica ownership and service/route
-wiring together; see the [model catalog](model-catalog.md).
+Both LAN hostnames route to vLLM. A swap must change replica ownership and
+service/route wiring together; see the [model catalog](model-catalog.md).
 
 ## Side effects to expect
 

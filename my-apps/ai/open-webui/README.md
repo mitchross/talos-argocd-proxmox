@@ -18,7 +18,7 @@ Open WebUI
 
 The canonical LLM connection is:
 
-- endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
+- endpoint: `http://litellm-service.litellm.svc.cluster.local:4000/v1`
 - model: `qwen3.8-27b`
 - effective server context ceiling: `262144`, shared with reasoning/output
 
@@ -61,12 +61,6 @@ the PostSync loader updates that existing global function in place under the
 new display name **Qwen3.8 Reasoning Policy**. Renaming the ID would leave the
 old global non-thinking filter active beside the new one. Verify the loaded
 function after sync, then test a fresh conversation and an existing one.
-
-## Historical llama.cpp performance baseline
-
-After the 2026-09-03 cutover, ordinary Open WebUI responses measured roughly
-42-43 generated tok/s on the single RTX 3090. Under generation the card showed
-about 22.7 GiB VRAM used and high GPU utilization at the 220 W cap.
 
 ## Date/time grounding
 
@@ -121,6 +115,6 @@ kubectl -n open-webui describe deploy/open-webui
 
 ## GPU ownership
 
-Open WebUI itself does not request a GPU. vLLM requests both RTX 3090s;
-llama.cpp and image generation remain parked. Use the GPU scale-swap runbook
-before changing ownership.
+Open WebUI itself does not request a GPU. vLLM requests both RTX 3090s; image
+generation remains parked. Use the GPU scale-swap runbook before changing
+ownership.

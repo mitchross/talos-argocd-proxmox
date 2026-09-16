@@ -50,14 +50,11 @@ long-session regression test.
 
 - model ID: `qwen3.8-27b`
 - direct: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- existing app alias: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`
 - LAN: `https://llama.vanillax.me/v1` and `https://vllm.vanillax.me/v1`
 
-The vLLM Service selects its pod. The llama.cpp Service becomes an
-`ExternalName` alias to it, so existing app configuration remains valid.
-Both LAN hostnames are owned by the vLLM HTTPRoute, targeting its selector
-Service directly; the gateway is not asked to route to an ExternalName.
-The old llama.cpp route remains in Git for rollback but is not rendered.
+Applications call LiteLLM, not these endpoints directly. Both LAN hostnames are
+owned by the vLLM HTTPRoute and target its selector Service; `llama.vanillax.me`
+is kept only so older bookmarks and client configs keep resolving.
 
 ## Explicit reasoning and sampling
 
@@ -233,15 +230,12 @@ AutoRound, GGUF and compile-cache files are retained; no pruning is performed.
 
 ## Verification after the user merges
 
-Application-level sync waves do not order separate Applications. During the
-swap the new two-GPU pod may be Pending until Argo scales llama.cpp to zero;
-that is expected. There will be an inference interruption during model loading.
+There will be an inference interruption while the model loads.
 
 From the workstation:
 
 ```bash
 kubectl -n vllm get jobs,pods
-kubectl -n llama-cpp get deploy llama-cpp-server
 kubectl -n vllm logs job/vllm-download-qwen38-fp8
 kubectl -n vllm logs job/vllm-cache-sync
 kubectl -n vllm logs deploy/vllm-server --tail=200
@@ -259,10 +253,9 @@ curl -fsS http://127.0.0.1:18000/v1/chat/completions \
   -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"What is 19 + 23?"}],"max_tokens":64,"temperature":0.7,"top_p":0.8,"top_k":20,"min_p":0.0,"presence_penalty":1.5,"repetition_penalty":1.0,"chat_template_kwargs":{"enable_thinking":false,"preserve_thinking":false}}'
 ```
 
-Expected: both staging hooks complete, vLLM Ready, llama.cpp at zero,
-two GPUs visible to vLLM, health OK, the expected model ID and answer 42.
-Also verify both LAN hostnames and an existing app using the llama.cpp DNS
-alias, one image, a tool call, and every reasoning mode.
+Expected: both staging hooks complete, vLLM Ready, two GPUs visible to vLLM,
+health OK, the expected model ID and answer 42. Also verify both LAN hostnames,
+one image, a tool call, and every reasoning mode.
 
 **Read the allocated KV capacity from startup logs.** 262K is the configured
 server ceiling, not a claim that two full 262K requests fit concurrently, or
@@ -290,12 +283,9 @@ For this tuning policy, revert its commits through Git and restore the previous
 Pi extension copy, then reload Pi. That retains vLLM and the current model;
 do not revert the entire FP8 cutover merely to undo sampler/prefill tuning.
 
-For a full backend rollback, revert the FP8 cutover commit through Git, preserving the prior hardware
-expansion. That restores llama.cpp's replica, selector Service, both-hostname
-HTTPRoute and vLLM's old alias/zero replicas. Argo releases vLLM's two cards
-before the retained one-card GGUF profile can run. Verify the model ID and
-endpoints again. The caches remain intact, so rollback needs no large model
-transfer.
+vLLM is the only GPU inference backend; there is no second backend to fall back
+to. A bad checkpoint or runtime change is rolled back by reverting its commit and
+letting the staging hooks re-run against the retained cache.
 
 The old AutoRound files are retained under
 `Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead`. A later INT4/W4A8 A/B must pin its
