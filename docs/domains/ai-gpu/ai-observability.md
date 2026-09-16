@@ -77,11 +77,11 @@ not enable paid judges or background model calls.
 | Langfuse UI | `https://langfuse.vanillax.me` | Initial owner credentials in 1Password |
 | Direct diagnostics | `https://vllm.vanillax.me/v1` | Bypasses gateway observations |
 
-The OpenRouter credential must be a populated concealed field named
-`openrouter_api_key` in the Connect-visible `homelab-prod/litellm` item.
-Do not merge the route based only on seeing an OpenRouter key in a personal
-1Password vault: External Secrets cannot read that vault. After sync, require
-the `litellm` ExternalSecret to be Ready before accepting the rollout.
+The OpenRouter credential was verified on 2026-09-16 as the populated concealed
+field `api-key-open-router` in the Connect-visible
+`homelab-prod/open-router` item. The ExternalSecret projects it as
+`OPENROUTER_API_KEY`; after sync, require that ExternalSecret to be Ready before
+accepting the rollout.
 
 Before merging the new app, unlock the 1Password desktop app with CLI
 integration enabled (or sign into `op`), then run:

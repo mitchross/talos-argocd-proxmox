@@ -134,7 +134,7 @@ class AIObservabilityTests(unittest.TestCase):
         fields = {x['secretKey']: x['remoteRef'] for x in
                   read('my-apps/ai/litellm/externalsecret.yaml')['spec']['data']}
         self.assertEqual(fields['OPENROUTER_API_KEY'], {
-            'key': 'litellm', 'property': 'openrouter_api_key'})
+            'key': 'open-router', 'property': 'api-key-open-router'})
         self.assertNotIn('MOONSHOT_API_KEY', fields)
 
         env = (ROOT / 'my-apps/ai/open-webui/open-webui-configmap.env').read_text()

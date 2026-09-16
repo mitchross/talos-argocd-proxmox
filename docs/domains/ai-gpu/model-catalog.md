@@ -118,7 +118,7 @@ inspect hooks, health, vision, tools, reasoning and long-context behavior.
 - workstation gateway: `https://litellm.vanillax.me/v1`
 - authentication: namespace-local ExternalSecret from `litellm/master_key`
 - Qwen upstream / diagnostics: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- DeepSeek upstream: OpenRouter using `litellm/openrouter_api_key` from 1Password
+- DeepSeek upstream: OpenRouter using `open-router/api-key-open-router` from 1Password
 
 All Git-declared local LLM consumers use LiteLLM: Open WebUI, Perplexica/Vane,
 Presenton, SurfSense, HolmesGPT, Hindsight, Project Nomad, ComfyUI's vision
