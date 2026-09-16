@@ -12,10 +12,12 @@ validation is not proof of live trace ingestion.
 | Prometheus / Grafana | Request failures, latency, throughput, vLLM KV capacity/preemptions and GPU utilization |
 | PostHog | Product events, funnels, feature flags and browser session replay |
 
-Local-model traffic uses **LiteLLM → vLLM**. Pi can force paid Kimi K3, which
-follows **Pi → LiteLLM → Moonshot** and does not touch the local GPUs. Its
+Local-model traffic uses **LiteLLM → vLLM**. Pi can force paid DeepSeek Flash,
+which follows **Pi → LiteLLM → OpenRouter → selected provider** and does not
+touch the local GPUs. Its
 `pi-auto` virtual model also lets LiteLLM classify each new human turn: lower
-tiers use local Qwen, while `COMPLEX` and `REASONING` use Kimi. LiteLLM exports
+tiers use local Qwen, while `COMPLEX` and `REASONING` use DeepSeek Flash.
+LiteLLM exports
 observations and routing-decision metadata from both upstreams to self-hosted
 Langfuse using `langfuse_otel`, alongside its `prometheus` callback. PostHog's
 AI callbacks are removed; its deployment and existing data remain. Historical
@@ -45,11 +47,12 @@ allocating another GPU or activating automation. Project Nomad's separate TEI
 embedding service remains separate; Karakeep's automatic vector indexing stays
 off. The migration covers local language-model requests, not every media or
 embedding service. Direct vLLM endpoints remain for gateway upstream traffic and
-explicit diagnostics. The Git-declared `kimi-k3` route is the external-model
-exception: Pi opts into it directly with `pik` or into its beta complexity
-policy with `pi-withk3`; prompts routed there leave the cluster and Moonshot
-bills the request. Other operator-created cloud providers remain separate from
-these Git-declared defaults. No application uses Kimi as a failure fallback:
+explicit diagnostics. The Git-declared `deepseek-flash` route is the external-model
+exception: Pi opts into it directly with `pi-flash` or into its beta complexity
+policy with `pi-withflash`; prompts routed there leave the cluster and
+OpenRouter bills the request. Other operator-created cloud providers remain
+separate from these Git-declared defaults. No application uses DeepSeek as a
+failure fallback:
 `pi-auto` is an explicit model whose classifier deliberately chooses an
 upstream before dispatch.
 
@@ -65,14 +68,20 @@ not enable paid judges or background model calls.
 | Caller | Endpoint | Authentication |
 |---|---|---|
 | Pi → local Qwen | `https://litellm.vanillax.me/v1` | LiteLLM key from workstation environment / `models.json` |
-| Pi → Kimi K3 | `https://litellm.vanillax.me/v1` | Same LiteLLM key; gateway uses `MOONSHOT_API_KEY` upstream |
+| Pi → DeepSeek Flash | `https://litellm.vanillax.me/v1` | Same LiteLLM key; gateway uses `OPENROUTER_API_KEY` upstream |
 | Pi → `pi-auto` | `https://litellm.vanillax.me/v1` | Same LiteLLM key; classifier selects one of the two rows above |
 | Open WebUI | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | `open-webui-litellm` ExternalSecret |
 | LiteLLM → Qwen | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | Existing local placeholder |
-| LiteLLM → Kimi | Moonshot API | `litellm-secrets` ExternalSecret |
+| LiteLLM → DeepSeek Flash | OpenRouter API | `litellm-secrets` ExternalSecret |
 | LiteLLM telemetry | `http://langfuse-web.langfuse.svc.cluster.local:3000` | Langfuse project public/secret keys |
 | Langfuse UI | `https://langfuse.vanillax.me` | Initial owner credentials in 1Password |
 | Direct diagnostics | `https://vllm.vanillax.me/v1` | Bypasses gateway observations |
+
+The OpenRouter credential must be a populated concealed field named
+`openrouter_api_key` in the Connect-visible `homelab-prod/litellm` item.
+Do not merge the route based only on seeing an OpenRouter key in a personal
+1Password vault: External Secrets cannot read that vault. After sync, require
+the `litellm` ExternalSecret to be Ready before accepting the rollout.
 
 Before merging the new app, unlock the 1Password desktop app with CLI
 integration enabled (or sign into `op`), then run:
@@ -104,11 +113,11 @@ Use synthetic input when verifying ingestion and set retention deliberately in
 the project settings before collecting large volumes of real conversations.
 
 The [Pi guide](pi-agent-local-dev.md) remains authoritative for the local-only,
-Kimi-only and auto-routed launchers; Qwen's medium default, explicit
-off/low/medium/xhigh, sampler and compaction; and Kimi's paid-cloud boundary.
+DeepSeek-only and auto-routed launchers; Qwen's medium default, explicit
+off/low/medium/xhigh, sampler and compaction; and OpenRouter's paid-cloud boundary.
 The local model, FP8 weights/KV, TP=2, native vision, 262,144-token ceiling and
 disabled MTP remain unchanged. The gateway smoke test is not another
-full-context endurance test and does not spend money on Kimi.
+full-context endurance test and does not spend money on OpenRouter.
 
 ## Deployment and persistence
 
