@@ -34,7 +34,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: sync
-              image: ghcr.io/modsetter/surfsense-backend:0.0.39
+              image: ghcr.io/modsetter/surfsense-backend:0.0.40
               command: [python, /sync/sync-mink.py]
               envFrom:
                 - secretRef:
