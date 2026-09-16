@@ -1,4 +1,4 @@
-# Pi.dev agent with local vLLM and Kimi K3
+# Pi.dev agent with local vLLM and OpenRouter DeepSeek Flash
 
 Current workstation guide, audited 2026-09-16 against Pi **0.85.1**, its installed
 provider configuration, and the Git-declared LiteLLM routes. Pi is the coding
@@ -6,11 +6,11 @@ agent from [pi.dev](https://pi.dev), not Raspberry Pi. These files configure a
 workstation; cluster changes still go through Git and ArgoCD.
 
 Bare `pi` and `pi-qwen-only` use the self-hosted
-**`vanillax-vllm/qwen3.8-27b`** path by default. `pik` selects paid, cloud-hosted
-**`vanillax-litellm/kimi-k3`** only. `pi-withk3` selects the
+**`vanillax-vllm/qwen3.8-27b`** path by default. `pi-flash` selects paid,
+cloud-hosted **`vanillax-openrouter/deepseek-flash`** only. `pi-withflash` selects the
 **`vanillax-auto/pi-auto`** virtual model: LiteLLM automatically keeps
 `SIMPLE` / `MEDIUM` work on local Qwen and sends `COMPLEX` / `REASONING` work
-to Kimi K3. All paths enter the authenticated LiteLLM gateway and share
+to OpenRouter's DeepSeek Flash latest alias. All paths enter the authenticated LiteLLM gateway and share
 Langfuse session tracing, but only Qwen is served by this cluster's vLLM and
 RTX 3090s.
 
@@ -30,13 +30,12 @@ manifests:
 | Request hook | `~/.pi/agent/extensions/qwen-sampling.ts` |
 | Subagents | `@narumitw/pi-subagents` 3.0.1 |
 
-The scan found four local drift items. The installed Kimi display name still
-says "logged to PostHog" even though LiteLLM now exports to Langfuse; the JSON
-below supplies the corrected label. Workstation `AGENTS.md` says
-`pi-withk3` runs Kimi, while the audited alias starts on Qwen and merely makes
-Kimi available through Ctrl+P. It must be replaced with the auto-router alias
-below after the `pi-auto` gateway route is merged and healthy. The installed
-sampler also predates the repo's thinking penalty change and still uses
+The scan found four local drift items. The installed provider catalog and
+launchers still name Kimi K3 and must be replaced with the OpenRouter entries
+below after the `deepseek-flash` and `pi-auto` gateway routes are merged and
+healthy. Workstation `AGENTS.md` also describes the obsolete Kimi launchers and
+must be updated at the same time. The installed sampler predates the repo's
+thinking penalty change and still uses
 `repetition_penalty=1.0` in both modes. Recopy the extension and reload Pi
 before claiming that the workstation uses the repo-declared 1.05 thinking
 policy.
@@ -61,6 +60,13 @@ sourced by `.zshrc`), or read it directly with
 is CLI `--api-key`, `auth.json`, environment variable, then the `models.json`
 value. A placeholder key fails against this authenticated gateway. Keep
 credentials out of Git.
+
+Before merging the cluster route, the Connect-visible
+`homelab-prod/litellm` item must contain a populated concealed field named
+`openrouter_api_key`. A similarly named key in a personal vault is not enough:
+the cluster's Connect token can read only `homelab-prod`. Confirm the
+`litellm` ExternalSecret becomes Ready before the LiteLLM rollout; otherwise
+the new pod will not receive `OPENROUTER_API_KEY`.
 
 ```json
 {
@@ -110,22 +116,38 @@ credentials out of Git.
         }
       ]
     },
-    "vanillax-litellm": {
+    "vanillax-openrouter": {
       "baseUrl": "https://litellm.vanillax.me/v1",
       "api": "openai-completions",
       "apiKey": "$LITELLM_API_KEY",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsUsageInStreaming": true,
+        "maxTokensField": "max_tokens",
+        "thinkingFormat": "openrouter",
+        "requiresReasoningContentOnAssistantMessages": true
+      },
       "models": [
         {
-          "id": "kimi-k3",
-          "name": "Kimi K3 (Moonshot via LiteLLM and Langfuse)",
+          "id": "deepseek-flash",
+          "name": "DeepSeek Flash Latest (OpenRouter via LiteLLM, Pi 32K cap)",
           "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": null,
+            "high": "high",
+            "xhigh": null,
+            "max": "max"
+          },
           "input": ["text", "image"],
-          "contextWindow": 1000000,
-          "maxTokens": 131072,
+          "contextWindow": 1048576,
+          "maxTokens": 32768,
           "cost": {
-            "input": 3,
-            "output": 15,
-            "cacheRead": 0.3,
+            "input": 0.3,
+            "output": 1.2,
+            "cacheRead": 0.03,
             "cacheWrite": 0
           }
         }
@@ -144,7 +166,7 @@ credentials out of Git.
       "models": [
         {
           "id": "pi-auto",
-          "name": "Pi Auto (LiteLLM: local Qwen or Kimi K3)",
+          "name": "Pi Auto (LiteLLM: local Qwen or OpenRouter DeepSeek Flash)",
           "reasoning": true,
           "thinkingLevelMap": {
             "off": null,
@@ -159,9 +181,9 @@ credentials out of Git.
           "contextWindow": 262144,
           "maxTokens": 32768,
           "cost": {
-            "input": 3,
-            "output": 15,
-            "cacheRead": 0.3,
+            "input": 0.3,
+            "output": 1.2,
+            "cacheRead": 0.03,
             "cacheWrite": 0
           }
         }
@@ -190,25 +212,34 @@ chats may explicitly disable preservation without changing the server default.
 [Official Qwen controls](https://huggingface.co/Qwen/Qwen3.8-27B-FP8#api-usage),
 [Pi model schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md).
 
-Kimi K3 is not another model loaded into local vLLM. LiteLLM sends
-`kimi-k3` to Moonshot using the `MOONSHOT_API_KEY` held by the cluster's
-`litellm` ExternalSecret. Prompts leave the cluster and are billed at the model
-metadata above: $3 per million cache-miss input tokens, $0.30 per million
-cache-hit input tokens, and $15 per million output tokens. K3 has native vision,
-a one-million-token context window, and a Pi-configured 131,072-token output
-ceiling.
-[Kimi model selection](https://www.kimi.ai/help/kimi-api/api-model-selection)
-and [official pricing](https://www.kimi.ai/help/kimi-api/api-pricing) remain the
-upstream source of truth.
+DeepSeek Flash is not another model loaded into local vLLM. LiteLLM sends
+`deepseek-flash` to `openrouter/~deepseek/deepseek-flash-latest` using the
+`OPENROUTER_API_KEY` held by the cluster's `litellm` ExternalSecret. Prompts
+leave the homelab, pass through OpenRouter, and may reach the provider
+OpenRouter selects for the alias. The alias follows the newest DeepSeek Flash
+family member, so its target, limits, providers, and prices can change without
+a Git edit.
 
-K3 always thinks; its API supports `low`, `high`, and `max` effort and defaults
-to `max` when no effort is supplied. The current workstation entry identifies it
-as a reasoning model but does not claim a verified Pi-to-Kimi effort mapping
-through LiteLLM. Do not interpret Pi's status-bar level as proof of the upstream
-K3 effort, and do not try to switch K3 thinking off. Capture the serialized
-request before documenting or depending on an effort override.
+On 2026-09-16 the public catalog advertised text and image input, a 1,048,576
+token model context, a 1,000,000-token provider context, and up to 393,216
+completion tokens. Pi deliberately caps direct output at 32,768 tokens to
+control spend and keep the same practical agent budget as local Qwen. Its
+static cost entry uses the current peak time-window price: $0.30/M input,
+$0.03/M cached input, and $1.20/M output. Lower current windows are not encoded
+because Pi accepts only one price. OpenRouter's response and LiteLLM/Langfuse
+cost records are authoritative.
+[OpenRouter's live model catalog](https://openrouter.ai/api/v1/models) and
+[LiteLLM's OpenRouter provider guide](https://docs.litellm.ai/docs/providers/openrouter)
+own the moving upstream contract.
 
-## Automatic Qwen / Kimi routing
+The alias defaults to reasoning enabled at `high` and advertises only `low`,
+`high`, and `max` effort. Pi's `thinkingFormat: openrouter` serializes those as
+OpenRouter's `reasoning: { effort }` object. Unsupported Pi choices are `null`,
+including `off`; do not claim that this alias can disable reasoning. Preserve
+reasoning content on replayed assistant messages so tool loops retain the
+provider's required conversation shape.
+
+## Automatic Qwen / DeepSeek routing
 
 `pi-auto` is a LiteLLM complexity-router alias, not a third inference backend.
 The deployed LiteLLM `v1.101.0` policy is:
@@ -216,7 +247,7 @@ The deployed LiteLLM `v1.101.0` policy is:
 | Classified tier | Selected gateway model | Actual compute |
 |---|---|---|
 | `SIMPLE`, `MEDIUM` | `qwen3.8-27b` | local vLLM on the two RTX 3090s |
-| `COMPLEX`, `REASONING` | `kimi-k3` | paid Moonshot API |
+| `COMPLEX`, `REASONING` | `deepseek-flash` | paid OpenRouter route |
 | no classifiable human ask / classifier default | `qwen3.8-27b` | local vLLM on the two RTX 3090s |
 
 The built-in heuristic classifier adds no model call. With
@@ -224,13 +255,14 @@ The built-in heuristic classifier adds no model call. With
 carries that decision through the assistant/tool continuation requests for that
 turn. `session_affinity` remains false, so the next human ask can select the
 other backend. This is automatic model selection, not load balancing: one
-completion goes to one backend and is never split across Qwen and Kimi.
+completion goes to one backend and is never split across Qwen and DeepSeek.
 
 The router is a beta LiteLLM feature. Its decision is policy, not a guarantee
 of task quality or privacy: any ask classified `COMPLEX` or `REASONING`, plus
 the conversation context and tool schema sent with it, leaves the cluster and
-incurs Kimi charges. Use `pi` or `pi-qwen-only` when content must remain local,
-and `pik` when Kimi must be forced. Check LiteLLM's `ComplexityRouter` decision
+incurs OpenRouter charges. Use `pi` or `pi-qwen-only` when content must remain
+local, and `pi-flash` when DeepSeek Flash must be forced. Check LiteLLM's
+`ComplexityRouter` decision
 log or Langfuse `routing_decision` metadata to see the chosen model; Pi continues
 to display the `pi-auto` alias. The Pi entry deliberately reports the safe
 shared 262,144-token total context and 32,768-token output limits; LiteLLM
@@ -240,20 +272,21 @@ fits inside Qwen's window.
 beta behavior and configuration contract.
 
 Pi cannot price two possible upstreams in one static model entry. The
-`vanillax-auto/pi-auto` entry therefore shows Kimi's rates as a conservative
+`vanillax-auto/pi-auto` entry therefore shows DeepSeek Flash's peak rates as a conservative
 upper bound; local-Qwen turns will look paid in Pi even though their actual API
 cost is zero. LiteLLM and Langfuse are authoritative for routed model and
 actual request cost. The auto provider suppresses a client
-`reasoning_effort`: Qwen uses the server's fixed medium default and K3 uses its
-upstream default. The single exposed Pi level is descriptive, not an override
-of either backend.
+`reasoning_effort`: Qwen uses the server's fixed medium default and DeepSeek
+Flash uses OpenRouter's upstream `high` default. The single exposed Pi level is
+descriptive, not an override of either backend.
 
 Requests pass through LiteLLM for Prometheus metrics and Langfuse AI analytics.
 The repo-owned extension attaches Pi's session ID and a `pi` tag to all three
 providers, so both branches of `pi-auto` stay grouped in one Langfuse session.
 Its Qwen sampling rewrite applies only to direct
 `vanillax-vllm/qwen3.8-27b` requests; auto-routed Qwen uses the matching server
-default, while LiteLLM drops unsupported sampling parameters before Kimi.
+default, while LiteLLM drops unsupported optional parameters on heterogeneous
+routes.
 Explicit caller metadata takes precedence. Local tool execution needs separate
 instrumentation; the gateway records model requests and returned tool calls.
 Keep all provider and model IDs stable: the Qwen name gates the direct sampler,
@@ -272,7 +305,8 @@ preferences, authentication, and UI settings:
   "defaultModel": "qwen3.8-27b",
   "defaultThinkingLevel": "medium",
   "modelThinkingLevels": {
-    "vanillax-vllm/qwen3.8-27b": "medium"
+    "vanillax-vllm/qwen3.8-27b": "medium",
+    "vanillax-openrouter/deepseek-flash": "high"
   },
   "enabledModels": [
     "vanillax-vllm/qwen3.8-27b"
@@ -293,10 +327,9 @@ our operating recommendation: 32,768 output tokens plus 16,384 for tool growth.
 It leaves the full server ceiling available while starting cleanup before a
 long tool result exhausts it. This is not an upstream-required value or a
 hard protection against arbitrarily large tool output. Compaction settings are
-global in Pi. Kimi's 131,072-token maximum is API metadata, not a routine output
-target; this Qwen-sized reserve does not guarantee room for an output that large.
-Use a project-specific override or compact early before deliberately requesting
-a very large Kimi result.
+global in Pi. OpenRouter currently advertises a much larger upstream completion
+limit, but this provider entry intentionally holds Pi to 32,768 output tokens.
+Revisit the reserve and cost guardrails together before increasing that cap.
 
 Compaction summarizes older history and retains a recent tail. It is lossy:
 keep task decisions, file paths, verification results, and remaining work in
@@ -317,43 +350,43 @@ After `pi-auto` is healthy in LiteLLM, keep these three launchers in `~/.zshrc`:
 # Provider name is load-bearing: scripts/pi/qwen-sampling.ts only fires on
 # vanillax-vllm, so a renamed provider silently drops Qwen's sampler.
 QWEN=vanillax-vllm/qwen3.8-27b
-K3=vanillax-litellm/kimi-k3
+FLASH=vanillax-openrouter/deepseek-flash
 AUTO=vanillax-auto/pi-auto
 alias pi-qwen-only="pi --model $QWEN --thinking medium --models $QWEN"
-alias pik="pi --model $K3 --models $K3"
-alias pi-withk3="pi --model $AUTO --thinking medium --models $AUTO"
-unset QWEN K3 AUTO
+alias pi-flash="pi --model $FLASH --thinking high --models $FLASH"
+alias pi-withflash="pi --model $AUTO --thinking medium --models $AUTO"
+unset QWEN FLASH AUTO
 ```
 
 | Launcher | Starts on | Ctrl+P scope | Use it for |
 |---|---|---|---|
 | `pi` | local Qwen, medium | local Qwen only | normal, private, zero-API-cost work |
 | `pi-qwen-only` | local Qwen, medium | local Qwen only | an explicit clean local session |
-| `pik` | Kimi K3 | Kimi K3 only | a deliberate paid-cloud K3 session |
-| `pi-withk3` | `pi-auto` | `pi-auto` only | let LiteLLM select local Qwen or paid Kimi for each human turn |
+| `pi-flash` | DeepSeek Flash latest | DeepSeek Flash only | a deliberate paid OpenRouter session |
+| `pi-withflash` | `pi-auto` | `pi-auto` only | let LiteLLM select local Qwen or paid DeepSeek Flash for each human turn |
 
-`pi-withk3` no longer uses Ctrl+P to choose the backend. Pi always requests
-`pi-auto`; LiteLLM chooses Qwen or Kimi behind that stable alias. Use the
-separate `pi-qwen-only` or `pik` launcher to override the policy. Because a
-later human turn can move the same session from Qwen to Kimi, start `/new`
-before a cloud-eligible task when the previous local conversation contains
+`pi-withflash` does not use Ctrl+P to choose the backend. Pi always requests
+`pi-auto`; LiteLLM chooses Qwen or DeepSeek Flash behind that stable alias. Use
+the separate `pi-qwen-only` or `pi-flash` launcher to override the policy.
+Because a later human turn can move the same session from Qwen to OpenRouter,
+start `/new` before a cloud-eligible task when the previous local conversation contains
 sensitive content that must not be forwarded.
 
-## Subagents and Kimi second opinions
+## Subagents and DeepSeek second opinions
 
 The installed `@narumitw/pi-subagents` 3.0.1 package makes children inherit the
 current session's provider and model. There is no separate per-job model catalog.
-Under `pi-withk3`, children inherit `vanillax-auto/pi-auto`, and LiteLLM
+Under `pi-withflash`, children inherit `vanillax-auto/pi-auto`, and LiteLLM
 classifies their human asks with the same policy. One fanout can therefore
 produce a mixture of local and paid requests. Keep auto-routed fanout bounded
 and verify its decisions in Langfuse.
 
-Use `pik` for an isolated, forced Kimi second opinion. Use `pi-withk3` when
-LiteLLM should choose between local Qwen and Kimi automatically. The workstation
-`AGENTS.md` guidance should describe that distinction instead of saying that
-`pi-withk3` starts on Kimi. Subagents are for independent, bounded work that
-benefits from a separate context; they are not a reason to multiply paid Kimi
-requests.
+Use `pi-flash` for an isolated, forced DeepSeek second opinion. Use
+`pi-withflash` when LiteLLM should choose between local Qwen and DeepSeek Flash
+automatically. The workstation `AGENTS.md` guidance should describe that
+distinction and the cloud-data boundary. Subagents are for independent,
+bounded work that benefits from a separate context; they are not a reason to
+multiply paid OpenRouter requests.
 
 Two GPU cards do not mean two independent model servers. The live shared pool
 holds about 325K tokens; two simultaneous 262K sessions do not fit. Use one
@@ -407,7 +440,7 @@ and no video. Pi can resend images from earlier turns: one new screenshot plus
 an old screenshot can already exceed the limit. This is unrelated to the size
 of the text context window. Keep text/DOM extraction as the browser default and
 use a screenshot when visual evidence is needed. This is a local vLLM limit,
-not a claim about Kimi K3's native vision API.
+not a claim about DeepSeek Flash's OpenRouter vision route.
 
 If the image limit is reached, do not blindly retry. Start `/new` with a text
 handoff and the required image. `/compact` can help only if the old image is in
@@ -424,32 +457,36 @@ Inspect `/session` and tool output growth during long work. Small, relevant
 outputs preserve room for reasoning and reduce prefill work.
 
 Use a new session for clean validation; resumed sessions may retain their old
-model or thinking level. No provider rename is required for this configuration.
-The installed Pi version was 0.85.1 during the 2026-09-16 workstation audit.
-Restart an existing Pi process after changing provider metadata or launchers.
+model or thinking level. Add `vanillax-openrouter`, then remove the obsolete
+Kimi provider only after verifying the new entry; these are custom IDs, so the
+rename is manual. The installed Pi version was 0.85.1 during the 2026-09-16
+workstation audit. Restart an existing Pi process after changing provider
+metadata or launchers.
 
 ## Verification and rollback
 
 ```bash
 pi --version
 pi --list-models qwen3.8-27b
-pi --list-models kimi-k3
+pi --list-models deepseek-flash
 pi --list-models pi-auto
 pi --provider vanillax-vllm --model qwen3.8-27b --thinking medium
+pi --provider vanillax-openrouter --model deepseek-flash --thinking high
 pi --provider vanillax-auto --model pi-auto --thinking medium
 type pi-qwen-only
-type pik
-type pi-withk3
+type pi-flash
+type pi-withflash
 ```
 
-Expected: Qwen reports roughly 262K context and 32K output; Kimi reports 1M
-context and roughly 131K output; `pi-auto` reports the safe 262K/32K
+Expected: Qwen reports roughly 262K context and 32K output; DeepSeek Flash
+reports roughly 1M context and the intentional 32K Pi output cap; `pi-auto`
+reports the safe 262K/32K
 intersection. All report thinking and image support. The three aliases must
 expand to the provider/model and `--models` scopes shown above. Start normally
-with `pi`; use `pik` or `pi-withk3` only when cloud processing and Kimi's API
-cost are acceptable. Use `/model` to reload model metadata; direct Qwen exposes
-low, medium, xhigh and off explicitly, while `pi-auto` exposes only its fixed
-medium label.
+with `pi`; use `pi-flash` or `pi-withflash` only when cloud processing and
+OpenRouter cost are acceptable. Use `/model` to reload model metadata; direct
+Qwen exposes low, medium, xhigh and off, direct DeepSeek Flash exposes low,
+high, and max, while `pi-auto` exposes only its fixed medium label.
 
 For an isolated smoke request from the repo root:
 
@@ -479,18 +516,20 @@ sampler and usage request. A real medium request through the LAN endpoint
 returned 1591 with separate reasoning and streaming token counts. Those checks
 validate plumbing, not agent task quality.
 
-A Kimi generation is deliberately absent from the automatic smoke test because
-it is paid external work. After rollout, first use LiteLLM's Auto Router test UI
+A DeepSeek generation is deliberately absent from the automatic smoke test
+because it is paid external work. After rollout, first use LiteLLM's Auto Router test UI
 to check simple and complex classification without dispatching the selected
-model. When intentionally testing `pik` or a Kimi-classified `pi-withk3` turn,
-use synthetic content, then verify `routing_decision.routed_model=kimi-k3` and
-the generation in Langfuse. Stop if Pi reports an invalid `reasoning_effort`;
-the current guide does not promise K3 effort remapping.
+model. When intentionally testing `pi-flash` or a DeepSeek-classified
+`pi-withflash` turn, use synthetic content, then verify
+`routing_decision.routed_model=deepseek-flash`, the OpenRouter generation, and
+recorded cost in Langfuse. Stop if Pi reports an invalid reasoning field and
+capture the serialized request before changing the effort mapping.
 
 To roll back workstation changes, restore the backed-up JSON/AGENTS files and
 remove the newly installed sampler extension (or restore its previous copy),
 then restart Pi. No Kubernetes rollback is needed for workstation files.
-Removing the Kimi and auto providers plus their two Kimi-capable aliases leaves
-the local Qwen path intact. Reverting the `pi-auto` LiteLLM route and restoring
-the old manual `pi-withk3` alias returns selection to Ctrl+P. For server-policy
-rollback, revert the reasoning-policy commit through Git.
+Removing the OpenRouter and auto providers plus their two cloud-capable aliases
+leaves the local Qwen path intact. Revert the `deepseek-flash` and `pi-auto`
+LiteLLM routes through Git for cluster rollback; do not restore obsolete Kimi
+credentials or aliases unless a separate change deliberately reintroduces
+that provider.
