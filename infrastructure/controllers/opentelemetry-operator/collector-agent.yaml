@@ -11,7 +11,7 @@ spec:
     rollingUpdate:
       maxUnavailable: 25%
   # The Kubernetes distribution omits tcp_log; Talos sends JSON lines to node-local loopback.
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.158.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.160.0
   hostNetwork: true
   dnsPolicy: ClusterFirstWithHostNet
   securityContext:
