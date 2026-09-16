@@ -61,12 +61,11 @@ is CLI `--api-key`, `auth.json`, environment variable, then the `models.json`
 value. A placeholder key fails against this authenticated gateway. Keep
 credentials out of Git.
 
-Before merging the cluster route, the Connect-visible
-`homelab-prod/litellm` item must contain a populated concealed field named
-`openrouter_api_key`. A similarly named key in a personal vault is not enough:
-the cluster's Connect token can read only `homelab-prod`. Confirm the
-`litellm` ExternalSecret becomes Ready before the LiteLLM rollout; otherwise
-the new pod will not receive `OPENROUTER_API_KEY`.
+The upstream key was verified on 2026-09-16 as the populated concealed field
+`homelab-prod/open-router/api-key-open-router`, which is visible to the
+cluster's Connect token. The `litellm` ExternalSecret maps that field to
+`OPENROUTER_API_KEY`. Confirm the ExternalSecret becomes Ready before accepting
+the LiteLLM rollout; never copy the value into Git or workstation model JSON.
 
 ```json
 {
