@@ -17,8 +17,8 @@ A Git revert restores the workflow and automatic critical-alert calls.
 
 ## Authenticated inference
 
-The existing `llama-cpp-local` provider name is retained so Keep updates its
-saved authentication in place on startup. It now uses LiteLLM. The
+`llama-cpp-local` is a stable provider key, not a backend name — it is kept so
+Keep updates its saved authentication in place on startup. It uses LiteLLM. The
 `keep-litellm` ExternalSecret reads the existing 1Password `litellm/master_key`
 into `LITELLM_API_KEY`; Keep 0.52.1's provision parser expands
 `$(LITELLM_API_KEY)` before saving the provider. Changing provisioned settings

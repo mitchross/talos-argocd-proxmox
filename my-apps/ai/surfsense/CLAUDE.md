@@ -80,6 +80,6 @@ The SurfSense backend image does not set a non-root `USER`, so object-store data
 - Model: `qwen3.8-27b`
 - Billing tier: `free`
 
-Keep application requests on LiteLLM so Langfuse receives their AI telemetry. vLLM remains the production backend; llama.cpp is parked.
+Keep application requests on LiteLLM so Langfuse receives their AI telemetry. vLLM is the production backend.
 
 The catalog contains an External Secrets template, not an environment-variable reference. `llm-externalsecret.yaml` renders it using `litellm/master_key` into `surfsense-llm-config`; API, worker, beat, and migrations mount the resulting Secret. Kustomize updates the template source name and pod revision annotation when the catalog changes.
