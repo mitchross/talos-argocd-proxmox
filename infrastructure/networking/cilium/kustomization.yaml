@@ -16,7 +16,7 @@ helmCharts:
 - name: cilium
   repo: https://helm.cilium.io
   # If a node 403s after a roll: restart cilium-agent first, then that node's cilium-envoy.
-  version: 1.20.1
+  version: 1.20.2
   releaseName: cilium
   includeCRDs: true
   namespace: kube-system
