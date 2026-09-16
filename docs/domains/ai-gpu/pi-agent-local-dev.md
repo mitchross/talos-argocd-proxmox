@@ -1,22 +1,24 @@
-# Pi.dev agent on the dual-3090 backend
+# Pi.dev agent with local vLLM and Kimi K3
 
-Current workstation guide, audited 2026-09-06 against Pi **0.85.0**, its installed
-provider source, and the live LiteLLM → vLLM endpoint. Pi is the coding agent from
-[pi.dev](https://pi.dev), not Raspberry Pi. These files configure a workstation;
-cluster changes still go through Git and ArgoCD.
+Current workstation guide, audited 2026-09-16 against Pi **0.85.1**, its installed
+provider configuration, and the Git-declared LiteLLM routes. Pi is the coding
+agent from [pi.dev](https://pi.dev), not Raspberry Pi. These files configure a
+workstation; cluster changes still go through Git and ArgoCD.
 
-Use **`vanillax-vllm/qwen3.8-27b`, medium thinking, preserved reasoning, native
-vision, and automatic compaction**. Keep the existing provider identity and
-cloud providers. The audit found a stale `qwen3.6-27b` default and the built-in
-`qwen-chat-template` toggle, which omitted the selected reasoning effort.
+Bare `pi` and `pi-qwen-only` use the self-hosted
+**`vanillax-vllm/qwen3.8-27b`** path by default. `pik` selects paid, cloud-hosted
+**`vanillax-litellm/kimi-k3`** only. `pi-withk3` starts on local Qwen and scopes
+both models so Ctrl+P can swap between them without leaving the Pi session.
+Both paths enter the authenticated LiteLLM gateway and share Langfuse session
+tracing, but only Qwen is served by this cluster's vLLM and RTX 3090s.
 
 ## Provider configuration
 
 Back up `~/.pi/agent/models.json`, `settings.json`, and `AGENTS.md` before editing.
-Merge this provider into `models.json`; do not overwrite other providers or
-credentials. `vanillax-vllm` is a custom `models.json` provider, so `/login`
-cannot configure it -- that picker offers only Pi's built-in providers, and a
-custom provider ID never appears in the list. Supply the LiteLLM key from
+Merge these providers into `models.json`; do not overwrite other providers or
+credentials. Both are custom `models.json` providers, so `/login` cannot
+configure them -- that picker offers only Pi's built-in providers, and custom
+provider IDs never appear in the list. Supply the shared LiteLLM key from
 1Password (`homelab-prod/litellm/master_key`) through the provider's `apiKey`
 field, which resolves `"$VAR"` and `"!command"` values as well as literals:
 
@@ -78,6 +80,27 @@ credentials out of Git.
           }
         }
       ]
+    },
+    "vanillax-litellm": {
+      "baseUrl": "https://litellm.vanillax.me/v1",
+      "api": "openai-completions",
+      "apiKey": "$LITELLM_API_KEY",
+      "models": [
+        {
+          "id": "kimi-k3",
+          "name": "Kimi K3 (Moonshot via LiteLLM and Langfuse)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 1000000,
+          "maxTokens": 131072,
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cacheRead": 0.3,
+            "cacheWrite": 0
+          }
+        }
+      ]
     }
   }
 }
@@ -102,13 +125,32 @@ chats may explicitly disable preservation without changing the server default.
 [Official Qwen controls](https://huggingface.co/Qwen/Qwen3.8-27B-FP8#api-usage),
 [Pi model schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md).
 
+Kimi K3 is not another model loaded into local vLLM. LiteLLM sends
+`kimi-k3` to Moonshot using the `MOONSHOT_API_KEY` held by the cluster's
+`litellm` ExternalSecret. Prompts leave the cluster and are billed at the model
+metadata above: $3 per million cache-miss input tokens, $0.30 per million
+cache-hit input tokens, and $15 per million output tokens. K3 has native vision,
+a one-million-token context window, and a Pi-configured 131,072-token output
+ceiling.
+[Kimi model selection](https://www.kimi.ai/help/kimi-api/api-model-selection)
+and [official pricing](https://www.kimi.ai/help/kimi-api/api-pricing) remain the
+upstream source of truth.
+
+K3 always thinks; its API supports `low`, `high`, and `max` effort and defaults
+to `max` when no effort is supplied. The current workstation entry identifies it
+as a reasoning model but does not claim a verified Pi-to-Kimi effort mapping
+through LiteLLM. Do not interpret Pi's status-bar level as proof of the upstream
+K3 effort, and do not try to switch K3 thinking off. Capture the serialized
+request before documenting or depending on an effort override.
+
 Requests pass through LiteLLM for Prometheus metrics and Langfuse AI analytics.
-The Qwen sampler extension also attaches Pi’s session ID and a `pi` tag so
-generations from one coding session can be grouped in Langfuse. Explicit caller
-metadata takes precedence. Local tool execution needs separate instrumentation;
-the gateway records model requests and returned tool calls.
-The provider ID stays `vanillax-vllm`, preserving its thinking mapping and sampler
-extension. The backend is still stock vLLM with the same context and GPUs.
+The repo-owned extension attaches Pi's session ID and a `pi` tag to both
+providers, so a Ctrl+P swap in `pi-withk3` stays grouped in one Langfuse session.
+Its Qwen sampling rewrite applies only to `vanillax-vllm/qwen3.8-27b`; it leaves
+Kimi sampling untouched. Explicit caller metadata takes precedence. Local tool
+execution needs separate instrumentation; the gateway records model requests
+and returned tool calls. Keep both provider IDs stable: the Qwen name gates the
+sampler, and the Kimi name is referenced by the workstation launchers.
 [Telemetry verification and direct-access fallback](ai-observability.md) explains
 how to confirm actual event storage; successful inference alone is insufficient.
 
@@ -125,6 +167,9 @@ preferences, authentication, and UI settings:
   "modelThinkingLevels": {
     "vanillax-vllm/qwen3.8-27b": "medium"
   },
+  "enabledModels": [
+    "vanillax-vllm/qwen3.8-27b"
+  ],
   "compaction": {
     "enabled": true,
     "reserveTokens": 49152,
@@ -141,7 +186,10 @@ our operating recommendation: 32,768 output tokens plus 16,384 for tool growth.
 It leaves the full server ceiling available while starting cleanup before a
 long tool result exhausts it. This is not an upstream-required value or a
 hard protection against arbitrarily large tool output. Compaction settings are
-global in Pi; smaller cloud models may need a project-specific override.
+global in Pi. Kimi's 131,072-token maximum is API metadata, not a routine output
+target; this Qwen-sized reserve does not guarantee room for an output that large.
+Use a project-specific override or compact early before deliberately requesting
+a very large Kimi result.
 
 Compaction summarizes older history and retains a recent tail. It is lossy:
 keep task decisions, file paths, verification results, and remaining work in
@@ -149,6 +197,38 @@ a concise handoff. Use `/compact` at milestones and `/new` between unrelated
 tasks. Avoid whole-repository dumps; search and read relevant sections.
 [Pi compaction behavior](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/compaction.md),
 [settings and project overrides](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/settings.md).
+
+`enabledModels` intentionally keeps bare `pi` local-Qwen-only. The launcher
+`--models` flag overrides that Ctrl+P scope for one Pi process without changing
+the saved default.
+
+## Workstation launchers and model switching
+
+The workstation keeps three launchers in `~/.zshrc`:
+
+```bash
+# Provider name is load-bearing: scripts/pi/qwen-sampling.ts only fires on
+# vanillax-vllm, so a renamed provider silently drops Qwen's sampler.
+QWEN=vanillax-vllm/qwen3.8-27b
+K3=vanillax-litellm/kimi-k3
+alias pi-qwen-only="pi --model $QWEN --thinking medium --models $QWEN"
+alias pik="pi --model $K3 --models $K3"
+alias pi-withk3="pi --model $QWEN --thinking medium --models $QWEN,$K3"
+unset QWEN K3
+```
+
+| Launcher | Starts on | Ctrl+P scope | Use it for |
+|---|---|---|---|
+| `pi` | local Qwen, medium | local Qwen only | normal, private, zero-API-cost work |
+| `pi-qwen-only` | local Qwen, medium | local Qwen only | an explicit clean local session |
+| `pik` | Kimi K3 | Kimi K3 only | a deliberate paid-cloud K3 session |
+| `pi-withk3` | local Qwen, medium | Qwen and Kimi K3 | start local, then switch only when the task benefits from K3 |
+
+`pi-withk3` does **not** start on Kimi. Press Ctrl+P to switch to K3 and back;
+the Pi session ID and Langfuse grouping stay the same across the swap. Model
+context and token accounting change to the selected model. Use `/new` when the
+new backend should not inherit the prior model's conversation or sensitive
+content.
 
 Two GPU cards do not mean two independent model servers. The live shared pool
 holds about 325K tokens; two simultaneous 262K sessions do not fit. Use one
@@ -187,11 +267,12 @@ another per-request sampler override to match Qwen's recommendation.
 
 ## Vision and browser tools
 
-The current server permits **one image in the entire submitted request** and
-no video. Pi can resend images from earlier turns: one new screenshot plus an
-old screenshot can already exceed the limit. This is unrelated to the size of
-the text context window. Keep text/DOM extraction as the browser default and
-use a screenshot when visual evidence is needed.
+The local Qwen vLLM server permits **one image in the entire submitted request**
+and no video. Pi can resend images from earlier turns: one new screenshot plus
+an old screenshot can already exceed the limit. This is unrelated to the size
+of the text context window. Keep text/DOM extraction as the browser default and
+use a screenshot when visual evidence is needed. This is a local vLLM limit,
+not a claim about Kimi K3's native vision API.
 
 If the image limit is reached, do not blindly retry. Start `/new` with a text
 handoff and the required image. `/compact` can help only if the old image is in
@@ -208,23 +289,28 @@ Inspect `/session` and tool output growth during long work. Small, relevant
 outputs preserve room for reasoning and reduce prefill work.
 
 Use a new session for clean validation; resumed sessions may retain their old
-model or thinking level. No provider rename, shell alias, or Pi upgrade is
-required for this configuration. The workstation was updated through Homebrew to 0.85.0, preserving provider,
-authentication and extension files. A fresh medium-thinking request through
-LiteLLM passed. Restart an existing Pi process to use the new executable.
+model or thinking level. No provider rename is required for this configuration.
+The installed Pi version was 0.85.1 during the 2026-09-16 workstation audit.
+Restart an existing Pi process after changing provider metadata or launchers.
 
 ## Verification and rollback
 
 ```bash
 pi --version
 pi --list-models qwen3.8-27b
+pi --list-models kimi-k3
 pi --provider vanillax-vllm --model qwen3.8-27b --thinking medium
+type pi-qwen-only
+type pik
+type pi-withk3
 ```
 
-Expected: `vanillax-vllm`, `qwen3.8-27b`, roughly 262K context and 32K output,
-with thinking and image support. Start normally with `pi` after setting the
-defaults. Use `/model` to reload model metadata and select low, medium, xhigh,
-or off explicitly.
+Expected: Qwen reports roughly 262K context and 32K output; Kimi reports 1M
+context and roughly 131K output. Both report thinking and image support. The
+three aliases must expand to the provider/model and `--models` scopes shown
+above. Start normally with `pi`; use `pik` or `pi-withk3` only when cloud
+processing and Kimi's API cost are acceptable. Use `/model` to reload model
+metadata; Qwen exposes low, medium, xhigh and off explicitly.
 
 For an isolated smoke request from the repo root:
 
@@ -254,7 +340,15 @@ sampler and usage request. A real medium request through the LAN endpoint
 returned 1591 with separate reasoning and streaming token counts. Those checks
 validate plumbing, not agent task quality.
 
+A Kimi generation is deliberately absent from the automatic smoke test because
+it is paid external work. When intentionally testing `pik`, use synthetic
+content, confirm the response model is `kimi-k3`, then verify its generation in
+Langfuse. Stop if Pi reports an invalid `reasoning_effort`; the current guide
+does not promise K3 effort remapping.
+
 To roll back workstation changes, restore the backed-up JSON/AGENTS files and
 remove the newly installed sampler extension (or restore its previous copy),
 then restart Pi. No Kubernetes rollback is needed for workstation files.
-For server-policy rollback, revert the reasoning-policy commit through Git.
+Removing only the Kimi provider and its two Kimi-capable aliases leaves the
+local Qwen path intact. For server-policy rollback, revert the reasoning-policy
+commit through Git.

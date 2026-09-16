@@ -1,8 +1,9 @@
 # AI model catalog
 
-Current model inventory and app wiring. Official FP8 was verified live on
-both cards on 2026-09-06. The medium fallback is the Git-declared policy;
-verify it after the reasoning-policy PR reconciles. The
+Current local and external model inventory plus app wiring. Official FP8 was
+verified live on both cards on 2026-09-06. Kimi K3 is a paid Moonshot API route,
+not a second local GPU model. The medium Qwen fallback is the Git-declared
+policy; reverify it after vLLM or client-policy changes. The
 [capacity audit](3090-llm-optimization.md) records runtime evidence and limits.
 
 ## Declared GPU ownership
@@ -21,7 +22,7 @@ Both RTX 3090s belong to vLLM. Other GPU workloads must remain parked;
 
 | Property | Value |
 |---|---|
-| Engine | stock vLLM `v0.28.0`, pinned digest |
+| Engine | stock vLLM `v0.29.0`, pinned digest |
 | Weights | official `Qwen/Qwen3.8-27B-FP8`, pinned revision |
 | Placement | TP=2, two RTX 3090s, no CPU weight offload |
 | KV / recurrent state | FP8 E4M3 / float16 |
@@ -48,6 +49,30 @@ stateless chats may disable it. Thinking-off requests send both flags false
 and the separate non-thinking sampler documented in the canonical runbook.
 Open WebUI normalizes generic `high` to medium; Pi exposes only valid efforts.
 
+## Kimi K3 through LiteLLM
+
+| Property | Value |
+|---|---|
+| Hosting | Moonshot API; external to this cluster |
+| Gateway model | `kimi-k3` |
+| LiteLLM upstream | `moonshot/kimi-k3` |
+| Pi provider | `vanillax-litellm/kimi-k3` |
+| Context metadata | 1,000,000 tokens |
+| Output metadata | 131,072 tokens |
+| Input | text and images |
+| Reasoning | always on; upstream supports low / high / max |
+| API price | $0.30/M cached input, $3/M cache-miss input, $15/M output |
+
+Kimi consumes no local GPU capacity. Pi reaches it through the same
+authenticated LiteLLM endpoint used for Qwen, but LiteLLM then calls Moonshot
+with `MOONSHOT_API_KEY` from the `litellm` ExternalSecret. Prompts therefore
+leave the homelab and incur API cost. The workstation guide does not claim that
+Pi's displayed thinking level has been verified end to end as a Kimi effort;
+K3 cannot be switched to non-thinking mode.
+[Kimi's model guide](https://www.kimi.ai/help/kimi-api/api-model-selection)
+and [pricing page](https://www.kimi.ai/help/kimi-api/api-pricing) own the
+upstream capabilities and prices.
+
 ## Storage and staging
 
 A Git-pinned manifest records revision, size and SHA-256 for all 77 checkpoint
@@ -63,11 +88,12 @@ inspect hooks, health, vision, tools, reasoning and long-context behavior.
 
 ## App wiring
 
-- model: `qwen3.8-27b`
+- gateway models: local `qwen3.8-27b` and external `kimi-k3`
 - application gateway: `http://litellm-service.litellm.svc.cluster.local:4000/v1`
 - workstation gateway: `https://litellm.vanillax.me/v1`
 - authentication: namespace-local ExternalSecret from `litellm/master_key`
-- gateway upstream / diagnostics: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
+- Qwen upstream / diagnostics: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
+- Kimi upstream: Moonshot API using `litellm/moonshot_api_key` from 1Password
 
 All Git-declared local LLM consumers use LiteLLM: Open WebUI, Perplexica/Vane,
 Presenton, SurfSense, HolmesGPT, Hindsight, Project Nomad, ComfyUI's vision
@@ -84,14 +110,19 @@ bypass gateway telemetry and must not be mistaken for application traffic.
 
 ## Pi.dev
 
-Pi uses `vanillax-vllm/qwen3.8-27b` through `https://litellm.vanillax.me/v1`.
-Open WebUI uses the in-cluster LiteLLM service. Both routes collect request
-metrics and Langfuse AI observations; direct vLLM callers bypass that gateway.
-See [AI observability](ai-observability.md) for verification and fallback.
-The [workstation guide](pi-agent-local-dev.md) owns the provider JSON, explicit
-medium reasoning mapping, mode-specific sampler extension, compaction reserve,
-one-image history limit, validation, and rollback. Existing cloud providers
-remain separate. Start a new session when validating changed defaults.
+Pi defaults to `vanillax-vllm/qwen3.8-27b` through
+`https://litellm.vanillax.me/v1`. `pik` creates a Kimi-only session;
+`pi-withk3` starts on Qwen and scopes both models for Ctrl+P switching. The same
+repo-owned extension supplies session metadata to both providers but rewrites
+sampling only for Qwen. Open WebUI and the other Git-declared apps continue to
+use local Qwen unless their model is explicitly changed.
+
+Both Pi routes collect LiteLLM metrics and Langfuse AI observations; direct
+vLLM callers bypass that gateway. See [AI observability](ai-observability.md)
+for verification and fallback. The [workstation guide](pi-agent-local-dev.md)
+owns both provider blocks, launchers, model-switch boundary, Qwen reasoning and
+sampling, compaction, validation, and rollback. Start a new session when the
+new backend should not inherit the old model's conversation.
 
 ## Rollback
 

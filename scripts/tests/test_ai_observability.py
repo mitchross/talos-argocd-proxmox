@@ -84,7 +84,8 @@ class AIObservabilityTests(unittest.TestCase):
     def test_pi_and_webui_use_gateway_without_changing_backend_context(self):
         guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
         blocks = [json.loads(b) for b in re.findall(r'```json\n(.*?)\n```', guide, re.S)]
-        provider = next(b['providers']['vanillax-vllm'] for b in blocks if 'providers' in b)
+        providers = next(b['providers'] for b in blocks if 'providers' in b)
+        provider = providers['vanillax-vllm']
         self.assertEqual(provider['baseUrl'], 'https://litellm.vanillax.me/v1')
         # /login cannot configure a custom provider, so the key is supplied
         # here; it must stay an indirection, never a literal secret.
@@ -95,6 +96,20 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(route['litellm_params']['api_base'], 'http://vllm-service.vllm.svc.cluster.local:8080/v1')
         self.assertGreaterEqual(route['litellm_params']['timeout'], 1800)
         self.assertEqual(model['contextWindow'], 262144)
+
+        kimi_provider = providers['vanillax-litellm']
+        self.assertEqual(kimi_provider['baseUrl'], provider['baseUrl'])
+        self.assertRegex(kimi_provider['apiKey'], r'^[$!]')
+        kimi = kimi_provider['models'][0]
+        kimi_route = next(m for m in config['model_list'] if m['model_name'] == kimi['id'])
+        self.assertEqual(kimi_route['litellm_params']['model'], 'moonshot/kimi-k3')
+        self.assertEqual(kimi['contextWindow'], 1_000_000)
+        self.assertEqual(kimi['maxTokens'], 131_072)
+        self.assertEqual(kimi['cost'], {'input': 3, 'output': 15,
+                                        'cacheRead': 0.3, 'cacheWrite': 0})
+        self.assertIn('pi-withk3', guide)
+        self.assertIn('--models $QWEN,$K3', guide)
+
         env = (ROOT / 'my-apps/ai/open-webui/open-webui-configmap.env').read_text()
         for name in ['OPENAI_API_BASE_URL', 'OPENAI_API_BASE_URLS']:
             self.assertIn(name + '=http://litellm-service.litellm.svc.cluster.local:4000/v1', env)
