@@ -80,6 +80,15 @@ patches:
     kind: KmsgLogConfig
     name: grafana
     url: tcp://127.0.0.1:6050
+- name: lan-time-sync
+  inline:
+    apiVersion: v1alpha1
+    kind: TimeSyncConfig
+    ntp:
+      # Firewalla intercepts NTP; sync directly with the LAN gateway.
+      servers:
+      - 192.168.10.1
+      useNTS: false
 ---
 kind: ControlPlane
 machineClass:
