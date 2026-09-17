@@ -13,8 +13,10 @@ spec:
   # CRITICAL: Enable L2 announcements for LoadBalancer IPs
   loadBalancerIPs: true
 
-  # Announce LoadBalancer IPs on all network interfaces starting with 'e'
-  # This typically matches: eth0, eno1, enp*, etc.
+  # Announce LoadBalancer IPs on the cluster's primary NIC. Verified 2026-09-17 from
+  # node_network_info: every Talos node exposes eth0, so this regex matches on all of
+  # them. The previous comment claimed it also matched eno1/enp* — it does not. The hosts
+  # exposing eno*/enp* (TrueNAS, Firewalla, Technitium) are not cluster nodes.
   interfaces:
     - ^(eth|ens)\d+$
 
@@ -23,7 +25,17 @@ spec:
   serviceSelector:
     matchLabels: {}
 
-  # Deliberately permissive: excluding control-plane nodes leaves every VIP allocated but unreachable from the LAN.
+  # Only wired nodes may hold a shared gateway VIP. The shed node
+  # (hp-micro-workers-pstbbd, node.vanillax.dev/link=wifi) sits behind a Wi-Fi media
+  # bridge and its kubelet stalls ~12.5% of the time (21 NotReady windows in 6h, measured
+  # 2026-09-17), so a lease won there would blackhole every split-DNS hostname from the
+  # LAN for the duration. A NoSchedule taint does NOT exclude a node from L2 lease
+  # participation — only this selector does.
+  #
+  # link=wired is chosen over a dedicated announcer label on purpose: it already exists on
+  # the three eligible nodes (dell, hp-elite, hp-sff), so this needs no Omni template
+  # change, and that pool keeps both nodes currently holding gateway leases eligible.
   nodeSelector:
-    matchLabels: {}
+    matchLabels:
+      node.vanillax.dev/link: wired
     matchExpressions: []
