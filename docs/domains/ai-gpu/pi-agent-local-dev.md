@@ -30,15 +30,55 @@ manifests:
 | Request hook | `~/.pi/agent/extensions/qwen-sampling.ts` |
 | Subagents | `@narumitw/pi-subagents` 3.0.1 |
 
-The scan found four local drift items. The installed provider catalog and
-launchers still name Kimi K3 and must be replaced with the OpenRouter entries
-below after the `deepseek-flash` and `pi-auto` gateway routes are merged and
-healthy. Workstation `AGENTS.md` also describes the obsolete Kimi launchers and
-must be updated at the same time. The installed sampler predates the repo's
-thinking penalty change and still uses
-`repetition_penalty=1.0` in both modes. Recopy the extension and reload Pi
-before claiming that the workstation uses the repo-declared 1.05 thinking
-policy.
+The CachyOS scan found obsolete Kimi providers/launchers and an older sampler.
+That machine still needs the migration below unless separately applied there.
+On 2026-09-17 the Mac has all four launchers, the current sampler, and concise
+agent instructions. Its installed Pi remains 0.85.1. The chezmoi changes are
+tracked separately in [mitchross/dotfiles](https://github.com/mitchross/dotfiles).
+
+## Chezmoi and workstation source of truth
+
+The dotfiles repo manages Pi provider/settings merge scripts, `AGENTS.md`, and
+OS-specific zsh launchers. The sampler remains owned by this Talos repo and is
+fetched by chezmoi's external-file entry; its cache refresh period is seven days.
+Use a forced refresh when deliberately installing a newer sampler.
+
+After the dotfiles PR is merged, inspect and apply on each workstation:
+
+```bash
+chezmoi git -- pull --ff-only
+chezmoi diff ~/.pi/agent/models.json ~/.pi/agent/settings.json ~/.pi/agent/AGENTS.md ~/.zshrc
+chezmoi apply ~/.pi/agent/models.json ~/.pi/agent/settings.json ~/.pi/agent/AGENTS.md ~/.zshrc
+chezmoi apply --refresh-externals ~/.pi/agent/extensions/qwen-sampling.ts
+```
+
+Expected: local Qwen remains the default and only default Ctrl+P choice;
+`pi-flash`, `pi-withflash`, and `pi-direct-openrouter` are separate opt-ins.
+Unrelated providers, existing credential references, extra packages, and UI
+settings survive. The retired Kimi model and aliases are removed. Check model
+listings and alias expansion as described below, then open a fresh terminal
+and restart Pi. Review diffs locally: an existing literal credential can appear
+in a diff even though the tracked defaults contain only key-file readers.
+
+New installs read `~/.pi/agent/litellm-api-key` for gateway providers and
+`~/.pi/agent/openrouter-api-key` for direct OpenRouter. Both are private `0600`
+files outside Git and must be provisioned separately on each machine; refresh
+local copies after key rotation. Custom provider `/login` is not supported.
+The [dotfiles setup guide](https://github.com/mitchross/dotfiles#readme) owns
+provisioning steps. Existing environment or `op read` references remain valid
+when their prerequisites are available. On the Mac the local key files remove
+runtime dependence on 1Password login and, for direct OpenRouter, the cluster.
+
+The shared Pi instructions require brief result-first replies (normally at most
+150 words), meaningful 1-2 sentence progress updates, no deliberation transcripts,
+and mechanism/gotcha comments of one line, two maximum. Detailed incident
+history belongs in docs or Mink. This applies to Qwen and all DeepSeek launchers;
+it does not reduce their reasoning effort or change the model's thinking display.
+
+Back up local files before applying. To roll back, restore those backups and
+revert the dotfiles change through its PR workflow before the next chezmoi
+apply; otherwise the managed configuration will return. Do not delete credentials
+or replace unrelated workstation configuration as part of rollback.
 
 ## Provider configuration
 
