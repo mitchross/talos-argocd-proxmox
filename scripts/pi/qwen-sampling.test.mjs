@@ -58,6 +58,7 @@ test("switching off and back on does not retain the previous mode's penalty", ()
 
 test("other providers and models keep their sampler but still get traced", () => {
   for (const model of [undefined, { ...context.model, provider: "vanillax-openrouter", id: "deepseek-flash" },
+    { ...context.model, provider: "vanillax-auto", id: "pi-auto" },
     { ...context.model, id: "other-model" }]) {
     const result = handler({ payload: { temperature: 0.2 } },
       { ...context, model });

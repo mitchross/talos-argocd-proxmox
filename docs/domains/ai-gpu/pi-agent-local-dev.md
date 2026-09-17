@@ -65,7 +65,9 @@ The upstream key was verified on 2026-09-16 as the populated concealed field
 `homelab-prod/open-router/api-key-open-router`, which is visible to the
 cluster's Connect token. The `litellm` ExternalSecret maps that field to
 `OPENROUTER_API_KEY`. Confirm the ExternalSecret becomes Ready before accepting
-the LiteLLM rollout; never copy the value into Git or workstation model JSON.
+the LiteLLM rollout. The Deployment also requires that individual Secret key,
+so its new container waits if ESO has not added it yet. Never copy the value
+into Git or workstation model JSON.
 
 ```json
 {
@@ -160,7 +162,8 @@ the LiteLLM rollout; never copy the value into Git or workstation model JSON.
         "supportsDeveloperRole": false,
         "supportsReasoningEffort": false,
         "supportsUsageInStreaming": true,
-        "maxTokensField": "max_tokens"
+        "maxTokensField": "max_tokens",
+        "requiresReasoningContentOnAssistantMessages": true
       },
       "models": [
         {
@@ -219,15 +222,18 @@ OpenRouter selects for the alias. The alias follows the newest DeepSeek Flash
 family member, so its target, limits, providers, and prices can change without
 a Git edit.
 
-On 2026-09-16 the public catalog advertised text and image input, a 1,048,576
-token model context, a 1,000,000-token provider context, and up to 393,216
-completion tokens. Pi deliberately caps direct output at 32,768 tokens to
-control spend and keep the same practical agent budget as local Qwen. Its
-static cost entry uses the current peak time-window price: $0.30/M input,
-$0.03/M cached input, and $1.20/M output. Lower current windows are not encoded
-because Pi accepts only one price. OpenRouter's response and LiteLLM/Langfuse
-cost records are authoritative.
-[OpenRouter's live model catalog](https://openrouter.ai/api/v1/models) and
+On 2026-09-16 the public catalog resolved the alias to DeepSeek V4.1 Flash,
+with text and image input, a 1,048,576-token model and top-provider context,
+and up to 943,718 completion tokens. Individual providers have lower limits.
+Pi deliberately caps direct output at 32,768 tokens to control spend and keep
+the same practical agent budget as local Qwen. Its
+static planning estimate is $0.30/M input, $0.03/M cached input, and $1.20/M
+output. That covers the current DeepSeek peak time-window rate, but some
+providers charge more; it is not a spending cap or a guaranteed upper bound.
+Pi accepts only one price. OpenRouter's billed usage is authoritative;
+compare LiteLLM/Langfuse cost records with it before relying on those totals.
+[OpenRouter's live model catalog](https://openrouter.ai/api/v1/models),
+[current target's provider limits and prices](https://openrouter.ai/api/v1/models/deepseek/deepseek-v4.1-flash/endpoints), and
 [LiteLLM's OpenRouter provider guide](https://docs.litellm.ai/docs/providers/openrouter)
 own the moving upstream contract.
 
@@ -255,6 +261,9 @@ carries that decision through the assistant/tool continuation requests for that
 turn. `session_affinity` remains false, so the next human ask can select the
 other backend. This is automatic model selection, not load balancing: one
 completion goes to one backend and is never split across Qwen and DeepSeek.
+`enable_context_window_escalation: false` prevents growing history from
+overriding the classified tier and sending a local turn to paid compute.
+If the chosen backend cannot fit the request, compact or start a new session.
 
 The router is a beta LiteLLM feature. Its decision is policy, not a guarantee
 of task quality or privacy: any ask classified `COMPLEX` or `REASONING`, plus
@@ -271,13 +280,16 @@ fits inside Qwen's window.
 beta behavior and configuration contract.
 
 Pi cannot price two possible upstreams in one static model entry. The
-`vanillax-auto/pi-auto` entry therefore shows DeepSeek Flash's peak rates as a conservative
-upper bound; local-Qwen turns will look paid in Pi even though their actual API
-cost is zero. LiteLLM and Langfuse are authoritative for routed model and
-actual request cost. The auto provider suppresses a client
-`reasoning_effort`: Qwen uses the server's fixed medium default and DeepSeek
+`vanillax-auto/pi-auto` entry therefore uses the same static planning estimate
+as direct Flash; local-Qwen turns will look paid in Pi even though their
+actual API cost is zero. Use LiteLLM/Langfuse to identify the routed model,
+and OpenRouter billed usage to confirm external spend. The auto provider
+suppresses a client `reasoning_effort`: Qwen uses the server's fixed medium default and DeepSeek
 Flash uses OpenRouter's upstream `high` default. The single exposed Pi level is
 descriptive, not an override of either backend.
+The auto provider also supplies `reasoning_content` on assistant history,
+including an empty string when a prior response had no reasoning, so a later
+DeepSeek turn can replay the same tool-call history as the direct route.
 
 Requests pass through LiteLLM for Prometheus metrics and Langfuse AI analytics.
 The repo-owned extension attaches Pi's session ID and a `pi` tag to all three

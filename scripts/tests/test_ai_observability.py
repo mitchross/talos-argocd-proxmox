@@ -119,6 +119,7 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(auto_provider['baseUrl'], provider['baseUrl'])
         self.assertRegex(auto_provider['apiKey'], r'^[$!]')
         self.assertFalse(auto_provider['compat']['supportsReasoningEffort'])
+        self.assertTrue(auto_provider['compat']['requiresReasoningContentOnAssistantMessages'])
         auto_model = auto_provider['models'][0]
         self.assertEqual(auto_model['id'], 'pi-auto')
         self.assertEqual(auto_model['contextWindow'], 262144)
@@ -136,6 +137,10 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(fields['OPENROUTER_API_KEY'], {
             'key': 'open-router', 'property': 'api-key-open-router'})
         self.assertNotIn('MOONSHOT_API_KEY', fields)
+        deployment = container(read('my-apps/ai/litellm/deployment.yaml'))
+        upstream = next(e for e in deployment['env'] if e['name'] == 'OPENROUTER_API_KEY')
+        self.assertEqual(upstream['valueFrom']['secretKeyRef'], {
+            'name': 'litellm-secrets', 'key': 'OPENROUTER_API_KEY'})
 
         env = (ROOT / 'my-apps/ai/open-webui/open-webui-configmap.env').read_text()
         for name in ['OPENAI_API_BASE_URL', 'OPENAI_API_BASE_URLS']:
@@ -157,6 +162,7 @@ class AIObservabilityTests(unittest.TestCase):
         })
         self.assertEqual(router['classification_mode'], 'user_turn')
         self.assertFalse(router['session_affinity'])
+        self.assertFalse(router['enable_context_window_escalation'])
         self.assertFalse(router['return_raw_model_name'])
         self.assertEqual(params['complexity_router_default_model'], 'qwen3.8-27b')
         self.assertEqual(auto['model_info'], {
@@ -173,7 +179,7 @@ class AIObservabilityTests(unittest.TestCase):
             'output_cost_per_token': 0.0000012,
             'cache_read_input_token_cost': 0.00000003,
             'max_input_tokens': 1048576,
-            'max_output_tokens': 393216,
+            'max_output_tokens': 943718,
         })
         image = container(read('my-apps/ai/litellm/deployment.yaml'))['image']
         self.assertEqual(image, 'ghcr.io/berriai/litellm:v1.101.0')

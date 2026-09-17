@@ -58,20 +58,21 @@ Open WebUI normalizes generic `high` to medium; Pi exposes only valid efforts.
 | Gateway model | `deepseek-flash` |
 | LiteLLM upstream | `openrouter/~deepseek/deepseek-flash-latest` |
 | Pi provider | `vanillax-openrouter/deepseek-flash` |
-| Model context metadata | 1,048,576 tokens; current top-provider limit is 1,000,000 |
-| Output metadata | 393,216 tokens upstream; Pi deliberately caps 32,768 |
+| Model context metadata | 1,048,576 tokens for model and top provider; other providers can be lower |
+| Output metadata | 943,718 tokens at the top provider; Pi deliberately caps 32,768 |
 | Input | text and images |
 | Reasoning | enabled by default at high; alias advertises low / high / max |
-| Conservative Pi price | $0.03/M cached input, $0.30/M input, $1.20/M output |
+| Pi planning estimate | $0.03/M cached input, $0.30/M input, $1.20/M output; not a spending cap |
 
 DeepSeek Flash consumes no local GPU capacity. Pi reaches it through the same
 authenticated LiteLLM endpoint used for Qwen, but LiteLLM then calls OpenRouter
 with `OPENROUTER_API_KEY` from the `litellm` ExternalSecret. Prompts therefore
 leave the homelab, may reach an OpenRouter-selected provider, and incur API
 cost. The `latest` alias may change target, limits, supported inputs, providers,
-and prices without a Git edit. The static Pi and LiteLLM metadata uses the
-2026-09-16 peak time-window rate rather than the lower base rate; actual
-OpenRouter responses and LiteLLM/Langfuse spend are authoritative.
+and prices without a Git edit. The 2026-09-16 catalog resolves it to DeepSeek
+V4.1 Flash. The static Pi and LiteLLM price covers DeepSeek's peak time window,
+but some providers cost more. OpenRouter billed usage is authoritative;
+verify LiteLLM/Langfuse totals against it.
 [OpenRouter's live model catalog](https://openrouter.ai/api/v1/models) and
 [LiteLLM's OpenRouter provider guide](https://docs.litellm.ai/docs/providers/openrouter)
 own the moving upstream contract.
@@ -87,6 +88,7 @@ own the moving upstream contract.
 | Empty/default route | `qwen3.8-27b` |
 | Classification boundary | each new human turn; continuation/tool calls keep that turn's model |
 | Session pin | off; a later human turn may select the other backend |
+| Context escalation | off; oversized history cannot override a local classification |
 | Advertised limits | 229,376 input plus 32,768 output; Pi uses a 262,144-token total window |
 
 The built-in heuristic adds no classifier model call. One request is served by
