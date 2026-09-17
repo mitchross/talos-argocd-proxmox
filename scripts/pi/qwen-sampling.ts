@@ -4,6 +4,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 export default function (pi: ExtensionAPI) {
   pi.on("before_provider_request", (event, ctx) => {
     const payload = event.payload as Record<string, unknown>;
+    if (ctx.model?.provider === "vanillax-direct-openrouter") return payload;
     // Keep direct and auto-routed requests in the same Langfuse session.
     const traced = {
       ...payload,

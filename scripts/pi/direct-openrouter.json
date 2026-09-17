@@ -1,0 +1,44 @@
+{
+  "providers": {
+    "vanillax-direct-openrouter": {
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "api": "openai-completions",
+      "apiKey": "!cat \"$HOME/.pi/agent/openrouter-api-key\"",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsUsageInStreaming": true,
+        "maxTokensField": "max_tokens",
+        "thinkingFormat": "openrouter",
+        "requiresReasoningContentOnAssistantMessages": true
+      },
+      "models": [
+        {
+          "id": "~deepseek/deepseek-flash-latest",
+          "name": "DeepSeek Flash Latest (direct OpenRouter, Pi 32K cap)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": null,
+            "high": "high",
+            "xhigh": null,
+            "max": "max"
+          },
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 1048576,
+          "maxTokens": 32768,
+          "cost": {
+            "input": 0.3,
+            "output": 1.2,
+            "cacheRead": 0.03,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    }
+  }
+}

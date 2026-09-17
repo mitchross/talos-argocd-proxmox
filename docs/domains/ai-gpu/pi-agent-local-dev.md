@@ -10,7 +10,7 @@ Bare `pi` and `pi-qwen-only` use the self-hosted
 cloud-hosted **`vanillax-openrouter/deepseek-flash`** only. `pi-withflash` selects the
 **`vanillax-auto/pi-auto`** virtual model: LiteLLM automatically keeps
 `SIMPLE` / `MEDIUM` work on local Qwen and sends `COMPLEX` / `REASONING` work
-to OpenRouter's DeepSeek Flash latest alias. All paths enter the authenticated LiteLLM gateway and share
+to OpenRouter's DeepSeek Flash latest alias. These three paths enter the authenticated LiteLLM gateway and share
 Langfuse session tracing, but only Qwen is served by this cluster's vLLM and
 RTX 3090s.
 
@@ -382,6 +382,72 @@ the separate `pi-qwen-only` or `pi-flash` launcher to override the policy.
 Because a later human turn can move the same session from Qwen to OpenRouter,
 start `/new` before a cloud-eligible task when the previous local conversation contains
 sensitive content that must not be forwarded.
+
+## Direct OpenRouter during cluster outages
+
+`pi-direct-openrouter` uses paid DeepSeek Flash directly at
+`https://openrouter.ai/api/v1`. It bypasses LiteLLM, vLLM, and Langfuse entirely;
+these requests will not appear in the homelab dashboards or session traces.
+Use OpenRouter activity for billed usage. Bare `pi` remains local-only.
+The direct launcher was installed on the Mac on 2026-09-16; the CachyOS
+workstation needs the same manual installation if desired.
+
+Prerequisites: Pi 0.85.1, Internet access, and the actual OpenRouter API key
+from `homelab-prod/open-router/api-key-open-router` (not the LiteLLM master key).
+Back up `~/.pi/agent/models.json`, `settings.json`, `.zshrc`, and the installed
+sampler before changing them. Store the key outside Git in
+`~/.pi/agent/openrouter-api-key`, readable only by your user. With a signed-in
+1Password CLI, provision it without printing its value:
+
+```bash
+mkdir -p ~/.pi/agent
+(umask 077; op read 'op://homelab-prod/open-router/api-key-open-router' > ~/.pi/agent/openrouter-api-key.new) &&
+  test -s ~/.pi/agent/openrouter-api-key.new &&
+  mv ~/.pi/agent/openrouter-api-key.new ~/.pi/agent/openrouter-api-key
+```
+
+If that command fails, stop and unlock/sign into 1Password; do not replace a
+working key with an empty file. Once provisioned, this local copy needs no
+cluster or 1Password connection at launch. Refresh it after key rotation.
+
+From the repository root, merge the provider fragment into the existing catalog:
+
+```bash
+python3 - <<'PYCODE'
+import json
+from pathlib import Path
+path = Path.home() / ".pi/agent/models.json"
+models = json.loads(path.read_text())
+fragment = json.loads(Path("scripts/pi/direct-openrouter.json").read_text())
+models.setdefault("providers", {}).update(fragment["providers"])
+path.write_text(json.dumps(models, indent=2) + "\n")
+path.chmod(0o600)
+PYCODE
+cp scripts/pi/qwen-sampling.ts ~/.pi/agent/extensions/qwen-sampling.ts
+```
+
+The [provider fragment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/direct-openrouter.json)
+uses upstream model ID `~deepseek/deepseek-flash-latest`, the same reasoning
+compatibility and 32,768 output cap as `pi-flash`, and a local key-file reader.
+The sampler leaves this provider untouched, without attaching Langfuse metadata.
+Add this alias to `~/.zshrc` and open a fresh terminal:
+
+```bash
+alias pi-direct-openrouter='pi --model vanillax-direct-openrouter/~deepseek/deepseek-flash-latest --thinking high --models vanillax-direct-openrouter/~deepseek/deepseek-flash-latest'
+```
+
+Run `pi --list-models '~deepseek/deepseek-flash-latest'` and
+`type pi-direct-openrouter`. Expect provider `vanillax-direct-openrouter`,
+roughly 1M context, 32K output, and the alias above. Start a fresh session with
+`pi-direct-openrouter`; this forces direct DeepSeek and does not auto-route.
+A missing/invalid key is an authentication error, not a reason to fall back to
+the cluster. Prompts, conversation context, and tool schemas go to OpenRouter.
+
+Rollback: remove the alias and `vanillax-direct-openrouter` provider (or restore
+the backups), remove the local OpenRouter key if no longer needed, and restart
+Pi. No cluster changes are required.
+[OpenRouter authentication](https://openrouter.ai/docs/api/reference/authentication)
+defines the direct endpoint and upstream credential contract.
 
 ## Subagents and DeepSeek second opinions
 
