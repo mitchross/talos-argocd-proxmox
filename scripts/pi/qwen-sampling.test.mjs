@@ -71,6 +71,15 @@ test("other providers and models keep their sampler but still get traced", () =>
 });
 
 
+test("direct OpenRouter bypasses gateway telemetry and sampling", () => {
+  const payload = { messages: [], reasoning: { effort: "high" }, max_tokens: 32768 };
+  const result = handler({ payload }, { ...context, model: {
+    provider: "vanillax-direct-openrouter", id: "~deepseek/deepseek-flash-latest",
+  } });
+  assert.equal(result, payload);
+  assert.equal("metadata" in result, false);
+});
+
 test("requests in a Pi session share telemetry metadata without losing caller fields", () => {
   const result = handler({ payload: {} }, context);
   assert.deepEqual(result.metadata, { session_id: "session-test", trace_name: "pi-agent", tags: ["pi"] });
