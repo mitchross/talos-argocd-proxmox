@@ -32,7 +32,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
 - **AI**: the production backend serves official `qwen3.8-27b` FP8 through vLLM
   on both RTX 3090s. The [model catalog](domains/ai-gpu/model-catalog.md)
-  owns the local backend and Pi's optional paid Kimi K3 route; use the
+  owns the local backend and Pi's optional OpenRouter DeepSeek Flash route; use the
   [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
 
 ## Documentation

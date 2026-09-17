@@ -15,14 +15,12 @@ model_list:
       api_key: os.environ/OPENROUTER_API_KEY
       timeout: 1800
     model_info:
-      # OpenRouter's latest alias and time-window prices can move. Use the
-      # 2026-09-16 peak rate as a conservative static estimate; OpenRouter's
-      # response and LiteLLM spend logs remain authoritative.
+      # Planning estimate only: alias targets and provider/time-window rates vary.
       input_cost_per_token: 0.0000003
       output_cost_per_token: 0.0000012
       cache_read_input_token_cost: 0.00000003
       max_input_tokens: 1048576
-      max_output_tokens: 393216
+      max_output_tokens: 943718
   - model_name: pi-auto
     litellm_params:
       model: auto_router/complexity_router
@@ -38,6 +36,8 @@ model_list:
         # Reclassify each human ask, but keep one model through its tool loop.
         classification_mode: user_turn
         session_affinity: false
+        # Context growth must not move a local-classified turn to paid compute.
+        enable_context_window_escalation: false
         return_raw_model_name: false
       complexity_router_default_model: qwen3.8-27b
     model_info:
