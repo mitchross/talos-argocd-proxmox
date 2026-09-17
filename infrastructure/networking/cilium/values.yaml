@@ -153,6 +153,15 @@ hubble:
 
 # Operator Configuration
 operator:
+  # Rolls the operator when the cilium-config ConfigMap changes. Without this the operator
+  # reads --config-dir only at startup and the pod template carries no config checksum, so
+  # a ConfigMap-only change applies to the ConfigMap but never reaches the generated
+  # Gateway Services. That exact gap is what kept all three gateway Services on
+  # externalTrafficPolicy: Local after the 2026-09-16 v1.20.2 bump, taking every LAN route
+  # down until the operator pods were recycled by hand (#2441).
+  # Agent rollouts stay manual (rollOutCiliumPods is deliberately not set) so a config
+  # tweak cannot restart the datapath on every node at once.
+  rollOutPods: true
   prometheus:
     enabled: true
     metricsService: true
