@@ -115,9 +115,14 @@ envoy:
 # Gateway API Support
 gatewayAPI:
   enabled: true
-  # CRITICAL FIX: Use Local externalTrafficPolicy to preserve source IP
-  # and enable proper connection tracking. This fixes intermittent connectivity.
-  externalTrafficPolicy: Local
+  # Must stay Cluster (also Cilium's default). With Local, Cilium >=1.20.2's l2announcer
+  # drops any service whose backends are not node-local, and the generated Gateway
+  # services use the nodeless 192.192.192.192 placeholder backend — so no node ever takes
+  # the lease, no node answers ARP for the VIP, and every LAN client times out on
+  # .49/.50/.52 while the ClusterIP tunnel path keeps working.
+  # Source IP is preserved either way: Cilium's per-node Envoy keeps the visible source
+  # address for both Cluster and Local (see docs/audits/2026-09-05-architecture-audit.md).
+  externalTrafficPolicy: Cluster
   # Enable session affinity for consistent routing
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
