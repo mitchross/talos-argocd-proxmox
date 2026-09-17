@@ -97,22 +97,98 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertGreaterEqual(route['litellm_params']['timeout'], 1800)
         self.assertEqual(model['contextWindow'], 262144)
 
-        kimi_provider = providers['vanillax-litellm']
-        self.assertEqual(kimi_provider['baseUrl'], provider['baseUrl'])
-        self.assertRegex(kimi_provider['apiKey'], r'^[$!]')
-        kimi = kimi_provider['models'][0]
-        kimi_route = next(m for m in config['model_list'] if m['model_name'] == kimi['id'])
-        self.assertEqual(kimi_route['litellm_params']['model'], 'moonshot/kimi-k3')
-        self.assertEqual(kimi['contextWindow'], 1_000_000)
-        self.assertEqual(kimi['maxTokens'], 131_072)
-        self.assertEqual(kimi['cost'], {'input': 3, 'output': 15,
-                                        'cacheRead': 0.3, 'cacheWrite': 0})
-        self.assertIn('pi-withk3', guide)
-        self.assertIn('--models $QWEN,$K3', guide)
+        openrouter_provider = providers['vanillax-openrouter']
+        self.assertEqual(openrouter_provider['baseUrl'], provider['baseUrl'])
+        self.assertRegex(openrouter_provider['apiKey'], r'^[$!]')
+        self.assertEqual(openrouter_provider['compat']['thinkingFormat'], 'openrouter')
+        self.assertTrue(openrouter_provider['compat']['requiresReasoningContentOnAssistantMessages'])
+        deepseek = openrouter_provider['models'][0]
+        deepseek_route = next(m for m in config['model_list'] if m['model_name'] == deepseek['id'])
+        self.assertEqual(deepseek_route['litellm_params']['model'],
+                         'openrouter/~deepseek/deepseek-flash-latest')
+        self.assertGreaterEqual(deepseek_route['litellm_params']['timeout'], 1800)
+        self.assertEqual(deepseek['contextWindow'], 1_048_576)
+        self.assertEqual(deepseek['maxTokens'], 32_768)
+        self.assertEqual(deepseek['thinkingLevelMap'], {
+            'off': None, 'minimal': None, 'low': 'low', 'medium': None,
+            'high': 'high', 'xhigh': None, 'max': 'max',
+        })
+        self.assertEqual(deepseek['cost'], {'input': 0.3, 'output': 1.2,
+                                            'cacheRead': 0.03, 'cacheWrite': 0})
+        auto_provider = providers['vanillax-auto']
+        self.assertEqual(auto_provider['baseUrl'], provider['baseUrl'])
+        self.assertRegex(auto_provider['apiKey'], r'^[$!]')
+        self.assertFalse(auto_provider['compat']['supportsReasoningEffort'])
+        self.assertTrue(auto_provider['compat']['requiresReasoningContentOnAssistantMessages'])
+        auto_model = auto_provider['models'][0]
+        self.assertEqual(auto_model['id'], 'pi-auto')
+        self.assertEqual(auto_model['contextWindow'], 262144)
+        self.assertEqual(auto_model['maxTokens'], 32768)
+        self.assertEqual(auto_model['cost'], deepseek['cost'])
+        self.assertIn('CachyOS workstation inventory', guide)
+        self.assertIn('@narumitw/pi-subagents` 3.0.1', guide)
+        self.assertIn('diff -u ~/.pi/agent/extensions/qwen-sampling.ts', guide)
+        self.assertIn('pi-withflash', guide)
+        self.assertIn('pi-flash', guide)
+        self.assertIn('--models $AUTO', guide)
+
+        fields = {x['secretKey']: x['remoteRef'] for x in
+                  read('my-apps/ai/litellm/externalsecret.yaml')['spec']['data']}
+        self.assertEqual(fields['OPENROUTER_API_KEY'], {
+            'key': 'open-router', 'property': 'api-key-open-router'})
+        self.assertNotIn('MOONSHOT_API_KEY', fields)
+        deployment = container(read('my-apps/ai/litellm/deployment.yaml'))
+        upstream = next(e for e in deployment['env'] if e['name'] == 'OPENROUTER_API_KEY')
+        self.assertEqual(upstream['valueFrom']['secretKeyRef'], {
+            'name': 'litellm-secrets', 'key': 'OPENROUTER_API_KEY'})
 
         env = (ROOT / 'my-apps/ai/open-webui/open-webui-configmap.env').read_text()
         for name in ['OPENAI_API_BASE_URL', 'OPENAI_API_BASE_URLS']:
             self.assertIn(name + '=http://litellm-service.litellm.svc.cluster.local:4000/v1', env)
+
+    def test_pi_auto_router_keeps_easy_work_local_and_escalates_hard_work(self):
+        config = read('my-apps/ai/litellm/config.yaml')
+        routes = {route['model_name']: route for route in config['model_list']}
+        auto = routes['pi-auto']
+        params = auto['litellm_params']
+        self.assertEqual(params['model'], 'auto_router/complexity_router')
+        self.assertTrue(params['drop_params'])
+        router = params['complexity_router_config']
+        self.assertEqual(router['tiers'], {
+            'SIMPLE': 'qwen3.8-27b',
+            'MEDIUM': 'qwen3.8-27b',
+            'COMPLEX': 'deepseek-flash',
+            'REASONING': 'deepseek-flash',
+        })
+        self.assertEqual(router['classification_mode'], 'user_turn')
+        self.assertFalse(router['session_affinity'])
+        self.assertFalse(router['enable_context_window_escalation'])
+        self.assertFalse(router['return_raw_model_name'])
+        self.assertEqual(params['complexity_router_default_model'], 'qwen3.8-27b')
+        self.assertEqual(auto['model_info'], {
+            'max_input_tokens': 229376,
+            'max_output_tokens': 32768,
+        })
+        self.assertEqual(routes['qwen3.8-27b']['litellm_params']['api_base'],
+                         'http://vllm-service.vllm.svc.cluster.local:8080/v1')
+        deepseek = routes['deepseek-flash']
+        self.assertEqual(deepseek['litellm_params']['model'],
+                         'openrouter/~deepseek/deepseek-flash-latest')
+        self.assertEqual(deepseek['model_info'], {
+            'input_cost_per_token': 0.0000003,
+            'output_cost_per_token': 0.0000012,
+            'cache_read_input_token_cost': 0.00000003,
+            'max_input_tokens': 1048576,
+            'max_output_tokens': 943718,
+        })
+        image = container(read('my-apps/ai/litellm/deployment.yaml'))['image']
+        self.assertEqual(image, 'ghcr.io/berriai/litellm:v1.101.0')
+
+        guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
+        self.assertIn('SIMPLE` / `MEDIUM`', guide)
+        self.assertIn('COMPLEX` / `REASONING`', guide)
+        self.assertIn('classification_mode: user_turn', guide)
+        self.assertIn('beta', guide.lower())
 
 
 class AllLLMClientsTests(unittest.TestCase):
