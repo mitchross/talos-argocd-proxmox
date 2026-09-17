@@ -13,8 +13,7 @@ spec:
   # CRITICAL: Enable L2 announcements for LoadBalancer IPs
   loadBalancerIPs: true
 
-  # Announce LoadBalancer IPs on all network interfaces starting with 'e'
-  # This typically matches: eth0, eno1, enp*, etc.
+  # Matches Talos eth/ens interfaces, including eth0.
   interfaces:
     - ^(eth|ens)\d+$
 
@@ -23,7 +22,8 @@ spec:
   serviceSelector:
     matchLabels: {}
 
-  # Deliberately permissive: excluding control-plane nodes leaves every VIP allocated but unreachable from the LAN.
+  # NoSchedule taints do not prevent L2 lease ownership; exclude the Wi-Fi node here.
   nodeSelector:
-    matchLabels: {}
+    matchLabels:
+      node.vanillax.dev/link: wired
     matchExpressions: []
