@@ -153,6 +153,8 @@ hubble:
 
 # Operator Configuration
 operator:
+  # ConfigMap checksum restarts operators so startup-only settings reach generated Services.
+  rollOutPods: true
   prometheus:
     enabled: true
     metricsService: true
