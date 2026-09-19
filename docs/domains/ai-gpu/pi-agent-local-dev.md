@@ -287,7 +287,7 @@ provider's required conversation shape.
 ## Automatic Qwen / DeepSeek routing
 
 `pi-auto` is a LiteLLM complexity-router alias, not a third inference backend.
-The deployed LiteLLM `v1.101.0` policy is:
+The Git-declared LiteLLM `v1.101.0` policy is:
 
 | Classified tier | Selected gateway model | Actual compute |
 |---|---|---|
@@ -295,7 +295,15 @@ The deployed LiteLLM `v1.101.0` policy is:
 | `COMPLEX`, `REASONING` | `deepseek-flash` | paid OpenRouter route |
 | no classifiable human ask / classifier default | `qwen3.8-27b` | local vLLM on the two RTX 3090s |
 
-The built-in heuristic classifier adds no model call. With
+The classifier uses local Qwen through the `pi-classifier` route, with thinking
+disabled and a 64-token structured response. It judges the task's meaning using
+LiteLLM's agentic rubric; keyword scoring had classified short incident reports
+as SIMPLE. It includes up to four prior user/assistant turns within an 8,000-character
+context budget, so approvals such as "yes, do that" can inherit the plan's difficulty.
+Classification adds one local inference call per human turn, with a 30-second
+timeout. Errors, invalid output, or timeouts select the local default model;
+the default classifier circuit breaker temporarily skips classification after a timeout.
+With
 `classification_mode: user_turn`, LiteLLM classifies each new human ask and
 carries that decision through the assistant/tool continuation requests for that
 turn. `session_affinity` remains false, so the next human ask can select the
@@ -304,6 +312,16 @@ completion goes to one backend and is never split across Qwen and DeepSeek.
 `enable_context_window_escalation: false` prevents growing history from
 overriding the classified tier and sending a local turn to paid compute.
 If the chosen backend cannot fit the request, compact or start a new session.
+
+After this configuration rolls out through ArgoCD, use the Auto Router test UI
+with a greeting, a routine rename, and a difficult incident or architecture request.
+Expect local tiers for the first two and a DeepSeek tier for the difficult task.
+These tests call the local classifier but do not dispatch the selected backend.
+Check `routing_decision.cause=llm_classifier`; `default_model_fallback` means
+classification failed, rather than the task being judged easy. Revert the classifier
+configuration through a PR to restore keyword routing if latency or classification
+quality is unacceptable. The source of truth is
+[`litellm/config.yaml`](../../../my-apps/ai/litellm/config.yaml).
 
 The router is a beta LiteLLM feature. Its decision is policy, not a guarantee
 of task quality or privacy: any ask classified `COMPLEX` or `REASONING`, plus
