@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:6e0e3fa9621bb590fa456d6a887e973790edfbd986d6f5e895f302211645ea66
+          image: ghcr.io/posthog/posthog/capture:master@sha256:0c5db5e41ab1afae9d85047532369c7b04c6bbcddd7542d8d4eff25ae3167695
           # No envFrom on purpose: events mode needs no S3/shared config, and skipping
           # the ConfigMap keeps env edits from rolling the hot ingest path.
           env:
@@ -86,7 +86,7 @@ spec:
     spec:
       containers:
         - name: replay-capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:6e0e3fa9621bb590fa456d6a887e973790edfbd986d6f5e895f302211645ea66
+          image: ghcr.io/posthog/posthog/capture:master@sha256:0c5db5e41ab1afae9d85047532369c7b04c6bbcddd7542d8d4eff25ae3167695
           envFrom:
             - configMapRef:
                 name: posthog-env
@@ -172,7 +172,7 @@ spec:
       initContainers:
         - name: copy-geoip
           # Keep this aligned with the posthog-migrate hook in jobs.yaml.
-          image: posthog/posthog:latest@sha256:1df304db352b4409ca046a86830cb4f94d7317b5d79d85732b8e5cb067ed0f63
+          image: posthog/posthog:latest@sha256:36381cd94fd12d1d38fcc203a4d84116a3eccb52a32636d79065db1a80be1926
           command:
             - /bin/sh
             - -c
@@ -185,7 +185,7 @@ spec:
               mountPath: /share
       containers:
         - name: feature-flags
-          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:494c3eec82d0c372de5dd8a10dd363f15e86399514de2fe8b7c88297c65c2b9b
+          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:4429fab865c8b21f48fbe73af67a46ff6fba17e73580ebe4d85f0aa06af248fc
           env:
             - name: PGPASSWORD
               valueFrom:
