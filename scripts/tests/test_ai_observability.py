@@ -154,6 +154,18 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(params['model'], 'auto_router/complexity_router')
         self.assertTrue(params['drop_params'])
         router = params['complexity_router_config']
+        self.assertEqual(router['classifier_type'], 'llm')
+        self.assertEqual(router['classifier_fallback'], 'default_model')
+        self.assertTrue(router['classifier_context_include_assistant_turns'])
+        self.assertGreater(router['classifier_context_window_size'], 0)
+        classifier = routes[router['classifier_llm_config']['model']]['litellm_params']
+        # Classification must stay local, avoid recursive routing, and produce JSON without thinking.
+        self.assertEqual(classifier['model'], routes['qwen3.8-27b']['litellm_params']['model'])
+        self.assertEqual(classifier['api_base'], routes['qwen3.8-27b']['litellm_params']['api_base'])
+        self.assertEqual(classifier['extra_body']['chat_template_kwargs'], {
+            'enable_thinking': False, 'preserve_thinking': False,
+        })
+        self.assertLessEqual(classifier['max_tokens'], 128)
         self.assertEqual(router['tiers'], {
             'SIMPLE': 'qwen3.8-27b',
             'MEDIUM': 'qwen3.8-27b',
