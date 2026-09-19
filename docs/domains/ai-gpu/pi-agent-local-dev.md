@@ -321,7 +321,7 @@ Check `routing_decision.cause=llm_classifier`; `default_model_fallback` means
 classification failed, rather than the task being judged easy. Revert the classifier
 configuration through a PR to restore keyword routing if latency or classification
 quality is unacceptable. The source of truth is
-[`litellm/config.yaml`](../../../my-apps/ai/litellm/config.yaml).
+[`litellm/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/litellm/config.yaml).
 
 The router is a beta LiteLLM feature. Its decision is policy, not a guarantee
 of task quality or privacy: any ask classified `COMPLEX` or `REASONING`, plus
