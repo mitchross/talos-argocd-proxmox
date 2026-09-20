@@ -1,67 +1,55 @@
-# AI observability: Langfuse, LiteLLM and Grafana
+# AI gateway and analytics
 
-Git-declared configuration, with AI routing refreshed 2026-09-16. Manifest
-validation is not proof of live trace ingestion.
+**Which model answered?** Open Grafana `/d/pi-routing`.
+**Why did that turn escalate?** Open `langfuse.vanillax.me`, filter tag `pi`.
 
-## What each service measures
+## Who measures what
 
-| Service | Role |
+| Service | Answers |
 |---|---|
-| Langfuse | AI inputs/outputs, generations, tokens, latency, session grouping, scores and evaluation workflows |
-| LiteLLM | Authenticated model gateway; exports generation telemetry and request metrics |
-| Prometheus / Grafana | Request failures, latency, throughput, vLLM KV capacity/preemptions and GPU utilization |
-| PostHog | Product events, funnels, feature flags and browser session replay |
+| Grafana `/d/pi-routing` | local vs paid ratio, escalations, spend |
+| Grafana `/d/ai-gateway-analytics` | gateway requests, tokens, latency, failures |
+| Langfuse | per-trace inputs/outputs, tokens, sessions, routing metadata |
+| Prometheus | throughput, vLLM KV capacity, GPU utilisation |
 
-Local-model traffic uses **LiteLLM → vLLM**. Pi can force paid DeepSeek Flash,
-which follows **Pi → LiteLLM → OpenRouter → selected provider** and does not
-touch the local GPUs. Its
-`pi-auto` virtual model also lets LiteLLM classify each new human turn: lower
-tiers use local Qwen, while `COMPLEX` and `REASONING` use DeepSeek Flash.
-LiteLLM exports
-observations and routing-decision metadata from both upstreams to self-hosted
-Langfuse using `langfuse_otel`, alongside its `prometheus` callback. PostHog's
-AI callbacks are removed; its deployment and existing data remain. Historical
-PostHog AI events/Kafka backlog are not imported into Langfuse.
+Local traffic is **LiteLLM → vLLM**. Paid traffic is **LiteLLM → OpenRouter**.
+LiteLLM exports to Langfuse via `langfuse_otel` and to Prometheus via its
+`prometheus` callback.
 
-All Git-declared local LLM clients now target LiteLLM, including parked clients:
+## Reading the Qwen / DeepSeek split
 
-| Clients | Gateway configuration |
-|---|---|
-| Pi, Open WebUI | Existing authenticated gateway setup; Pi includes session grouping |
-| Hindsight, Project Nomad, Karakeep, WorldMonitor | App environment settings and namespace-local ExternalSecrets |
-| SurfSense | Secret-rendered global catalog shared by API, worker and scheduler |
-| Perplexica / Vane, Presenton | Startup reconciliation updates persisted provider configuration |
-| News Reader, Deal Scout | Pinned source compatibility overlays add missing Bearer authentication |
-| n8n | Authenticated workflow requests and GitOps workflow/credential reconciliation |
-| HolmesGPT, Keep | Native provider secret interpolation; Keep uses the gateway root URL |
-| ComfyUI vision bridge | Secret-backed requests and migration of legacy saved local server URLs |
+`pi-withflash` reports the `pi-auto` alias, never the backend that answered.
+LiteLLM tags every request with two model labels, and the split lives in the gap
+between them:
 
-Each namespace receives the existing `homelab-prod/litellm/master_key` through
-External Secrets. No keys are stored in ConfigMaps or workflow JSON. These are
-shared gateway credentials, not separate per-app budgets or access controls.
-App/session labels are available where clients supply metadata; a shared key
-alone does not identify the calling application.
+| Label | Meaning | Value on an auto-routed turn |
+|---|---|---|
+| `requested_model` | what the client asked for | `pi-auto` |
+| `model` / `litellm_model_name` | what actually ran | `qwen3.8-27b-auto` or `~deepseek/deepseek-flash-latest` |
 
-Parked applications remain parked. This configures their next startup without
-allocating another GPU or activating automation. Project Nomad's separate TEI
-embedding service remains separate; Karakeep's automatic vector indexing stays
-off. The migration covers local language-model requests, not every media or
-embedding service. Direct vLLM endpoints remain for gateway upstream traffic and
-explicit diagnostics. The Git-declared `deepseek-flash` route is the external-model
-exception: Pi opts into it directly with `pi-flash` or into its beta complexity
-policy with `pi-withflash`; prompts routed there leave the cluster and
-OpenRouter bills the request. Other operator-created cloud providers remain
-separate from these Git-declared defaults. No application uses DeepSeek as a
-failure fallback:
-`pi-auto` is an explicit model whose classifier deliberately chooses an
-upstream before dispatch.
+`litellm_proxy_total_requests_metric_total` carries **only** `requested_model`,
+so it cannot show the split. Use
+`litellm_deployment_success_responses_total`, whose `litellm_model_name` is the
+resolved deployment.
 
-A gateway observes model calls and tool-call responses. It does not automatically
-observe local tool execution, file changes, or every internal agent step. Use
-application instrumentation for those spans when building agents. Evaluation
-scores are also not automatic: add a small labeled dataset and explicit scoring
-before treating model speed as evidence of answer quality. This deployment does
-not enable paid judges or background model calls.
+Two traps, both caused by sparse Pi traffic, both failing in the reassuring
+direction:
+
+1. A LiteLLM counter that first appears at its **full value** makes `increase()`
+   return zero, so a real escalation reads as "never fired". Use
+   `max_over_time(...[$__range])` for totals and a cumulative line for spend.
+2. `histogram_quantile` returns `NaN` when every bucket rate is zero, which a
+   handful of classifier calls guarantees. Use a `sum`/`count` average.
+
+In Langfuse the resolved backend is `providedModelName`. Scope every widget with
+the tag filter `tags any of [pi]`; without it, Open WebUI and the other gateway
+clients count as Pi turns. Per trace, check `routing_decision.cause`:
+`llm_classifier` means the task was judged, `default_model_fallback` means
+classification failed and fell back.
+
+Langfuse dashboards live in the Langfuse database, not in Git. Recreate them
+through the UI, or through `dashboardWidgets.create` plus
+`dashboard.updateDashboardDefinition`, after a rebuild.
 
 ## Reading the Qwen / DeepSeek split
 
@@ -101,200 +89,92 @@ through the UI, or through `dashboardWidgets.create` plus
 
 ## Routes and credentials
 
-| Caller | Endpoint | Authentication |
+| Caller | Endpoint | Auth |
 |---|---|---|
-| Pi → local Qwen | `https://litellm.vanillax.me/v1` | LiteLLM key from workstation environment / `models.json` |
-| Pi → DeepSeek Flash | `https://litellm.vanillax.me/v1` | Same LiteLLM key; gateway uses `OPENROUTER_API_KEY` upstream |
-| Pi → `pi-auto` | `https://litellm.vanillax.me/v1` | Same LiteLLM key; classifier selects one of the two rows above |
-| Open WebUI | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | `open-webui-litellm` ExternalSecret |
-| LiteLLM → Qwen | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | Existing local placeholder |
-| LiteLLM → DeepSeek Flash | OpenRouter API | `litellm-secrets` ExternalSecret |
-| LiteLLM telemetry | `http://langfuse-web.langfuse.svc.cluster.local:3000` | Langfuse project public/secret keys |
-| Langfuse UI | `https://langfuse.vanillax.me` | Initial owner credentials in 1Password |
-| Direct diagnostics | `https://vllm.vanillax.me/v1` | Bypasses gateway observations |
+| Pi (all gateway routes) | `https://litellm.vanillax.me/v1` | LiteLLM key on the workstation |
+| Apps | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | namespace ExternalSecret |
+| LiteLLM → Qwen | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | local placeholder |
+| LiteLLM → DeepSeek | OpenRouter | `litellm-secrets` ExternalSecret |
+| LiteLLM → Langfuse | `http://langfuse-web.langfuse.svc.cluster.local:3000` | project keys |
+| Direct diagnostics | `https://vllm.vanillax.me/v1` | bypasses all telemetry |
 
-The OpenRouter credential was verified on 2026-09-16 as the populated concealed
-field `api-key-open-router` in the Connect-visible
-`homelab-prod/open-router` item. The ExternalSecret projects it as
-`OPENROUTER_API_KEY`; after sync, require that ExternalSecret to be Ready before
-accepting the rollout.
+Every namespace receives `homelab-prod/litellm/master_key` through External
+Secrets. No keys in ConfigMaps or workflow JSON. This is a shared gateway
+credential, not a per-app budget or access control.
 
-Before merging the new app, unlock the 1Password desktop app with CLI
-integration enabled (or sign into `op`), then run:
+## Storage
 
-```bash
-python3 scripts/bootstrap-langfuse-secrets.py
-```
+| Store | Holds | Backup |
+|---|---|---|
+| PostgreSQL | identity, projects, configuration | kopiur, restore-before-bind |
+| ClickHouse | AI observations | kopiur, restore-before-bind |
+| Valkey | queue | **exempt** — losing it loses in-flight observations |
+| RustFS | event payloads, media, exports | separate bucket lifecycle |
 
-Expected: the item is created or existing fields are validated. The helper
-preserves existing credentials and prints no values. The Connect token used by
-External Secrets has read-only vault access and cannot perform this creation.
+Chart 2.1.0, app 4.24.0. Chart-bundled stores are disabled; the app owns
+PostgreSQL, ClickHouse and Valkey so no database operator is needed. A Sync hook
+creates the RustFS bucket before web and worker start.
 
-`homelab-prod/langfuse` holds `public-key`, `secret-key`, `admin-email`,
-`admin-password`, `salt`, `encryption-key`, `nextauth-secret`, and the three
-store passwords. ExternalSecrets copy them into the owning namespaces.
-Headless initialization creates the Vanillax organization and Homelab AI project
-with the same project keys used by LiteLLM. Public signup and vendor telemetry
-are disabled. Initialization only seeds missing entities; editing the seed
-password/key later is not an account/key rotation procedure. Keep the salt and
-encryption key with database backups; replacing them can make stored credentials
-unusable. Never paste secret values into manifests or smoke-test output.
+Do not describe this as lossless messaging. Keep all stores consistent when
+planning a restore, and test recovery with synthetic observations first.
 
-Prometheus authenticates `/metrics` with the existing LiteLLM master key.
-The hash-suffixed ConfigMap rolls LiteLLM on callback/configuration edits.
-Its 30-minute timeout and latency buckets preserve long-running requests.
-Local Qwen cost is recorded as zero, excluding hardware and electricity.
-Prompts and completions are stored in Langfuse, not just anonymous counters.
-Use synthetic input when verifying ingestion and set retention deliberately in
-the project settings before collecting large volumes of real conversations.
+Langfuse v4 uses its new observations data model. The pinned LiteLLM container
+ships legacy Langfuse SDK 2.59.7, so the plain `langfuse` callback is unusable —
+`langfuse_otel` supplies the v4 header and exports to
+`/api/public/otel/v1/traces`. Read with Observations API v2; legacy traces APIs
+return 404 on a fresh v4 install.
 
-The [Pi guide](pi-agent-local-dev.md) remains authoritative for the local-only,
-DeepSeek-only and auto-routed launchers; Qwen's medium default, explicit
-off/low/medium/xhigh, sampler and compaction; and OpenRouter's paid-cloud boundary.
-The local model, FP8 weights/KV, TP=2, native vision, 262,144-token ceiling and
-disabled MTP remain unchanged. The gateway smoke test is not another
-full-context endurance test and does not spend money on OpenRouter.
+## Verify a deployment
 
-## Deployment and persistence
+Roughly 15 minutes.
 
-The application at `my-apps/ai/langfuse` is discovered automatically by ArgoCD.
-It pins the maintained Langfuse chart **2.1.0** and app **4.24.0**. Chart-owned
-web/worker pods use app-owned PostgreSQL, standalone ClickHouse and Valkey;
-all chart-bundled stores are disabled. This avoids adding database operators.
-The namespace and secrets precede stores; a Sync hook creates the scoped RustFS
-bucket before web and worker start. Database migrations are owned by Langfuse.
+1. Confirm `my-apps-langfuse`, `my-apps-litellm`, `my-apps-open-webui` and
+   `monitoring-prometheus-stack` are Synced/Healthy.
+2. Sign into Langfuse and open **Homelab AI**. An empty chart means nothing
+   until you have confirmed the project exists.
+3. Send synthetic traffic:
+   ```bash
+   kubectl -n litellm exec -i deploy/litellm -- python - < scripts/smoke-litellm.py
+   ```
+   Expect PASS for thinking-off, streamed medium with usage, tool invocation,
+   tool-result followup and vision. Record the printed
+   `ai-observability-...` session marker.
+4. In Langfuse Observations, filter by that `session_id` and clear the
+   root-only filter. Expect at least five generations with model, input/output,
+   positive token usage and latency. **Intake HTTP success alone proves
+   nothing** — only stored observations do.
+5. Check backups:
+   ```bash
+   kubectl -n langfuse get secret kopiur-rustfs
+   kubectl -n langfuse get snapshotpolicy,snapshotschedule,restore,snapshot
+   ```
+   Both database policies exist and snapshots reach `Succeeded` with non-zero
+   files. A brand-new empty PVC is not a tested restore.
 
-PostgreSQL holds identity/project/configuration data. ClickHouse holds AI
-observations. Both have Longhorn volumes and kopiur restore-before-bind backups.
-Valkey has a persistent queue with no eviction, but is backup-exempt under repo
-policy: catastrophic queue-volume loss can lose in-flight observations even if
-S3 payloads survive. Do not describe this as a lossless messaging system.
-RustFS holds event payloads, media and exports under separate `langfuse` bucket
-prefixes. Its storage/backup lifecycle is separate from kopiur database snapshots.
-Keep all stores consistent when planning a restore; test recovery with synthetic
-observations before relying on it for enterprise-style retention guarantees.
-
-Langfuse v4 defaults to its new observations data model. The pinned LiteLLM
-container includes legacy Langfuse SDK 2.59.7, so the `langfuse` callback is
-unsuitable. Its existing `langfuse_otel` integration supplies the v4 ingestion
-header and exports to `/api/public/otel/v1/traces`. No LiteLLM upgrade or custom
-SDK/kernel is needed. Use Observations API v2 for reads; legacy traces APIs
-return 404 on fresh v4 installations.
-
-## Adapter verification before deployment
+Check the adapter before deploying a LiteLLM bump:
 
 ```bash
 kubectl -n litellm exec -i deploy/litellm -- python - < scripts/verify-litellm-langfuse.py
 ```
 
-Expected: PASS for the v4 endpoint/header/auth, session metadata, tool output,
-usage and zero local cost. This uses synthetic in-memory spans without making
-model requests or exporting telemetry; it catches pinned-adapter incompatibility.
+This uses synthetic in-memory spans, makes no model requests, and catches a
+pinned-adapter incompatibility before it reaches the cluster.
 
-## Verification after ArgoCD sync
+## When telemetry breaks
 
-1. Confirm `my-apps-langfuse`, `my-apps-litellm`, `my-apps-open-webui` and
-   `monitoring-prometheus-stack` are Synced/Healthy. Check the Langfuse
-   ExternalSecret, bucket hook, database migrations and both application pods.
-2. Sign into Langfuse using `homelab-prod/langfuse` owner credentials and open
-   **Homelab AI**. Confirm the project exists before interpreting empty charts.
-3. Send five synthetic requests through the gateway:
+| Symptom | Cause | Fix |
+|---|---|---|
+| Requests work, no traces | adapter or key mismatch | run the adapter check above |
+| Empty charts, project missing | signed into the wrong project | open **Homelab AI** |
+| Traces stop after a version bump | v4 data-model or SDK drift | re-run the adapter check, then step 4 |
+| TTFT panel empty | no streaming traffic | send a streamed request |
 
-   ```bash
-   kubectl -n litellm exec -i deploy/litellm -- python - < scripts/smoke-litellm.py
-   ```
+Availability and restart panels never prove ingestion. Only step 4 does.
 
-   Expected: PASS for thinking off, streamed medium with usage/reasoning,
-   tool invocation, preserved tool-result followup and vision. Record the
-   printed `ai-observability-...` session marker. These checks prove forwarding;
-   the next step proves telemetry delivery.
-4. Allow batching/ingestion to finish. In Langfuse Observations, filter by that
-   `session_id` and clear the default root-only filter if necessary. Expect
-   at least five generation observations named for the smoke cases, with model,
-   input/output, positive token usage and latency. Inspect the tool arguments
-   and followup result. Check the image request still appears as a generation;
-   browser media upload/download is a separate check. Retries may produce more
-   than five records. Intake HTTP success alone is insufficient.
-5. Open Grafana's **AI Gateway and Analytics** dashboard
-   (`/d/ai-gateway-analytics`). Expect LiteLLM scrape=1, request/token/latency
-   samples and available Langfuse web/worker replicas. Availability/restart
-   panels do not prove ingestion; use step 4. TTFT needs streaming traffic.
-   **vLLM Inference** and the GPU dashboard retain engine/hardware metrics.
-6. Verify backup configuration and the first successful snapshots:
+Telemetry is optional to inference. If Langfuse is down, model requests still
+succeed and observations for that window are lost.
 
-   ```bash
-   kubectl -n langfuse get secret kopiur-rustfs
-   kubectl -n langfuse get snapshotpolicy,snapshotschedule,restore,snapshot
-   ```
+## Upstream
 
-   Expected: both database policies/restores exist and snapshots eventually
-   succeed with non-zero files. A brand-new empty PVC is not a tested restore.
-
-### Verify each application
-
-Confirm each active application's ExternalSecret is Ready and its new pod is
-healthy. Send a small synthetic request from each application's own UI or job,
-then match its model, timestamp and distinctive prompt in Langfuse. A successful
-gateway smoke test alone does not prove every application's authentication or
-saved provider settings. Do not activate parked applications for this check.
-
-| Application | Acceptance check |
-|---|---|
-| Pi / Open WebUI | Send a medium request; Pi's turns share a session. |
-| Hindsight | Exercise a small retain/reflect operation that calls the model. |
-| SurfSense | Confirm the global local model is present and use it in a chat. |
-| Perplexica / Vane | Use the retained local provider in an existing conversation; unrelated providers remain available. |
-| Presenton | Generate a small presentation with the local provider; confirm saved preferences survive restart. |
-| Project Nomad | Send a chat using the OpenAI-compatible provider; embedding health is a separate check. |
-| Karakeep | Tag/summarize a synthetic bookmark; automatic vector indexing remains disabled. |
-| WorldMonitor | Request a synthetic summary. |
-| Deal Scout / News Reader | Confirm source-preparation init succeeds, then run a synthetic digest/summary and locate its generation. |
-| n8n | Finish owner setup if fresh, inspect the imported credential and three inactive workflows, then manually test a local LLM node. |
-| Keep | Test the existing local provider with a synthetic request. |
-| HolmesGPT / ComfyUI | Verify their rendered route/secret while parked; test a console request or vision workflow only when deliberately enabled later. |
-
-n8n preserves existing activation states and refuses routing changes to an
-active workflow with unpublished edits, before importing credentials or
-workflows. Resolve that draft deliberately in n8n before retrying; see the
-[n8n runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/home/n8n/README.md). Fresh templates remain
-inactive until their non-LLM integrations are configured.
-
-Deal Scout and News Reader's pinned images lack native gateway authentication.
-Their startup overlays check the exact upstream source hash and add only Bearer
-headers. Image upgrades must reverify these adapters; a source mismatch stops
-startup instead of silently issuing unauthenticated requests. See the
-[Deal Scout](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/utility/deal-scout/README.md) and
-[News Reader](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/news-reader/README.md) runbooks.
-
-For controlled comparisons, keep prompt dataset, concurrency, input/output
-lengths, reasoning level and warm/cold-cache conditions fixed. Compare latency,
-TTFT, tokens per second, errors and a correctness score together. A higher token
-rate alone does not establish a better agent or longer usable context.
-
-## Failure handling and rollback
-
-If inference fails, compare a synthetic direct vLLM request and inspect LiteLLM
-logs/model routing/ExternalSecret readiness. Keep model and GPU settings fixed
-while diagnosing gateway authentication. If telemetry stalls, inspect LiteLLM's
-OTel export errors, Langfuse web/worker logs, store connectivity and migrations.
-Do not reset queues, recreate databases or change project keys to clear errors.
-
-Rollback routing/callback changes through Git while retaining the Langfuse
-application's persistent stores. Removing the entire auto-discovered app can
-cascade deletion of its resources; first preserve the desired storage in Git
-and confirm backups. Pi can temporarily use direct vLLM with its local
-placeholder key, or restore its local provider/auth backup. Direct calls retain
-vLLM/GPU metrics but bypass LiteLLM and Langfuse observations.
-
-PostHog remains independently maintained for product analytics and replay. Its
-30-day retention compatibility fix and verification are documented in the
-[PostHog runbook](../../posthog-self-host-k8s.md).
-
-## Upstream references
-
-- [Langfuse Kubernetes deployment](https://langfuse.com/self-hosting/deployment/kubernetes-helm)
-  and [headless initialization](https://langfuse.com/self-hosting/administration/headless-initialization).
-- [Langfuse v4 compatibility and API changes](https://langfuse.com/self-hosting/upgrade/upgrade-guides/upgrade-v3-to-v4).
-- [LiteLLM Langfuse OTel integration source](https://github.com/BerriAI/litellm/blob/v1.99.1/litellm/integrations/langfuse/langfuse_otel.py)
-  (also inspected inside the pinned live image) and
-  [Prometheus integration](https://docs.litellm.ai/docs/proxy/prometheus).
+- [LiteLLM Auto Routing](https://docs.litellm.ai/docs/proxy/auto_routing)
+- [LiteLLM OpenRouter provider](https://docs.litellm.ai/docs/providers/openrouter)
