@@ -26,24 +26,24 @@ spec:
             type: PathPrefix
             value: /batch
       backendRefs:
-        - name: capture
-          port: 3000
+        - name: ingest-sanitizer
+          port: 8001
     # LLM analytics capture (Rust) — longest-prefix-match beats /i/v0 above
     - matches:
         - path:
             type: PathPrefix
             value: /i/v0/ai
       backendRefs:
-        - name: capture-ai
-          port: 3000
+        - name: ingest-sanitizer
+          port: 8002
     # Session replay capture (Rust)
     - matches:
         - path:
             type: PathPrefix
             value: /s
       backendRefs:
-        - name: replay-capture
-          port: 3000
+        - name: ingest-sanitizer
+          port: 8003
     # Feature flags + /decide (Rust) — required for session replay config
     - matches:
         - path:
@@ -53,8 +53,8 @@ spec:
             type: PathPrefix
             value: /flags
       backendRefs:
-        - name: feature-flags
-          port: 3001
+        - name: ingest-sanitizer
+          port: 8004
     # SDK remote config — session replay never starts when /array falls through to Django.
     - matches:
         - path:
@@ -114,23 +114,23 @@ spec:
             type: PathPrefix
             value: /batch
       backendRefs:
-        - name: capture
-          port: 3000
+        - name: ingest-sanitizer
+          port: 8001
     # LLM analytics capture (Rust) — longest-prefix-match beats /i/v0 above
     - matches:
         - path:
             type: PathPrefix
             value: /i/v0/ai
       backendRefs:
-        - name: capture-ai
-          port: 3000
+        - name: ingest-sanitizer
+          port: 8002
     - matches:
         - path:
             type: PathPrefix
             value: /s
       backendRefs:
-        - name: replay-capture
-          port: 3000
+        - name: ingest-sanitizer
+          port: 8003
     # Feature flags + /decide (Rust) — required for session replay config
     - matches:
         - path:
@@ -140,8 +140,8 @@ spec:
             type: PathPrefix
             value: /flags
       backendRefs:
-        - name: feature-flags
-          port: 3001
+        - name: ingest-sanitizer
+          port: 8004
     # SDK remote config — session replay never starts when /array falls through to Django.
     - matches:
         - path:
