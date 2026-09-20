@@ -1,13 +1,18 @@
 # 3090 LLM optimization
 
-**262,144 tokens, shared by two sequence slots.** That is the whole budget.
-It is not two separate 262K contexts.
+**262,144 tokens is the per-request ceiling.** Two sequence slots share the
+engine's allocated KV pool; they do not each receive an independent 262K pool.
 
 Baseline: official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
 vision, speculation off. Exact flags and rollback live in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).
 
-## What the machine reports
+## Historical capacity observations
+
+The September 6 audit measured the earlier v0.28.0 deployment with medium
+reasoning explicitly requested. These values are not a new measurement of the
+v0.29.0 prefill settings or the xhigh default. Re-check the running engine after
+rollout; do not relabel the historical pool as current capacity.
 
 | Observation | Value |
 |---|---|
@@ -45,7 +50,7 @@ dimension 256, one byte per element:
 | 262,144 | ~8 GiB (~4 GiB/card) |
 | 524,288 | ~16 GiB |
 
-524K exceeds the current allocation and, with 14.46 GiB of weights per card,
+524K exceeds the historical allocation and, with 14.46 GiB of weights per card,
 leaves inadequate workspace at the 0.92 memory budget. The measured engine pool
 is the authority, not this arithmetic.
 
@@ -55,7 +60,7 @@ Going past the native window needs a separate RoPE and quality evaluation.
 
 | Do | Why |
 |---|---|
-| Use **medium** reasoning for coding | low for light work, xhigh only deliberately |
+| Use **xhigh** reasoning by default | accuracy-first policy; choose medium/low explicitly for less reasoning |
 | Keep one image in submitted history | a second retained screenshot exceeds the one-image limit |
 | Keep tool outputs bounded | dumping unrelated files burns context and triggers expensive prefill |
 | Run one long session near the ceiling | a second full-length request causes waiting or preemption |
@@ -66,12 +71,14 @@ agents; stateless chats can disable it. Thinking-off needs Qwen's separate
 non-thinking sampler, which the WebUI policy and the Pi hook select by mode.
 
 Pi is configured for the 262K window, a 32K output budget, and automatic
-compaction reserving 49,152 tokens. See the
-[Pi agent guide](pi-agent-local-dev.md).
+compaction reserving 49,152 tokens. Xhigh can use more of that output allowance;
+it does not expand context or guarantee better answers. See the
+[Pi agent guide](pi-agent-local-dev.md) for the paired workstation rollout.
 
 ## Re-check capacity
 
-Read-only, about 5 minutes.
+These commands inspect the cluster and establish a local diagnostic tunnel;
+they do not change the deployment.
 
 ```bash
 kubectl -n vllm get deploy vllm-server
