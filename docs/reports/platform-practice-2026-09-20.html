@@ -53,7 +53,7 @@
       <p class="eyebrow">Your homelab → your work practice</p>
       <h1>Your lab.<br><em>Real platform</em><br>practice.</h1>
       <p class="lede">You already have the pools. The next step is making selected placement and delivery rules more deliberate.</p>
-      <p class="small">Keep the lab understandable. Use the systems you already run to practice the decisions that matter at work.</p>
+      <p class="small">Keep the lab understandable. Use the systems you already run to practice the decisions that matter at work.</p><p class="small"><strong>Latest focus:</strong> int → cert → prod, v1/v2 traffic splits, and autoscaling. Keep bootstrap, 1Password and Argo configuration unchanged during this audit.</p>
       <div class="actions"><a class="btn primary" href="#overview">Start with the short version <span aria-hidden="true">↓</span></a><a class="btn" href="#next">Choose what’s next</a></div>
       <p class="quiet" style="margin-top:16px">About 4 minutes to skim · 15–20 minutes with details<br>Audit and recommendations. No deployment changes.</p>
     </div>
@@ -198,12 +198,40 @@ Application → local cluster</code></pre>
     <h4>Work’s Argo Git identity</h4><div class="secret-route" aria-label="Work secret delivery"><span>Workload identity</span><span class="arrow" aria-hidden="true">→</span><span class="vault">Secret Manager</span><span class="arrow" aria-hidden="true">→</span><span>SecretSync</span><span class="arrow" aria-hidden="true">→</span><span>Argo repo-creds</span><span class="arrow" aria-hidden="true">→</span><span>GitHub App</span></div>
     <p class="small">Both routes materialize Kubernetes Secrets. Work’s federated identity removes a static Google account key; authorization scope and application credential handling still matter.</p>
   </div>
-  <details><summary>Secret and bootstrap exercises with low upkeep</summary><div class="detail-body"><ul>
-    <li><strong>Trace one demo credential:</strong> secret-store access, synchronization, Pod consumption and reload after rotation.</li>
-    <li><strong>Record initial trust:</strong> home pre-seeds 1Password access; work needs cloud identity and initial GitHub App secret values before Git access succeeds.</li>
-    <li><strong>Separate roles:</strong> Terraform provisioning, Argo installation, node operation and application secret access should be understandable identities.</li>
-    <li><strong>Add boundaries when useful:</strong> a future lab can use its own vault/store. GitHub App <code>repo-creds</code> can serve matching repository URL prefixes if private Git access is a useful exercise.</li>
-  </ul><p class="small">Managed secret synchronization and automatic rotation are separate settings in GKE. Referencing “latest” does not prove periodic refresh or application reload. Talos does not reproduce GKE IAM automatically.</p><p class="source-line"><a href="https://docs.cloud.google.com/secret-manager/docs/sync-k8-secrets">GKE secret synchronization</a><a href="https://argo-cd.readthedocs.io/en/stable/user-guide/private-repositories/#credential-templates">Argo credential templates</a></p></div></details>
+  <details><summary>Secret and bootstrap reference · no changes requested</summary><div class="detail-body"><ul>
+    <li><strong>Existing ownership:</strong> home pre-seeds 1Password access; work needs cloud identity and initial GitHub App secret values before Git access succeeds.</li>
+    <li><strong>Different identities:</strong> provisioning, Argo installation, node operation and application access are separate roles in the work design.</li>
+    <li><strong>Scope decision:</strong> secret rotation, bootstrap changes and changes to 1Password or Argo configuration are excluded from the current learning proposal.</li>
+  </ul><p class="small">This remains architectural reference. The user chose application promotion, weighted HTTP routing and scaling as the more useful next lessons.</p><p class="source-line"><a href="https://docs.cloud.google.com/secret-manager/docs/sync-k8-secrets">GKE secret synchronization</a><a href="https://argo-cd.readthedocs.io/en/stable/user-guide/private-repositories/#credential-templates">Argo credential templates</a></p></div></details>
+
+  <div class="card" id="release-practice" style="margin-top:24px">
+    <span class="pill idea">New proposal / application release practice</span><h3 style="margin-top:15px">One app. Three environments. Two production versions.</h3>
+    <p><strong>Environment and version are separate axes.</strong> Int and cert are nonproduction stages; prod is the stable stage. Inside prod, v1 and v2 can run at the same time behind separate Services.</p>
+    <div class="flow">
+      <div class="step"><i>01 / INT</i><strong>Integrate</strong><p>Deploy an immutable image digest. Exercise the API and configuration using isolated test data.</p></div>
+      <div class="step"><i>02 / CERT</i><strong>Validate</strong><p>Promote the same digest. Run smoke, compatibility and bounded load checks.</p></div>
+      <div class="step"><i>03 / PROD</i><strong>Release gradually</strong><p>Preview v2 directly, then move the stable route through 1%, 10%, 50% and 100% v2.</p></div>
+    </div>
+    <pre><code>Stable production hostname
+          │
+          └─ HTTPRoute ─┬─ Service app-v1 → v1 Deployment   weight: 99
+                       └─ Service app-v2 → v2 Deployment   weight:  1
+
+Optional preview hostname → Service app-v2   (direct testing)</code></pre>
+    <p class="small" style="margin-top:16px">Each Service selects only its version. Two preview hostnames do not split stable traffic by themselves. HTTPRoute weights control request distribution, independently of replica counts. A 1% weight is an approximate traffic share over many requests, not a guarantee that one of the next hundred people sees v2.</p>
+    <p class="small">Use ordinary Deployments, Services, Kustomize and Cilium HTTPRoutes. Argo CD can reconcile reviewed manifests; no Argo Rollouts controller is proposed. Start with three namespaces on the existing cluster. That teaches promotion and configuration separation, while sharing the cluster's failure boundary.</p>
+    <div class="callout amber small"><strong>Verified prerequisite, not permission to change Argo:</strong> the current Argo configuration globally ignores <code>.spec.rules[].backendRefs[].weight</code>. A weight-only Git change is therefore not a reliable automatic rollout trigger. The generated apps also use <code>RespectIgnoreDifferences=true</code>; the precise apply behavior needs a focused check before designing a weight-edit workflow. The audit leaves this configuration alone. A live weighted-promotion exercise remains conditional on an agreed, verified way to manage those weights.</div>
+    <p class="small">Promotion checks should inspect route <code>Accepted</code>/<code>ResolvedRefs</code> conditions and observed per-version requests, errors and latency. Rollback means restoring v1's traffic share while keeping v1 available; it does not undo database changes or requests already served. Build identity in responses/metrics and a non-cacheable test path make the traffic test meaningful.</p>
+    <p class="source-line"><a href="https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/splitting/">Cilium's 99/1 example</a><a href="https://gateway-api.sigs.k8s.io/guides/user-guides/traffic-splitting/">HTTPRoute weights</a><a href="https://github.com/mitchross/talos-argocd-proxmox/blob/e32190777/infrastructure/controllers/argocd/values.yaml#L134">Current weight-ignore rule</a></p>
+  </div>
+  <details><summary>Which of your apps fits this exercise?</summary><div class="detail-body">
+    <div class="grid two">
+      <article class="card"><span class="pill idea">Recommended for routing + scaling</span><h3 style="margin-top:14px">News Reader web/API</h3><p>The current web Deployment uses <code>RollingUpdate</code>, has no persistent volume, and requests 50m CPU / 128Mi memory. Its only volume is temporary storage.</p><p class="small">That makes parallel versions simpler. Start with a read-only endpoint and a visible build identifier. Keep Temporal workers out of this exercise; nonprod requests must not start production workflows. Browser-wide canaries also need a plan for versioned JS assets, so begin with API traffic.</p></article>
+      <article class="card"><span class="pill idea">Good option with a storage decision</span><h3 style="margin-top:14px">Radar HTTP serving</h3><p>Radar already has health endpoints, request metrics and a k6 load script. It is a useful real application for measuring releases.</p><p class="small">Today its tile server mounts three RWO volumes, uses <code>Recreate</code>, is pinned to the GPU worker and has HPA min=max=1. RWO permits same-node sharing in appropriate configurations, but it does not provide multi-node read sharing. First design isolated fixture data or a deliberate serving-storage model; duplicating the full ingest stack is unnecessary.</p></article>
+    </div>
+    <p class="small">These are recommendations from source inspection, not implemented environments. Neither application is being deployed or load-tested by this report. News Reader's current VPA controls CPU and memory; adding a CPU HPA would require a scoped VPA policy change for the exercise. Radar already limits its tile-server VPA to memory.</p>
+    <p class="source-line"><a href="https://github.com/mitchross/talos-argocd-proxmox/blob/e32190777/my-apps/development/news-reader/deployment.yaml">News Reader Deployment</a><a href="https://github.com/mitchross/talos-argocd-proxmox/blob/e32190777/my-apps/development/radar-ng/deployment-tile-server.yaml">Radar Deployment</a><a href="https://github.com/mitchross/talos-argocd-proxmox/blob/e32190777/my-apps/development/radar-ng/hpa-tile-server.yaml">Radar HPA</a></p>
+  </div></details>
 </section>
 
 <section class="chapter" id="comparison">
@@ -225,6 +253,20 @@ Application → local cluster</code></pre>
     <div class="callout cyan small"><strong>Three different loops:</strong> HPA changes Pod replicas. Node autoscaling changes worker capacity. A PDB limits voluntary eviction. None substitutes for the others.</div>
     <p class="small">The GKE wrapper permits an upstream 44.x version range; public defaults were inspected, but the deployed resolved module was not. Resource caps are not a cloud spending budget.</p>
     <p class="source-line"><a href="https://github.com/terraform-google-modules/terraform-google-kubernetes-engine/blob/v44.3.0/modules/beta-private-cluster/main.tf">Upstream zone selection</a><a href="https://docs.cloud.google.com/kubernetes-engine/docs/how-to/cluster-autoscaler">Autoscaler limits</a><a href="https://docs.cloud.google.com/kubernetes-engine/docs/concepts/about-custom-compute-classes">ComputeClasses</a></p>
+  </div></details>
+  <details open id="autoscaling"><summary>New research: work HPA, VPA and node autoscaling</summary><div class="detail-body">
+    <p><strong>Work explicitly scales telemetry Pods and cloud nodes. The reviewed source does not establish workload VPA use.</strong> Both GKE monitoring targets were rendered again: nonprod produced 33 objects and prod 32. These are desired-state checks; no work cluster was queried.</p>
+    <div class="table-scroll"><table><thead><tr><th scope="col">Control</th><th scope="col">Verified work configuration</th><th scope="col">Useful home lesson</th></tr></thead><tbody>
+      <tr><td>OTel gateway HPA</td><td>2–5 replicas; CPU target 70% and memory target 75% of requests.</td><td>Replica count follows observed demand. Multiple HPA metrics use the largest computed replica recommendation.</td></tr>
+      <tr><td>OTel export HPA</td><td>4–8 replicas; CPU 70%, memory 60%. Both collectors have minAvailable: 1 PDBs.</td><td>Minimum replicas are an availability/capacity choice. A PDB allowing one survivor does not preserve full throughput.</td></tr>
+      <tr><td>Scaling behavior</td><td>Zero scale-up stabilization; 3,600-second scale-down stabilization and a 10% per 300-second scale-down policy.</td><td>Learn stabilization and watch for oscillation. These settings do not promise immediate scale-up or exact fractional-Pod removal.</td></tr>
+      <tr><td>VPA</td><td>No workload VPA resources found in the searched platform manifests. The wrapper does not enable VPA; inspected upstream 44.3.0 defaults it off.</td><td>Home already declares VPA policies. Compare resource recommendations with actual load; do not assume work is further along.</td></tr>
+      <tr><td>Cloud nodes</td><td>Autoscaling profile OPTIMIZE_UTILIZATION; infra 1–2 nodes per zone. App ComputeClass enables pool creation and 60% / 10-minute consolidation.</td><td>HPA creates Pods; it cannot create physical home capacity. Pool selection, resource requests and available nodes still bound scheduling.</td></tr>
+    </tbody></table></div>
+    <p class="small" style="margin-top:16px">The collector CRs declare <code>autoscaler</code>; the OTel operator is responsible for creating their HPAs. The rendered agent is a DaemonSet, and the rendered scraper collectors do not declare autoscalers. Searching application repos also found no standalone HPA/VPA objects. Chart defaults and live resources outside these renders remain outside that negative finding.</p>
+    <div class="callout cyan small"><strong>A small home exercise:</strong> after promotion works, use a CPU HPA with a small bounded replica range and a memory-only VPA for the chosen stateless tier. Keep CPU requests fixed while CPU-utilization HPA uses them as its denominator. Observe version-specific latency/errors under bounded load, then watch scale-down and placement.</div>
+    <p class="small">Do not copy work's CPU+memory HPA and simultaneously let VPA tune those same requests. Give each controller a distinct job. Keep Git from continually resetting HPA-owned replicas, and verify the metrics API before expecting scaling. A 1% canary may receive too little traffic to exercise its HPA; use the preview route for a deliberate load test and preserve enough capacity for the next traffic step.</p>
+    <p class="source-line"><a href="https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/">HPA calculations and ownership</a><a href="https://docs.cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler">GKE VPA</a><a href="https://github.com/terraform-google-modules/terraform-google-kubernetes-engine/blob/v44.3.0/modules/beta-private-cluster/variables.tf#L80">Inspected VPA default</a></p>
   </div></details>
   <details><summary>The important correction: telemetry does not have a third pool in this source</summary><div class="detail-body">
     <p>The intended topic was <strong>workload isolation as well as zone spread</strong>. The initial summary gave isolation too little attention.</p>
@@ -273,10 +315,10 @@ Application → local cluster</code></pre>
 <section class="chapter" id="next">
   <div class="section-head"><span class="section-num">05</span><div><h2>Pick the part you want next.</h2><p>Choose one or two topics. The buttons prepare a message to bring back to the chat; they do not change the cluster.</p></div></div>
   <div class="choice-grid">
-    <label class="choice"><input type="checkbox" name="topic" value="A"><span class="recommended">Closest to your latest questions</span><span class="choice-title">A · Make the existing pools intentional</span><span class="choice-copy">Map core, telemetry, GPU, edge and experimental workloads to allowed/preferred nodes. Check capacity and data dependencies before proposing taints.</span><span class="effort">Placement plan: about 45–90 minutes</span></label>
-    <label class="choice"><input type="checkbox" name="topic" value="B"><span class="choice-title">B · One app, two deployment targets</span><span class="choice-copy">A stateless demo with a shared base, lab/stable overlays and immutable image promotion. Preserve existing Argo discovery.</span><span class="effort">Pilot and review: about 1–2 hours</span></label>
-    <label class="choice"><input type="checkbox" name="topic" value="C"><span class="choice-title">C · Trace secrets and bootstrap</span><span class="choice-copy">Follow initial credentials, secret access, synchronization and application reload. Make each owner clear using 1Password and ESO.</span><span class="effort">Walkthrough / plan: about 1–2 hours</span></label>
-    <label class="choice"><input type="checkbox" name="topic" value="D"><span class="choice-title">D · Add a few meaningful checks</span><span class="choice-copy">Practice policy with topology-selector, PDB and readiness checks. Optionally scope one tenant sandbox after the basics.</span><span class="effort">Focused CI work: about 2–4 hours</span></label>
+    <label class="choice"><input type="checkbox" name="topic" value="A"><span class="choice-title">A · Make the existing pools intentional</span><span class="choice-copy">Map core, telemetry, GPU, edge and experimental workloads to allowed/preferred nodes. Check capacity and data dependencies before proposing taints.</span><span class="effort">Placement plan: about 45–90 minutes</span></label>
+    <label class="choice"><input type="checkbox" name="topic" value="B"><span class="choice-title">B · Int → cert → prod promotion</span><span class="choice-copy">One of your own app tiers, with shared configuration and int/cert/prod overlays. Promote the same image digest through reviewed changes.</span><span class="effort">Design and inventory: about 1–2 hours</span></label>
+    <label class="choice"><input type="checkbox" name="topic" value="C"><span class="choice-title">C · V1/v2 HTTPRoute traffic practice</span><span class="choice-copy">Plan a v2 preview route, 99/1 stable traffic, version-specific checks and rollback. Resolve the existing weight-ignore prerequisite before execution.</span><span class="effort">Route and measurement plan: about 1–2 hours</span></label>
+    <label class="choice"><input type="checkbox" name="topic" value="D"><span class="choice-title">D · HPA, VPA and load checks</span><span class="choice-copy">Compare work scaling with a bounded home HPA and memory-only VPA. Include topology, replica ownership, metrics and readiness checks.</span><span class="effort">Scaling design and checks: about 1–2 hours</span></label>
     <label class="choice"><input type="checkbox" name="topic" value="E"><span class="choice-title">E · Verify availability and recovery</span><span class="choice-copy">Recheck current health and backups; design a disposable service or restore exercise with success criteria. A drill is a separate planned operation.</span><span class="effort">Read-only review and exercise plan: about 1–2 hours</span></label>
   </div>
   <div class="decision">
@@ -285,7 +327,7 @@ Application → local cluster</code></pre>
     <div class="actions"><button class="btn primary" id="copy" disabled>Copy my next request</button><button class="btn" id="download" disabled>Download choices</button><button class="btn" id="reset">Clear choices</button></div>
     <p class="status" id="copy-status" role="status"></p><p class="notice" id="save-status">Choices stay in this browser when local storage is available. No account, network request or deployment is involved.</p>
   </div>
-  <div class="callout ink"><p><strong>A reasonable first choice is A:</strong> finish the placement map for the pools already in Talos. You can ask for an explanation, a plan, or a focused PR. Picking a topic here makes no deployment decision.</p></div>
+  <div class="callout ink"><p><strong>For the latest request, start with B:</strong> choose News Reader or Radar and draw its int/cert/prod promotion path. Add C for traffic practice and D for autoscaling after their prerequisites are clear. A remains the pool-placement exercise. Picking a topic makes no deployment decision.</p></div>
   <details><summary>Evidence shelf · home sources and further reading</summary><div class="detail-body">
     <div class="appendix-list">
       <div><h4>Home source of truth</h4><ul class="small">
@@ -357,9 +399,9 @@ Application → local cluster</code></pre>
   drawZones();
   const topics = {
     A: "Map and plan workload placement for the existing general, gpu, edge and disposable pools. Start with core services and OTel backends; assess capacity and storage dependencies.",
-    B: "Build out one stateless app example with shared base, lab/stable overlays and immutable promotion, preserving Argo discovery and ownership.",
-    C: "Trace bootstrap and one credential from 1Password through ESO to its consumer, including access scope, rotation and reload.",
-    D: "Define a small set of meaningful CI checks for topology selectors, replica/PDB compatibility and service readiness.",
+    B: "Plan one of my own app tiers across int/cert/prod overlays, promoting the same immutable image digest while preserving Argo discovery and ownership. Compare News Reader web/API with Radar HTTP serving.",
+    C: "Plan v1/v2 Deployments and Services with a direct preview route and 99/1 HTTPRoute traffic split. Include per-version checks and rollback. Treat the current Argo weight-ignore rule as an unresolved prerequisite; do not change Argo configuration.",
+    D: "Compare work HPA/VPA/node autoscaling with a bounded home CPU HPA and memory-only VPA. Plan load checks, scaling ownership and capacity; do not run load tests yet.",
     E: "Recheck current availability and backups, then design a disposable service or restore exercise with explicit acceptance criteria."
   };
   const inputs = Array.from(document.querySelectorAll('input[name="topic"]'));
@@ -375,7 +417,7 @@ Application → local cluster</code></pre>
     let text = "Select a topic above to prepare your next request.";
     if (selected.length) {
       text = openings[mode] + "\n\n" + selected.map((key) => key + ". " + topics[key]).join("\n\n");
-      text += "\n\nKeep the homelab understandable. Reuse the existing tools and worker roles. Distinguish verified facts from proposals.";
+      text += "\n\nKeep the homelab understandable. Reuse the existing tools and worker roles. Distinguish verified facts from proposals. Leave bootstrap, secret rotation, 1Password and Argo configuration alone. Do not add Argo Rollouts.";
       if ($("preferences").value.trim()) text += "\n\nMy preferences:\n" + $("preferences").value.trim();
       text += mode === "pr" ? "\n\nUse the personal repository PR workflow. Do not merge, apply Talos changes, drain nodes or run recovery drills as part of preparing the PR." : "\n\nThis request is for explanation/planning only; no configuration changes.";
     }
