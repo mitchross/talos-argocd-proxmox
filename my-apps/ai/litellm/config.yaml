@@ -9,6 +9,17 @@ model_list:
       # Self-hosted — pin explicitly rather than rely on LiteLLM's cost map.
       input_cost_per_token: 0
       output_cost_per_token: 0
+  # Same backend as qwen3.8-27b, separate name so the DeepSeek failover below
+  # reaches only pi-auto and never bare `pi`, Open WebUI or the other apps.
+  - model_name: qwen3.8-27b-auto
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+      api_key: "vllm-no-key-required"
+      timeout: 1800
+    model_info:
+      input_cost_per_token: 0
+      output_cost_per_token: 0
   - model_name: pi-classifier
     litellm_params:
       model: openai/qwen3.8-27b
@@ -56,8 +67,8 @@ model_list:
         # Qwen owns the local half of the workload: tests, refactors, code
         # explanation, cluster inspection. Escalation is what covers its misses.
         tiers:
-          SIMPLE: qwen3.8-27b
-          MEDIUM: qwen3.8-27b
+          SIMPLE: qwen3.8-27b-auto
+          MEDIUM: qwen3.8-27b-auto
           COMPLEX: deepseek-flash
           REASONING: deepseek-flash
         # OpenRouter's exposed Flash levels are low/high/max; xhigh is not one,
@@ -105,10 +116,12 @@ litellm_settings:
   drop_params: true
 
 router_settings:
+  # Keyed on the pi-auto-only route: a vLLM outage must not silently bill and
+  # de-localise every other gateway client.
   fallbacks:
-    - qwen3.8-27b: ["deepseek-flash"]
+    - qwen3.8-27b-auto: ["deepseek-flash"]
   context_window_fallbacks:
-    - qwen3.8-27b: ["deepseek-flash"]
+    - qwen3.8-27b-auto: ["deepseek-flash"]
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

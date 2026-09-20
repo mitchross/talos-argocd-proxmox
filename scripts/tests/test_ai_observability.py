@@ -173,11 +173,16 @@ class AIObservabilityTests(unittest.TestCase):
             self.assertNotIn(noisy, classifier)
         self.assertNotIn('top_k', classifier['extra_body'])
         self.assertEqual(router['tiers'], {
-            'SIMPLE': 'qwen3.8-27b',
-            'MEDIUM': 'qwen3.8-27b',
+            'SIMPLE': 'qwen3.8-27b-auto',
+            'MEDIUM': 'qwen3.8-27b-auto',
             'COMPLEX': 'deepseek-flash',
             'REASONING': 'deepseek-flash',
         })
+        # The auto route is the same vLLM backend under a separate name.
+        auto_local = routes['qwen3.8-27b-auto']['litellm_params']
+        shared = routes['qwen3.8-27b']['litellm_params']
+        self.assertEqual(auto_local['model'], shared['model'])
+        self.assertEqual(auto_local['api_base'], shared['api_base'])
         # Paid tiers must never fall back to the provider's default effort.
         efforts = {
             tier: entries[0]['litellm_params']['reasoning_effort']
@@ -185,7 +190,7 @@ class AIObservabilityTests(unittest.TestCase):
         }
         self.assertEqual(efforts, {'COMPLEX': 'high', 'REASONING': 'max'})
         # Local work is the point of the two 3090s: Qwen must keep a real tier.
-        self.assertEqual(router['tiers']['MEDIUM'], 'qwen3.8-27b')
+        self.assertEqual(router['tiers']['MEDIUM'], 'qwen3.8-27b-auto')
         for tier, entries in router['tier_model_configs'].items():
             self.assertEqual(entries[0]['model_name'], router['tiers'][tier])
             # OpenRouter exposes low/high/max for Flash; drop_params eats anything else.
@@ -205,9 +210,13 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(params['complexity_router_default_model'], 'deepseek-flash')
         # vLLM being down must not fail the request.
         settings = config['router_settings']
-        self.assertEqual(settings['fallbacks'], [{'qwen3.8-27b': ['deepseek-flash']}])
+        self.assertEqual(settings['fallbacks'], [{'qwen3.8-27b-auto': ['deepseek-flash']}])
         self.assertEqual(settings['context_window_fallbacks'],
-                         [{'qwen3.8-27b': ['deepseek-flash']}])
+                         [{'qwen3.8-27b-auto': ['deepseek-flash']}])
+        # A vLLM outage must never divert bare `pi`, Open WebUI or the other
+        # gateway clients to a paid external provider.
+        for rule in settings['fallbacks'] + settings['context_window_fallbacks']:
+            self.assertNotIn('qwen3.8-27b', rule)
         self.assertEqual(auto['model_info'], {
             'max_input_tokens': 229376,
             'max_output_tokens': 32768,
