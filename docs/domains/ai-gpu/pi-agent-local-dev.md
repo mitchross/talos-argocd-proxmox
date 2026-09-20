@@ -571,16 +571,36 @@ for thinking and `1.0` for off.
 ## Vision and browser tools
 
 The local Qwen vLLM server permits **one image in the entire submitted request**
-and no video. Pi can resend images from earlier turns: one new screenshot plus
-an old screenshot can already exceed the limit. This is unrelated to the size
-of the text context window. Keep text/DOM extraction as the browser default and
-use a screenshot when visual evidence is needed. This is a local vLLM limit,
-not a claim about DeepSeek Flash's OpenRouter vision route.
+and no video. The repo-owned `qwen-sampling.ts` request hook enforces that budget
+for `vanillax-vllm/qwen3.8-27b` and `vanillax-auto/pi-auto`: after Pi serializes
+attachments and tool results, it retains the last image and replaces earlier
+image parts with explicit text markers. Repeated reads of an attachment also
+consume only one image slot. Text, reasoning, tool calls/results, and the saved
+session remain intact. Each request is filtered independently, including resumed
+sessions and text-only followups after screenshots.
 
-If the image limit is reached, do not blindly retry. Start `/new` with a text
-handoff and the required image. `/compact` can help only if the old image is in
-the portion discarded; a recent image may remain. Do not promise that compaction
-always resets the image count. Keep this rule in workstation `AGENTS.md`.
+The model sees only the newest image; earlier visual details remain available
+only through prior text observations. Re-read an older image to make it current.
+For simultaneous image comparison, explicitly select the DeepSeek route and
+check its provider limits. Explicit cloud routes are not filtered; auto-routing
+always uses Qwen's budget because any new turn can select local inference.
+Prefer text/DOM extraction when visual evidence is unnecessary.
+
+Install the updated hook with the copy command above, or refresh the chezmoi
+external after this change merges. Run `/reload` in an existing Pi session
+before retrying the failed request; new processes load the hook automatically.
+No new session or compaction is required with the hook loaded. Verify locally:
+
+```bash
+node --test scripts/pi/qwen-sampling.test.mjs
+diff -u ~/.pi/agent/extensions/qwen-sampling.ts scripts/pi/qwen-sampling.ts
+```
+
+Expected: all tests pass and the installed copy matches. Tests cover accumulated
+images, duplicate reads, resumed text followups, unchanged source history, and
+cloud-route isolation. To roll back, restore the previous installed hook and
+run `/reload`; the one-image server limit then requires manual history control
+again. The GPU deployment does not change.
 
 ## Recommended agent tools
 
