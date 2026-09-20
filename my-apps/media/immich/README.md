@@ -7,7 +7,7 @@ them. It owns only thumbnails, transcodes, ML embeddings and database rows.
 ## Architecture
 
 ```
- User → https://photos.vanillax.me (gateway-internal, LAN only)
+ User → https://photos.vanillax.me (gateway-internal-technitium, LAN only)
        │
        ▼
  immich-server ──────── reads /mnt/photos (read-only NFS, the originals)
