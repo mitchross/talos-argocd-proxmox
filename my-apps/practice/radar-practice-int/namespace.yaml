@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: radar-practice-int
+  labels:
+    platform.vanillax.dev/environment: int
+    app.kubernetes.io/part-of: platform-practice
+    pod-security.kubernetes.io/enforce: restricted

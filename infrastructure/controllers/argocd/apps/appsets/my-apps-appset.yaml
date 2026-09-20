@@ -35,17 +35,15 @@ spec:
       # project-nomad is intentionally one bundled app at my-apps/home/project-nomad.
       # Its child folders are resources, not generated apps.
       - path: my-apps/*/*
-      # my-apps/common/* holds shared Kustomize Components (kind: Component),
-      # consumed via `components:` from app kustomizations — they are not apps.
-      # kustomize (5.4+) builds a Component directory as an EMPTY render, so
-      # without this exclude the generator creates a phantom zero-resource
-      # Application (e.g. my-apps-kopiur-backup, Synced/Healthy, manages
-      # nothing). Guarded by validate-argocd-apps.sh Check 8.
+      # Shared bases and Components are inputs to app roots, never standalone Applications.
       - path: my-apps/common/*
         exclude: true
   template:
     metadata:
       name: 'my-apps-{{ .path.basename }}'
+      labels:
+        app.kubernetes.io/part-of: applications
+        platform.vanillax.dev/category: '{{ index .path.segments 1 }}'
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "6"
@@ -126,3 +124,19 @@ spec:
       info:
       - name: 'Description'
         value: 'Application: {{ .path.basename }}'
+
+  # Only prod practice delegates replica counts to HPAs.
+  templatePatch: |
+    {{- if eq (index .path.segments 1) "practice" }}
+    metadata:
+      labels:
+        platform.vanillax.dev/environment: '{{ trimPrefix "radar-practice-" .path.basename }}'
+    {{- if eq .path.basename "radar-practice-prod" }}
+    spec:
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+    {{- end }}
+    {{- end }}

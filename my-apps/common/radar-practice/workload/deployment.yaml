@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radar-api
+  labels: &id001
+    app.kubernetes.io/name: radar-practice
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: platform-practice
+    app.kubernetes.io/version: v1.1.17
+    delivery.vanillax.dev/slot: v1
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  revisionHistoryLimit: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels: &id002
+      app.kubernetes.io/name: radar-practice
+      delivery.vanillax.dev/slot: v1
+  template:
+    metadata:
+      labels: *id001
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: radar-practice
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node.vanillax.dev/pool
+                operator: In
+                values:
+                - general
+                - gpu
+                - disposable
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node.vanillax.dev/pool
+                operator: In
+                values:
+                - disposable
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        nodeTaintsPolicy: Honor
+        matchLabelKeys:
+        - pod-template-hash
+        labelSelector:
+          matchLabels: *id002
+      containers:
+      - name: api
+        image: ghcr.io/mitchross/radar-ng-tile-server:v1.1.17@sha256:95db471e2b6766fb1ed66a9a12ee8f71e0b4f4632bb0e4477ab8a0befe70c4be
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PYTHONPATH
+          value: /app
+        # Click would parent every Uvicorn request under one long-lived startup span.
+        - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+          value: click
+        - name: DISABLE_WORKFLOW_ROUTES
+          value: '1'
+        - name: TEMPORAL_ADDRESS
+          value: 127.0.0.1:1
+        - name: OPEN_METEO_BASE
+          value: http://127.0.0.1:1
+        - name: TILE_DIR
+          value: /data/tiles
+        - name: GRID_DIR
+          value: /data/grids
+        - name: STATE_DIR
+          value: /fixtures
+        - name: API_RATE_LIMIT_RPS
+          value: '100'
+        - name: API_RATE_LIMIT_BURST
+          value: '100'
+        - name: FORECAST_CACHE_MAX_ENTRIES
+          value: '8'
+        - name: WIND_CACHE_MAX_ENTRIES
+          value: '8'
+        - name: OTEL_SERVICE_NAME
+          value: radar-practice
+        - name: OTEL_METRICS_EXPORTER
+          value: none
+        - name: OTEL_LOGS_EXPORTER
+          value: none
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: http/protobuf
+        - name: OTEL_PYTHON_FASTAPI_EXCLUDED_URLS
+          value: .*/api/livez,.*/api/metrics
+        - name: OTEL_BSP_MAX_QUEUE_SIZE
+          value: '256'
+        - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+          value: '64'
+        - name: OTEL_EXPORTER_OTLP_TIMEOUT
+          value: '5'
+        - name: PRACTICE_ENV
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['platform.vanillax.dev/environment']
+        - name: RELEASE_SLOT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['delivery.vanillax.dev/slot']
+        - name: SERVICE_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app.kubernetes.io/version']
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: deployment.environment.name=$(PRACTICE_ENV),service.version=$(SERVICE_VERSION),release.slot=$(RELEASE_SLOT)
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          httpGet:
+            path: /api/livez
+            port: http
+          periodSeconds: 2
+          failureThreshold: 45
+        readinessProbe:
+          httpGet:
+            path: /api/livez
+            port: http
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/livez
+            port: http
+          periodSeconds: 20
+        volumeMounts:
+        - name: fixture
+          mountPath: /fixtures
+          readOnly: true
+        - name: config
+          mountPath: /etc/caddy
+          readOnly: true
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: fixture
+        configMap:
+          name: radar-practice-fixture
+      - name: config
+        configMap:
+          name: radar-practice-caddy
+      - name: data
+        emptyDir:
+          sizeLimit: 32Mi

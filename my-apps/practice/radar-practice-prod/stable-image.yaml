@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radar-api
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        image: ghcr.io/mitchross/radar-ng-tile-server:v1.1.17@sha256:95db471e2b6766fb1ed66a9a12ee8f71e0b4f4632bb0e4477ab8a0befe70c4be

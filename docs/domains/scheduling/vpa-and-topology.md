@@ -105,12 +105,17 @@ The active Omni template uses physical-host zone labels:
 | Threadripper | GPU worker | `house` |
 | Shed HP | Worker behind the media bridge | `shed` |
 
-Cloudflared uses soft `ScheduleAnyway` spread and preferred anti-affinity over
-`topology.kubernetes.io/zone`, so two VMs on the SFF count as one physical host.
-Its preferred node affinity favors the `general` worker pool. These are preferences:
-other eligible workers remain usable when the HPs lack room, and several tunnel
-pods can share a surviving host. Verify actual placement; this is not a guarantee
-that every replica occupies a different chassis.
+Cloudflared uses required balanced `DoNotSchedule` spread over
+`topology.kubernetes.io/zone`, with `nodeTaintsPolicy: Honor` and per-rollout
+`pod-template-hash` grouping. Its general-pool affinity remains a preference;
+other eligible workers can be used. Two VMs on SFF count as one physical host.
+A tight eligible set or insufficient capacity can leave Pods Pending.
+
+The OTel gateway follows the same pattern with two replicas. The
+[Radar/OTel practice guide](../observability/platform-practice.md) describes
+selected workload placement, three app stages, weighted releases and bounded
+scaling. Node agents continue observing all relevant nodes. This does not
+reserve the general pool or migrate existing stateful services.
 
 ### What each worker is for
 
@@ -124,9 +129,10 @@ The Omni template declares a separate `node.vanillax.dev/pool` label:
 | Dell | `disposable` | Temporary, restartable work after required state is relocated |
 
 These labels describe intent; existing apps and Longhorn replicas are not moved
-by a label alone. In particular, the Dell still holds real data. Cloudflared is
-the first consumer and uses a soft preference. No new taints, hard app constraints,
-storage tags or control-plane scheduling changes accompany these labels.
+by a label alone. In particular, the Dell still holds real data. Cloudflared and the OTel gateway prefer the general pool. Practice int/cert prefer
+Dell, while practice prod prefers general; both permit selected wired-worker
+fallback. No new pool taints, storage tags or control-plane scheduling changes
+accompany this practice configuration.
 
 Check live labels after syncing the Omni template; merging Git does not itself
 change allocated machines. Finish the active Talos upgrade before applying another

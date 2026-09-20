@@ -116,6 +116,7 @@ patches:
     kind: KubeNodeConfig
     labels:
       topology.kubernetes.io/zone: hp-sff
+      node.vanillax.dev/link: wired
 - name: control-plane-api-server
   inline:
     apiVersion: v1alpha1
@@ -458,6 +459,7 @@ patches:
       nvidia.com/gpu: "true"
       node.vanillax.dev/gpu-class: rtx-3090
       node.vanillax.dev/pool: gpu
+      node.vanillax.dev/link: wired
       topology.kubernetes.io/zone: house
 - name: longhorn-node-disks
   inline:

@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: radar-practice
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: radar-practice
+  podMetricsEndpoints:
+  - port: http
+    path: /api/metrics
+    interval: 30s
+  podTargetLabels:
+  - platform.vanillax.dev/environment
+  - delivery.vanillax.dev/slot
+  - app.kubernetes.io/version

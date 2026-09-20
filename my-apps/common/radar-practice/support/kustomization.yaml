@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- instrumentation.yaml
+- network-policy.yaml
+- podmonitor.yaml
+configMapGenerator:
+- name: radar-practice-caddy
+  files:
+  - Caddyfile
+- name: radar-practice-fixture
+  files:
+  - tropical.json

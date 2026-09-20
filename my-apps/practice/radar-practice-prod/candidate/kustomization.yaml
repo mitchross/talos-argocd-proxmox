@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../../common/radar-practice/workload
+nameSuffix: -canary
+images:
+- name: ghcr.io/mitchross/radar-ng-tile-server
+  newTag: v1.1.17
+  digest: sha256:95db471e2b6766fb1ed66a9a12ee8f71e0b4f4632bb0e4477ab8a0befe70c4be
+labels:
+- pairs:
+    delivery.vanillax.dev/slot: v2
+  includeSelectors: true
+  includeTemplates: true

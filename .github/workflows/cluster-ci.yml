@@ -232,6 +232,9 @@ jobs:
           set -euo pipefail
           python3 ./scripts/validate-vpa-policies.py /tmp/all-manifests.yaml
 
+      - name: Verify platform practice isolation, promotion and spread
+        run: python3 -m unittest discover -s scripts/tests -p test_platform_practice.py -v
+
       - name: Validate metrics discovery and capability-aware Argo render
         run: |
           set -euo pipefail

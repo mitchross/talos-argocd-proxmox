@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radar-practice
+  labels:
+    delivery.vanillax.dev/weights: git
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway-internal-technitium
+    namespace: gateway
+    sectionName: https
+  hostnames:
+  - radar-practice-prod.vanillax.me
+  rules:
+  - backendRefs:
+    - name: radar-api
+      port: 8080
+      weight: 99
+    - name: radar-api-canary
+      port: 8080
+      weight: 1

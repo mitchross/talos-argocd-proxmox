@@ -11,6 +11,7 @@ superseded where the newer measurements differ. A recommendation is not a deploy
 | Assessment | Scope |
 | --- | --- |
 | [20 September 2026 — homelab decisions](2026-09-20-homelab-report.html) | Remote DNS, measured NAS needs, management options, and small pilots |
+| [Enterprise platform practice — visual audit](../reports/platform-practice-2026-09-20.html) | Work/home comparison, node roles, Argo and the proposed Radar/OTel practice path |
 | [Proxmox & Kubernetes performance](../inventory/2026-09-20-capacity-and-benchmarks.md) | Disk speeds, fast/slow verdicts, capacity, and consolidation limits |
 | [NAS performance & RAM](../nas-performance.md) | Pool speeds, disk versus RAM cache, concurrent transfers, and future hardware needs |
 | [5 September 2026 — architecture](2026-09-05-architecture-audit.md) | GitOps, dependencies, recovery, and operational boundaries |
