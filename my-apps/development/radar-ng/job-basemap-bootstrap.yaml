@@ -43,7 +43,7 @@ spec:
       containers:
         - name: extract
           # Bump basemap-bootstrap-image/VERSION + this tag together; no :latest (a missing push must fail ImagePullBackOff, not run the old script).
-          image: ghcr.io/mitchross/basemap-bootstrap:v1.0.1
+          image: ghcr.io/mitchross/basemap-bootstrap:v1.0.2
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
