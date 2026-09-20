@@ -21,6 +21,7 @@ resources:
   - core/workers.yaml
   - core/plugins.yaml
   - core/capture.yaml
+  - core/ingest-sanitizer.yaml
   - core/capture-ai.yaml
   - core/hypercache-server.yaml
   - core/personhog.yaml
@@ -49,6 +50,9 @@ configMapGenerator:
   - name: posthog-env
     envs:
       - posthog-env.env
+  - name: posthog-ingest-sanitizer
+    files:
+      - config/ingest-sanitizer.conf
 
 components:
   - ../../common/kopiur-backup
