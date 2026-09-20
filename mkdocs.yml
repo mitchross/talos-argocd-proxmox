@@ -17,8 +17,6 @@ theme:
   name: material
   features:
     - navigation.instant
-    - navigation.tabs
-    - navigation.tabs.sticky
     - navigation.tracking
     - navigation.top
     - navigation.indexes
@@ -97,17 +95,18 @@ extra_javascript:
 nav:
   - Overview:
       - Home — the big picture: index.md
-      - The easy guide (explain it to anyone): easy-guide.md
+      - Getting started — the easy guide: easy-guide.md
       - Documentation reader contract: documentation-standard.md
   - Inventory:
       - inventory/index.md
-      - Hardware diagnostics: diagnostics.md
       - Explore the lab: lab.md
-      - Fleet capacity & benchmarks — 20 September: inventory/2026-09-20-capacity-and-benchmarks.md
-      - NAS hardware & performance reference: nas-performance.md
+      - Hardware diagnostics: diagnostics.md
       - Repository and hardware inventory — 5 September: audits/2026-09-05-inventory.md
   - Audits:
       - audits/index.md
+      - Homelab report & recommendations: audits/2026-09-20-homelab-report.html
+      - Proxmox & Kubernetes performance: inventory/2026-09-20-capacity-and-benchmarks.md
+      - NAS performance & RAM: nas-performance.md
       - Architecture audit — 5 September: audits/2026-09-05-architecture-audit.md
       - Hardware and workload placement — 5 September: audits/2026-09-05-hardware-and-placement-review.md
   - Ongoing research:
