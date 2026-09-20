@@ -1,0 +1,1032 @@
+{
+  "measurement_date": "2026-09-20",
+  "host": "192.168.10.133",
+  "location": "local NAS pool filesystem",
+  "l2arc": {
+    "present": false,
+    "devices": 0,
+    "comparison_performed": false,
+    "reason": "No L2ARC/cache vdev installed; RAM ARC is a different cache."
+  },
+  "parameters": {
+    "file_size_bytes": 4294967296,
+    "dataset_quota_bytes": 8589934592,
+    "sequential_block_size_bytes": 1048576,
+    "random_block_size_bytes": 4096,
+    "jobs": 1,
+    "iodepth": 1,
+    "ioengine": "psync",
+    "recordsize_bytes": 131072,
+    "compression": "off",
+    "sync": "standard",
+    "atime": "off",
+    "random_read_seconds": 15,
+    "random_sync_write_seconds": 10,
+    "random_arc_read_seconds": 10,
+    "dataset_pattern": "<pool>/agent-bench-20260920-1745",
+    "payload_file": "payload.bin"
+  },
+  "status": "complete",
+  "results": [
+    {
+      "utc": "2026-09-20T17:46:37.284819+00:00",
+      "pool": "BigTank",
+      "name": "sequential-write-flushed",
+      "metrics": {
+        "seconds": 21.45275544701144,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 8303.125,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 818.8691678041405,
+        "cpu_busy_pct": 2.8664658634538154,
+        "cpu_iowait_pct": 8.652945113788487,
+        "arc_delta": {
+          "hits": 23700,
+          "misses": 0,
+          "demand_data_hits": 5013,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 43,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "write": {
+        "bytes": 4294967296,
+        "runtime_ms": 21116,
+        "MBs": 203.398716,
+        "MiBs": 193.97613143920898,
+        "iops": 193.976132,
+        "clat_mean_ms": 5.015266781982,
+        "clat_p99_ms": 0.354304
+      },
+      "fio_job_runtime_ms": 21115
+    },
+    {
+      "utc": "2026-09-20T17:47:02.909344+00:00",
+      "pool": "BigTank",
+      "name": "sequential-read-direct",
+      "metrics": {
+        "seconds": 17.2024254220305,
+        "physical_read_MiB": 4096.0,
+        "physical_write_MiB": 39.1484375,
+        "physical_read_iops": 1904.8476709589597,
+        "physical_write_iops": 60.921641820220636,
+        "cpu_busy_pct": 3.7136661245256266,
+        "cpu_iowait_pct": 4.328787689228075,
+        "arc_delta": {
+          "hits": 574476,
+          "misses": 0,
+          "demand_data_hits": 2266,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 16852,
+        "MBs": 254.86395,
+        "MiBs": 243.05720329284668,
+        "iops": 243.057204,
+        "clat_mean_ms": 4.1103059194339995,
+        "clat_p99_ms": 30.015488
+      },
+      "fio_job_runtime_ms": 16851
+    },
+    {
+      "utc": "2026-09-20T17:47:20.347244+00:00",
+      "pool": "BigTank",
+      "name": "sequential-read-prefetch-cache-disabled",
+      "metrics": {
+        "seconds": 9.32276638300391,
+        "physical_read_MiB": 4096.53125,
+        "physical_write_MiB": 18.125,
+        "physical_read_iops": 561.0995476124447,
+        "physical_write_iops": 49.12704890202631,
+        "cpu_busy_pct": 2.8224407171775594,
+        "cpu_iowait_pct": 2.8378638904954694,
+        "arc_delta": {
+          "hits": 100538,
+          "misses": 32768,
+          "demand_data_hits": 30782,
+          "demand_data_misses": 16,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 8941,
+        "MBs": 480.367665,
+        "MiBs": 458.1143045425415,
+        "iops": 458.114305,
+        "clat_mean_ms": 2.180349009033,
+        "clat_p99_ms": 29.229056
+      },
+      "fio_job_runtime_ms": 8940
+    },
+    {
+      "utc": "2026-09-20T17:47:43.789018+00:00",
+      "pool": "BigTank",
+      "name": "random-read-4k-disk",
+      "metrics": {
+        "seconds": 15.455274280975573,
+        "physical_read_MiB": 183.5,
+        "physical_write_MiB": 30.5,
+        "physical_read_iops": 94.98375592123988,
+        "physical_write_iops": 58.81487338719826,
+        "cpu_busy_pct": 1.2794659620332383,
+        "cpu_iowait_pct": 5.880444104489721,
+        "arc_delta": {
+          "hits": 11783,
+          "misses": 0,
+          "demand_data_hits": 2156,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "read": {
+        "bytes": 6012928,
+        "runtime_ms": 15001,
+        "MBs": 0.400835,
+        "MiBs": 0.3822660446166992,
+        "iops": 97.860143,
+        "clat_mean_ms": 10.212345777929,
+        "clat_p99_ms": 108.527616
+      },
+      "fio_job_runtime_ms": 15000
+    },
+    {
+      "utc": "2026-09-20T17:48:06.216596+00:00",
+      "pool": "BigTank",
+      "name": "random-write-4k-fsync-each",
+      "metrics": {
+        "seconds": 14.223039978998713,
+        "physical_read_MiB": 75.75,
+        "physical_write_MiB": 193.9609375,
+        "physical_read_iops": 42.606925164718675,
+        "physical_write_iops": 256.2743271046197,
+        "cpu_busy_pct": 1.1815983069636198,
+        "cpu_iowait_pct": 2.6176559508213244,
+        "arc_delta": {
+          "hits": 13373,
+          "misses": 606,
+          "demand_data_hits": 2475,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "write": {
+        "bytes": 2510848,
+        "runtime_ms": 10019,
+        "MBs": 0.250608,
+        "MiBs": 0.2389984130859375,
+        "iops": 61.183751,
+        "clat_mean_ms": 8.099988189233,
+        "clat_p99_ms": 22.151168
+      },
+      "fio_job_runtime_ms": 10018,
+      "operation_cycle_mean_ms": 16.344208775300487,
+      "fsync": {
+        "count": 613,
+        "mean_ms": 8.233797526917,
+        "p99_ms": 45.8752
+      }
+    },
+    {
+      "utc": "2026-09-20T17:48:23.980270+00:00",
+      "pool": "BigTank",
+      "name": "sequential-read-arc-warmup",
+      "metrics": {
+        "seconds": 9.702856445044745,
+        "physical_read_MiB": 4022.1328125,
+        "physical_write_MiB": 12.15625,
+        "physical_read_iops": 584.3639996236029,
+        "physical_write_iops": 52.45877880218939,
+        "cpu_busy_pct": 3.246344623357394,
+        "cpu_iowait_pct": 2.320932815102721,
+        "arc_delta": {
+          "hits": 101478,
+          "misses": 32173,
+          "demand_data_hits": 31171,
+          "demand_data_misses": 16,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 9209,
+        "MBs": 466.388022,
+        "MiBs": 444.7822780609131,
+        "iops": 444.782278,
+        "clat_mean_ms": 2.2457481320799997,
+        "clat_p99_ms": 27.394048
+      },
+      "fio_job_runtime_ms": 9208
+    },
+    {
+      "utc": "2026-09-20T17:48:33.518143+00:00",
+      "pool": "BigTank",
+      "name": "sequential-read-warm-arc",
+      "metrics": {
+        "seconds": 1.1999699950101785,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 0.0859375,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 31.667458484807923,
+        "cpu_busy_pct": 8.173076923076923,
+        "cpu_iowait_pct": 3.2752403846153846,
+        "arc_delta": {
+          "hits": 50790,
+          "misses": 0,
+          "demand_data_hits": 34052,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 805,
+        "MBs": 5335.3631,
+        "MiBs": 5088.198757171631,
+        "iops": 5088.198758,
+        "clat_mean_ms": 0.195734203125,
+        "clat_p99_ms": 0.24064
+      },
+      "fio_job_runtime_ms": 804
+    },
+    {
+      "utc": "2026-09-20T17:48:55.537349+00:00",
+      "pool": "BigTank",
+      "name": "random-read-4k-warm-arc",
+      "metrics": {
+        "seconds": 13.93744033202529,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 12.375,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 33.93736502054441,
+        "cpu_busy_pct": 6.492604501607717,
+        "cpu_iowait_pct": 0.9877813504823151,
+        "arc_delta": {
+          "hits": 2272323,
+          "misses": 0,
+          "demand_data_hits": 1757298,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "read": {
+        "bytes": 7089033216,
+        "runtime_ms": 10000,
+        "MBs": 708.903321,
+        "MiBs": 676.0628900527954,
+        "iops": 173072.1,
+        "clat_mean_ms": 0.005434164157,
+        "clat_p99_ms": 0.01984
+      },
+      "fio_job_runtime_ms": 10000
+    },
+    {
+      "utc": "2026-09-20T17:49:19.512953+00:00",
+      "pool": "ai-pool",
+      "name": "sequential-write-flushed",
+      "metrics": {
+        "seconds": 13.964149289007764,
+        "physical_read_MiB": 0.04296875,
+        "physical_write_MiB": 4111.296875,
+        "physical_read_iops": 0.4296717168959983,
+        "physical_write_iops": 2233.433584425399,
+        "cpu_busy_pct": 3.4104343356463636,
+        "cpu_iowait_pct": 32.845026985350806,
+        "arc_delta": {
+          "hits": 41956,
+          "misses": 6,
+          "demand_data_hits": 3337,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 34
+      },
+      "write": {
+        "bytes": 4294967296,
+        "runtime_ms": 10838,
+        "MBs": 396.287811,
+        "MiBs": 377.9295072555542,
+        "iops": 377.929507,
+        "clat_mean_ms": 2.590480016602,
+        "clat_p99_ms": 0.33792
+      },
+      "fio_job_runtime_ms": 10837
+    },
+    {
+      "utc": "2026-09-20T17:49:43.840238+00:00",
+      "pool": "ai-pool",
+      "name": "sequential-read-direct",
+      "metrics": {
+        "seconds": 16.204541223007254,
+        "physical_read_MiB": 4096.0,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 2022.1491956511486,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 1.8895477475882823,
+        "cpu_iowait_pct": 3.8963625099566332,
+        "arc_delta": {
+          "hits": 44527,
+          "misses": 2,
+          "demand_data_hits": 2140,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 15670,
+        "MBs": 274.088531,
+        "MiBs": 261.39119243621826,
+        "iops": 261.391193,
+        "clat_mean_ms": 3.821236791504,
+        "clat_p99_ms": 3.588096
+      },
+      "fio_job_runtime_ms": 15669
+    },
+    {
+      "utc": "2026-09-20T17:49:56.336294+00:00",
+      "pool": "ai-pool",
+      "name": "sequential-read-prefetch-cache-disabled",
+      "metrics": {
+        "seconds": 4.449670250993222,
+        "physical_read_MiB": 4096.0,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 4096.4833283840035,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 4.488737643817858,
+        "cpu_iowait_pct": 1.1991573488899692,
+        "arc_delta": {
+          "hits": 94714,
+          "misses": 32768,
+          "demand_data_hits": 27591,
+          "demand_data_misses": 16,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 4029,
+        "MBs": 1066.013228,
+        "MiBs": 1016.6294364929199,
+        "iops": 1016.629437,
+        "clat_mean_ms": 0.980138666016,
+        "clat_p99_ms": 2.70336
+      },
+      "fio_job_runtime_ms": 4028
+    },
+    {
+      "utc": "2026-09-20T17:50:19.744940+00:00",
+      "pool": "ai-pool",
+      "name": "random-read-4k-disk",
+      "metrics": {
+        "seconds": 15.446862640965264,
+        "physical_read_MiB": 2817.375,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 1459.131250395553,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 1.8255719428637789,
+        "cpu_iowait_pct": 3.783532690744397,
+        "arc_delta": {
+          "hits": 33256,
+          "misses": 0,
+          "demand_data_hits": 2197,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 92319744,
+        "runtime_ms": 15001,
+        "MBs": 6.154239,
+        "MiBs": 5.869139671325684,
+        "iops": 1502.499833,
+        "clat_mean_ms": 0.6609094860460001,
+        "clat_p99_ms": 1.019904
+      },
+      "fio_job_runtime_ms": 15000
+    },
+    {
+      "utc": "2026-09-20T17:50:41.957044+00:00",
+      "pool": "ai-pool",
+      "name": "random-write-4k-fsync-each",
+      "metrics": {
+        "seconds": 14.103780484991148,
+        "physical_read_MiB": 487.51953125,
+        "physical_write_MiB": 555.1328125,
+        "physical_read_iops": 276.734312771917,
+        "physical_write_iops": 941.8751244842803,
+        "cpu_busy_pct": 1.9102440018338342,
+        "cpu_iowait_pct": 5.3716061331567415,
+        "arc_delta": {
+          "hits": 29212,
+          "misses": 3903,
+          "demand_data_hits": 8550,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "write": {
+        "bytes": 17035264,
+        "runtime_ms": 10001,
+        "MBs": 1.703356,
+        "MiBs": 1.6244468688964844,
+        "iops": 415.858414,
+        "clat_mean_ms": 0.835190228901,
+        "clat_p99_ms": 1.089536
+      },
+      "fio_job_runtime_ms": 10000,
+      "operation_cycle_mean_ms": 2.4046645837494105,
+      "fsync": {
+        "count": 4159,
+        "mean_ms": 1.5597413539309999,
+        "p99_ms": 3.162112
+      }
+    },
+    {
+      "utc": "2026-09-20T17:50:54.386305+00:00",
+      "pool": "ai-pool",
+      "name": "sequential-read-arc-warmup",
+      "metrics": {
+        "seconds": 4.1987723570200615,
+        "physical_read_MiB": 3623.5,
+        "physical_write_MiB": 0.69140625,
+        "physical_read_iops": 3982.5926671261313,
+        "physical_write_iops": 30.485101147718265,
+        "cpu_busy_pct": 7.8839239856189005,
+        "cpu_iowait_pct": 4.1003252867659645,
+        "arc_delta": {
+          "hits": 301296,
+          "misses": 28988,
+          "demand_data_hits": 31575,
+          "demand_data_misses": 14,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 3735,
+        "MBs": 1149.924309,
+        "MiBs": 1096.6532793045044,
+        "iops": 1096.65328,
+        "clat_mean_ms": 0.910249352783,
+        "clat_p99_ms": 3.096576
+      },
+      "fio_job_runtime_ms": 3734
+    },
+    {
+      "utc": "2026-09-20T17:51:03.541904+00:00",
+      "pool": "ai-pool",
+      "name": "sequential-read-warm-arc",
+      "metrics": {
+        "seconds": 1.1987992720096372,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 3.8898862956313587,
+        "cpu_iowait_pct": 0.11968880909634949,
+        "arc_delta": {
+          "hits": 33481,
+          "misses": 0,
+          "demand_data_hits": 32914,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 781,
+        "MBs": 5499.31792,
+        "MiBs": 5244.558258056641,
+        "iops": 5244.558259,
+        "clat_mean_ms": 0.190043717041,
+        "clat_p99_ms": 0.246784
+      },
+      "fio_job_runtime_ms": 780
+    },
+    {
+      "utc": "2026-09-20T17:51:25.992535+00:00",
+      "pool": "ai-pool",
+      "name": "random-read-4k-warm-arc",
+      "metrics": {
+        "seconds": 14.096350654959679,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 3.54276716781796,
+        "cpu_iowait_pct": 2.458350264120276,
+        "arc_delta": {
+          "hits": 1786894,
+          "misses": 0,
+          "demand_data_hits": 1779709,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 7281152000,
+        "runtime_ms": 10001,
+        "MBs": 728.042395,
+        "MiBs": 694.315333366394,
+        "iops": 177744.725527,
+        "clat_mean_ms": 0.005295308009999999,
+        "clat_p99_ms": 0.018816
+      },
+      "fio_job_runtime_ms": 10000
+    },
+    {
+      "utc": "2026-09-20T17:52:04.954420+00:00",
+      "pool": "Backup10T",
+      "name": "sequential-write-flushed",
+      "metrics": {
+        "seconds": 28.97347788902698,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 4108.84375,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 195.0749586103559,
+        "cpu_busy_pct": 2.112170360282283,
+        "cpu_iowait_pct": 7.0830753992819115,
+        "arc_delta": {
+          "hits": 29595,
+          "misses": 0,
+          "demand_data_hits": 4050,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "write": {
+        "bytes": 4294967296,
+        "runtime_ms": 25184,
+        "MBs": 170.543491,
+        "MiBs": 162.64294719696045,
+        "iops": 162.642948,
+        "clat_mean_ms": 5.9428116906740005,
+        "clat_p99_ms": 0.362496
+      },
+      "fio_job_runtime_ms": 25183
+    },
+    {
+      "utc": "2026-09-20T17:52:35.988403+00:00",
+      "pool": "Backup10T",
+      "name": "sequential-read-direct",
+      "metrics": {
+        "seconds": 22.955824697040953,
+        "physical_read_MiB": 4096.0,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 1427.4372814941323,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 1.643672952830336,
+        "cpu_iowait_pct": 4.776338609127697,
+        "arc_delta": {
+          "hits": 52114,
+          "misses": 0,
+          "demand_data_hits": 5306,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 22545,
+        "MBs": 190.506422,
+        "MiBs": 181.6810817718506,
+        "iops": 181.681082,
+        "clat_mean_ms": 5.499229885986001,
+        "clat_p99_ms": 21.62688
+      },
+      "fio_job_runtime_ms": 22544
+    },
+    {
+      "utc": "2026-09-20T17:53:05.472416+00:00",
+      "pool": "Backup10T",
+      "name": "sequential-read-prefetch-cache-disabled",
+      "metrics": {
+        "seconds": 21.45340205100365,
+        "physical_read_MiB": 4096.15234375,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 222.20252007895346,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 3.3316068236119696,
+        "cpu_iowait_pct": 4.183722911897879,
+        "arc_delta": {
+          "hits": 623958,
+          "misses": 32769,
+          "demand_data_hits": 15445,
+          "demand_data_misses": 17,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 21106,
+        "MBs": 203.495086,
+        "MiBs": 194.06803703308105,
+        "iops": 194.068038,
+        "clat_mean_ms": 5.148503541748,
+        "clat_p99_ms": 17.956864
+      },
+      "fio_job_runtime_ms": 21105
+    },
+    {
+      "utc": "2026-09-20T17:53:29.347847+00:00",
+      "pool": "Backup10T",
+      "name": "random-read-4k-disk",
+      "metrics": {
+        "seconds": 15.451125086983666,
+        "physical_read_MiB": 244.5,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 126.59272311812252,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 1.3722126929674099,
+        "cpu_iowait_pct": 4.466645032682768,
+        "arc_delta": {
+          "hits": 15574,
+          "misses": 0,
+          "demand_data_hits": 1982,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 8011776,
+        "runtime_ms": 15006,
+        "MBs": 0.533904,
+        "MiBs": 0.5091705322265625,
+        "iops": 130.347861,
+        "clat_mean_ms": 7.66551045501,
+        "clat_p99_ms": 19.791872
+      },
+      "fio_job_runtime_ms": 15005
+    },
+    {
+      "utc": "2026-09-20T17:53:51.626278+00:00",
+      "pool": "Backup10T",
+      "name": "random-write-4k-fsync-each",
+      "metrics": {
+        "seconds": 14.16602653200971,
+        "physical_read_MiB": 151.125,
+        "physical_write_MiB": 170.234375,
+        "physical_read_iops": 85.34503286917685,
+        "physical_write_iops": 110.334397332112,
+        "cpu_busy_pct": 3.32648245413717,
+        "cpu_iowait_pct": 3.552307731344041,
+        "arc_delta": {
+          "hits": 53107,
+          "misses": 1209,
+          "demand_data_hits": 10332,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "write": {
+        "bytes": 5054464,
+        "runtime_ms": 10010,
+        "MBs": 0.504941,
+        "MiBs": 0.4815492630004883,
+        "iops": 123.276723,
+        "clat_mean_ms": 7.582650123177,
+        "clat_p99_ms": 18.219008
+      },
+      "fio_job_runtime_ms": 10009,
+      "operation_cycle_mean_ms": 8.111831460672425,
+      "fsync": {
+        "count": 1233,
+        "mean_ms": 0.518387742092,
+        "p99_ms": 0.733184
+      }
+    },
+    {
+      "utc": "2026-09-20T17:54:21.849382+00:00",
+      "pool": "Backup10T",
+      "name": "sequential-read-arc-warmup",
+      "metrics": {
+        "seconds": 21.952519621001557,
+        "physical_read_MiB": 3948.42578125,
+        "physical_write_MiB": 0.6484375,
+        "physical_read_iops": 211.95744635839267,
+        "physical_write_iops": 1.8221143035322818,
+        "cpu_busy_pct": 2.1191771645180792,
+        "cpu_iowait_pct": 4.022678626864696,
+        "arc_delta": {
+          "hits": 101019,
+          "misses": 31586,
+          "demand_data_hits": 25146,
+          "demand_data_misses": 16,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 21510,
+        "MBs": 199.673049,
+        "MiBs": 190.42305850982666,
+        "iops": 190.423059,
+        "clat_mean_ms": 5.247627512938999,
+        "clat_p99_ms": 21.62688
+      },
+      "fio_job_runtime_ms": 21509
+    },
+    {
+      "utc": "2026-09-20T17:54:31.524534+00:00",
+      "pool": "Backup10T",
+      "name": "sequential-read-warm-arc",
+      "metrics": {
+        "seconds": 1.2005686140037142,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 4.651162790697675,
+        "cpu_iowait_pct": 0.0,
+        "arc_delta": {
+          "hits": 33420,
+          "misses": 0,
+          "demand_data_hits": 32937,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 4294967296,
+        "runtime_ms": 781,
+        "MBs": 5499.31792,
+        "MiBs": 5244.558258056641,
+        "iops": 5244.558259,
+        "clat_mean_ms": 0.19007457373,
+        "clat_p99_ms": 0.25088
+      },
+      "fio_job_runtime_ms": 780
+    },
+    {
+      "utc": "2026-09-20T17:54:53.649948+00:00",
+      "pool": "Backup10T",
+      "name": "random-read-4k-warm-arc",
+      "metrics": {
+        "seconds": 14.00378043600358,
+        "physical_read_MiB": 0.0,
+        "physical_write_MiB": 0.0,
+        "physical_read_iops": 0.0,
+        "physical_write_iops": 0.0,
+        "cpu_busy_pct": 6.570090348340202,
+        "cpu_iowait_pct": 1.0544905428578741,
+        "arc_delta": {
+          "hits": 2070268,
+          "misses": 0,
+          "demand_data_hits": 1673571,
+          "demand_data_misses": 0,
+          "l2_hits": 0,
+          "l2_read_bytes": 0
+        }
+      },
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54,
+        "sdf": 35
+      },
+      "read": {
+        "bytes": 6806528000,
+        "runtime_ms": 10001,
+        "MBs": 680.584741,
+        "MiBs": 649.0561876296997,
+        "iops": 166158.384162,
+        "clat_mean_ms": 0.00565313793,
+        "clat_p99_ms": 0.020096
+      },
+      "fio_job_runtime_ms": 10000
+    }
+  ],
+  "cleanup": [
+    {
+      "kind": "dataset_deleted",
+      "utc": "2026-09-20T17:48:56.517550+00:00",
+      "name": "BigTank/agent-bench-20260920-1745"
+    },
+    {
+      "kind": "dataset_deleted",
+      "utc": "2026-09-20T17:51:27.104162+00:00",
+      "name": "ai-pool/agent-bench-20260920-1745"
+    },
+    {
+      "kind": "dataset_deleted",
+      "utc": "2026-09-20T17:54:54.589497+00:00",
+      "name": "Backup10T/agent-bench-20260920-1745"
+    }
+  ],
+  "errors": [],
+  "started_at": "2026-09-20T17:45:56.556040+00:00",
+  "preflight_temperatures": {
+    "sdg": 58,
+    "sdh": 55,
+    "sdi": 43,
+    "sdj": 54,
+    "sdf": 34
+  },
+  "completed_at": "2026-09-20T17:54:58.738007+00:00",
+  "final_health": "all pools are healthy\n",
+  "final_temperatures": {
+    "sdg": 58,
+    "sdh": 55,
+    "sdi": 44,
+    "sdj": 54,
+    "sdf": 35
+  },
+  "limitations": [
+    "Physical-counter time brackets include process startup and potentially ~4 seconds of SMART polling overhead; fio runtimes determine throughput/IOPS.",
+    "4GiB bounded one-pass sequential workloads; flush-complete writes, not indefinite steady-state SSD writes beyond device cache.",
+    "One fio process, psync QD1; does not measure maximum parallel throughput/IOPS.",
+    "Live production services continued; disk and ARC counters include background activity.",
+    "All comparison datasets use128KiB recordsize; real dataset recordsize/compression/sync choices differ.",
+    "Buffered writes end with fsync; random writes fsync each operation. No direct-write verification artefact.",
+    "Warm ARC measurements use RAM; no installed L2ARC to test.",
+    "Temperature stop threshold60C was a conservative test guardrail, not a manufacturer failure specification.",
+    "Disk byte counters prove data path; request-based ARC hit ratios are influenced by metadata/prefetch and are not byte hit rates."
+  ]
+}

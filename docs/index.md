@@ -25,7 +25,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
 - **Storage**: Longhorn V1, mostly one replica despite multiple physical hosts;
   Temporal Postgres uses the wired two-replica class. NAS provides bulk files and
-  off-cluster backups. [Failure domains and disk inventory](audits/2026-09-05-inventory.md).
+  off-cluster backups. [Current capacity and storage dependencies](inventory/2026-09-20-capacity-and-benchmarks.md).
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: plain Postgres Deployments backed up by kopiur — hourly snapshots, restore-before-bind (CNPG retired 2026-08-13)
 - **Secrets**: 1Password Connect + External Secrets Operator
@@ -35,96 +35,41 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
   owns the local backend and Pi's optional OpenRouter DeepSeek Flash route; use the
   [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
 
-## Documentation
+## Choose what you need
 
-Read the [September 20 homelab decision report](audits/2026-09-20-homelab-report.html)
-for prioritized recommendations on remote DNS, NAS RAM and performance,
-Proxmox management, NetBird, and the TrueNAS storage plugin. It is a standalone,
-printable HTML report with optional technical detail; proposals are not deployed changes.
+**Start with the [September 20 decision report](audits/2026-09-20-homelab-report.html)**
+for the prioritized recommendations. Read its summary in 1 minute; open the
+technical detail only where you want the evidence.
 
-For worker releases, use the [Temporal safe deployment runbook](domains/temporal/safe-deployments.md):
-candidate gates, retained configuration, stateful handoff, and pinned-run recovery.
+| Tab | Use it for | Start here |
+|---|---|---|
+| Overview | Understand how the platform works | [The easy guide](easy-guide.md) |
+| Inventory | Machines, disks, capacity, and dated speed measurements | [Inventory](inventory/index.md) |
+| Audits | Verified findings, limitations, and ranked recommendations | [Audits](audits/index.md) |
+| Ongoing research | Options being considered and the tests needed to decide | [Research](research/index.md) |
+| Operations | Procedures for the deployed platform | [Storage](storage-architecture.md) · [Disaster recovery](disaster-recovery.md) |
 
-[**Explore the lab →**](lab.md) Click through the machines, IPs, disks, VMs and
-what depends on each host. Includes the proposed jobs for each machine.
+The dates matter: a historical inventory is not a live dashboard, and a research
+proposal is not a deployed change. NAS benchmarks carry their own September 20
+collection date; other host inventories retain their original dates.
 
-Start with the [hardware, disk placement and GitOps review](audits/2026-09-05-hardware-and-placement-review.md)
-for the engineering recommendation, proposed workload pools and disk move priorities.
-Those proposals are explicitly separate from deployed state.
+## Frequent tasks
 
-The [September 5 architecture audit](audits/2026-09-05-architecture-audit.md) and
-[dated repository/host inventory](audits/2026-09-05-inventory.md) record verified
-findings, proposed fixes, and current-state differences that still need reconciliation.
+1. **Find a machine or its disks:** [Explore the lab](lab.md), or open the
+   [hardware diagnostics report](diagnostics.md) for detailed evidence.
+2. **Understand NAS speeds and RAM:** [NAS performance](nas-performance.md)
+   separates physical-disk reads, RAM-cache reads, and flushed writes.
+3. **Add or troubleshoot backups:** start with the
+   [kopiur architecture](domains/storage/kopiur-backup-architecture.md), then
+   [mover permissions](domains/storage/kopiur-mover-permissions.md).
+4. **Recover the platform:** use the [disaster recovery runbook](disaster-recovery.md).
+   The [backup simulator](kopiur-playground.md) provides a safe browser-only walkthrough.
+5. **Release a worker:** use the
+   [Temporal safe deployment runbook](domains/temporal/safe-deployments.md).
 
 Every page follows the [documentation reader contract](documentation-standard.md):
 state the current posture, explain unfamiliar choices, provide verifiable steps,
 and include failure/rollback guidance for risky operations.
-
-<div class="grid cards" markdown>
-
--   📖 **The easy guide** — *share this one*
-
-    ---
-
-    The whole system from zero: GitOps → sync waves → Kustomize components →
-    kopiur → restore-before-bind. Real YAML, an adoption ladder for
-    "I just want to try kopiur", and the colleague FAQ.
-
-    [→ easy-guide.md](easy-guide.md)
-
--   💾 **kopiur backup architecture** — *the one doc*
-
-    ---
-
-    The pieces, the component pattern, backup + restore flow diagrams, and
-    the 6-step add-a-backup checklist.
-
-    [→ kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
-
--   ☠️ **Disaster recovery** — *the runbook*
-
-    ---
-
-    Destroy → rebuild → restore: pre-nuke checklist, restore-wave
-    expectations, and the restore canary.
-
-    [→ disaster-recovery.md](disaster-recovery.md)
-
--   🗄️ **Storage architecture** — *operator's reference*
-
-    ---
-
-    Design decisions, who-provides-what, day-2 operations
-    (enable / exempt / drill), troubleshooting, and the honest limitations.
-
-    [→ storage-architecture.md](storage-architecture.md)
-
-</div>
-
-### 💾 More storage & backups
-
-Backups are **kopiur** (Kopia-native operator).
-
-- **[kopiur-playground.md](kopiur-playground.md)** — 🕹️ interactive, in-browser
-  simulation of backup + restore-before-bind: delete a PVC, take S3 offline,
-  nuke the cluster, watch what happens.
-- **[domains/storage/kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md)** —
-  why the backup mover runs as the data owner (the #1 gotcha), plain English + technical.
-- **[backup-repository-setup.md](backup-repository-setup.md)** — the one-time backend
-  setup: RustFS S3 bucket, credentials, the kopiur `ClusterRepository`.
-
-### 🗃️ Domains
-
-- **Databases**: [Run Postgres here — plain-English operator guide](domains/cnpg/run-postgres-plain-english.md) · [Plain Postgres pattern & CNPG retirement](domains/cnpg/plain-postgres-migration.md)
-- **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
-- **Enterprise multi-cluster planning**: [roadmap](domains/multicluster/enterprise-gitops-roadmap.md) · [concrete fleet PRD](domains/multicluster/prd.md)
-- **Networking**: [topology](domains/networking/topology.md) · [Dell Proxmox Talos worker](domains/networking/dell-proxmox-talos-worker.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
-- **Storage**: [Talos SELinux audit remediation](domains/storage/selinux-mount-context.md) · [move a PVC to another StorageClass](domains/storage/pvc-storageclass-migration.md) · [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
-- **Observability**: [radar-ng](domains/observability/radar-ng.md)
-- **Scheduling**: [VPA policy ownership and topology](domains/scheduling/vpa-and-topology.md)
-- **Power**: [wall-plug metering, cost model and the power-off lockout](domains/power/metering.md)
-- **Apps**: [Self-hosting PostHog on Kubernetes](posthog-self-host-k8s.md) — the full recipe (topology, single-node ClickHouse, routing, upgrade checklist), portable to any cluster
-- **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [one vs two 3090s](domains/ai-gpu/single-vs-dual-3090.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md) · [pi agent local-dev guide](domains/ai-gpu/pi-agent-local-dev.md)
 
 ## Adopting any of this
 

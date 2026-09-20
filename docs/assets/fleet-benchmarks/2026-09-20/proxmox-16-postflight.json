@@ -1,0 +1,72 @@
+{
+  "checked_at": "2026-09-20T17:57:32.435310+00:00",
+  "scratch_exists": false,
+  "smart": [
+    {
+      "device": "sda",
+      "passed": true,
+      "temperature_C": 33,
+      "media_errors": null,
+      "critical_warning": null,
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          }
+        },
+        {
+          "id": 187,
+          "name": "Uncorrectable_Error_Cnt",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          }
+        },
+        {
+          "id": 199,
+          "name": "CRC_Error_Count",
+          "raw": {
+            "value": 8162,
+            "string": "8162"
+          }
+        }
+      ]
+    },
+    {
+      "device": "sdb",
+      "passed": true,
+      "temperature_C": 36,
+      "media_errors": null,
+      "critical_warning": null,
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          }
+        },
+        {
+          "id": 197,
+          "name": "Current_Pending_Sector",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          }
+        },
+        {
+          "id": 199,
+          "name": "UDMA_CRC_Error_Count",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          }
+        }
+      ]
+    }
+  ]
+}

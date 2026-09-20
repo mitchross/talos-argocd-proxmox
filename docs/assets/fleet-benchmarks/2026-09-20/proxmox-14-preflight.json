@@ -1,0 +1,557 @@
+{
+  "started_at": "2026-09-20T17:52:41.566438+00:00",
+  "cpu_sample_seconds": 15,
+  "logical_cpus": 32,
+  "cpu_busy_percent": 33.78573740425073,
+  "cpu_iowait_percent": 0.21577300679684971,
+  "cpu_steal_percent": 0.0,
+  "memory": {
+    "MemTotal": 134941814784,
+    "MemFree": 16504815616,
+    "MemAvailable": 19667546112,
+    "SwapTotal": 8589930496,
+    "SwapFree": 8589930496,
+    "Dirty": 49152,
+    "Writeback": 0
+  },
+  "load": "12.00 12.42 12.10 11/698 2731352",
+  "storage": "Name                 Type     Status     Total (KiB)      Used (KiB) Available (KiB)        %\nlocal                 dir     active        98497960        40485668        53242368   41.10%\nlocal-lvm         lvmthin     active       846864384        27607778       819256605    3.26%\nnvme0-vmstore     lvmthin     active       489975808       187513741       302462066   38.27%\nnvme1-vmstore     lvmthin     active       489975808        30378500       459597307    6.20%\nssd-ent               lvm     active       468717568       314572800       154144768   67.11%\ntruenas-smb          cifs     active      8726487552       517504640      8208982912    5.93%",
+  "root_mount": {
+    "filesystems": [
+      {
+        "target": "/",
+        "source": "/dev/mapper/pve-root",
+        "fstype": "ext4",
+        "options": "rw,relatime,errors=remount-ro"
+      }
+    ]
+  },
+  "blockdevices": [
+    {
+      "name": "sda",
+      "type": "disk",
+      "size": 1000204886016,
+      "fstype": null,
+      "mountpoints": [],
+      "model": "PNY CS900 1TB SSD",
+      "children": [
+        {
+          "name": "sda1",
+          "type": "part",
+          "size": 1031168,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null
+        },
+        {
+          "name": "sda2",
+          "type": "part",
+          "size": 1073741824,
+          "fstype": "vfat",
+          "mountpoints": [
+            "/boot/efi"
+          ],
+          "model": null
+        },
+        {
+          "name": "sda3",
+          "type": "part",
+          "size": 999129350144,
+          "fstype": "LVM2_member",
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "pve-swap",
+              "type": "lvm",
+              "size": 8589934592,
+              "fstype": "swap",
+              "mountpoints": [
+                "[SWAP]"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-root",
+              "type": "lvm",
+              "size": 103079215104,
+              "fstype": "ext4",
+              "mountpoints": [
+                "/"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-data_tmeta",
+              "type": "lvm",
+              "size": 1543503872,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "pve-data-tpool",
+                  "type": "lvm",
+                  "size": 867189129216,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null,
+                  "children": [
+                    {
+                      "name": "pve-data",
+                      "type": "lvm",
+                      "size": 867189129216,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "pve-data_tdata",
+              "type": "lvm",
+              "size": 867189129216,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "pve-data-tpool",
+                  "type": "lvm",
+                  "size": 867189129216,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null,
+                  "children": [
+                    {
+                      "name": "pve-data",
+                      "type": "lvm",
+                      "size": 867189129216,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sdb",
+      "type": "disk",
+      "size": 480103981056,
+      "fstype": "linux_raid_member",
+      "mountpoints": [],
+      "model": "MK000480GWCEV",
+      "children": [
+        {
+          "name": "md0",
+          "type": "raid1",
+          "size": 479968690176,
+          "fstype": "LVM2_member",
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "ssd--ent-vm--100--disk--0",
+              "type": "lvm",
+              "size": 322122547200,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sdc",
+      "type": "disk",
+      "size": 480103981056,
+      "fstype": "linux_raid_member",
+      "mountpoints": [],
+      "model": "MK000480GWCEV",
+      "children": [
+        {
+          "name": "md0",
+          "type": "raid1",
+          "size": 479968690176,
+          "fstype": "LVM2_member",
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "ssd--ent-vm--100--disk--0",
+              "type": "lvm",
+              "size": 322122547200,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nvme0n1",
+      "type": "disk",
+      "size": 512110190592,
+      "fstype": "LVM2_member",
+      "mountpoints": [],
+      "model": "EDILOCA EN605 512GB",
+      "children": [
+        {
+          "name": "nvme1--vmstore-nvme1--vmstore_tmeta",
+          "type": "lvm",
+          "size": 5121245184,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "nvme1--vmstore-nvme1--vmstore-tpool",
+              "type": "lvm",
+              "size": 501735227392,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "nvme1--vmstore-nvme1--vmstore",
+                  "type": "lvm",
+                  "size": 501735227392,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme1--vmstore-vm--100--disk--0",
+                  "type": "lvm",
+                  "size": 483183820800,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "nvme1--vmstore-nvme1--vmstore_tdata",
+          "type": "lvm",
+          "size": 501735227392,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "nvme1--vmstore-nvme1--vmstore-tpool",
+              "type": "lvm",
+              "size": 501735227392,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "nvme1--vmstore-nvme1--vmstore",
+                  "type": "lvm",
+                  "size": 501735227392,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme1--vmstore-vm--100--disk--0",
+                  "type": "lvm",
+                  "size": 483183820800,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nvme1n1",
+      "type": "disk",
+      "size": 512110190592,
+      "fstype": "LVM2_member",
+      "mountpoints": [],
+      "model": "EDILOCA EN605 512GB",
+      "children": [
+        {
+          "name": "nvme0--vmstore-nvme0--vmstore_tmeta",
+          "type": "lvm",
+          "size": 5121245184,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "nvme0--vmstore-nvme0--vmstore-tpool",
+              "type": "lvm",
+              "size": 501735227392,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "nvme0--vmstore-nvme0--vmstore",
+                  "type": "lvm",
+                  "size": 501735227392,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme0--vmstore-vm--100--disk--0",
+                  "type": "lvm",
+                  "size": 4194304,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme0--vmstore-vm--100--disk--1",
+                  "type": "lvm",
+                  "size": 17179869184,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme0--vmstore-vm--100--disk--2",
+                  "type": "lvm",
+                  "size": 466003951616,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "nvme0--vmstore-nvme0--vmstore_tdata",
+          "type": "lvm",
+          "size": 501735227392,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "nvme0--vmstore-nvme0--vmstore-tpool",
+              "type": "lvm",
+              "size": 501735227392,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "nvme0--vmstore-nvme0--vmstore",
+                  "type": "lvm",
+                  "size": 501735227392,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme0--vmstore-vm--100--disk--0",
+                  "type": "lvm",
+                  "size": 4194304,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme0--vmstore-vm--100--disk--1",
+                  "type": "lvm",
+                  "size": 17179869184,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                },
+                {
+                  "name": "nvme0--vmstore-vm--100--disk--2",
+                  "type": "lvm",
+                  "size": 466003951616,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "smart": [
+    {
+      "device": "sda",
+      "model": "PNY CS900 1TB SSD",
+      "passed": true,
+      "temperature_C": 33,
+      "nvme": {},
+      "ata_indicators": []
+    },
+    {
+      "device": "sdb",
+      "model": "MK000480GWCEV",
+      "passed": true,
+      "temperature_C": 18,
+      "nvme": {},
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          },
+          "when_failed": ""
+        }
+      ]
+    },
+    {
+      "device": "sdc",
+      "model": "MK000480GWCEV",
+      "passed": true,
+      "temperature_C": 21,
+      "nvme": {},
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          },
+          "when_failed": ""
+        }
+      ]
+    },
+    {
+      "device": "nvme0n1",
+      "model": "EDILOCA EN605 512GB",
+      "passed": true,
+      "temperature_C": 54,
+      "nvme": {
+        "critical_warning": 0,
+        "temperature": 54,
+        "available_spare": 100,
+        "percentage_used": 20,
+        "media_errors": 0,
+        "num_err_log_entries": 0
+      },
+      "ata_indicators": []
+    },
+    {
+      "device": "nvme1n1",
+      "model": "EDILOCA EN605 512GB",
+      "passed": true,
+      "temperature_C": 54,
+      "nvme": {
+        "critical_warning": 0,
+        "temperature": 54,
+        "available_spare": 100,
+        "percentage_used": 15,
+        "media_errors": 0,
+        "num_err_log_entries": 0
+      },
+      "ata_indicators": []
+    }
+  ],
+  "vms": [
+    {
+      "id": 100,
+      "status": "running",
+      "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+      "cpu_fraction": 0.341394342561352,
+      "maxcpu": 30,
+      "memory_bytes": 107609837568,
+      "maxmemory_bytes": 107374182400,
+      "config": {
+        "balloon": "0",
+        "cores": "30",
+        "cpu": "host",
+        "ide0": "local:iso/user-data-100.iso,media=cdrom,size=57856",
+        "ide2": "local:iso/470ee5f8e729df4fc258484c5da7711ba7b0b5c99c751cf653b54af850b28544.iso,media=cdrom,size=357708K",
+        "memory": "102400",
+        "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+        "scsi0": "nvme0-vmstore:vm-100-disk-1,aio=io_uring,cache=none,discard=on,iothread=1,size=16G,ssd=1",
+        "scsi1": "nvme0-vmstore:vm-100-disk-2,aio=io_uring,cache=none,discard=on,iothread=1,size=434G,ssd=1",
+        "scsi2": "nvme1-vmstore:vm-100-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=450G,ssd=1",
+        "scsi3": "ssd-ent:vm-100-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=300G,ssd=1",
+        "scsihw": "virtio-scsi-single",
+        "sockets": "1"
+      }
+    },
+    {
+      "id": 102,
+      "status": "stopped",
+      "name": "kali-linux",
+      "cpu_fraction": 0,
+      "maxcpu": 4,
+      "memory_bytes": 0,
+      "maxmemory_bytes": 12582912000,
+      "config": {
+        "balloon": "8000",
+        "cores": "4",
+        "cpu": "x86-64-v2-AES",
+        "memory": "12000",
+        "name": "kali-linux",
+        "scsi0": "truenas-smb:102/vm-102-disk-0.raw,iothread=1,size=305G,ssd=1",
+        "scsihw": "virtio-scsi-single",
+        "sockets": "1"
+      }
+    }
+  ],
+  "guest_summary": [
+    {
+      "vmid": 100,
+      "type": "qemu",
+      "status": "running",
+      "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+      "cpu": 0.41209962658389,
+      "maxcpu": 30,
+      "mem": 107611594752,
+      "maxmem": 107374182400,
+      "configuration": {
+        "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+        "memory": "102400",
+        "balloon": "0",
+        "cores": "30",
+        "sockets": "1",
+        "cpu": "host"
+      }
+    },
+    {
+      "vmid": 102,
+      "type": "qemu",
+      "status": "stopped",
+      "name": "kali-linux",
+      "cpu": 0,
+      "maxcpu": 4,
+      "mem": 0,
+      "maxmem": 12582912000,
+      "configuration": {
+        "name": "kali-linux",
+        "memory": "12000",
+        "balloon": "8000",
+        "cores": "4",
+        "sockets": "1",
+        "cpu": "x86-64-v2-AES"
+      }
+    }
+  ],
+  "cpu_model": "AMD Ryzen Threadripper 2950X 16-Core Processor"
+}

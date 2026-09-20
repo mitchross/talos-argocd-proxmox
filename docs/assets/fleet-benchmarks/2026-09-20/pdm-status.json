@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-09-20T17:57:00Z",
+  "host": "192.168.10.22",
+  "container_id": 101,
+  "address": "192.168.10.151",
+  "https_port": 8443,
+  "http_status": 200,
+  "package": "proxmox-datacenter-manager",
+  "version": "1.1.7",
+  "services": {
+    "proxmox-datacenter-api": "active",
+    "proxmox-datacenter-privileged-api": "active"
+  },
+  "configured_remotes": [
+    {
+      "name": "dell",
+      "primary_endpoint": "192.168.10.16"
+    },
+    {
+      "name": "threadripper",
+      "primary_endpoint": "192.168.10.14"
+    },
+    {
+      "name": "hp-shed",
+      "primary_endpoint": "192.168.10.20"
+    },
+    {
+      "name": "hp-medium",
+      "primary_endpoint": "192.168.10.21"
+    },
+    {
+      "name": "hp-elite-mini",
+      "primary_endpoint": "192.168.10.22"
+    }
+  ],
+  "limitations": "Remote credentials and connection health were not tested; secondary discovered endpoint entries omitted. Read-only inspection."
+}

@@ -1,5 +1,12 @@
 # Repository and physical inventory — 5 September 2026
 
+!!! info "Historical snapshot — use the September 20 measurements for current capacity decisions"
+    This page preserves the September 5 evidence and decisions. Hardware speeds,
+    memory headroom, guest placement and management-tool findings were checked
+    again in the [September 20 fleet assessment](../inventory/2026-09-20-capacity-and-benchmarks.md)
+    and [NAS reference](../nas-performance.md). Those newer measurements supersede
+    the corresponding older claims; unrelated architecture findings were not all re-audited.
+
 [Explore these machines interactively](../lab.md): hosts, guest IPs, all physical
 drives, VM allocations and a dependency walkthrough.
 

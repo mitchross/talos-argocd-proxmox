@@ -1,0 +1,487 @@
+{
+  "date": "2026-09-20",
+  "scope": "Proxmox host-root ext4 filesystem probes, separate from VM data and Kubernetes PVC benchmarks",
+  "method": {
+    "file_bytes": 1073741824,
+    "sequential_block_bytes": 1048576,
+    "write_fsync_interval_bytes": 67108864,
+    "random_write_bytes": 8192,
+    "random_write_operations": 128,
+    "random_write_durability": "fsync after every operation",
+    "per_file_cache_eviction": "POSIX_FADV_DONTNEED after flush and in 64MiB intervals; no global cache drop",
+    "host_deadline_seconds": 120
+  },
+  "limitations": [
+    "A bounded 1GiB pass does not establish steady-state flash-cache exhaustion or maximum parallel throughput.",
+    "Host root disks and actual VM data tiers differ; only SFF worker data shares the root physical drive.",
+    "Physical disk byte counters include unrelated production background activity.",
+    "15-second preflight CPU samples are not peak demand or failure-capacity guarantees.",
+    "Host memory available is not guest application memory; fixed-memory VMs can later touch currently unused allocations."
+  ],
+  "hosts": [
+    {
+      "ip": "192.168.10.14",
+      "name": "Threadripper",
+      "cpu_model": "AMD Ryzen Threadripper 2950X 16-Core Processor",
+      "logical_cpus": 32,
+      "active_guest_vcpus": 30,
+      "ram_GiB": 125.67435836791992,
+      "available_GiB": 18.316829681396484,
+      "active_guest_memory_GiB": 100.0,
+      "cpu_busy_pct": 33.78573740425073,
+      "cpu_iowait_pct": 0.21577300679684971,
+      "cpu_steal_pct": 0.0,
+      "preflight_started_at": "2026-09-20T17:52:41.566438+00:00",
+      "guest_summary": [
+        {
+          "vmid": 100,
+          "type": "qemu",
+          "status": "running",
+          "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+          "cpu": 0.41209962658389,
+          "maxcpu": 30,
+          "mem": 107611594752,
+          "maxmem": 107374182400,
+          "configuration": {
+            "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+            "memory": "102400",
+            "balloon": "0",
+            "cores": "30",
+            "sockets": "1",
+            "cpu": "host"
+          }
+        },
+        {
+          "vmid": 102,
+          "type": "qemu",
+          "status": "stopped",
+          "name": "kali-linux",
+          "cpu": 0,
+          "maxcpu": 4,
+          "mem": 0,
+          "maxmem": 12582912000,
+          "configuration": {
+            "name": "kali-linux",
+            "memory": "12000",
+            "balloon": "8000",
+            "cores": "4",
+            "sockets": "1",
+            "cpu": "x86-64-v2-AES"
+          }
+        }
+      ],
+      "root_disk": "sda",
+      "path": "PNY CS900 root SSD; excludes enterprise mirror and GPU NVMe tiers",
+      "write_MBs": 359.6760398131046,
+      "read_MBs": 406.5248369629984,
+      "sync_write_8KiB_p50_ms": 1.9898469909094274,
+      "sync_write_8KiB_p95_ms": 2.177661983296275,
+      "sync_write_8KiB_p99_ms": 2.313199103809893,
+      "sequential_physical_read_bytes": 1075052544,
+      "benchmark_started_at": "2026-09-20T17:56:17.453838+00:00",
+      "benchmark_finished_at": "2026-09-20T17:56:23.348042+00:00",
+      "cleanup_verified": true,
+      "errors": [],
+      "postflight_smart": [
+        {
+          "device": "sda",
+          "passed": true,
+          "temperature_C": 33,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": []
+        },
+        {
+          "device": "sdb",
+          "passed": true,
+          "temperature_C": 20,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": [
+            {
+              "id": 5,
+              "name": "Reallocated_Sector_Ct",
+              "raw": {
+                "value": 0,
+                "string": "0"
+              }
+            }
+          ]
+        },
+        {
+          "device": "sdc",
+          "passed": true,
+          "temperature_C": 22,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": [
+            {
+              "id": 5,
+              "name": "Reallocated_Sector_Ct",
+              "raw": {
+                "value": 0,
+                "string": "0"
+              }
+            }
+          ]
+        },
+        {
+          "device": "nvme0n1",
+          "passed": true,
+          "temperature_C": 54,
+          "media_errors": 0,
+          "critical_warning": 0,
+          "ata_indicators": []
+        },
+        {
+          "device": "nvme1n1",
+          "passed": true,
+          "temperature_C": 54,
+          "media_errors": 0,
+          "critical_warning": 0,
+          "ata_indicators": []
+        }
+      ]
+    },
+    {
+      "ip": "192.168.10.16",
+      "name": "Dell",
+      "cpu_model": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz",
+      "logical_cpus": 6,
+      "active_guest_vcpus": 6,
+      "ram_GiB": 38.97224044799805,
+      "available_GiB": 7.437259674072266,
+      "active_guest_memory_GiB": 30.0,
+      "cpu_busy_pct": 41.40841813135985,
+      "cpu_iowait_pct": 1.1332099907493063,
+      "cpu_steal_pct": 0.0,
+      "preflight_started_at": "2026-09-20T17:52:41.483110+00:00",
+      "guest_summary": [
+        {
+          "vmid": 100,
+          "type": "qemu",
+          "status": "running",
+          "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+          "cpu": 0.465274666020644,
+          "maxcpu": 6,
+          "mem": 31062364160,
+          "maxmem": 32212254720,
+          "configuration": {
+            "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+            "memory": "30720",
+            "balloon": "0",
+            "cores": "6",
+            "sockets": "1",
+            "cpu": "host"
+          }
+        }
+      ],
+      "root_disk": "sdb",
+      "path": "Apple root SSD; excludes Samsung SSD VM data tier",
+      "write_MBs": 635.7481599074167,
+      "read_MBs": 1926.2973655755006,
+      "sync_write_8KiB_p50_ms": 7.177386491093785,
+      "sync_write_8KiB_p95_ms": 9.50894400011748,
+      "sync_write_8KiB_p99_ms": 10.834149899892509,
+      "sequential_physical_read_bytes": 1073741824,
+      "benchmark_started_at": "2026-09-20T17:56:17.355731+00:00",
+      "benchmark_finished_at": "2026-09-20T17:56:20.542457+00:00",
+      "cleanup_verified": true,
+      "errors": [],
+      "postflight_smart": [
+        {
+          "device": "sda",
+          "passed": true,
+          "temperature_C": 33,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": [
+            {
+              "id": 5,
+              "name": "Reallocated_Sector_Ct",
+              "raw": {
+                "value": 0,
+                "string": "0"
+              }
+            },
+            {
+              "id": 187,
+              "name": "Uncorrectable_Error_Cnt",
+              "raw": {
+                "value": 0,
+                "string": "0"
+              }
+            },
+            {
+              "id": 199,
+              "name": "CRC_Error_Count",
+              "raw": {
+                "value": 8162,
+                "string": "8162"
+              }
+            }
+          ]
+        },
+        {
+          "device": "sdb",
+          "passed": true,
+          "temperature_C": 36,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": [
+            {
+              "id": 5,
+              "name": "Reallocated_Sector_Ct",
+              "raw": {
+                "value": 0,
+                "string": "0"
+              }
+            },
+            {
+              "id": 197,
+              "name": "Current_Pending_Sector",
+              "raw": {
+                "value": 0,
+                "string": "0"
+              }
+            },
+            {
+              "id": 199,
+              "name": "UDMA_CRC_Error_Count",
+              "raw": {
+                "value": 0,
+                "string": "0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ip": "192.168.10.20",
+      "name": "Shed Micro",
+      "cpu_model": "Intel(R) Core(TM) i5-8500T CPU @ 2.10GHz",
+      "logical_cpus": 6,
+      "active_guest_vcpus": 4,
+      "ram_GiB": 31.124744415283203,
+      "available_GiB": 25.005516052246094,
+      "active_guest_memory_GiB": 12.0,
+      "cpu_busy_pct": 4.66263169692894,
+      "cpu_iowait_pct": 0.19054023761488456,
+      "cpu_steal_pct": 0.0,
+      "preflight_started_at": "2026-09-20T17:52:41.369922+00:00",
+      "guest_summary": [
+        {
+          "vmid": 100,
+          "type": "qemu",
+          "status": "running",
+          "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+          "cpu": 0.0694411012616958,
+          "maxcpu": 4,
+          "mem": 4800806912,
+          "maxmem": 12884901888,
+          "configuration": {
+            "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+            "memory": "12288",
+            "balloon": "0",
+            "cores": "4",
+            "sockets": "1",
+            "cpu": "host"
+          }
+        }
+      ],
+      "root_disk": "nvme0n1",
+      "path": "SK hynix root NVMe; excludes PNY VM data tier",
+      "write_MBs": 638.5990371105569,
+      "read_MBs": 1159.8498179481585,
+      "sync_write_8KiB_p50_ms": 1.0125505000360135,
+      "sync_write_8KiB_p95_ms": 1.1411049999878742,
+      "sync_write_8KiB_p99_ms": 1.1752210002669017,
+      "sequential_physical_read_bytes": 1073741824,
+      "benchmark_started_at": "2026-09-20T17:56:17.261298+00:00",
+      "benchmark_finished_at": "2026-09-20T17:56:20.003731+00:00",
+      "cleanup_verified": true,
+      "errors": [],
+      "postflight_smart": [
+        {
+          "device": "sda",
+          "passed": true,
+          "temperature_C": 33,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": []
+        },
+        {
+          "device": "nvme0n1",
+          "passed": true,
+          "temperature_C": 39,
+          "media_errors": 0,
+          "critical_warning": 0,
+          "ata_indicators": []
+        }
+      ]
+    },
+    {
+      "ip": "192.168.10.21",
+      "name": "HP SFF",
+      "cpu_model": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz",
+      "logical_cpus": 6,
+      "active_guest_vcpus": 10,
+      "ram_GiB": 62.607139587402344,
+      "available_GiB": 8.141902923583984,
+      "active_guest_memory_GiB": 52.0,
+      "cpu_busy_pct": 39.25524556144801,
+      "cpu_iowait_pct": 0.9453539312889094,
+      "cpu_steal_pct": 0.0,
+      "preflight_started_at": "2026-09-20T17:52:41.259099+00:00",
+      "guest_summary": [
+        {
+          "vmid": 100,
+          "type": "qemu",
+          "status": "running",
+          "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+          "cpu": 0.264930127998531,
+          "maxcpu": 6,
+          "mem": 43113689088,
+          "maxmem": 42949672960,
+          "configuration": {
+            "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+            "memory": "40960",
+            "balloon": "0",
+            "cores": "6",
+            "sockets": "1",
+            "cpu": "host"
+          }
+        },
+        {
+          "vmid": 101,
+          "type": "qemu",
+          "status": "running",
+          "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
+          "cpu": 0.21199380786374,
+          "maxcpu": 4,
+          "mem": 12395954176,
+          "maxmem": 12884901888,
+          "configuration": {
+            "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
+            "memory": "12288",
+            "balloon": "0",
+            "cores": "4",
+            "sockets": "1",
+            "cpu": "host"
+          }
+        }
+      ],
+      "root_disk": "sdb",
+      "path": "PNY root SSD; shares physical drive with worker VM, excludes separate control-plane SSD",
+      "write_MBs": 83.10613731557248,
+      "read_MBs": 401.34424849078806,
+      "sync_write_8KiB_p50_ms": 2.3808350088074803,
+      "sync_write_8KiB_p95_ms": 4.409085959196091,
+      "sync_write_8KiB_p99_ms": 8.463542093522847,
+      "sequential_physical_read_bytes": 1073741824,
+      "benchmark_started_at": "2026-09-20T17:56:17.214536+00:00",
+      "benchmark_finished_at": "2026-09-20T17:56:33.321896+00:00",
+      "cleanup_verified": true,
+      "errors": [],
+      "postflight_smart": [
+        {
+          "device": "sda",
+          "passed": true,
+          "temperature_C": 33,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": []
+        },
+        {
+          "device": "sdb",
+          "passed": true,
+          "temperature_C": 33,
+          "media_errors": null,
+          "critical_warning": null,
+          "ata_indicators": []
+        }
+      ]
+    },
+    {
+      "ip": "192.168.10.22",
+      "name": "HP Elite",
+      "cpu_model": "13th Gen Intel(R) Core(TM) i5-13500T",
+      "logical_cpus": 20,
+      "active_guest_vcpus": 18,
+      "ram_GiB": 30.58776092529297,
+      "available_GiB": 3.953998565673828,
+      "active_guest_memory_GiB": 26.0,
+      "cpu_busy_pct": 22.456781914893618,
+      "cpu_iowait_pct": 0.24268617021276595,
+      "cpu_steal_pct": 0.0,
+      "preflight_started_at": "2026-09-20T17:52:41.272510+00:00",
+      "guest_summary": [
+        {
+          "vmid": 100,
+          "type": "qemu",
+          "status": "running",
+          "name": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+          "cpu": 0.257626206742207,
+          "maxcpu": 16,
+          "mem": 25901973504,
+          "maxmem": 25769803776,
+          "configuration": {
+            "name": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+            "memory": "24576",
+            "balloon": "0",
+            "cores": "16",
+            "sockets": "1",
+            "cpu": "host"
+          }
+        },
+        {
+          "vmid": 101,
+          "type": "lxc",
+          "status": "running",
+          "name": "proxmox-datacenter-manager",
+          "cpu": 4.9844123031383e-05,
+          "maxcpu": 2,
+          "mem": 98430976,
+          "maxmem": 2147483648,
+          "configuration": {
+            "hostname": "proxmox-datacenter-manager",
+            "memory": "2048",
+            "swap": "512",
+            "cores": "2"
+          }
+        }
+      ],
+      "root_disk": "nvme1n1",
+      "path": "WDC root NVMe; excludes Intel SSD VM data tier",
+      "write_MBs": 638.203858352072,
+      "read_MBs": 888.6898635308518,
+      "sync_write_8KiB_p50_ms": 0.6068929797038436,
+      "sync_write_8KiB_p95_ms": 0.8404740365222096,
+      "sync_write_8KiB_p99_ms": 0.9099689777940512,
+      "sequential_physical_read_bytes": 1075412992,
+      "benchmark_started_at": "2026-09-20T17:56:17.216171+00:00",
+      "benchmark_finished_at": "2026-09-20T17:56:20.184620+00:00",
+      "cleanup_verified": true,
+      "errors": [],
+      "postflight_smart": [
+        {
+          "device": "nvme0n1",
+          "passed": true,
+          "temperature_C": 35,
+          "media_errors": 0,
+          "critical_warning": 0,
+          "ata_indicators": []
+        },
+        {
+          "device": "nvme1n1",
+          "passed": true,
+          "temperature_C": 47,
+          "media_errors": 0,
+          "critical_warning": 0,
+          "ata_indicators": []
+        }
+      ]
+    }
+  ]
+}

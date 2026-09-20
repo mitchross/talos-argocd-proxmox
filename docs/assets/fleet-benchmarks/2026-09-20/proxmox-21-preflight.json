@@ -1,0 +1,225 @@
+{
+  "started_at": "2026-09-20T17:52:41.259099+00:00",
+  "cpu_sample_seconds": 15,
+  "logical_cpus": 6,
+  "cpu_busy_percent": 39.25524556144801,
+  "cpu_iowait_percent": 0.9453539312889094,
+  "cpu_steal_percent": 0.0,
+  "memory": {
+    "MemTotal": 67223904256,
+    "MemFree": 5506330624,
+    "MemAvailable": 8742301696,
+    "SwapTotal": 8589930496,
+    "SwapFree": 8589922304,
+    "Dirty": 4096,
+    "Writeback": 0
+  },
+  "load": "2.48 3.02 3.61 5/277 2495236",
+  "storage": "Name                      Type     Status     Total (KiB)      Used (KiB) Available (KiB)        %\nhp-prodesk-vmstore         lvm     active       975171584       966787072         8384512   99.14%\nhp-sff-cp-vmstore          lvm     active       976760832       104857600       871903232   10.74%\nlocal                      dir     active        98497780        11268036        82180196   11.44%",
+  "root_mount": {
+    "filesystems": [
+      {
+        "target": "/",
+        "source": "/dev/mapper/pve-root",
+        "fstype": "ext4",
+        "options": "rw,relatime,errors=remount-ro"
+      }
+    ]
+  },
+  "blockdevices": [
+    {
+      "name": "sda",
+      "type": "disk",
+      "size": 1000204886016,
+      "fstype": "LVM2_member",
+      "mountpoints": [],
+      "model": "PNY CS900 1TB SSD",
+      "children": [
+        {
+          "name": "hp--sff--cp-vm--101--disk--0",
+          "type": "lvm",
+          "size": 107374182400,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null
+        }
+      ]
+    },
+    {
+      "name": "sdb",
+      "type": "disk",
+      "size": 1000204886016,
+      "fstype": null,
+      "mountpoints": [],
+      "model": "PNY CS900 1TB SSD",
+      "children": [
+        {
+          "name": "sdb1",
+          "type": "part",
+          "size": 1031168,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null
+        },
+        {
+          "name": "sdb2",
+          "type": "part",
+          "size": 1073741824,
+          "fstype": "vfat",
+          "mountpoints": [
+            "/boot/efi"
+          ],
+          "model": null
+        },
+        {
+          "name": "sdb3",
+          "type": "part",
+          "size": 998578848256,
+          "fstype": "LVM2_member",
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "pve-swap",
+              "type": "lvm",
+              "size": 8589934592,
+              "fstype": "swap",
+              "mountpoints": [
+                "[SWAP]"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-root",
+              "type": "lvm",
+              "size": 103079215104,
+              "fstype": "ext4",
+              "mountpoints": [
+                "/"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-vm--100--disk--0",
+              "type": "lvm",
+              "size": 137438953472,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null
+            },
+            {
+              "name": "pve-vm--100--disk--1",
+              "type": "lvm",
+              "size": 740881858560,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "smart": [
+    {
+      "device": "sda",
+      "model": "PNY CS900 1TB SSD",
+      "passed": true,
+      "temperature_C": 33,
+      "nvme": {},
+      "ata_indicators": []
+    },
+    {
+      "device": "sdb",
+      "model": "PNY CS900 1TB SSD",
+      "passed": true,
+      "temperature_C": 33,
+      "nvme": {},
+      "ata_indicators": []
+    }
+  ],
+  "vms": [
+    {
+      "id": 100,
+      "status": "running",
+      "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+      "cpu_fraction": 0.224124454372087,
+      "maxcpu": 6,
+      "memory_bytes": 43102801920,
+      "maxmemory_bytes": 42949672960,
+      "config": {
+        "balloon": "0",
+        "cores": "6",
+        "cpu": "host",
+        "ide0": "local:iso/user-data-100.iso,media=cdrom,size=57856",
+        "ide2": "local:iso/470ee5f8e729df4fc258484c5da7711ba7b0b5c99c751cf653b54af850b28544.iso,media=cdrom,size=357708K",
+        "memory": "40960",
+        "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+        "scsi0": "hp-prodesk-vmstore:vm-100-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=128G,ssd=1",
+        "scsi1": "hp-prodesk-vmstore:vm-100-disk-1,aio=io_uring,cache=none,discard=on,iothread=1,size=690G,ssd=1",
+        "scsihw": "virtio-scsi-single",
+        "sockets": "1"
+      }
+    },
+    {
+      "id": 101,
+      "status": "running",
+      "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
+      "cpu_fraction": 0.149581952917956,
+      "maxcpu": 4,
+      "memory_bytes": 12436267008,
+      "maxmemory_bytes": 12884901888,
+      "config": {
+        "balloon": "0",
+        "cores": "4",
+        "cpu": "host",
+        "ide0": "local:iso/user-data-101.iso,media=cdrom,size=57856",
+        "ide2": "local:iso/470ee5f8e729df4fc258484c5da7711ba7b0b5c99c751cf653b54af850b28544.iso,media=cdrom,size=357708K",
+        "memory": "12288",
+        "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
+        "scsi0": "hp-sff-cp-vmstore:vm-101-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=100G,ssd=1",
+        "scsihw": "virtio-scsi-single",
+        "sockets": "1"
+      }
+    }
+  ],
+  "guest_summary": [
+    {
+      "vmid": 100,
+      "type": "qemu",
+      "status": "running",
+      "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+      "cpu": 0.264930127998531,
+      "maxcpu": 6,
+      "mem": 43113689088,
+      "maxmem": 42949672960,
+      "configuration": {
+        "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+        "memory": "40960",
+        "balloon": "0",
+        "cores": "6",
+        "sockets": "1",
+        "cpu": "host"
+      }
+    },
+    {
+      "vmid": 101,
+      "type": "qemu",
+      "status": "running",
+      "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
+      "cpu": 0.21199380786374,
+      "maxcpu": 4,
+      "mem": 12395954176,
+      "maxmem": 12884901888,
+      "configuration": {
+        "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
+        "memory": "12288",
+        "balloon": "0",
+        "cores": "4",
+        "sockets": "1",
+        "cpu": "host"
+      }
+    }
+  ],
+  "cpu_model": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"
+}

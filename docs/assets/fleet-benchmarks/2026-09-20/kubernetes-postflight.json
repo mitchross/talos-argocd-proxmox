@@ -1,0 +1,232 @@
+{
+  "verifiedAt": "2026-09-20T18:10:15.180896+00:00",
+  "scratchChecks": [
+    {
+      "namespace": "copyparty",
+      "pod": "copyparty-55d9fb59b8-n9tmk",
+      "container": "copyparty",
+      "path": "/data",
+      "exitCode": 0,
+      "scratchRemaining": []
+    },
+    {
+      "namespace": "radar-ng",
+      "pod": "open-meteo-58cc7cc7fb-rlkzb",
+      "container": "open-meteo",
+      "path": "/app/data",
+      "exitCode": 0,
+      "scratchRemaining": []
+    },
+    {
+      "namespace": "paperless-ngx",
+      "pod": "paperless-ngx-796787d86d-gkgzv",
+      "container": "paperless-ngx",
+      "path": "/usr/src/paperless/data",
+      "exitCode": 0,
+      "scratchRemaining": []
+    },
+    {
+      "namespace": "surfsense",
+      "pod": "surfsense-v2-569c88f987-rq655",
+      "container": "api",
+      "path": "/app/.local_object_store",
+      "exitCode": 0,
+      "scratchRemaining": []
+    },
+    {
+      "namespace": "intercept",
+      "pod": "intercept-5fd847c974-kt9kk",
+      "container": "intercept",
+      "path": "/app/data/weather_sat",
+      "exitCode": 0,
+      "scratchRemaining": []
+    },
+    {
+      "namespace": "tubesync",
+      "pod": "tubesync-57f956b86d-5qpt6",
+      "container": "tubesync",
+      "path": "/downloads",
+      "exitCode": 0,
+      "scratchRemaining": []
+    },
+    {
+      "namespace": "immich",
+      "pod": "immich-machine-learning-847669597f-hgzxv",
+      "container": "machine-learning",
+      "path": "/cache",
+      "exitCode": 0,
+      "scratchRemaining": []
+    },
+    {
+      "namespace": "radar-ng",
+      "pod": "radar-ng-w-sha-eeaf8c-4bb8041695-6f877bfc-k5pms",
+      "container": "worker",
+      "path": "/data/state",
+      "exitCode": 0,
+      "scratchRemaining": []
+    }
+  ],
+  "pods": [
+    {
+      "namespace": "copyparty",
+      "pod": "copyparty-55d9fb59b8-n9tmk",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "copyparty",
+          "ready": true,
+          "restarts": 1,
+          "lastTerminated": {
+            "containerID": "containerd://041bc46d7254c82dd9cfe667c9e1ad0e58ed626477f01ac0173071b68b7a2f65",
+            "exitCode": 137,
+            "finishedAt": "2026-09-20T17:54:04Z",
+            "reason": "OOMKilled",
+            "startedAt": "2026-09-20T03:51:12Z"
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "immich",
+      "pod": "immich-machine-learning-847669597f-hgzxv",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "machine-learning",
+          "ready": true,
+          "restarts": 0,
+          "lastTerminated": {}
+        }
+      ]
+    },
+    {
+      "namespace": "intercept",
+      "pod": "intercept-5fd847c974-kt9kk",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "intercept",
+          "ready": true,
+          "restarts": 0,
+          "lastTerminated": {}
+        }
+      ]
+    },
+    {
+      "namespace": "paperless-ngx",
+      "pod": "paperless-ngx-796787d86d-gkgzv",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "paperless-ngx",
+          "ready": true,
+          "restarts": 1,
+          "lastTerminated": {
+            "containerID": "containerd://b7c471e58d7f1843434abb10057abe897c06e4f34bc36cfb2dbc27008dede2e6",
+            "exitCode": 1,
+            "finishedAt": "2026-09-20T03:53:48Z",
+            "reason": "Error",
+            "startedAt": "2026-09-20T03:48:54Z"
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "radar-ng",
+      "pod": "open-meteo-58cc7cc7fb-rlkzb",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "open-meteo",
+          "ready": true,
+          "restarts": 0,
+          "lastTerminated": {}
+        },
+        {
+          "name": "sync-worker",
+          "ready": true,
+          "restarts": 0,
+          "lastTerminated": {}
+        }
+      ]
+    },
+    {
+      "namespace": "radar-ng",
+      "pod": "radar-ng-w-sha-eeaf8c-4bb8041695-6f877bfc-k5pms",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "worker",
+          "ready": true,
+          "restarts": 1,
+          "lastTerminated": {
+            "containerID": "containerd://66a711ea1966d3d7d4933e1214958f447739eca92176ade021cad4563d416544",
+            "exitCode": 1,
+            "finishedAt": "2026-09-20T03:51:17Z",
+            "reason": "Error",
+            "startedAt": "2026-09-20T03:48:59Z"
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "surfsense",
+      "pod": "surfsense-v2-569c88f987-rq655",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "api",
+          "ready": true,
+          "restarts": 0,
+          "lastTerminated": {}
+        },
+        {
+          "name": "worker",
+          "ready": true,
+          "restarts": 0,
+          "lastTerminated": {}
+        }
+      ]
+    },
+    {
+      "namespace": "tubesync",
+      "pod": "tubesync-57f956b86d-5qpt6",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "tubesync",
+          "ready": true,
+          "restarts": 0,
+          "lastTerminated": {}
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+      "ready": "True"
+    },
+    {
+      "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+      "ready": "True"
+    },
+    {
+      "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+      "ready": "True"
+    },
+    {
+      "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+      "ready": "True"
+    },
+    {
+      "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+      "ready": "True"
+    },
+    {
+      "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+      "ready": "True"
+    }
+  ],
+  "incident": "Initial buffered-write test caused Copyparty OOM restart at17:54:04 UTC; exact leftover scratchfile removed, later direct-I/O runs succeeded."
+}

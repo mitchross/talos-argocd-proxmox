@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-09-20T17:57:32.363110+00:00",
+  "scratch_exists": false,
+  "smart": [
+    {
+      "device": "nvme0n1",
+      "passed": true,
+      "temperature_C": 35,
+      "media_errors": 0,
+      "critical_warning": 0,
+      "ata_indicators": []
+    },
+    {
+      "device": "nvme1n1",
+      "passed": true,
+      "temperature_C": 47,
+      "media_errors": 0,
+      "critical_warning": 0,
+      "ata_indicators": []
+    }
+  ]
+}

@@ -1,5 +1,12 @@
 # Hardware, disk placement, and GitOps decisions
 
+!!! info "Historical snapshot — use the September 20 measurements for current capacity decisions"
+    This page preserves the September 5 evidence and decisions. Hardware speeds,
+    memory headroom, guest placement and management-tool findings were checked
+    again in the [September 20 fleet assessment](../inventory/2026-09-20-capacity-and-benchmarks.md)
+    and [NAS reference](../nas-performance.md). Those newer measurements supersede
+    the corresponding older claims; unrelated architecture findings were not all re-audited.
+
 Prefer a quick look around? [Explore the interactive lab inventory](../lab.md).
 The measurements and reasoning are below.
 
