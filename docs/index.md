@@ -35,19 +35,22 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
   owns the local backend and Pi's optional OpenRouter DeepSeek Flash route; use the
   [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
 
-## Choose what you need
+## Reading order
 
-**Start with the [September 20 decision report](audits/2026-09-20-homelab-report.html)**
-for the prioritized recommendations. Read its summary in 1 minute; open the
-technical detail only where you want the evidence.
+Start with [the easy guide](easy-guide.md), then follow the sidebar from top to
+bottom: understand the platform, learn how to operate it, explore the hardware,
+review its measured performance, and consider future changes.
 
 | Sidebar section | Use it for | Start here |
 |---|---|---|
 | Overview | Understand how the platform works | [The easy guide](easy-guide.md) |
+| Operations | Learn the deployed platform and its procedures | [Operations guide](operations/index.md) |
 | Inventory | Machines, disks, hardware health, and workload placement | [Inventory](inventory/index.md) |
 | Audits | Performance measurements, limitations, and ranked recommendations | [Audits](audits/index.md) |
 | Ongoing research | Options being considered and the tests needed to decide | [Research](research/index.md) |
-| Operations | Procedures for the deployed platform | [Storage](storage-architecture.md) · [Disaster recovery](disaster-recovery.md) |
+
+For current upgrade priorities, jump to the
+[September 20 decision report](audits/2026-09-20-homelab-report.html).
 
 The dates matter: a historical inventory is not a live dashboard, and a research
 proposal is not a deployed change. NAS benchmarks carry their own September 20
