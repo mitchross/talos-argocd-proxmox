@@ -4,7 +4,7 @@
 # Prerequisites:
 #   - Docker (or Podman) on the machine running this script.
 #   - Network reachability to registry.vanillax.me (internal gateway at
-#     192.168.10.50, or Cloudflare tunnel from outside the LAN).
+#     192.168.10.52, or Cloudflare tunnel from outside the LAN).
 #   - No auth needed — the in-cluster registry at kube-system/registry:5000
 #     is anonymous-push.
 #
