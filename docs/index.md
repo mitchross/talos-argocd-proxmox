@@ -37,6 +37,11 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 
 ## Documentation
 
+[**Read the visual platform-practice audit →**](reports/platform-practice-2026-09-20.html)
+Compare existing Talos pools, Argo and secrets with enterprise Kubernetes
+patterns, try a topology example, and choose a small next step. Recommendations
+are optional; the report does not change the cluster.
+
 For worker releases, use the [Temporal safe deployment runbook](domains/temporal/safe-deployments.md):
 candidate gates, retained configuration, stateful handoff, and pinned-run recovery.
 
