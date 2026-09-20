@@ -46,6 +46,11 @@ spec:
           env:
             - name: MMDB_FILE_LOCATION
               value: "/code/share/GeoLite2-City.mmdb"
+            - name: INTERNAL_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-internal-api-secret
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
