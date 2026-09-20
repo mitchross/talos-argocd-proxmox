@@ -79,8 +79,8 @@ model_list:
         stall_escalation_window: 6
         stall_escalation_repeat_threshold: 3
         session_affinity: false
-        # Inert until v1.102.0, where this defaults true and would swap Pi's
-        # 32K output cap for the tier model's (943K on Flash). Renovate bumps us.
+        # Defaults true since v1.102.0: without this the tier model's cap
+        # replaces Pi's 32K, which is 943K on Flash.
         max_tokens_from_tier_model: false
         # A prompt truncated to fit Qwen's window is the hallucination we care
         # about most, so let an oversized request move up instead.

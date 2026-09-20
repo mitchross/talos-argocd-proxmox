@@ -287,7 +287,7 @@ provider's required conversation shape.
 ## Automatic Qwen / DeepSeek routing
 
 `pi-auto` is a LiteLLM complexity-router alias, not a third inference backend.
-The Git-declared LiteLLM `v1.101.0` policy is:
+The Git-declared LiteLLM `v1.102.0` policy is:
 
 | Classified tier | Selected gateway model | Reasoning effort | Actual compute |
 |---|---|---|---|
@@ -332,6 +332,10 @@ hallucination that matters most here.
 `router_settings.fallbacks` sends `qwen3.8-27b` failures to `deepseek-flash`, so a
 vLLM outage degrades to the paid route instead of failing the request.
 `context_window_fallbacks` does the same for a prompt Qwen cannot hold.
+
+`max_tokens_from_tier_model: false` is required from `v1.102.0`, where it defaults
+to true and replaces the caller's output cap with the selected tier model's —
+943,718 tokens on Flash, against the 32,768 Pi is told.
 
 This is automatic model selection, not load balancing: one completion goes to one
 backend and is never split across Qwen and DeepSeek.
