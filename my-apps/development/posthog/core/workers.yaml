@@ -25,7 +25,7 @@ spec:
       containers:
         - name: worker
           # Keep this aligned with the posthog-migrate hook in jobs.yaml.
-          image: posthog/posthog:latest@sha256:42176067c09c1351116aacd28c53cf45ff93e5454a73936ea55f38583395303e
+          image: posthog/posthog:latest@sha256:3d30b030b0e18ea517f08dd6b87d65bea8c5462038f9910c298dda72c61dca7b
           command:
             - ./bin/docker-worker-celery
             - --with-scheduler
