@@ -20,3 +20,47 @@ spec:
         maxAllowed:
           cpu: "1"
           memory: 512Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-personhog-replica
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: personhog-replica
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: personhog-replica
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 512Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-personhog-router
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: personhog-router
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: personhog-router
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 512Mi

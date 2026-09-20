@@ -23,6 +23,7 @@ resources:
   - core/capture.yaml
   - core/capture-ai.yaml
   - core/hypercache-server.yaml
+  - core/personhog.yaml
   - core/ingestion.yaml
   - core/ingestion-sessionreplay.yaml
   - core/recording-api.yaml
@@ -40,6 +41,7 @@ configMapGenerator:
       - scripts/init-clickhouse.sh
       - scripts/init-kafka.sh
       - scripts/migrate.sh
+      - scripts/personhog-schema.sql
       - scripts/patch-replay-retention.py
       - scripts/start-kafka.sh
       - scripts/start-web.sh
