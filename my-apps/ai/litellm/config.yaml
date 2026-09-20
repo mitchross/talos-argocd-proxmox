@@ -15,13 +15,11 @@ model_list:
       api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
       api_key: "vllm-no-key-required"
       max_tokens: 64
-      temperature: 0.7
-      top_p: 0.8
-      presence_penalty: 1.5
+      # Qwen's chat sampling made the same ask classify SIMPLE/MEDIUM/COMPLEX
+      # across repeat runs. A one-label verdict must be greedy, not sampled.
+      temperature: 0
+      top_p: 1
       extra_body:
-        top_k: 20
-        min_p: 0.0
-        repetition_penalty: 1.0
         chat_template_kwargs:
           enable_thinking: false
           preserve_thinking: false
@@ -55,20 +53,16 @@ model_list:
         classifier_context_window_size: 4
         classifier_context_budget_chars: 8000
         classifier_context_include_assistant_turns: true
-        # Qwen keeps only trivia; anything the classifier rates above SIMPLE is
-        # work where a non-frontier model's mistakes cost more than the tokens.
+        # Qwen owns the local half of the workload: tests, refactors, code
+        # explanation, cluster inspection. Escalation is what covers its misses.
         tiers:
           SIMPLE: qwen3.8-27b
-          MEDIUM: deepseek-flash
+          MEDIUM: qwen3.8-27b
           COMPLEX: deepseek-flash
           REASONING: deepseek-flash
         # OpenRouter's exposed Flash levels are low/high/max; xhigh is not one,
         # and drop_params would discard it silently.
         tier_model_configs:
-          MEDIUM:
-            - model_name: deepseek-flash
-              litellm_params:
-                reasoning_effort: high
           COMPLEX:
             - model_name: deepseek-flash
               litellm_params:
@@ -85,6 +79,9 @@ model_list:
         stall_escalation_window: 6
         stall_escalation_repeat_threshold: 3
         session_affinity: false
+        # Inert until v1.102.0, where this defaults true and would swap Pi's
+        # 32K output cap for the tier model's (943K on Flash). Renovate bumps us.
+        max_tokens_from_tier_model: false
         # A prompt truncated to fit Qwen's window is the hallucination we care
         # about most, so let an oversized request move up instead.
         enable_context_window_escalation: true
