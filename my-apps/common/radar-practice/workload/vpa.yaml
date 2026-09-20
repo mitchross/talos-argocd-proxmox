@@ -1,0 +1,22 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-api
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-api
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: api
+      controlledResources:
+      - memory
+      controlledValues: RequestsOnly
+      minAllowed:
+        memory: 256Mi
+      maxAllowed:
+        memory: 768Mi

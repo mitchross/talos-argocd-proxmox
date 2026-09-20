@@ -1,0 +1,25 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: radar-practice
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  exporter:
+    endpoint: http://otel-gateway-collector.opentelemetry.svc.cluster.local:4318
+  propagators:
+  - tracecontext
+  - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: '0.1'
+  python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0@sha256:c63d0ba213bc3af67e85079a57fd9d5c7b58cc3dd4bad2248ccb83d6a1b6df91
+    resourceRequirements:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi

@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: radar-practice-prod
+resources:
+- ../../common/radar-practice/workload
+- ../../common/radar-practice/support
+- namespace.yaml
+- httproute.yaml
+- quota.yaml
+- candidate
+- preview.yaml
+- hpa.yaml
+- pdb.yaml
+labels:
+- pairs:
+    platform.vanillax.dev/environment: prod
+  includeSelectors: false
+  includeTemplates: true
+patches:
+- target:
+    kind: Deployment
+  patch: |
+    - op: replace
+      path: /spec/template/spec/affinity/nodeAffinity/preferredDuringSchedulingIgnoredDuringExecution/0/preference/matchExpressions/0/values
+      value:
+      - general
+    - op: replace
+      path: /spec/template/spec/topologySpreadConstraints/0/whenUnsatisfiable
+      value: DoNotSchedule
+- path: stable-image.yaml
+  target:
+    kind: Deployment
+    labelSelector: delivery.vanillax.dev/slot=v1

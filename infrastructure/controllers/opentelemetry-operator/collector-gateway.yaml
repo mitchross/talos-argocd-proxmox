@@ -5,7 +5,38 @@ metadata:
   namespace: opentelemetry
 spec:
   mode: deployment
-  replicas: 1
+  replicas: 2
+  podDisruptionBudget:
+    maxUnavailable: 1
+  deploymentUpdateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node.vanillax.dev/pool
+                operator: In
+                values: [general, gpu, disposable]
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node.vanillax.dev/pool
+                operator: In
+                values: [general]
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: DoNotSchedule
+      nodeTaintsPolicy: Honor
+      matchLabelKeys: [pod-template-hash]
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: otel-gateway-collector
   serviceAccount: otel-gateway
   resources:
     requests:
@@ -62,6 +93,18 @@ spec:
           - tag_name: app_name
             key: app.kubernetes.io/name
             from: pod
+          - tag_name: deployment.environment.name
+            key: platform.vanillax.dev/environment
+            from: pod
+          - tag_name: service.version
+            key: app.kubernetes.io/version
+            from: pod
+          - tag_name: platform.pool
+            key: node.vanillax.dev/pool
+            from: node
+          - tag_name: platform.zone
+            key: topology.kubernetes.io/zone
+            from: node
         pod_association:
         - sources:
           - from: resource_attribute
@@ -76,8 +119,11 @@ spec:
       resource:
         attributes:
         - key: service.name
+          from_attribute: app_name
+          action: insert
+        - key: service.name
           from_attribute: app
-          action: upsert
+          action: insert
         - key: k8s.cluster.name
           value: talos-prod
           action: upsert

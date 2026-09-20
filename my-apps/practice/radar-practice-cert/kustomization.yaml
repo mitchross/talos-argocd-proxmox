@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: radar-practice-cert
+resources:
+- ../../common/radar-practice/workload
+- ../../common/radar-practice/support
+- namespace.yaml
+- httproute.yaml
+- quota.yaml
+labels:
+- pairs:
+    platform.vanillax.dev/environment: cert
+  includeSelectors: false
+  includeTemplates: true
+patches:
+- target:
+    kind: Deployment
+  patch: |
+    - op: add
+      path: /spec/replicas
+      value: 1
+images:
+- name: ghcr.io/mitchross/radar-ng-tile-server
+  newTag: v1.1.17
+  digest: sha256:95db471e2b6766fb1ed66a9a12ee8f71e0b4f4632bb0e4477ab8a0befe70c4be

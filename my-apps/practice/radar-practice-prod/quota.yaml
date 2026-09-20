@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: practice-budget
+spec:
+  hard:
+    pods: '8'
+    requests.cpu: '1'
+    requests.memory: 6Gi
+    limits.cpu: '4'
+    limits.memory: 8Gi

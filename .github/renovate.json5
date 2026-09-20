@@ -356,6 +356,11 @@
       ],
       enabled: false,
     },
+    {
+      description: 'Practice stages promote reviewed image digests explicitly; automated bumps bypass the exercise.',
+      matchFileNames: ['my-apps/common/radar-practice/**', 'my-apps/practice/radar-practice-*/**'],
+      enabled: false,
+    },
   ],
   ignorePaths: [
     '**/charts/**',

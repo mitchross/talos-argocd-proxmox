@@ -1,0 +1,21 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: radar-practice-dependencies
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: radar-practice
+  egressDeny:
+  - toEntities:
+    - world
+    - host
+    - remote-node
+    - kube-apiserver
+  - toEndpoints:
+    - matchExpressions:
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: NotIn
+        values:
+        - kube-system
+        - opentelemetry

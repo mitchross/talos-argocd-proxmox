@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: radar-practice-cert
+  labels:
+    platform.vanillax.dev/environment: cert
+    app.kubernetes.io/part-of: platform-practice
+    pod-security.kubernetes.io/enforce: restricted

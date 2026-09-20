@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 450" role="img" aria-labelledby="title desc">
+  <title id="title">Your existing Talos worker pools</title>
+  <desc id="desc">Two general workers, one GPU worker, one edge worker and one disposable worker already have role labels. A separate control-plane node makes six nodes total. Labels describe roles; scheduling policies determine where workloads run.</desc>
+  <defs>
+    <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#cad7d1"/></pattern>
+    <g id="server" fill="#f9fcfa" stroke="#205e51" stroke-width="2.5">
+      <rect width="52" height="66" rx="8"/>
+      <path d="M10 18h32M10 32h32M10 46h19" stroke-linecap="round"/>
+      <circle cx="40" cy="52" r="3" fill="#308665" stroke="none"/>
+    </g>
+  </defs>
+  <rect width="700" height="450" rx="24" fill="#edf3eb"/>
+  <rect width="700" height="450" rx="24" fill="url(#dots)"/>
+  <g font-family="system-ui,sans-serif" fill="#193b35">
+    <text x="32" y="39" font-size="14" font-weight="700" letter-spacing="2">ALREADY IN YOUR TALOS CONFIG</text>
+    <g transform="translate(30 63)">
+      <rect width="310" height="148" rx="18" fill="#fffef9" stroke="#b7cdbf"/>
+      <use href="#server" x="20" y="26"/><use href="#server" x="62" y="43"/>
+      <text x="135" y="49" font-size="26" font-weight="750">general</text>
+      <text x="135" y="76" font-size="17">HP SFF + Elite</text>
+      <text x="135" y="111" font-size="13" fill="#54655d">2 workers · open placement</text>
+    </g>
+    <g transform="translate(360 63)">
+      <rect width="310" height="148" rx="18" fill="#fffef9" stroke="#b7cdbf"/>
+      <use href="#server" x="26" y="31"/>
+      <rect x="60" y="68" width="37" height="32" rx="6" fill="#cae6d6" stroke="#205e51" stroke-width="2"/>
+      <path d="M67 75h23v18H67z" fill="none" stroke="#205e51" stroke-width="2"/>
+      <text x="122" y="49" font-size="26" font-weight="750">gpu</text>
+      <text x="122" y="76" font-size="17">Threadripper</text>
+      <text x="122" y="111" font-size="13" fill="#54655d">2 GPUs · shared CPU capacity</text>
+    </g>
+    <g transform="translate(30 229)">
+      <rect width="310" height="148" rx="18" fill="#fffef9" stroke="#b7cdbf"/>
+      <use href="#server" x="31" y="54"/>
+      <g stroke="#087e8b" stroke-width="3" fill="none" stroke-linecap="round"><path d="M28 26q30-23 60 0M39 38q19-15 38 0"/><circle cx="58" cy="48" r="2" fill="#087e8b"/></g>
+      <text x="135" y="49" font-size="26" font-weight="750">edge</text>
+      <text x="135" y="76" font-size="17">Shed / Wi-Fi</text>
+      <text x="135" y="111" font-size="13" fill="#54655d">Opt-in through a real taint</text>
+    </g>
+    <g transform="translate(360 229)">
+      <rect width="310" height="148" rx="18" fill="#fffef9" stroke="#b7cdbf"/>
+      <use href="#server" x="31" y="39"/>
+      <path d="M81 35l12-10 12 10v24H81z" fill="#d6ecee" stroke="#087e8b" stroke-width="2"/>
+      <text x="122" y="49" font-size="26" font-weight="750">disposable</text>
+      <text x="122" y="76" font-size="17">Dell</text>
+      <text x="122" y="111" font-size="13" fill="#54655d">Role label · still hosts services</text>
+    </g>
+    <text x="350" y="414" font-size="16" text-anchor="middle" font-weight="650">4 worker roles. The next choice is placement policy.</text>
+    <text x="350" y="435" font-size="12" text-anchor="middle" fill="#54655d">Control plane: a separate, already-tainted node on the SFF host.</text>
+  </g>
+</svg>

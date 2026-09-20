@@ -86,12 +86,7 @@ configs:
     # load restrictor remains active; no app should reference files outside
     # its own kustomization root.
     kustomize.buildOptions: "--enable-helm"
-    # Resource tracking — annotation+label survives operator reconciles.
-    # Default 'annotation' alone gets stripped by CNPG/cert-manager/ESO/KEDA,
-    # causing perma-OutOfSync flap on managed CRs even when Healthy.
-    # 'annotation+label' writes app.kubernetes.io/instance (durable) AND keeps
-    # the informational tracking-id annotation. See mink:
-    # argocd-cnpg-permanent-outofsync-tracking-method-fix.md
+    # The tracking annotation is authoritative; the instance label aids discovery.
     application.resourceTrackingMethod: "annotation+label"
     # NOTE: The legacy `resource.server-side-diff: "true"` key was a no-op —
     # the controller reads its diff mode from argocd-cmd-params-cm key
@@ -137,7 +132,7 @@ configs:
       - .spec.parentRefs[].kind
       - .spec.rules[].backendRefs[].group
       - .spec.rules[].backendRefs[].kind
-      - .spec.rules[].backendRefs[].weight
+      - select(.metadata.labels["delivery.vanillax.dev/weights"] != "git") | .spec.rules[].backendRefs[].weight
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
       - .metadata.generation

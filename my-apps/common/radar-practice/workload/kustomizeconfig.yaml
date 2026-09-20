@@ -1,0 +1,5 @@
+nameReference:
+- kind: Deployment
+  fieldSpecs:
+  - kind: VerticalPodAutoscaler
+    path: spec/targetRef/name
