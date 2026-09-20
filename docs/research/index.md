@@ -18,7 +18,7 @@ NAS replacement planning starts with the [measured performance reference](../nas
 and the report's [RAM options](../audits/2026-09-20-homelab-report.html#ram-choice).
 Candidate RAM sizes are not validated replacement specifications.
 
-## Earlier proposals — revalidate before use
+## Design studies
 
 These documents retain their original URLs and context. Listing them here does
 not make them active work; their assumptions were not revalidated by the
