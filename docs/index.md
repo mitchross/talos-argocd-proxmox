@@ -41,11 +41,11 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 for the prioritized recommendations. Read its summary in 1 minute; open the
 technical detail only where you want the evidence.
 
-| Tab | Use it for | Start here |
+| Sidebar section | Use it for | Start here |
 |---|---|---|
 | Overview | Understand how the platform works | [The easy guide](easy-guide.md) |
-| Inventory | Machines, disks, capacity, and dated speed measurements | [Inventory](inventory/index.md) |
-| Audits | Verified findings, limitations, and ranked recommendations | [Audits](audits/index.md) |
+| Inventory | Machines, disks, hardware health, and workload placement | [Inventory](inventory/index.md) |
+| Audits | Performance measurements, limitations, and ranked recommendations | [Audits](audits/index.md) |
 | Ongoing research | Options being considered and the tests needed to decide | [Research](research/index.md) |
 | Operations | Procedures for the deployed platform | [Storage](storage-architecture.md) · [Disaster recovery](disaster-recovery.md) |
 

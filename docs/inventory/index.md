@@ -1,8 +1,9 @@
 # Inventory
 
-**Start with [the latest capacity and speed verdicts](2026-09-20-capacity-and-benchmarks.md)**
-— about 2 minutes to compare the Proxmox disks and Kubernetes storage paths.
-The NAS has its own [disk-versus-cache comparison](../nas-performance.md).
+**Start with [Explore the lab](../lab.md)** to see the machines, disks, and
+workload placement. Use [hardware diagnostics](../diagnostics.md) for disk
+health and repair evidence. For speed verdicts and upgrade priorities, open
+[Audits](../audits/index.md) in the sidebar.
 
 ## Current measurements — September 20, 2026
 
