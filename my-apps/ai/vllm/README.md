@@ -3,8 +3,8 @@
 **Git-declared backend and operating policy.** The
 [2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
 records measurements of the earlier v0.28.0 deployment, with medium sent
-explicitly. It is not a benchmark of the v0.29.0 tunables below. Confirm the
-running arguments and repeat acceptance after merge and Argo reconciliation.
+explicitly. It is not a benchmark of the v0.29.0 tunables or xhigh default below.
+Confirm the running arguments and repeat acceptance after merge and Argo reconciliation.
 
 | Setting | Value |
 |---|---|
@@ -20,7 +20,7 @@ running arguments and repeat acceptance after merge and Argo reconciliation.
 | GPU utilization budget | 0.92 per GPU |
 | Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
-| Reasoning | on, explicit `medium` default; `low` and `xhigh` per request |
+| Reasoning | on, explicit `xhigh` default; `low` and `medium` per request |
 | Speculation | **off**; no MTP or external drafter |
 | Power | existing 220 W per card |
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
@@ -40,10 +40,10 @@ checks part of acceptance, not just throughput checks. No unsupported legacy
 [Triton architecture guard](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/v1/attention/backends/triton_attn.py),
 [KV scale handling](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/model_executor/layers/quantization/kv_cache.py).
 
-Speculation is disabled because the GDN/Mamba long-session fault work remains
-open. No community kernel patches, W4A8 overlays, or experimental speculative
-backports are installed. Revisit MTP only against a fixed runtime and a
-long-session regression test.
+Speculation remains disabled pending validation of the GDN/Mamba long-session
+fault fixes. No community kernel patches, W4A8 overlays, or experimental
+speculative backports are installed. Revisit MTP only against a fixed runtime
+and a long-session regression test.
 [Upstream fault/fix discussion](https://github.com/vllm-project/vllm/pull/50021)
 
 ## Endpoints and client compatibility
@@ -52,13 +52,14 @@ long-session regression test.
 - direct: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
 - LAN: `https://llama.vanillax.me/v1` and `https://vllm.vanillax.me/v1`
 
-Applications call LiteLLM, not these endpoints directly. Both LAN hostnames are
-owned by the vLLM HTTPRoute and target its selector Service; `llama.vanillax.me`
-is kept only so older bookmarks and client configs keep resolving.
+Applications call authenticated LiteLLM, not these diagnostic endpoints directly.
+Both LAN hostnames are owned by the vLLM HTTPRoute and target its selector
+Service; `llama.vanillax.me` is kept for older bookmarks and client configs.
+See the [model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for gateway wiring.
 
 ## Explicit reasoning and sampling
 
-The server supplies `enable_thinking=true`, `reasoning_effort=medium`, and
+The server supplies `enable_thinking=true`, `reasoning_effort=xhigh`, and
 `preserve_thinking=true` through the checkpoint's native chat template.
 The Qwen reasoning parser emits reasoning separately from answer content;
 `qwen3_coder` parses tool calls and automatic tool choice remains enabled.
@@ -67,14 +68,21 @@ The Qwen reasoning parser emits reasoning separately from answer content;
 |---|---|
 | No thinking | `{"enable_thinking":false,"preserve_thinking":false}` |
 | Brief thinking | `{"enable_thinking":true,"reasoning_effort":"low"}` |
-| Normal coding (default) | `{"enable_thinking":true,"reasoning_effort":"medium"}` |
-| Difficult task (explicit opt-in) | `{"enable_thinking":true,"reasoning_effort":"xhigh"}` |
+| Less reasoning than the default | `{"enable_thinking":true,"reasoning_effort":"medium"}` |
+| Accuracy-first default | `{"enable_thinking":true,"reasoning_effort":"xhigh"}` |
 
-The valid efforts are `low`, `medium`, and `xhigh`; `high` is invalid. Clients
-should expose only valid levels or map generic `high` to `medium`. The server
-merges its explicit defaults with request kwargs, so omitted effort stays
-`medium`; do not remove that default and expose the upstream implicit `xhigh`.
-No custom chat template is needed.
+The valid efforts are `low`, `medium`, and `xhigh`; `high` is not a native Qwen
+value. WebUI maps generic `high` to `xhigh`; Pi exposes the valid levels instead.
+The server merges its explicit defaults with request kwargs, so omitted effort
+stays `xhigh`. Explicit low, medium and off are still honored. No custom chat
+template is needed.
+
+Xhigh is an accuracy-first operating choice, not a measured quality improvement.
+Expect more reasoning time and output-token use. It applies to any local
+request that omits an effort, including background application tasks and local
+`pi-auto` generation. The router's classifier explicitly disables thinking;
+DeepSeek high/max, route selection and cloud-failover boundaries are unchanged.
+A client that explicitly sends medium continues to get medium.
 
 Preservation stays on for coding agents: keep returned reasoning with the
 assistant messages to retain continuity and allow reuse of unchanged prefixes.
@@ -94,17 +102,15 @@ hard reasoning-token budget or a substitute for `enable_thinking=false`.
 Changing the thinking flag alone does not switch vLLM's sampler. Direct
 clients must send all six non-thinking values when opting out. Open WebUI's
 Qwen filter applies these mode-specific values to both forwarding forms; Pi's
-thinking toggle controls template kwargs, with the optional repo-owned
-sampler extension selecting the matching values. See the
+thinking toggle controls template kwargs, with the repo-owned sampler
+extension selecting the matching values for direct Qwen requests. See the
 [Pi guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md).
 [Official Qwen controls and sampling](https://huggingface.co/Qwen/Qwen3.8-27B-FP8#api-usage)
 
-**Source check, 2026-09-06:** the official FP8 repository's latest revision is
-still `017b9c7af6b5689d5dd426a76e0bc077eb5ca20a` (2026-08-14). There is no newer
-official checkpoint in that history to migrate to. This change addresses
-client/default behavior; it does not claim a universal cure for thinking loops.
-`medium` is this deployment's coding policy, while upstream still defaults to
-`xhigh` and cautions that lower effort can cause more retries in agent tasks.
+The checkpoint revision remains pinned. The September 6 source audit found
+`017b9c7af6b5689d5dd426a76e0bc077eb5ca20a` (2026-08-14); that historical check is
+not a claim about future upstream releases. Changing the reasoning default
+does not replace weights or claim a universal cure for thinking loops.
 [Official FP8 history](https://huggingface.co/Qwen/Qwen3.8-27B-FP8/commits/main)
 
 ## Tuning policy and evidence limits
@@ -129,16 +135,16 @@ official Qwen default of 1.0 or an established fix. The author of
 claims: low/medium are not universally immune, and the reported narrow penalty
 band and extraction scores do not establish coding/tool/vision quality.
 The suspected EOS-inside-thinking mechanism is not a confirmed root cause.
-Keep medium as the default and validate all supported modes, not just xhigh.
+Validate all supported modes; the xhigh-default rollout does not change sampling.
 The server value is a fallback, not an enforced floor: explicit client values
-win. WebUI and the Pi extension therefore use 1.05 for every thinking effort
-and 1.0 for off. Update server, clients, tests and docs together.
+win. WebUI and the Pi extension use 1.05 for every thinking effort and 1.0 for
+off. Update server, clients, tests and docs together when changing that policy.
 
 ## Reasoning acceptance checks
 
 Before live tests, inspect the **running** Deployment args and request payloads.
 A short answer alone cannot prove which effort reached the model. The running
-`--default-chat-template-kwargs` must contain thinking=true, effort=medium and
+`--default-chat-template-kwargs` must contain thinking=true, effort=xhigh and
 preservation=true. Keep the stock parser/template and thinking sampler.
 
 ```bash
@@ -147,26 +153,27 @@ uv run --with pyyaml python -m unittest discover -s scripts/tests -p test_qwen_r
 kubectl -n vllm port-forward svc/vllm-service 18000:8080
 ```
 
-In another terminal, this request deliberately omits template kwargs to test
-the server fallback. Repeat it with each row's kwargs and record the complete
-response (including `reasoning` or `reasoning_content`, content, tools and usage).
+In another terminal, deliberately omit template kwargs to test the fallback.
+Repeat with each row's kwargs and record the complete response, including
+reasoning, content, tools and usage. This diagnostic bypasses LiteLLM; also
+verify client requests through the authenticated gateway after rollout.
 
 ```bash
 curl -fsS http://127.0.0.1:18000/v1/chat/completions \
   -H 'Content-Type: application/json' \
-  -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"What is 37*43? Verify the calculation."}],"max_tokens":2048}'
+  -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"What is 37*43? Verify the calculation."}],"max_tokens":32768}'
 ```
 
 | Case | Request / expected result |
 |---|---|
-| Default | Omit kwargs; running defaults resolve to enabled/medium/preserved; answer 1591 with separate reasoning. |
+| Default | Omit kwargs; running defaults resolve to enabled/xhigh/preserved; answer 1591 with separate reasoning. |
 | Explicit low | `{"enable_thinking":true,"reasoning_effort":"low"}`; payload remains low, coherent answer. |
 | Explicit medium | `{"enable_thinking":true,"reasoning_effort":"medium"}`; payload remains medium, coherent answer. |
-| Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; xhigh appears only after explicit selection. |
+| Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; same effort as the default, coherent answer. |
 | Off | `{"enable_thinking":false,"preserve_thinking":false}` plus the non-thinking sampler; empty/absent reasoning fields and no think tags in content. |
-| Tool under medium | Supply a `lookup` function with an integer `id` argument and ask to look up id 7; expect a valid `tool_calls` entry with parseable JSON `{"id":7}`. Do not execute external actions. |
-| Image under medium | Send one known local image as an `image_url` data URI plus a factual question; check visible facts against the actual image. HTTP 200 alone is insufficient. |
-| Multi-turn medium | Append the full assistant tool-call message (including returned reasoning), a matching `tool_call_id` result and a follow-up question; expect coherent use of the result, intact roles and separately parsed reasoning/content/tools. |
+| Tool under xhigh | Supply a `lookup` function with an integer `id` argument and ask to look up id 7; expect a valid `tool_calls` entry with parseable JSON `{"id":7}`. Do not execute external actions. |
+| Image under xhigh | Send one known local image as an `image_url` data URI plus a factual question; check visible facts against the actual image. HTTP 200 alone is insufficient. |
+| Multi-turn xhigh | Append the full assistant tool-call message, including reasoning, a matching `tool_call_id` result and a follow-up question; expect coherent use of the result, intact roles and separately parsed reasoning/content/tools. |
 
 For off, use the complete request policy, not just the thinking switch:
 
@@ -178,27 +185,32 @@ For off, use the complete request policy, not just the thinking switch:
 }
 ```
 
-Repeat through Open WebUI and Pi. Capture their outgoing kwargs: Open WebUI's
-legacy `qwen_non_thinking_default` function ID now updates in place to the
-reasoning policy; Pi must retain its explicit mapping and medium startup level.
-Generic `high` must become medium in WebUI or be unavailable in Pi. Clear stale
-per-chat presets that explicitly request xhigh. Stored user/client settings
-outside Git still require payload inspection after rollout. Verify the WebUI
-PostSync function-loader job succeeds; it loads the updated filter into WebUI.
-Refresh an installed Pi extension using the copy command and `/reload` in the
-Pi guide. In both clients, inspect the outgoing sampler as well as kwargs:
-1.05 for default/low/medium/xhigh, 1.0 for off, including through LiteLLM.
-A successful request alone does not show which penalty reached vLLM.
+Repeat through Open WebUI and Pi. The WebUI function ID
+`qwen_non_thinking_default` is updated in place; verify its PostSync
+function-loader job succeeds and the stored filter contains the xhigh default.
+Generic `high` maps to xhigh in WebUI. Saved explicit medium/low/off settings
+remain honored, so test a fresh conversation as well as an existing one.
 
-The offline tests check policy resolution and preservation of tool/image/history
+Pi's startup preference and local-only alias are managed in the companion
+[dotfiles PR](https://github.com/mitchross/dotfiles/pull/10). After both PRs merge,
+pull the updated dotfiles source and follow the scoped apply steps in the
+[Pi guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md#default-reasoning-and-rollout).
+Start a fresh session or explicitly select xhigh in a resumed one. The sampler
+extension is unchanged by this rollout; reinstalling it alone does not change
+Pi's selected effort. `pi-auto` still delegates effort to the selected backend.
+
+In both clients inspect the outgoing sampler as well as kwargs: 1.05 for all
+thinking modes, 1.0 for off, including through LiteLLM. A successful request
+alone does not show which settings reached vLLM.
+
+Offline tests check policy resolution and preservation of tool/image/history
 payloads, not model quality. Actual tool/vision/multi-turn generation must pass
-after merge. Treat output truncation (`finish_reason=length`) as inconclusive,
-not a successful reasoning check. Repeat representative coding, tool and image
-requests with a sufficient output budget. Flag a completed empty final answer
-with no tool calls; empty content accompanying a valid tool call is normal.
-Stop on loops, malformed tool output or lost history and inspect payloads
-before changing runtime flags. Roll back this
-reasoning-policy commit through Git if needed; it does not alter backend sizing.
+after merge. The 32K Pi output allowance includes reasoning and final content;
+xhigh does not raise it. Treat `finish_reason=length` as inconclusive, not a
+successful quality check. A completed empty final answer without tool calls is
+a failure; empty content accompanying a valid tool call is normal. Stop on
+loops, malformed tool output or lost history and inspect payloads before
+changing runtime flags.
 
 ## Reproducible staging
 
@@ -222,15 +234,16 @@ publish readiness, and incomplete artifacts never replace verified files.
 The wait container uses a small pinned Python image; it does not need CUDA.
 
 Prerequisites: the NFS export permits the download Job to write and has at
-least 31 GB free; local NVMe has at least that much free as well. Local free
-space was checked at approximately 123 GiB before staging. NAS SSH access was
-unavailable from this workstation, so export write permissions and NAS free
-space remain rollout checks. No private model token is required. Existing
-AutoRound, GGUF and compile-cache files are retained; no pruning is performed.
+least 31 GB free; local NVMe has at least that much free as well. The earlier
+approximately 123 GiB local free-space check is historical; re-check storage
+and export permissions before restaging. No private model token is required.
+Existing AutoRound, GGUF and compile-cache files are retained; no pruning is performed.
 
 ## Verification after the user merges
 
-There will be an inference interruption while the model loads.
+ArgoCD applies the changed arguments through the existing `Recreate` deployment.
+There will be an inference interruption while the model loads. This default
+change does not alter the checkpoint, cache precision, memory budget or GPU ownership.
 
 From the workstation:
 
@@ -279,9 +292,11 @@ routing configuration; they do not establish new runtime performance.
 
 ## Rollback
 
-For this tuning policy, revert its commits through Git and restore the previous
-Pi extension copy, then reload Pi. That retains vLLM and the current model;
-do not revert the entire FP8 cutover merely to undo sampler/prefill tuning.
+For an immediate per-request opt-down, explicitly select medium, low or off.
+To restore the default permanently, revert the paired GitOps and dotfiles PRs,
+apply the restored Pi settings and zshrc, and start a fresh session. ArgoCD
+reconciles the server and WebUI policy; it cannot update workstation settings.
+Do not change model weights, sampler or KV precision to roll back effort.
 
 vLLM is the only GPU inference backend; there is no second backend to fall back
 to. A bad checkpoint or runtime change is rolled back by reverting its commit and

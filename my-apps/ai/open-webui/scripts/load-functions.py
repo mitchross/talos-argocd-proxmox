@@ -24,7 +24,7 @@ FUNCTIONS = [
         "id": "qwen_non_thinking_default",
         "name": "Qwen3.8 Reasoning Policy",
         "path": "/functions/qwen-no-think-filter.py",
-        "description": "Filter: explicit medium default, per-request reasoning and mode-specific sampling",
+        "description": "Filter: explicit xhigh default, per-request reasoning and mode-specific sampling",
     },
 ]
 

@@ -29,17 +29,18 @@ Both cards belong to vLLM. Other GPU workloads stay parked.
 | Engine | stock vLLM `v0.29.0`, pinned digest |
 | Weights | official `Qwen/Qwen3.8-27B-FP8`, pinned revision |
 | Placement | TP=2, two RTX 3090s, no CPU offload |
-| KV cache | FP8 E4M3 / float16 |
+| KV / recurrent state | FP8 E4M3 / float16 |
 | Context ceiling | 262,144 tokens |
 | Concurrency | two sequences sharing the KV pool |
 | Vision | one image per request, video disabled |
-| Reasoning | off / low / medium / xhigh; **medium** default |
+| Reasoning | off / low / medium / xhigh; **xhigh** default |
 | Speculation | disabled |
 | Power | 220 W per card |
 
 262K is a server ceiling, not a promise of two simultaneous full-length
-sessions. Use `medium` for coding, `low` for light requests, `xhigh` for hard
-ones.
+sessions. Use `xhigh` by default for the accuracy-first policy; select `medium`
+or `low` for less reasoning, or explicitly turn thinking off. More reasoning
+can consume more time and tokens; a quality improvement is not guaranteed.
 
 Exact flags, rollout checks and rollback live in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).
@@ -79,7 +80,8 @@ authoritative.
 | Advertised limits | 229,376 input plus 32,768 output |
 
 One request goes to one backend. This is model selection, not response
-splitting.
+splitting. Local generation inherits xhigh from vLLM; the classifier still
+explicitly disables thinking. DeepSeek's high/max settings are unchanged.
 
 `qwen3.8-27b-auto` is the same vLLM backend as `qwen3.8-27b` under a second
 name, so the router's DeepSeek failover reaches `pi-auto` alone and never the
