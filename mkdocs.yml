@@ -97,25 +97,8 @@ nav:
       - Home — the big picture: index.md
       - Getting started — the easy guide: easy-guide.md
       - Documentation reader contract: documentation-standard.md
-  - Inventory:
-      - inventory/index.md
-      - Explore the lab: lab.md
-      - Hardware diagnostics: diagnostics.md
-      - Repository and hardware inventory — 5 September: audits/2026-09-05-inventory.md
-  - Audits:
-      - audits/index.md
-      - Homelab report & recommendations: audits/2026-09-20-homelab-report.html
-      - Proxmox & Kubernetes performance: inventory/2026-09-20-capacity-and-benchmarks.md
-      - NAS performance & RAM: nas-performance.md
-      - Architecture audit — 5 September: audits/2026-09-05-architecture-audit.md
-      - Hardware and workload placement — 5 September: audits/2026-09-05-hardware-and-placement-review.md
-  - Ongoing research:
-      - research/index.md
-      - Earlier proposals — revalidate before use:
-          - Future idea — tiered storage: domains/storage/architecture-future.md
-          - Enterprise multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md
-          - Multicluster — PRD: domains/multicluster/prd.md
   - Operations:
+      - operations/index.md
       - GitOps & ArgoCD:
           - ArgoCD architecture: domains/argocd/argocd.md
           - Root entrypoints & sync waves: domains/argocd/entrypoints.md
@@ -156,3 +139,20 @@ nav:
           - Observability — radar-ng cookbook: domains/observability/radar-ng.md
           - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
           - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
+  - Inventory:
+      - inventory/index.md
+      - Explore the lab: lab.md
+      - Hardware diagnostics: diagnostics.md
+      - Repository and hardware inventory — 5 September: audits/2026-09-05-inventory.md
+  - Audits:
+      - audits/index.md
+      - Homelab report & recommendations: audits/2026-09-20-homelab-report.html
+      - Proxmox & Kubernetes performance: inventory/2026-09-20-capacity-and-benchmarks.md
+      - NAS performance & RAM: nas-performance.md
+      - Architecture audit — 5 September: audits/2026-09-05-architecture-audit.md
+      - Hardware and workload placement — 5 September: audits/2026-09-05-hardware-and-placement-review.md
+  - Ongoing research:
+      - research/index.md
+      - Tiered storage: domains/storage/architecture-future.md
+      - Multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md
+      - Multi-cluster requirements: domains/multicluster/prd.md
