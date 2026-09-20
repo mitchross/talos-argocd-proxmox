@@ -1990,11 +1990,6 @@ window.HOMELAB_INVENTORY = {
         "role": "gateway-external"
       },
       {
-        "name": "Internal gateway",
-        "ip": "192.168.10.50",
-        "role": "gateway-internal"
-      },
-      {
         "name": "Private split-DNS gateway",
         "ip": "192.168.10.52",
         "role": "gateway-internal-technitium"

@@ -1,4 +1,4 @@
-# Public, unauthenticated, write-only OTLP/HTTP ingest for the radar-ng mobile app; reads stay on gateway-internal.
+# Public, unauthenticated, write-only OTLP/HTTP ingest for the radar-ng mobile app; reads stay on gateway-internal-technitium.
 # The backend Service otel-gateway-collector (4318) is created by the operator from OpenTelemetryCollector/otel-gateway.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

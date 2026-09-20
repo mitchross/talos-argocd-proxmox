@@ -318,7 +318,7 @@ gatewayAPI:
 - `allowFirstLastIPs: "No"` — `.32` and `.63` are reserved for network/broadcast, not used
 - Current assignments:
   - `192.168.10.49` — `gateway-external`
-  - `192.168.10.50` — free (former `gateway-internal`, removed 2026-09-20)
+  - `192.168.10.50` — free
   - `192.168.10.51` — `project-zomboid` (UDP game server)
   - `192.168.10.52` — `gateway-internal-technitium`
 - Managed by: Cilium L2 announcements (`cilium/l2-policy.yaml`)
