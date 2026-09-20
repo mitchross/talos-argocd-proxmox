@@ -38,7 +38,7 @@ This cluster uses a modern, high-performance networking stack:
 │  CNI: Pod networking (10.244.0.0/16)                       │
 │  Service LB: ClusterIP, LoadBalancer (replaces kube-proxy) │
 │  Gateway API: HTTPRoute, TLS termination                   │
-│  L2 Announcements: LoadBalancer IPs (192.168.10.49-50)    │
+│  L2 Announcements: LoadBalancer IPs (192.168.10.49-52)    │
 │  Network Policy: Security rules                            │
 └─────────────────────────────────────────────────────────────┘
                               ↓
