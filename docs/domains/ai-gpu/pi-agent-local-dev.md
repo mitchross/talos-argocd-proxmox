@@ -9,7 +9,7 @@ Bare `pi` and `pi-qwen-only` use the self-hosted
 **`vanillax-vllm/qwen3.8-27b`** path by default. `pi-flash` selects paid,
 cloud-hosted **`vanillax-openrouter/deepseek-flash`** only. `pi-withflash` selects the
 **`vanillax-auto/pi-auto`** virtual model: LiteLLM automatically keeps
-`SIMPLE` work on local Qwen and sends `MEDIUM` / `COMPLEX` / `REASONING` work
+`SIMPLE` / `MEDIUM` work on local Qwen and sends `COMPLEX` / `REASONING` work
 to OpenRouter's DeepSeek Flash latest alias, escalating mid-task if Qwen stalls. These three paths enter the authenticated LiteLLM gateway and share
 Langfuse session tracing, but only Qwen is served by this cluster's vLLM and
 RTX 3090s.
@@ -291,17 +291,22 @@ The Git-declared LiteLLM `v1.101.0` policy is:
 
 | Classified tier | Selected gateway model | Reasoning effort | Actual compute |
 |---|---|---|---|
-| `SIMPLE` | `qwen3.8-27b` | server default | local vLLM on the two RTX 3090s |
-| `MEDIUM`, `COMPLEX` | `deepseek-flash` | `high` | paid OpenRouter route |
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b` | server default | local vLLM on the two RTX 3090s |
+| `COMPLEX` | `deepseek-flash` | `high` | paid OpenRouter route |
 | `REASONING` | `deepseek-flash` | `max` | paid OpenRouter route |
 | unclassifiable ask / classifier failure | `deepseek-flash` | per tier above | paid OpenRouter route |
 
-Qwen keeps only `SIMPLE` work. Escalation moves one tier at a time, so a rescued
-`SIMPLE` turn reaches `MEDIUM` and therefore DeepSeek rather than landing back on
-Qwen. Classification failures resolve upward for the same reason.
+Qwen owns `SIMPLE` and `MEDIUM`: tests, refactors, code explanation and cluster
+inspection all stay on the 3090s. Escalation covers its misses rather than
+pre-emptively spending, so the local half of the workload stays real.
+Classification failures resolve upward, since guessing cheap is the costly miss.
 
 The classifier uses local Qwen through the `pi-classifier` route, with thinking
-disabled and a 64-token structured response. It judges the task's meaning using
+disabled, greedy decoding (`temperature: 0`, `top_p: 1`, no penalties) and a
+64-token structured response. Qwen's conversational sampling is wrong for a
+one-label verdict: at `temperature: 0.7` the same ask classified `SIMPLE`,
+`MEDIUM` and `COMPLEX` across six runs, so identical work reached different
+backends. Greedy decoding returned the same tier six times out of six. It judges the task's meaning using
 LiteLLM's agentic rubric; keyword scoring had classified short incident reports
 as SIMPLE. It includes up to four prior user/assistant turns within an 8,000-character
 context budget, so approvals such as "yes, do that" can inherit the plan's difficulty.

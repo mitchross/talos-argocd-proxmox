@@ -166,9 +166,15 @@ class AIObservabilityTests(unittest.TestCase):
             'enable_thinking': False, 'preserve_thinking': False,
         })
         self.assertLessEqual(classifier['max_tokens'], 128)
+        # Sampled classification routed one ask three different ways across runs.
+        self.assertEqual(classifier['temperature'], 0)
+        self.assertEqual(classifier['top_p'], 1)
+        for noisy in ('presence_penalty', 'frequency_penalty'):
+            self.assertNotIn(noisy, classifier)
+        self.assertNotIn('top_k', classifier['extra_body'])
         self.assertEqual(router['tiers'], {
             'SIMPLE': 'qwen3.8-27b',
-            'MEDIUM': 'deepseek-flash',
+            'MEDIUM': 'qwen3.8-27b',
             'COMPLEX': 'deepseek-flash',
             'REASONING': 'deepseek-flash',
         })
@@ -177,7 +183,9 @@ class AIObservabilityTests(unittest.TestCase):
             tier: entries[0]['litellm_params']['reasoning_effort']
             for tier, entries in router['tier_model_configs'].items()
         }
-        self.assertEqual(efforts, {'MEDIUM': 'high', 'COMPLEX': 'high', 'REASONING': 'max'})
+        self.assertEqual(efforts, {'COMPLEX': 'high', 'REASONING': 'max'})
+        # Local work is the point of the two 3090s: Qwen must keep a real tier.
+        self.assertEqual(router['tiers']['MEDIUM'], 'qwen3.8-27b')
         for tier, entries in router['tier_model_configs'].items():
             self.assertEqual(entries[0]['model_name'], router['tiers'][tier])
             # OpenRouter exposes low/high/max for Flash; drop_params eats anything else.
@@ -191,6 +199,8 @@ class AIObservabilityTests(unittest.TestCase):
                              router['stall_escalation_window'])
         self.assertTrue(router['enable_context_window_escalation'])
         self.assertFalse(router['return_raw_model_name'])
+        # v1.102.0 flips this default and would hand Flash a 943K output cap.
+        self.assertFalse(router['max_tokens_from_tier_model'])
         # An unclassifiable turn resolves upward; guessing cheap is the costly miss.
         self.assertEqual(params['complexity_router_default_model'], 'deepseek-flash')
         # vLLM being down must not fail the request.
@@ -218,8 +228,8 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(image, 'ghcr.io/berriai/litellm:v1.101.0')
 
         guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
-        self.assertIn('`SIMPLE` work on local Qwen', guide)
-        self.assertIn('MEDIUM` / `COMPLEX` / `REASONING`', guide)
+        self.assertIn('SIMPLE` / `MEDIUM` work on local Qwen', guide)
+        self.assertIn('COMPLEX` / `REASONING`', guide)
         self.assertIn('stall_escalation_enabled', guide)
         self.assertIn('LITELLM ESCALATE', guide)
         self.assertIn('classification_mode: every_request', guide)
