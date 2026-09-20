@@ -16,7 +16,7 @@
 # go-pmtiles binary source (distroless upstream; we only want the binary).
 FROM protomaps/go-pmtiles:v1.31.2@sha256:06574f01f55a78f78f887bc7ebf729a5c093c0d6e17d9876300cfcb0758b59d3 AS pmtiles
 
-FROM alpine:3@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+FROM alpine:3@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
 
 # curl: probe + download. coreutils: GNU `date -d "-N days"` (busybox date
 # cannot do relative-day arithmetic reliably).
