@@ -26,7 +26,7 @@ class Filter:
         if not isinstance(kwargs["preserve_thinking"], bool):
             raise ValueError("preserve_thinking must be a boolean")
         if enabled:
-            effort = "medium" if effort in (None, "high") else effort
+            effort = "xhigh" if effort in (None, "high") else effort
             if effort not in ("low", "medium", "xhigh"):
                 raise ValueError("Qwen reasoning effort must be low, medium, or xhigh")
             kwargs["reasoning_effort"] = effort

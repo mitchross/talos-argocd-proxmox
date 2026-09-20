@@ -1,16 +1,47 @@
 # Pi agent: local Qwen and DeepSeek Flash
 
-**Use `pi-withflash` for everything.** It picks the model per message. You never choose.
+**Use `pi-withflash` for automatic routing; use `pi` or `pi-qwen-only` to stay local.**
 
 Pi is the coding agent from [pi.dev](https://pi.dev), not Raspberry Pi. This page
 configures a workstation; cluster changes go through Git and ArgoCD.
+
+## Default reasoning and rollout
+
+Local Qwen defaults to **xhigh** with preserved reasoning. This is an
+accuracy-first operating choice, not a guarantee of better answers; expect
+longer reasoning and more output-budget use. Explicit low, medium and off
+remain available on the direct Qwen provider. The model, sampler, 262K context,
+32K output allowance and 49,152-token compaction reserve are unchanged.
+
+The companion `mitchross/dotfiles` change sets both Pi's default and the
+`pi-qwen-only` alias. After merging both PRs, pull the updated dotfiles source,
+preview these two targets with `chezmoi diff`, then apply only those targets:
+
+```bash
+chezmoi diff ~/.pi/agent/settings.json ~/.zshrc
+chezmoi apply ~/.pi/agent/settings.json ~/.zshrc
+source ~/.zshrc
+jq '{defaultThinkingLevel, modelThinkingLevels}' ~/.pi/agent/settings.json
+type pi-qwen-only
+```
+
+Expect the default and local Qwen entry to be `xhigh`, and the local alias to
+contain `--thinking xhigh`. Start a fresh Pi session: reloading extensions does
+not necessarily change a resumed session's saved thinking level. In an existing
+session, explicitly select xhigh. A stale alias or per-model setting can still
+send medium and override the server default.
+
+`pi-auto` keeps its medium UI placeholder: it sends no Qwen effort mapping.
+Local auto-routed generation therefore inherits the server's xhigh default;
+DeepSeek's high/max and the thinking-off classifier stay unchanged. Do not
+change the auto provider to xhigh or forward Qwen kwargs into cloud routes.
 
 ## The four launchers
 
 | Launcher | Model | Use it for |
 |---|---|---|
-| `pi-withflash` | `pi-auto` | **everything** — LiteLLM picks per message |
-| `pi` / `pi-qwen-only` | local Qwen | nothing may leave the cluster |
+| `pi-withflash` | `pi-auto` | automatic local/cloud selection |
+| `pi` / `pi-qwen-only` | local Qwen, xhigh | nothing may leave the cluster |
 | `pi-flash` | DeepSeek Flash | you already know it is hard |
 | `pi-direct-openrouter` | DeepSeek Flash, no cluster | the gateway is down |
 
@@ -22,7 +53,7 @@ In `~/.zshrc`:
 QWEN=vanillax-vllm/qwen3.8-27b
 FLASH=vanillax-openrouter/deepseek-flash
 AUTO=vanillax-auto/pi-auto
-alias pi-qwen-only="pi --model $QWEN --thinking medium --models $QWEN"
+alias pi-qwen-only="pi --model $QWEN --thinking xhigh --models $QWEN"
 alias pi-flash="pi --model $FLASH --thinking high --models $FLASH"
 alias pi-withflash="pi --model $AUTO --thinking medium --models $AUTO"
 unset QWEN FLASH AUTO
@@ -40,7 +71,7 @@ must not leave the cluster.
 
 | Tier | Model | Effort | Runs on |
 |---|---|---|---|
-| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default | your two RTX 3090s, free |
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: xhigh | your two RTX 3090s, free |
 | `COMPLEX` | `deepseek-flash` | `high` | paid OpenRouter |
 | `REASONING` | `deepseek-flash` | `max` | paid OpenRouter |
 | classifier failed | `deepseek-flash` | as above | paid OpenRouter |
@@ -99,9 +130,10 @@ to paid OpenRouter during an outage. Local-only callers must fail closed.
 
 ## Routing changes need no workstation change
 
-Tiers, effort, escalation and failover are all server-side. The launcher only
-names `vanillax-auto/pi-auto`. A routing change ships through Git and ArgoCD and
-reaches every machine with no `chezmoi apply` and no Pi reinstall.
+Tiers, effort, escalation and failover for `pi-auto` are server-side. The
+launcher only names `vanillax-auto/pi-auto`. Changing its routing needs no
+Pi reinstall. Direct-Qwen defaults are different: its workstation settings and
+alias send an explicit effort, so the xhigh rollout above needs a chezmoi apply.
 
 ## CachyOS workstation inventory
 
@@ -122,11 +154,12 @@ serve a week-old copy and miss a fix.
 
 ```bash
 chezmoi --refresh-externals apply ~/.pi/agent/extensions/qwen-sampling.ts
-diff -u ~/.pi/agent/extensions/qwen-sampling.ts \
+command diff -u ~/.pi/agent/extensions/qwen-sampling.ts \
         ~/src/talos-argocd-proxmox/scripts/pi/qwen-sampling.ts
 ```
 
 No output from `diff` means current. Running Pi sessions need `/reload`.
+The xhigh-default change does not modify the sampler extension itself.
 
 The hook does three things: keeps only the newest image for local Qwen and
 `pi-auto`, attaches the Langfuse session id and `pi` tag, and applies Qwen's
@@ -193,13 +226,31 @@ type pi-qwen-only; type pi-flash; type pi-withflash
 Expect Qwen at roughly 262K context and 32K output, DeepSeek Flash at roughly 1M
 context with the deliberate 32K Pi cap, and `pi-auto` at the safe 262K/32K
 intersection. All report thinking and image support. The aliases must expand to
-the provider/model pairs above, including `--models $AUTO` for `pi-withflash`.
+the provider/model pairs above, including `--thinking xhigh` for `pi-qwen-only`
+and `--models $AUTO` for `pi-withflash`.
+
+Check outgoing request kwargs, not answer length: direct Qwen should send
+`enable_thinking=true`, `reasoning_effort=xhigh`, and `preserve_thinking=true`
+by default. Repeat with explicit medium, low and off. The
+[vLLM acceptance matrix](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#reasoning-acceptance-checks)
+covers tools, images and multi-turn history. A run that exhausts its output
+budget is inconclusive; xhigh does not expand the 32K allowance.
 
 ## Rollback
 
-Point `pi-withflash` at `$QWEN` instead of `$AUTO`. Everything stays local and
-nothing is billed. Router behaviour reverts through a PR to
-`my-apps/ai/litellm/config.yaml`.
+To reduce reasoning immediately, select medium on direct Qwen or launch:
+
+```bash
+pi --model vanillax-vllm/qwen3.8-27b --thinking medium --models vanillax-vllm/qwen3.8-27b
+```
+
+To revert the default permanently, revert the paired GitOps/dotfiles changes
+through PRs, apply the restored settings and zshrc, then start a fresh session.
+Do not change model weights, sampler or KV precision to roll back effort.
+
+Point `pi-withflash` at `$QWEN` instead of `$AUTO` to roll back automatic routing.
+Everything stays local and nothing is billed. Router behaviour reverts through
+a PR to `my-apps/ai/litellm/config.yaml`.
 
 ## Reference: `~/.pi/agent/models.json`
 
@@ -346,9 +397,9 @@ thinking levels, so keep this in step with the workstation copy.
 {
   "defaultProvider": "vanillax-vllm",
   "defaultModel": "qwen3.8-27b",
-  "defaultThinkingLevel": "medium",
+  "defaultThinkingLevel": "xhigh",
   "modelThinkingLevels": {
-    "vanillax-vllm/qwen3.8-27b": "medium",
+    "vanillax-vllm/qwen3.8-27b": "xhigh",
     "vanillax-openrouter/deepseek-flash": "high"
   },
   "enabledModels": [

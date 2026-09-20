@@ -9,10 +9,10 @@ https://open-webui.vanillax.me
         |
         v
 Open WebUI
-  |-- vLLM     -> qwen3.8-27b (chat / reasoning / tools / vision)
+  |-- LiteLLM -> vLLM -> qwen3.8-27b (chat / reasoning / tools / vision)
   |-- SearXNG   -> web search
   |-- MCPO      -> MCP-backed tools
-  |-- ComfyUI   -> image generation
+  |-- ComfyUI   -> image generation (parked while vLLM owns both GPUs)
   `-- local CPU SentenceTransformer / Whisper -> RAG + STT
 ```
 
@@ -33,32 +33,40 @@ settings.
 | Chat/default | `qwen3.8-27b` |
 | Vision | `qwen3.8-27b` |
 | Task/title model | `qwen3.8-27b` |
-| Backend | stock vLLM `0.28.0` |
+| Backend | stock vLLM `0.29.0` |
 | Target | official Qwen3.8-27B FP8 |
 | Server context ceiling | 262,144 |
 | Speculation / MTP | Off |
 | KV | FP8 E4M3 |
 | Vision | Native encoder |
 
-The production server and this client's default are **medium reasoning**.
-`qwen-no-think-filter.py` now honors explicit off/low/medium/xhigh. A client's
-generic high maps to medium; unsupported efforts fail instead of falling back
-to implicit xhigh. Preservation defaults to true for thinking and false for
+The Git-declared server and this client's default are **xhigh reasoning**.
+`qwen-no-think-filter.py` honors explicit off/low/medium/xhigh. A client's
+generic high maps to xhigh; unsupported efforts fail instead of silently
+changing modes. Preservation defaults to true for thinking and false for
 off; stateless chats may explicitly disable preservation.
+
+This is an accuracy-first default, not a measured quality improvement. Longer
+reasoning can consume more time and output tokens. Explicit medium/low/off
+presets remain effective, including saved conversations; clear or change them
+when checking the new default. Background tasks also inherit xhigh unless they
+explicitly opt down or off.
 
 The filter normalizes both top-level and `extra_body` forwarding shapes to
 matching chat-template kwargs and top-level effort (null for off). Keeping
 the top-level key prevents later WebUI model defaults from restoring stale
 effort; vLLM gives that top-level value precedence. Canonical
 kwargs take precedence over nested kwargs when both exist. For Qwen only, it
-applies all six recommended mode-specific sampling values, including overriding
-stale per-chat sampler values. Other models and messages/tools/images/history
-are untouched. See [the canonical policy and acceptance matrix](../vllm/README.md#reasoning-acceptance-checks)
+applies the deployment's six mode-specific sampling values, including overriding
+stale per-chat sampler values. Thinking repetition penalty 1.05 is a local
+mitigation candidate, not the official default; it is unchanged by this rollout.
+Other models and messages/tools/images/history are untouched. See
+[the canonical policy and acceptance matrix](../vllm/README.md#reasoning-acceptance-checks)
 for exact samplers and runtime tests.
 
 The stored function ID `qwen_non_thinking_default` is deliberately retained:
 the PostSync loader updates that existing global function in place under the
-new display name **Qwen3.8 Reasoning Policy**. Renaming the ID would leave the
+name **Qwen3.8 Reasoning Policy**. Renaming the ID would leave the
 old global non-thinking filter active beside the new one. Verify the loaded
 function after sync, then test a fresh conversation and an existing one.
 

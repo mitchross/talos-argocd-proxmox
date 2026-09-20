@@ -13,8 +13,8 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 **AI/LLM Backend**: **vLLM** is the only GPU inference backend; never Ollama.
 
 - **vLLM**: official `Qwen/Qwen3.8-27B-FP8`, TP=2 on both RTX 3090s, FP8 KV,
-  native vision, 262,144-token server ceiling, explicit medium reasoning default, and
-  **no MTP/speculative decoding**. Live capacity and client guidance are in
+  native vision, 262,144-token server ceiling, explicit xhigh reasoning default, and
+  **no MTP/speculative decoding**. Historical capacity and current client guidance are in
   `docs/domains/ai-gpu/3090-llm-optimization.md`; reverify after runtime changes.
 - Stable API model: `qwen3.8-27b`. Apps use authenticated LiteLLM at
   `http://litellm-service.litellm.svc.cluster.local:4000/v1` for Langfuse telemetry. Direct diagnostic / gateway upstream service:

@@ -1,31 +1,38 @@
 # AI Stack Guide
 
-Local AI inference uses official Qwen3.8-27B FP8 on stock vLLM 0.28.0 with
+Local AI inference uses official Qwen3.8-27B FP8 on stock vLLM 0.29.0 with
 both RTX 3090s (TP=2), FP8 KV and native vision. GPU allocations are whole-card
 with time-slicing off. The server ceiling is 262,144 tokens; speculation is off.
 
-Normal coding uses explicit medium reasoning with preservation enabled.
-Low is available for lighter work, xhigh is opt-in, and explicit off requests
-use their separate sampler. See [the vLLM runbook](vllm/README.md) for the
+Local Qwen defaults to explicit xhigh reasoning with preservation enabled.
+Low and medium remain available for less reasoning, and explicit off requests
+use their separate sampler. More reasoning can take longer and is not a
+measured accuracy improvement. See [the vLLM runbook](vllm/README.md) for the
 canonical runtime, source references and reasoning acceptance checks.
 
 ComfyUI and SwarmUI are parked while vLLM owns both cards. The API model is
 `qwen3.8-27b`.
 
 For coding, follow the [Pi.dev setup guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md).
-The [dual-3090 capacity audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
-explains the measured memory pool and practical long-session limits.
+Pi's local defaults and launcher also need the companion dotfiles update;
+ArgoCD does not update workstation settings. The
+[dual-3090 capacity audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
+separates historical memory measurements from current operating guidance.
 
 ### Using with OpenClaw / Other Tools
 
-Both backends expose the OpenAI-compatible API at `/v1/chat/completions`:
+Applications use the authenticated LiteLLM gateway's OpenAI-compatible API at
+`/v1/chat/completions`. On a workstation with `LITELLM_API_KEY` provisioned
+outside Git:
 
 ```bash
-export OPENAI_BASE_URL="https://vllm.vanillax.me/v1"
-export OPENAI_API_KEY="any-value"
+export OPENAI_BASE_URL="https://litellm.vanillax.me/v1"
+export OPENAI_API_KEY="${LITELLM_API_KEY:?Set the gateway key outside Git first}"
 ```
 
-Works with: OpenClaw, Aider, Continue.dev, OpenCode, or any OpenAI-compatible client.
+Select `qwen3.8-27b` for local-only requests. Direct vLLM endpoints are for
+diagnostics and bypass gateway telemetry. See the
+[model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for route boundaries.
 
 ## Image Generation (ComfyUI)
 
@@ -159,7 +166,7 @@ kubectl exec -n comfyui deploy/comfyui -- ls -lh /root/ComfyUI/models/diffusion_
 The job downloads (skips existing):
 
 - `clip_l.safetensors` -- CLIP-L text encoder for Z-Image-Turbo (~400MB)
-- `t5xxl_fp8_e4m3fn.safetensors` -- T5-XXL FP8 text encoder for Z-Image-Turbo (~5GB)
+- `t5xxl_fp8_e4m3fn_scaled.safetensors` -- T5-XXL FP8 text encoder for Z-Image-Turbo (~5GB)
 - `ae.safetensors` -- FLUX VAE for Z-Image-Turbo (~300MB)
 - `umt5_xxl_fp8_e4m3fn_scaled.safetensors` -- UMT5-XXL FP8 for Wan 2.2 video (~6.7GB)
 - `wan_2.1_vae.safetensors` -- Wan 2.2 video VAE (~254MB)
@@ -201,8 +208,8 @@ The job downloads (skips existing):
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`qwen3.8-27b`. Open WebUI now defaults to medium reasoning; lightweight tasks
-may explicitly opt out with the non-thinking policy in the vLLM runbook.
+`qwen3.8-27b`. Open WebUI defaults to xhigh reasoning; lightweight tasks
+may explicitly opt down or out using the policy in the vLLM runbook.
 
 ### RAG Tuning
 
