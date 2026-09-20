@@ -29,7 +29,7 @@ spec:
       containers:
         - name: deal-scout
           # Source: github.com/mitchross/deal-scout, dashboard/
-          image: ghcr.io/mitchross/deal-scout:v0.14.1@sha256:906f93dd33a198d1c6f5fddc973cd896d1c5431064c00801dd8a5c6eb240423c
+          image: ghcr.io/mitchross/deal-scout:v0.15.0@sha256:a7220f50ef0e72ad28ccca5fc1fa6aa2ff9c958c92c901ba865cb65e574c47c2
           imagePullPolicy: IfNotPresent
           env:
             - name: LITELLM_API_KEY
