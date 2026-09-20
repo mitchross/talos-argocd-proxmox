@@ -291,7 +291,7 @@ The Git-declared LiteLLM `v1.102.0` policy is:
 
 | Classified tier | Selected gateway model | Reasoning effort | Actual compute |
 |---|---|---|---|
-| `SIMPLE`, `MEDIUM` | `qwen3.8-27b` | server default | local vLLM on the two RTX 3090s |
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default | local vLLM on the two RTX 3090s |
 | `COMPLEX` | `deepseek-flash` | `high` | paid OpenRouter route |
 | `REASONING` | `deepseek-flash` | `max` | paid OpenRouter route |
 | unclassifiable ask / classifier failure | `deepseek-flash` | per tier above | paid OpenRouter route |
@@ -329,9 +329,16 @@ the operator noticing or intervening.
 letting it be truncated to fit, since a silently truncated prompt is the
 hallucination that matters most here.
 
-`router_settings.fallbacks` sends `qwen3.8-27b` failures to `deepseek-flash`, so a
-vLLM outage degrades to the paid route instead of failing the request.
+`router_settings.fallbacks` sends `qwen3.8-27b-auto` failures to `deepseek-flash`,
+so a vLLM outage degrades to the paid route instead of failing the request.
 `context_window_fallbacks` does the same for a prompt Qwen cannot hold.
+
+`qwen3.8-27b-auto` is the same vLLM backend as `qwen3.8-27b` under a second name,
+and exists only so that failover is scoped. LiteLLM fallbacks key on the model
+name, so a rule on `qwen3.8-27b` would divert **every** gateway client — bare
+`pi`, `pi-qwen-only`, Open WebUI, Perplexica, Presenton, Hindsight, ninfer,
+ComfyUI — to paid OpenRouter during a vLLM outage. `pi-qwen-only` exists so that
+nothing leaves the cluster, so it must fail closed rather than fail over.
 
 `max_tokens_from_tier_model: false` is required from `v1.102.0`, where it defaults
 to true and replaces the caller's output cap with the selected tier model's —
