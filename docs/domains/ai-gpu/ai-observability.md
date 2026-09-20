@@ -63,6 +63,42 @@ scores are also not automatic: add a small labeled dataset and explicit scoring
 before treating model speed as evidence of answer quality. This deployment does
 not enable paid judges or background model calls.
 
+## Reading the Qwen / DeepSeek split
+
+`pi-withflash` reports the `pi-auto` alias, never the backend that answered. Two
+dashboards resolve it, and each answers a different question.
+
+**Grafana — `PI ROUTING — Local or Paid?` (`/d/pi-routing`)** answers *what is
+the ratio, and what has it cost.* LiteLLM tags every request with two model
+labels, and the split lives in the gap between them:
+
+| Label | Meaning | Value on an auto-routed turn |
+|---|---|---|
+| `requested_model` | what the client asked for | `pi-auto` |
+| `model` | what actually ran | `qwen3.8-27b` or `~deepseek/deepseek-flash-latest` |
+
+`litellm_proxy_total_requests_metric_total` carries only `requested_model`, so
+it cannot show the split; use `litellm_deployment_success_responses_total`,
+whose `litellm_model_name` is the resolved deployment.
+
+Pi traffic is sparse, and a LiteLLM counter that first appears at its full value
+makes `increase()` return zero — a real DeepSeek escalation reads as "never
+fired". The dashboard uses `max_over_time(...[$__range])` for totals and a
+cumulative line for spend. For the same reason `histogram_quantile` returns NaN
+on classifier latency, so decision time is a `sum`/`count` average.
+
+**Langfuse — `PI ROUTING — Local or Paid?`** answers *why did this turn
+escalate, and how did each backend behave.* Langfuse stores the resolved model
+in `providedModelName`, so widgets break down by backend directly. Scope every
+widget with the tag filter `tags any of [pi]`; without it, Open WebUI and the
+other gateway clients are counted as Pi turns. Per-trace, check
+`routing_decision.cause`: `llm_classifier` means the task was judged,
+`default_model_fallback` means classification failed and fell back to local.
+
+Langfuse dashboards live in the Langfuse database, not in Git. Recreate them
+through the UI, or through `dashboardWidgets.create` plus
+`dashboard.updateDashboardDefinition`, after a Langfuse rebuild.
+
 ## Routes and credentials
 
 | Caller | Endpoint | Authentication |
