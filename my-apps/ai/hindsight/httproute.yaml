@@ -1,4 +1,4 @@
-# INTERNAL route only (gateway-internal): memory data stays off the Cloudflare tunnel.
+# INTERNAL route only (gateway-internal-technitium): memory data stays off the Cloudflare tunnel.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

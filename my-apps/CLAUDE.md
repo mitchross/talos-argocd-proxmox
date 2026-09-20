@@ -82,7 +82,7 @@ spec:
 # spec:
 #   parentRefs:
 #   - kind: Gateway
-#     name: gateway-internal
+#     name: gateway-internal-technitium
 #     namespace: gateway
 #   hostnames:
 #   - app.vanillax.me

@@ -31,7 +31,7 @@ returns local overrides when present and forwards everything else upstream.
 | `external-dns-technitium` | RFC2136 A/TXT records for private HTTPRoutes |
 | Cloudflare ExternalDNS | Public records for `gateway-external` routes |
 | `gateway-internal-technitium` | Private routes at `192.168.10.52` |
-| `gateway-external` | Public Cloudflare routes at `192.168.10.33` |
+| `gateway-external` | Public Cloudflare routes at `192.168.10.49` |
 
 Private HTTPRoutes parent to `gateway-internal-technitium`; public routes
 parent to `gateway-external`.
@@ -242,7 +242,7 @@ internal cert:
 | --- | --- |
 | ClusterIssuer | `cloudflare-cluster-issuer` (ACME DNS-01 via Cloudflare) |
 | Certificate / Secret | `cert-vanillax` in namespace `gateway`, SAN `*.vanillax.me` |
-| `gateway-external` (`192.168.10.33`) | `certificateRefs: cert-vanillax` |
+| `gateway-external` (`192.168.10.49`) | `certificateRefs: cert-vanillax` |
 | `gateway-internal-technitium` (`192.168.10.52`) | `certificateRefs: cert-vanillax` |
 
 Public and private paths use the **same hostname** under `*.vanillax.me`, so the
