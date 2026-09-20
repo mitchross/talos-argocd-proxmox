@@ -9,19 +9,28 @@ model_list:
       # Self-hosted — pin explicitly rather than rely on LiteLLM's cost map.
       input_cost_per_token: 0
       output_cost_per_token: 0
+  # Same backend as qwen3.8-27b, separate name so the DeepSeek failover below
+  # reaches only pi-auto and never bare `pi`, Open WebUI or the other apps.
+  - model_name: qwen3.8-27b-auto
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+      api_key: "vllm-no-key-required"
+      timeout: 1800
+    model_info:
+      input_cost_per_token: 0
+      output_cost_per_token: 0
   - model_name: pi-classifier
     litellm_params:
       model: openai/qwen3.8-27b
       api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
       api_key: "vllm-no-key-required"
       max_tokens: 64
-      temperature: 0.7
-      top_p: 0.8
-      presence_penalty: 1.5
+      # Qwen's chat sampling made the same ask classify SIMPLE/MEDIUM/COMPLEX
+      # across repeat runs. A one-label verdict must be greedy, not sampled.
+      temperature: 0
+      top_p: 1
       extra_body:
-        top_k: 20
-        min_p: 0.0
-        repetition_penalty: 1.0
         chat_template_kwargs:
           enable_thinking: false
           preserve_thinking: false
@@ -55,20 +64,43 @@ model_list:
         classifier_context_window_size: 4
         classifier_context_budget_chars: 8000
         classifier_context_include_assistant_turns: true
-        # Keep ordinary Pi work local; send only the two higher complexity
-        # tiers to the paid OpenRouter route.
+        # Qwen owns the local half of the workload: tests, refactors, code
+        # explanation, cluster inspection. Escalation is what covers its misses.
         tiers:
-          SIMPLE: qwen3.8-27b
-          MEDIUM: qwen3.8-27b
+          SIMPLE: qwen3.8-27b-auto
+          MEDIUM: qwen3.8-27b-auto
           COMPLEX: deepseek-flash
           REASONING: deepseek-flash
-        # Reclassify each human ask, but keep one model through its tool loop.
-        classification_mode: user_turn
+        # OpenRouter's exposed Flash levels are low/high/max; xhigh is not one,
+        # and drop_params would discard it silently.
+        tier_model_configs:
+          COMPLEX:
+            - model_name: deepseek-flash
+              litellm_params:
+                reasoning_effort: high
+          REASONING:
+            - model_name: deepseek-flash
+              litellm_params:
+                reasoning_effort: max
+        # every_request is required by stall_escalation: holding one decision
+        # through the tool loop hides the very tool calls it watches.
+        classification_mode: every_request
+        # Rescue a task Qwen is stuck on: same tool call repeating or erroring.
+        stall_escalation_enabled: true
+        stall_escalation_window: 6
+        stall_escalation_repeat_threshold: 3
         session_affinity: false
-        # Context growth must not move a local-classified turn to paid compute.
-        enable_context_window_escalation: false
+        # Defaults true since v1.102.0: without this the tier model's cap
+        # replaces Pi's 32K, which is 943K on Flash.
+        max_tokens_from_tier_model: false
+        # A prompt truncated to fit Qwen's window is the hallucination we care
+        # about most, so let an oversized request move up instead.
+        enable_context_window_escalation: true
+        context_window_escalation_buffer: 0.95
         return_raw_model_name: false
-      complexity_router_default_model: qwen3.8-27b
+      # Classification failures resolve upward: guessing cheap is the expensive
+      # mistake here.
+      complexity_router_default_model: deepseek-flash
     model_info:
       # Reserve the 32K output allowance inside Qwen's 262K total window.
       max_input_tokens: 229376
@@ -82,6 +114,14 @@ litellm_settings:
   # Routes have different parameter sets; drop unsupported optional fields
   # rather than fail an otherwise valid request.
   drop_params: true
+
+router_settings:
+  # Keyed on the pi-auto-only route: a vLLM outage must not silently bill and
+  # de-localise every other gateway client.
+  fallbacks:
+    - qwen3.8-27b-auto: ["deepseek-flash"]
+  context_window_fallbacks:
+    - qwen3.8-27b-auto: ["deepseek-flash"]
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

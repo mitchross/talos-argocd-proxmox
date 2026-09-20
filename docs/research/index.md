@@ -27,10 +27,9 @@ September 20 assessment.
 - [Tiered storage](../domains/storage/architecture-future.md): idea only, not implemented.
 - [Enterprise multi-cluster roadmap](../domains/multicluster/enterprise-gitops-roadmap.md)
   and [PRD](../domains/multicluster/prd.md): future design documents, not the current topology.
-- [Flash Next study — 6 September 2026](../domains/ai-gpu/flash-next-dual-3090.md):
-  researched candidate, not deployed or benchmarked on the restored dual-card
-  system. The [model catalog](../domains/ai-gpu/model-catalog.md) owns the current
-  serving configuration.
+
+For current AI serving configuration and evaluated model choices, use the
+[model catalog](../domains/ai-gpu/model-catalog.md).
 
 Use [audits](../audits/index.md) for dated findings and [inventory](../inventory/index.md)
 for the observed hardware behind these choices.

@@ -116,7 +116,6 @@ nav:
           - Future idea — tiered storage: domains/storage/architecture-future.md
           - Enterprise multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md
           - Multicluster — PRD: domains/multicluster/prd.md
-          - Flash Next study — 6 September: domains/ai-gpu/flash-next-dual-3090.md
   - Operations:
       - GitOps & ArgoCD:
           - ArgoCD architecture: domains/argocd/argocd.md

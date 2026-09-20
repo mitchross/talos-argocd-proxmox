@@ -56,6 +56,13 @@ configMapGenerator:
       labels:
         grafana_dashboard: "1"
         app.kubernetes.io/name: grafana-dashboards
+  - name: pi-routing-dashboard
+    files:
+      - dashboards/pi-routing.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: grafana-dashboards
   # Default Grafana home: plain-English cluster performance triage.
   - name: performance-cockpit-dashboard
     files:
