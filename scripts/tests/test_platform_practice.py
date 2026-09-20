@@ -78,6 +78,20 @@ class DeliveryContract(unittest.TestCase):
         self.assertIn('"practice"', appset['spec']['templatePatch'])
         self.assertIn('/spec/replicas', appset['spec']['templatePatch'])
 
+    def test_first_install_does_not_wait_on_autoscalers_before_their_targets(self):
+        def wave(d):
+            return int(d['metadata'].get('annotations', {}).get('argocd.argoproj.io/sync-wave', '0'))
+        for docs in self.stages.values():
+            targets = {d['metadata']['name']: d for d in docs if d['kind'] == 'Deployment'}
+            instrumentation = next(d for d in docs if d['kind'] == 'Instrumentation')
+            for target in targets.values():
+                self.assertLess(wave(instrumentation), wave(target))
+            for d in docs:
+                if d['kind'] not in ['HorizontalPodAutoscaler', 'VerticalPodAutoscaler']:
+                    continue
+                ref = d['spec'].get('scaleTargetRef', d['spec'].get('targetRef'))
+                self.assertGreaterEqual(wave(d), wave(targets[ref['name']]))
+
     def test_git_weights_survive_the_actual_argo_ignore_expression(self):
         values = yaml.safe_load((ROOT / 'infrastructure/controllers/argocd/values.yaml').read_text())
         key = 'resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute'

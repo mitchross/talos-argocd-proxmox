@@ -65,6 +65,9 @@ The existing ApplicationSet discovers three separate roots. It already includes
 shared components in its cache hints; CI renders shared changes and all three
 stages. Existing Applications retain their names and ownership. Practice
 Applications carry category/environment labels; labels do not schedule Pods.
+Instrumentation is created at wave 0, Deployments at wave 1, and HPA/VPA at
+wave 2. An HPA in an earlier wave would wait for a missing scale target and
+could block first installation before that Deployment is created.
 
 **Initially every stage uses the same verified `v1.1.17` digest.** v1/v2 are
 release slots, not a claim that different source versions were built. Stage a
