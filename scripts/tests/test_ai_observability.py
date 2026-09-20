@@ -168,15 +168,36 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertLessEqual(classifier['max_tokens'], 128)
         self.assertEqual(router['tiers'], {
             'SIMPLE': 'qwen3.8-27b',
-            'MEDIUM': 'qwen3.8-27b',
+            'MEDIUM': 'deepseek-flash',
             'COMPLEX': 'deepseek-flash',
             'REASONING': 'deepseek-flash',
         })
-        self.assertEqual(router['classification_mode'], 'user_turn')
+        # Paid tiers must never fall back to the provider's default effort.
+        efforts = {
+            tier: entries[0]['litellm_params']['reasoning_effort']
+            for tier, entries in router['tier_model_configs'].items()
+        }
+        self.assertEqual(efforts, {'MEDIUM': 'high', 'COMPLEX': 'high', 'REASONING': 'max'})
+        for tier, entries in router['tier_model_configs'].items():
+            self.assertEqual(entries[0]['model_name'], router['tiers'][tier])
+            # OpenRouter exposes low/high/max for Flash; drop_params eats anything else.
+            self.assertIn(entries[0]['litellm_params']['reasoning_effort'],
+                          {'low', 'high', 'max'})
+        # LiteLLM rejects stall escalation unless every request is classified.
+        self.assertTrue(router['stall_escalation_enabled'])
+        self.assertEqual(router['classification_mode'], 'every_request')
         self.assertFalse(router['session_affinity'])
-        self.assertFalse(router['enable_context_window_escalation'])
+        self.assertLessEqual(router['stall_escalation_repeat_threshold'],
+                             router['stall_escalation_window'])
+        self.assertTrue(router['enable_context_window_escalation'])
         self.assertFalse(router['return_raw_model_name'])
-        self.assertEqual(params['complexity_router_default_model'], 'qwen3.8-27b')
+        # An unclassifiable turn resolves upward; guessing cheap is the costly miss.
+        self.assertEqual(params['complexity_router_default_model'], 'deepseek-flash')
+        # vLLM being down must not fail the request.
+        settings = config['router_settings']
+        self.assertEqual(settings['fallbacks'], [{'qwen3.8-27b': ['deepseek-flash']}])
+        self.assertEqual(settings['context_window_fallbacks'],
+                         [{'qwen3.8-27b': ['deepseek-flash']}])
         self.assertEqual(auto['model_info'], {
             'max_input_tokens': 229376,
             'max_output_tokens': 32768,
@@ -197,9 +218,11 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(image, 'ghcr.io/berriai/litellm:v1.101.0')
 
         guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
-        self.assertIn('SIMPLE` / `MEDIUM`', guide)
-        self.assertIn('COMPLEX` / `REASONING`', guide)
-        self.assertIn('classification_mode: user_turn', guide)
+        self.assertIn('`SIMPLE` work on local Qwen', guide)
+        self.assertIn('MEDIUM` / `COMPLEX` / `REASONING`', guide)
+        self.assertIn('stall_escalation_enabled', guide)
+        self.assertIn('LITELLM ESCALATE', guide)
+        self.assertIn('classification_mode: every_request', guide)
         self.assertIn('beta', guide.lower())
 
 
