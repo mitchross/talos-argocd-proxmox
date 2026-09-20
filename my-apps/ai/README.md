@@ -47,7 +47,7 @@ and more natural "filmic" look than FLUX. Excellent bilingual text rendering (EN
 | Property | Value |
 |----------|-------|
 | Model | `z_image_turbo_bf16.safetensors` (~12GB BF16, auto-cast to FP8 at inference) |
-| Text encoders | `clip_l.safetensors` + `t5xxl_fp8_e4m3fn_scaled.safetensors` (separate) |
+| Text encoders | `clip_l.safetensors` + `t5xxl_fp8_e4m3fn.safetensors` (separate) |
 | VAE | `ae.safetensors` (FLUX VAE) |
 | VRAM | ~12-16GB (model + encoders + VAE swap in/out) |
 | Speed | ~8-9 sec on RTX 3090 |
@@ -168,7 +168,7 @@ The job downloads (skips existing):
 - `clip_l.safetensors` -- CLIP-L text encoder for Z-Image-Turbo (~400MB)
 - `t5xxl_fp8_e4m3fn_scaled.safetensors` -- T5-XXL FP8 text encoder for Z-Image-Turbo (~5GB)
 - `ae.safetensors` -- FLUX VAE for Z-Image-Turbo (~300MB)
-- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` -- UMT5-XXL FP8 text encoder for Wan 2.2 video (~6.7GB)
+- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` -- UMT5-XXL FP8 for Wan 2.2 video (~6.7GB)
 - `wan_2.1_vae.safetensors` -- Wan 2.2 video VAE (~254MB)
 - `clip_vision_h.safetensors` -- CLIP Vision H for I2V (~1.3GB)
 
@@ -188,8 +188,8 @@ The job downloads (skips existing):
 
 **Image-to-Text / Reverse Prompt (ComfyUI direct):**
 1. Load `workflows/florence2-caption.json` for detailed captions
-2. Load an image into the LoadImage node
-3. Use the node's output text as the result
+2. Load `workflows/wd14-tagger.json` for diffusion-optimized tags
+3. Drag-and-drop your image onto the LoadImage node
 
 ## Open WebUI Configuration
 
