@@ -88,3 +88,71 @@ test("requests in a Pi session share telemetry metadata without losing caller fi
   assert.deepEqual(overridden.metadata, { trace_name: "pi-agent", ...metadata });
   assert.deepEqual(metadata.tags, ["custom"]);
 });
+
+const image = (id) => ({ type: "image_url", image_url: { url: `data:image/png;base64,${id}` } });
+const images = (payload) => payload.messages.flatMap((m) => Array.isArray(m.content) ? m.content : [])
+  .filter((part) => part.type === "image_url");
+function freeze(value) {
+  if (value && typeof value === "object") {
+    Object.values(value).forEach(freeze);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+for (const model of [context.model, { provider: "vanillax-auto", id: "pi-auto" }]) {
+  test(`${model.id}: resumed screenshot/tool history keeps newest image without altering session`, () => {
+    const newest = image("newest");
+    const payload = freeze({
+      messages: [
+        { role: "system", content: "Instructions" },
+        { role: "user", content: [image("old"), { type: "text", text: "Inspect this" }] },
+        { role: "assistant", content: null, reasoning_content: "Observation", tool_calls: [
+          { id: "read1", type: "function", function: { name: "read", arguments: "{}" } },
+        ] },
+        { role: "tool", tool_call_id: "read1", content: "Image read" },
+        { role: "user", content: [image("old"), newest] },
+        { role: "user", content: "almost better" },
+      ],
+      tools: [{ type: "function", function: { name: "read" } }],
+      stream: true, stream_options: { include_usage: true }, temperature: 0.2,
+    });
+    const before = JSON.stringify(payload);
+    const result = handler({ payload }, { ...context, model });
+    assert.deepEqual(images(result), [newest]);
+    assert.equal(JSON.stringify(payload), before);
+    assert.equal(result.messages[2], payload.messages[2]);
+    assert.equal(result.messages[3], payload.messages[3]);
+    assert.equal(result.messages[5], payload.messages[5]);
+    assert.equal(result.tools, payload.tools);
+    assert.equal(result.stream_options, payload.stream_options);
+    assert.match(result.messages[1].content[0].text, /Only the newest image is visible/);
+    assert.deepEqual(handler({ payload: result }, { ...context, model }), result);
+    if (model.id === "pi-auto") assert.equal(result.temperature, 0.2);
+  });
+
+  test(`${model.id}: repeated reads of one attachment send it once`, () => {
+    const same = image("same");
+    const payload = { messages: [{ role: "user", content: [same, same, same] }] };
+    assert.deepEqual(images(handler({ payload }, { ...context, model })), [same]);
+  });
+
+  test(`${model.id}: zero or one image preserves messages`, () => {
+    for (const content of ["text", [], [image("one")]]) {
+      const payload = { messages: [{ role: "user", content }] };
+      assert.equal(handler({ payload }, { ...context, model }).messages, payload.messages);
+    }
+  });
+}
+
+test("explicit cloud and unrelated routes retain multiple images", () => {
+  for (const model of [
+    { provider: "vanillax-openrouter", id: "deepseek-flash" },
+    { provider: "vanillax-direct-openrouter", id: "~deepseek/deepseek-flash-latest" },
+    { provider: "other", id: "pi-auto" },
+    { provider: "vanillax-vllm", id: "other" },
+  ]) {
+    const payload = { messages: [{ role: "user", content: [image("a"), image("b")] }] };
+    assert.equal(handler({ payload }, { ...context, model }).messages, payload.messages);
+  }
+});
