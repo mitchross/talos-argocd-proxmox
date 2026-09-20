@@ -37,6 +37,11 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 
 ## Documentation
 
+Read the [September 20 homelab decision report](audits/2026-09-20-homelab-report.html)
+for prioritized recommendations on remote DNS, NAS RAM and performance,
+Proxmox management, NetBird, and the TrueNAS storage plugin. It is a standalone,
+printable HTML report with optional technical detail; proposals are not deployed changes.
+
 For worker releases, use the [Temporal safe deployment runbook](domains/temporal/safe-deployments.md):
 candidate gates, retained configuration, stateful handoff, and pinned-run recovery.
 
