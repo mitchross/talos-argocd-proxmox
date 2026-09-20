@@ -9,8 +9,8 @@ Bare `pi` and `pi-qwen-only` use the self-hosted
 **`vanillax-vllm/qwen3.8-27b`** path by default. `pi-flash` selects paid,
 cloud-hosted **`vanillax-openrouter/deepseek-flash`** only. `pi-withflash` selects the
 **`vanillax-auto/pi-auto`** virtual model: LiteLLM automatically keeps
-`SIMPLE` / `MEDIUM` work on local Qwen and sends `COMPLEX` / `REASONING` work
-to OpenRouter's DeepSeek Flash latest alias. These three paths enter the authenticated LiteLLM gateway and share
+`SIMPLE` work on local Qwen and sends `MEDIUM` / `COMPLEX` / `REASONING` work
+to OpenRouter's DeepSeek Flash latest alias, escalating mid-task if Qwen stalls. These three paths enter the authenticated LiteLLM gateway and share
 Langfuse session tracing, but only Qwen is served by this cluster's vLLM and
 RTX 3090s.
 
@@ -289,29 +289,54 @@ provider's required conversation shape.
 `pi-auto` is a LiteLLM complexity-router alias, not a third inference backend.
 The Git-declared LiteLLM `v1.101.0` policy is:
 
-| Classified tier | Selected gateway model | Actual compute |
-|---|---|---|
-| `SIMPLE`, `MEDIUM` | `qwen3.8-27b` | local vLLM on the two RTX 3090s |
-| `COMPLEX`, `REASONING` | `deepseek-flash` | paid OpenRouter route |
-| no classifiable human ask / classifier default | `qwen3.8-27b` | local vLLM on the two RTX 3090s |
+| Classified tier | Selected gateway model | Reasoning effort | Actual compute |
+|---|---|---|---|
+| `SIMPLE` | `qwen3.8-27b` | server default | local vLLM on the two RTX 3090s |
+| `MEDIUM`, `COMPLEX` | `deepseek-flash` | `high` | paid OpenRouter route |
+| `REASONING` | `deepseek-flash` | `max` | paid OpenRouter route |
+| unclassifiable ask / classifier failure | `deepseek-flash` | per tier above | paid OpenRouter route |
+
+Qwen keeps only `SIMPLE` work. Escalation moves one tier at a time, so a rescued
+`SIMPLE` turn reaches `MEDIUM` and therefore DeepSeek rather than landing back on
+Qwen. Classification failures resolve upward for the same reason.
 
 The classifier uses local Qwen through the `pi-classifier` route, with thinking
 disabled and a 64-token structured response. It judges the task's meaning using
 LiteLLM's agentic rubric; keyword scoring had classified short incident reports
 as SIMPLE. It includes up to four prior user/assistant turns within an 8,000-character
 context budget, so approvals such as "yes, do that" can inherit the plan's difficulty.
-Classification adds one local inference call per human turn, with a 30-second
-timeout. Errors, invalid output, or timeouts select the local default model;
-the default classifier circuit breaker temporarily skips classification after a timeout.
-With
-`classification_mode: user_turn`, LiteLLM classifies each new human ask and
-carries that decision through the assistant/tool continuation requests for that
-turn. `session_affinity` remains false, so the next human ask can select the
-other backend. This is automatic model selection, not load balancing: one
-completion goes to one backend and is never split across Qwen and DeepSeek.
-`enable_context_window_escalation: false` prevents growing history from
-overriding the classified tier and sending a local turn to paid compute.
-If the chosen backend cannot fit the request, compact or start a new session.
+Classification adds one local inference call per request, with a 30-second
+timeout. Errors, invalid output, or timeouts select `deepseek-flash`; the default
+classifier circuit breaker temporarily skips classification after a timeout.
+
+`classification_mode: every_request` classifies each request rather than holding
+one verdict through a tool loop. LiteLLM **rejects** `stall_escalation_enabled`
+alongside `classification_mode: user_turn` or `session_affinity`, because a held
+decision hides the tool calls stall detection has to watch. Re-classifying every
+request is what buys the mid-task rescue below.
+
+`stall_escalation_enabled` moves a task up one tier when the newest tool call
+repeats, or errors, at least three times across the last six calls. This is the
+safety net for a task Qwen accepted and then got stuck on: it escalates without
+the operator noticing or intervening.
+
+`enable_context_window_escalation: true` moves an oversized request up instead of
+letting it be truncated to fit, since a silently truncated prompt is the
+hallucination that matters most here.
+
+`router_settings.fallbacks` sends `qwen3.8-27b` failures to `deepseek-flash`, so a
+vLLM outage degrades to the paid route instead of failing the request.
+`context_window_fallbacks` does the same for a prompt Qwen cannot hold.
+
+This is automatic model selection, not load balancing: one completion goes to one
+backend and is never split across Qwen and DeepSeek.
+
+Including `LITELLM ESCALATE` in a message forces a one-tier bump when a result is
+unsatisfying. It chooses a stronger tier, not a specific model.
+
+Routing is entirely server-side. The workstation only names
+`vanillax-auto/pi-auto`, so tier, effort and escalation changes need no launcher,
+`models.json` or chezmoi change.
 
 After this configuration rolls out through ArgoCD, use the Auto Router test UI
 with a greeting, a routine rename, and a difficult incident or architecture request.

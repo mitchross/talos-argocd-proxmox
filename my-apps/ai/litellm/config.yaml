@@ -55,20 +55,44 @@ model_list:
         classifier_context_window_size: 4
         classifier_context_budget_chars: 8000
         classifier_context_include_assistant_turns: true
-        # Keep ordinary Pi work local; send only the two higher complexity
-        # tiers to the paid OpenRouter route.
+        # Qwen keeps only trivia; anything the classifier rates above SIMPLE is
+        # work where a non-frontier model's mistakes cost more than the tokens.
         tiers:
           SIMPLE: qwen3.8-27b
-          MEDIUM: qwen3.8-27b
+          MEDIUM: deepseek-flash
           COMPLEX: deepseek-flash
           REASONING: deepseek-flash
-        # Reclassify each human ask, but keep one model through its tool loop.
-        classification_mode: user_turn
+        # OpenRouter's exposed Flash levels are low/high/max; xhigh is not one,
+        # and drop_params would discard it silently.
+        tier_model_configs:
+          MEDIUM:
+            - model_name: deepseek-flash
+              litellm_params:
+                reasoning_effort: high
+          COMPLEX:
+            - model_name: deepseek-flash
+              litellm_params:
+                reasoning_effort: high
+          REASONING:
+            - model_name: deepseek-flash
+              litellm_params:
+                reasoning_effort: max
+        # every_request is required by stall_escalation: holding one decision
+        # through the tool loop hides the very tool calls it watches.
+        classification_mode: every_request
+        # Rescue a task Qwen is stuck on: same tool call repeating or erroring.
+        stall_escalation_enabled: true
+        stall_escalation_window: 6
+        stall_escalation_repeat_threshold: 3
         session_affinity: false
-        # Context growth must not move a local-classified turn to paid compute.
-        enable_context_window_escalation: false
+        # A prompt truncated to fit Qwen's window is the hallucination we care
+        # about most, so let an oversized request move up instead.
+        enable_context_window_escalation: true
+        context_window_escalation_buffer: 0.95
         return_raw_model_name: false
-      complexity_router_default_model: qwen3.8-27b
+      # Classification failures resolve upward: guessing cheap is the expensive
+      # mistake here.
+      complexity_router_default_model: deepseek-flash
     model_info:
       # Reserve the 32K output allowance inside Qwen's 262K total window.
       max_input_tokens: 229376
@@ -82,6 +106,12 @@ litellm_settings:
   # Routes have different parameter sets; drop unsupported optional fields
   # rather than fail an otherwise valid request.
   drop_params: true
+
+router_settings:
+  fallbacks:
+    - qwen3.8-27b: ["deepseek-flash"]
+  context_window_fallbacks:
+    - qwen3.8-27b: ["deepseek-flash"]
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
