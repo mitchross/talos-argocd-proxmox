@@ -1,0 +1,296 @@
+{
+  "started_at": "2026-09-20T17:52:41.483110+00:00",
+  "cpu_sample_seconds": 15,
+  "logical_cpus": 6,
+  "cpu_busy_percent": 41.40841813135985,
+  "cpu_iowait_percent": 1.1332099907493063,
+  "cpu_steal_percent": 0.0,
+  "memory": {
+    "MemTotal": 41846124544,
+    "MemFree": 4346572800,
+    "MemAvailable": 7985696768,
+    "SwapTotal": 8589930496,
+    "SwapFree": 8589930496,
+    "Dirty": 16384,
+    "Writeback": 0
+  },
+  "load": "3.42 2.96 3.17 2/292 1865471",
+  "storage": "Name                    Type     Status     Total (KiB)      Used (KiB) Available (KiB)        %\ndell-ssd-vmstore         lvm     active       488382464       419430400        68952064   85.88%\nlocal                    dir     active        69799144        12089680        54118092   17.32%\nlocal-lvm            lvmthin     active       159133696        46276078       112857617   29.08%",
+  "root_mount": {
+    "filesystems": [
+      {
+        "target": "/",
+        "source": "/dev/mapper/pve-root",
+        "fstype": "ext4",
+        "options": "rw,relatime,errors=remount-ro"
+      }
+    ]
+  },
+  "blockdevices": [
+    {
+      "name": "sda",
+      "type": "disk",
+      "size": 500107862016,
+      "fstype": "LVM2_member",
+      "mountpoints": [],
+      "model": "Samsung SSD 850 EVO 500GB",
+      "children": [
+        {
+          "name": "dell--ssd--vg-vm--100--disk--0",
+          "type": "lvm",
+          "size": 429496729600,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null
+        }
+      ]
+    },
+    {
+      "name": "sdb",
+      "type": "disk",
+      "size": 251000193024,
+      "fstype": null,
+      "mountpoints": [],
+      "model": "APPLE SSD SM0256G",
+      "children": [
+        {
+          "name": "sdb1",
+          "type": "part",
+          "size": 1031168,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null
+        },
+        {
+          "name": "sdb2",
+          "type": "part",
+          "size": 1073741824,
+          "fstype": "vfat",
+          "mountpoints": [],
+          "model": null
+        },
+        {
+          "name": "sdb3",
+          "type": "part",
+          "size": 249925385728,
+          "fstype": "LVM2_member",
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "pve-swap",
+              "type": "lvm",
+              "size": 8589934592,
+              "fstype": "swap",
+              "mountpoints": [
+                "[SWAP]"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-root",
+              "type": "lvm",
+              "size": 73215770624,
+              "fstype": "ext4",
+              "mountpoints": [
+                "/"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-data_tmeta",
+              "type": "lvm",
+              "size": 1505755136,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "pve-data-tpool",
+                  "type": "lvm",
+                  "size": 162952904704,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null,
+                  "children": [
+                    {
+                      "name": "pve-data",
+                      "type": "lvm",
+                      "size": 162952904704,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    },
+                    {
+                      "name": "pve-vm--100--disk--0",
+                      "type": "lvm",
+                      "size": 137438953472,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "pve-data_tdata",
+              "type": "lvm",
+              "size": 162952904704,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "pve-data-tpool",
+                  "type": "lvm",
+                  "size": 162952904704,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null,
+                  "children": [
+                    {
+                      "name": "pve-data",
+                      "type": "lvm",
+                      "size": 162952904704,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    },
+                    {
+                      "name": "pve-vm--100--disk--0",
+                      "type": "lvm",
+                      "size": 137438953472,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "smart": [
+    {
+      "device": "sda",
+      "model": "Samsung SSD 850 EVO 500GB",
+      "passed": true,
+      "temperature_C": 32,
+      "nvme": {},
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          },
+          "when_failed": ""
+        },
+        {
+          "id": 187,
+          "name": "Uncorrectable_Error_Cnt",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          },
+          "when_failed": ""
+        },
+        {
+          "id": 199,
+          "name": "CRC_Error_Count",
+          "raw": {
+            "value": 8162,
+            "string": "8162"
+          },
+          "when_failed": ""
+        }
+      ]
+    },
+    {
+      "device": "sdb",
+      "model": "APPLE SSD SM0256G",
+      "passed": true,
+      "temperature_C": 35,
+      "nvme": {},
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          },
+          "when_failed": ""
+        },
+        {
+          "id": 197,
+          "name": "Current_Pending_Sector",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          },
+          "when_failed": ""
+        },
+        {
+          "id": 199,
+          "name": "UDMA_CRC_Error_Count",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          },
+          "when_failed": ""
+        }
+      ]
+    }
+  ],
+  "vms": [
+    {
+      "id": 100,
+      "status": "running",
+      "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+      "cpu_fraction": 0.366474896196001,
+      "maxcpu": 6,
+      "memory_bytes": 30919454720,
+      "maxmemory_bytes": 32212254720,
+      "config": {
+        "balloon": "0",
+        "cores": "6",
+        "cpu": "host",
+        "ide0": "local:iso/user-data-100.iso,media=cdrom,size=57856",
+        "ide2": "local:iso/470ee5f8e729df4fc258484c5da7711ba7b0b5c99c751cf653b54af850b28544.iso,media=cdrom,size=357708K",
+        "memory": "30720",
+        "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+        "scsi0": "local-lvm:vm-100-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=128G,ssd=1",
+        "scsi1": "dell-ssd-vmstore:vm-100-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=400G,ssd=1",
+        "scsihw": "virtio-scsi-single",
+        "sockets": "1"
+      }
+    }
+  ],
+  "guest_summary": [
+    {
+      "vmid": 100,
+      "type": "qemu",
+      "status": "running",
+      "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+      "cpu": 0.465274666020644,
+      "maxcpu": 6,
+      "mem": 31062364160,
+      "maxmem": 32212254720,
+      "configuration": {
+        "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+        "memory": "30720",
+        "balloon": "0",
+        "cores": "6",
+        "sockets": "1",
+        "cpu": "host"
+      }
+    }
+  ],
+  "cpu_model": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"
+}

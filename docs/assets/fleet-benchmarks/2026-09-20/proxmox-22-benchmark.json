@@ -1,0 +1,107 @@
+{
+  "started_at": "2026-09-20T17:56:17.216171+00:00",
+  "scope": "Proxmox root filesystem scratch file, not guest VM storage tier",
+  "dataset_bytes": 1073741824,
+  "tests": [
+    {
+      "name": "sequential-write-1GiB-fsync-every-64MiB-and-final",
+      "finished_at": "2026-09-20T17:56:18.901576+00:00",
+      "seconds": 1.6824433289584704,
+      "bytes": 1073741824,
+      "MBs": 638.203858352072,
+      "physical_disk_counters": {
+        "nvme0n1": {
+          "read_bytes": 524288,
+          "write_bytes": 12288,
+          "read_iops": 2.377494641959935,
+          "write_iops": 1.1887473209799675,
+          "busy_pct": 0.7132483925879806
+        },
+        "nvme1n1": {
+          "read_bytes": 524288,
+          "write_bytes": 1083355136,
+          "read_iops": 2.377494641959935,
+          "write_iops": 5123.500953423661,
+          "busy_pct": 82.73681354020574
+        },
+        "nvme1n1p3": {
+          "read_bytes": 524288,
+          "write_bytes": 1083355136,
+          "read_iops": 2.377494641959935,
+          "write_iops": 5123.500953423661,
+          "busy_pct": 84.4604971556267
+        }
+      },
+      "cpu_busy_pct": 23.731884057971016,
+      "cpu_iowait_pct": 4.7101449275362315
+    },
+    {
+      "name": "sequential-read-1GiB-after-cache-eviction-hint",
+      "finished_at": "2026-09-20T17:56:20.110453+00:00",
+      "seconds": 1.208230078977067,
+      "bytes": 1073741824,
+      "MBs": 888.6898635308518,
+      "physical_disk_counters": {
+        "nvme0n1": {
+          "read_bytes": 581632,
+          "write_bytes": 20480,
+          "read_iops": 17.380795566502854,
+          "write_iops": 2.4829707952146935,
+          "busy_pct": 1.1587197044335236
+        },
+        "nvme1n1": {
+          "read_bytes": 1075412992,
+          "write_bytes": 3170304,
+          "read_iops": 6852.1717378608155,
+          "write_iops": 127.4591674876876,
+          "busy_pct": 83.92441287825665
+        },
+        "nvme1n1p3": {
+          "read_bytes": 1075412992,
+          "write_bytes": 3170304,
+          "read_iops": 6852.1717378608155,
+          "write_iops": 127.4591674876876,
+          "busy_pct": 99.23606611541392
+        }
+      },
+      "cpu_busy_pct": 30.873049346267397,
+      "cpu_iowait_pct": 3.88021931674399
+    },
+    {
+      "name": "random-write-8KiB-fsync-each",
+      "finished_at": "2026-09-20T17:56:20.184256+00:00",
+      "seconds": 0.07327524799620733,
+      "bytes": 1048576,
+      "MBs": 14.310098275672482,
+      "physical_disk_counters": {
+        "nvme1n1": {
+          "read_bytes": 0,
+          "write_bytes": 1970176,
+          "read_iops": 0.0,
+          "write_iops": 4503.56715295021,
+          "busy_pct": 98.25964697345913
+        },
+        "nvme1n1p3": {
+          "read_bytes": 0,
+          "write_bytes": 1970176,
+          "read_iops": 0.0,
+          "write_iops": 4503.56715295021,
+          "busy_pct": 98.25964697345913
+        }
+      },
+      "cpu_busy_pct": 21.52777777777778,
+      "cpu_iowait_pct": 4.166666666666667,
+      "operations": 128,
+      "p50_ms": 0.6068929797038436,
+      "p95_ms": 0.8404740365222096,
+      "p99_ms": 0.9099689777940512,
+      "max_ms": 1.1777039617300034,
+      "latency_scope": "8KiB write plus fsync syscall elapsed time"
+    }
+  ],
+  "errors": [],
+  "cleanup": true,
+  "scratch_directory": "/var/lib/vz/agent-bench-20260920-s5kie5k0",
+  "read_cache_control": "per-file POSIX_FADV_DONTNEED after fsync; advisory, not proof of eviction",
+  "finished_at": "2026-09-20T17:56:20.184620+00:00"
+}

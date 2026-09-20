@@ -1,0 +1,216 @@
+{
+  "status": "complete",
+  "started_at": "2026-09-20T17:58:44.010449+00:00",
+  "completed_at": "2026-09-20T17:59:51.129499+00:00",
+  "pool": "BigTank",
+  "dataset": "BigTank/agent-concurrency-20260920",
+  "scope": "Local one vs four bulk streams; not a concurrent-app/user capacity test",
+  "results": [
+    {
+      "utc": "2026-09-20T17:59:12.838049+00:00",
+      "name": "four-concurrent-writers-flushed",
+      "jobs": [
+        {
+          "job_index": 0,
+          "jobname": "four-concurrent-writers-flushed",
+          "direction": "write",
+          "bytes": 1073741824,
+          "runtime_ms": 21250,
+          "MBs": 50.529027,
+          "iops": 48.188235,
+          "clat_mean_ms": 19.52526459082,
+          "p99_ms": 1082.130432
+        },
+        {
+          "job_index": 1,
+          "jobname": "four-concurrent-writers-flushed",
+          "direction": "write",
+          "bytes": 1073741824,
+          "runtime_ms": 21250,
+          "MBs": 50.529027,
+          "iops": 48.188235,
+          "clat_mean_ms": 19.524182094727,
+          "p99_ms": 1082.130432
+        },
+        {
+          "job_index": 2,
+          "jobname": "four-concurrent-writers-flushed",
+          "direction": "write",
+          "bytes": 1073741824,
+          "runtime_ms": 21229,
+          "MBs": 50.57901,
+          "iops": 48.235904,
+          "clat_mean_ms": 19.522314223633,
+          "p99_ms": 1082.130432
+        },
+        {
+          "job_index": 3,
+          "jobname": "four-concurrent-writers-flushed",
+          "direction": "write",
+          "bytes": 1073741824,
+          "runtime_ms": 20845,
+          "MBs": 51.510761,
+          "iops": 49.12449,
+          "clat_mean_ms": 19.516195535156,
+          "p99_ms": 1082.130432
+        }
+      ],
+      "total_bytes": 4294967296,
+      "wall_seconds": 21.695350912981667,
+      "aggregate_wall_MBs": 197.96717339243662,
+      "aggregate_max_job_runtime_MBs": 202.11610804705882,
+      "physical_read_MiB": 0.0,
+      "physical_write_MiB": 8304.9140625,
+      "temperatures_during": [
+        {
+          "sdg": 58,
+          "sdh": 55,
+          "sdi": 44,
+          "sdj": 54
+        }
+      ],
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54
+      }
+    },
+    {
+      "utc": "2026-09-20T17:59:32.220731+00:00",
+      "name": "one-reader-four-files",
+      "jobs": [
+        {
+          "job_index": 0,
+          "jobname": "one-reader-four-files",
+          "direction": "read",
+          "bytes": 4294967296,
+          "runtime_ms": 9890,
+          "MBs": 434.27374,
+          "iops": 414.155713,
+          "clat_mean_ms": 2.411581536865,
+          "p99_ms": 31.850496
+        }
+      ],
+      "total_bytes": 4294967296,
+      "wall_seconds": 10.319729495968204,
+      "aggregate_wall_MBs": 416.1899105667443,
+      "aggregate_max_job_runtime_MBs": 434.2737407482305,
+      "physical_read_MiB": 4096.37109375,
+      "physical_write_MiB": 20.8828125,
+      "temperatures_during": [
+        {
+          "sdg": 58,
+          "sdh": 55,
+          "sdi": 44,
+          "sdj": 54
+        }
+      ],
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54
+      }
+    },
+    {
+      "utc": "2026-09-20T17:59:47.176567+00:00",
+      "name": "four-concurrent-readers",
+      "jobs": [
+        {
+          "job_index": 0,
+          "jobname": "four-concurrent-readers",
+          "direction": "read",
+          "bytes": 1073741824,
+          "runtime_ms": 8064,
+          "MBs": 133.152507,
+          "iops": 126.984127,
+          "clat_mean_ms": 7.871118872069999,
+          "p99_ms": 106.430464
+        },
+        {
+          "job_index": 1,
+          "jobname": "four-concurrent-readers",
+          "direction": "read",
+          "bytes": 1073741824,
+          "runtime_ms": 8220,
+          "MBs": 130.625526,
+          "iops": 124.574209,
+          "clat_mean_ms": 8.024182876953,
+          "p99_ms": 102.23616
+        },
+        {
+          "job_index": 2,
+          "jobname": "four-concurrent-readers",
+          "direction": "read",
+          "bytes": 1073741824,
+          "runtime_ms": 7929,
+          "MBs": 135.419576,
+          "iops": 129.146172,
+          "clat_mean_ms": 7.740125709961,
+          "p99_ms": 95.944704
+        },
+        {
+          "job_index": 3,
+          "jobname": "four-concurrent-readers",
+          "direction": "read",
+          "bytes": 1073741824,
+          "runtime_ms": 8222,
+          "MBs": 130.593751,
+          "iops": 124.543907,
+          "clat_mean_ms": 8.025438921875,
+          "p99_ms": 98.041856
+        }
+      ],
+      "total_bytes": 4294967296,
+      "wall_seconds": 8.703357527963817,
+      "aggregate_wall_MBs": 493.4839551518256,
+      "aggregate_max_job_runtime_MBs": 522.3750055947459,
+      "physical_read_MiB": 4096.46484375,
+      "physical_write_MiB": 23.59375,
+      "temperatures_during": [],
+      "temperatures_after": {
+        "sdg": 58,
+        "sdh": 55,
+        "sdi": 44,
+        "sdj": 54
+      }
+    }
+  ],
+  "parameters": {
+    "files": 4,
+    "bytes_per_file": 1073741824,
+    "total_bytes_per_pass": 4294967296,
+    "block_size_bytes": 1048576,
+    "recordsize_bytes": 131072,
+    "ioengine": "psync",
+    "queue_depth_per_job": 1,
+    "compression": "off",
+    "sync": "standard",
+    "primarycache": "metadata",
+    "secondarycache": "none",
+    "write_end_fsync": true
+  },
+  "cleanup": {
+    "kind": "deleted",
+    "utc": "2026-09-20T17:59:48.120143+00:00",
+    "name": "BigTank/agent-concurrency-20260920"
+  },
+  "final_health": "all pools are healthy\n",
+  "final_temperatures": {
+    "sdg": 58,
+    "sdh": 56,
+    "sdi": 44,
+    "sdj": 54
+  },
+  "limitations": [
+    "Live production background continued; physical disk counters include background.",
+    "Aggregate fio-rate estimate divides total bytes by longest job duration, not sum of individual MB/s. Wall rate includes process startup.",
+    "Four distinct1GiB files written concurrently; reader comparisons use these same files,4GiB total per pass.",
+    "One bounded pass per mode; no confidence interval, prolonged steady state, mixed random applications, SMB or application latency measured.",
+    "Metadata remains cached; physical counters verify payloads came from devices, not RAM ARC.",
+    "P99 read/write completion latency applies to1MiB requests, not HTTP or user request latency.",
+    "Buffered writes may throttle during TXG flush; final fsync completes before each job ends."
+  ],
+  "independent_cleanup_verified_absent": true
+}

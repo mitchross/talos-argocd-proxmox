@@ -1,37 +1,44 @@
 # Come have a look around the lab
 
-The HPs do the everyday work. The Threadripper has the 3090. The shed talks to
+The HPs do the everyday work. The Threadripper has two RTX 3090s. The shed talks to
 radios over a Wi-Fi bridge. TrueNAS holds the big files and backups, and a Pi
 runs Omni and DNS. Click a machine to see what is inside it, or explore the
 private, public and shed network paths below.
+
+**Start with the [September 20 capacity verdicts](inventory/2026-09-20-capacity-and-benchmarks.md)**
+for current Proxmox disk speeds, Kubernetes storage paths, RAM headroom and
+consolidation limits. Select a machine below for its dated inventory and latest
+measurement summary. The [NAS reference](nas-performance.md) separates physical
+disk reads, RAM cache and flushed writes.
 
 <div id="lab-explorer">
   <p>The interactive inventory is loading. The <a href="../audits/2026-09-05-inventory/">full written inventory</a> is also available.</p>
 </div>
 
-## What I would change first
+## Current priorities — September 20
 
-1. **Give the control plane a better disk.** The SFF has plenty of capacity;
-   the measured problem is how long durable writes take.
-2. **Make the two HPs the everyday pair.** Protect selected app data on both
-   machines. Keep the Dell useful without depending on it long term.
-3. **Let the Threadripper be the heavy-work machine.** Keep its enterprise
-   mirror and GPU. Gradually remove ordinary services' dependence on that host.
-4. **Keep the NAS RAM.** Its cache is doing useful work. We have not shown
-   that reducing it would be worth the trade-off.
+1. **Protect data before removing a host.** 84 of 89 Longhorn volumes have one
+   replica; the GPU host holds 44 sole copies. SFF still hosts the only control plane.
+2. **Investigate SFF contention before choosing a replacement.** Its root/worker
+   disk had slow bulk writes, and both guests showed CPU steal. The control-plane
+   disk is separate; its etcd history is the relevant evidence for that path.
+3. **Plan Dell retirement as a migration, not a power-off.** Its applications are
+   the best consolidation candidate, but data, replica protection and placement
+   constraints must be resolved first. Keep device-bound Elite and Shed roles distinct.
+4. **Keep NAS RAM and check cooling.** The cache is useful; smaller replacement
+   capacities remain unvalidated. BigTank HDDs at 54–58°C justify airflow checks.
 
-Argo's directory layout is worth keeping. The work is in disk placement,
-recovery, a few broad diff exceptions, and clearer rules about which jobs run
-where. It does not call for a new GitOps platform.
-
-The [full review](audits/2026-09-05-hardware-and-placement-review.md) has the
-reasoning and proposed PRs. The [inventory](audits/2026-09-05-inventory.md) links
-the application, route, volume and documentation CSVs. The
-[recovery guide](disaster-recovery.md) owns the actual procedures.
+These recommendations replace the September 5 purchase ordering. The
+[latest report](audits/2026-09-20-homelab-report.html) explains the priorities;
+the [fleet assessment](inventory/2026-09-20-capacity-and-benchmarks.md) owns current
+host and guest benchmarks. The [recovery guide](disaster-recovery.md) owns
+operational recovery procedures.
 
 ## What this page knows
 
-This is the **September 5, 2026 audit snapshot**, not a live monitoring screen.
+The hardware inventory is the **September 5, 2026 audit snapshot**, with a
+separately dated **September 20 NAS, Proxmox and Kubernetes performance updates**. This
+is not a live monitoring screen.
 Host hardware and disks came from read-only SSH inspection. Node IPs and software
 versions were checked again at **2026-09-06 01:48 UTC** after the
 [Talos and Kubernetes upgrade](audits/2026-09-05-upgrade-and-disks.md).

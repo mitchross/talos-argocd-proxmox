@@ -1,4 +1,388 @@
 {
+  "fleetPerformance": {
+    "date": "2026-09-20",
+    "scope": "Latest dated storage measurements; older September 8/9 latency records below are preserved as history.",
+    "rootMethod": "Proxmox root ext4: 1 GiB, one process, fsync every 64 MiB and at end; read backed by physical disk counters. Root disks often differ from VM data disks.",
+    "guestMethod": "Mounted Kubernetes paths: 512 MiB, one process, QD1 direct sequential I/O; 128 separate 8 KiB write+fsync samples. Upstream caches and production background activity remain.",
+    "referenceNote": "Verdicts are workload-fit assessments, not industry percentiles. Vendor numbers are bare-drive sequential peaks under different conditions, not matched averages or fsync latency targets.",
+    "incident": "The first 1 GiB buffered Copyparty attempt caused an OOM restart at 17:54:04 UTC; the app recovered and its scratch file was removed. Completed results use the revised 512 MiB direct-I/O method.",
+    "rootResults": [
+      {
+        "hostId": "gpu",
+        "name": "Threadripper",
+        "ip": "192.168.10.14",
+        "path": "PNY CS900 root SSD; excludes enterprise mirror and GPU NVMe tiers",
+        "writeMBs": 359.7,
+        "readMBs": 406.5,
+        "syncP99Ms": 2.313,
+        "verdict": "Normal SATA-class bulk; good small-write tail.",
+        "reference": "PNY 1 TB vendor peak: 535 read / 515 write MB/s.",
+        "referenceUrl": "https://www.pny.com/ssd-cs900?iscommercial=true",
+        "checkedAt": "2026-09-20T17:56:23.348042+00:00",
+        "suggested": "Keep GPU workloads; reduce ordinary-service dependencies",
+        "advice": "September 20: preserve dual-GPU placement. Default EDILOCA and enterprise-mirror volume paths differ; the mirror sample had heavy background I/O and needs a comparable retest."
+      },
+      {
+        "hostId": "dell",
+        "name": "Dell",
+        "ip": "192.168.10.16",
+        "path": "Apple root SSD; excludes Samsung SSD VM data tier",
+        "writeMBs": 635.7,
+        "readMBs": 1926.3,
+        "syncP99Ms": 10.834,
+        "verdict": "Fast reads; slow small-write tail compared with other tested roots.",
+        "reference": "Other roots: 0.91\u20138.46 ms p99. No matched official Apple OEM throughput baseline.",
+        "referenceUrl": null,
+        "checkedAt": "2026-09-20T17:56:20.542457+00:00",
+        "suggested": "Keep until data and recovery placement are ready",
+        "advice": "September 20: eventual consolidation candidate, but two volumes have their only copy here and five two-copy volumes depend on Dell plus SFF. Move data and verify recovery first."
+      },
+      {
+        "hostId": "shed",
+        "name": "Shed Micro",
+        "ip": "192.168.10.20",
+        "path": "SK hynix root NVMe; excludes PNY VM data tier",
+        "writeMBs": 638.6,
+        "readMBs": 1159.8,
+        "syncP99Ms": 1.175,
+        "verdict": "Fast burst throughput and small writes within this fleet.",
+        "reference": "No matched official BC501 OEM baseline; not sustained-write evidence.",
+        "referenceUrl": null,
+        "checkedAt": "2026-09-20T17:56:20.003731+00:00",
+        "suggested": "Keep radio workloads selective",
+        "advice": "September 20: spare RAM does not make the Wi-Fi host equivalent to wired compute. Intercept storage is on SFF; its measured remote write tail was 39.70 ms."
+      },
+      {
+        "hostId": "sff",
+        "name": "HP SFF",
+        "ip": "192.168.10.21",
+        "path": "PNY root SSD; shares physical drive with worker VM, excludes separate control-plane SSD",
+        "writeMBs": 83.1,
+        "readMBs": 401.3,
+        "syncP99Ms": 8.464,
+        "verdict": "Slow bulk writes; investigate the path before replacing hardware.",
+        "reference": "Other PNY host wrote 359.7 MB/s; PNY vendor peak: 535 read / 515 write MB/s.",
+        "referenceUrl": "https://www.pny.com/ssd-cs900?iscommercial=true",
+        "checkedAt": "2026-09-20T17:56:33.321896+00:00",
+        "suggested": "Keep control plane and worker roles distinct",
+        "advice": "September 20: investigate guest CPU steal and the slow root/worker write path. The control plane uses a separate SSD; the older 49 ms WAL sample is historical."
+      },
+      {
+        "hostId": "elite",
+        "name": "HP Elite",
+        "ip": "192.168.10.22",
+        "path": "WDC root NVMe; excludes Intel SSD VM data tier",
+        "writeMBs": 638.2,
+        "readMBs": 888.7,
+        "syncP99Ms": 0.91,
+        "verdict": "Fast root responsiveness; this does not measure the Intel VM tier.",
+        "reference": "256 GB SN530 vendor peak: 2400 read / 950 write MB/s.",
+        "referenceUrl": "https://downloads.sandisk.com/downloads/datasheet/pcsn530-datasheet.pdf",
+        "checkedAt": "2026-09-20T17:56:20.184620+00:00",
+        "suggested": "Keep hardware-bound services; watch RAM headroom",
+        "advice": "September 20: about 4 GiB host memory was available. Check eligible app placement and real peaks before increasing allocations; the Intel VM SSD has 75% endurance used."
+      }
+    ],
+    "guestResults": [
+      {
+        "name": "Elite: Immich cache",
+        "path": "/cache",
+        "backend": "One copy on Intel NVMe",
+        "writeMBs": 157.5,
+        "readMBs": 240.0,
+        "syncP99Ms": 1.29,
+        "verdict": "Fastest measured local one-copy app path; good for light state in this sample.",
+        "reference": "Bare 512 GB Intel 660p peak: 1500 read / 1000 write MB/s; not matched Longhorn conditions.",
+        "referenceUrl": "https://www.solidigm.com/content/dam/solidigm/en/site/products/client/d6/660p/documents/ssd-660p-series-512gb-m-2-80mm-pcie-3-0-x4-3d2-qlc-spec-sheet.pdf",
+        "durability": "Client fsync requested after each 8 KiB write.",
+        "checkedAt": "2026-09-20T17:57:56.964021+00:00"
+      },
+      {
+        "name": "SFF: Open-Meteo data",
+        "path": "/app/data",
+        "backend": "One copy on PNY worker tier",
+        "writeMBs": 58.3,
+        "readMBs": 138.0,
+        "syncP99Ms": 3.468,
+        "verdict": "Normal for light state; modest bulk throughput.",
+        "reference": "Bare PNY peak: 535 read / 515 write MB/s; different VM/storage path.",
+        "referenceUrl": "https://www.pny.com/ssd-cs900?iscommercial=true",
+        "durability": "Client fsync requested after each 8 KiB write.",
+        "checkedAt": "2026-09-20T17:58:11.057051+00:00"
+      },
+      {
+        "name": "GPU: Paperless data",
+        "path": "/usr/src/paperless/data",
+        "backend": "One copy on EDILOCA 434 GiB default Longhorn tier",
+        "writeMBs": 56.1,
+        "readMBs": 123.0,
+        "syncP99Ms": 7.094,
+        "verdict": "Slow bulk versus Elite; higher small-write tail than SFF.",
+        "reference": "Compare measured one-copy paths. No matched EDILOCA/Longhorn industry baseline.",
+        "referenceUrl": null,
+        "durability": "Client fsync requested after each 8 KiB write.",
+        "checkedAt": "2026-09-20T17:58:26.848736+00:00"
+      },
+      {
+        "name": "Dell: SurfSense object store",
+        "path": "/app/.local_object_store",
+        "backend": "Two copies: Dell Samsung + SFF PNY",
+        "writeMBs": 37.1,
+        "readMBs": 102.4,
+        "syncP99Ms": 9.417,
+        "verdict": "Slow bulk; moderate write tail. Replication cost was not isolated.",
+        "reference": "No matched two-copy industry baseline; both replicas are in the measured path.",
+        "referenceUrl": null,
+        "durability": "Client fsync requested after each 8 KiB write.",
+        "checkedAt": "2026-09-20T17:58:48.231416+00:00"
+      },
+      {
+        "name": "Shed: Intercept data",
+        "path": "/app/data/weather_sat",
+        "backend": "App on Shed; one running copy on SFF across Wi-Fi",
+        "writeMBs": 18.8,
+        "readMBs": 22.0,
+        "syncP99Ms": 39.703,
+        "verdict": "Slow for interactive writes; this does not measure the local Shed SSD.",
+        "reference": "Wired consumer-tier app paths: 1.29\u20139.42 ms p99; network/client conditions differ.",
+        "referenceUrl": null,
+        "durability": "Client fsync requested after each 8 KiB write.",
+        "checkedAt": "2026-09-20T17:59:45.427899+00:00"
+      },
+      {
+        "name": "GPU: Radar state",
+        "path": "/data/state",
+        "backend": "One copy on HPE enterprise mirror",
+        "writeMBs": 33.9,
+        "readMBs": 95.4,
+        "syncP99Ms": 46.783,
+        "verdict": "Slow in this loaded test; repeat before judging hardware.",
+        "reference": "About 8.1 GB concurrent disk reads confound comparison; no matched idle-mirror baseline.",
+        "referenceUrl": null,
+        "durability": "Client fsync requested after each 8 KiB write.",
+        "checkedAt": "2026-09-20T18:00:52.720751+00:00"
+      },
+      {
+        "name": "TubeSync: SMB downloads",
+        "path": "/downloads",
+        "backend": "NAS BigTank/k8s/tubearchivist; sync=disabled",
+        "writeMBs": 135.5,
+        "readMBs": 174.9,
+        "syncP99Ms": 3.499,
+        "verdict": "Useful bulk throughput; exclude from durable-write rankings.",
+        "reference": "About 1.40 Gbit/s read payload. No matched SMB industry baseline.",
+        "referenceUrl": null,
+        "durability": "Client fsync is not a durability guarantee: NAS sync=disabled.",
+        "checkedAt": "2026-09-20T18:02:51.009077+00:00"
+      }
+    ]
+  },
+  "nasPerformance": {
+    "date": "2026-09-20",
+    "checkedAt": "2026-09-20T17:54:53.649948+00:00",
+    "sourceArtifact": "nas-benchmarks/2026-09-20/summary.json",
+    "summary": "Separate disk-backed reads, flushed writes and repeated reads from the RAM cache across BigTank, ai-pool and Backup10T.",
+    "scope": "NAS-local fio tests: one reader/writer, queue depth 1, 4 GiB file, 128 KiB ZFS records, compression off, sync=standard. Network and SMB/NFS are excluded.",
+    "cacheNote": "ARC means RAM cache. There are no L2ARC SSD cache devices, so no L2ARC comparison was possible.",
+    "limitations": "These are bounded samples under live background activity, not maximum parallel or sustained throughput. A warm 4 GiB file demonstrates cache benefit but cannot establish the minimum RAM for the real working set. MB/s is decimal; IOPS counts operations per second.",
+    "memory": {
+      "checkedAt": "2026-09-20T17:16:08.100Z",
+      "arcGiB": 341.407,
+      "otherGiB": 13.8294,
+      "freeGiB": 22.3338
+    },
+    "results": [
+      {
+        "pool": "BigTank",
+        "mode": "Sequential write, final flush",
+        "throughput": "203.4 MB/s",
+        "durability": "sync=standard; fsync at end of 4 GiB write",
+        "limitations": "Bounded write including final flush; not sustained SSD speed beyond its cache.",
+        "measuredAt": "2026-09-20T17:46:37.284819+00:00",
+        "benchmark": "sequential-write-flushed"
+      },
+      {
+        "pool": "BigTank",
+        "mode": "Sequential read, direct I/O",
+        "throughput": "254.9 MB/s",
+        "durability": "Read operation",
+        "limitations": "One reader, queue depth 1; data reads bypass RAM ARC.",
+        "measuredAt": "2026-09-20T17:47:02.909344+00:00",
+        "benchmark": "sequential-read-direct"
+      },
+      {
+        "pool": "BigTank",
+        "mode": "Sequential read, disk with prefetch",
+        "throughput": "480.4 MB/s",
+        "durability": "Read operation",
+        "limitations": "Data retention in ARC disabled; prefetch still operates. Not the same path as direct I/O.",
+        "measuredAt": "2026-09-20T17:47:20.347244+00:00",
+        "benchmark": "sequential-read-prefetch-cache-disabled"
+      },
+      {
+        "pool": "BigTank",
+        "mode": "4 KiB random read, disk",
+        "throughput": "98 IOPS (0.40 MB/s)",
+        "durability": "Read operation",
+        "limitations": "Queue depth 1 on 128 KiB records; record-size amplification matters.",
+        "measuredAt": "2026-09-20T17:47:43.789018+00:00",
+        "benchmark": "random-read-4k-disk"
+      },
+      {
+        "pool": "BigTank",
+        "mode": "4 KiB random write, fsync each",
+        "throughput": "61 IOPS (0.25 MB/s)",
+        "durability": "sync=standard; fsync after every write",
+        "limitations": "IOPS includes write and sync waits. This is a short random-write probe.",
+        "measuredAt": "2026-09-20T17:48:06.216596+00:00",
+        "benchmark": "random-write-4k-fsync-each"
+      },
+      {
+        "pool": "BigTank",
+        "mode": "Sequential read, warm RAM ARC",
+        "throughput": "5,335.4 MB/s",
+        "durability": "Read operation",
+        "limitations": "Repeated 4 GiB file fits in RAM; not SMB/NFS throughput.",
+        "measuredAt": "2026-09-20T17:48:33.518143+00:00",
+        "benchmark": "sequential-read-warm-arc"
+      },
+      {
+        "pool": "BigTank",
+        "mode": "4 KiB random read, warm RAM ARC",
+        "throughput": "173,072 IOPS (708.90 MB/s)",
+        "durability": "Read operation",
+        "limitations": "Queue depth 1, RAM-resident test file; not uncached disk IOPS.",
+        "measuredAt": "2026-09-20T17:48:55.537349+00:00",
+        "benchmark": "random-read-4k-warm-arc"
+      },
+      {
+        "pool": "ai-pool",
+        "mode": "Sequential write, final flush",
+        "throughput": "396.3 MB/s",
+        "durability": "sync=standard; fsync at end of 4 GiB write",
+        "limitations": "Bounded write including final flush; not sustained SSD speed beyond its cache.",
+        "measuredAt": "2026-09-20T17:49:19.512953+00:00",
+        "benchmark": "sequential-write-flushed"
+      },
+      {
+        "pool": "ai-pool",
+        "mode": "Sequential read, direct I/O",
+        "throughput": "274.1 MB/s",
+        "durability": "Read operation",
+        "limitations": "One reader, queue depth 1; data reads bypass RAM ARC.",
+        "measuredAt": "2026-09-20T17:49:43.840238+00:00",
+        "benchmark": "sequential-read-direct"
+      },
+      {
+        "pool": "ai-pool",
+        "mode": "Sequential read, disk with prefetch",
+        "throughput": "1,066.0 MB/s",
+        "durability": "Read operation",
+        "limitations": "Data retention in ARC disabled; prefetch still operates. Not the same path as direct I/O.",
+        "measuredAt": "2026-09-20T17:49:56.336294+00:00",
+        "benchmark": "sequential-read-prefetch-cache-disabled"
+      },
+      {
+        "pool": "ai-pool",
+        "mode": "4 KiB random read, disk",
+        "throughput": "1,502 IOPS (6.15 MB/s)",
+        "durability": "Read operation",
+        "limitations": "Queue depth 1 on 128 KiB records; record-size amplification matters.",
+        "measuredAt": "2026-09-20T17:50:19.744940+00:00",
+        "benchmark": "random-read-4k-disk"
+      },
+      {
+        "pool": "ai-pool",
+        "mode": "4 KiB random write, fsync each",
+        "throughput": "416 IOPS (1.70 MB/s)",
+        "durability": "sync=standard; fsync after every write",
+        "limitations": "IOPS includes write and sync waits. This is a short random-write probe.",
+        "measuredAt": "2026-09-20T17:50:41.957044+00:00",
+        "benchmark": "random-write-4k-fsync-each"
+      },
+      {
+        "pool": "ai-pool",
+        "mode": "Sequential read, warm RAM ARC",
+        "throughput": "5,499.3 MB/s",
+        "durability": "Read operation",
+        "limitations": "Repeated 4 GiB file fits in RAM; not SMB/NFS throughput.",
+        "measuredAt": "2026-09-20T17:51:03.541904+00:00",
+        "benchmark": "sequential-read-warm-arc"
+      },
+      {
+        "pool": "ai-pool",
+        "mode": "4 KiB random read, warm RAM ARC",
+        "throughput": "177,745 IOPS (728.04 MB/s)",
+        "durability": "Read operation",
+        "limitations": "Queue depth 1, RAM-resident test file; not uncached disk IOPS.",
+        "measuredAt": "2026-09-20T17:51:25.992535+00:00",
+        "benchmark": "random-read-4k-warm-arc"
+      },
+      {
+        "pool": "Backup10T",
+        "mode": "Sequential write, final flush",
+        "throughput": "170.5 MB/s",
+        "durability": "sync=standard; fsync at end of 4 GiB write",
+        "limitations": "Bounded write including final flush; not sustained SSD speed beyond its cache.",
+        "measuredAt": "2026-09-20T17:52:04.954420+00:00",
+        "benchmark": "sequential-write-flushed"
+      },
+      {
+        "pool": "Backup10T",
+        "mode": "Sequential read, direct I/O",
+        "throughput": "190.5 MB/s",
+        "durability": "Read operation",
+        "limitations": "One reader, queue depth 1; data reads bypass RAM ARC.",
+        "measuredAt": "2026-09-20T17:52:35.988403+00:00",
+        "benchmark": "sequential-read-direct"
+      },
+      {
+        "pool": "Backup10T",
+        "mode": "Sequential read, disk with prefetch",
+        "throughput": "203.5 MB/s",
+        "durability": "Read operation",
+        "limitations": "Data retention in ARC disabled; prefetch still operates. Not the same path as direct I/O.",
+        "measuredAt": "2026-09-20T17:53:05.472416+00:00",
+        "benchmark": "sequential-read-prefetch-cache-disabled"
+      },
+      {
+        "pool": "Backup10T",
+        "mode": "4 KiB random read, disk",
+        "throughput": "130 IOPS (0.53 MB/s)",
+        "durability": "Read operation",
+        "limitations": "Queue depth 1 on 128 KiB records; record-size amplification matters.",
+        "measuredAt": "2026-09-20T17:53:29.347847+00:00",
+        "benchmark": "random-read-4k-disk"
+      },
+      {
+        "pool": "Backup10T",
+        "mode": "4 KiB random write, fsync each",
+        "throughput": "123 IOPS (0.50 MB/s)",
+        "durability": "sync=standard; fsync after every write",
+        "limitations": "IOPS includes write and sync waits. This is a short random-write probe.",
+        "measuredAt": "2026-09-20T17:53:51.626278+00:00",
+        "benchmark": "random-write-4k-fsync-each"
+      },
+      {
+        "pool": "Backup10T",
+        "mode": "Sequential read, warm RAM ARC",
+        "throughput": "5,499.3 MB/s",
+        "durability": "Read operation",
+        "limitations": "Repeated 4 GiB file fits in RAM; not SMB/NFS throughput.",
+        "measuredAt": "2026-09-20T17:54:31.524534+00:00",
+        "benchmark": "sequential-read-warm-arc"
+      },
+      {
+        "pool": "Backup10T",
+        "mode": "4 KiB random read, warm RAM ARC",
+        "throughput": "166,158 IOPS (680.58 MB/s)",
+        "durability": "Read operation",
+        "limitations": "Queue depth 1, RAM-resident test file; not uncached disk IOPS.",
+        "measuredAt": "2026-09-20T17:54:53.649948+00:00",
+        "benchmark": "random-read-4k-warm-arc"
+      }
+    ]
+  },
   "title": "2026 homelab inspection",
   "collectedAt": "2026-09-08T23:41:00Z",
   "hardwareCheckedAt": "2026-09-08T23:53:00Z",

@@ -1,0 +1,2079 @@
+{
+  "method": "Conservative current-requests capacity, existing placements fixed; first fit descending memory after scarce eligibility. Handles nodeSelectors, required nodeAffinity, NoSchedule/NoExecute taints, extended device capacity. Optimistic: does NOT enforce pod affinity/anti-affinity, PVC availability/access modes, topology spread, host ports, priorities or transient migration overhead. Identifies lost volume copies separately. NOT Kubernetes scheduler simulation nor proof of drain safety. Physical SFF host also loses control plane; no scheduling possible during sole control-plane outage.",
+  "nodes": [
+    {
+      "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
+      "allocatable_cpu": 3.95,
+      "allocatable_memory_gib": 11.066398620605469,
+      "requested_cpu": 1.59,
+      "requested_memory_gib": 3.765625,
+      "specified_limits_cpu": 1.5,
+      "specified_limits_memory_gib": 10.939453125,
+      "pods": 17
+    },
+    {
+      "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+      "allocatable_cpu": 5.95,
+      "allocatable_memory_gib": 28.886051177978516,
+      "requested_cpu": 3.605,
+      "requested_memory_gib": 14.240938195027411,
+      "specified_limits_cpu": 4.0,
+      "specified_limits_memory_gib": 52.890625,
+      "pods": 44
+    },
+    {
+      "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+      "allocatable_cpu": 29.95,
+      "allocatable_memory_gib": 97.67208480834961,
+      "requested_cpu": 16.856,
+      "requested_memory_gib": 70.746391762048,
+      "specified_limits_cpu": 23.15,
+      "specified_limits_memory_gib": 232.78515625,
+      "pods": 91
+    },
+    {
+      "name": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+      "allocatable_cpu": 15.950000000000001,
+      "allocatable_memory_gib": 22.976581573486328,
+      "requested_cpu": 8.835,
+      "requested_memory_gib": 18.258185711689293,
+      "specified_limits_cpu": 2.5,
+      "specified_limits_memory_gib": 65.380859375,
+      "pods": 60
+    },
+    {
+      "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+      "allocatable_cpu": 3.95,
+      "allocatable_memory_gib": 11.191390991210938,
+      "requested_cpu": 1.206,
+      "requested_memory_gib": 2.5658547319471836,
+      "specified_limits_cpu": 1.1,
+      "specified_limits_memory_gib": 14.87890625,
+      "pods": 13
+    },
+    {
+      "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+      "allocatable_cpu": 5.95,
+      "allocatable_memory_gib": 38.68291473388672,
+      "requested_cpu": 3.5420000000000003,
+      "requested_memory_gib": 12.930977578274906,
+      "specified_limits_cpu": 7.8,
+      "specified_limits_memory_gib": 64.91017866134644,
+      "pods": 63
+    }
+  ],
+  "scenarios": [
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-control-planes-7mxjxv"
+      ],
+      "displaced_non_daemon_pods": 7,
+      "optimistically_placeable": 4,
+      "blocked": [
+        {
+          "pod": "cert-manager/cert-manager-cainjector-5dd447f9d4-9tth7",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "cert-manager/cert-manager-85ccd5574-7fvst",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "cert-manager/cert-manager-webhook-7d8c4f77c-svp8f",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        }
+      ],
+      "hypothetical_placements": [
+        {
+          "pod": "kube-system/cilium-operator-74f5775c87-d9pcj",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "csi-driver-nfs/csi-nfs-controller-69c5f4fb64-cwg6x",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "gpu-operator/gpu-operator-7d958d78d9-r9vl4",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "csi-driver-smb/csi-smb-controller-6b996668f6-pvfq5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [],
+      "remaining_free_cpu_after_hypothetical_placement": 27.21599999999997,
+      "remaining_free_memory_gib_after_hypothetical_placement": 80.14323780592531
+    },
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-dell-workers-2jfrb8"
+      ],
+      "displaced_non_daemon_pods": 32,
+      "optimistically_placeable": 32,
+      "blocked": [],
+      "hypothetical_placements": [
+        {
+          "pod": "temporal/temporal-postgres-bdc8f7685-hlpgq",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "surfsense/surfsense-v2-569c88f987-rq655",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "surfsense/surfsense-beat-v2-74cbd964f9-mdw9f",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "open-webui/open-webui-c595f5c87-qnqtz",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-write-0",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "loki-stack/loki-chunks-cache-0",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "surfsense/surfsense-zero-v2-5897c9c5b7-rqvv5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "temporal/temporal-history-5567fd6bd7-p5wdr",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "kafka/strimzi-cluster-operator-5969874667-xb892",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-read-78d8cbb48b-4zrqp",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "news-reader/news-digest-v1-0-16-d497-7d8b494cdc-z6p8w",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "opentelemetry/otel-gateway-collector-5d68ddf5f4-nsxl7",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "versatiles/versatiles-9988969cd-78cfw",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "prometheus-stack/kube-prometheus-stack-kube-state-metrics-5dd47cc688-rfmb9",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "temporal/temporal-matching-84d78f94f6-s9ltb",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "surfsense/surfsense-frontend-75768fbc8-srbgf",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "1passwordconnect/onepassword-connect-operator-695bbf9b97-5c7vk",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kopiur-system/kopiur-controller-c498b56c9-tcjwn",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "node-feature-discovery/nfd-node-feature-discovery-gc-6b89b8d7b9-bznft",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "prometheus-stack/kube-prometheus-stack-operator-56899469ff-rcqb4",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "keda/keda-admission-webhooks-7d59c6bfc6-xz646",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keda/keda-operator-6dfd44cf-cklpm",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "cloudflared/cloudflared-c55db4487-4tgkt",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "pairdrop/pairdrop-66d468bfd-mh9tm",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "paperless-ngx/gotenberg-8596f49db4-zrxv8",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "versatiles/map-styles-5f55d8d576-fc8fx",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "kube-system/hubble-ui-6dcdfb579c-cnbzd",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "nginx-example/nginx-example-b944587fd-n9hfh",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kube-system/coredns-f98564579-hhh4h",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-attacher-56db747df6-9qch2",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "longhorn-system/csi-snapshotter-68c548468b-6j8q7",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "longhorn-system/instance-manager-f3a9ab8b2e00ca99aeb69b1c452603dc",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [
+        {
+          "volume": "pvc-5c99f1a6-f221-49ef-ba39-f980e2260d28",
+          "namespace": "nginx-example",
+          "pvc": "storage",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-836f21ea-bd5e-482b-8475-e75b70cd90b8",
+          "namespace": "project-zomboid",
+          "pvc": "zomboid-server-files",
+          "state": "detached"
+        }
+      ],
+      "remaining_free_cpu_after_hypothetical_placement": 24.90599999999997,
+      "remaining_free_memory_gib_after_hypothetical_placement": 61.13608524855226
+    },
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+      ],
+      "displaced_non_daemon_pods": 73,
+      "optimistically_placeable": 47,
+      "blocked": [
+        {
+          "pod": "vllm/vllm-server-544cf6cc59-qbpsb",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/web-7c5f644649-wwmwg",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/clickhouse-67ddc8b6bb-fqpqs",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/worker-5c8b6b76f5-rmfnb",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "radar-ng/radar-ng-w-sha-eeaf8c-4bb8041695-6f877bfc-k5pms",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "radar-ng/radar-ng-w-sha-eeaf8c-ca3dc5c1db-7c7bf7df5b-9wmwj",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "radar-ng/radar-ng-w-sha-eeaf8c-db9dc1ca7f-cc8dbfb86-jz6nl",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "radar-ng/radar-ng-w-sha-eeaf8c-840bba292f-5bd559d95c-7mvsp",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/ingestion-general-7c8689679f-l7hmj",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/temporal-django-worker-695bbcd6b8-sx8vm",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/kafka-6f7458c9cc-gsj46",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/plugins-5559667fb9-fsmbf",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "radar-ng/radar-ng-w-sha-e31144-5db68b6e7d-7987c8775b-78ht2",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/db-7f877d5f46-lw6l5",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/capture-66fb896b49-x6fml",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/ingestion-sessionreplay-74b8fc87cb-9b9jz",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/recording-api-756b749569-dz5rm",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/feature-flags-6469cf4d57-r4rh9",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/hypercache-server-7c8b58d4b6-cl62v",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/property-defs-rs-5fb799886c-8964h",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/personhog-router-69dc869b87-mqkqq",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/personhog-replica-7b6776b59c-sbcm9",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "radar-ng/tile-server-7dc548d854-pbw8r",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/capture-ai-74674f8f45-bx2fk",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/redis7-77dbd989cb-frn7c",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "posthog/replay-capture-8b8c69bd8-c9w9h",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        }
+      ],
+      "hypothetical_placements": [
+        {
+          "pod": "prometheus-stack/prometheus-kube-prometheus-stack-prometheus-0",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "immich/immich-server-6979b98b8d-klr7d",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "langfuse/langfuse-clickhouse-677ff7b987-vtvck",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "langfuse/langfuse-web-7785864dd8-vm9zg",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "argocd/argocd-application-controller-0",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "paperless-ngx/paperless-ngx-796787d86d-gkgzv",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "litellm/litellm-749cc87fb6-hjg27",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "convertx/convertx-666676d566-fwrt8",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "karakeep/karakeep-web-567b7d8d49-lr6tr",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "keep/keep-backend-7665bb75b4-knp9p",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "prometheus-stack/kube-prometheus-stack-grafana-54c7fb9c8d-lpzhr",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "tubesync/tubesync-57f956b86d-5qpt6",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "perplexica/perplexica-8466744bb8-p6fz9",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "presenton/presenton-7b99db5d9d-5pxns",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "project-nomad/mysql-59bbc57d6f-d5dfl",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "immich/immich-postgres-85b68d748f-xlb69",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "karakeep/karakeep-chrome-5f9b66d68-4k4rx",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "loki-stack/loki-backend-0",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "homepage-dashboard/homepage-dashboard-7486559db8-lgk58",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "surfsense/surfsense-postgres-v2-849749fb4b-qdlzv",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "deal-scout/deal-scout-v0-14-1-fc77-5bf546f567-mvscx",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "gitea/gitea-695f77d4f8-2nq7j",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "karakeep/karakeep-meilisearch-56d7798cb5-rzxd7",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "argocd/argocd-applicationset-controller-5559fcf5c7-ctkpq",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "external-secrets/external-secrets-85c7559685-k2ssd",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "keep/keep-websocket-5cb9bc8bfb-7gvmf",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "gitea/gitea-postgres-7d6fb6fd9f-5qcdw",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "paperless-ngx/paperless-postgres-85b9dddbd-h9h9l",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "dozzle/dozzle-7f6754d556-gxvbs",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "langfuse/langfuse-postgres-6886646499-2bzpn",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "prometheus-stack/alertmanager-kube-prometheus-stack-alertmanager-0",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "frigate/mosquitto-5cc4f89746-qbqcw",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "gitea/gitea-valkey-primary-0",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "hindsight/hindsight-db-74ccc785f9-lwgrz",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "mcp-grafana/mcp-grafana-6997b6d996-2mxxt",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "metrics-server/metrics-server-5f58d45995-7mcwl",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "project-nomad/protomaps-5fcdddc9d6-d99hh",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "redis/redis-commander-6f8ffc7884-kzgk5",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "searxng/redis-5679658d4d-9mhsk",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "worldmonitor/worldmonitor-redis-58f96c5d89-g4qbc",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "restore-canary/restore-canary-5896b84689-tz2dz",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "kube-system/registry-74f6bdd67c-99tcs",
+          "to": "talos-prod-cluster-v2-dell-workers-2jfrb8"
+        },
+        {
+          "pod": "kube-system/cilium-operator-74f5775c87-p9qkf",
+          "to": "talos-prod-cluster-v2-control-planes-7mxjxv"
+        },
+        {
+          "pod": "longhorn-system/csi-provisioner-99ddd689b-bpnd4",
+          "to": "talos-prod-cluster-v2-hp-micro-workers-pstbbd"
+        },
+        {
+          "pod": "longhorn-system/csi-resizer-5b86f4d9bb-292z6",
+          "to": "talos-prod-cluster-v2-hp-micro-workers-pstbbd"
+        },
+        {
+          "pod": "longhorn-system/instance-manager-f08056cef2eed19dadb435f61c25d95e",
+          "to": "talos-prod-cluster-v2-hp-micro-workers-pstbbd"
+        },
+        {
+          "pod": "longhorn-system/longhorn-ui-6db686cf74-jklt4",
+          "to": "talos-prod-cluster-v2-hp-micro-workers-pstbbd"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [
+        {
+          "volume": "pvc-17c13462-2405-4dbf-b281-f19d20f4cc06",
+          "namespace": "frigate",
+          "pvc": "mosquitto-storage-pvc",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-1cc71d35-a5dd-4769-93d3-e0985b9a1606",
+          "namespace": "paperless-ngx",
+          "pvc": "media",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-27a363e9-389d-44f3-8ff7-b6d877a86ee6",
+          "namespace": "gitea",
+          "pvc": "gitea-postgres-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-36a9bd7e-388f-4ac6-840e-57639e3a8e1e",
+          "namespace": "paperless-ngx",
+          "pvc": "paperless-export-pvc",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-3890a695-86df-46be-920d-49b71f50e18e",
+          "namespace": "homepage-dashboard",
+          "pvc": "config",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-3c457330-bb1b-44ac-b751-fdc94f2cf57d",
+          "namespace": "posthog",
+          "pvc": "postgres-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-3cbff490-0a52-4b6a-87e5-0433fba17ebf",
+          "namespace": "project-nomad",
+          "pvc": "mysql-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-3f4fa443-3b31-4760-9464-def23c7a1406",
+          "namespace": "tubesync",
+          "pvc": "config-pvc",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-3fbb084d-5de1-450f-9e42-f24af46089b1",
+          "namespace": "swarmui",
+          "pvc": "swarmui-output",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-47aebe01-d26f-4445-8292-756bf6267419",
+          "namespace": "karakeep",
+          "pvc": "data-pvc",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-4c8e9336-b0c8-49c1-8d19-0264b22bf269",
+          "namespace": "presenton",
+          "pvc": "presenton-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-525ad854-31fd-4097-b5ad-f610742603d1",
+          "namespace": "posthog",
+          "pvc": "redis7-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-55f70732-391c-413e-acb6-cb6c12cd67d5",
+          "namespace": "project-zomboid",
+          "pvc": "zomboid-data",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-56fddab9-f8f3-4204-ad6e-03e983cb4202",
+          "namespace": "searxng",
+          "pvc": "redis-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-5efb14c1-03e0-443e-a37a-bfab67207171",
+          "namespace": "paperless-ngx",
+          "pvc": "paperless-consume-pvc",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-65f97a8f-3bbc-4960-8de8-87fcf1ab70bd",
+          "namespace": "posthog",
+          "pvc": "clickhouse-data-clickhouse-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-68521250-4f60-4ceb-83a8-fb866600b0d4",
+          "namespace": "immich",
+          "pvc": "library",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-6b35e208-f958-4693-af8d-b51921901520",
+          "namespace": "langfuse",
+          "pvc": "langfuse-clickhouse-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-755a6d35-70dc-4133-a8c1-a6086f7ae2ca",
+          "namespace": "posthog",
+          "pvc": "redpanda-data-kafka-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-764fd28f-d855-4084-898b-16b1946c4af3",
+          "namespace": "hindsight",
+          "pvc": "hindsight-db-pvc",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-8346bb8d-f0cf-4b65-89c2-932378b24833",
+          "namespace": "prometheus-stack",
+          "pvc": "alertmanager-kube-prometheus-stack-alertmanager-db-alertmanager-kube-prometheus-stack-alertmanager-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-8ab11796-5711-4f57-bb85-455195feecee",
+          "namespace": "radar-ng",
+          "pvc": "tiles",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-958052c4-b1f6-4cfe-b0e1-1ab9c34b2f95",
+          "namespace": "prometheus-stack",
+          "pvc": "kube-prometheus-stack-grafana",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-9740b1a5-ea16-4107-92fa-acbb910d7cc6",
+          "namespace": "radar-ng",
+          "pvc": "pmtiles",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-981f9636-99cd-4c1c-bfaa-df296c61b91f",
+          "namespace": "vllm",
+          "pvc": "vllm-compile-cache",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-9b8360a6-7c5e-47c9-b123-88189cdc1158",
+          "namespace": "gitea",
+          "pvc": "gitea-shared-storage",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-a0e31a2b-969a-40a0-8c61-5e1a1f795373",
+          "namespace": "consumers-energy-sync",
+          "pvc": "consumers-energy-sync-data",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-a2b18003-14b2-4393-99b5-e03f71fa0190",
+          "namespace": "kube-system",
+          "pvc": "registry",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-b075a0cc-4c03-4173-a042-73843a3e3080",
+          "namespace": "langfuse",
+          "pvc": "langfuse-postgres-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-bc4e8d73-cfbb-471c-ba52-5a92959f689a",
+          "namespace": "prometheus-stack",
+          "pvc": "prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-bee1dd1f-39cf-4d14-b2cc-119dc486c56e",
+          "namespace": "loki-stack",
+          "pvc": "data-loki-write-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-c1b27273-299d-4c9a-8005-d1d465df7eaf",
+          "namespace": "intercept",
+          "pvc": "intercept-postgres-data",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-c8a1d223-b787-4e1c-9e29-76240ca20ad1",
+          "namespace": "immich",
+          "pvc": "immich-postgres-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-cfd7d804-ccac-4328-be8c-0a015f824b91",
+          "namespace": "project-nomad",
+          "pvc": "protomaps-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-d2197849-e910-486f-bd83-8e910a192dad",
+          "namespace": "restore-canary",
+          "pvc": "restore-canary-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-d7b477f0-4ab9-4e39-a59e-47aaaec786b0",
+          "namespace": "worldmonitor",
+          "pvc": "worldmonitor-redis-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-d8855238-2e1e-473f-be42-185843e769f4",
+          "namespace": "perplexica",
+          "pvc": "perplexica-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-d8a77559-3c75-4f2e-b8ef-acfbc9f35f96",
+          "namespace": "karakeep",
+          "pvc": "meilisearch-pvc",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-ddf72a19-d6ae-409a-9917-9b3869adf3fb",
+          "namespace": "paperless-ngx",
+          "pvc": "paperless-postgres-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-e7471245-294f-4766-aa38-276491226bcd",
+          "namespace": "paperless-ngx",
+          "pvc": "data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-eaa0eb34-f609-4509-8ad1-6a5c649d3a92",
+          "namespace": "loki-stack",
+          "pvc": "data-loki-backend-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-f2b1785c-0eef-40af-ac7d-512c1b069988",
+          "namespace": "radar-ng",
+          "pvc": "state",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-f6a9bba9-0d4c-4500-8b15-64d50236594b",
+          "namespace": "dozzle",
+          "pvc": "dozzle-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-f72a0bd9-7cb8-493e-b66c-04aeb0427c64",
+          "namespace": "radar-ng",
+          "pvc": "grids",
+          "state": "attached"
+        }
+      ],
+      "remaining_free_cpu_after_hypothetical_placement": 10.86,
+      "remaining_free_memory_gib_after_hypothetical_placement": 33.81517400033772
+    },
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-hp-elite-workers-l5zlgr"
+      ],
+      "displaced_non_daemon_pods": 47,
+      "optimistically_placeable": 44,
+      "blocked": [
+        {
+          "pod": "immich/immich-machine-learning-847669597f-hgzxv",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "frigate/frigate-5b774686f8-hbg9n",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "home-assistant/home-assistant-586658499d-cfphp",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        }
+      ],
+      "hypothetical_placements": [
+        {
+          "pod": "hindsight/hindsight-6c97b884b9-z4wnv",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "langfuse/langfuse-worker-78cd86b988-skkrx",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "redlib/redlib-8fc5cb5b5-nn4gb",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "argocd/argocd-repo-server-5d494688b6-9xhqt",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "n8n/n8n-dcd4b6665-2w79m",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "paperless-ngx/tika-69456d5d76-sjbtl",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "worldmonitor/worldmonitor-5699d684d4-z8kcp",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "1passwordconnect/onepassword-connect-6748bcf86f-6ggg9",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "news-reader/news-reader-6d7cb4f8fb-bd2f9",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "temporal/temporal-frontend-86b75f599c-4js9v",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "external-dns/external-dns-86dfc84878-cf6ck",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "external-dns/external-dns-technitium-66b746dbf4-7q6w9",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "temporal-worker-controller/temporal-worker-controller-manager-56fbd86c97-brzkr",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "cobalt/cobalt-569b669799-tgbn7",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "opentelemetry/opentelemetry-operator-55f545d5f-4vtwb",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "snapshot-controller/snapshot-controller-77b5d9f6c-7mhkc",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "trivy-operator/trivy-operator-5d48f64cbc-9ffsz",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/flatnotes-65467df7cf-vr7bq",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "argocd/argocd-server-757b5c78b-ttgnm",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "temporal/temporal-worker-69c9877759-kvncf",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "temporal/temporal-admintools-648c4fb469-htkgf",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "cloudflared/cloudflared-c55db4487-6zm9j",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "cobalt/cobalt-web-fdd56c56-h65q9",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "copyparty/copyparty-55d9fb59b8-n9tmk",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "coroot/coroot-operator-94cf48999-nww55",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "immich/immich-valkey-7c845fdd48-6bmdh",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "it-tools/it-tools-f95b68b-bzqt9",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kiwix/kiwix-769c58d55d-dzztg",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "kopiur-system/kopiur-webhook-568d84bfc7-dk6rb",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kube-system/headlamp-7c4f6b8444-z6tf7",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "project-nomad/cyberchef-948dbf895-5zxwj",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/redis-5fcfd5c749-htlmk",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "surfsense/surfsense-redis-v2-58c7bdd948-8lntz",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "temporal/temporal-web-867549b784-sfcvm",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "vert/vert-7dc4cb9f5-sfrcr",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kube-system/hubble-relay-856fb9b979-mjpfv",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "nginx-example/nginx-example-b944587fd-gj5c6",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "kube-system/coredns-f98564579-29ncv",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "longhorn-system/csi-attacher-56db747df6-dt42k",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-provisioner-99ddd689b-xkpgq",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-resizer-5b86f4d9bb-5zf5b",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-snapshotter-68c548468b-nbbtm",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/instance-manager-4d35aed2b23ef3a2fb4a4e418a4f15bd",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/longhorn-driver-deployer-5bbb57b47b-nvf5v",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [
+        {
+          "volume": "pvc-23d82deb-c3ae-40b3-8c83-988af5adc376",
+          "namespace": "n8n",
+          "pvc": "data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-26843eb5-a8dc-46c3-972e-6cd530b42f88",
+          "namespace": "karakeep",
+          "pvc": "data-pvc-hourly-20260916141000-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-26ba3901-012a-4a65-acc6-652374a1fc04",
+          "namespace": "n8n",
+          "pvc": "data-hourly-20260917111700-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-33945b1b-4fe0-4a2b-9593-988a69a796f0",
+          "namespace": "intercept",
+          "pvc": "intercept-postgres-data-hourly-20260917050100-src",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-4cceeb1f-e6ce-41ee-b1eb-aeafaef723b9",
+          "namespace": "gitea",
+          "pvc": "gitea-postgres-data-hourly-20260916141300-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-51af0c40-3de5-4728-82fd-6c9904436e85",
+          "namespace": "home-assistant",
+          "pvc": "config",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-6485208a-5b26-4afa-ae85-f8b05ca8edfa",
+          "namespace": "project-nomad",
+          "pvc": "flatnotes-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-69934475-e0f0-4fb5-8a36-1ff06e1a1075",
+          "namespace": "surfsense",
+          "pvc": "surfsense-redis-data-v2",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-7486864b-06d9-459e-a9d5-fb67bcb8e8de",
+          "namespace": "frigate",
+          "pvc": "frigate-config",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-7a2112b0-22ca-4494-bc38-f05fe596c1d8",
+          "namespace": "temporal",
+          "pvc": "temporal-postgres-data-hourly-20260916140600-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-7b354820-bb21-4937-88b6-d495bb6ce324",
+          "namespace": "immich",
+          "pvc": "immich-ml-cache",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-a94ace00-71b6-4dea-8881-55a4539e06b1",
+          "namespace": "paperless-ngx",
+          "pvc": "paperless-postgres-data-hourly-20260917050400-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-adc363ab-22ce-4dca-aab2-e233bda253c7",
+          "namespace": "langfuse",
+          "pvc": "langfuse-postgres-data-hourly-20260916141600-src",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-b1a3cdb3-05bc-40d9-9a52-e40605f26aa3",
+          "namespace": "home-assistant",
+          "pvc": "config-hourly-20260917101500-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-be92be7f-7ea4-4145-85cb-ec180c62ed33",
+          "namespace": "home-assistant",
+          "pvc": "config-hourly-20260916141500-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-ce5a5113-6eeb-4233-bd1d-1351b7833a85",
+          "namespace": "",
+          "pvc": "",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-ea39ebd4-a3c8-4cb6-af2b-32fb9061f38b",
+          "namespace": "copyparty",
+          "pvc": "copyparty-data",
+          "state": "attached"
+        }
+      ],
+      "remaining_free_cpu_after_hypothetical_placement": 17.65699999999997,
+      "remaining_free_memory_gib_after_hypothetical_placement": 75.04415427520871
+    },
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-hp-micro-workers-pstbbd"
+      ],
+      "displaced_non_daemon_pods": 2,
+      "optimistically_placeable": 1,
+      "blocked": [
+        {
+          "pod": "intercept/intercept-5fd847c974-kt9kk",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        }
+      ],
+      "hypothetical_placements": [
+        {
+          "pod": "longhorn-system/instance-manager-40dbb7b64d309fd814197e22b4817c64",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [],
+      "remaining_free_cpu_after_hypothetical_placement": 27.00599999999997,
+      "remaining_free_memory_gib_after_hypothetical_placement": 79.34191266726702
+    },
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+      ],
+      "displaced_non_daemon_pods": 49,
+      "optimistically_placeable": 42,
+      "blocked": [
+        {
+          "pod": "coroot/coroot-clickhouse-shard-0-0",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-prometheus-d65699c5-kj6ps",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-cluster-agent-8666c5b7cc-fmdps",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-coroot-0",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-clickhouse-keeper-0",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-clickhouse-keeper-1",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-clickhouse-keeper-2",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        }
+      ],
+      "hypothetical_placements": [
+        {
+          "pod": "jellyfin/jellyfin-6958cb9898-f46l9",
+          "to": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr"
+        },
+        {
+          "pod": "project-nomad/embeddings-5494fcffdc-jr5qd",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "stirling-pdf/stirling-pdf-588887fc58-lgfph",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "open-webui/mcpo-multi-9d9b7bdd7-9czrg",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "trivy-operator/trivy-server-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "gitea-actions/act-runner-67865fc644-brjgt",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/project-nomad-67ccb5cd5-kkt9x",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "radar-ng/open-meteo-58cc7cc7fb-rlkzb",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "1passwordconnect/onepassword-connect-6748bcf86f-r87dg",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keep/keep-frontend-d7f6f9879-687qd",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/qdrant-795cf46bb-ztdtx",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "open-webui/mcpo-kiwix-5d4d7cc884-fdk5n",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "searxng/searxng-68fb5c557f-mvc58",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "worldmonitor/worldmonitor-ais-relay-64945ccfd8-vk46d",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "redis-instance/redis-master-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keep/keep-postgres-75b76964dd-q8pdn",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "deal-scout/deal-scout-67d95b4f76-wjzv2",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "worldmonitor/worldmonitor-redis-rest-5f77c4bcb4-4c45h",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "echo-server/echo-server-968687cd7-lrffw",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "intercept/intercept-postgres-7fb8467c89-jfg2g",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "snapshot-controller/snapshot-controller-77b5d9f6c-xswjv",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "truenas-csi/truenas-csi-controller-84db4f4db4-fwww6",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vertical-pod-autoscaler/vpa-vertical-pod-autoscaler-admission-controller-b7fdd8795zrgfp",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vertical-pod-autoscaler/vpa-vertical-pod-autoscaler-updater-5fb475b446-v9zmc",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keda/keda-operator-metrics-apiserver-79bd9445f7-97c4b",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "monitoring/tempo-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "argocd/argocd-redis-57586ff648-mxzsc",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "cloudflared/cloudflared-c55db4487-67jl9",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "excalidraw/excalidraw-7c7d4b656-g27w2",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "langfuse/langfuse-redis-7f58c6f55f-r4xp5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-gateway-79fcc55c75-q88px",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-results-cache-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/kiwix-7797cdcf48-vhfl5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vert/vertd-78b96f7644-7dm4k",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "radar-ng/basemap-56475f54-spsgk",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vertical-pod-autoscaler/vpa-vertical-pod-autoscaler-recommender-6579c77f6b-x9h4n",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "node-feature-discovery/nfd-node-feature-discovery-master-5fbbb7cf74-ttrtt",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-attacher-56db747df6-wr45v",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-provisioner-99ddd689b-gvhx2",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-resizer-5b86f4d9bb-chfxs",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-snapshotter-68c548468b-lsd6s",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/instance-manager-b5959f18bd55f44cece41d525544352d",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [
+        {
+          "volume": "pvc-02951b7e-6b70-4780-828f-fe34123f4f1a",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-keeper-1",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-12016d1c-d9b3-4f18-b5d2-edc6ab9da723",
+          "namespace": "coroot",
+          "pvc": "data-coroot-prometheus",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-1526216a-fef2-4f6d-a512-39ce4a3ebef3",
+          "namespace": "project-nomad",
+          "pvc": "embeddings-model-cache",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-188754d9-8a11-45cc-a29d-ff406d08eb50",
+          "namespace": "langfuse",
+          "pvc": "langfuse-postgres-data-hourly-20260917101600-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-1ac4de97-c515-42ac-8fc9-e348a78ab69f",
+          "namespace": "coroot",
+          "pvc": "data-coroot-coroot-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-44137a01-edf2-458e-8e9f-ab3dfaba72c2",
+          "namespace": "jellyfin",
+          "pvc": "config",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-4927d525-a520-4162-80f5-19af9f7d9066",
+          "namespace": "radar-ng",
+          "pvc": "openmeteo-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-4f2e5444-f130-438a-908e-f1ca596c4071",
+          "namespace": "swarmui",
+          "pvc": "swarmui-data",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-565d5b83-fd12-4a1d-874f-aae1af2afd88",
+          "namespace": "swarmui",
+          "pvc": "swarmui-dlbackend",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-63a40572-e758-481e-88e4-e50176d031fd",
+          "namespace": "project-nomad",
+          "pvc": "qdrant-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-9773b73f-5a09-4b45-a315-20d6f45f0a6f",
+          "namespace": "deal-scout",
+          "pvc": "deal-scout-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-97c26fd5-f968-414e-bc14-bd8aaa3fe503",
+          "namespace": "gitea-actions",
+          "pvc": "act-runner-docker-cache",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-b2631c56-64c2-4f1a-be04-63124864f7f4",
+          "namespace": "langfuse",
+          "pvc": "langfuse-redis-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-b8b5266e-73ba-4e43-8028-5db6f9e5f940",
+          "namespace": "intercept",
+          "pvc": "intercept-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-baa3f9df-c6e0-4b81-99d2-0731b8fb6de5",
+          "namespace": "redis-instance",
+          "pvc": "redis-master-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-baafd4de-90a0-4c9f-9725-53e6fd4e5c3e",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-shard-0-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-c2ce5c16-4888-48e4-a2b3-4b4f9f000866",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-keeper-2",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-c59c7e77-f723-451c-b08c-9e154a2f300a",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-keeper-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-d26030d6-290a-4095-a53e-2cbe710e61e4",
+          "namespace": "keep",
+          "pvc": "keep-postgres-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-e9604a6b-1826-43fe-9669-d5cdfeb8fb02",
+          "namespace": "project-nomad",
+          "pvc": "nomad-storage",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-f602337a-4bc5-4762-810b-8ae60c0b99e9",
+          "namespace": "open-webui",
+          "pvc": "storage",
+          "state": "detached"
+        }
+      ],
+      "remaining_free_cpu_after_hypothetical_placement": 25.61599999999996,
+      "remaining_free_memory_gib_after_hypothetical_placement": 53.69078419264406
+    },
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-control-planes-7mxjxv",
+        "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+      ],
+      "displaced_non_daemon_pods": 56,
+      "optimistically_placeable": 46,
+      "blocked": [
+        {
+          "pod": "coroot/coroot-clickhouse-shard-0-0",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-prometheus-d65699c5-kj6ps",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-cluster-agent-8666c5b7cc-fmdps",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-coroot-0",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "cert-manager/cert-manager-cainjector-5dd447f9d4-9tth7",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "cert-manager/cert-manager-85ccd5574-7fvst",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "cert-manager/cert-manager-webhook-7d8c4f77c-svp8f",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-clickhouse-keeper-0",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-clickhouse-keeper-1",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        },
+        {
+          "pod": "coroot/coroot-clickhouse-keeper-2",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        }
+      ],
+      "hypothetical_placements": [
+        {
+          "pod": "jellyfin/jellyfin-6958cb9898-f46l9",
+          "to": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr"
+        },
+        {
+          "pod": "project-nomad/embeddings-5494fcffdc-jr5qd",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "stirling-pdf/stirling-pdf-588887fc58-lgfph",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "open-webui/mcpo-multi-9d9b7bdd7-9czrg",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "trivy-operator/trivy-server-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "gitea-actions/act-runner-67865fc644-brjgt",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/project-nomad-67ccb5cd5-kkt9x",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "radar-ng/open-meteo-58cc7cc7fb-rlkzb",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "1passwordconnect/onepassword-connect-6748bcf86f-r87dg",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keep/keep-frontend-d7f6f9879-687qd",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kube-system/cilium-operator-74f5775c87-d9pcj",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vertical-pod-autoscaler/vpa-vertical-pod-autoscaler-recommender-6579c77f6b-x9h4n",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/qdrant-795cf46bb-ztdtx",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "open-webui/mcpo-kiwix-5d4d7cc884-fdk5n",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "searxng/searxng-68fb5c557f-mvc58",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "worldmonitor/worldmonitor-ais-relay-64945ccfd8-vk46d",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "redis-instance/redis-master-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keep/keep-postgres-75b76964dd-q8pdn",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "deal-scout/deal-scout-67d95b4f76-wjzv2",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "worldmonitor/worldmonitor-redis-rest-5f77c4bcb4-4c45h",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "echo-server/echo-server-968687cd7-lrffw",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "intercept/intercept-postgres-7fb8467c89-jfg2g",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "node-feature-discovery/nfd-node-feature-discovery-master-5fbbb7cf74-ttrtt",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "snapshot-controller/snapshot-controller-77b5d9f6c-xswjv",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "truenas-csi/truenas-csi-controller-84db4f4db4-fwww6",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vertical-pod-autoscaler/vpa-vertical-pod-autoscaler-admission-controller-b7fdd8795zrgfp",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vertical-pod-autoscaler/vpa-vertical-pod-autoscaler-updater-5fb475b446-v9zmc",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "csi-driver-nfs/csi-nfs-controller-69c5f4fb64-cwg6x",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "gpu-operator/gpu-operator-7d958d78d9-r9vl4",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keda/keda-operator-metrics-apiserver-79bd9445f7-97c4b",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "monitoring/tempo-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "csi-driver-smb/csi-smb-controller-6b996668f6-pvfq5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "argocd/argocd-redis-57586ff648-mxzsc",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "cloudflared/cloudflared-c55db4487-67jl9",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "excalidraw/excalidraw-7c7d4b656-g27w2",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "langfuse/langfuse-redis-7f58c6f55f-r4xp5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-gateway-79fcc55c75-q88px",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-results-cache-0",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "project-nomad/kiwix-7797cdcf48-vhfl5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "vert/vertd-78b96f7644-7dm4k",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "radar-ng/basemap-56475f54-spsgk",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-attacher-56db747df6-wr45v",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-provisioner-99ddd689b-gvhx2",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-resizer-5b86f4d9bb-chfxs",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-snapshotter-68c548468b-lsd6s",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/instance-manager-b5959f18bd55f44cece41d525544352d",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [
+        {
+          "volume": "pvc-02951b7e-6b70-4780-828f-fe34123f4f1a",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-keeper-1",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-12016d1c-d9b3-4f18-b5d2-edc6ab9da723",
+          "namespace": "coroot",
+          "pvc": "data-coroot-prometheus",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-1526216a-fef2-4f6d-a512-39ce4a3ebef3",
+          "namespace": "project-nomad",
+          "pvc": "embeddings-model-cache",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-188754d9-8a11-45cc-a29d-ff406d08eb50",
+          "namespace": "langfuse",
+          "pvc": "langfuse-postgres-data-hourly-20260917101600-src",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-1ac4de97-c515-42ac-8fc9-e348a78ab69f",
+          "namespace": "coroot",
+          "pvc": "data-coroot-coroot-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-44137a01-edf2-458e-8e9f-ab3dfaba72c2",
+          "namespace": "jellyfin",
+          "pvc": "config",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-4927d525-a520-4162-80f5-19af9f7d9066",
+          "namespace": "radar-ng",
+          "pvc": "openmeteo-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-4f2e5444-f130-438a-908e-f1ca596c4071",
+          "namespace": "swarmui",
+          "pvc": "swarmui-data",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-565d5b83-fd12-4a1d-874f-aae1af2afd88",
+          "namespace": "swarmui",
+          "pvc": "swarmui-dlbackend",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-63a40572-e758-481e-88e4-e50176d031fd",
+          "namespace": "project-nomad",
+          "pvc": "qdrant-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-9773b73f-5a09-4b45-a315-20d6f45f0a6f",
+          "namespace": "deal-scout",
+          "pvc": "deal-scout-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-97c26fd5-f968-414e-bc14-bd8aaa3fe503",
+          "namespace": "gitea-actions",
+          "pvc": "act-runner-docker-cache",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-b2631c56-64c2-4f1a-be04-63124864f7f4",
+          "namespace": "langfuse",
+          "pvc": "langfuse-redis-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-b8b5266e-73ba-4e43-8028-5db6f9e5f940",
+          "namespace": "intercept",
+          "pvc": "intercept-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-baa3f9df-c6e0-4b81-99d2-0731b8fb6de5",
+          "namespace": "redis-instance",
+          "pvc": "redis-master-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-baafd4de-90a0-4c9f-9725-53e6fd4e5c3e",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-shard-0-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-c2ce5c16-4888-48e4-a2b3-4b4f9f000866",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-keeper-2",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-c59c7e77-f723-451c-b08c-9e154a2f300a",
+          "namespace": "coroot",
+          "pvc": "data-coroot-clickhouse-keeper-0",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-d26030d6-290a-4095-a53e-2cbe710e61e4",
+          "namespace": "keep",
+          "pvc": "keep-postgres-data",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-e9604a6b-1826-43fe-9669-d5cdfeb8fb02",
+          "namespace": "project-nomad",
+          "pvc": "nomad-storage",
+          "state": "attached"
+        },
+        {
+          "volume": "pvc-f602337a-4bc5-4762-810b-8ae60c0b99e9",
+          "namespace": "open-webui",
+          "pvc": "storage",
+          "state": "detached"
+        }
+      ],
+      "remaining_free_cpu_after_hypothetical_placement": 22.76599999999996,
+      "remaining_free_memory_gib_after_hypothetical_placement": 45.86657307203859
+    },
+    {
+      "lost_nodes": [
+        "talos-prod-cluster-v2-dell-workers-2jfrb8",
+        "talos-prod-cluster-v2-hp-micro-workers-pstbbd"
+      ],
+      "displaced_non_daemon_pods": 34,
+      "optimistically_placeable": 33,
+      "blocked": [
+        {
+          "pod": "intercept/intercept-5fd847c974-kt9kk",
+          "reason": "no matching labels/devices/taints",
+          "eligible_nodes": []
+        }
+      ],
+      "hypothetical_placements": [
+        {
+          "pod": "temporal/temporal-postgres-bdc8f7685-hlpgq",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "surfsense/surfsense-v2-569c88f987-rq655",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "surfsense/surfsense-beat-v2-74cbd964f9-mdw9f",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "open-webui/open-webui-c595f5c87-qnqtz",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-write-0",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "loki-stack/loki-chunks-cache-0",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "surfsense/surfsense-zero-v2-5897c9c5b7-rqvv5",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "temporal/temporal-history-5567fd6bd7-p5wdr",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "kafka/strimzi-cluster-operator-5969874667-xb892",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "loki-stack/loki-read-78d8cbb48b-4zrqp",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "news-reader/news-digest-v1-0-16-d497-7d8b494cdc-z6p8w",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "opentelemetry/otel-gateway-collector-5d68ddf5f4-nsxl7",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "versatiles/versatiles-9988969cd-78cfw",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "prometheus-stack/kube-prometheus-stack-kube-state-metrics-5dd47cc688-rfmb9",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "temporal/temporal-matching-84d78f94f6-s9ltb",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "surfsense/surfsense-frontend-75768fbc8-srbgf",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "1passwordconnect/onepassword-connect-operator-695bbf9b97-5c7vk",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kopiur-system/kopiur-controller-c498b56c9-tcjwn",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "node-feature-discovery/nfd-node-feature-discovery-gc-6b89b8d7b9-bznft",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "prometheus-stack/kube-prometheus-stack-operator-56899469ff-rcqb4",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "keda/keda-admission-webhooks-7d59c6bfc6-xz646",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "keda/keda-operator-6dfd44cf-cklpm",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "cloudflared/cloudflared-c55db4487-4tgkt",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "pairdrop/pairdrop-66d468bfd-mh9tm",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "paperless-ngx/gotenberg-8596f49db4-zrxv8",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "versatiles/map-styles-5f55d8d576-fc8fx",
+          "to": "talos-prod-cluster-v2-hp-sff-workers-h76ncc"
+        },
+        {
+          "pod": "kube-system/hubble-ui-6dcdfb579c-cnbzd",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-attacher-56db747df6-9qch2",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/csi-snapshotter-68c548468b-6j8q7",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/instance-manager-40dbb7b64d309fd814197e22b4817c64",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "longhorn-system/instance-manager-f3a9ab8b2e00ca99aeb69b1c452603dc",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "nginx-example/nginx-example-b944587fd-n9hfh",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        },
+        {
+          "pod": "kube-system/coredns-f98564579-hhh4h",
+          "to": "talos-prod-cluster-v2-gpu-workers-jxfkdr"
+        }
+      ],
+      "sole_volume_copies_on_lost_nodes": [
+        {
+          "volume": "pvc-5c99f1a6-f221-49ef-ba39-f980e2260d28",
+          "namespace": "nginx-example",
+          "pvc": "storage",
+          "state": "detached"
+        },
+        {
+          "volume": "pvc-836f21ea-bd5e-482b-8475-e75b70cd90b8",
+          "namespace": "project-zomboid",
+          "pvc": "zomboid-server-files",
+          "state": "detached"
+        }
+      ],
+      "remaining_free_cpu_after_hypothetical_placement": 21.845999999999965,
+      "remaining_free_memory_gib_after_hypothetical_placement": 52.51054898928851
+    }
+  ]
+}

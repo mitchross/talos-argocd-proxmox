@@ -1,6 +1,13 @@
 # Architecture audit — 5 September 2026
 
-**Status:** evidence-backed audit with implementation underway. The owner merged
+!!! info "Historical snapshot — use the September 20 measurements for current capacity decisions"
+    This page preserves the September 5 evidence and decisions. Hardware speeds,
+    memory headroom, guest placement and management-tool findings were checked
+    again in the [September 20 fleet assessment](../inventory/2026-09-20-capacity-and-benchmarks.md)
+    and [NAS reference](../nas-performance.md). Those newer measurements supersede
+    the corresponding older claims; unrelated architecture findings were not all re-audited.
+
+**Status:** historical audit; implementation tracking below records the September 5 checkpoint. The owner merged
 Fizzy/Mailpit removal [#2238](https://github.com/mitchross/talos-argocd-proxmox/pull/2238),
 Cilium metrics/exporter fixes [#2241](https://github.com/mitchross/talos-argocd-proxmox/pull/2241),
 and parked-Zomboid PDB/docs [#2242](https://github.com/mitchross/talos-argocd-proxmox/pull/2242). This document answers what the
