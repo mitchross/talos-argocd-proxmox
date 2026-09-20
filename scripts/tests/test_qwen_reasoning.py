@@ -19,7 +19,7 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
     async def request(self, **options):
         return await module.Filter().inlet({'model': 'qwen3.8-27b', **options})
 
-    def assert_mode(self, body, effort='medium', enabled=True, preserve=True):
+    def assert_mode(self, body, effort='xhigh', enabled=True, preserve=True):
         kwargs = body['chat_template_kwargs']
         self.assertIs(kwargs['enable_thinking'], enabled)
         self.assertIs(kwargs['preserve_thinking'], preserve)
@@ -38,7 +38,7 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
             args = deployment['spec']['template']['spec']['containers'][0]['args']
             self.assertEqual(json.loads(args[args.index('--override-generation-config') + 1]), expected)
 
-    async def test_default_request_has_explicit_medium_and_preserves_history(self):
+    async def test_default_request_has_explicit_xhigh_and_preserves_history(self):
         body = await self.request()
         self.assert_mode(body)
         self.assertEqual([body[k] for k in ['temperature', 'top_p', 'top_k',
@@ -64,10 +64,29 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
                     enabled = effort != 'none'
                     self.assert_mode(body, effort, enabled=enabled, preserve=enabled)
 
-    async def test_generic_high_maps_to_medium_and_invalid_effort_fails(self):
-        self.assert_mode(await self.request(reasoning_effort='high'))
+    async def test_generic_high_maps_to_xhigh_and_invalid_effort_fails(self):
+        for options in [dict(reasoning_effort='high'),
+                        dict(chat_template_kwargs={'reasoning_effort': 'high'}),
+                        dict(extra_body={'reasoning_effort': 'high'}),
+                        dict(extra_body={'chat_template_kwargs': {'reasoning_effort': 'high'}})]:
+            with self.subTest(options=options):
+                self.assert_mode(await self.request(**options))
         with self.assertRaises(ValueError):
             await self.request(reasoning_effort='invented')
+
+    async def test_empty_or_null_effort_uses_explicit_xhigh(self):
+        for options in [dict(chat_template_kwargs={}), dict(reasoning_effort=None),
+                        dict(extra_body={'chat_template_kwargs': {}}),
+                        dict(extra_body={'reasoning_effort': None})]:
+            with self.subTest(options=options):
+                self.assert_mode(await self.request(**options))
+
+    async def test_explicit_lower_effort_wins_conflicting_nested_default(self):
+        for effort in ('low', 'medium'):
+            body = await self.request(
+                chat_template_kwargs={'reasoning_effort': effort},
+                extra_body={'chat_template_kwargs': {'reasoning_effort': 'xhigh'}})
+            self.assert_mode(body, effort)
 
     async def test_off_clears_effort_and_uses_non_thinking_sampler(self):
         body = await self.request(
@@ -82,7 +101,8 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(body['extra_body'][key], value)
 
     async def test_generic_none_means_explicit_off(self):
-        self.assert_mode(await self.request(reasoning_effort='none'), enabled=False, preserve=False)
+        for effort in ('none', 'off'):
+            self.assert_mode(await self.request(reasoning_effort=effort), enabled=False, preserve=False)
 
     async def test_stateless_thinking_may_disable_preservation(self):
         body = await self.request(chat_template_kwargs={'preserve_thinking': False})
@@ -119,11 +139,11 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
 
 
 class DeclaredPolicyTests(unittest.TestCase):
-    def test_server_cannot_use_implicit_xhigh_or_non_thinking_sampler(self):
+    def test_server_uses_explicit_xhigh_and_thinking_sampler(self):
         deployment = yaml.safe_load((ROOT / 'my-apps/ai/vllm/deployment.yaml').read_text())
         args = deployment['spec']['template']['spec']['containers'][0]['args']
         defaults = json.loads(args[args.index('--default-chat-template-kwargs') + 1])
-        self.assertEqual(defaults, dict(enable_thinking=True, reasoning_effort='medium', preserve_thinking=True))
+        self.assertEqual(defaults, dict(enable_thinking=True, reasoning_effort='xhigh', preserve_thinking=True))
         sampler = json.loads(args[args.index('--override-generation-config') + 1])
         self.assertEqual(sampler, dict(temperature=1.0, top_p=0.95, top_k=20, min_p=0.0,
                                       presence_penalty=0.0, repetition_penalty=1.05))
@@ -154,8 +174,26 @@ class DeclaredPolicyTests(unittest.TestCase):
         mapping = provider['models'][0]['thinkingLevelMap']
         self.assertEqual({v for k, v in mapping.items() if k != 'off' and v is not None}, {'low', 'medium', 'xhigh'})
         settings = next(c for c in configs if 'defaultThinkingLevel' in c)
-        self.assertEqual(settings['defaultThinkingLevel'], 'medium')
-        self.assertEqual(settings['modelThinkingLevels']['vanillax-vllm/qwen3.8-27b'], 'medium')
+        self.assertEqual(settings['defaultThinkingLevel'], 'xhigh')
+        self.assertEqual(settings['modelThinkingLevels']['vanillax-vllm/qwen3.8-27b'], 'xhigh')
+        self.assertEqual(settings['modelThinkingLevels']['vanillax-openrouter/deepseek-flash'], 'high')
+        self.assertIn('alias pi-qwen-only="pi --model $QWEN --thinking xhigh --models $QWEN"', doc)
+        self.assertIn('alias pi-withflash="pi --model $AUTO --thinking medium --models $AUTO"', doc)
+
+    def test_classifier_stays_off_and_cloud_efforts_do_not_follow_qwen(self):
+        config = yaml.safe_load((ROOT / 'my-apps/ai/litellm/config.yaml').read_text())
+        routes = {route['model_name']: route['litellm_params'] for route in config['model_list']}
+        classifier = routes['pi-classifier']
+        self.assertEqual(classifier['temperature'], 0)
+        self.assertEqual(classifier['max_tokens'], 64)
+        self.assertEqual(classifier['extra_body']['chat_template_kwargs'],
+                         {'enable_thinking': False, 'preserve_thinking': False})
+        local = routes['qwen3.8-27b-auto']
+        self.assertNotIn('reasoning_effort', local)
+        self.assertNotIn('chat_template_kwargs', local.get('extra_body', {}))
+        tiers = routes['pi-auto']['complexity_router_config']['tier_model_configs']
+        self.assertEqual(tiers['COMPLEX'][0]['litellm_params']['reasoning_effort'], 'high')
+        self.assertEqual(tiers['REASONING'][0]['litellm_params']['reasoning_effort'], 'max')
 
 
 if __name__ == '__main__':

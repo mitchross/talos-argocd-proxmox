@@ -7,10 +7,10 @@ The Git-declared production backend is **vLLM**, never Ollama. See
 staging order, runtime flags, reasoning/sampling controls and rollback.
 
 - Model ID: `qwen3.8-27b`; official `Qwen/Qwen3.8-27B-FP8`.
-- vLLM v0.28.0, two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
+- vLLM v0.29.0, two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
 - **MTP/speculation stays off** pending the long-session fixes and validation.
 - Explicit thinking levels: `low`, `medium`, `xhigh`; coding/server default
-  is `medium`, preservation true. xhigh is opt-in; generic high maps to medium.
+  is `xhigh`, preservation true. Lower effort is opt-in; WebUI's generic high maps to xhigh.
 - Off requests use `enable_thinking=false`, `preserve_thinking=false`, and
   the separate non-thinking sampler in the vLLM runbook. Preserve the server's
   thinking sampler; do not globally disable preserved thinking.
@@ -18,9 +18,14 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
 - Direct diagnostic / gateway upstream URL: `http://vllm-service.vllm.svc.cluster.local:8080/v1`.
 - Both LAN hostnames (`vllm.vanillax.me`, `llama.vanillax.me`) route to the vLLM
   selector Service.
-- Live capacity and client guidance: `docs/domains/ai-gpu/3090-llm-optimization.md`.
+- Historical capacity and current client guidance: `docs/domains/ai-gpu/3090-llm-optimization.md`.
   A configured ceiling is not proof of concurrent near-ceiling vision capacity.
 - AutoRound is a later speed A/B only.
+
+Pi's direct-Qwen settings and launcher are managed in `mitchross/dotfiles`;
+keep them aligned with this default. Explicit low/medium/off still win.
+`pi-auto` inherits the local server default without forwarding Qwen effort;
+its classifier stays thinking-off and its DeepSeek high/max routes are unchanged.
 
 ## GPU Topology
 
@@ -61,9 +66,11 @@ spec:
 ```
 
 **Large CPU-offloaded LLMs need reserved RAM.** The GPU node also hosts
-unrelated workloads and storage; do not assume it is isolated. Other pods
-already reserve roughly 35 GiB of the 96 GiB host, and the inference container
-caps at 48 GiB. Resolve both before any large-model cutover.
+unrelated workloads and storage; do not assume it is isolated. The declared
+vLLM container requests 8 GiB and limits memory to 64 GiB. That limit is not
+reserved or free host RAM. Re-check guest allocatable memory, other pod
+requests and steady-state usage before any large-model cutover; historical
+node measurements are not a current capacity guarantee.
 
 ## Debugging GPU
 
