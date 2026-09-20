@@ -35,6 +35,11 @@ spec:
             - configMapRef:
                 name: posthog-env
           env:
+            - name: INTERNAL_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-internal-api-secret
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:

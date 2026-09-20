@@ -34,6 +34,11 @@ spec:
           env:
             - name: PLUGIN_SERVER_MODE
               value: "recordings-blob-ingestion-v2"
+            - name: INTERNAL_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-internal-api-secret
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:

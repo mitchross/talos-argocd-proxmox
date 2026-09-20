@@ -40,6 +40,11 @@ spec:
               value: "300"
             - name: CELERY_MAX_MEMORY_PER_CHILD
               value: "1048576"
+            - name: INTERNAL_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-internal-api-secret
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
