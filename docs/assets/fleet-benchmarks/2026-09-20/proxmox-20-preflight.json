@@ -1,0 +1,249 @@
+{
+  "started_at": "2026-09-20T17:52:41.369922+00:00",
+  "cpu_sample_seconds": 15,
+  "logical_cpus": 6,
+  "cpu_busy_percent": 4.66263169692894,
+  "cpu_iowait_percent": 0.19054023761488456,
+  "cpu_steal_percent": 0.0,
+  "memory": {
+    "MemTotal": 33419939840,
+    "MemFree": 24241876992,
+    "MemAvailable": 26849468416,
+    "SwapTotal": 8589930496,
+    "SwapFree": 8561451008,
+    "Dirty": 0,
+    "Writeback": 0
+  },
+  "load": "0.37 0.27 0.29 2/287 28842",
+  "storage": "Name                  Type     Status     Total (KiB)      Used (KiB) Available (KiB)        %\nhp-ssd-vmstore         lvm     active       976760832       891289600        85471232   91.25%\nlocal                  dir     active        71017632        12011684        55352728   16.91%\nlocal-lvm          lvmthin     active       160669696         9543779       151125916    5.94%",
+  "root_mount": {
+    "filesystems": [
+      {
+        "target": "/",
+        "source": "/dev/mapper/pve-root",
+        "fstype": "ext4",
+        "options": "rw,relatime,errors=remount-ro"
+      }
+    ]
+  },
+  "blockdevices": [
+    {
+      "name": "sda",
+      "type": "disk",
+      "size": 1000204886016,
+      "fstype": "LVM2_member",
+      "mountpoints": [],
+      "model": "PNY CS900 1TB SSD",
+      "children": [
+        {
+          "name": "hp--ssd--vmstore-vm--100--disk--0",
+          "type": "lvm",
+          "size": 912680550400,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null
+        }
+      ]
+    },
+    {
+      "name": "nvme0n1",
+      "type": "disk",
+      "size": 256060514304,
+      "fstype": null,
+      "mountpoints": [],
+      "model": "SK hynix BC501 HFM256GDJTNG-8310A",
+      "children": [
+        {
+          "name": "nvme0n1p1",
+          "type": "part",
+          "size": 1031168,
+          "fstype": null,
+          "mountpoints": [],
+          "model": null
+        },
+        {
+          "name": "nvme0n1p2",
+          "type": "part",
+          "size": 1073741824,
+          "fstype": "vfat",
+          "mountpoints": [
+            "/boot/efi"
+          ],
+          "model": null
+        },
+        {
+          "name": "nvme0n1p3",
+          "type": "part",
+          "size": 254985707008,
+          "fstype": "LVM2_member",
+          "mountpoints": [],
+          "model": null,
+          "children": [
+            {
+              "name": "pve-swap",
+              "type": "lvm",
+              "size": 8589934592,
+              "fstype": "swap",
+              "mountpoints": [
+                "[SWAP]"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-root",
+              "type": "lvm",
+              "size": 74482450432,
+              "fstype": "ext4",
+              "mountpoints": [
+                "/"
+              ],
+              "model": null
+            },
+            {
+              "name": "pve-data_tmeta",
+              "type": "lvm",
+              "size": 1543503872,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "pve-data-tpool",
+                  "type": "lvm",
+                  "size": 164525768704,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null,
+                  "children": [
+                    {
+                      "name": "pve-data",
+                      "type": "lvm",
+                      "size": 164525768704,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    },
+                    {
+                      "name": "pve-vm--100--disk--0",
+                      "type": "lvm",
+                      "size": 137438953472,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "pve-data_tdata",
+              "type": "lvm",
+              "size": 164525768704,
+              "fstype": null,
+              "mountpoints": [],
+              "model": null,
+              "children": [
+                {
+                  "name": "pve-data-tpool",
+                  "type": "lvm",
+                  "size": 164525768704,
+                  "fstype": null,
+                  "mountpoints": [],
+                  "model": null,
+                  "children": [
+                    {
+                      "name": "pve-data",
+                      "type": "lvm",
+                      "size": 164525768704,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    },
+                    {
+                      "name": "pve-vm--100--disk--0",
+                      "type": "lvm",
+                      "size": 137438953472,
+                      "fstype": null,
+                      "mountpoints": [],
+                      "model": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "smart": [
+    {
+      "device": "sda",
+      "model": "PNY CS900 1TB SSD",
+      "passed": true,
+      "temperature_C": 33,
+      "nvme": {},
+      "ata_indicators": []
+    },
+    {
+      "device": "nvme0n1",
+      "model": "SK hynix BC501 HFM256GDJTNG-8310A",
+      "passed": true,
+      "temperature_C": 38,
+      "nvme": {
+        "critical_warning": 0,
+        "temperature": 38,
+        "available_spare": 100,
+        "percentage_used": 4,
+        "media_errors": 0,
+        "num_err_log_entries": 0
+      },
+      "ata_indicators": []
+    }
+  ],
+  "vms": [
+    {
+      "id": 100,
+      "status": "running",
+      "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+      "cpu_fraction": 0.0663082201505155,
+      "maxcpu": 4,
+      "memory_bytes": 4800917504,
+      "maxmemory_bytes": 12884901888,
+      "config": {
+        "balloon": "0",
+        "cores": "4",
+        "cpu": "host",
+        "ide0": "local:iso/user-data-100.iso,media=cdrom,size=57856",
+        "ide2": "local:iso/470ee5f8e729df4fc258484c5da7711ba7b0b5c99c751cf653b54af850b28544.iso,media=cdrom,size=357708K",
+        "memory": "12288",
+        "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+        "scsi0": "local-lvm:vm-100-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=128G,ssd=1",
+        "scsi1": "hp-ssd-vmstore:vm-100-disk-0,aio=io_uring,cache=none,discard=on,iothread=1,size=850G,ssd=1",
+        "scsihw": "virtio-scsi-single",
+        "sockets": "1"
+      }
+    }
+  ],
+  "guest_summary": [
+    {
+      "vmid": 100,
+      "type": "qemu",
+      "status": "running",
+      "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+      "cpu": 0.0694411012616958,
+      "maxcpu": 4,
+      "mem": 4800806912,
+      "maxmem": 12884901888,
+      "configuration": {
+        "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+        "memory": "12288",
+        "balloon": "0",
+        "cores": "4",
+        "sockets": "1",
+        "cpu": "host"
+      }
+    }
+  ],
+  "cpu_model": "Intel(R) Core(TM) i5-8500T CPU @ 2.10GHz"
+}

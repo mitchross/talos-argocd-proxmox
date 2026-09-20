@@ -1,317 +1,336 @@
-# NAS hardware and performance reference
+# NAS hardware and performance
 
-**Purpose:** the single place that records what the TrueNAS box *is* and what it
-actually *does* — hardware inventory, pool layout, measured throughput on disk
-and across the network, and the client configuration that produced those
-numbers.
+**Start with the measured speeds below (2 minutes). Keep the existing RAM.**
+The September 20 tests compare physical-disk reads, warm RAM-cache reads, and
+writes that request a final flush on all three data pools.
 
-**Status:** current state. Every figure on this page was measured on the running
-system with `fio`, not estimated or taken from a vendor sheet.
+**Status:** measured September 20, 2026. Historical network results and older
+permissions are labeled separately. Recommendations are not deployed changes.
 
-**Scope:** this page describes the storage server and the network paths into it.
-It does not cover Kubernetes-side storage policy — see
-[Storage architecture](storage-architecture.md) for that, and
-[kopiur backup architecture](domains/storage/kopiur-backup-architecture.md) for
-backups.
+**Scope:** NAS-local tests on new disposable datasets. No raw devices, boot-pool
+writes, production-file writes, global cache flushes, or ARC limit changes.
+These results inform NAS purchases; they do not benchmark the whole Kubernetes,
+SMB, NFS, or iSCSI path. See [storage architecture](storage-architecture.md)
+for the deployed storage policy.
 
----
+## Measured speeds — September 20
 
-## 1. The one-paragraph summary
+All sequential runs processed **4 GiB**, with one job and queue depth one.
+MB/s uses decimal megabytes. These are short, matched workload measurements,
+not indefinite steady-state or maximum-concurrency ratings. Verdicts use drive-class
+specifications, not a matched industry-average benchmark; the source links and
+comparison limits are in [the drive comparison](#compared-with-the-actual-drive-specifications).
 
-The 10 gigabit network is not a bottleneck and cannot become one at current pool
-speeds: a single TCP stream reaches **1119 MB/s (9.39 Gbit/s)** at standard MTU
-1500, and nothing storage-related has ever come close to that. Writes land
-between **141 and 243 MB/s on every path measured** — local, NFS, or SMB —
-because the pools, not the wire, set that ceiling. Reads are entirely a question
-of what caches them: **2.5–2.9 GB/s** when ARC serves them from RAM, **408–645
-MB/s** across the network with readahead or parallel streams, and as low as
-**224 MB/s** when prefetch is defeated.
+| Pool | Write + final flush | Disk read, direct | Disk read, prefetch | Warm RAM ARC read | Verdict / industry reference |
+|---|---:|---:|---:|---:|---|
+| **BigTank** | **203.4 MB/s** | 254.9 MB/s | **480.4 MB/s** | 5.34 GB/s | **Normal HDD bulk speed**; writes modest for two mirrors. HGST rates one He10 at ~249 MB/s sustained. |
+| **ai-pool** | **396.3 MB/s** | 274.1 MB/s | **1,066.0 MB/s** | 5.50 GB/s | **Fast reads, modest writes**. One HP/Samsung SATA SSD is rated ~550 MB/s read / ~520 MB/s write. |
+| **Backup10T** | **170.5 MB/s** | 190.5 MB/s | **203.5 MB/s** | 5.50 GB/s | **Normal single-HDD speed**. Read is ~80% of Seagate’s 254 MB/s best-case transfer rating. |
 
-```text
-READ                                0        1000      2000      3000 MB/s
-                                    |    ¦    |         |         |
-ai-pool   ARC (RAM)          2891   ██████████████████████████████████████████████
-BigTank   ARC (RAM)          2490   ████████████████████████████████████████
-NFS       4 streams           645   ██████████
-SMB       1 stream+readahead  634   ██████████
-NFS       1 stream+readahead  463   ███████
-BigTank   cold disk, prefetch 408   ██████
-SMB       4 streams           408   ██████
-BigTank   disk, no prefetch   224   ███
-                                    |    ¦
-                                    |    ¦ 10G line rate, 1119 — nothing reaches it
-```
+Physical counters confirmed approximately **4 GiB of disk reads in each sequential disk-read
+phase and zero physical reads in each warm ARC repeat**. BigTank's write phase
+produced about 8.1 GiB of physical writes, consistent with two copies in mirrors.
 
-```text
-WRITE                               0      100       200     250 MB/s
-                                    |       |         |    ¦
-ai-pool   local, 3x SSD       243   ███████████████████████████████████
-NFS       buffered, 10G       218   ███████████████████████████████
-Backup10T local, 1 disk       203   █████████████████████████████
-SMB       parallel, 10G       174   █████████████████████████
-BigTank   local, 4 disks      168   ████████████████████████
-SMB       buffered, 10G       141   ████████████████████
-                                    |       |         |    ¦
-                                    |       |         |    ¦ calomel 4x raid10, 226
-```
+### Small random requests and durable writes
 
-Note the scale change between the two blocks: 0–3000 for reads, 0–250 for
-writes. Plotted on one axis the entire write story would be invisible.
+| Pool | 4 KiB disk read IOPS | Read p99 latency | Write + fsync IOPS | Mean write + fsync cycle | Verdict / industry reference |
+|---|---:|---:|---:|---:|---|
+| BigTank | 97.9 | 108.53 ms | 61.2 | 16.34 ms | **Slow for busy VMs/databases**; mean read ~10.2 ms is mechanical-class, p99 is long. HGST: 8 ms seek + 4.16 ms rotation. |
+| ai-pool | 1,502.5 | 1.02 ms | 415.9 | 2.40 ms | **Much faster than HDDs**; raw Samsung QD1 reference is 10K read IOPS, but does not include this 128 KiB record amplification. |
+| Backup10T | 130.3 | 19.79 ms | 123.3 | 8.11 ms | **HDD-limited**; Seagate’s 170/370 read/write IOPS is QD16, not a matched QD1/fsync comparison. |
 
----
+These requests access **128 KiB ZFS records**. Reading 4 KiB can cause a much
+larger physical read; do not compare this directly with a drive vendor's raw
+4 KiB benchmark. Write IOPS include an `fsync` after every operation. The
+separate fsync latency in the raw results is not the whole write cycle.
 
-## 2. Hardware
+Warm ARC random reads reached 173,072 IOPS on BigTank, 177,745 on ai-pool,
+and 166,158 on Backup10T, with no physical reads. That demonstrates caching
+for this **4 GiB working set**, not that every installed gigabyte is necessary.
 
-| Component | Value |
+[Download compact results](assets/nas-benchmarks/2026-09-20/summary.json) ·
+[Full fio output and exact arguments](assets/nas-benchmarks/2026-09-20/results.jsonl)
+
+
+## Is this NAS fast or slow?
+
+**Good for bulk files; HDD latency is the weak fit for busy VMs and databases.**
+The SSD pool reads quickly, but its lack of redundancy makes it a poor default
+for irreplaceable state. CPU capacity is not the demonstrated NAS bottleneck.
+
+| Workload | Verdict from this run | What to consider |
+|---|---|---|
+| Large files, media, backup copies on BigTank | Reasonable HDD-class throughput: 480 MB/s reads, 203 MB/s flushed writes | Keep it; schedule competing backups and judge actual completion windows |
+| Random uncached VM/database access on BigTank | Slow relative to SSDs: 98 QD1 read IOPS, 108.5 ms read p99; 61 fsync writes/s | Prefer a measured, redundant SSD path for latency-sensitive state |
+| Repeated hot reads | Very fast locally: 5.34–5.50 GB/s from RAM | Keep RAM now; network clients cannot receive data faster than their link |
+| Large model files on ai-pool | Good measured aggregate read rate: 1.07 GB/s | Current stripe is suitable only where loss/re-download is acceptable; 396 MB/s writes deserve a longer representative test if write speed matters |
+| Backup10T | Plausible single-HDD result: 203 MB/s reads, 171 MB/s writes | Capacity/staging tier, not high-availability primary storage |
+
+### Compared with the actual drive specifications
+
+| Drive | Manufacturer's reference | Comparison boundary |
+|---|---|---|
+| HGST He10 10 TB | Typical sustained 249 MB/s per drive; 8 ms read seek + 4.16 ms average rotation | BigTank's ~10.2 ms mean random-read completion is in mechanical-latency territory. Four advertised rates are not a guaranteed ZFS pool rate. |
+| Seagate ST10000NM0096 | Up to 254 MB/s at the outer diameter | 203 MB/s buffered disk reads are plausible on an allocated, live filesystem; not evidence of a failing disk. |
+| HP S700 500 GB | Up to 564/518 MB/s sequential read/write | Vendor conditions differ from one ZFS job on a mixed three-drive pool. |
+| Samsung 860 EVO 1 TB | Up to 550/520 MB/s; random reads 10K IOPS at QD1 versus 98K at QD32 | Queue depth and block size matter. This test's 128 KiB records do not reproduce raw-device 4 KiB conditions. |
+| P3-512 | Live evidence establishes SATA 6 Gb/s, vendor identity unconfirmed | Do not apply Crucial P3 NVMe specifications to this SATA device. |
+
+Sources: [HGST He10 datasheet](https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/data-center-drives/ultrastar-hdd-sata-series/ultrastar-he10/data-sheet-ultrastar-he10.pdf),
+[Seagate Enterprise Capacity v6 datasheet](https://www.seagate.com/www-content/datasheets/pdfs/ent-cap-3-5-hdd-10tb-channelDS1863-6C-1701US-en_US.pdf),
+[HP/Biwin S700 specification](https://hp.biwintech.com/u_file/photo/20220916/HP-S700-2.5-Specifications.pdf),
+[Samsung 860 EVO datasheet](https://download.semiconductor.samsung.com/resources/data-sheet/Samsung_SSD_860_EVO_Data_Sheet_Rev1.pdf).
+These are specification comparisons, **not an industry percentile or matched lab shootout**.
+
+A 10 GbE link has an arithmetic ceiling of 1.25 GB/s before overhead; the old
+1,119 MB/s TCP result equals 8.95 Gb/s. The SSD disk result approaches that
+transport budget, and warm ARC exceeds it. A 2.5 GbE client has a 312.5 MB/s
+arithmetic ceiling. The old claim that the network “cannot become a bottleneck”
+was incorrect.
+
+### Translating speeds into users
+
+“User” is not a storage workload. Ten people watching cached video, ten people
+copying large files, and ten database writers require different resources.
+These are **bandwidth-budget examples, not load-tested simultaneous-user limits**:
+
+| Example | Aggregate demand | Reading the result |
+|---|---:|---|
+| 10 direct-play streams at 100 Mb/s each | 125 MB/s | ~26% of BigTank's single-stream prefetch result; concurrent seek patterns, network, and transcoding still need testing |
+| 40 direct-play streams at 25 Mb/s each | 125 MB/s | Same bandwidth; four times the independent requests may alter disk behavior |
+| 4 file readers at 50 MB/s each | 200 MB/s | ~42% of the sequential read result; client links and concurrency matter |
+| 2 file writers at 50 MB/s each | 100 MB/s | ~49% of the flushed sequential write result; leave room for backups and other traffic |
+| Small database transactions or Kubernetes control-plane writes | No reliable users-per-second conversion | Use measured durable-write latency, real query/app tests and the workload's latency target |
+
+These examples reserve substantial headroom but do not model multi-file seeks,
+cache misses, mixed reads/writes, transcoding CPU, or application locks.
+For consolidation, use the [Proxmox and Kubernetes capacity assessment](inventory/2026-09-20-capacity-and-benchmarks.md).
+
+
+## Four simultaneous bulk streams — measured
+
+A separate follow-up ran at **17:58:44–17:59:51 UTC**, using four new 1 GiB
+files on a new BigTank scratch dataset. The reader comparison used those same
+four files, with 4 GiB total per pass, data retention disabled and physical
+reads verified. Conditions matched the first suite except job/file count.
+
+| Test | Aggregate MB/s | Per-stream MB/s |
+|---|---:|---:|
+| One reader across four files | 434.3 | 434.3 |
+| Four concurrent readers | 522.4 | 130.6–135.4 |
+| Four concurrent writers, final fsync per job | 202.1 | 50.5–51.5 |
+
+Four readers raised total throughput about 20%; four writers shared roughly the
+same total bandwidth as the earlier single writer. Aggregate throughput divides
+total bytes by the longest fio job runtime; startup-inclusive wall rates were
+416.2, 493.5, and 198.0 MB/s respectively.
+
+For 1 MiB requests, read p99 rose from 31.9 ms with one reader to 95.9–106.4 ms
+with four. Concurrent buffered writes showed 1.08-second p99 stalls; their cause
+was not isolated. These are bulk request latencies, not application response times.
+This was not a mixed read/write test, an SMB test, or a supported-user-count test.
+
+The scratch dataset was deleted and independently checked absent; all pools
+remained healthy. [Concurrency summary](assets/nas-benchmarks/2026-09-20/concurrency/summary.json)
+· [Raw results](assets/nas-benchmarks/2026-09-20/concurrency/results.jsonl)
+· [Executed script](assets/nas-benchmarks/2026-09-20/concurrency/run-remote.py).
+
+## ARC is RAM; L2ARC is a separate device
+
+**No L2ARC is installed.** Pool topology has no cache vdevs, and the kernel
+reported `l2_ndev=0` and `l2_size=0`. An “L2ARC on versus off” result would require
+hardware that this NAS does not currently have.
+
+The useful test here is **disk reads versus RAM ARC reads**. Dataset-local
+`primarycache=metadata` excludes file data from ARC retention for the disk tests;
+metadata caching remains enabled. The warm-cache test changes only the scratch
+dataset to `primarycache=all`, reads the file once, then repeats it.
+`secondarycache=none` is explicit throughout.
+
+L2ARC caches reads. It is not a write-acceleration device. A separate log device
+(SLOG) has a different job: handling synchronous-write intent logging. Neither
+should be purchased merely because a graph says the RAM cache is full.
+[OpenZFS caching reference](https://openzfs.github.io/openzfs-docs/Basic%20Concepts/Pool%20Structure/Caching.html).
+
+A prefetch-enabled disk read can record ARC demand hits as prefetched data is
+consumed. **The physical disk-byte counters are the evidence that separates
+those reads from warm RAM reads.** A high demand-hit count alone is insufficient.
+
+## Hardware and pool inventory
+
+| Component | Observed September 20 |
 |---|---|
-| OS | TrueNAS SCALE 26.0 Community |
-| ZFS | OpenZFS 2.4.3-1 |
-| CPU | Intel Xeon E5-2680 v4 — 14 cores / 28 threads @ 2.40 GHz |
-| RAM | 377 GB |
-| ARC | 275 GB in use, `c_max` 404 GB, hit rate 99.96% |
-| NIC | 10 GbE, MTU 1500 |
+| Chassis | HP DL360 Gen9 |
+| Processor | Xeon E5-2680 v4, 14 cores / 28 threads |
+| Installed RAM | 12 × 32 GB ECC LRDIMM, 1600 MT/s; 384 GB installed |
+| OS-usable RAM | 377.6 GiB |
+| OS | `TrueNAS-26.0.0-MASTER+20260914-020141` — development build |
+| ZFS | OpenZFS 2.4.3 |
+| Network | 10 GbE path; historical TCP test below, not rerun in this pass |
+| Cache/log additions | No L2ARC cache vdev or separate SLOG observed |
 
-The CPU matters when reading general NAS advice: commentary about consumer NAS
-units bottlenecking on weak ARM/N100/Celeron processors does not apply here.
-This box has never been CPU-bound in any measurement on this page.
+| Pool | Drive layout | Pool capacity | Allocated | Redundancy |
+|---|---|---:|---:|---|
+| BigTank | 4 × HGST HUH721010AL4200 10 TB SAS HDD, two mirrors | 18.2 TiB | 57% | One member can fail per mirror; both members of one mirror failing loses the pool |
+| Backup10T | 1 × Seagate ST10000NM0096 10 TB HDD | 9.08 TiB | 68% | None |
+| ai-pool | P3-512 512 GB + HP S700 500 GB + Samsung 860 EVO 1 TB SATA SSD, striped | 1.82 TiB | 75% | None; losing any member threatens the pool |
+| boot-pool | Two mirrored SSDs | 222 GiB | 58% | Mirror; excluded from performance writes |
 
-### Disks
+Pool capacities are ZFS pool figures, not a promise of the same writable dataset
+capacity. BigTank reported 27% fragmentation and retained mappings from an earlier
+vdev removal. Those facts do **not** establish the cause of a throughput limit.
+Do not rebuild a pool based on that correlation alone.
 
-| Device | Model | Size | Type | Pool |
-|---|---|---|---|---|
-| `sdi` | HGST HUH721010AL4200 | 10 TB | 7200 rpm SAS | BigTank — mirror-0 |
-| `sdj` | HGST HUH721010AL4200 | 10 TB | 7200 rpm SAS | BigTank — mirror-0 |
-| `sdk` | HGST HUH721010AL4200 | 10 TB | 7200 rpm SAS | BigTank — mirror-1 |
-| `sdl` | HGST HUH721010AL4200 | 10 TB | 7200 rpm SAS | BigTank — mirror-1 |
-| `sda` | Seagate ST10000NM0096 | 10 TB | 7200 rpm | Backup10T |
-| `sdd` | P3-512 | 512 GB | SATA SSD | ai-pool |
-| `sde` | HP SSD S700 500GB | 500 GB | SATA SSD | ai-pool |
-| `sdf` | Samsung 860 EVO 1TB | 1 TB | SATA SSD | ai-pool |
-| `sdg` | T-FORCE 512GB | 512 GB | SATA SSD | boot-pool mirror |
-| `sdh` | MK000480GWCEV | 480 GB | SATA SSD | boot-pool mirror |
-| `sdb`, `sdc` | T-FORCE 512GB | 512 GB | SATA SSD | unused, no partitions |
+Device names such as `/dev/sda` changed between inspections. Match disks by
+persistent identifier/model and current `zpool status -P`, not an old letter.
+All four pools were ONLINE with no known pool data errors at preflight.
 
----
+## How much RAM is actually needed?
 
-## 3. Pools
+**384 GB is useful today; the minimum acceptable replacement size remains unmeasured.**
+A repeated read demonstrates caching value. It does not show that the real working
+set requires every gigabyte of the current cache.
 
-| Pool | Topology | Raw | Used | Frag | Role |
-|---|---|---|---|---|---|
-| **BigTank** | 2 × 2-way mirror, striped (RAID10) | 18.2 TB | 53% | 25% | Primary data. Backs all NFS and SMB shares. |
-| **Backup10T** | single disk | 9.08 TB | 68% | 1% | Holding/staging disk. Replication target for `BigTank/General,backup,photos`. Single-disk by design. |
-| **ai-pool** | 3 × single-disk stripe | 1.82 TB | 50% | 2% | LLM model weights. **No redundancy, deliberately** — contents are re-downloadable. |
-| **boot-pool** | 2-way mirror | 222 GB | 50% | 26% | Boot. |
+| Observation | What it establishes |
+|---|---|
+| 17:16 UTC snapshot: 341.4 GiB ARC, 13.8 GiB other allocations, 22.3 GiB free | Most available memory is doing cache work; “other” includes OS, apps, kernel and other caches |
+| 72-hour CPU mean 1.51%, p95 2.43% across ten-minute buckets | Substantial CPU headroom in the observed workload; averages hide short spikes |
+| 72-hour demand-data hit rate 99.917% | Most counted demand requests hit cache; this is not a byte-weighted hit rate |
+| RustFS about 3.2 GiB at inspection; peak ten-minute average 7.46 GiB | Reserve app peaks before allocating a future RAM budget to ARC |
+| About 11 hours with ARC below 128 GiB and very high demand hits | A clue that some activity fits in less cache; workload differed, so it is not a 128 GB replacement test |
 
-Two properties of BigTank explain its write behaviour and should not be
-forgotten when reading section 4:
+Tailscale and monitoring used about 0.14 GiB combined. One configured 8 GB VM
+was stopped. The five-minute passive sample showed no memory-pressure stalls
+or ARC throttling; no swap was configured. These were observations of the
+existing workload, not a maximum-concurrency stress test.
 
-- **25% fragmentation** at 53% capacity.
-- **A removed vdev.** `zpool status` reports `Removal of vdev 3 copied 325G`
-  with `18.8M memory used for removed device mappings`. Every block lookup on
-  this pool passes through that indirection table for the life of the pool.
+### Future purchase priorities
 
----
+1. **Keep the current RAM and improve cooling first.** Initial BigTank HDD
+   temperatures were 58, 55, 54, and 43–44°C. Check airflow and trend comparable
+   workloads; no temperature-caused failure was demonstrated.
+2. **Choose drive layout for the workload.** Large media/backups and small durable
+   VM/database requests have different needs; use the sequential and random
+   results separately. The SSD stripe is not redundant VM storage.
+3. **Evaluate 128–256 GB only as expandable replacement candidates.** Reserve OS
+   and app peaks. Keep 384 GB as the measured baseline; 64 GB is a larger,
+   unvalidated cache tradeoff.
+4. **Measure a representative week before buying.** Include backup, restore,
+   Steam iSCSI, file opens, and concurrent users. Compare task duration, disk
+   latency, memory peaks and cache misses, not cache occupancy alone.
+5. **Validate a smaller cache budget in a separate planned test.** Define acceptable
+   task times, record the original setting, warm up comparable workloads and
+   restore the original budget if latency or pressure exceeds the target.
+   An ARC cap is only an approximation of having less physical RAM.
 
-## 4. Measured throughput
+The HP S700 had 816 lifetime CRC errors and the Samsung 860 EVO had four. No
+matching recent kernel I/O errors were found in the inspection. Compare counter
+*deltas* before diagnosing an active cable/controller fault. SMART passing does
+not guarantee future reliability.
 
-### Local, straight to the pools
+## Test method and reproducibility
 
-Compression was set to `off` and the payload was incompressible, so these are
-true disk figures rather than compression artefacts.
+The suite ran **17:45:56–17:54:58 UTC**, using existing `fio` on the NAS.
+Each data pool received one new, uniquely named scratch dataset with an 8 GiB
+quota, `compression=off`, `sync=standard`, `recordsize=128K`, and `atime=off`.
+All three scratch datasets were deleted and independently checked absent.
+Production properties and global ARC limits were unchanged.
 
-| Pool | Write, 1 stream | Write, 4 streams | Read from ARC | Read from disk |
-|---|---|---|---|---|
-| BigTank (4 disks) | 168 MB/s | 164 MB/s | 2490 MB/s | **408 MB/s** |
-| Backup10T (1 disk) | 203 MB/s | 158 MB/s | 2466 MB/s | — |
-| ai-pool (3 SSDs) | 243 MB/s | 179 MB/s | 2891 MB/s | — |
+1. Write an allocated 4 GiB file, 1 MiB blocks, `psync`, one job, `end_fsync=1`.
+2. Read it with `direct=1`, then with buffered prefetch; data retention stays
+   disabled using `primarycache=metadata` and `secondarycache=none`.
+3. Run 15 seconds of 4 KiB direct random reads and 10 seconds of 4 KiB writes
+   with `fsync=1` on the same scratch file.
+4. Set only the scratch dataset's `primarycache=all`; warm the file, repeat the
+   sequential read, then run 10 seconds of cached random reads.
+5. Delete only the scratch dataset created by this run. Verify pool health,
+   unchanged production properties, and absence of all three scratch datasets.
 
-**BigTank's four disks write slower than Backup10T's one disk.** A striped
-mirror should write at roughly twice a single drive; it writes at 0.8×. Adding
-parallel streams does not help — 4 streams were *slower* than 1 on every pool.
+`end_fsync` requests persistence at the end; `fsync=1` requests it after each
+write. One synchronous `psync` job is QD1 even if a larger `iodepth` is requested.
+[Fio option definitions](https://fio.readthedocs.io/en/latest/fio_doc.html) and
+[ZFS dataset properties](https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html).
 
-Per-disk instrumentation during a write shows both mirrors loaded evenly, so
-striping itself is working, and the disks burst to roughly 490 MB/s aggregate
-raw. But sustained per-disk throughput sits at 120–130 MB/s against roughly 250
-MB/s these drives do sequentially. That gap is consistent with the 25%
-fragmentation and the removed-vdev indirection turning a sequential write into a
-scattered one. This is the single clearest improvement target on the box.
+The file size is too small to prove long-run SSD behavior beyond device write
+caches. The final flush is part of fio's reported write runtime. Physical-counter
+brackets include process startup and occasional SMART polling overhead, so
+those longer brackets are not the denominator for fio throughput. Production
+traffic continued; counter deltas can include that traffic and mirror copies.
 
-### Across the network
+**Reproduction prerequisites:** SSH access with appropriate NAS permissions,
+healthy pools, sufficient free space, and a quiet agreed test window. Read the
+[executed script](assets/nas-benchmarks/2026-09-20/run-remote.py) as a dated record;
+review its device mappings and choose a new unique dataset name for another run.
+Never substitute a production path or raw device for its scratch files.
 
-Client is Proxmox `pve` at 192.168.10.14 over 10 GbE, reading and writing
-BigTank.
+**Stop conditions:** new pool errors, a fio failure, a 180-second wall timeout,
+or a SMART HDD temperature of 60°C during this run. That temperature was a
+conservative testing guardrail, not a claimed manufacturer failure threshold.
+Check temperatures before/after each phase and during longer phases.
 
-| Path | Read | Write |
-|---|---|---|
-| Raw TCP, 1 stream (no storage involved) | **1119 MB/s** | — |
-| NFS v4.2, 1 stream + readahead | 463 MB/s | 218 MB/s |
-| NFS v4.2, 4 parallel streams | 645 MB/s | 230 MB/s |
-| SMB 3.1.1, 1 stream + readahead | 634 MB/s | 141 MB/s |
-| SMB 3.1.1, 4 parallel streams | 408 MB/s | 174 MB/s |
-| 2.5 GbE workstation, raw TCP | 256 MB/s | — |
+**Expected result:** allocated data, successful final flushes, physical reads
+for disk phases, and near-zero physical reads for warm-cache repeats. A sparse
+file or unexpected cache behavior invalidates the intended comparison.
 
-Read it against the two ceilings. NFS write (218) lands within 30% of BigTank's
-local write (168) — writes are pool-bound end to end, and no network change will
-move them. Reads never exceed 645 MB/s against a 1119 MB/s wire, so the network
-has headroom nothing is using.
+**Failure/cleanup:** stop the workload, record the error, and remove only the
+exact scratch dataset created by the run after verifying its identity. No
+production setting needs rollback. The script's cleanup tracks created names
+and refuses to adopt a pre-existing benchmark dataset.
+[Independent final verification](assets/nas-benchmarks/2026-09-20/verification.json).
 
-**The NFS-vs-SMB write comparison in that table is not valid and must not be
-quoted as a protocol result.** The NFS figures were taken against
-`BigTank/k8s`, which has `sync=disabled`; the SMB figures against
-`BigTank/virtual-machines`, which has `sync=standard`. That measures the sync
-setting, not the protocol. Treat 218 vs 141 as "sync off vs sync on".
 
-The read difference **is** real but is a mount-option effect, not a protocol
-one: the SMB mount negotiated `rsize=4194304` (4 MB) against NFS's
-`rsize=1048576` (1 MB), so SMB makes a quarter as many round trips. NFS at
-`rsize=4M` would be expected to close most of the gap.
+## Earlier measurements — retained for context
 
-The ad-hoc NFS mount used for these tests had no `nconnect`. The cluster's real
-`truenas-nfs` storageClass **does** mount with `nconnect=16`, so the
-single-stream NFS numbers above understate the production path.
+These figures came from the previous performance reference. Their full raw run
+artifacts and exact collection timestamp were not retained with this page, so
+**they are not September 20 results or controlled regression baselines**.
 
----
+| Earlier path | Read MB/s | Write MB/s | Limitation |
+|---|---:|---:|---|
+| Raw TCP, Proxmox `.14` ↔ NAS, one stream | 1,119 | — | No storage involved; MTU 1500 |
+| NFS v4.2, one stream + readahead | 463 | 218 | `BigTank/k8s`, `sync=disabled` |
+| NFS v4.2, four streams | 645 | 230 | Different concurrency from this pass |
+| SMB 3.1.1, one stream + readahead | 634 | 141 | `BigTank/virtual-machines`, `sync=standard` |
+| SMB 3.1.1, four streams | 408 | 174 | Different concurrency from this pass |
+| 2.5 GbE workstation, raw TCP | 256 | — | A different client/link |
 
-## 5. Against calomel's reference table
+The NFS/SMB write rows do not isolate protocol cost: the datasets had different
+sync policies. Read results also mix mount options, concurrency and cache state.
+The old explanation that NFS should accept a 4 MiB `rsize`, or that changing one
+mount option would close the gap, was not demonstrated and is not a tuning plan.
+The live Kubernetes NFS StorageClass already uses `nconnect=16`; an old ad-hoc
+mount without it does not describe that production path.
 
-[calomel.org's ZFS RAID speed and capacity table](https://calomel.org/zfs_raid_speed_capacity.html)
-is the usual yardstick for "is my pool normal?". It benchmarked 24 × WD Black
-4 TB 7200rpm SAS on an LSI 9207-8i, FreeBSD 10.2, with `bonnie++` on a 16 GB
-file and compression disabled.
+Earlier local sequential writes were BigTank 168 MB/s, Backup10T 203 MB/s and
+ai-pool 243 MB/s; earlier BigTank disk reads were 408 MB/s. Old cache reads were
+2.49, 2.47 and 2.89 GB/s respectively. Different files and methodology prevent
+claiming an improvement or regression from the new test alone.
 
-Their **4 × raid10** — two 2-drive mirrors striped — is exactly BigTank's
-topology, which makes it the one row worth comparing against.
+The first September 20 read-only sample used existing files: 1 GiB direct read
+96.7 MB/s, 1 GiB first buffered read 273.9 MB/s, its cached repeat 4.84 GB/s,
+and a 256 MiB SMB client-cache-bypassed read from `.14` at 219.7 MB/s. Those
+small samples prompted the controlled all-pool rerun above. Do not use 96.7 MB/s
+as BigTank's maximum or 4.84 GB/s as its disk speed.
 
-| Metric | calomel, WD Black 4 TB | BigTank, HGST He10 10 TB | Delta |
-|---|---|---|---|
-| Sequential write | 226 MB/s | 168 MB/s | **−26%** |
-| Sequential read | 644 MB/s | 408 MB/s | **−37%** |
+## Source of truth
 
-| Metric | calomel 1 × single | Backup10T, 1 disk | Delta |
-|---|---|---|---|
-| Sequential write | 108 MB/s | 203 MB/s | **+88%** |
+- Current layout/health: `zpool status -P` and `zpool list` on the NAS.
+- Current properties: `zfs get` on the exact dataset; inheritance matters.
+- Share definitions: `midclt call sharing.smb.query` and `sharing.nfs.query`.
+- [Storage architecture](storage-architecture.md) and
+  [kopiur backup architecture](domains/storage/kopiur-backup-architecture.md)
+  own Kubernetes storage and recovery policy.
+- [TrueNAS special-vdev stall runbook](truenas-special-vdev-stall-runbook.md)
+  covers the earlier missing-pool/dashboard incident.
 
-**The comparison is not symmetric, and that is the point.** calomel ran
-`bonnie++ -b` — synchronous writes with the drive cache disabled — on freshly
-created, unfragmented pools. That is a *harsher* write test than the buffered
-`--end_fsync=1` used here. Backup10T beating their single-drive number by 88%
-is about what an easier test plus a newer, denser platter should produce.
-
-BigTank landing 26% *below* their figure despite the easier test, on drives a
-generation newer and 2.5× larger, is the anomaly. It is the same finding as
-section 4 arrived at from a different direction, and the causes are the same:
-25% fragmentation and the removed-vdev indirection layer.
-
-For reference, the rest of calomel's spinning-disk table, useful when sizing a
-future pool:
-
-| Configuration | Write | Read |
-|---|---|---|
-| 1 × single | 108 | 204 |
-| 2 × mirror | 106 | 488 |
-| 4 × raid10 | 226 | 644 |
-| 4 × raidz1 | 225 | 619 |
-| 4 × raidz2 | 204 | 183 |
-| 6 × raid10 | 389 | 655 |
-| 6 × raidz2 | 429 | 488 |
-
-Their numbers are not directly portable to this box — different drives, OS, ZFS
-version, and test tool — so treat them as shape rather than target. The useful
-signal is relative: adding spindles buys write throughput roughly linearly, and
-`raidz2` at four drives collapses on reads.
-
----
-
-## 6. How to read these numbers correctly
-
-Four traps produced wrong answers during measurement. They will produce wrong
-answers again on any re-run.
-
-**Cache-defeating is mandatory on a 377 GB machine.** With a 275 GB ARC, no
-practical file size defeats the cache. Use `fio --direct=1` (OpenZFS 2.3+ has
-real O_DIRECT and every dataset here is `direct=standard`), or read a cold
-region of a file far larger than ARC.
-
-**O_DIRECT disables prefetch, so it understates sequential reads.** BigTank
-reads 224 MB/s under O_DIRECT and 408 MB/s buffered with prefetch — an
-83% difference on identical hardware. O_DIRECT answers "is ARC involved?"; it
-does not answer "how fast is this pool?" Comparisons against published
-reference tables such as
-[calomel.org's ZFS RAID speed table](https://calomel.org/zfs_raid_speed_capacity.html)
-must use the buffered figure, because that is what `dd`-based tests measure.
-
-**Client page cache can invent throughput above line rate.** Four buffered
-streams reading one file reported 1596 MB/s over NFS and 2486 MB/s over SMB.
-Both are impossible on a 10 GbE link, because jobs 2–4 were served from the
-client's RAM. Always sanity-check a network result against measured raw TCP;
-anything above it is a measurement artefact. Parallel tests must use
-`--direct=1` and a separate file per job.
-
-**Compression turns benchmarks into fiction.** `fio` must write incompressible
-data, or set `compression=off` on the test dataset. Note `--refill_buffers`
-regenerates random data per I/O and becomes its own CPU bottleneck; a single
-random buffer is already incompressible and is enough.
-
-One more artefact worth knowing: `zfs_vdev_direct_write_verify=1` makes ZFS read
-back and verify every O_DIRECT write, which showed up as an absurd 82 MB/s.
-O_DIRECT writes are not a meaningful measurement here — ARC is a read cache, so
-measure writes buffered with `--end_fsync=1`.
-
----
-
-## 7. Tuning observations
-
-Not yet applied. Recorded here so the reasoning is not lost.
-
-- **`zfs_dirty_data_max` is 4 GB on a 377 GB machine.** ZFS caps this default at
-  4 GB regardless of RAM. Writes are visibly bursty — disks idle, then flush at
-  ~490 MB/s. Raising it lets ZFS absorb more before throttling. Test before
-  adopting; a larger dirty buffer also lengthens txg flush pauses.
-- **NFS has no `nconnect`.** Every mount is one TCP connection, which is why 1
-  stream reaches 463 MB/s while 4 reach 645. `nconnect=4` would let a single
-  mount use multiple connections.
-- **Jumbo frames would gain nothing.** Single-stream TCP already reaches 94% of
-  theoretical 10 GbE at MTU 1500. This is the most commonly suggested tuning
-  knob and the least useful one here — and a partially applied MTU change across
-  a path breaks connectivity in ways that are tedious to diagnose.
-- **BigTank fragmentation and vdev indirection** are the real write limit. Both
-  are properties of the pool's history; neither is fixable by tuning. Only
-  rewriting the data into a freshly created pool clears them.
-
----
-
-## 8. Client configuration
-
-Mount options in effect when the section 4 numbers were taken.
-
-**SMB** — Proxmox storage `truenas-smb`, share `virtual-machines` on
-`/mnt/BigTank/virtual-machines`:
-
-```
-vers=3.1.1,cache=strict,rsize=4194304,wsize=4194304,bsize=1048576,actimeo=1
-```
-
-**NFS** — export `/mnt/BigTank/k8s`:
-
-```
-vers=4.2,rsize=1048576,wsize=1048576,proto=tcp,hard,timeo=600,retrans=2,sec=sys
-```
-
-NFS exports differ in root mapping, which decides whether a client's `root` can
-write. `/mnt/BigTank/proxmox` squashes root; `/mnt/BigTank/k8s` and
-`/mnt/ai-pool/vllm` set `maproot_user: root`. A "permission denied" as root on
-an NFS mount is usually this, not a filesystem permission.
-
----
-
-## 9. Identity, sharing, and permissions
+## Recorded sharing and permissions
 
 **Purpose:** who can reach which data, and why. This is the model to reason from
 when adding a device or debugging "why can't this user read that file".
 
-**Status:** current state, implemented. Replaces an earlier arrangement in which
-every account sat in its own private group and cross-account access was
-structurally impossible.
+**Status:** retained configuration reference from the earlier inspection. The
+September 20 benchmark did not revalidate every account, ACL, or share. Recheck
+live permissions before changing them; benchmark datasets do not use these shares.
 
 ### The model in one sentence
 
@@ -350,7 +369,7 @@ and everyone else read. The leading `2` is setgid, so files created inside
 inherit the directory's group instead of the creator's private group — that is
 what stops the arrangement drifting apart as data is written.
 
-### Verified behaviour
+### Behaviour verified by the earlier inspection
 
 Tested by running as each account rather than by reading modes:
 
@@ -398,10 +417,10 @@ while a different account had write through an invisible NFSv4 ACL. **On an
 - **Two ACL models coexist.** `acltype=nfsv4` on BigTank and children;
   `acltype=posix` on Backup10T, ai-pool, and `BigTank/backup`. `acltype` cannot
   be changed casually on a populated dataset, so this is left as-is.
-- **`Backup10T` is intentionally `readonly=on`.** It is the second copy of
-  personal data. ZFS replication (`zfs recv`) still writes to a read-only
-  dataset, but humans and processes cannot — which is the correct protection for
-  a replica. Do not turn it off.
+- **`Backup10T` root was `readonly=off` on September 20.** The earlier
+  reference said `on`; live inspection supersedes that statement. No production
+  property was changed for the benchmark. Inspect individual replica datasets
+  before assuming they are protected from ordinary writes.
 - **Two unrelated locations are called "photos"**: the SMB share `photos` serves
   `/mnt/BigTank/organized_backups/photos`, while the NFS export
   `/mnt/BigTank/photos/All` serves the separate `BigTank/photos` dataset.
@@ -409,74 +428,3 @@ while a different account had write through an invisible NFSv4 ACL. **On an
   library on this NAS yet.
 
 ---
-
-## 10. Reproducing these measurements
-
-Requires SSH to the NAS and a client. `midclt` and read-only `zpool` commands
-work as `truenas_admin` without sudo; `zfs set` does not, so change dataset
-properties through the API instead.
-
-Create a scratch dataset, own it, and disable compression:
-
-```bash
-# on the NAS
-midclt call pool.dataset.create '{"name": "<pool>/_bench", "type": "FILESYSTEM"}'
-midclt call -j filesystem.setperm \
-  '{"path": "/mnt/<pool>/_bench", "uid": 950, "gid": 950, "mode": "755", "options": {"stripacl": true}}'
-midclt call pool.dataset.update "<pool>/_bench" '{"compression": "OFF"}'
-```
-
-`midclt call -job` fails to parse on this build — use `-j`.
-
-Sequential write, and read as ARC would serve it:
-
-```bash
-fio --name=w --filename=/mnt/<pool>/_bench/f --rw=write --bs=1M --size=24G \
-    --direct=0 --ioengine=psync --end_fsync=1 --group_reporting
-fio --name=r --filename=/mnt/<pool>/_bench/f --rw=read --bs=1M --size=24G \
-    --direct=0 --ioengine=psync --invalidate=0 --group_reporting
-```
-
-True disk read, using a cold region of a file much larger than ARC. **`--readonly`
-is required** when pointing `fio` at production data:
-
-```bash
-fio --name=cold --filename=<large-file> --rw=read --bs=1M --size=32G \
-    --offset=120G --direct=0 --ioengine=psync --readonly --group_reporting
-```
-
-Confirm it really came from disk — watch `zpool iostat <pool> 5` for read
-bandwidth during the run, and check that ARC misses climbed:
-
-```bash
-awk '/^misses/{print $3}' /proc/spl/kstat/zfs/arcstats
-```
-
-Remove the scratch dataset afterwards:
-
-```bash
-midclt call pool.dataset.delete "<pool>/_bench"
-```
-
-Raw network ceiling, with no storage in the path, needs only `python3` on both
-ends. Listen on the NAS, then send from the client, and compare the result to
-every network figure in section 4:
-
-```python
-# receiver: python3 - (bind 0.0.0.0:5201, recv until EOF, report bytes/elapsed)
-# sender:   python3 - (connect, sendall a 4 MiB buffer N times, report bytes/elapsed)
-```
-
----
-
-## 11. Source of truth
-
-- Pool topology and health: `zpool status` on the NAS — authoritative over any
-  table here.
-- Share definitions: `midclt call sharing.smb.query` / `sharing.nfs.query`.
-- Kubernetes-side storage policy: [Storage architecture](storage-architecture.md).
-- A pool that disappears from the Storage dashboard: see
-  [TrueNAS special-vdev stall runbook](truenas-special-vdev-stall-runbook.md).
-  Note that an OFFLINE pool with a null topology blanks the entire Storage
-  dashboard — `zpool list` is the reliable check, and exporting the dead pool
-  with `destroy: false` restores the UI without touching data.
