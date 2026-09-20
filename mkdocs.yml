@@ -134,7 +134,6 @@ nav:
       - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
   - AI / GPU:
       - Model catalog: domains/ai-gpu/model-catalog.md
-      - Flash Next on two 3090s: domains/ai-gpu/flash-next-dual-3090.md
       - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
       - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
       - AI gateway and analytics: domains/ai-gpu/ai-observability.md

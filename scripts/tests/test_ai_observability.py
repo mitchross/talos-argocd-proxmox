@@ -166,17 +166,57 @@ class AIObservabilityTests(unittest.TestCase):
             'enable_thinking': False, 'preserve_thinking': False,
         })
         self.assertLessEqual(classifier['max_tokens'], 128)
+        # Sampled classification routed one ask three different ways across runs.
+        self.assertEqual(classifier['temperature'], 0)
+        self.assertEqual(classifier['top_p'], 1)
+        for noisy in ('presence_penalty', 'frequency_penalty'):
+            self.assertNotIn(noisy, classifier)
+        self.assertNotIn('top_k', classifier['extra_body'])
         self.assertEqual(router['tiers'], {
-            'SIMPLE': 'qwen3.8-27b',
-            'MEDIUM': 'qwen3.8-27b',
+            'SIMPLE': 'qwen3.8-27b-auto',
+            'MEDIUM': 'qwen3.8-27b-auto',
             'COMPLEX': 'deepseek-flash',
             'REASONING': 'deepseek-flash',
         })
-        self.assertEqual(router['classification_mode'], 'user_turn')
+        # The auto route is the same vLLM backend under a separate name.
+        auto_local = routes['qwen3.8-27b-auto']['litellm_params']
+        shared = routes['qwen3.8-27b']['litellm_params']
+        self.assertEqual(auto_local['model'], shared['model'])
+        self.assertEqual(auto_local['api_base'], shared['api_base'])
+        # Paid tiers must never fall back to the provider's default effort.
+        efforts = {
+            tier: entries[0]['litellm_params']['reasoning_effort']
+            for tier, entries in router['tier_model_configs'].items()
+        }
+        self.assertEqual(efforts, {'COMPLEX': 'high', 'REASONING': 'max'})
+        # Local work is the point of the two 3090s: Qwen must keep a real tier.
+        self.assertEqual(router['tiers']['MEDIUM'], 'qwen3.8-27b-auto')
+        for tier, entries in router['tier_model_configs'].items():
+            self.assertEqual(entries[0]['model_name'], router['tiers'][tier])
+            # OpenRouter exposes low/high/max for Flash; drop_params eats anything else.
+            self.assertIn(entries[0]['litellm_params']['reasoning_effort'],
+                          {'low', 'high', 'max'})
+        # LiteLLM rejects stall escalation unless every request is classified.
+        self.assertTrue(router['stall_escalation_enabled'])
+        self.assertEqual(router['classification_mode'], 'every_request')
         self.assertFalse(router['session_affinity'])
-        self.assertFalse(router['enable_context_window_escalation'])
+        self.assertLessEqual(router['stall_escalation_repeat_threshold'],
+                             router['stall_escalation_window'])
+        self.assertTrue(router['enable_context_window_escalation'])
         self.assertFalse(router['return_raw_model_name'])
-        self.assertEqual(params['complexity_router_default_model'], 'qwen3.8-27b')
+        # v1.102.0 flips this default and would hand Flash a 943K output cap.
+        self.assertFalse(router['max_tokens_from_tier_model'])
+        # An unclassifiable turn resolves upward; guessing cheap is the costly miss.
+        self.assertEqual(params['complexity_router_default_model'], 'deepseek-flash')
+        # vLLM being down must not fail the request.
+        settings = config['router_settings']
+        self.assertEqual(settings['fallbacks'], [{'qwen3.8-27b-auto': ['deepseek-flash']}])
+        self.assertEqual(settings['context_window_fallbacks'],
+                         [{'qwen3.8-27b-auto': ['deepseek-flash']}])
+        # A vLLM outage must never divert bare `pi`, Open WebUI or the other
+        # gateway clients to a paid external provider.
+        for rule in settings['fallbacks'] + settings['context_window_fallbacks']:
+            self.assertNotIn('qwen3.8-27b', rule)
         self.assertEqual(auto['model_info'], {
             'max_input_tokens': 229376,
             'max_output_tokens': 32768,
@@ -194,12 +234,14 @@ class AIObservabilityTests(unittest.TestCase):
             'max_output_tokens': 943718,
         })
         image = container(read('my-apps/ai/litellm/deployment.yaml'))['image']
-        self.assertEqual(image, 'ghcr.io/berriai/litellm:v1.101.0')
+        self.assertTrue(image.startswith('ghcr.io/berriai/litellm:v1.102.0@sha256:'), image)
 
         guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
-        self.assertIn('SIMPLE` / `MEDIUM`', guide)
+        self.assertIn('SIMPLE` / `MEDIUM` work on local Qwen', guide)
         self.assertIn('COMPLEX` / `REASONING`', guide)
-        self.assertIn('classification_mode: user_turn', guide)
+        self.assertIn('stall_escalation_enabled', guide)
+        self.assertIn('LITELLM ESCALATE', guide)
+        self.assertIn('classification_mode: every_request', guide)
         self.assertIn('beta', guide.lower())
 
 
