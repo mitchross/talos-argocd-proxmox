@@ -55,10 +55,30 @@
   function recheck(key) {
     const item = D.reinspection?.[key];
     if (!item) return callout('Latest reinspection pending', 'The detailed baseline below is historical. This section has no newer verified capture in this inventory; do not interpret it as current cluster health.');
-    return `<article class="recheck ${esc(item.status || 'neutral')}"><div class="card-meta">${badge(item.label || 'Reinspection', item.status || 'neutral')}<span class="small">Checked ${esc(date(item.checkedAt || D.reinspection.checkedAt))}</span></div><h3>${esc(item.summary)}</h3>${bullets(item.evidence)}${item.limitations ? `<p class="small">${esc(item.limitations)}</p>` : ''}</article>`;
+    const historical = Boolean(D.fleetPerformance && new Date(item.checkedAt || D.reinspection.checkedAt) < new Date(D.fleetPerformance.date));
+    const card = `<article class="recheck ${esc(item.status || 'neutral')}"><div class="card-meta">${badge(item.label || 'Reinspection', item.status || 'neutral')}<span class="small">Checked ${esc(date(item.checkedAt || D.reinspection.checkedAt))}</span></div><h3>${esc(item.summary)}</h3>${bullets(item.evidence)}${item.limitations ? `<p class="small">${esc(item.limitations)}</p>` : ''}</article>`;
+    return historical ? `<details><summary>Historical inspection: ${esc(date(item.checkedAt || D.reinspection.checkedAt))}</summary>${card}</details>` : card;
+  }
+  function renderNasPerformance(){
+    const p = D.nasPerformance;
+    if (!p) return;
+    section(`<h3 class="subheading">NAS pool speed and RAM cache · ${esc(p.date)}</h3><p class="capture-note">Benchmarks: ${esc(p.checkedAt)}; memory: ${esc(p.memory.checkedAt)}. Historical host, drive and save-latency tables retain their own dates.</p><p class="body-copy">${esc(p.summary)}</p><div class="metric-grid">${metric('RAM cache',`${num(p.memory.arcGiB)} GiB`,'ARC: ZFS data and metadata held in RAM.')}${metric('OS, apps and other allocations',`${num(p.memory.otherGiB)} GiB`,'Total minus ARC and free memory; includes other caches, not just app usage.')}${metric('Free memory',`${num(p.memory.freeGiB)} GiB`,'Separate from reclaimable ARC memory.')}${metric('SSD read cache (L2ARC)','None','No cache devices were installed; there is no L2ARC benchmark.')}</div><p class="body-copy">${esc(p.scope)} ${esc(p.cacheNote)}</p>`);
+    table(panel,p.results,[['Pool / mode',r=>title(r.pool,r.mode)],['Throughput',r=>esc(r.throughput)],['When writes are durable',r=>esc(r.durability)],['Interpretation / limits',r=>esc(r.limitations)]],{placeholder:'Search NAS pool, cache mode or test…'});
+    section(`<p class="body-copy">${esc(p.limitations)}</p><p><a class="button" href="../../nas-performance/">NAS performance method and RAM sizing ↗</a></p>`);
+  }
+  function renderFleetBenchmarks(){
+    const p = D.fleetPerformance;
+    if (!p) return;
+    const root = section(`<details class="latest-fleet-benchmarks"><summary><strong>September 20 Proxmox & Kubernetes benchmarks</strong> · 5 host roots and 7 application paths</summary><p class="capture-note">${esc(p.scope)}</p><p class="body-copy">${esc(p.referenceNote)}</p><h3 class="subheading">Proxmox host root filesystems</h3><p class="body-copy">${esc(p.rootMethod)}</p><div class="fleet-roots"></div><h3 class="subheading">Actual Kubernetes volume paths</h3><p class="body-copy">${esc(p.guestMethod)}</p><div class="fleet-guests"></div><p class="body-copy">${esc(p.incident)}</p></details><p><a class="button" href="../../inventory/2026-09-20-capacity-and-benchmarks/">Full fleet findings, methodology and consolidation assessment ↗</a></p>`);
+    const reference = r => `${title(r.verdict,r.reference)}${r.referenceUrl ? `<a href="${esc(r.referenceUrl)}">Manufacturer reference ↗</a>` : ''}`;
+    const columns = [['Path',r=>title(r.name,r.backend || r.path)],['Write / read MB/s',r=>esc(`${num(r.writeMBs)} / ${num(r.readMBs)}`)],['8 KiB write + fsync p99',r=>title(`${num(r.syncP99Ms,3)} ms`,r.durability)],['Verdict / reference',reference]];
+    table(root.querySelector('.fleet-roots'),p.rootResults,columns,{placeholder:'Search latest host-root measurement…'});
+    table(root.querySelector('.fleet-guests'),p.guestResults,columns,{placeholder:'Search latest application-volume measurement…'});
   }
   function renderDisks() {
     panel.innerHTML=head('01','Start at the disks.','Click a drive to see what needs attention, why it matters, and whether to keep it or plan a replacement.') + recheck('disks') + callout('A recommendation is not a failure diagnosis.','Investigate soon means find the cause before buying parts. Plan maintenance means schedule preventive work. Keep and monitor means no replacement is justified by the evidence. Passing the drive’s built-in health check does not guarantee it cannot fail.','good') + dated('disks');
+    renderFleetBenchmarks();
+    renderNasPerformance();
     const chips=section('<div class="host-chips" aria-label="Filter disks by physical host"></div>').firstElementChild;
     const summary=section(''), inventory=section(''); let selected='all';
     const choices=[{id:'all',name:'All hosts'},...hosts];
@@ -129,14 +149,18 @@
     renderBenchmarks();
   }
   function renderBenchmarks(){
+    renderFleetBenchmarks();
+    renderNasPerformance();
     const samples=list('benchmarks');
-    section(dated('benchmarks'));
-    section('<h3 class="subheading">How long did saving data take?</h3><p class="body-copy">These short tests time a small save through each storage path. They do not show maximum speed or guarantee future performance. Typical wait is the middle result; the slowest 5% and 1% cutoffs show the delays hidden by an average. A cutoff of 42 ms means 99 out of 100 operations finished within 42 ms. Physical-disk averages above time a different operation.</p>'+callout('A fast “saved” response may not mean the data is safe yet.','The NAS file-share path (SMB) can confirm a save before it reaches permanent storage because sync is disabled. It can look faster while risking recent writes during a power loss. Compare the save behavior below before ranking speeds.'));
+    const historical = section('<details><summary>Historical September 8/9 save-latency probes</summary><div class="historical-benchmarks"></div></details>').querySelector('.historical-benchmarks');
+    const historicalSection = html => { const node=document.createElement('div');node.innerHTML=html;historical.append(node); };
+    historicalSection(dated('benchmarks'));
+    historicalSection('<h3 class="subheading">How long did saving data take?</h3><p class="body-copy">These short tests time a small save through each storage path. They do not show maximum speed or guarantee future performance. Typical wait is the middle result; the slowest 5% and 1% cutoffs show the delays hidden by an average. A cutoff of 42 ms means 99 out of 100 operations finished within 42 ms. Physical-disk averages above time a different operation.</p>'+callout('A fast “saved” response may not mean the data is safe yet.','The NAS file-share path (SMB) can confirm a save before it reaches permanent storage because sync is disabled. It can look faster while risking recent writes during a power loss. Compare the save behavior below before ranking speeds.'));
     const valid=samples.filter(b=>b.p99Ms!=null&&Number.isFinite(Number(b.p99Ms))&&Number(b.p99Ms)>=0),max=Math.max(1,...valid.map(b=>Number(b.p99Ms)));
     if(valid.length){
-      section(`<figure class="latency-chart"><figcaption><strong>Slowest 1% cutoff: disk-save wait</strong><span>Milliseconds · linear scale · lower is faster</span></figcaption>${valid.map(b=>`<div class="latency-row"><span class="latency-name">${esc(b.name)}</span><div class="latency-track" aria-hidden="true"><span style="width:${Math.max(0,Math.min(100,Number(b.p99Ms)/max*100))}%"></span></div><strong>${num(b.p99Ms,2)} ms</strong></div>`).join('')}<p class="small">99 out of 100 operations finished within the shown time. Save settings differ, so a shorter bar alone does not make a storage path better.</p></figure>`);
+      historicalSection(`<figure class="latency-chart"><figcaption><strong>Slowest 1% cutoff: disk-save wait</strong><span>Milliseconds · linear scale · lower is faster</span></figcaption>${valid.map(b=>`<div class="latency-row"><span class="latency-name">${esc(b.name)}</span><div class="latency-track" aria-hidden="true"><span style="width:${Math.max(0,Math.min(100,Number(b.p99Ms)/max*100))}%"></span></div><strong>${num(b.p99Ms,2)} ms</strong></div>`).join('')}<p class="small">99 out of 100 operations finished within the shown time. Save settings differ, so a shorter bar alone does not make a storage path better.</p></figure>`);
     }
-    table(panel,samples,[['Probe / path',b=>title(b.name,b.path)],['Typical wait (middle result)',b=>esc(b.p50Ms==null?'Not collected':`${num(b.p50Ms,3)} ms`)],['Slowest 5% cutoff',b=>esc(b.p95Ms==null?'Not collected':`${num(b.p95Ms,3)} ms`)],['Slowest 1% cutoff',b=>esc(b.p99Ms==null?'Not collected':`${num(b.p99Ms,3)} ms`)],['When does it say “saved”?',b=>esc(evidenceText(b.durability)||'Not specified')],['Interpretation',b=>esc(b.note||'Short save-time test; not a prolonged stress test')]],{placeholder:'Search probe, storage path or durability…'});
+    table(historical,samples,[['Probe / path',b=>title(b.name,b.path)],['Typical wait (middle result)',b=>esc(b.p50Ms==null?'Not collected':`${num(b.p50Ms,3)} ms`)],['Slowest 5% cutoff',b=>esc(b.p95Ms==null?'Not collected':`${num(b.p95Ms,3)} ms`)],['Slowest 1% cutoff',b=>esc(b.p99Ms==null?'Not collected':`${num(b.p99Ms,3)} ms`)],['When does it say “saved”?',b=>esc(evidenceText(b.durability)||'Not specified')],['Interpretation',b=>esc(b.note||'Short save-time test; not a prolonged stress test')]],{placeholder:'Search probe, storage path or durability…'});
   }
   function renderArgo(){
     const apps=list('apps'),healthy=apps.filter(a=>a.health==='Healthy').length,synced=apps.filter(a=>a.sync==='Synced').length;
@@ -184,7 +208,14 @@
   const tabs=document.querySelector('#stage-tabs');let current=0;
   stages.forEach(([label],i)=>{const b=document.createElement('button');b.className='stage-tab';b.id=`tab-${i}`;b.setAttribute('role','tab');b.setAttribute('aria-controls','inspection-panel');b.innerHTML=`<span class="num">${i+1}</span>${esc(label)}`;b.addEventListener('click',()=>selectStage(i));b.addEventListener('keydown',e=>{let next=null;if(e.key==='ArrowRight')next=(i+1)%stages.length;if(e.key==='ArrowLeft')next=(i+stages.length-1)%stages.length;if(e.key==='Home')next=0;if(e.key==='End')next=stages.length-1;if(next!==null){e.preventDefault();selectStage(next);tabs.children[next].focus();tabs.children[next].scrollIntoView({block:'nearest',inline:'nearest'});}});tabs.append(b);});
   function selectStage(i){current=i;[...tabs.children].forEach((b,j)=>{b.setAttribute('aria-selected',String(i===j));b.tabIndex=i===j?0:-1;});panel.setAttribute('aria-labelledby',`tab-${i}`);stages[i][1]();history.replaceState(null,'',`#stage-${i+1}`);}
-  document.querySelector('#capture-date').textContent=`Latest report update: ${date(D.reinspection?.checkedAt)} · Detailed physical tables: ${date(D.physicalCheckedAt || D.hardwareCheckedAt)}`;
+  if (D.nasPerformance) {
+    document.querySelector('.snapshot-card h2').textContent = D.fleetPerformance ? 'September 20 performance review' : 'September 10 cluster / September 20 NAS';
+    document.querySelector('.snapshot-card p:last-of-type').textContent = 'Current fleet and NAS measurements are separated from historical September 8–10 hardware details and repair records. Each section dates its evidence.';
+  }
+  if (D.fleetPerformance) {
+    const latest=document.createElement('aside');latest.className='callout good';latest.innerHTML='<h2>Latest assessment · September 20</h2><p>Spare compute does not remove single-copy data, pinned devices or the sole control-plane dependency. The Elite has the least host RAM headroom; SFF storage and CPU contention deserve investigation.</p><p><a href="../../inventory/2026-09-20-capacity-and-benchmarks/">Current fleet assessment</a> · <a href="../../nas-performance/">Current NAS assessment</a></p>';document.querySelector('.hero').after(latest);
+  }
+  document.querySelector('#capture-date').textContent=`NAS performance: ${date(D.nasPerformance?.checkedAt)} · Cluster reinspection: ${date(D.reinspection?.checkedAt)} · Detailed physical tables: ${date(D.physicalCheckedAt || D.hardwareCheckedAt)}`;
   document.querySelector('#scope-counts').innerHTML=`<span><strong>${hosts.length}</strong>physical hosts</span><span><strong>${disks.length}</strong>drives</span><span><strong>${nodes.length}</strong>Talos nodes</span>`;
   document.querySelector('#revision').textContent=`Baseline ${D.sourceCommit||'not recorded'} · Dated inspection, not live polling`;
   panel.addEventListener('click',e=>{const b=e.target.closest('[data-disk]');if(b&&!document.querySelector('#detail-dialog').open)showDisk(b.dataset.disk);});

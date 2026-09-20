@@ -1,0 +1,64 @@
+{
+  "checked_at": "2026-09-20T17:57:32.568307+00:00",
+  "scratch_exists": false,
+  "smart": [
+    {
+      "device": "sda",
+      "passed": true,
+      "temperature_C": 33,
+      "media_errors": null,
+      "critical_warning": null,
+      "ata_indicators": []
+    },
+    {
+      "device": "sdb",
+      "passed": true,
+      "temperature_C": 20,
+      "media_errors": null,
+      "critical_warning": null,
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          }
+        }
+      ]
+    },
+    {
+      "device": "sdc",
+      "passed": true,
+      "temperature_C": 22,
+      "media_errors": null,
+      "critical_warning": null,
+      "ata_indicators": [
+        {
+          "id": 5,
+          "name": "Reallocated_Sector_Ct",
+          "raw": {
+            "value": 0,
+            "string": "0"
+          }
+        }
+      ]
+    },
+    {
+      "device": "nvme0n1",
+      "passed": true,
+      "temperature_C": 54,
+      "media_errors": 0,
+      "critical_warning": 0,
+      "ata_indicators": []
+    },
+    {
+      "device": "nvme1n1",
+      "passed": true,
+      "temperature_C": 54,
+      "media_errors": 0,
+      "critical_warning": 0,
+      "ata_indicators": []
+    }
+  ]
+}

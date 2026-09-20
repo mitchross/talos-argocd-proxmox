@@ -1,5 +1,11 @@
 # Diagnostics Hardware Report
 
+**September 20 NAS measurements:** the **Disks** and **Disk overload & repairs**
+tabs now compare local pool reads, writes and RAM cache performance. Read the
+[NAS performance report](nas-performance.md) for the method and hardware-sizing
+limits. These tests exclude SMB/NFS and do not refresh the older host, recovery
+or application-health findings below.
+
 The September 10 post-reboot inspection covers drives, hosts, Talos nodes,
 applications and recovery. **Keep the Dell for now:** normal compute demand fits,
 but its spare wired failure domain matters when another machine fails. The

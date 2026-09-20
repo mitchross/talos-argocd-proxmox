@@ -1,0 +1,19 @@
+{
+  "utc": "2026-09-20T17:55:56.681890+00:00",
+  "scratch_datasets_absent": {
+    "BigTank/agent-bench-20260920-1745": true,
+    "ai-pool/agent-bench-20260920-1745": true,
+    "Backup10T/agent-bench-20260920-1745": true
+  },
+  "health": "all pools are healthy",
+  "arc": {
+    "size": 358363626816,
+    "c_max": 404340830208,
+    "l2_ndev": 0,
+    "l2_size": 0,
+    "l2_hits": 0,
+    "l2_read_bytes": 0,
+    "memory_throttle_count": 0
+  },
+  "parent_properties": "Backup10T\treadonly\toff\nBackup10T\tcompression\tlz4\nBackup10T\tsync\tstandard\nBackup10T\tprimarycache\tall\nBackup10T\tsecondarycache\tall\nBigTank\treadonly\toff\nBigTank\tcompression\tzstd\nBigTank\tsync\tstandard\nBigTank\tprimarycache\tall\nBigTank\tsecondarycache\tall\nai-pool\treadonly\toff\nai-pool\tcompression\tlz4\nai-pool\tsync\tstandard\nai-pool\tprimarycache\tall\nai-pool\tsecondarycache\tall\n"
+}
