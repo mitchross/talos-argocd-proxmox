@@ -82,7 +82,7 @@ own the moving upstream contract.
 | Property | Value |
 |---|---|
 | Gateway model | `pi-auto` |
-| LiteLLM implementation | beta `auto_router/complexity_router` in pinned `v1.101.0` |
+| LiteLLM implementation | beta `auto_router/complexity_router` in pinned `v1.102.0` |
 | Local tiers | `SIMPLE`, `MEDIUM` → `qwen3.8-27b` |
 | Paid tiers | `COMPLEX`, `REASONING` → `deepseek-flash` |
 | Empty/default route | `qwen3.8-27b` |
