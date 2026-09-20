@@ -56,6 +56,11 @@ Upgrade procedure: `UPGRADE.md` (this directory).
    the router in `replica` mode for this PostgreSQL-backed deployment. The migrate
    hook applies `scripts/personhog-schema.sql` after Django migrations to add the
    tombstone columns absent from Django-managed tables.
+10. **Replay playback needs internal API authentication.** Django and Node
+    services share `INTERNAL_API_SECRET` from `posthog-internal-api-secret` in
+    the ExternalSecret. The pinned Node image supports the shared header, not
+    recording JWTs. Verify both snapshot sources and block retrieval after upgrades;
+    a working recording list does not prove playback works.
 
 ## DR model (why only Postgres is backed up)
 
