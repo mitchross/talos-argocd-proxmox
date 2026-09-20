@@ -17,6 +17,12 @@ data:
       "binarySource": "install",
       "persistRepoData": false,
       "ignorePrAuthor": false,
+      "hostRules": [
+        {
+          "matchHost": "https://registry.vanillax.me/",
+          "allowInternal": true
+        }
+      ],
       "force": {
         "dependencyDashboard": true,
         "dependencyDashboardTitle": "Dependency Dashboard — self-hosted (LAN registry)",
