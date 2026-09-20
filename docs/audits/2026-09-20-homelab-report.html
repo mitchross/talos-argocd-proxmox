@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="A prioritized homelab decision report: NAS memory and performance, Tailscale DNS, NetBird, Proxmox management, and the TrueNAS storage plugin. Observations from September 20, 2026.">
+  <title>Your homelab: what to fix, keep, and try — September 2026</title>
+  <style>
+    :root { --paper:#f5f4ef; --card:#fff; --ink:#172c3a; --muted:#52616a; --line:#d9dfde; --cyan:#086f7a; --green:#216447; --amber:#885007; --coral:#a13d2f; --soft-cyan:#eaf5f4; --soft-green:#edf6ee; --soft-amber:#fff4df; --soft-coral:#fff0eb; }
+    * { box-sizing:border-box; }
+    html { scroll-padding-top:2rem; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    a { color:var(--cyan); text-underline-offset:.2em; overflow-wrap:anywhere; }
+    a:hover { text-decoration-thickness:2px; }
+    :focus-visible { outline:3px solid var(--cyan); outline-offset:4px; }
+    .skip { position:absolute; top:-5rem; left:1rem; z-index:10; padding:.7rem 1rem; background:white; }
+    .skip:focus { top:1rem; }
+    .layout { display:grid; grid-template-columns:240px minmax(0,960px); gap:48px; max-width:1336px; margin:auto; padding:40px 32px 80px; }
+    aside { align-self:start; position:sticky; top:30px; }
+    .brand { font-size:12px; letter-spacing:.15em; font-weight:750; text-transform:uppercase; color:var(--muted); margin:0 0 26px; }
+    .brand span { display:inline-block; width:9px; height:9px; background:var(--cyan); border-radius:50%; margin-right:8px; }
+    nav a { display:block; color:var(--muted); text-decoration:none; font-size:14px; padding:10px 12px; margin:2px 0; border-left:3px solid transparent; border-radius:0 7px 7px 0; }
+    nav a:hover,nav a[aria-current="location"] { background:#e5edeb; color:var(--ink); border-color:var(--cyan); }
+    .side-note { margin:24px 12px 0; font-size:13px; color:var(--muted); }
+    main { min-width:0; }
+    .eyebrow { color:var(--cyan); font-size:12px; letter-spacing:.13em; font-weight:750; text-transform:uppercase; margin:0 0 12px; }
+    h1 { font-size:clamp(2.1rem,4vw,3.6rem); line-height:1.1; letter-spacing:-.045em; margin:0 0 22px; max-width:830px; }
+    h2 { font-size:clamp(1.5rem,2.5vw,2rem); line-height:1.25; letter-spacing:-.025em; margin:8px 0 16px; }
+    h3 { font-size:1.15rem; line-height:1.4; margin:26px 0 10px; }
+    p { margin:0 0 15px; max-width:78ch; }
+    .lede { font-size:1.15rem; color:var(--muted); max-width:64ch; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px; margin:24px 0; }
+    .tag { display:inline-block; font-size:12px; font-weight:700; line-height:1.5; padding:5px 10px; border:1px solid var(--line); border-radius:5px; background:white; color:var(--muted); }
+    .tag.verified { background:var(--soft-green); color:var(--green); border-color:#c8dfcd; }
+    .tag.proposed { background:var(--soft-cyan); color:var(--cyan); border-color:#c6dede; }
+    .tag.unknown { background:var(--soft-amber); color:var(--amber); border-color:#e7d5b4; }
+    .tools { display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 30px; }
+    button { font:inherit; font-size:14px; font-weight:650; border:1px solid #9daeb3; border-radius:6px; background:white; color:var(--ink); padding:10px 15px; min-height:44px; cursor:pointer; }
+    button:hover { background:var(--soft-cyan); }
+    .js-only { display:none; }
+    .js .js-only { display:flex; }
+    .hero { background:var(--ink); color:white; border-radius:12px; padding:30px; margin:25px 0; }
+    .hero p { color:#e0e8eb; }
+    .hero h2 { color:white; }
+    .hero a { color:#b4eff1; }
+    .hero .eyebrow { color:#b4eff1; }
+    .hero ol { margin-bottom:0; padding-left:24px; }
+    .hero li { padding:4px 0; }
+    section { background:var(--card); border:1px solid var(--line); border-radius:12px; margin:24px 0; padding:30px; }
+    .section-top { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+    .section-number { display:inline-grid; place-items:center; background:var(--ink); color:white; width:32px; height:32px; border-radius:7px; font-size:13px; font-weight:750; margin-right:3px; }
+    .verdict { font-size:1.08rem; max-width:75ch; }
+    .callout { border-left:4px solid var(--cyan); background:var(--soft-cyan); padding:18px 20px; margin:22px 0; border-radius:0 8px 8px 0; }
+    .callout p:last-child { margin-bottom:0; }
+    .callout.caution { border-color:var(--amber); background:var(--soft-amber); }
+    .callout.action { border-color:var(--coral); background:var(--soft-coral); }
+    .callout.healthy { border-color:var(--green); background:var(--soft-green); }
+    .small { font-size:14px; color:var(--muted); }
+    .priority-list { display:grid; gap:12px; margin:20px 0; }
+    .priority { display:grid; grid-template-columns:64px 1fr; gap:16px; padding:18px; border:1px solid var(--line); border-radius:8px; }
+    .priority strong { display:block; }
+    .priority p { margin:5px 0 0; font-size:15px; color:var(--muted); }
+    .priority .rank { font-size:13px; font-weight:750; color:var(--coral); }
+    .priority .rank.later { color:var(--muted); }
+    .priority a { font-size:14px; }
+    .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:22px 0; }
+    .metric { background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:18px; }
+    .metric .value { display:block; font-size:1.65rem; line-height:1.25; font-weight:750; letter-spacing:-.03em; margin:5px 0; }
+    .metric .label { display:block; font-size:13px; color:var(--muted); }
+    figure { margin:24px 0; }
+    figcaption { color:var(--muted); font-size:14px; margin-top:12px; }
+    .memory { display:flex; height:36px; border-radius:6px; overflow:hidden; background:var(--line); }
+    .memory .arc { width:90.44%; background:var(--cyan); }
+    .memory .other { width:3.65%; background:#bf785b; }
+    .memory .free { width:5.91%; background:#c4d8c5; }
+    .legend { display:flex; flex-wrap:wrap; gap:10px 20px; margin-top:12px; font-size:14px; }
+    .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:7px; background:var(--cyan); }
+    .legend .other::before { background:#bf785b; }
+    .legend .free::before { background:#c4d8c5; }
+    .table-wrap { overflow-x:auto; margin:20px 0; }
+    table { border-collapse:collapse; width:100%; font-size:15px; }
+    caption { text-align:left; font-weight:700; margin-bottom:10px; }
+    th,td { text-align:left; vertical-align:top; padding:12px; border-bottom:1px solid var(--line); }
+    th { font-size:13px; background:var(--paper); color:var(--muted); }
+    td:first-child { font-weight:600; }
+    tbody tr:last-child td { border-bottom:0; }
+    code { font: .88em ui-monospace,SFMono-Regular,Consolas,monospace; background:#edf1f1; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+    pre { padding:18px; background:var(--ink); color:#edf4f5; overflow-x:auto; border-radius:7px; font-size:13px; line-height:1.7; }
+    pre code { padding:0; color:inherit; background:transparent; overflow-wrap:normal; }
+    ul,ol { padding-left:24px; margin:12px 0 20px; }
+    li { margin:8px 0; }
+    details { border-top:1px solid var(--line); margin-top:24px; padding-top:16px; }
+    summary { cursor:pointer; font-weight:700; padding:4px 0 10px; min-height:44px; }
+    details[open] summary { margin-bottom:12px; }
+    .flow { display:flex; align-items:stretch; gap:9px; flex-wrap:wrap; margin:18px 0; }
+    .flow .node { flex:1; min-width:145px; border:1px solid #c8dedd; background:var(--soft-cyan); border-radius:7px; padding:15px; font-size:14px; }
+    .flow .node strong { display:block; margin-bottom:4px; }
+    .flow .arrow { display:grid; place-items:center; color:var(--muted); font-size:20px; }
+    .flow .broken { background:var(--soft-amber); border-color:#e7d5b4; }
+    .source-list { font-size:14px; }
+    .source-list li { margin:12px 0; }
+    .status { font-size:13px; color:var(--muted); min-height:1.6em; }
+    footer { color:var(--muted); font-size:13px; padding:8px 4px; }
+    @media(max-width:1000px) { .layout { grid-template-columns:180px minmax(0,1fr); gap:24px; padding:25px 20px; } section,.hero { padding:24px; } }
+    @media(max-width:760px) { .layout { display:block; padding:20px 16px 50px; } aside { position:static; margin-bottom:28px; } .brand { margin-bottom:12px; } nav { display:flex; gap:5px; overflow-x:auto; padding-bottom:6px; } nav a { white-space:nowrap; border-left:0; border-bottom:3px solid transparent; padding:8px 10px; } .side-note { display:none; } section,.hero { padding:22px 18px; } .metrics { grid-template-columns:1fr; } .metric { display:grid; grid-template-columns:1fr auto; gap:0 10px; } .metric .value { grid-column:2; grid-row:1/3; align-self:center; } .priority { grid-template-columns:42px 1fr; gap:10px; padding:14px; } .flow { display:block; } .flow .arrow { transform:rotate(90deg); height:32px; } th,td { padding:10px 8px; } }
+    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; } }
+    @media print { @page { margin:16mm; } body { font-size:10pt; background:white; color:#111; } .layout { display:block; max-width:none; padding:0; } aside,.tools,.skip,.status { display:none!important; } section { padding:16px 0; border:0; border-top:1px solid #aaa; border-radius:0; margin:20px 0; } h1 { font-size:28pt; } h2 { font-size:18pt; } .hero { color:#111; background:#f1f3f3; padding:18px; } .hero h2,.hero p,.hero .eyebrow,.hero a { color:#111; } a { color:#222; } .table-wrap { overflow:visible; } table { font-size:9pt; } tr,.priority,.metric,.callout { break-inside:avoid; } h2,h3,summary { break-after:avoid; } details::details-content { display:block!important; content-visibility:visible!important; } details>*:not(summary) { display:block!important; } .memory { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }
+  </style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to report</a>
+<div class="layout">
+  <aside aria-label="Report navigation">
+    <p class="brand"><span aria-hidden="true"></span>Vanillax / field report</p>
+    <nav aria-label="Sections">
+      <a href="#start" aria-current="location">Start here</a>
+      <a href="#priorities">Your priorities</a>
+      <a href="#dns">01 · Fix remote DNS</a>
+      <a href="#nas">02 · NAS &amp; RAM</a>
+      <a href="#proxmox">03 · Proxmox options</a>
+      <a href="#netbird">04 · NetBird options</a>
+      <a href="#plugin">05 · TrueNAS plugin</a>
+      <a href="#evidence">Methods &amp; sources</a>
+    </nav>
+    <p class="side-note">Read the conclusions first.<br>Open the evidence when you want it.<br>There is no need to act on every recommendation.</p>
+    <p class="side-note">Dated assessment<br><strong>20 September 2026</strong><br>Not a live dashboard.</p>
+  </aside>
+  <main id="main">
+    <header id="start">
+      <p><strong>Start here:</strong> read the five conclusions below, then <a href="#dns">open the DNS plan</a>. Allow 2 minutes.</p>
+      <p class="eyebrow">Five investigations. One decision guide.</p>
+      <h1>Your homelab:<br>what to fix, keep, and try.</h1>
+      <p class="lede">Fix the broken remote DNS path. Keep the useful NAS cache. Keep Proxmox simple. Test new tools in small, reversible steps.</p>
+      <div class="meta"><span class="tag">Observed 20 Sep 2026</span><span class="tag verified">Live checks + primary-source research</span><span class="tag proposed">Recommendations not applied</span></div>
+      <div class="tools js-only" role="group" aria-label="Reading controls"><button id="expand" type="button">Expand all technical details</button><button id="collapse" type="button">Collapse technical details</button><button id="print" type="button">Print / save PDF</button></div>
+      <p class="status js-only" id="reading-status" role="status" aria-live="polite"></p>
+      <div class="hero">
+        <p class="eyebrow">The 60-second version</p>
+        <h2>You do not need a big rebuild.</h2>
+        <ol>
+          <li><strong>Fix Tailscale DNS:</strong> it points to a resolver behind an offline router.</li>
+          <li><strong>Keep the 384 GB of RAM:</strong> your 341 GiB ARC is useful. A cached test read reached 4.84 GB/s.</li>
+          <li><strong>Check NAS airflow:</strong> three HDDs reported 54–58°C. The pools were healthy.</li>
+          <li><strong>Keep standalone Proxmox:</strong> a central dashboard does not require Corosync.</li>
+          <li><strong>Pilot, then decide:</strong> the TrueNAS storage plugin and NetBird are candidates for experiments.</li>
+        </ol>
+      </div>
+      <p class="small">Reading choices: 1 minute for the summary · 5 minutes for priorities and NAS results · about 25 minutes for the full report. Technical details start collapsed.</p>
+      <p class="small">Purpose: help decide your next operational steps and future hardware needs. Scope: findings from the preceding read-only investigation; no service settings, storage layouts, or tailnet settings were changed. This HTML file works offline; source links need internet access.</p>
+    </header>
+
+    <section id="priorities" aria-labelledby="priorities-title">
+      <p class="eyebrow">Do one useful thing at a time</p>
+      <h2 id="priorities-title">Your priorities, in order</h2>
+      <p>“Now” means the next useful action, not an emergency. These are proposed actions, not completed work. Effort ranges are planning estimates for the person doing the work; access problems or unexpected failures can extend them.</p>
+      <h3>First: repair and measure</h3>
+      <div class="priority-list">
+        <div class="priority"><div class="rank">1 · NOW</div><div><strong>Restore reliable remote DNS.</strong><p>Allow 15–30 minutes with admin access and an offsite test client. Success: the client resolves private and public names and opens a private app.</p><a href="#dns">Read the DNS plan →</a></div></div>
+        <div class="priority"><div class="rank">2 · SOON</div><div><strong>Inspect NAS cooling and trend drive health.</strong><p>Allow 15–30 minutes for the initial inspection, then compare a day of temperatures. Success: lower temperatures under comparable load and no increase in CRC counters.</p><a href="#nas-health">Read the health findings →</a></div></div>
+        <div class="priority"><div class="rank">3 · NEXT</div><div><strong>Measure the RAM tradeoff before a future purchase.</strong><p>Keep current RAM. Collect 7 days of representative activity, then allow 1–2 hours to review. Schedule a separate controlled cache-budget experiment only if a purchase depends on it.</p><a href="#ram-choice">Read the RAM decision →</a></div></div>
+      </div>
+      <details><summary>Later: three optional experiments, ranked</summary>
+        <div class="priority-list">
+          <div class="priority"><div class="rank later">4 · PILOT</div><div><strong>Try the TrueNAS plugin on one disposable VM.</strong><p>Budget 2–4 hours for installation and lifecycle checks. Success: provisioning, snapshots, recovery, cleanup, and a move back to local storage all pass.</p><a href="#plugin">Read the isolated pilot →</a></div></div>
+          <div class="priority"><div class="rank later">5 · PILOT</div><div><strong>Evaluate NetBird alongside working access.</strong><p>Budget 2–4 hours for a narrow private-access pilot; self-hosted public ingress is a separate experiment. Preserve independent recovery access.</p><a href="#netbird">Read the NetBird decision →</a></div></div>
+          <div class="priority"><div class="rank later">6 · LATER</div><div><strong>Try PDM only if ProxCenter misses a needed feature.</strong><p>Budget 1–2 hours for a small VM and remote-inventory trial. Your existing dashboard is lightweight; a management-tool comparison does not require a PVE cluster.</p><a href="#proxmox">Compare the three options →</a></div></div>
+        </div>
+      </details>
+      <div class="callout healthy"><p><strong>Keep for now:</strong> the existing RAM, standalone Proxmox hosts, local Talos disks, and Cloudflare DNS/certificate automation. None of the findings establishes a need for a hardware purchase today.</p></div>
+    </section>
+
+    <section id="dns" aria-labelledby="dns-title">
+      <div class="section-top"><span class="section-number">01</span><span class="tag verified">Verified configuration fault</span><span class="tag unknown">Offsite validation pending</span></div>
+      <h2 id="dns-title">Fix the DNS destination, then test remotely.</h2>
+      <p class="verdict">Tailscale distributes <code>192.168.1.1</code> as global DNS. The only approved router for that subnet, <code>tailscale-firewalla</code>, was offline. Technitium at <code>192.168.10.15</code> correctly answers your domain.</p>
+      <div class="flow" role="group" aria-label="Observed DNS dependency"><div class="node"><strong>Remote client</strong>Receives DNS server 192.168.1.1</div><span class="arrow" aria-hidden="true">→</span><div class="node broken"><strong>Offline Firewalla peer</strong>Route to 192.168.1.0/24 unavailable</div><span class="arrow" aria-hidden="true">→</span><div class="node broken"><strong>Configured resolver</strong>No working path established</div></div>
+      <p>The online TrueNAS Tailscale app advertises an approved route for <code>192.168.10.0/24</code>. That route reaches your actual LAN, but does not cover <code>192.168.1.1</code>.</p>
+      <div class="callout action"><p><strong>Recommended change:</strong> use <code>192.168.10.15</code> only for <code>vanillax.me</code>. Use reachable public resolvers, or the client's local DNS, for other domains. This is called <em>split DNS</em>: the hostname's suffix selects its resolver.</p></div>
+      <details><summary>Evidence, exact change plan, and offsite checks</summary>
+        <div class="table-wrap" role="region" aria-label="DNS evidence" tabindex="0"><table><caption>What was observed</caption><thead><tr><th scope="col">Check</th><th scope="col">Result</th></tr></thead><tbody>
+          <tr><td>Global tailnet resolver</td><td>192.168.1.1</td></tr><tr><td>Router for 192.168.1.0/24</td><td>tailscale-firewalla; offline since 10 August, about 41 days</td></tr><tr><td>Restricted resolver for vanillax.me</td><td>Missing</td></tr><tr><td>Technitium: argocd.vanillax.me</td><td>192.168.10.52, the intended private gateway</td></tr><tr><td>Technitium: news.vanillax.me</td><td>Public Cloudflare addresses</td></tr><tr><td>Technitium: google.com</td><td>REFUSED; not currently serving general recursive DNS</td></tr>
+        </tbody></table></div>
+        <h3>Proposed procedure</h3>
+        <p><strong>Prerequisites:</strong> access to Tailscale DNS/network administration; a saved copy of existing DNS settings; a phone on cellular or another genuinely offsite client. Recheck the TrueNAS subnet route and intended client permissions first.</p>
+        <ol><li>Remove the stale global <code>192.168.1.1</code> nameserver. Choose either reachable public global resolvers or clients' local DNS; review the global override accordingly.</li><li>Add <code>192.168.10.15</code> as a restricted nameserver for <code>vanillax.me</code>.</li><li>Keep the NAS's approved <code>192.168.10.0/24</code> route. Ensure intended clients can reach the DNS server on TCP/UDP 53 and the app gateway on HTTPS.</li><li>Enable “Use Tailscale DNS” on the test client. Linux clients also need accepted subnet routes. Review “Use with exit node” if the client uses one.</li><li>On cellular, check private resolution, unrelated public DNS, and an actual HTTPS app.</li></ol>
+        <h3>Success looks like this</h3>
+        <ul><li><code>argocd.vanillax.me</code> resolves to <code>192.168.10.52</code>.</li><li><code>news.vanillax.me</code> resolves publicly, and <code>google.com</code> also resolves.</li><li>The private app opens over HTTPS. Correct DNS alone does not prove application routing works.</li></ul>
+        <p>On a connected Mac, check the system resolver with this read-only command:</p>
+        <pre><code>dscacheutil -q host -a name argocd.vanillax.me</code></pre>
+        <div class="callout caution"><p><strong>Avoid a misleading local test.</strong> This Mac received DNS answers even when querying TEST-NET address <code>192.0.2.123</code>, consistent with LAN DNS interception. Therefore, successful LAN queries to an arbitrary address do not prove that address is reachable through Tailscale. Technitium container-loopback tests bypassed that interception.</p></div>
+        <p><strong>If validation fails:</strong> separate DNS resolution from subnet reachability. If names resolve but HTTPS fails, inspect client route acceptance and access policy. Restore the saved DNS settings to undo the change, understanding that the old global resolver still depends on the offline router.</p>
+        <p><strong>Do not blindly toggle NAS settings:</strong> its <code>accept-dns=false</code> and <code>accept-routes=false</code> govern the NAS itself. They do not disable its advertised subnet routing for other clients.</p>
+        <p class="small">Confidence boundary: the configuration fault is verified. All other tailnet peers were offline during inspection, so the user's offsite symptom and proposed remediation were not tested end to end. <a href="https://tailscale.com/docs/reference/dns-in-tailscale">Tailscale DNS reference</a> · <a href="https://tailscale.com/docs/features/subnet-routers">Subnet-router documentation</a>.</p>
+      </details>
+    </section>
+
+    <section id="nas" aria-labelledby="nas-title">
+      <div class="section-top"><span class="section-number">02</span><span class="tag verified">Live measurements</span><span class="tag unknown">Minimum RAM still unknown</span></div>
+      <h2 id="nas-title">Your RAM is doing useful work.</h2>
+      <p class="verdict">Keep the current 384 GB. The NAS has substantial CPU headroom, while its large ZFS cache demonstrably accelerates reads. These findings justify neither buying more RAM nor promising equal performance with less.</p>
+      <div class="metrics"><div class="metric"><span class="label">ZFS ARC occupied</span><strong class="value">341.5 GiB</strong><span class="label">~330.5 GiB cached data</span></div><div class="metric"><span class="label">CPU average · 72 hours</span><strong class="value">1.51%</strong><span class="label">2.43% at the 95th percentile</span></div><div class="metric"><span class="label">Demand-data cache hits · 72 hours</span><strong class="value">99.917%</strong><span class="label">Request count, not bytes</span></div></div>
+      <figure aria-labelledby="memory-caption"><div class="memory" role="img" aria-label="Approximately 377.6 GiB usable RAM: 341.5 GiB ARC, 13.8 GiB other allocations, and about 22 GiB free."><span class="arc"></span><span class="other"></span><span class="free"></span></div><div class="legend" aria-hidden="true"><span>ARC · 341.5 GiB</span><span class="other">Other · 13.8 GiB</span><span class="free">Free · ~22 GiB</span></div><figcaption id="memory-caption">A snapshot of usable memory. ZFS ARC is a memory cache that retains recently or frequently used blocks. Other allocations include the OS, apps, kernel, and additional caches; they are not all mandatory app memory. Values are rounded.</figcaption></figure>
+      <h3>What the read tests actually showed</h3>
+      <div class="table-wrap" role="region" aria-label="NAS read benchmark results" tabindex="0"><table><caption>Short, bounded read tests on existing files</caption><thead><tr><th scope="col">Path</th><th scope="col">Result</th><th scope="col">Meaning</th></tr></thead><tbody><tr><td>Local direct read · 1 GiB</td><td>96.7 MB/s</td><td>About 1 GiB of physical disk reads confirmed</td></tr><tr><td>Buffered first read · 1 GiB</td><td>273.9 MB/s</td><td>Physical reads confirmed; prefetch helped</td></tr><tr><td>Immediate repeat · 1 GiB</td><td><strong>4.84 GB/s</strong></td><td>Primarily RAM cache; a real cache benefit</td></tr><tr><td>Proxmox .14 → SMB · 256 MiB</td><td>219.7 MB/s</td><td>Client cache bypassed; NAS ARC not excluded</td></tr></tbody></table></div>
+      <p class="small">These are local or LAN test-path rates, not remote-VPN speeds. No writes or cache flushing were performed. Short tests do not establish sustained throughput, random-I/O capability, or a pool's maximum speed.</p>
+      <div class="callout healthy"><p><strong>The purchasing distinction:</strong> “RAM is useful” is demonstrated. “This workload needs every installed gigabyte to meet your performance target” is still an unanswered question. A full cache alone cannot resolve it.</p></div>
+      <h3 id="ram-choice">How to think about the next NAS</h3>
+      <div class="table-wrap" role="region" aria-label="Future RAM options" tabindex="0"><table><caption>Planning options — not validated replacement specifications</caption><thead><tr><th scope="col">RAM option</th><th scope="col">Recommendation</th><th scope="col">Tradeoff</th></tr></thead><tbody><tr><td>Keep current 384 GB</td><td><strong>Recommended today</strong></td><td>Preserves demonstrated caching; no evidence supports an upgrade</td></tr><tr><td>256 GB</td><td>Candidate for a future replacement</td><td>More cache headroom than 128 GB, still less than the current occupied ARC</td></tr><tr><td>128 GB, expandable</td><td>Candidate to test before purchase</td><td>Must reserve OS/app peaks; cannot devote all 128 GB to ARC</td></tr><tr><td>64 GB</td><td>Larger unvalidated tradeoff</td><td>Less caching for backups, restores, Steam iSCSI, and future VM storage</td></tr></tbody></table></div>
+      <p>Choose a future platform for usable drive bays, cooling, ECC memory and expansion, storage-controller connectivity, and the 10 GbE path as well as CPU. Current CPU observations do not justify chasing more cores. Power draw and total replacement cost were not measured here.</p>
+      <details><summary>Full hardware, workload, benchmark methods, and RAM validation plan</summary>
+        <div class="table-wrap" role="region" aria-label="NAS hardware and workload inventory" tabindex="0"><table><caption>Observed hardware and workload</caption><thead><tr><th scope="col">Item</th><th scope="col">Observed state</th></tr></thead><tbody><tr><td>Chassis / processor</td><td>HP DL360 Gen9; Xeon E5-2680 v4; 14 cores / 28 threads</td></tr><tr><td>Memory</td><td>12 × 32 GB DDR4 ECC LRDIMM, 1600 MT/s; 377.6 GiB OS usable</td></tr><tr><td>Operating system</td><td>TrueNAS-26.0.0-MASTER+20260914-020141; a development build</td></tr><tr><td>Current apps</td><td>RustFS ~3.2 GiB; Tailscale and monitoring ~0.14 GiB combined</td></tr><tr><td>App peak evidence</td><td>RustFS reached a 7.46 GiB ten-minute memory average in the 72-hour history</td></tr><tr><td>NAS virtual machines</td><td>One configured 8 GB VM, stopped</td></tr><tr><td>Services</td><td>NFS, SMB, iSCSI, and NVMe-oF running</td></tr><tr><td>Active block-storage consumer</td><td>One Steam Linux iSCSI session from 192.168.50.114</td></tr><tr><td>Memory pressure</td><td>No new memory PSI stalls or ARC throttling in the sample; no swap configured</td></tr></tbody></table></div>
+        <h3>Two observation windows</h3>
+        <p><strong>72-hour history:</strong> 432 ten-minute averages from existing Netdata metrics. CPU mean 1.51%, p95 2.43%, maximum ten-minute average 11.88%. These averages can hide brief spikes. Demand-data hit rate was calculated from access/hit rates because the supplied percentage chart returned invalid zeros.</p>
+        <p><strong>Five-minute live sample:</strong> 20 September, 17:16:08–17:21:08 UTC. Demand-data reads: 405,024 hits and 15 misses, or 99.9963%. CPU averaged 3.68%; the highest 15-second sample was 10.98%. Traffic averaged 8.51 MiB/s inbound and 6.56 MiB/s outbound. The highest observed HDD utilization over a 15-second sample was 27.5%.</p>
+        <p>There was no observed CPU, disk, or memory saturation during that workload. That does not test the NAS at maximum load.</p>
+        <h3>Why the smaller-cache history is only a clue</h3>
+        <p>About 11 hours of historical buckets had ARC below 128 GiB and roughly 99.999967% demand-data hits. That suggests some workloads fit comfortably in less cache. Those periods had different activity and cache warm-up conditions, however, and do not simulate a machine with only 128 GB total RAM.</p>
+        <h3>Read-test controls and limitations</h3>
+        <p>Tests used existing allocated files, one job, queue depth 1, 1 MiB blocks, fixed byte limits, and 15-second caps. The total was 3.25 GiB. Disk counters confirmed approximately 1,024 MiB of physical reads for the direct test and 1,082 MiB for the buffered first read. The immediate repeat was primarily cached.</p>
+        <p>An old <code>seq_write.test</code> file was excluded: it appeared to be 4 GiB but had only 512 bytes allocated. Reading its holes would produce a misleading “disk” benchmark. No raw-disk tests, writes, installs, cache drops, or ARC-limit changes were used.</p>
+        <p>The earlier <a href="https://github.com/mitchross/talos-argocd-proxmox/blob/main/docs/nas-performance.md">NAS performance reference</a> reports 408 MB/s local disk reads, 1,119 MB/s raw TCP, and 141–243 MB/s writes across tested paths. Those results were not reproduced in this investigation. Different files, cache state, and test conditions prevent a regression claim. Its NFS/SMB write comparison also mixes <code>sync=disabled</code> and <code>sync=standard</code>; it does not isolate protocol overhead.</p>
+        <h3>The next experiment that would answer the RAM question</h3>
+        <ol><li>Choose an acceptable workload target: backup completion window, restore duration, Steam behavior, and file-open latency.</li><li>Record a full representative workload cycle with current RAM: app memory peaks, demand-data hit/miss rates, disk latency/queues, and task duration.</li><li>In a planned experiment, compare smaller ARC budgets while reserving enough memory for the OS and application peaks. Changing ARC size alone is not a perfect simulation of smaller physical RAM.</li><li>Repeat comparable workloads after a defined warm-up period. Keep a configuration record and restore the original ARC settings if latency, memory pressure, or task duration worsens beyond the chosen target.</li><li>Use the observed difference and hardware price to choose between 128, 256, and the current capacity.</li></ol>
+        <p class="small">This is a proposed experiment, not a change performed during the audit. ARC interpretation: <a href="https://openzfs.github.io/openzfs-docs/Basic%20Concepts/Pool%20Structure/Caching.html">OpenZFS caching</a> and <a href="https://openzfs.github.io/openzfs-docs/man/v2.2/1/arcstat.1.html">ARC statistics</a>.</p>
+      </details>
+      <h3 id="nas-health">The immediate hardware follow-up is cooling.</h3>
+      <p>BigTank's four HDDs reported <strong>58, 55, 54, and 44°C</strong>. Check intake obstructions, dust, fan operation, drive-bay airflow, and temperature trends under comparable load. No thermal throttling or temperature-caused failure was demonstrated.</p>
+      <details><summary>Pool health and counters to watch</summary>
+        <div class="table-wrap" role="region" aria-label="Pool health" tabindex="0"><table><caption>All four pools were ONLINE</caption><thead><tr><th scope="col">Pool</th><th scope="col">Layout / role</th><th scope="col">Allocation</th></tr></thead><tbody><tr><td>BigTank</td><td>Four 10 TB HDDs; two mirrored vdevs; primary data</td><td>57% used; 27% fragmentation</td></tr><tr><td>Backup10T</td><td>Single HDD; staging/replication destination</td><td>68% used</td></tr><tr><td>ai-pool</td><td>Three striped SATA SSDs; intentionally no redundancy</td><td>75% used</td></tr><tr><td>boot-pool</td><td>Mirrored SSDs</td><td>Healthy</td></tr></tbody></table></div>
+        <p>All ten disks passed SMART, and pools reported no errors. The day's Backup10T scrub completed without errors. SMART success does not guarantee future reliability.</p>
+        <p>The HP S700 reported 816 lifetime CRC errors; the Samsung 860 EVO reported four. No matching recent kernel I/O errors were found. Save the counters and compare later before treating historical counts as an active cable or controller fault.</p>
+        <p>Do not compare SMART internal temperatures directly with a manufacturer's ambient-temperature limit. This assessment recommends improved cooling based on the observed temperatures; it does not claim the drives exceeded a verified manufacturer threshold.</p>
+      </details>
+    </section>
+
+    <section id="proxmox" aria-labelledby="proxmox-title">
+      <div class="section-top"><span class="section-number">03</span><span class="tag verified">Five standalone hosts</span><span class="tag proposed">Keep current topology</span></div>
+      <h2 id="proxmox-title">Keep centralized management separate from clustering.</h2>
+      <p class="verdict">You already have ProxCenter 1.4.10 on the Raspberry Pi at <code>192.168.10.15</code>. Keep it unless a specific missing feature justifies evaluating Proxmox Datacenter Manager (PDM).</p>
+      <div class="table-wrap" role="region" aria-label="Proxmox management comparison" tabindex="0"><table><caption>Three options with different purposes</caption><thead><tr><th scope="col">Option</th><th scope="col">What you gain</th><th scope="col">Cost / constraint</th><th scope="col">Recommendation</th></tr></thead><tbody><tr><td>Existing ProxCenter</td><td>One interface across hosts; current installation already works on ARM</td><td>Some automation/security features depend on edition</td><td>Keep as default</td></tr><tr><td>Proxmox Datacenter Manager</td><td>Official inventory, monitoring, guest operations, and cross-remote migration</td><td>Separate service; official requirements are x86-64</td><td>Evaluate only for a needed feature</td></tr><tr><td>Full PVE cluster</td><td>Shared cluster configuration and a foundation for PVE HA</td><td>Corosync/quorum dependency, join migration, compatible storage/hardware</td><td>Defer until there is a concrete HA need</td></tr></tbody></table></div>
+      <p class="small">Feature sources: <a href="https://docs.proxcenter.io/">ProxCenter documentation</a> · <a href="https://pdm.proxmox.com/docs/introduction.html">PDM introduction</a> · <a href="https://github.com/proxmox/pve-docs/blob/master/pvecm.adoc">PVE cluster requirements</a>.</p>
+      <div class="callout"><p><strong>Why this fits your lab:</strong> all five hosts are standalone today. A dashboard can manage them without introducing a shared quorum dependency. PDM does not make hardware-bound guests freely movable or provide automatic VM failover on its own.</p></div>
+      <details><summary>Live host inventory, migration constraints, and when clustering would help</summary>
+        <div class="table-wrap" role="region" aria-label="Proxmox host inventory" tabindex="0"><table><caption>PVE 9.2.18 on all five hosts; no corosync.conf found</caption><thead><tr><th scope="col">Host</th><th scope="col">Address</th><th scope="col">Relevant workload / constraint</th></tr></thead><tbody><tr><td>Threadripper</td><td>192.168.10.14</td><td>VM 100 GPU worker; PCI GPU passthrough; stopped Kali VM 102 on NAS SMB</td></tr><tr><td>Dell Optiplex</td><td>192.168.10.16</td><td>VM 100 worker; local disks and iGPU passthrough</td></tr><tr><td>Shed HP micro</td><td>192.168.10.20</td><td>VM 100 worker; USB radios; Wi-Fi bridge and solar power</td></tr><tr><td>HP ProDesk</td><td>192.168.10.21</td><td>VM 100 worker plus VM 101 control plane; local disks</td></tr><tr><td>HP Elite</td><td>192.168.10.22</td><td>VM 100 worker; local disks, iGPU and USB passthrough</td></tr></tbody></table></div>
+        <p>Four hosts use hostname <code>pve</code>. Every host has its own VM <code>100</code>. Running Talos guests use <code>cpu: host</code>, and the fleet mixes AMD and Intel processors. Per-host storage names and local virtual disks also differ.</p>
+        <p>Before joining a cluster, you would need unique node identities, a plan for guest evacuation/backup and restore, noncolliding VM IDs, and reconciliation of storage and Omni provider configuration. PVE cluster join overwrites local cluster configuration and is not an ordinary dashboard setting. The previous Corosync incidents were not forensically diagnosed in this investigation.</p>
+        <h3>What the Pi is doing</h3>
+        <p>The Pi runs Ubuntu on ARM64 with about 7.7 GiB RAM. ProxCenter's frontend and PostgreSQL used approximately 140 MiB and 27 MiB respectively in one snapshot. Around 6.1 GiB was available overall. Omni, its five providers, and Technitium also run there. There is no measured resource reason to move the dashboard.</p>
+        <h3>If you want to try PDM</h3>
+        <p>Use an x86-64 Debian VM, outside the Kubernetes application stack if it will be a recovery tool. An evaluation based on upstream recommended resources would start with two vCPUs, 4 GiB RAM, and at least 40 GB disk. Add standalone hosts as remotes with the permissions needed for the trial. Verify inventory and a harmless operation on a disposable guest. PDM downtime does not itself stop the managed guests. <a href="https://pdm.proxmox.com/docs/installation.html">Official installation requirements</a>.</p>
+        <p><strong>Rollback:</strong> remove the trial remote connections and evaluation VM when no longer needed, after revoking its credentials. This does not require changing the PVE topology.</p>
+        <h3>When a real cluster becomes worth it</h3>
+        <p>Revisit a three-node, reliably wired design when you have a specific guest-failover requirement, a compatible storage plan, and enough spare capacity for failures. Keep the shed out of that quorum proposal. Proxmox calls for stable sub-5 ms networking and recommends separating Corosync from heavy storage traffic. HA also requires addressing passthrough, CPU compatibility, and guest storage; joining hosts alone does not solve them.</p>
+      </details>
+    </section>
+
+    <section id="netbird" aria-labelledby="netbird-title">
+      <div class="section-top"><span class="section-number">04</span><span class="tag proposed">Pilot alongside existing access</span><span class="tag unknown">Public proxy / Gateway integration beta</span></div>
+      <h2 id="netbird-title">NetBird can replace parts of the access stack.</h2>
+      <p class="verdict">It is a credible private-access alternative to Tailscale. It also now offers a public reverse proxy, so replacing Cloudflare Tunnel is possible. That is a separate decision from replacing Cloudflare DNS or its other edge services.</p>
+      <div class="table-wrap" role="region" aria-label="NetBird replacement scope" tabindex="0"><table><caption>Decide which job you want to replace</caption><thead><tr><th scope="col">Current job</th><th scope="col">NetBird fit</th><th scope="col">Initial choice</th></tr></thead><tbody><tr><td>Private laptop/phone → LAN access</td><td>Direct overlap: clients, routing peers, policies, private DNS</td><td>Good pilot candidate</td></tr><tr><td>Public websites via Cloudflare Tunnel</td><td>Public reverse proxy exists, currently beta</td><td>Test one noncritical endpoint</td></tr><tr><td>Cloudflare authoritative DNS / ExternalDNS</td><td>A different responsibility</td><td>Keep initially</td></tr><tr><td>Cloudflare DNS-01 for certificates</td><td>A different responsibility</td><td>Keep initially</td></tr><tr><td>CDN / WAF / other edge services</td><td>No blanket equivalence established</td><td>Assess only the capabilities you use</td></tr></tbody></table></div>
+      <p class="small"><a href="https://docs.netbird.io/about-netbird/how-netbird-works">NetBird architecture</a> · <a href="https://docs.netbird.io/manage/reverse-proxy">Public reverse proxy</a>.</p>
+      <div class="callout"><p><strong>Recommended pilot:</strong> keep Cloudflare DNS/certificates and working Tailscale access. Test NetBird with an independent routing peer. If it becomes your emergency access, prefer a management/relay location outside the cluster you may need to repair.</p></div>
+      <details><summary>In-cluster feasibility, public ingress architecture, and pilot checks</summary>
+        <h3>Can the control plane run in Kubernetes?</h3>
+        <p>Yes, technically. Modern self-hosted deployments combine management, signal, relay, and STUN in <code>netbird-server</code>, with a dashboard and embedded identity support. The upstream quickstart starts at one CPU and 2 GB RAM; that is a provisioning baseline, not a measurement of this lab.</p>
+        <p>HTTP, WebSockets, OAuth, and gRPC/h2c must route correctly. Public UDP 3478 for STUN needs direct reachability; a Cloudflare HTTP Tunnel cannot supply it. Home hosting therefore needs appropriate inbound reachability, or an external endpoint such as a VPS. <a href="https://docs.netbird.io/selfhosted/selfhosted-quickstart">Quickstart</a> · <a href="https://docs.netbird.io/selfhosted/external-reverse-proxy">Proxy and transport requirements</a>.</p>
+        <p>Inside this repository, an implementation would need pinned manifests, named Services, explicit network permissions, 1Password-managed secrets, backed-up state, and an update strategy appropriate for a single-writer database/PVC. Kubernetes, Cilium, secrets, and storage then become dependencies of remote access.</p>
+        <h3>Two integration details to verify</h3>
+        <ul><li>The official server Helm chart source inspected in the investigation still described the older split-service architecture (chart 1.9.0 / app 0.46.0). Verify it against the intended current release before using it. The Kubernetes operator attaches services to an existing management account; it is not the control-plane server.</li><li>NetBird Gateway API integration exists, but upstream labels it beta. Its self-hosted public-proxy documentation identifies Traefik as the supported external TLS-passthrough edge. This is not a verified drop-in substitution for this lab's Cilium gateway.</li></ul>
+        <p class="small"><a href="https://github.com/netbirdio/helms/blob/main/charts/netbird/Chart.yaml">Server chart source</a> · <a href="https://docs.netbird.io/use-cases/kubernetes">Kubernetes operator</a> · <a href="https://docs.netbird.io/use-cases/kubernetes/gateway-api">Gateway API status</a>.</p>
+        <h3>One possible public path</h3>
+        <div class="flow" role="group" aria-label="Proposed NetBird public access path"><div class="node"><strong>Public VPS edge</strong>NetBird proxy / public reachability</div><span class="arrow" aria-hidden="true">→</span><div class="node"><strong>Encrypted mesh</strong>Home routing peer outside Kubernetes</div><span class="arrow" aria-hidden="true">→</span><div class="node"><strong>Existing Cilium gateway</strong>Host/SNI preserved for the app</div></div>
+        <p>This adds VPS cost, patching, backup, and bandwidth responsibilities. No VPS was selected or purchased. Direct peer paths may be fast; relayed paths depend on relay bandwidth and latency. Remote NAS traffic also depends on your WAN uplink.</p>
+        <h3>Acceptance and rollback</h3>
+        <ol><li>Pick private VPN access or public ingress as the first goal.</li><li>Test one client and one noncritical resource while the existing path remains available.</li><li>Verify DNS, intended access policy, reconnect behavior, direct versus relayed paths, and usable throughput.</li><li>Test recovery access during an isolated pilot-component outage; do not take down the production cluster to prove it.</li><li>Only replace an existing endpoint after behavior meets your needs. Roll back by returning clients/DNS to the original path and removing pilot routes and credentials.</li></ol>
+        <p>Switching VPN products would not automatically repair Technitium routing or the current DNS policy. Those dependencies must be configured in either product. This investigation did not verify that Cloudflare Access authentication is active; do not assume a tunnel alone supplies it.</p>
+      </details>
+    </section>
+
+    <section id="plugin" aria-labelledby="plugin-title">
+      <div class="section-top"><span class="section-number">05</span><span class="tag proposed">Small isolated pilot</span><span class="tag unknown">Exact version combination untested</span></div>
+      <h2 id="plugin-title">The TrueNAS plugin fits. Start with one test VM.</h2>
+      <p class="verdict">Install it on a Proxmox host to let Proxmox request TrueNAS-backed VM disks and ZFS snapshots. It automates block storage; it is not a ProxCenter replacement, a TrueNAS App, or a requirement to form a Proxmox cluster.</p>
+      <p>Its immediate value is automatic zvol provisioning and snapshots over iSCSI or NVMe/TCP. It does not establish that HDD-backed NAS disks outperform your local storage. NFS/SMB still serve file content such as ISOs and backups. <a href="https://www.truenas.com/blog/truenas-proxmox-plugin/">TrueNAS's September announcement</a> calls for early-adopter testing on non-production workloads.</p>
+      <div class="callout caution"><p><strong>Your specific collision risk:</strong> all five independent hosts have VM <code>100</code>. Each standalone host needs its own parent dataset <strong>and</strong> its own iSCSI target or NVMe subsystem. A common dataset can collide at the zvol level. Distinct datasets with one shared target still expose unrelated block devices. <a href="https://github.com/truenas/truenas-proxmox-plugin/blob/main/wiki/Multi-Tenancy.md">Upstream isolation guide</a>.</p></div>
+      <h3>The smallest useful pilot</h3>
+      <ol><li>Choose one wired host, such as <code>192.168.10.14</code>, and a disposable VM.</li><li>Use a dedicated dataset such as <code>BigTank/proxmox-pilot-pve14</code> with its own target, separate from Steam iSCSI and Kubernetes storage.</li><li>Use an inspected, pinned package and start with iSCSI. Keep the source VM disks/local recovery path until the trial passes.</li><li>Verify creation, guest I/O, resize, snapshots/rollback, clone, backup/restore, deletion cleanup, and movement back to local storage.</li></ol>
+      <p class="small">Proposed names and actions only. No dataset, target, VM, API key, or plugin installation was created.</p>
+      <details><summary>Compatibility, release gotchas, permissions, and storage failure domains</summary>
+        <h3>Broad prerequisites match; exact compatibility remains untested</h3>
+        <p>All hosts run PVE 9.2.18. The NAS runs <code>TrueNAS-26.0.0-MASTER+20260914-020141</code>. Upstream's minimum is TrueNAS 25.10+ and PVE 8+ for iSCSI, or PVE 9+ for NVMe/TCP. The development NAS version meets that broad floor but requires testing against the chosen plugin release.</p>
+        <p>On <code>.14</code>, <code>open-iscsi</code> and <code>nvme-cli</code> were present and the plugin was absent. NAS iSCSI and NVMe-oF services were running. PVE's live storage API version was 15 with compatibility age 6; an older plugin API declaration alone is not proof of incompatibility.</p>
+        <h3>Choose matching release artifacts</h3>
+        <p>On 20 September, <code>v2.1.23-beta4</code> was the newest published release (19 September; marked prerelease). GitHub's “latest” endpoint selected <code>beta3</code>, whose prerelease flag was false despite its beta name. The main-branch version banner was older still. Pin a coherent package/tag and its matching configuration documentation; do not combine moving-branch installer files and unrelated release instructions.</p>
+        <p>The Reddit discussion mentions a dataset-creation bug and a beta-tag installer error. Tagged source shows several historical defects already fixed, including the PR82 dataset issue, later cloud-init changes, and beta4 capacity-cache/FQDN fixes. Open issue titles alone do not establish that the chosen release still fails. No plugin runtime defects were reproduced here.</p>
+        <p class="small"><a href="https://github.com/truenas/truenas-proxmox-plugin/releases/tag/v2.1.23-beta4">Beta4 release</a> · <a href="https://github.com/truenas/truenas-proxmox-plugin/blob/v2.1.23-beta4/debian/changelog">Tagged changelog</a> · <a href="https://github.com/truenas/truenas-proxmox-plugin/issues/88">Cleanup/VMID-reuse report to validate</a>.</p>
+        <h3>Credentials and isolation</h3>
+        <p>Use a dedicated API identity, verify the documented roles against the installed TrueNAS version, and keep credentials in 1Password and private host storage. Keep TLS verification enabled with a trusted matching certificate. Dataset write/delete roles may grant appliance-wide capabilities: selecting a pilot dataset prevents naming collisions but does not necessarily restrict the API key to that dataset. Restrict storage initiators as appropriate. <a href="https://github.com/truenas/truenas-proxmox-plugin/blob/main/wiki/API-Permissions.md">API permissions guide</a>.</p>
+        <h3>Keep the current Talos storage design during the trial</h3>
+        <p>Most active Talos disks are on per-host local LVM-backed storage. Moving their Longhorn storage disks onto this one NAS would place those volumes—and any replicas hosted there—behind the same physical NAS dependency. The plugin does not remove GPU/USB passthrough or mixed-CPU migration constraints.</p>
+        <p>For important future VM data, use a redundant pool. The current ai-pool is intentionally striped without redundancy. Snapshot support does not replace independent backups. Adding VM workloads would also change the NAS working set, so revisit RAM sizing after that change rather than applying today's measurements unchanged.</p>
+        <h3>Stop conditions and rollback</h3>
+        <p>Stop the pilot on unexplained data-integrity errors, failed cleanup, or a failed move back to local storage. Preserve logs and the exact version; do not test deletion on production volumes. Restore the disposable guest from its known-good backup or local copy. After ensuring no guest uses the pilot backend, remove only the pilot storage configuration, targets, data, and credentials. Do not stop shared NAS services to remove the trial.</p>
+        <p>Any future repository-owned implementation follows the branch/PR workflow. Host installation and storage changes need a concrete deployment plan; this report is the assessment, not that deployment.</p>
+      </details>
+    </section>
+
+    <section id="evidence" aria-labelledby="evidence-title">
+      <p class="eyebrow">Know what each claim rests on</p>
+      <h2 id="evidence-title">Methods, confidence, and sources</h2>
+      <p>This report packages the preceding 20 September investigation. It is not a new monitoring run. Findings combine read-only SSH/API inspection, existing Netdata history, bounded file reads, repository configuration, and official project documentation.</p>
+      <div class="table-wrap" role="region" aria-label="Evidence confidence" tabindex="0"><table><caption>Keep observations separate from decisions</caption><thead><tr><th scope="col">Evidence type</th><th scope="col">Examples</th><th scope="col">What it supports</th></tr></thead><tbody><tr><td>Verified snapshot</td><td>DNS settings, offline peer, pool health, ProxCenter containers, host versions</td><td>State at observation time, not a permanent guarantee</td></tr><tr><td>Measured sample/history</td><td>72-hour CPU/ARC history; five-minute live sample; four bounded reads</td><td>Behavior in those windows and test conditions</td></tr><tr><td>Source-verified capability</td><td>PDM remotes; NetBird public proxy; plugin isolation requirements</td><td>Documented features, not a local interoperability test</td></tr><tr><td>Engineering recommendation</td><td>Keep RAM; defer Corosync; isolate a plugin pilot</td><td>A proposed choice based on evidence and this lab's dependencies</td></tr></tbody></table></div>
+      <h3>Still unanswered</h3>
+      <ul><li>Does the proposed DNS configuration solve the exact offsite client's symptom?</li><li>What performance is lost with smaller ARC budgets, and what are sustained write/random-I/O limits?</li><li>What caused the older Corosync incidents?</li><li>Does the selected plugin release pass its lifecycle tests on this TrueNAS development build?</li><li>Does NetBird meet your access/recovery needs over your actual WAN?</li></ul>
+      <h3>Primary references and repository context</h3>
+      <ul class="source-list">
+        <li><strong>DNS:</strong> <a href="https://tailscale.com/docs/reference/dns-in-tailscale">Tailscale DNS reference</a>; <a href="https://tailscale.com/docs/features/subnet-routers">subnet routing</a>; <a href="https://github.com/mitchross/talos-argocd-proxmox/blob/main/docs/domains/networking/technitium-vanillax-me-migration.md">repository DNS design</a>.</li>
+        <li><strong>NAS:</strong> <a href="https://openzfs.github.io/openzfs-docs/Basic%20Concepts/Pool%20Structure/Caching.html">OpenZFS caching</a>; <a href="https://openzfs.github.io/openzfs-docs/man/v2.2/1/arcstat.1.html">ARC statistic definitions</a>; <a href="https://github.com/mitchross/talos-argocd-proxmox/blob/main/docs/nas-performance.md">historical NAS benchmark reference</a>.</li>
+        <li><strong>Management:</strong> <a href="https://docs.proxcenter.io/">ProxCenter</a>; <a href="https://pdm.proxmox.com/docs/introduction.html">PDM capabilities</a>; <a href="https://pdm.proxmox.com/docs/installation.html">PDM requirements</a>; <a href="https://github.com/proxmox/pve-docs/blob/master/pvecm.adoc">Corosync, quorum, and cluster joins</a>; <a href="https://github.com/mitchross/talos-argocd-proxmox/blob/main/docs/domains/networking/topology.md">lab topology</a>.</li>
+        <li><strong>NetBird:</strong> <a href="https://docs.netbird.io/selfhosted/selfhosted-quickstart">self-hosting</a>; <a href="https://docs.netbird.io/selfhosted/external-reverse-proxy">edge protocols</a>; <a href="https://docs.netbird.io/manage/reverse-proxy">public proxy</a>; <a href="https://docs.netbird.io/use-cases/kubernetes/gateway-api">Gateway API</a>.</li>
+        <li><strong>TrueNAS plugin:</strong> <a href="https://www.truenas.com/blog/truenas-proxmox-plugin/">11 September announcement</a>; <a href="https://forums.truenas.com/t/truenas-proxmox-plugin-ready-for-community-under-testing-for-enterprise/67956">17 September community announcement</a>; <a href="https://github.com/truenas/truenas-proxmox-plugin">source and requirements</a>; <a href="https://github.com/truenas/truenas-proxmox-plugin/blob/main/wiki/Multi-Tenancy.md">host isolation</a>; <a href="https://github.com/truenas/truenas-proxmox-plugin/releases/tag/v2.1.23-beta4">beta4 release</a>.</li>
+        <li><strong>Requested discussion:</strong> <a href="https://redlib.vanillax.me/r/truenas/comments/1wh1x7f/truenas_proxmox_plugin_available_on_github/">your Redlib link</a>; the investigation used the <a href="https://www.reddit.com/r/truenas/comments/1wh1x7f/truenas_proxmox_plugin_available_on_github/">equivalent Reddit thread</a> after Redlib returned HTTP 403. Technical conclusions were checked against upstream sources.</li>
+      </ul>
+      <p class="small">Capability and release claims are dated to this assessment. Recheck the chosen version before a deployment. Internal addresses identify this lab; examples are not portable configuration for another network.</p>
+    </section>
+    <div class="callout action"><p><strong>One next action, under 2 minutes:</strong> open <a href="https://login.tailscale.com/admin/dns">Tailscale's DNS settings</a> and record the current nameserver entries. Use that saved state before making the proposed DNS change.</p></div>
+    <footer>Prepared for Mitch · 20 September 2026 · Read-only investigation, prioritized recommendations.<br>No external scripts, fonts, tracking, or live connections are required to read this file.</footer>
+  </main>
+</div>
+<script>
+  document.documentElement.classList.add('js');
+  const panels = Array.from(document.querySelectorAll('details'));
+  const status = document.getElementById('reading-status');
+  function setDetails(open) {
+    panels.forEach(panel => { panel.open = open; });
+    status.textContent = open ? 'All technical details are expanded.' : 'Conclusions are visible. Open individual details when you want more.';
+  }
+  document.getElementById('expand').addEventListener('click', () => setDetails(true));
+  document.getElementById('collapse').addEventListener('click', () => setDetails(false));
+  document.getElementById('print').addEventListener('click', () => window.print());
+  let previousPrintState = null;
+  window.addEventListener('beforeprint', () => {
+    if (previousPrintState === null) previousPrintState = panels.map(panel => panel.open);
+    panels.forEach(panel => { panel.open = true; });
+  });
+  window.addEventListener('afterprint', () => {
+    if (previousPrintState) panels.forEach((panel, index) => { panel.open = previousPrintState[index]; });
+    previousPrintState = null;
+  });
+  const navLinks = Array.from(document.querySelectorAll('nav a'));
+  function markCurrent(id) {
+    navLinks.forEach(link => {
+      if (link.hash === '#' + id) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  }
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => { if (entry.isIntersecting) markCurrent(entry.target.id); });
+    }, { rootMargin: '0px 0px -65% 0px', threshold: 0 });
+    document.querySelectorAll('main > section, #start').forEach(section => observer.observe(section));
+  }
+  navLinks.forEach(link => link.addEventListener('click', () => {
+    const target = document.querySelector(link.hash);
+    if (target) markCurrent(target.id);
+  }));
+  function revealAnchor() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (!id) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    let parent = target.parentElement;
+    while (parent) { if (parent.tagName === 'DETAILS') parent.open = true; parent = parent.parentElement; }
+  }
+  window.addEventListener('hashchange', revealAnchor);
+  revealAnchor();
+</script>
+</body>
+</html>
