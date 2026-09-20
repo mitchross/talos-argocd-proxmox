@@ -90,7 +90,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum(max_over_time(litellm_deployment_success_responses_total{requested_model=\"pi-auto\", litellm_model_name=\"qwen3.8-27b\"}[$__range])) / clamp_min(sum(max_over_time(litellm_deployment_success_responses_total{requested_model=\"pi-auto\"}[$__range])), 1)",
+          "expr": "100 * sum(max_over_time(litellm_deployment_success_responses_total{requested_model=\"pi-auto\", litellm_model_name=~\"qwen3.8-27b.*\"}[$__range])) / clamp_min(sum(max_over_time(litellm_deployment_success_responses_total{requested_model=\"pi-auto\"}[$__range])), 1)",
           "instant": true,
           "refId": "A"
         }
@@ -146,7 +146,7 @@
       },
       "targets": [
         {
-          "expr": "sum(max_over_time(litellm_deployment_success_responses_total{requested_model=\"pi-auto\", litellm_model_name!=\"qwen3.8-27b\"}[$__range]))",
+          "expr": "sum(max_over_time(litellm_deployment_success_responses_total{requested_model=\"pi-auto\", litellm_model_name!~\"qwen3.8-27b.*\"}[$__range]))",
           "instant": true,
           "refId": "A"
         }
