@@ -139,8 +139,8 @@ needs no extra module entry or pinned network-interface configuration.
 After the operator boots the VM, confirm the node is Ready and Kubernetes
 reports `nvidia.com/gpu: 2`. Check both cards through `nvidia-smi` in the
 `nvidia-powerlimit` DaemonSet; a one-card workload correctly sees only its own
-allocated card. The [Flash Next study](../../docs/domains/ai-gpu/flash-next-dual-3090.md)
-contains the memory budget and validation commands.
+allocated card. [3090 LLM optimization](../../docs/domains/ai-gpu/3090-llm-optimization.md)
+holds the capacity figures and the re-check commands.
 
 ## Storage
 

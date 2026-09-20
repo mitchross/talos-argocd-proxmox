@@ -60,10 +60,10 @@ spec:
             nvidia.com/gpu: "1"
 ```
 
-**Large CPU-offloaded LLMs need reserved RAM.** The GPU node currently also
-hosts unrelated workloads and storage; do not assume it is isolated. Resolve
-competing allocations before a large-model cutover; see
-[`flash-next-dual-3090.md`](../../../docs/domains/ai-gpu/flash-next-dual-3090.md).
+**Large CPU-offloaded LLMs need reserved RAM.** The GPU node also hosts
+unrelated workloads and storage; do not assume it is isolated. Other pods
+already reserve roughly 35 GiB of the 96 GiB host, and the inference container
+caps at 48 GiB. Resolve both before any large-model cutover.
 
 ## Debugging GPU
 
