@@ -25,6 +25,7 @@ python /opt/repo-scripts/configure-replay-retention.py
 echo "Applying self-hosted Postgres schema guards..."
 python - <<'PY'
 import os
+from pathlib import Path
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "posthog.settings")
 
@@ -32,9 +33,10 @@ import django
 
 django.setup()
 
-from django.db import connection
+from django.db import connection, transaction
 
-with connection.cursor() as cursor:
+with transaction.atomic(), connection.cursor() as cursor:
+    cursor.execute(Path("/opt/repo-scripts/personhog-schema.sql").read_text())
     cursor.execute(
         "ALTER TABLE public.posthog_person "
         "ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NULL"

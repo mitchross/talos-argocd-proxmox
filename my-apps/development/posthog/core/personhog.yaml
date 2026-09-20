@@ -1,0 +1,164 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personhog-replica
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: personhog-replica
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: personhog-replica
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: personhog-replica
+    spec:
+      containers:
+        - name: personhog-replica
+          image: ghcr.io/posthog/posthog/personhog-replica:master@sha256:fff13c90561bdb44b18cd708902787f328248d1203aeb98fc0ef3cfd99871664
+          env:
+            - name: GRPC_ADDRESS
+              value: "0.0.0.0:50051"
+            - name: METRICS_PORT
+              value: "9100"
+            - name: RUST_LOG
+              value: "info"
+            - name: PRIMARY_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: MIN_PG_CONNECTIONS
+              value: "1"
+          ports:
+            - name: grpc
+              containerPort: 50051
+            - name: http-metrics
+              containerPort: 9100
+          startupProbe:
+            tcpSocket:
+              port: grpc
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /_readiness
+              port: http-metrics
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /_liveness
+              port: http-metrics
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: personhog-replica
+  namespace: posthog
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: personhog-replica
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personhog-router
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: personhog-router
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: personhog-router
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: personhog-router
+    spec:
+      containers:
+        - name: personhog-router
+          image: ghcr.io/posthog/posthog/personhog-router:master@sha256:2ee0ea16591a4d584411f878f455da0ef5610b227585181cec2f87ae8fcaf1b4
+          env:
+            - name: GRPC_ADDRESS
+              value: "0.0.0.0:50052"
+            - name: METRICS_PORT
+              value: "9101"
+            - name: RUST_LOG
+              value: "info"
+            - name: REPLICA_URL
+              value: "http://personhog-replica:50051"
+            - name: ROUTER_MODE
+              value: "replica"
+          ports:
+            - name: grpc
+              containerPort: 50052
+            - name: http-metrics
+              containerPort: 9101
+          startupProbe:
+            tcpSocket:
+              port: grpc
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /_readiness
+              port: http-metrics
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /_liveness
+              port: http-metrics
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: personhog-router
+  namespace: posthog
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: personhog-router
+  ports:
+    - name: grpc
+      port: 50052
+      targetPort: grpc
