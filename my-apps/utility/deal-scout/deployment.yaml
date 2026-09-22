@@ -39,6 +39,9 @@ spec:
                   key: LITELLM_API_KEY
             - name: DATA_DIR
               value: /data
+            # A request with no X-Deal-Scout-Mode header (neither gateway route) is a visitor.
+            - name: DEAL_SCOUT_DEFAULT_MODE
+              value: public
             # Pin both values: the digest call is best-effort and silently falls
             # back to facts-only prose when a backend or model id is stale.
             - name: DIGEST_LLM_URL
