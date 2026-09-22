@@ -1,4 +1,4 @@
-# Internal route: full read/write. The public route below is GET-only because the writes are unauthenticated.
+# Internal route: full read/write, and X-Deal-Scout-Mode: operator. The public route below is GET-only and sets public.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -17,6 +17,14 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      # The app decides operator vs public per request from this header. SET,
+      # not add, so a client-supplied value never survives the gateway.
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Deal-Scout-Mode
+                value: operator
       backendRefs:
         - group: ""
           kind: Service
@@ -56,6 +64,12 @@ spec:
             type: PathPrefix
             value: /
           method: HEAD
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Deal-Scout-Mode
+                value: public
       backendRefs:
         - group: ""
           kind: Service
