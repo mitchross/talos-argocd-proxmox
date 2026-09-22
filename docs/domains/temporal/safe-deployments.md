@@ -1,248 +1,189 @@
 # Temporal safe worker deployments
 
-Use this runbook to release workers without losing the ability to run an older
-version. **Status:** desired release contract; application code and GitOps image
-changes must both be reviewed before rollout. Tests described below run locally;
-they do not establish that production has deployed or passed a restore drill.
+**Ship a new worker by changing its image in Git. Never edit a running worker.**
+The controller starts the new version next to the old one, runs a smoke
+workflow, ramps new work over, and retires the old version once its workflows
+finish. Nothing in flight is touched.
 
-## What was verified
+**Status:** runbook for the live cluster. **Scope:** application workers
+(News Reader, Deal Scout, Radar). The Temporal server itself is covered by the
+[server README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/temporal/README.md).
 
-The review used Talos `4158062b5`, Radar `f012385`, News Reader `8bd5269` on
-Gitea, Deal Scout `d72509a`, the installed controller's v1.10.1 base, and all nine
-clickable steps of [Michael Jones's guide](https://syntaxsugar.io/lab/temporal-safe-deploys/).
-Its HTML contains all sections, but JavaScript turns them into nine pages.
-The tutorial repository defaults to `starter`; its
-[finished `main` branch](https://github.com/mikeacjones/temporal-safe-deploys-lab/tree/main)
-contains the versioned worker and state-preserving handoff.
+This page follows Michael Jones's
+[Temporal Safe Deploys lab](https://syntaxsugar.io/lab/temporal-safe-deploys/)
+and applies it to this repository's manifests. Read the lab once if the words
+*Build ID*, *pinned* or *drained* are new to you. It takes about an hour.
 
-| Area | Keep or improve |
-|---|---|
-| Server | Keep the persistent Temporal/Postgres/kopiur setup and schema-hook ordering. It is a single Postgres instance, not database HA. A declared backup is not a demonstrated recovery. |
-| Controller | Keep `WorkerDeployment` / `Connection` and separate controller/CRD charts. Use the official `temporalio/temporal-worker-controller:v1.10.1` release, including upstream #554, rather than the custom inactive-retirement fork. See the upstream verification procedure below. |
-| Worker identity | Keep workload-specific queues and overlapping worker versions. New finite News Reader and Deal Scout runs use `PINNED`; short duration does not guarantee safe replay. |
-| Long-lived state | Radar carries frame/notification state, lifetime counters, and queued alerts through Continue-as-New. Only the per-run bound counter resets. Existing pinned runs need a separate, reviewed migration. |
-| Promotion | All seven versioned worker resources declare a candidate gate. Existing ramps remain; Radar retains `AllAtOnce`, which controls promotion while old versions coexist. |
+## The idea in five lines
 
-### Official controller baseline
+1. A workflow that started on version A must finish on version A. Replaying
+   its history against different code fails with a non-determinism error.
+2. So every worker image gets a **Build ID**. Workflows are **pinned** to the
+   Build ID they started on.
+3. The **Temporal Worker Controller** runs one Kubernetes Deployment per
+   Build ID, all on the same task queue. Temporal routes each task to the
+   right one.
+4. New work goes to the newest version only after its **gate** workflow
+   passes and its **ramp** finishes.
+5. An old version is **drained** when nothing is pinned to it any more. The
+   controller then scales it down and deletes it on a timer.
 
-The declared image is the official **v1.10.1** release. It contains the
-[#554 status-consistency fix](https://github.com/temporalio/temporal-worker-controller/pull/554)
-shipped in [v1.10.0](https://github.com/temporalio/temporal-worker-controller/releases/tag/v1.10.0),
-plus [v1.10.1's namespace-scoped watch fix](https://github.com/temporalio/temporal-worker-controller/releases/tag/v1.10.1).
-This follows the request to verify upstream in
-[#577](https://github.com/temporalio/temporal-worker-controller/pull/577#issuecomment-5676359536)
-without downgrading the fork's v1.10.1 base. The custom #577 patch is **not**
-included, and returning upstream is not evidence that its distinct Inactive
-retirement case is fixed.
+## What runs here
 
-Only the controller image changes. Keep the existing charts, CRDs, controller
-identity/recovery job, worker templates, gates, rollout settings, and retained
-configuration. Reconciliation can still act on existing worker versions when
-the new controller starts; unchanged worker templates are not a no-op guarantee.
+Every app has one `Connection` named `cluster-temporal` that points at
+`temporal-frontend.temporal.svc.cluster.local:7233`, and one or more
+`WorkerDeployment` resources. The `kind` names matter: the controller ignores
+the deprecated `Temporal*` kinds, so an image bump on those never rolls.
 
-After approval, merge, and Argo sync, use read-only checks:
+| App | WorkerDeployment | Rollout | Gate workflow | Sunset |
+|---|---|---|---|---|
+| News Reader | `news-digest` | Progressive: 10% for 2 min, then 50% for 5 min | `NewsDeploymentSmokeWorkflow` | scale down 10 min, delete 1 h |
+| Deal Scout | `deal-scout` | Progressive: 50% for 2 min | `DealScoutDeploymentSmokeWorkflow` | scale down 10 min, delete 1 h |
+| Radar | five `radar-ng-worker-*` pools | All at once | `RadarDeploymentSmokeWorkflow` | scale down 10 min, delete 1 h |
 
-```bash
-kubectl -n temporal-worker-controller get deployments -o wide
-kubectl -n temporal-worker-controller get pods -o json | jq '.items[] | {pod: .metadata.name, containers: [.status.containerStatuses[]? | {name, image, imageID, ready}]}'
-kubectl get workerdeployments -A -o yaml
-```
+Radar uses all-at-once because its five pools share volumes and must move
+together. It still keeps the old version alive until every pinned run drains.
 
-Expect the controller container to use the official v1.10.1 image and be Ready.
-Verify current and target versions, gate results, and pinned-workflow progress;
-record controller/server versions and any deprecated Inactive versions that
-remain after pollers stop. Test the never-promoted V1-to-V2 retirement case in
-an isolated namespace with synthetic work before reporting it resolved upstream.
-Do not purge version records, force-delete Deployments, or migrate pinned runs
-just to make the inventory clean. If reconciliation or worker progress regresses,
-stop further releases, collect conditions/logs, and revert this image change
-through a reviewed GitOps PR; do not change live routing or CRDs as a shortcut.
+The sunset timers count from the moment a version becomes **Drained**, not
+from promotion. Deletion waits `scaledownDelay + deleteDelay` after Drained,
+so an old version lives at least 70 minutes past its last pinned workflow.
 
-### A lifecycle correction
+## Release a worker
 
-For the deployed v1.10.1 implementation, scale-down waits `scaledownDelay`
-after the version becomes **Drained**. Deletion waits **`scaledownDelay +
-deleteDelay` after Drained**, and also requires zero replicas and deletion
-eligibility. With this repository's settings that is at least 10 minutes and
-70 minutes, respectively. These are not timers measured from promotion.
+About 15 minutes of your attention. The controller does the waiting.
 
-The [controller implementation](https://github.com/temporalio/temporal-worker-controller/blob/v1.10.1/internal/planner/planner.go)
-adds the delays, despite the shorter description in its concepts document.
-Recheck the implementation when upgrading the controller. Do not alter the
-manifest delays just to match the tutorial's prose.
-
-## Release configuration belongs to a worker version
-
-Radar's [release environment patch](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/temporal-workers/release-env-patch.yaml)
-copies settings into every worker's pod template during Kustomize rendering.
-A config edit changes the template and therefore the Build ID. An old generated
-Deployment keeps its original literal environment when replacing a pod.
-The old `radar-ng-temporal-config` ConfigMap remains frozen in Git for existing
-versions that still use `envFrom`.
-
-News Reader's image contains LiteLLM authentication. New workers no longer need
-an init container to rewrite application source. Its hashed script ConfigMap
-and source file remain rendered, unchanged, so an old worker can still restart.
-Keep that generator until the last referencing Deployment is retired, including
-scaled-to-zero versions retained for recovery. A later PR can remove it after
-checking references. Do not edit the frozen script or remove it at promotion.
-
-Application pruning stays enabled. Credential rotation remains a separate
-lifecycle: environment-based secrets require replacement pods to pick up a new
-value. Radar and Deal Scout pin image digests. News Reader always uses plain
-`vMAJOR.MINOR.PATCH` release tags for both images, with no SHA tag or digest
-suffix in manifests. Its publishers must never overwrite a release tag; record
-the verified digest and source revision in the PR. The registry must retain
-every referenced image's layers.
-
-## Before merging a release
-
-Prerequisites: reviewed application PRs, published candidate images, `git`,
-`kustomize`, `kubectl`, `jq`, and a Temporal CLI configured for the intended
-namespace. Repository changes go through branches and PRs; merge requires the
-operator's explicit approval. No direct Kubernetes template edits are needed.
-
-1. Run the application tests and build the actual worker images. Radar's image
-   build replays every retained synthetic history. Its integration test exercises
-   V1→V2 with alerts on both sides of handoff; it uses SDK 1.30.0 against a local
-   Temporal dev server. Production here declares server 1.32.0; the local CLI
-   1.8.3 embeds 1.31.2, so the first staged rollout must verify that combination.
-2. Publish each candidate and enable its registered gate in the **same** GitOps
-   PR. Radar and Deal Scout use digest pins; News Reader uses a unique published
-   semantic version. A gate against an older image lacking the workflow blocks.
-   Record the image's source revision. Branch candidate images can be reviewed
-   without merging application source first; stable release promotion follows
-   the application's normal release pipeline after review. When that pipeline
-   publishes a stable tag, update the SHA-tagged reference by PR to the stable
-   tag and its verified digest; semver-only Renovate rules may skip SHA tags.
-   News Reader never uses SHA-based image references, including for candidates.
-3. Render and test from the Talos repository root:
+1. Publish the new worker image. Radar and Deal Scout pin by digest; News
+   Reader uses a plain `vMAJOR.MINOR.PATCH` tag that is never overwritten.
+2. Open a PR that changes only the image line in the app's `WorkerDeployment`.
+   Any change to the pod template, image or environment is a new Build ID.
+3. Before merging, render and test from the repository root:
 
    ```bash
-   kustomize build my-apps/development/radar-ng > /tmp/radar-workers.yaml
-   kustomize build my-apps/development/news-reader > /tmp/news-workers.yaml
-   kustomize build my-apps/utility/deal-scout > /tmp/deal-workers.yaml
+   kustomize build my-apps/development/news-reader > /dev/null
+   kustomize build my-apps/development/radar-ng > /dev/null
+   kustomize build my-apps/utility/deal-scout > /dev/null
    python -m unittest discover -s scripts/tests -p test_temporal_deployments.py -v
    ```
 
-   Expect changed worker templates, registered gate names, the required image
-   reference formats, unchanged legacy ConfigMaps, and passing Lua health and
-   configuration-lifetime tests.
-4. Check overlap capacity and placement. The declared five Radar pools request
-   6.75 CPU / 11 GiB for one generation; two complete generations need 13.5 CPU /
-   22 GiB, before other apps. They share tile-server placement and RWO volumes.
-   Do not add replicas without checking that node's actual available capacity.
-5. After approval and merge, verify Argo and Temporal as below. A successful
-   build, a green Pod, or elapsed ramp time alone is insufficient.
+   Expected: every build renders and every test passes.
+4. Merge. Argo CD syncs the `WorkerDeployment`. The controller creates the new
+   Deployment, waits for it to poll, runs the gate workflow, then ramps.
+5. Watch it land (next section). You are done when the resource is `Ready`
+   and the old version shows `Drained`.
 
-## Observe promotion
+Argo CD shows the app as **Progressing** for the whole ramp. That is normal.
+It shows **Degraded** only when the gate workflow fails or the controller
+cannot reach Temporal.
+
+## Watch a rollout
+
+From your workstation:
 
 ```bash
 kubectl get workerdeployments -A -o json | jq '.items[] | {
-  namespace: .metadata.namespace, name: .metadata.name,
-  generation: .metadata.generation, observed: .status.observedGeneration,
-  conditions: .status.conditions,
+  ns: .metadata.namespace, name: .metadata.name,
+  observed: (.status.observedGeneration == .metadata.generation),
+  current: .status.currentVersion.buildID,
   target: .status.targetVersion.buildID,
-  gates: .status.targetVersion.testWorkflows,
-  current: .status.currentVersion.buildID
+  gates: [.status.targetVersion.testWorkflows[]? | .status],
+  ready: ([.status.conditions[]? | select(.type=="Ready") | .status][0])
 }'
 ```
 
-Expect the current generation to be observed, each candidate gate to complete,
-and `Ready=True` after promotion. Inspect the actual status field spellings if
-upgrading CRDs. Argo remains `Progressing` for pollers, ramping, or stale status;
-it reports `Degraded` for connection/auth/spec/plan failures and terminal failed
-gate workflows. A failed gate may leave the controller's ordinary conditions
-at `WaitingForPromotion`, so the health script checks gate status too.
+Expected during a rollout: `observed: true`, `target` set to the new Build
+ID, gates `Running` then `Completed`, `ready: "False"`. Expected at the end:
+`current` equals the new Build ID and `ready: "True"`.
 
-| Gate | What it proves | Remaining boundary |
-|---|---|---|
-| Radar | Configured palettes, real PNG transformation, role-specific native libraries, scratch fsync/rename/read on all three volumes | No full forecast, upstream-feed or push-delivery test |
-| News Reader | RSS fixture and bounded authenticated LiteLLM inference | Does not fetch every feed or publish a digest; uses a tiny inference request |
-| Deal Scout | Parser fixture, required configuration, authenticated API read and database readiness | No scrape/browser job; checks eBay credential presence, not OAuth validity |
-
-Each activity has a 90-second total schedule-to-close bound and at most two
-attempts. If one fails, inspect its error and dependency, publish a corrected
-candidate and open another PR. Do not remove the gate as a recovery shortcut.
-Adding a gate to an already-current unchanged version is not a fresh validation;
-these releases also change the image/template to create a new candidate.
-
-## Verify old-version restartability
-
-List all ConfigMaps referenced by retained generated Deployments:
+From inside the cluster, with the Temporal CLI:
 
 ```bash
-kubectl -n news-reader get deployments -o json | jq -r '.. | objects | .configMapRef?.name // .configMap?.name // empty' | sort -u
-kubectl -n radar-ng get deployments -o json | jq -r '.. | objects | .configMapRef?.name // .configMap?.name // empty' | sort -u
+kubectl -n temporal exec -it deploy/temporal-admintools -- bash
+temporal worker-deployment describe --name <deployment-name>
+temporal worker-deployment list
 ```
 
-Every returned name must still exist in that namespace and remain in Git. New
-Radar workers have literal release settings; new News Reader workers have no
-script mount. Before removing a legacy ConfigMap, check **all** retained
-Deployments, not just current pods. Treat image retention and shared storage
-schema compatibility as dependencies too. Old and new code still share data.
+`describe` lists every version with its status: `Current`, `Ramping`,
+`Draining` or `Drained`. A `Draining` version still has pinned workflows.
 
-The post-merge operational acceptance drill is to replace one retained
-old-version pod during a controlled window and confirm it mounts its original
-dependencies, registers its original Build ID, and resumes synthetic pinned
-work. This review did not restart production pods. Do not remove a resource
-merely because the new version is Healthy or because `PruneLast` finished.
+If a gate fails: read its error in the Temporal UI at `temporal.vanillax.me`,
+fix the image, publish again, open another PR. Do not delete the gate to get
+past it.
 
-## Rollback and existing pinned runs
+## Long-running workflows
 
-1. Revert the faulty worker template through a GitOps PR to stop new traffic
-   reaching it. Keep the bad version's image and configuration while its runs
-   are investigated. Do not fight the controller with manual current/ramping
-   changes; its manager identity owns routing.
-2. Identify the affected execution and Run ID using read-only `temporal workflow
-   describe` and version-filtered visibility queries. A rollout rollback does
-   not move already-pinned executions. Visibility can lag; verify drainage and
-   individual descriptions before declaring a version unused.
-3. For Radar runs pinned to pre-fix code, keep their old workers alive. Replay a
-   private export of the selected history with the fixed image. Existing patch
-   markers preserve old command paths, but retained synthetic fixtures alone
-   do not prove every real history is compatible. Do not commit real histories.
-4. Only after explicit approval of the exact execution and destination, use
-   Temporal's [pinned-workflow recovery procedure](https://docs.temporal.io/production-deployment/worker-deployments/recover-pinned-workflows).
-   A pinned version override can be sticky: inspect it and explicitly clear it
-   after the repaired version has processed the execution, verifying subsequent
-   handoff and version assignment. Do not call the CLI override a one-time move
-   or bulk-switch all workflows to `AUTO_UPGRADE`. Resetting stateful watches to
-   their initial arguments loses accumulated state and can repeat side effects.
-5. Verify the selected run's state, buffered alerts, new Run ID and assigned
-   version. Stop if replay fails or state is incomplete. State discarded by an
-   older completed handoff cannot be recovered merely by deploying this fix.
+A workflow that never finishes never drains on its own. Radar's watch
+workflows are this shape. The lab's pattern, which Radar implements:
 
-The Radar `wakeUpSignal` is optional; its existing 60-second polling also
-generates workflow tasks. The version-change notification is remembered until
-the safe boundary because a later task can clear the server's notification.
-Upgrade-on-Continue-as-New remains an SDK Public Preview feature.
+1. Stay **pinned** while running, so replay is always safe.
+2. When Temporal reports a newer version, finish the current step, wait for
+   in-flight signal handlers, then **continue-as-new** with the
+   `AUTO_UPGRADE` behaviour. The fresh run starts on the new version and
+   carries its state forward as arguments.
+3. A sleeping workflow does not notice a new version until it runs a task.
+   Radar polls every 60 seconds, so it wakes itself. A workflow that only
+   waits on a signal needs a no-op wake-up signal in its code, sent after
+   the release:
 
-## Availability and recovery checks
+   ```bash
+   temporal workflow signal --workflow-id <workflow-id> --name <wake-up-signal>
+   ```
 
-Radar preserves its graceful worker shutdown and observe-only schedule
-watchdog. Its new liveness file measures local event-loop progress; readiness
-measures Temporal connectivity. A shared Temporal outage should affect
-readiness without restarting every worker. Readiness itself does not stop SDK
-polling. Compare poll-failure metrics, queue latency/backlog, and controller
-registration when an apparently healthy process stops doing work.
+Expected after a Radar release: each watch workflow shows a new Run ID within
+a couple of minutes, and the old version drains once all of them have moved.
 
-Before claiming disaster recovery, perform a separate approved restore drill
-in an isolated environment using the [kopiur recovery runbook](../../disaster-recovery.md):
-start a synthetic workflow, record its state, capture a successful Postgres
-backup, restore it, and demonstrate that the same execution resumes with its
-recorded history and expected result. Avoid duplicate external side effects by
-using fake activities and isolated endpoints. Record snapshot identity, restore
-time, resumed Run ID and result. Do not test by overwriting production Postgres.
+Versioning does not make breaking code changes safe. If you reorder or add
+activities inside a loop, a workflow still fails when it replays across that
+change. Continue-as-new is the boundary where such changes become safe.
 
-Per-version autoscaling through `WorkerResourceTemplate` remains an option
-after measuring capacity and backlog. It is not required for this repair and
-does not replace correct version retirement.
+## Roll back
+
+1. Revert the image PR. That is the whole rollback for **new** work: the
+   previous template is the current version again.
+2. Workflows already pinned to the bad version stay there. Leave that version
+   running until they finish or you recover them. Do not scale it down by
+   hand and do not change routing with the CLI; the controller owns both.
+3. To move a pinned workflow off a broken version, follow Temporal's
+   [recover pinned workflows](https://docs.temporal.io/production-deployment/worker-deployments/recover-pinned-workflows)
+   procedure for that one execution. Check its state afterwards and clear
+   the override once the repaired version has processed it.
+
+Expected after step 1: the reverted Build ID appears as `Current`, the bad one
+as `Draining`, and no new workflow starts on it.
+
+## Gotchas
+
+- **A config change is a release.** Radar copies release settings into the
+  pod template, so editing them creates a new Build ID. That is intended.
+- **Keep old ConfigMaps until the last old Deployment is gone.** An old
+  version restarts its pods from the original template. Check every retained
+  Deployment, not just the running pods, before deleting anything it mounts:
+
+  ```bash
+  kubectl -n <namespace> get deployments -o json \
+    | jq -r '.. | objects | .configMapRef?.name // .configMap?.name // empty' | sort -u
+  ```
+
+- **Two versions run at once.** Radar's five pools need capacity for two
+  generations during a rollout. Check node headroom before adding replicas.
+- **A gate against the wrong image blocks forever.** The gate workflow type
+  must exist in the image being promoted.
+- **The registry must keep every referenced image.** An old version that
+  cannot pull its image cannot restart.
 
 ## Sources of truth
 
-- [Official controller image values](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/values.yaml)
-- [Argo health mapping](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/argocd/values.yaml)
-- [News worker manifest](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/news-reader/temporal-workers/temporal-worker-deployment.yaml)
-- [Radar worker pools](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/temporal-workers/worker-pools.yaml)
-- [Deal Scout worker manifest](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/utility/deal-scout/temporal-workers/temporal-worker-deployment.yaml)
+Concepts and the pattern this page follows:
+
+- [Temporal Safe Deploys lab](https://syntaxsugar.io/lab/temporal-safe-deploys/) by Michael Jones
+- [Lab repository](https://github.com/mikeacjones/temporal-safe-deploys-lab): `starter` is the exercise, `main` is the finished versioned worker
+- [Temporal worker versioning](https://docs.temporal.io/production-deployment/worker-deployments/worker-versioning) and [recover pinned workflows](https://docs.temporal.io/production-deployment/worker-deployments/recover-pinned-workflows)
+- [Temporal Worker Controller](https://github.com/temporalio/temporal-worker-controller)
+
+What this cluster actually runs:
+
+- [Controller chart values](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/values.yaml) and [CRD chart pins](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/kustomization.yaml)
+- [Argo CD health rule for WorkerDeployment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/argocd/values.yaml)
+- [News Reader worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/news-reader/temporal-workers/temporal-worker-deployment.yaml)
+- [Deal Scout worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/utility/deal-scout/temporal-workers/temporal-worker-deployment.yaml)
+- [Radar worker pools](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/temporal-workers/worker-pools.yaml) and [release settings patch](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/temporal-workers/release-env-patch.yaml)
+- [Manifest tests](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/tests/test_temporal_deployments.py)
