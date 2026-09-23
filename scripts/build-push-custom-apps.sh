@@ -12,9 +12,6 @@
 #   <registry>/news-reader        (Next.js RSS reader UI)
 #   <registry>/temporal-worker    (Python Temporal worker)
 #
-# basemap-bootstrap is NOT built here — GitHub Actions owns it
-# (.github/workflows/basemap-bootstrap-image.yml, tag from the VERSION file).
-#
 # Usage (TAG is required — no :latest; manifests pin version tags so the
 # manifest and the image move atomically through git):
 #   TAG=v1.2.3 ./scripts/build-push-custom-apps.sh news-reader

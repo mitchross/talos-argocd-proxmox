@@ -429,5 +429,16 @@
       ],
       datasourceTemplate: 'docker',
     },
+    {
+      description: 'Kubernetes image volumes (volumes[].image.reference); the kubernetes manager only reads image: lines, so these would drift from the matching container image.',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^my-apps/.+\\.yaml$/',
+      ],
+      matchStrings: [
+        'reference:\\s*(?<depName>[^\\s:@]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})',
+      ],
+      datasourceTemplate: 'docker',
+    },
   ],
 }
