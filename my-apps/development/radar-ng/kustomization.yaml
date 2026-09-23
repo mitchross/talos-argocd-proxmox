@@ -11,8 +11,6 @@ resources:
   - hpa-tile-server.yaml
   - pdb-tile-server.yaml
   - deployment-basemap.yaml
-  # Sync hook; the basemap Deployment's init container waits for its output, so order doesn't matter.
-  - job-basemap-bootstrap.yaml
   - deployment-open-meteo.yaml
   - servicemonitor.yaml
   - prometheusrule.yaml
@@ -28,7 +26,7 @@ namespace: radar-ng
 configMapGenerator:
   - name: radar-ng-scripts
     files:
-      - scripts/wait-for-basemap.sh
+      - scripts/fetch-basemap.sh
 
 patches:
   - path: temporal-workers/release-env-patch.yaml
