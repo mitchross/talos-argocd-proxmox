@@ -266,12 +266,9 @@ usable yet, manually refill the exact pinned tags from local checkouts:
 ```bash
 cd ~/programming/radar-ng/backend
 VERSION=v1.1.4 ./scripts/build-push.sh tile-server
-VERSION=v1.1.1 ./scripts/build-push.sh basemap open-meteo-worker
+VERSION=v1.1.1 ./scripts/build-push.sh open-meteo-worker
 VERSION=v1.1.7 ./scripts/build-push.sh temporal-worker
 
-cd ~/programming/talos-argocd-proxmox
-./scripts/build-push-custom-apps.sh basemap-bootstrap
-kubectl -n radar-ng delete job basemap-bootstrap
 kubectl -n radar-ng rollout restart deploy/tile-server deploy/basemap deploy/open-meteo
 kubectl -n radar-ng delete pod -l app=radar-ng-worker
 ```

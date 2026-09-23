@@ -75,10 +75,9 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
+    storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; the basemap pod's fetch-basemap init container rebuilds it from a build.protomaps.com daily build"
 spec:
   # longhorn-flash RWO: pmtiles mmap random reads thrash on HDD-over-NFS.
-  # basemap (reader) + basemap-bootstrap Job (writer) share this RWO volume — they must co-locate on one node (podAffinity).
   accessModes: [ReadWriteOnce]
   storageClassName: longhorn-flash
   resources:

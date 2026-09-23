@@ -1,5 +1,4 @@
-# Serves the PMTiles archive the basemap-bootstrap Job writes to the PVC (data split from image so the bbox can change without a rebuild).
-# The init container blocks start until the file exists so a fresh deploy never serves "Archive not found" 204s.
+# Serves the PMTiles archive on the pmtiles PVC; the fetch-basemap init container fills it when it's missing.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -9,6 +8,8 @@ metadata:
     app: basemap
 spec:
   replicas: 1
+  # An empty PVC means a ~35-min CONUS extract before the pod starts; don't flag that as a failed rollout.
+  progressDeadlineSeconds: 3600
   strategy:
     type: Recreate  # RWO PVC; only one writer at a time
   selector:
@@ -19,8 +20,6 @@ spec:
       labels:
         app: basemap
     spec:
-      # fsGroup so the non-root container can read the file the Job wrote
-      # (the Job uses the same uid/gid).
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -29,29 +28,41 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       initContainers:
-        # Block pod start until the bootstrap Job has populated the PVC.
-        - name: wait-for-pmtiles
-          image: busybox:1.38
-          command:
-            - sh
-            - -c
-            - /opt/repo-scripts/wait-for-basemap.sh
+        - name: fetch-basemap
+          image: docker.io/library/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+          command: ["/opt/repo-scripts/fetch-basemap.sh"]
+          env:
+            # extract bbox: minLon,minLat,maxLon,maxLat (CONUS)
+            - name: BBOX
+              value: "-125,24,-66,50"
+            # Bump to force a re-extract of a fresher planet build without changing the bbox.
+            - name: REFRESH
+              value: "1"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
           volumeMounts:
             - name: repo-scripts
               mountPath: /opt/repo-scripts
               readOnly: true
+            - name: go-pmtiles
+              mountPath: /opt/go-pmtiles
+              readOnly: true
             - name: pmtiles
               mountPath: /data
-              readOnly: true
       containers:
         - name: basemap
-          # Image still bakes a Michigan-only extract at /data/basemap.pmtiles; the PVC mount shadows it, only PVC contents serve.
-          image: ghcr.io/mitchross/radar-ng-basemap:v1.1.5
+          image: protomaps/go-pmtiles:v1.31.2@sha256:06574f01f55a78f78f887bc7ebf729a5c093c0d6e17d9876300cfcb0758b59d3
           imagePullPolicy: IfNotPresent
+          args: ["serve", "/data", "--port", "8081", "--cors", "*"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -75,6 +86,11 @@ spec:
           configMap:
             name: radar-ng-scripts
             defaultMode: 0555
+        # The go-pmtiles binary for the init container; keep in step with the basemap container image.
+        - name: go-pmtiles
+          image:
+            reference: protomaps/go-pmtiles:v1.31.2@sha256:06574f01f55a78f78f887bc7ebf729a5c093c0d6e17d9876300cfcb0758b59d3
+            pullPolicy: IfNotPresent
         - name: pmtiles
           persistentVolumeClaim:
             claimName: pmtiles
