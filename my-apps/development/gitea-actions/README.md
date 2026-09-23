@@ -64,14 +64,9 @@ use Gitea Actions once the runner is healthy, or build locally from the
 ```bash
 cd ~/programming/radar-ng/backend
 VERSION=v1.1.4 ./scripts/build-push.sh tile-server
-VERSION=v1.1.1 ./scripts/build-push.sh basemap open-meteo-worker
+VERSION=v1.1.1 ./scripts/build-push.sh open-meteo-worker
 VERSION=v1.1.7 ./scripts/build-push.sh temporal-worker
 ```
 
-`basemap-bootstrap:latest` is maintained in this GitOps repo:
-
-```bash
-cd ~/programming/talos-argocd-proxmox
-./scripts/build-push-custom-apps.sh basemap-bootstrap
-kubectl -n radar-ng delete job basemap-bootstrap
-```
+The basemap runs the upstream `protomaps/go-pmtiles` image and needs no rebuild;
+its init container refills an empty `pmtiles` PVC on start.
