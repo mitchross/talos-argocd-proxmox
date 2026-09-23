@@ -165,6 +165,13 @@
       groupName: 'radar open-meteo image',
       automerge: false,
     },
+    {
+      description: 'Radar worker bumps are Temporal worker releases: review against docs/domains/temporal/safe-deployments.md, never automerge.',
+      matchPackageNames: [
+        'ghcr.io/mitchross/radar-ng-temporal-worker',
+      ],
+      automerge: false,
+    },
     // -------------------------------------------------------------------
     // PostHog image rules
     // -------------------------------------------------------------------
