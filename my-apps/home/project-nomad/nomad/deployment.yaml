@@ -25,7 +25,7 @@ spec:
             - name: nomad-storage
               mountPath: /app/storage
         - name: migrate
-          image: ghcr.io/mitchross/project-nomad:sha-da05336@sha256:93ecaa4f723f781f37b84fff346653cc5b186263a163eb8111403b526a4f034b
+          image: ghcr.io/mitchross/project-nomad:v2.0.0@sha256:275ce7144669645856b14b91b901f8a84fc43fc8eafda04d3c3eb3bbc3d209ea
           command: ["sh", "-c", "/opt/repo-scripts/migrate.sh"]
           envFrom:
             - configMapRef:
@@ -54,7 +54,7 @@ spec:
               mountPath: /app/storage
       containers:
         - name: project-nomad
-          image: ghcr.io/mitchross/project-nomad:sha-da05336@sha256:93ecaa4f723f781f37b84fff346653cc5b186263a163eb8111403b526a4f034b
+          image: ghcr.io/mitchross/project-nomad:v2.0.0@sha256:275ce7144669645856b14b91b901f8a84fc43fc8eafda04d3c3eb3bbc3d209ea
           command: ["sh", "-c", "/opt/repo-scripts/start.sh"]
           ports:
             - containerPort: 8080
