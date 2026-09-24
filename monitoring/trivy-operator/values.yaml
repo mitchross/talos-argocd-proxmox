@@ -5,13 +5,18 @@ targetNamespaces: ""
 excludeNamespaces: "dvwa"
 
 # Redpanda images rate-limit unauthenticated pulls — every scan fails; excluded to stop the retry loop.
+# Posthog's monolith image yields reports larger than etcd's request limit, so the write fails and
+# the operator rescans it forever (aquasecurity/trivy-operator#441) — excluded for the same reason.
 trivyOperator:
-  excludeImages: "docker.redpanda.com/*/*"
+  excludeImages: "docker.redpanda.com/*/*,posthog/posthog*,ghcr.io/posthog/posthog/feature-flags*"
 
 operator:
   # Low concurrency: at most 2 scan jobs at once. Homelab nodes, not a fleet.
   scanJobsConcurrentLimit: 2
   scanJobTimeout: 10m
+  # Report TTL is the only periodic rescan trigger (expiry deletes + rescans). 72h cuts the
+  # full-cluster rescan wave to ~1/3; fresh CVEs still surface within 3 days.
+  scannerReportTTL: "72h"
   # Default 30s retry creates a tight loop of OOMKilled/error scans. Back off
   # to 15m so failed jobs don't hammer the node on every reconcile.
   scanJobsRetryDelay: 15m
