@@ -38,6 +38,7 @@ configMapGenerator:
     files:
       - styles/light.json
       - styles/dark.json
+      - styles/satellite.json
   # Fullscreen MapLibre viewer served at `/` (see httproute-viewer.yaml). Hash
   # suffix rolls the map-styles Deployment when index.html changes.
   - name: map-styles-index
