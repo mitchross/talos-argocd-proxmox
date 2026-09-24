@@ -25,7 +25,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
       - name: redis
-        image: valkey/valkey:9.2-alpine@sha256:43135a13c2d480c6d99d765119098fe617483b6d03fb9996dd89f7a980f143a5
+        image: valkey/valkey:9.2-alpine@sha256:cdcb7b1c7b6f1c9cb9442c71ac6275e78184657448407b2c1fdde7ee8024f4fb
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 999
