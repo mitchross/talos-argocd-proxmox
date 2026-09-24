@@ -28,6 +28,8 @@ spec:
   template:
     metadata:
       name: 'monitoring-{{ .path.basename }}'
+      labels:
+        app.kubernetes.io/part-of: monitoring
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "5"

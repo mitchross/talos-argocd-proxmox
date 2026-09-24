@@ -46,6 +46,9 @@ spec:
   template:
     metadata:
       name: 'my-apps-{{ .path.basename }}'
+      labels:
+        app.kubernetes.io/part-of: applications
+        platform.vanillax.dev/category: '{{ index .path.segments 1 }}'
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "6"
