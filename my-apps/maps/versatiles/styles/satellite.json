@@ -1,0 +1,26 @@
+{
+  "version": 8,
+  "name": "Satellite imagery",
+  "sources": {
+    "imagery": {
+      "type": "raster",
+      "tiles": ["https://maps.vanillax.me/imagery/{z}/{x}/{y}.jpg"],
+      "tileSize": 256,
+      "attribution": "USDA, USGS The National Map: Orthoimagery",
+      "minzoom": 0,
+      "maxzoom": 16
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": { "background-color": "#1b2226" }
+    },
+    {
+      "id": "imagery",
+      "type": "raster",
+      "source": "imagery"
+    }
+  ]
+}

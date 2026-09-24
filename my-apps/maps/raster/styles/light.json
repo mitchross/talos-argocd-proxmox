@@ -4,18 +4,18 @@
 	"metadata": {
 		"license": "https://creativecommons.org/publicdomain/zero/1.0/"
 	},
-	"glyphs": "https://maps.vanillax.me/assets/glyphs/{fontstack}/{range}.pbf",
+	"glyphs": "http://versatiles.versatiles.svc.cluster.local:8080/assets/glyphs/{fontstack}/{range}.pbf",
 	"sprite": [
 		{
 			"id": "base",
-			"url": "https://maps.vanillax.me/assets/sprites/base"
+			"url": "http://versatiles.versatiles.svc.cluster.local:8080/assets/sprites/base"
 		}
 	],
 	"sources": {
 		"versatiles-shortbread": {
 			"type": "vector",
 			"tiles": [
-				"https://maps.vanillax.me/tiles/osm/{z}/{x}/{y}"
+				"http://versatiles.versatiles.svc.cluster.local:8080/tiles/osm/{z}/{x}/{y}"
 			],
 			"minzoom": 0,
 			"maxzoom": 14
