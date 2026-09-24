@@ -1,0 +1,13 @@
+{
+  "options": {
+    "paths": { "root": "/data", "styles": "styles" },
+    "serveStaticMaps": true,
+    "maxScaleFactor": 3,
+    "maxSize": 1024
+  },
+  "styles": {
+    "light": { "style": "light.json" },
+    "dark": { "style": "dark.json" }
+  },
+  "data": {}
+}

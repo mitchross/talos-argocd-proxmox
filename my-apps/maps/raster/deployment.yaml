@@ -1,0 +1,71 @@
+# Renders the VersaTiles styles to PNG for clients that can't draw vector maps (Watch, widget, CarPlay).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: map-raster
+  namespace: map-raster
+  labels:
+    app.kubernetes.io/name: map-raster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: map-raster
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: map-raster
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tileserver
+          image: maptiler/tileserver-gl:v5.6.0@sha256:3a9ccdb24820b6814c8119bcc8a4376c39867cb0ffe69d62919ef898b90c2427
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config
+            - /data/config.json
+            - --public_url
+            - https://maps.vanillax.me/raster/
+          ports:
+            - containerPort: 8080
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: config
+              mountPath: /data/config.json
+              subPath: config.json
+              readOnly: true
+            - name: styles
+              mountPath: /data/styles
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: map-raster-config
+        - name: styles
+          configMap:
+            name: map-raster-styles
