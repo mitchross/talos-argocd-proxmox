@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - deployment.yaml
+  - pdb.yaml
   - service.yaml
   - pvc.yaml
   - httproute.yaml

@@ -13,6 +13,15 @@ spec:
       labels:
         app: nginx
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys: [pod-template-hash]
+          labelSelector:
+            matchLabels:
+              app: nginx
       containers:
         - name: nginx
           image: nginx:1.31-alpine
