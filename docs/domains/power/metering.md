@@ -22,8 +22,8 @@ what it costs, and how to add a plug.
 **Shed Lab** runs off the shed's own solar and battery bank, so it has watts and
 kWh (with the daily/weekly/monthly/yearly meters) but no cost entities, and it is
 not in any group or in the house-share numbers. Its supply side (MPPT yield,
-battery bank voltage and state of charge) lives in the separate Grafana
-**Solar MPPT Monitor** dashboard (`solar-mppt-monitor`).
+battery bank voltage and state of charge) lives in the Grafana **Solar**
+dashboard (`shed-solar`).
 
 Household plugs (dryer, TV, office lamps, the garage fridge) exist in Home
 Assistant but are outside this accounting: the Prometheus filter only exports
@@ -89,8 +89,8 @@ month, since a young month has not accrued yet.
 
 | Surface | What it is |
 |---|---|
-| Grafana **Homelab Power & Cost** (`homelab-power-cost`) | The main view: homelab and office draw, cost today/month/year, hot-spot leaderboard, idle-floor analysis, and a "reading this dashboard" panel |
-| Grafana **Tapo Power Monitor** (`tapo-power-monitor`) | Raw per-plug telemetry: watts, volts, amps, energy today |
+| Grafana **Power & Cost** (`homelab-power-cost`, folder Home & Energy) | Mirrors HA's Overview/Devices/House views: draw, cost today/month/year, per-device table, 14-day trends, and per-plug volts/amps in a collapsed row |
+| Grafana **Gaming PC** (`gaming-pc`) and **Cooling** (`ac-cooling`) | Mirror HA's Gaming and Cooling views, with 14-day per-day history |
 | Home Assistant **Homelab Power** dashboard | Same numbers inside HA, plus the editable rate inputs |
 | HA **Energy** dashboard | Configured in the UI; each `sensor.<prefix>_energy` is an Individual device |
 
@@ -250,9 +250,9 @@ the guarded LOAD automation, and serves two feeds:
 | `:8080/metrics` (`epever_*`, `epsolar_*`, `solar_buffer_*`) | cluster Prometheus, job `epever-solar` (`monitoring/prometheus-stack/values.yaml`) |
 | `:8080/api/v1/status` (JSON) | Home Assistant `rest:` sensors `sensor.solar_*` / `binary_sensor.solar_*` (30 s) |
 
-Grafana: **Shed Solar** (`shed-solar.json`, the overview page), **Solar Buffer
-Control** (the author's detailed dashboard, copied from the epsolar repo), and
-the older **Solar MPPT Monitor**. Home Assistant: the **Solar** view of the
+Grafana: **Solar** (`dashboards/home-energy/shed-solar.json`), which mirrors
+HA's Solar view and keeps the epsolar controller internals in a collapsed row.
+Home Assistant: the **Solar** view of the
 Homelab Power dashboard. kWh counters are the controller's own lifetime
 totals.
 

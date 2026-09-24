@@ -112,6 +112,9 @@ kind: Service
 metadata:
   name: db
   namespace: posthog
+  labels: # ServiceMonitor selector (core/servicemonitor.yaml)
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: db
 spec:
   ports:
   - name: postgres

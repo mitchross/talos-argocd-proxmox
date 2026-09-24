@@ -2,14 +2,13 @@
   "uid": "homelab-diagnostics",
   "title": "Diagnostics Hardware Report",
   "description": "Continuous physical host/disk SMART and I/O plus live Talos, Longhorn, VPA, Argo, application and backup diagnostics. No snapshot measurements.",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "version": 2,
-  "editable": true,
+  "editable": false,
   "graphTooltip": 1,
   "tags": [
-    "homelab",
-    "diagnostics",
     "hardware",
+    "diagnostics",
     "audit"
   ],
   "timezone": "browser",
@@ -44,23 +43,12 @@
   "templating": {
     "list": [
       {
-        "type": "datasource",
-        "name": "DS_PROM",
-        "label": "Prometheus",
-        "query": "prometheus",
-        "hide": 2,
-        "current": {
-          "text": "Prometheus",
-          "value": "prometheus"
-        }
-      },
-      {
         "name": "physical_host",
         "label": "Physical host",
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROM}"
+          "uid": "prometheus"
         },
         "definition": "label_values(up{job=\"physical-node\"},physical_host)",
         "query": {
@@ -83,7 +71,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROM}"
+          "uid": "prometheus"
         },
         "definition": "label_values(node_disk_info{job=\"physical-node\",physical_host=~\"${physical_host:regex}\",device=~\"sd[a-z]+|nvme[0-9]+n[0-9]+\"},disk)",
         "query": {
@@ -106,7 +94,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROM}"
+          "uid": "prometheus"
         },
         "definition": "label_values(kube_node_info, node)",
         "query": {
@@ -129,7 +117,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROM}"
+          "uid": "prometheus"
         },
         "definition": "label_values(kube_namespace_created, namespace)",
         "query": {
@@ -161,13 +149,13 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "**Physical host / disk filters** control the hardware panels. **Talos node / namespace filters** control supported cluster panels. Click a disk in the inventory to focus its hardware readings.\n\nPhysical I/O comes from the host kernel. SMART comes from the drive through smartctl_exporter: **\u201cDrive reports OK\u201d is one test, not a clean bill of health.** Its current version can retain the previous SMART result after a failed device poll and exposes no last-successful-poll time. We hide drive results when the host, SMART exporter, or disk-presence telemetry disappears, but a responding exporter cannot prove a fresh device read. Missing readings remain **unknown**, never zero or healthy."
+        "content": "**Physical host / disk filters** control the hardware panels. **Talos node / namespace filters** control supported cluster panels. Click a disk in the inventory to focus its hardware readings.\n\nPhysical I/O comes from the host kernel. SMART comes from the drive through smartctl_exporter: **“Drive reports OK” is one test, not a clean bill of health.** Its current version can retain the previous SMART result after a failed device poll and exposes no last-successful-poll time. We hide drive results when the host, SMART exporter, or disk-presence telemetry disappears, but a responding exporter cannot prove a fresh device read. Missing readings remain **unknown**, never zero or healthy."
       }
     },
     {
       "id": 201,
       "type": "row",
-      "title": "1 \u00b7 Physical disks \u2014 live inventory, condition and I/O",
+      "title": "1 · Physical disks — live inventory, condition and I/O",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -190,7 +178,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -202,7 +190,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -295,7 +283,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -307,7 +295,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -389,7 +377,7 @@
     },
     {
       "id": 204,
-      "title": "Connected physical drives \u00b7 click a disk",
+      "title": "Connected physical drives · click a disk",
       "type": "table",
       "description": "Live kernel/udev inventory. NVMe namespaces are grouped by controller for SMART correlation. Missing hosts remain visible in exporter availability above; they are not silently certified healthy.",
       "gridPos": {
@@ -400,7 +388,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -412,7 +400,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -501,7 +489,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -513,7 +501,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -606,7 +594,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -618,7 +606,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -674,7 +662,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -686,7 +674,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -905,7 +893,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -917,7 +905,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -1136,7 +1124,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1148,7 +1136,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -1367,7 +1355,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1379,7 +1367,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -1464,7 +1452,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1476,7 +1464,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -1532,7 +1520,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1544,7 +1532,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -1752,7 +1740,7 @@
     },
     {
       "id": 213,
-      "title": "SATA attributes \u00b7 raw vendor values",
+      "title": "SATA attributes · raw vendor values",
       "type": "table",
       "description": "Raw attributes retain vendor names and IDs. Wear fields are not interchangeable across models; never interpret every field as percent remaining.",
       "gridPos": {
@@ -1763,7 +1751,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1775,7 +1763,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -1831,7 +1819,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1843,7 +1831,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -1854,7 +1842,7 @@
             "mode": "fixed",
             "fixedColor": "#B88028"
           },
-          "noValue": "No telemetry",
+          "noValue": "None",
           "decimals": 2
         },
         "overrides": []
@@ -1899,7 +1887,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1911,7 +1899,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2130,7 +2118,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -2142,7 +2130,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2361,7 +2349,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -2373,7 +2361,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2592,7 +2580,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -2604,7 +2592,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2812,7 +2800,7 @@
     },
     {
       "id": 219,
-      "title": "Physical read delay \u00b7 average",
+      "title": "Physical read delay · average",
       "type": "timeseries",
       "description": "Total completed-request time divided by completed requests. No requests means no latency observation, not 0ms. This is an average, not a tail-latency measurement.",
       "gridPos": {
@@ -2823,7 +2811,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -2835,7 +2823,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3043,7 +3031,7 @@
     },
     {
       "id": 220,
-      "title": "Physical write delay \u00b7 average",
+      "title": "Physical write delay · average",
       "type": "timeseries",
       "description": "Total completed-request time divided by completed requests. No requests means no latency observation, not 0ms. This is an average, not a tail-latency measurement.",
       "gridPos": {
@@ -3054,7 +3042,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -3066,7 +3054,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3285,7 +3273,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -3297,7 +3285,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3516,7 +3504,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -3528,7 +3516,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3747,7 +3735,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -3759,7 +3747,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3978,7 +3966,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -3990,7 +3978,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4198,7 +4186,7 @@
     },
     {
       "id": 225,
-      "title": "Guest read await \u2014 average",
+      "title": "Guest read await — average",
       "type": "timeseries",
       "description": "Average completed guest read latency; not p99 and not a direct physical SSD measurement. Only QEMU-backed guest disks are included; attached Longhorn iSCSI devices are excluded.",
       "gridPos": {
@@ -4209,7 +4197,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -4221,7 +4209,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4429,7 +4417,7 @@
     },
     {
       "id": 226,
-      "title": "Guest write await \u2014 average",
+      "title": "Guest write await — average",
       "type": "timeseries",
       "description": "Average completed guest write latency; compare with queue, workload and fsync. Only QEMU-backed guest disks are included; attached Longhorn iSCSI devices are excluded.",
       "gridPos": {
@@ -4440,7 +4428,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -4452,7 +4440,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4671,7 +4659,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -4683,7 +4671,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4902,7 +4890,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -4914,7 +4902,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -5123,7 +5111,7 @@
     {
       "id": 229,
       "type": "row",
-      "title": "2 \u00b7 Memory and CPU \u2014 physical hosts, guests and VPA",
+      "title": "2 · Memory and CPU — physical hosts, guests and VPA",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -5146,7 +5134,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -5158,7 +5146,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -5377,7 +5365,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -5389,7 +5377,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -5608,7 +5596,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -5620,7 +5608,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -5839,7 +5827,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -5851,7 +5839,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -6070,7 +6058,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -6082,7 +6070,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -6138,7 +6126,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -6150,7 +6138,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -6369,7 +6357,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -6381,7 +6369,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -6600,7 +6588,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -6612,7 +6600,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -6831,7 +6819,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -6843,7 +6831,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -7062,7 +7050,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -7074,7 +7062,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -7293,7 +7281,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -7305,7 +7293,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         },
         {
@@ -7317,7 +7305,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -7554,7 +7542,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -7566,7 +7554,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         },
         {
@@ -7578,7 +7566,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -7804,7 +7792,7 @@
     },
     {
       "id": 242,
-      "title": "VPA in-place updates \u00b7 selected time range",
+      "title": "VPA in-place updates · selected time range",
       "type": "table",
       "description": "Actual updater counter increments, not recommendation gauges. Namespace filter applies; node does not.",
       "gridPos": {
@@ -7815,7 +7803,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -7827,7 +7815,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -7859,7 +7847,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "VPA in-place updates \u00b7 selected time range",
+              "Value": "VPA in-place updates · selected time range",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -7872,7 +7860,7 @@
     },
     {
       "id": 243,
-      "title": "VPA admissions actually applied \u00b7 selected range",
+      "title": "VPA admissions actually applied · selected range",
       "type": "stat",
       "description": "Global counter filtered applied=true. This exporter has no target namespace label, so namespace/node filters do not apply.",
       "gridPos": {
@@ -7883,7 +7871,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -7895,7 +7883,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -7939,7 +7927,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -7951,7 +7939,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -8170,7 +8158,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -8182,7 +8170,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -8391,7 +8379,7 @@
     {
       "id": 246,
       "type": "row",
-      "title": "3 \u00b7 Spread and replicas \u2014 live placement and copy counts",
+      "title": "3 · Spread and replicas — live placement and copy counts",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -8403,7 +8391,7 @@
     },
     {
       "id": 247,
-      "title": "Node readiness \u00b7 1 ready / 0 not ready",
+      "title": "Node readiness · 1 ready / 0 not ready",
       "type": "table",
       "description": "All selected nodes from kube-state-metrics, including an unreachable exporter.",
       "gridPos": {
@@ -8414,7 +8402,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -8426,7 +8414,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -8458,7 +8446,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "Node readiness \u00b7 1 ready / 0 not ready",
+              "Value": "Node readiness · 1 ready / 0 not ready",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -8482,7 +8470,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -8494,7 +8482,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -8550,7 +8538,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -8562,7 +8550,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -8618,7 +8606,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -8630,7 +8618,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -8675,7 +8663,7 @@
     },
     {
       "id": 251,
-      "title": "Longhorn robustness \u00b7 count by state",
+      "title": "Longhorn robustness · count by state",
       "type": "timeseries",
       "description": "One-hot state series. Detached/unknown volumes are not automatically broken; cross-check attached state. Namespace filter uses PVC namespace; node filter omitted because replica location differs from engine placement.",
       "gridPos": {
@@ -8686,7 +8674,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -8698,7 +8686,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -8906,7 +8894,7 @@
     },
     {
       "id": 252,
-      "title": "Longhorn attachment \u00b7 count by state",
+      "title": "Longhorn attachment · count by state",
       "type": "timeseries",
       "description": "Backup staging can temporarily add volumes; detached retained/parked volumes can be expected.",
       "gridPos": {
@@ -8917,7 +8905,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -8929,7 +8917,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -9148,7 +9136,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -9160,7 +9148,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -9216,7 +9204,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -9228,7 +9216,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -9275,7 +9263,7 @@
       "id": 255,
       "title": "Longhorn in-sync writable copies",
       "type": "table",
-      "description": "RW is the attached engine\u2019s replica mode. Detached volumes need not have an engine report; absent is not a measured 0. Compare configured copies, running copies and robustness.",
+      "description": "RW is the attached engine’s replica mode. Detached volumes need not have an engine report; absent is not a measured 0. Compare configured copies, running copies and robustness.",
       "gridPos": {
         "x": 0,
         "y": 210,
@@ -9284,7 +9272,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -9296,7 +9284,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -9352,7 +9340,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -9364,7 +9352,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -9410,7 +9398,7 @@
     {
       "id": 257,
       "type": "row",
-      "title": "4 \u00b7 Disk thrashing \u2014 page rereads, stalls and maintenance",
+      "title": "4 · Disk thrashing — page rereads, stalls and maintenance",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -9422,7 +9410,7 @@
     },
     {
       "id": 258,
-      "title": "File-page refaults \u00b7 busiest pods",
+      "title": "File-page refaults · busiest pods",
       "type": "timeseries",
       "description": "Maximum of pod-parent and child cgroups avoids summing overlapping accounting. Refaults alone need pressure/I/O correlation.",
       "gridPos": {
@@ -9433,7 +9421,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -9445,7 +9433,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -9653,7 +9641,7 @@
     },
     {
       "id": 259,
-      "title": "Memory PSI \u00b7 most affected pods",
+      "title": "Memory PSI · most affected pods",
       "type": "timeseries",
       "description": "Max across parent/child avoids double counting. No OOM kill is required for a reclaim storm.",
       "gridPos": {
@@ -9664,7 +9652,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -9676,7 +9664,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -9884,7 +9872,7 @@
     },
     {
       "id": 260,
-      "title": "Container reads \u00b7 busiest pods",
+      "title": "Container reads · busiest pods",
       "type": "timeseries",
       "description": "Container cgroup reads. Backup clones appear under Longhorn; compare time windows before diagnosing thrash.",
       "gridPos": {
@@ -9895,7 +9883,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -9907,7 +9895,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -10126,7 +10114,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -10138,7 +10126,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -10346,7 +10334,7 @@
     },
     {
       "id": 262,
-      "title": "Temporal recovery \u00b7 completed Job runtime",
+      "title": "Temporal recovery · completed Job runtime",
       "type": "table",
       "description": "Dedicated maintenance Job, unfiltered by namespace/node. Job-history retention limits visible old runs; completion is required, so active jobs do not masquerade as finished.",
       "gridPos": {
@@ -10357,7 +10345,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -10369,7 +10357,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -10401,7 +10389,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "Temporal recovery \u00b7 completed Job runtime",
+              "Value": "Temporal recovery · completed Job runtime",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -10414,7 +10402,7 @@
     },
     {
       "id": 263,
-      "title": "DCGM scrape availability \u00b7 24h",
+      "title": "DCGM scrape availability · 24h",
       "type": "stat",
       "description": "Dedicated GPU exporter, unfiltered by node/namespace. Uses the current exporter pod only, up to 24h of its samples; retired pre-repair pods are excluded. Not proof GPU workloads are healthy.",
       "gridPos": {
@@ -10425,7 +10413,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -10437,7 +10425,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -10471,7 +10459,7 @@
     {
       "id": 264,
       "type": "row",
-      "title": "5 \u00b7 Argo \u2014 synchronization and actual application health",
+      "title": "5 · Argo — synchronization and actual application health",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -10494,7 +10482,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -10506,7 +10494,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -10725,7 +10713,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -10737,7 +10725,7 @@
           "format": "time_series",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -10956,7 +10944,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -10968,7 +10956,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -10979,7 +10967,7 @@
             "mode": "fixed",
             "fixedColor": "#B88028"
           },
-          "noValue": "No telemetry",
+          "noValue": "None",
           "decimals": 2
         },
         "overrides": []
@@ -11013,7 +11001,7 @@
     },
     {
       "id": 268,
-      "title": "Argo sync outcomes \u00b7 selected time range",
+      "title": "Argo sync outcomes · selected time range",
       "type": "table",
       "description": "Global sync outcomes, not an application uptime measure; this metric has no reliable destination-namespace selector.",
       "gridPos": {
@@ -11024,7 +11012,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11036,7 +11024,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11068,7 +11056,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "Argo sync outcomes \u00b7 selected time range",
+              "Value": "Argo sync outcomes · selected time range",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -11082,7 +11070,7 @@
     {
       "id": 269,
       "type": "row",
-      "title": "6 \u00b7 Applications, disk headroom and backups",
+      "title": "6 · Applications, disk headroom and backups",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -11094,7 +11082,7 @@
     },
     {
       "id": 270,
-      "title": "Running but not Ready \u00b7 ordinary pods",
+      "title": "Running but not Ready · ordinary pods",
       "type": "table",
       "description": "Includes running pods on unreachable nodes: stale container readiness is not pod health. Completed jobs are excluded. Namespace filter only.",
       "gridPos": {
@@ -11105,7 +11093,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11117,7 +11105,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11128,7 +11116,7 @@
             "mode": "fixed",
             "fixedColor": "#B88028"
           },
-          "noValue": "No telemetry",
+          "noValue": "None",
           "decimals": 2
         },
         "overrides": []
@@ -11149,7 +11137,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "Running but not Ready \u00b7 ordinary pods",
+              "Value": "Running but not Ready · ordinary pods",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -11162,7 +11150,7 @@
     },
     {
       "id": 271,
-      "title": "Pending pods \u00b7 scheduling or attachment",
+      "title": "Pending pods · scheduling or attachment",
       "type": "table",
       "description": "Empty is expected when none are Pending. A short backup staging pod is not automatically an application outage.",
       "gridPos": {
@@ -11173,7 +11161,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11185,7 +11173,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11196,7 +11184,7 @@
             "mode": "fixed",
             "fixedColor": "#B88028"
           },
-          "noValue": "No telemetry",
+          "noValue": "None",
           "decimals": 2
         },
         "overrides": []
@@ -11217,7 +11205,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "Pending pods \u00b7 scheduling or attachment",
+              "Value": "Pending pods · scheduling or attachment",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -11230,7 +11218,7 @@
     },
     {
       "id": 272,
-      "title": "Container restarts \u00b7 selected time range",
+      "title": "Container restarts · selected time range",
       "type": "table",
       "description": "Counters include multiple causes. Inspect termination reason/logs; 137 alone does not prove OOM.",
       "gridPos": {
@@ -11241,7 +11229,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11253,7 +11241,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11285,7 +11273,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "Container restarts \u00b7 selected time range",
+              "Value": "Container restarts · selected time range",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -11298,7 +11286,7 @@
     },
     {
       "id": 273,
-      "title": "PVC used capacity \u00b7 telemetry available",
+      "title": "PVC used capacity · telemetry available",
       "type": "table",
       "description": "Some crashing pods stop reporting volume stats. A missing PVC is unknown, not empty. See the missing-telemetry panel for claims absent from these measurements.",
       "gridPos": {
@@ -11309,7 +11297,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11321,7 +11309,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11353,7 +11341,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "PVC used capacity \u00b7 telemetry available",
+              "Value": "PVC used capacity · telemetry available",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -11377,7 +11365,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11389,7 +11377,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11445,7 +11433,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11457,7 +11445,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11502,7 +11490,7 @@
     },
     {
       "id": 276,
-      "title": "Latest backup outcome \u00b7 1 success / 0 failure",
+      "title": "Latest backup outcome · 1 success / 0 failure",
       "type": "table",
       "description": "Boolean status, not a timestamp. Ready schedules and historical successful snapshots can coexist with a failed latest run.",
       "gridPos": {
@@ -11513,7 +11501,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11525,7 +11513,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11557,7 +11545,7 @@
               "__name__": true
             },
             "renameByName": {
-              "Value": "Latest backup outcome \u00b7 1 success / 0 failure",
+              "Value": "Latest backup outcome · 1 success / 0 failure",
               "exported_namespace": "namespace",
               "physical_host": "Host",
               "job": "Collector",
@@ -11571,7 +11559,7 @@
     {
       "id": 277,
       "type": "row",
-      "title": "7 \u00b7 What needs attention now \u2014 live signals and next checks",
+      "title": "7 · What needs attention now — live signals and next checks",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -11594,7 +11582,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -11606,7 +11594,7 @@
           "format": "table",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROM}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -11661,8 +11649,9 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "- **Missing exporter or drive:** establish reachability and discovery before judging health. A missing reading is unknown.\n- **SMART warning, increasing media errors, or worn endurance:** verify the model-specific evidence, protect the data, then plan replacement. A passing overall test does not erase these concerns.\n- **Growing disk queues plus long request delays:** correlate physical-host pressure with guest and pod activity. High throughput alone can be healthy backup work.\n- **Memory stalls and file-page rereads:** compare the application\u2019s memory budget with VPA activity before blaming a disk.\n- **One writable replica:** compare configured copies and physical failure domains before maintenance. Three pods on one physical host do not survive that host failing.\n- **Argo synchronized but application unhealthy:** inspect readiness, logs and the actual user operation. Synchronization checks configuration, not recovery.\n- **Full or unreported PVC, failed or stale backup:** inspect the backing pool and latest failure. A successful backup still needs an isolated restore check.\n\nThis dashboard is continuous telemetry. Replacement history, model-specific fit constraints and dated forensic findings remain in the [September inspection](https://mitchross.github.io/talos-argocd-proxmox/diagnostics/); they are not current measurements."
+        "content": "- **Missing exporter or drive:** establish reachability and discovery before judging health. A missing reading is unknown.\n- **SMART warning, increasing media errors, or worn endurance:** verify the model-specific evidence, protect the data, then plan replacement. A passing overall test does not erase these concerns.\n- **Growing disk queues plus long request delays:** correlate physical-host pressure with guest and pod activity. High throughput alone can be healthy backup work.\n- **Memory stalls and file-page rereads:** compare the application’s memory budget with VPA activity before blaming a disk.\n- **One writable replica:** compare configured copies and physical failure domains before maintenance. Three pods on one physical host do not survive that host failing.\n- **Argo synchronized but application unhealthy:** inspect readiness, logs and the actual user operation. Synchronization checks configuration, not recovery.\n- **Full or unreported PVC, failed or stale backup:** inspect the backing pool and latest failure. A successful backup still needs an isolated restore check.\n\nThis dashboard is continuous telemetry. Replacement history, model-specific fit constraints and dated forensic findings remain in the [September inspection](https://mitchross.github.io/talos-argocd-proxmox/diagnostics/); they are not current measurements."
       }
     }
-  ]
+  ],
+  "id": null
 }

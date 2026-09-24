@@ -1,14 +1,14 @@
 {
   "uid": "node-crash-logs",
   "title": "Nodes / Crash logs",
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "version": 1,
   "tags": [
     "nodes",
     "logs",
     "crashes"
   ],
-  "editable": true,
+  "editable": false,
   "refresh": "30s",
   "timezone": "browser",
   "time": {
@@ -26,24 +26,12 @@
   "templating": {
     "list": [
       {
-        "name": "DS_PROMETHEUS",
-        "type": "datasource",
-        "query": "prometheus",
-        "hide": 2
-      },
-      {
-        "name": "DS_LOKI",
-        "type": "datasource",
-        "query": "loki",
-        "hide": 2
-      },
-      {
         "name": "host",
         "label": "Host or Talos node",
         "type": "query",
         "datasource": {
           "type": "loki",
-          "uid": "${DS_LOKI}"
+          "uid": "loki"
         },
         "query": "label_values({service_name=~\"talos-system|host-journal\"}, host_name)",
         "refresh": 2,
@@ -81,7 +69,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "A missing series is unknown, not healthy.",
       "targets": [
@@ -89,7 +77,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "max by (node) (kube_node_status_condition{condition=\"Ready\",status=\"true\",node=~\"${host:regex}\"})",
           "legendFormat": "{{node}}"
@@ -131,7 +119,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "This checks the hypervisor separately from its Talos guest.",
       "targets": [
@@ -139,7 +127,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "up{job=\"physical-node\",physical_host=~\"${host:regex}\"}",
           "legendFormat": "{{physical_host}}"
@@ -171,7 +159,7 @@
     },
     {
       "id": 3,
-      "title": "Last boot \u2014 physical hosts",
+      "title": "Last boot — physical hosts",
       "type": "table",
       "gridPos": {
         "x": 0,
@@ -181,7 +169,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Boot time is not a diagnosis of why a node restarted.",
       "targets": [
@@ -189,7 +177,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "node_boot_time_seconds{job=\"physical-node\",physical_host=~\"${host:regex}\"} * 1000",
           "instant": true,
@@ -224,7 +212,7 @@
     },
     {
       "id": 4,
-      "title": "Last boot \u2014 Talos guests",
+      "title": "Last boot — Talos guests",
       "type": "table",
       "gridPos": {
         "x": 12,
@@ -234,7 +222,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Compare with physical boot time to distinguish a host reboot from a guest restart.",
       "targets": [
@@ -242,7 +230,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "(node_boot_time_seconds{job=\"node-exporter\"} * on(namespace,pod) group_left(node) max by(namespace,pod,node)(kube_pod_info{namespace=\"prometheus-stack\",node=~\"${host:regex}\"})) * 1000",
           "instant": true,
@@ -281,7 +269,7 @@
     },
     {
       "id": 5,
-      "title": "Kernel OOM kills \u2014 all nodes",
+      "title": "Kernel OOM kills — all nodes",
       "type": "timeseries",
       "gridPos": {
         "x": 0,
@@ -291,7 +279,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Kernel OOM counters cover the whole host or guest. Zero does not exclude a non-OOM crash.",
       "targets": [
@@ -299,7 +287,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "increase(node_vmstat_oom_kill[$__rate_interval])",
           "legendFormat": "{{physical_host}} {{instance}}"
@@ -323,7 +311,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Down until the host logging playbook is deployed. An up collector can still have delivery errors.",
       "targets": [
@@ -331,7 +319,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "up{job=\"physical-logs\",physical_host=~\"${host:regex}\"}",
           "legendFormat": "{{physical_host}}"
@@ -358,7 +346,7 @@
       },
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "loki"
       },
       "description": "Matches are clues, not proof of a crash. Expand a physical journal entry for boot ID and systemd unit.",
       "targets": [
@@ -366,7 +354,7 @@
           "refId": "A",
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "loki"
           },
           "expr": "{service_name=~\"talos-system|host-journal\",host_name=~\"${host:regex}\"} |~ \"(?i)(kernel panic|watchdog|out of memory|oom-kill|killed process|I/O error|thermal|hardware error|unclean|segfault|shutdown|reboot)\""
         }
@@ -387,7 +375,7 @@
     },
     {
       "id": 8,
-      "title": "Node logs \u2014 full context",
+      "title": "Node logs — full context",
       "type": "logs",
       "gridPos": {
         "x": 0,
@@ -397,7 +385,7 @@
       },
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "loki"
       },
       "description": "Seven-day retention for these node streams. A sudden power cut may produce no final message.",
       "targets": [
@@ -405,7 +393,7 @@
           "refId": "A",
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "loki"
           },
           "expr": "{service_name=~\"talos-system|host-journal\",host_name=~\"${host:regex}\"} |= ${search:doublequote}"
         }
@@ -426,7 +414,7 @@
     },
     {
       "id": 9,
-      "title": "Log delivery failures \u2014 all node collectors",
+      "title": "Log delivery failures — all node collectors",
       "type": "timeseries",
       "gridPos": {
         "x": 0,
@@ -436,7 +424,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Retry attempts can repeat for the same batch; this is not a count of unique lost log lines.",
       "targets": [
@@ -444,7 +432,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "sum by(instance,exporter) (rate({__name__=~\"otelcol_exporter_send_failed_log_records(_total)?\",exporter=~\"otlphttp/node_logs|otlphttp/loki\"}[$__rate_interval]))",
           "legendFormat": "{{instance}} {{exporter}}"
@@ -458,7 +446,7 @@
     },
     {
       "id": 10,
-      "title": "Disk queue usage \u2014 all node collectors",
+      "title": "Disk queue usage — all node collectors",
       "type": "timeseries",
       "gridPos": {
         "x": 12,
@@ -468,7 +456,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Finite local queues backpressure producers when full. Check free space and Loki if usage keeps rising.",
       "targets": [
@@ -476,7 +464,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "100 * otelcol_exporter_queue_size{exporter=~\"otlphttp/node_logs|otlphttp/loki\"} / otelcol_exporter_queue_capacity{exporter=~\"otlphttp/node_logs|otlphttp/loki\"}",
           "legendFormat": "{{instance}} {{exporter}}"
@@ -492,5 +480,6 @@
       },
       "options": {}
     }
-  ]
+  ],
+  "id": null
 }

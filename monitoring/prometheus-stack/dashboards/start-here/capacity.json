@@ -1,0 +1,1602 @@
+{
+  "id": null,
+  "uid": "capacity",
+  "title": "Capacity — requests vs real use",
+  "description": "Where memory and CPU are reserved vs actually used, per node and per workload, against peaks not snapshots.",
+  "tags": [
+    "kubernetes",
+    "capacity",
+    "vpa",
+    "start-here"
+  ],
+  "editable": false,
+  "schemaVersion": 42,
+  "refresh": "5m",
+  "graphTooltip": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "window",
+        "label": "Peak window",
+        "type": "custom",
+        "query": "1d,7d,15d",
+        "current": {
+          "text": "7d",
+          "value": "7d"
+        },
+        "options": [
+          {
+            "text": "1d",
+            "value": "1d",
+            "selected": false
+          },
+          {
+            "text": "7d",
+            "value": "7d",
+            "selected": true
+          },
+          {
+            "text": "15d",
+            "value": "15d",
+            "selected": false
+          }
+        ],
+        "description": "Prometheus keeps 15 days, so that's the longest honest window."
+      }
+    ]
+  },
+  "links": [
+    {
+      "title": "VPA Recommendations",
+      "type": "link",
+      "url": "/d/vpa-recommendations"
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "CLUSTER AT A GLANCE — requests reserve space, usage is what's really burned",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Memory requested",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) / sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 95
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "description": "Share of allocatable memory reserved by pod requests. This is what the scheduler sees."
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Memory used",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * sum(sum by (node) (node_namespace_pod_container:container_memory_working_set_bytes{container!=\"\"})) / sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "description": "Live working set as a share of allocatable."
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Memory limits",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits) / sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 150
+              },
+              {
+                "color": "red",
+                "value": 250
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "description": "Over 100% = overcommitted: if several pods spike at once the kernel OOM-kills."
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "CPU requested",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) / sum(kube_node_status_allocatable{resource=\"cpu\"})",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 95
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "CPU used",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * sum(sum by (node) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)) / sum(kube_node_status_allocatable{resource=\"cpu\"})",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Workloads without a VPA",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "count((count by (namespace, workload, workload_type) (namespace_workload_pod:kube_pod_owner:relabel{workload_type=~\"deployment|statefulset|daemonset\"})) unless on (namespace, workload) label_replace(kube_verticalpodautoscaler_spec_updatepolicy_updatemode, \"workload\", \"$1\", \"target_name\", \"(.+)\"))",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "description": "Their requests are static — nothing corrects them. See the last row."
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "PER NODE — can the scheduler fit more, and is it really busy?",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Memory per node",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 16,
+        "x": 0,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"memory\"})",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (node_namespace_pod_container:container_memory_working_set_bytes{container!=\"\"})",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"memory\"}) - sum by (node) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) - sum by (node) (node_namespace_pod_container:container_memory_working_set_bytes{container!=\"\"})",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * sum by (node) (cluster:namespace:pod_memory:active:kube_pod_container_resource_limits) / sum by (node) (kube_node_status_allocatable{resource=\"memory\"})",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "node": "Node",
+              "Value #A": "Allocatable",
+              "Value #B": "Requested",
+              "Value #C": "Used now",
+              "Value #D": "Unreserved (schedulable)",
+              "Value #E": "Reserved but idle",
+              "Value #F": "Limits % of allocatable"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allocatable"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requested"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Used now"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unreserved (schedulable)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reserved but idle"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Limits % of allocatable"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Limits % of allocatable",
+            "desc": true
+          }
+        ]
+      },
+      "description": "Unreserved = what the scheduler can still hand out. Reserved but idle = requested minus live use (a snapshot — check peaks below before trimming)."
+    },
+    {
+      "id": 10,
+      "type": "bargauge",
+      "title": "Memory-limit overcommit per node",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sort_desc(100 * sum by (node) (cluster:namespace:pod_memory:active:kube_pod_container_resource_limits) / sum by (node) (kube_node_status_allocatable{resource=\"memory\"}))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{node}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 150
+              },
+              {
+                "color": "red",
+                "value": 250
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "description": "Sum of memory limits ÷ allocatable. Above 100% the node is betting pods won't all peak together."
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "CPU per node",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"cpu\"}) - sum by (node) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) - sum by (node) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "node": "Node",
+              "Value #A": "Allocatable",
+              "Value #B": "Requested",
+              "Value #C": "Used now",
+              "Value #D": "Unreserved (schedulable)",
+              "Value #E": "Reserved but idle"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allocatable"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requested"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Used now"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unreserved (schedulable)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reserved but idle"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Reserved but idle",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": "row",
+      "title": "PER WORKLOAD — MEMORY: requested vs real peak (running short = OOM kill)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "panels": []
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Memory: request vs peak vs limit (per pod)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 15,
+        "x": 0,
+        "y": 21
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (max_over_time(workload:memory_working_set_bytes:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_limits) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\")) - max by (namespace, workload) (max_over_time(workload:memory_working_set_bytes:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "namespace": "Namespace",
+              "workload": "Workload",
+              "Value #A": "Request",
+              "Value #B": "Peak ($window)",
+              "Value #C": "Limit",
+              "Value #D": "Reserved above peak"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Request"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Peak ($window)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Limit"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reserved above peak"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Reserved above peak",
+            "desc": true
+          }
+        ]
+      },
+      "description": "Per-pod figures. Peaks come from a recording rule, so the window fills in over the first days after it ships. Reserved above peak is the most you could trim; negative means the pod regularly exceeds its request. VPA-managed workloads fix themselves."
+    },
+    {
+      "id": 14,
+      "type": "bargauge",
+      "title": "Under-requested: peak ÷ request (OOM-risk list)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 9,
+        "x": 15,
+        "y": 21
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sort_desc(100 * (max by (namespace, workload) (max_over_time(workload:memory_working_set_bytes:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) / (max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) > 100)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{namespace}}/{{workload}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 150
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "Every workload peaks under its request"
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "description": "Workloads whose real peak is above their memory request."
+    },
+    {
+      "id": 15,
+      "type": "row",
+      "title": "PER WORKLOAD — CPU: requested vs p99 (running short = throttling, not a kill — the safe place to trim)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "panels": []
+    },
+    {
+      "id": 16,
+      "type": "table",
+      "title": "CPU: request vs p99 vs limit (per pod)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 15,
+        "x": 0,
+        "y": 34
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (quantile_over_time(0.99, workload:cpu_usage_cores:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\")) - max by (namespace, workload) (quantile_over_time(0.99, workload:cpu_usage_cores:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "namespace": "Namespace",
+              "workload": "Workload",
+              "Value #A": "Request",
+              "Value #B": "p99 ($window)",
+              "Value #C": "Limit",
+              "Value #D": "Reserved above p99"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Request"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p99 ($window)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Limit"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reserved above p99"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Reserved above p99",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "type": "bargauge",
+      "title": "Under-requested CPU: p99 ÷ request",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 9,
+        "x": 15,
+        "y": 34
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sort_desc(100 * (max by (namespace, workload) (quantile_over_time(0.99, workload:cpu_usage_cores:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) / (max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) > 100)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{namespace}}/{{workload}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "Every workload's p99 fits its request"
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "row",
+      "title": "NO VPA — static requests nobody corrects (exemptions live in scripts/vpa-exemptions.yaml)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "panels": []
+    },
+    {
+      "id": 19,
+      "type": "table",
+      "title": "Workloads without a VPA",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(count by (namespace, workload, workload_type) (namespace_workload_pod:kube_pod_owner:relabel{workload_type=~\"deployment|statefulset|daemonset\"})) unless on (namespace, workload) label_replace(kube_verticalpodautoscaler_spec_updatepolicy_updatemode, \"workload\", \"$1\", \"target_name\", \"(.+)\")",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) unless on (namespace, workload) label_replace(kube_verticalpodautoscaler_spec_updatepolicy_updatemode, \"workload\", \"$1\", \"target_name\", \"(.+)\")",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(max by (namespace, workload) (max_over_time(workload:memory_working_set_bytes:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_memory:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) unless on (namespace, workload) label_replace(kube_verticalpodautoscaler_spec_updatepolicy_updatemode, \"workload\", \"$1\", \"target_name\", \"(.+)\")",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) unless on (namespace, workload) label_replace(kube_verticalpodautoscaler_spec_updatepolicy_updatemode, \"workload\", \"$1\", \"target_name\", \"(.+)\")",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(max by (namespace, workload) (quantile_over_time(0.99, workload:cpu_usage_cores:pod_max[$window])) and on (namespace, workload) max by (namespace, workload) (sum by (namespace, pod) (cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests) * on (namespace, pod) group_left (workload) label_replace(namespace_workload_pod:kube_pod_owner:relabel, \"workload\", \"$1\", \"workload\", \"(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+\"))) unless on (namespace, workload) label_replace(kube_verticalpodautoscaler_spec_updatepolicy_updatemode, \"workload\", \"$1\", \"target_name\", \"(.+)\")",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "namespace": "Namespace",
+              "workload": "Workload",
+              "workload_type": "Kind",
+              "Value #A": "Pods",
+              "Value #B": "Mem request",
+              "Value #C": "Mem peak ($window)",
+              "Value #D": "CPU request",
+              "Value #E": "CPU p99 ($window)"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mem request"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mem peak ($window)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU request"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU p99 ($window)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "cores"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Mem peak ($window)",
+            "desc": true
+          }
+        ]
+      }
+    }
+  ]
+}
