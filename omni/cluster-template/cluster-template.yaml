@@ -5,7 +5,7 @@ name: talos-prod-cluster
 labels:
   cluster-id: "1"
 kubernetes:
-  version: v1.37.0
+  version: v1.37.1
 talos:
   # Install disk is an Omni resource since 1.11, not a config patch; unset, Omni
   # auto-picks the smallest eligible disk. See README "Cluster Upgrades".
