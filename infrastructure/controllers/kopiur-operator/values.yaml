@@ -1,6 +1,13 @@
 # Image tags deliberately unset: empty tag = .Chart.AppVersion == chart version, so all three images track the chart pin.
 # Explicit tags here drifted on Renovate chart bumps.
 installScope: cluster # ClusterRole + ClusterRepository reconciliation
+monitoring:
+  dashboards:
+    enabled: true # sidecar ConfigMap; kube-prometheus-stack's Grafana sidecar searches all namespaces
+    label: grafana_dashboard
+    labelValue: "1"
+    folderAnnotation: grafana_folder
+    folder: Cluster
 webhook:
   failurePolicy: Ignore # deliberate (DR-safety): a kopiur outage must never gate CR creation
   tls:

@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: capacity-recording-rules
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
+    role: recording-rules
+spec:
+  groups:
+    # One series per workload so the Capacity dashboard's 7d/15d peaks don't scan short-lived pod churn (times out).
+    - name: capacity.workload
+      interval: 1m
+      rules:
+        - record: workload:memory_working_set_bytes:pod_max
+          expr: |
+            max by (namespace, workload, workload_type) (
+              sum by (namespace, pod) (node_namespace_pod_container:container_memory_working_set_bytes{container!=""})
+              * on (namespace, pod) group_left (workload, workload_type)
+              label_replace(namespace_workload_pod:kube_pod_owner:relabel{workload_type=~"deployment|statefulset|daemonset"},
+                "workload", "$1", "workload", "(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+")
+            )
+        - record: workload:cpu_usage_cores:pod_max
+          expr: |
+            max by (namespace, workload, workload_type) (
+              sum by (namespace, pod) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)
+              * on (namespace, pod) group_left (workload, workload_type)
+              label_replace(namespace_workload_pod:kube_pod_owner:relabel{workload_type=~"deployment|statefulset|daemonset"},
+                "workload", "$1", "workload", "(.+)-v[0-9]+-[0-9]+-[0-9]+-[a-z0-9]+")
+            )

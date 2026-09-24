@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+  annotations:
+    grafana_folder: "Home & Energy"
+configMapGenerator:
+  - name: ac-cooling-dashboard
+    files:
+      - ac-cooling.json
+  - name: aircube-air-quality-dashboard
+    files:
+      - aircube-air-quality.json
+  - name: gaming-pc-dashboard
+    files:
+      - gaming-pc.json
+  - name: homelab-power-dashboard
+    files:
+      - homelab-power.json
+  - name: shed-solar-dashboard
+    files:
+      - shed-solar.json

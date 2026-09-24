@@ -15,6 +15,16 @@
       "title": "WHY IS THIS APP SLOW?",
       "type": "link",
       "url": "/d/app-performance-investigator/why-is-this-app-slow"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false,
+      "title": "Capacity",
+      "type": "link",
+      "url": "/d/capacity"
     }
   ],
   "panels": [
@@ -30,7 +40,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "## 1. Fix the named critical problem first\nThe table directly below says **what broke and where**. Click the **Problem** name for the alert details. Empty table = no critical alert.\n\n## 2. Find the offender\nThe four ranked lists below show who is using CPU/RAM and who is close to a hard limit. Click a workload name, colored bar, or value to open its investigator automatically.\n\n## 3. Read the cause decoder\nCPU throttling = CPU limit; memory near limit + restarts = likely OOM; resources green + errors = app/dependency/config problem.\n\n## 4. Only then use a specialist view\n[PostHog — web / Postgres / Kafka / ClickHouse](/d/posthog-performance/why-is-posthog-slow) · [Storage / Longhorn](/d/2BCgsldGz/storage) · [Deployments / ArgoCD](/d/qPkgGHg7k/deployments) · [Right-sizing / VPA](/d/vpa-recommendations/right-sizing) · [GPU](/d/gpu-overview/gpu) · [Raw app logs](/d/loki-logs-otel/logs)"
+        "content": "## 1. Fix the named critical problem first\nThe table directly below says **what broke and where**. Click the **Problem** name for the alert details. Empty table = no critical alert.\n\n## 2. Find the offender\nThe four ranked lists below show who is using CPU/RAM and who is close to a hard limit. Click a workload name, colored bar, or value to open its investigator automatically.\n\n## 3. Read the cause decoder\nCPU throttling = CPU limit; memory near limit + restarts = likely OOM; resources green + errors = app/dependency/config problem.\n\n## 4. Only then use a specialist view\n[PostHog — web / Postgres / Kafka / ClickHouse](/d/posthog-performance/why-is-posthog-slow) · [Storage / Longhorn](/d/longhorn/storage) · [Deployments / ArgoCD](/d/argocd/deployments) · [Capacity — requests vs real use](/d/capacity) · [Right-sizing / VPA](/d/vpa-recommendations/right-sizing) · [GPU](/d/gpu-overview/gpu) · [Logs Explorer](/d/loki-logs-otel)"
       }
     },
     {
@@ -46,7 +56,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -122,7 +132,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -187,7 +197,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -248,7 +258,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -327,7 +337,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -388,7 +398,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -449,7 +459,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -510,7 +520,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -578,7 +588,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -639,7 +649,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -699,7 +709,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -774,7 +784,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -862,7 +872,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -928,7 +938,7 @@
       },
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "loki"
       },
       "targets": [
         {
@@ -1007,7 +1017,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1066,7 +1076,7 @@
       },
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROM}"
+        "uid": "prometheus"
       },
       "targets": [
         {
@@ -1097,7 +1107,9 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "noValue": "All pods ready"
+        },
         "overrides": []
       },
       "options": {
@@ -1107,37 +1119,14 @@
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "tags": [
     "start-here",
     "performance",
     "kubernetes"
   ],
   "templating": {
-    "list": [
-      {
-        "type": "datasource",
-        "name": "DS_PROM",
-        "label": "Prometheus",
-        "query": "prometheus",
-        "hide": 2,
-        "current": {
-          "text": "Prometheus",
-          "value": "Prometheus"
-        }
-      },
-      {
-        "type": "datasource",
-        "name": "DS_LOKI",
-        "label": "Loki",
-        "query": "loki",
-        "hide": 2,
-        "current": {
-          "text": "Loki",
-          "value": "Loki"
-        }
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-6h",
@@ -1146,5 +1135,6 @@
   "timezone": "browser",
   "title": "START HERE — Cluster Performance",
   "uid": "performance-cockpit",
-  "version": 1
+  "version": 1,
+  "id": null
 }
