@@ -3,6 +3,8 @@ kind: ApplicationSet
 metadata:
   name: infrastructure
   namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: infrastructure
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
