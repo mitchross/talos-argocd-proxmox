@@ -1,4 +1,4 @@
-FROM golang:1.27.1-alpine@sha256:4cb7ac979db5fcc41cae44b2227ba5ab8a51e8807f40d9ba4dee20a0ad960b5b AS build
+FROM golang:1.27.1-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS build
 RUN apk add --no-cache git
 WORKDIR /src
 RUN git init . && git remote add origin https://github.com/bober10113/go2rtc.git \
@@ -10,7 +10,7 @@ RUN go test ./pkg/nest ./pkg/webrtc ./internal/exec ./internal/streams \
     -run 'Test(Nest|NegotiateRTC|GetReceiver|LocalNest|ExecNest|RecentExecNest|ResetLocalNest|Begin|MarkExecNest|MediaCounters|SourceScheme)'
 RUN CGO_ENABLED=0 go build -trimpath -o /go2rtc . && /go2rtc -version
 
-FROM busybox:1.38.0@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
+FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
 LABEL org.opencontainers.image.source="https://github.com/mitchross/talos-argocd-proxmox"
 LABEL org.opencontainers.image.description="Pinned B101 go2rtc for Frigate Nest stream recovery"
 COPY --from=build /go2rtc /go2rtc
