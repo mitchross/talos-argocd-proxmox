@@ -105,12 +105,27 @@ The active Omni template uses physical-host zone labels:
 | Threadripper | GPU worker | `house` |
 | Shed HP | Worker behind the media bridge | `shed` |
 
-Cloudflared uses soft `ScheduleAnyway` spread and preferred anti-affinity over
-`topology.kubernetes.io/zone`, so two VMs on the SFF count as one physical host.
-Its preferred node affinity favors the `general` worker pool. These are preferences:
-other eligible workers remain usable when the HPs lack room, and several tunnel
-pods can share a surviving host. Verify actual placement; this is not a guarantee
-that every replica occupies a different chassis.
+Cloudflared uses required `DoNotSchedule` spread across eligible
+`topology.kubernetes.io/zone` domains, with `nodeTaintsPolicy: Honor` and
+rollout-scoped `matchLabelKeys`. Two VMs on the SFF count as one physical host.
+Preferred anti-affinity and node affinity favor separate hosts in the `general`
+pool. Other eligible workers remain usable when the HPs lack room, and several
+tunnel pods can share a surviving host. Verify actual placement; spread does not
+guarantee a different chassis per replica when fewer zones are eligible.
+
+The OpenTelemetry gateway runs two replicas with a required zone spread
+(`DoNotSchedule`, `nodeTaintsPolicy: Honor`), a `maxUnavailable: 1` budget and a
+preference for the `general` pool. Its pipelines keep no per-trace state, so either
+replica can take any request. Check placement with:
+
+```sh
+kubectl -n opentelemetry get pods -l app.kubernetes.io/name=otel-gateway-collector -o wide
+kubectl get nodes -L topology.kubernetes.io/zone,node.vanillax.dev/pool
+```
+
+Match each pod's node to its zone. With at least two eligible zones and enough
+capacity, expect two Ready pods on different zones. Reverting the manifest
+returns it to one replica; no data moves.
 
 ### What each worker is for
 
@@ -124,8 +139,8 @@ The Omni template declares a separate `node.vanillax.dev/pool` label:
 | Dell | `disposable` | Temporary, restartable work after required state is relocated |
 
 These labels describe intent; existing apps and Longhorn replicas are not moved
-by a label alone. In particular, the Dell still holds real data. Cloudflared is
-the first consumer and uses a soft preference. No new taints, hard app constraints,
+by a label alone. In particular, the Dell still holds real data. Cloudflared and
+the OpenTelemetry gateway consume the label as a soft preference. No new taints,
 storage tags or control-plane scheduling changes accompany these labels.
 
 Check live labels after syncing the Omni template; merging Git does not itself
