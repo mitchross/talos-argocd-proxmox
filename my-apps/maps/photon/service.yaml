@@ -1,0 +1,15 @@
+# In-cluster only: radar-ng's tile server proxies /api/geocode here, so clients never reach Photon directly.
+apiVersion: v1
+kind: Service
+metadata:
+  name: photon
+  namespace: photon
+  labels:
+    app.kubernetes.io/name: photon
+spec:
+  selector:
+    app.kubernetes.io/name: photon
+  ports:
+    - name: http
+      port: 2322
+      targetPort: http

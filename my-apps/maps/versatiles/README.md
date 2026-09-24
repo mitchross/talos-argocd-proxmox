@@ -165,8 +165,8 @@ map.setStyle(colorful({ baseUrl: 'https://maps.vanillax.me' }));  // dark: eclip
 
 ## Known limitations
 
-- No geocoding/search, no routing, no satellite imagery (future phases:
-  Photon / Valhalla / etc. — deliberately not deployed yet).
+- No routing and no satellite imagery yet. Geocoding lives in
+  [`../photon`](../photon/README.md).
 - Single replica (RWO PVC, `Recreate`); brief downtime on pod moves/updates.
 - Dataset refresh is a manual URL bump + rollout restart (no auto-cron yet).
 - No native Prometheus metrics upstream; coverage is the generic kube-state
