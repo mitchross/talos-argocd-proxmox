@@ -21,7 +21,7 @@ patches:
 helmCharts:
   - name: opentelemetry-operator
     repo: https://open-telemetry.github.io/opentelemetry-helm-charts
-    version: 0.123.0
+    version: 0.123.1
     releaseName: opentelemetry-operator
     namespace: opentelemetry
     valuesFile: values.yaml
