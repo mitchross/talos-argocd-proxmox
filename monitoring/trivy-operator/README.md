@@ -17,6 +17,9 @@ Phase 1 is intentionally narrow:
 - per-CVE Prometheus metrics: disabled to avoid high-cardinality series
 - cluster-wide Secret/ServiceAccount access for image pull credentials: disabled
 - `dvwa` namespace: excluded because it is intentionally vulnerable
+- posthog monolith image: excluded — its vulnerability report exceeds etcd's request size
+  limit, so the operator rescan-loops forever without ever storing it (trivy-operator#441)
+- report TTL: 72h (the operator's only periodic rescan trigger; expiry deletes + rescans)
 
 The goal is useful signal without turning the cluster into a policy-noise
 generator.
