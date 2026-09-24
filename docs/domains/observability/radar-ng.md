@@ -21,7 +21,7 @@ OTel-semconv labels in Loki: `k8s_namespace_name`, `k8s_pod_name`,
 
 ## Grafana — the radar-ng dashboard
 
-Auto-imported from [`monitoring/prometheus-stack/radar-ng-dashboard.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/radar-ng-dashboard.yaml).
+Auto-imported from [`monitoring/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/dashboards/apps/radar-ng.json).
 Labelled `grafana_dashboard: "1"` so the sidecar picks it up. Open in
 Grafana → Dashboards → search "radar-ng".
 
@@ -231,7 +231,7 @@ check Grafana radar-ng dashboard
 
 - [`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md) — platform observability layout
 - [`monitoring/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/CLAUDE.md) — design rationale + pitfalls
-- [`monitoring/prometheus-stack/radar-ng-dashboard.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/radar-ng-dashboard.yaml) — the dashboard JSON
+- [`monitoring/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/dashboards/apps/radar-ng.json) — the dashboard JSON
 - [`my-apps/development/radar-ng/servicemonitor.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/servicemonitor.yaml) — Prometheus scrape config
 - radar-ng repo: `src/lib/telemetry.ts` — mobile OTel wiring
 - radar-ng repo: `services/shared/logger.py` — backend JSON logger

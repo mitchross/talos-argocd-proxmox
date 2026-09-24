@@ -24,15 +24,10 @@ GPU monitoring is integrated into the Prometheus/Grafana stack using NVIDIA's DC
 - GPU down/unavailable alerts
 - Low clock speed warnings
 
-### 4. Grafana Dashboard (`gpu-dashboard.yaml`)
-- **Dashboard UID**: `gpu-monitoring`
-- **Panels**:
-  - GPU Utilization (%)
-  - Memory Usage (bytes)
-  - Temperature (°C)
-  - Power Usage (watts)
-  - Clock Speeds (SM/Memory)
-  - Status Overview Table
+### 4. Grafana Dashboard (`dashboards/ai/gpu-overview.json`)
+- **Dashboard UID**: `gpu-overview` (Grafana folder **AI**)
+- Per-card utilization, VRAM, temperature, power vs the 220 W cap, clocks,
+  PCIe link retries, and which pod holds each card.
 
 ## Key Metrics
 
@@ -60,8 +55,8 @@ curl localhost:9400/metrics | grep DCGM_FI_DEV
 ### Access Grafana Dashboard
 1. Open Grafana
 2. Navigate to **Dashboards**
-3. Find **GPU Monitoring Dashboard**
-4. Or use direct URL: `/d/gpu-monitoring/gpu-monitoring-dashboard`
+3. Open the **AI** folder → **GPU Overview**
+4. Or use direct URL: `/d/gpu-overview`
 
 ### Deploy Changes
 ```bash

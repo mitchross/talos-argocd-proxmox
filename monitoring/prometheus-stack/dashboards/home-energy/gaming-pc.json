@@ -2,23 +2,37 @@
   "annotations": {
     "list": []
   },
-  "editable": true,
+  "description": "Gaming sessions, what they cost, and the idle tax: mirrors the Gaming view of Home Assistant's Homelab Power dashboard.",
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "energy"
+      ],
+      "title": "Energy",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": true,
+      "targetBlank": false,
+      "icon": "external link"
+    }
+  ],
   "panels": [
     {
       "type": "row",
       "title": "Right now",
-      "collapsed": false,
+      "id": 1,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 1,
+      "collapsed": false,
       "panels": []
     },
     {
@@ -27,11 +41,10 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Gaming?",
-      "description": "Plug draw above the threshold for a while.",
+      "title": "Session",
       "id": 2,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 0,
         "y": 1
@@ -71,18 +84,20 @@
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -96,7 +111,8 @@
           "instant": true,
           "range": false
         }
-      ]
+      ],
+      "description": "Draw above 350 W until five quiet minutes pass."
     },
     {
       "datasource": {
@@ -104,11 +120,10 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Draw Now",
-      "description": "",
+      "title": "Draw",
       "id": 3,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 4,
         "y": 1
@@ -128,28 +143,29 @@
                 "value": null
               },
               {
-                "color": "green",
+                "color": "purple",
                 "value": 350
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -157,11 +173,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.gaming_pc_current_consumption\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_current_consumption\"})",
           "legendFormat": "",
           "refId": "A",
-          "instant": true,
-          "range": false
+          "instant": false,
+          "range": true
         }
       ]
     },
@@ -171,48 +187,49 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Idle Floor (24h min)",
-      "description": "What it draws doing nothing. This runs all day.",
+      "title": "Burn rate while gaming ($/h)",
       "id": 4,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 8,
         "y": 1
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "watt",
-          "decimals": 0,
+          "unit": "currencyUSD",
+          "decimals": 3,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -220,13 +237,14 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.gaming_pc_current_consumption\"}))[24h:5m])",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_cost_rate\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
           "range": false
         }
-      ]
+      ],
+      "description": "Zero outside a session."
     },
     {
       "datasource": {
@@ -234,48 +252,49 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Threshold",
-      "description": "input_number.gaming_pc_active_threshold_w in HA.",
+      "title": "Sessions today",
       "id": 5,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 12,
         "y": 1
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "watt",
+          "unit": "none",
           "decimals": 0,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "purple"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -283,7 +302,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_unit_w{entity=\"input_number.gaming_pc_active_threshold_w\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_sessions_today\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
@@ -297,11 +316,10 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Burn Rate While Gaming",
-      "description": "USD per hour at this instant, zero when idle.",
+      "title": "Cost per hour gamed",
       "id": 6,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 16,
         "y": 1
@@ -311,34 +329,37 @@
           "unit": "currencyUSD",
           "decimals": 3,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
           },
-          "mappings": []
+          "noValue": "Not enough gaming yet"
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -346,13 +367,14 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd_per_h{entity=\"sensor.gaming_pc_gaming_cost_rate\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_cost_per_gaming_hour\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
           "range": false
         }
-      ]
+      ],
+      "description": "This month's gaming cost / hours gamed. Blank until 15 minutes of gaming this month."
     },
     {
       "datasource": {
@@ -360,48 +382,49 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Sessions Today",
-      "description": "",
+      "title": "Idle floor (24h min)",
       "id": 7,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 20,
         "y": 1
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "watt",
           "decimals": 0,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "text"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -409,25 +432,26 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_unit_{entity=\"sensor.gaming_pc_sessions_today\"})",
+          "expr": "min(min_over_time(homeassistant_sensor_power_w{entity=\"sensor.gaming_pc_current_consumption\"}[24h]))",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
           "range": false
         }
-      ]
+      ],
+      "description": "What the PC draws doing nothing."
     },
     {
       "type": "row",
-      "title": "Hours, energy and money",
-      "collapsed": false,
+      "title": "Today",
+      "id": 8,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 5
       },
-      "id": 8,
+      "collapsed": false,
       "panels": []
     },
     {
@@ -436,48 +460,49 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Hours Gamed Today",
-      "description": "",
+      "title": "Hours gamed",
       "id": 9,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 0,
-        "y": 7
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
           "unit": "h",
-          "decimals": 2,
+          "decimals": 1,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "purple"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -485,7 +510,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_unit_h{entity=\"sensor.gaming_pc_gaming_hours_daily\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_hours_daily\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
@@ -499,48 +524,49 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "Hours Gamed This Month",
-      "description": "",
+      "title": "kWh gaming",
       "id": 10,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 4,
-        "y": 7
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "h",
-          "decimals": 1,
+          "unit": "kwatth",
+          "decimals": 2,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "purple"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -548,7 +574,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_unit_h{entity=\"sensor.gaming_pc_gaming_hours_monthly\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_energy_daily\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
@@ -562,48 +588,49 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "kWh Gaming Today",
-      "description": "",
+      "title": "Cost gaming",
       "id": 11,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 8,
-        "y": 7
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "kwatth",
+          "unit": "currencyUSD",
           "decimals": 2,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
+        }
       },
       "targets": [
         {
@@ -611,7 +638,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_gaming_energy_daily\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_cost_daily\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
@@ -625,237 +652,178 @@
         "uid": "prometheus"
       },
       "type": "stat",
-      "title": "kWh Gaming This Month",
-      "description": "",
+      "title": "Idle tax",
       "id": 12,
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 12,
-        "y": 7
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_idle_cost_daily\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "description": "Whole-PC cost outside sessions."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Whole PC cost",
+      "id": 13,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_cost_daily\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Whole PC kWh",
+      "id": 14,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
           "unit": "kwatth",
-          "decimals": 1,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_gaming_energy_monthly\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Cost Per Gaming Hour",
-      "description": "This month's gaming cost ÷ hours gamed.",
-      "id": 13,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 16,
-        "y": 7
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "decimals": 3,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd_per_h{entity=\"sensor.gaming_pc_cost_per_gaming_hour\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Whole PC This Month",
-      "description": "",
-      "id": 14,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 7
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
           "decimals": 2,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "purple"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
+                "color": "green",
                 "value": null
               }
             ]
-          },
-          "mappings": []
+          }
         },
         "overrides": []
       },
       "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_cost_monthly\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
         }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Gaming Cost Today",
-      "description": "",
-      "id": 15,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 0,
-        "y": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "decimals": 3,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
       },
       "targets": [
         {
@@ -863,338 +831,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_gaming_cost_daily\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Idle Tax Today",
-      "description": "Whole PC minus gaming: the cost of leaving it on.",
-      "id": 16,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 4,
-        "y": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "decimals": 3,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_idle_cost_daily\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Gaming Cost This Month",
-      "description": "",
-      "id": 17,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 8,
-        "y": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "decimals": 2,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_gaming_cost_monthly\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Idle Tax This Month",
-      "description": "",
-      "id": 18,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 12,
-        "y": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "decimals": 2,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 5
-              },
-              {
-                "color": "red",
-                "value": 10
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_idle_cost_monthly\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Gaming Cost Last Month",
-      "description": "",
-      "id": 19,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 16,
-        "y": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "decimals": 2,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_gaming_cost_last_month\"})",
-          "legendFormat": "",
-          "refId": "A",
-          "instant": true,
-          "range": false
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "type": "stat",
-      "title": "Hours Gamed Last Month",
-      "description": "",
-      "id": 20,
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "h",
-          "decimals": 1,
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_h{entity=\"sensor.gaming_pc_gaming_hours_last_month\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_energy_daily\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
@@ -1204,15 +841,412 @@
     },
     {
       "type": "row",
-      "title": "Sessions",
-      "collapsed": false,
+      "title": "This month",
+      "id": 15,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 10
       },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Hours gamed",
+      "id": 16,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_hours_monthly\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "kWh gaming",
+      "id": 17,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_energy_monthly\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Cost gaming",
+      "id": 18,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_cost_monthly\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Idle tax",
+      "id": 19,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_idle_cost_monthly\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Hours last month",
+      "id": 20,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_hours_last_month\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "stat",
+      "title": "Gaming cost last month",
       "id": 21,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_gaming_cost_last_month\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "History",
+      "id": 22,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "collapsed": false,
       "panels": []
     },
     {
@@ -1221,14 +1255,13 @@
         "uid": "prometheus"
       },
       "type": "timeseries",
-      "title": "Draw vs Threshold",
-      "description": "",
-      "id": 22,
+      "title": "Draw vs session threshold",
+      "id": 23,
       "gridPos": {
-        "h": 10,
+        "h": 9,
         "w": 16,
         "x": 0,
-        "y": 18
+        "y": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -1239,72 +1272,45 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 1,
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": 300000,
+            "barAlignment": 0,
             "stacking": {
-              "mode": "none",
-              "group": "A"
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
             }
           },
-          "min": 0
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 350
+              }
+            ]
+          }
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "Threshold"
+              "options": "Gaming PC"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "orange"
+                  "fixedColor": "purple"
                 }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "dash",
-                  "dash": [
-                    10,
-                    10
-                  ]
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Idle floor"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "gray"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "dash",
-                  "dash": [
-                    4,
-                    4
-                  ]
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
               }
             ]
           }
@@ -1312,9 +1318,14 @@
       },
       "options": {
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
         },
         "tooltip": {
           "mode": "multi",
@@ -1327,35 +1338,14 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.gaming_pc_current_consumption\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.gaming_pc_current_consumption\"})",
           "legendFormat": "Gaming PC",
           "refId": "A",
           "instant": false,
           "range": true
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entity) (homeassistant_sensor_unit_w{entity=\"input_number.gaming_pc_active_threshold_w\"})",
-          "legendFormat": "Threshold",
-          "refId": "A",
-          "instant": false,
-          "range": true
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "min_over_time((max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.gaming_pc_current_consumption\"}))[24h:5m])",
-          "legendFormat": "Idle floor",
-          "refId": "A",
-          "instant": false,
-          "range": true
         }
-      ]
+      ],
+      "description": "Dashed line is the 350 W session threshold (HA default)."
     },
     {
       "datasource": {
@@ -1363,14 +1353,13 @@
         "uid": "prometheus"
       },
       "type": "state-timeline",
-      "title": "Session Timeline",
-      "description": "Green = gaming. Zoom the time range out for the week.",
-      "id": 23,
+      "title": "Sessions",
+      "id": 24,
       "gridPos": {
-        "h": 10,
+        "h": 9,
         "w": 8,
         "x": 16,
-        "y": 18
+        "y": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -1412,10 +1401,14 @@
       },
       "options": {
         "showValue": "never",
-        "rowHeight": 0.9,
+        "rowHeight": 0.85,
         "mergeValues": true,
+        "alignValue": "left",
         "legend": {
           "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single"
         }
       },
       "targets": [
@@ -1425,7 +1418,7 @@
             "uid": "prometheus"
           },
           "expr": "max by (entity) (homeassistant_binary_sensor_state{entity=\"binary_sensor.gaming_pc_gaming\"})",
-          "legendFormat": "session",
+          "legendFormat": "Session",
           "refId": "A",
           "instant": false,
           "range": true
@@ -1438,14 +1431,13 @@
         "uid": "prometheus"
       },
       "type": "timeseries",
-      "title": "Energy Today: Gaming vs Whole PC (resets at midnight)",
-      "description": "",
-      "id": 24,
+      "title": "Energy per day: gaming vs whole PC",
+      "id": 25,
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 8,
+        "w": 8,
         "x": 0,
-        "y": 28
+        "y": 25
       },
       "fieldConfig": {
         "defaults": {
@@ -1454,24 +1446,64 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "drawStyle": "line",
+            "drawStyle": "bars",
             "lineWidth": 1,
-            "fillOpacity": 15,
+            "fillOpacity": 80,
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
+            "barAlignment": 0,
             "stacking": {
-              "mode": "none",
-              "group": "A"
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
-          }
+          },
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gaming"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Whole PC"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "sum"
+          ]
         },
         "tooltip": {
           "mode": "multi",
@@ -1484,7 +1516,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_gaming_energy_daily\"})",
+          "expr": "sum(max_over_time(homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_gaming_energy\"}[1d] offset -4h) - min_over_time(homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_gaming_energy\"}[1d] offset -4h))",
           "legendFormat": "Gaming",
           "refId": "A",
           "instant": false,
@@ -1495,13 +1527,16 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_energy_daily\"})",
+          "expr": "sum(max_over_time(homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_energy\"}[1d] offset -4h) - min_over_time(homeassistant_sensor_energy_kwh{entity=\"sensor.gaming_pc_energy\"}[1d] offset -4h))",
           "legendFormat": "Whole PC",
-          "refId": "A",
+          "refId": "B",
           "instant": false,
           "range": true
         }
-      ]
+      ],
+      "description": "One bar per local day (Eastern), last 14 days.",
+      "timeFrom": "14d",
+      "interval": "1d"
     },
     {
       "datasource": {
@@ -1509,14 +1544,13 @@
         "uid": "prometheus"
       },
       "type": "timeseries",
-      "title": "Hours Gamed Today (resets at midnight)",
-      "description": "",
-      "id": 25,
+      "title": "Hours gamed per day",
+      "id": 26,
       "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 28
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 25
       },
       "fieldConfig": {
         "defaults": {
@@ -1525,25 +1559,49 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "drawStyle": "line",
+            "drawStyle": "bars",
             "lineWidth": 1,
-            "fillOpacity": 15,
+            "fillOpacity": 80,
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
+            "barAlignment": 0,
             "stacking": {
-              "mode": "none",
-              "group": "A"
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
           },
-          "min": 0
+          "decimals": 1
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Hours"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "sum"
+          ]
         },
         "tooltip": {
           "mode": "multi",
@@ -1556,48 +1614,165 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) (homeassistant_sensor_unit_h{entity=\"sensor.gaming_pc_gaming_hours_daily\"})",
+          "expr": "sum(sum_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.gaming_pc_gaming\"}[1d] offset -4h)) / sum(count_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.gaming_pc_gaming\"}[1d] offset -4h)) * 24",
           "legendFormat": "Hours",
           "refId": "A",
           "instant": false,
           "range": true
         }
-      ]
+      ],
+      "description": "One bar per local day (Eastern), last 14 days.",
+      "timeFrom": "14d",
+      "interval": "1d"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "type": "timeseries",
+      "title": "Cost per day: gaming vs idle tax",
+      "id": 27,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 25
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 2
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gaming"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Idle tax"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(max_over_time(homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_gaming_cost\"}[1d] offset -4h) - min_over_time(homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_gaming_cost\"}[1d] offset -4h))",
+          "legendFormat": "Gaming",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(max_over_time(homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_cost\"}[1d] offset -4h) - min_over_time(homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_cost\"}[1d] offset -4h)) - sum(max_over_time(homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_gaming_cost\"}[1d] offset -4h) - min_over_time(homeassistant_sensor_unit_usd{entity=\"sensor.gaming_pc_gaming_cost\"}[1d] offset -4h))",
+          "legendFormat": "Idle tax",
+          "refId": "B",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "description": "One bar per local day (Eastern), last 14 days. Stacked: the whole bar is the PC's cost.",
+      "timeFrom": "14d",
+      "interval": "1d"
     },
     {
       "type": "row",
-      "title": "Reading this dashboard",
-      "collapsed": false,
+      "title": "Notes",
+      "id": 28,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 33
       },
-      "id": 26,
+      "collapsed": false,
       "panels": []
     },
     {
       "type": "text",
       "title": "",
-      "id": 27,
+      "id": 29,
       "gridPos": {
-        "h": 7,
+        "h": 4,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 34
       },
       "options": {
         "mode": "markdown",
-        "content": "**A session** is the Gaming PC plug drawing more than the threshold (350 W by default; idle is ~200 W, gaming 450–600 W) until five quiet minutes pass. Menus and loading screens do not split a session.\n\n**Gaming cost** is the all-in rate applied only to watts drawn during sessions. **Idle tax** is everything else the PC costs: the ~200 W it draws sitting there is about 1.4 kWh a day, more than a couple of hours of gaming. If the idle tax dominates, sleep the machine; no amount of settings tuning in games will move the bill.\n\n**Tuning:** the threshold is `input_number.gaming_pc_active_threshold_w` in Home Assistant (resets to git on restart). Month numbers come from HA utility meters, so they survive Prometheus retention; the timeline here only reaches back as far as Prometheus keeps."
+        "content": "A **session** is the plug drawing more than the threshold (350 W; idle is ~200 W, gaming 450-600 W) until five quiet minutes pass. **Idle tax** is everything the PC costs outside sessions: sitting on at 200 W is about 1.4 kWh a day. The threshold is `input_number.gaming_pc_active_threshold_w` in Home Assistant (Settings view); input helpers are not exported, so the dashed line here is fixed at 350 W."
       }
     }
   ],
-  "refresh": "30s",
-  "schemaVersion": 39,
+  "refresh": "1m",
+  "schemaVersion": 42,
   "tags": [
-    "power",
-    "gaming"
+    "energy",
+    "gaming",
+    "home-assistant"
   ],
   "templating": {
     "list": []
@@ -1610,5 +1785,6 @@
   "timezone": "browser",
   "title": "Gaming PC",
   "uid": "gaming-pc",
-  "version": 1
+  "version": 1,
+  "weekStart": ""
 }

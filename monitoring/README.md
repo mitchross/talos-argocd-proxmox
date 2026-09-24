@@ -142,7 +142,7 @@ folders.
 Only two selectors are exposed on the investigator: **Namespace** and
 **Workload**. The pod selector is derived automatically. Specialist dashboards
 remain available from the START HERE instructions for PostHog, Longhorn,
-Argo CD, VPA, GPU, and raw logs.
+Argo CD, Capacity, VPA, GPU, and logs.
 
 For PostHog, open **WHY IS POSTHOG SLOW?**. It deliberately keeps all of the
 following on one page:
@@ -160,21 +160,21 @@ PostgreSQL uses a pinned `postgres_exporter` sidecar; Redpanda and ClickHouse
 use their built-in Prometheus endpoints. Query text is not placed in metric
 labels.
 
-The kube-prometheus-stack stock dashboard bundle and the five community
-Kubernetes views are deliberately disabled. They duplicated the same signals
-across global/namespace/node/pod menus and obscured the incident workflow.
-The three GitOps-managed entrypoints are:
-
-- `monitoring/prometheus-stack/performance-cockpit-dashboard.yaml`
-- `monitoring/prometheus-stack/app-performance-dashboard.yaml`
-- `monitoring/prometheus-stack/posthog-performance-dashboard.yaml`
+The kube-prometheus-stack stock dashboard bundle is deliberately disabled; it
+duplicated the same signals across menus and obscured the incident workflow.
+Every dashboard is GitOps-managed JSON under
+`monitoring/prometheus-stack/dashboards/`, one directory per Grafana folder.
+See [dashboards/README.md](prometheus-stack/dashboards/README.md) for the
+folder map, how to add a board, and per-board query gotchas.
 
 ## Key Files
 
 - Custom ServiceMonitors: `monitoring/prometheus-stack/custom-servicemonitors.yaml`
 - Custom alerts: `monitoring/prometheus-stack/custom-alerts.yaml`
 - Argo CD alerts: `monitoring/prometheus-stack/argocd-sync-alerts.yaml`
-- GPU alerts/dashboard: `monitoring/prometheus-stack/gpu-alerts.yaml`, `gpu-dashboard.yaml`
+- GPU alerts: `monitoring/prometheus-stack/gpu-alerts.yaml`
+- Dashboards: `monitoring/prometheus-stack/dashboards/<folder>/*.json`
+- Capacity recording rules: `monitoring/prometheus-stack/capacity-rules.yaml`
 - OTEL Collectors: `infrastructure/controllers/opentelemetry-operator/collector-*.yaml`
 - k8sgpt runbook: `monitoring/k8sgpt/README.md`
 - Trivy Operator runbook: `monitoring/trivy-operator/README.md`

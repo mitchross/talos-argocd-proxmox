@@ -117,6 +117,9 @@ kind: Service
 metadata:
   name: kafka
   namespace: posthog
+  labels: # ServiceMonitor selector (core/servicemonitor.yaml)
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: kafka
 spec:
   clusterIP: None
   ports:
