@@ -67,7 +67,7 @@ authoritative.
 | Property | Value |
 |---|---|
 | Gateway model | `pi-auto` |
-| Implementation | **beta** `auto_router/complexity_router`, LiteLLM `v1.102.0` |
+| Implementation | **beta** `auto_router/complexity_router`, LiteLLM `v1.102.1` |
 | Local tiers | `SIMPLE`, `MEDIUM` → `qwen3.8-27b-auto` |
 | Paid tiers | `COMPLEX` → `deepseek-flash` at `high`; `REASONING` at `max` |
 | Classifier | local Qwen, greedy, 64 tokens |

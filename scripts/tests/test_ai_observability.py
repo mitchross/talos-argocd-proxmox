@@ -234,7 +234,7 @@ class AIObservabilityTests(unittest.TestCase):
             'max_output_tokens': 943718,
         })
         image = container(read('my-apps/ai/litellm/deployment.yaml'))['image']
-        self.assertTrue(image.startswith('ghcr.io/berriai/litellm:v1.102.0@sha256:'), image)
+        self.assertTrue(image.startswith('ghcr.io/berriai/litellm:v1.102.1@sha256:'), image)
 
         guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
         self.assertIn('SIMPLE` / `MEDIUM` work on local Qwen', guide)
