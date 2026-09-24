@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: map-raster
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - vpa.yaml
+
+configMapGenerator:
+  # Styles are written by ../versatiles/styles/generate.mjs; hash suffix rolls the Deployment.
+  - name: map-raster-styles
+    files:
+      - styles/light.json
+      - styles/dark.json
+  - name: map-raster-config
+    files:
+      - config.json
