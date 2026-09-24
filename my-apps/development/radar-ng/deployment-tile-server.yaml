@@ -87,6 +87,11 @@ spec:
               value: "20"
             - name: API_RATE_LIMIT_BURST
               value: "60"
+            # /api/alerts and /api/geocode fetch upstream data server-side so the app only ever talks to this cluster.
+            - name: NWS_USER_AGENT
+              value: "(radar-ng, mitch@vanillax.me)"
+            - name: PHOTON_URL
+              value: http://photon.photon.svc.cluster.local:2322
             # Push/watch routes stay closed until the mobile identity provider
             # can issue the per-user HMAC session tokens the API now requires.
             - name: DISABLE_WORKFLOW_ROUTES
