@@ -1,0 +1,269 @@
+{
+  "title": "radar-ng mobile (load + errors)",
+  "uid": "radar-ng-mobile-load",
+  "tags": [
+    "radar-ng",
+    "mobile"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 42,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Active app instances — last 5m",
+      "description": "Distinct sessions seen in Loki by service.instance.id (one per app launch).",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "count(sum by (service_instance_id) (count_over_time({service_name=\"radar-ng-mobile\"}[5m])))",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "App errors per minute",
+      "description": "Log records at ERROR or FATAL: red-screens, query failures, unhandled rejections.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({service_name=\"radar-ng-mobile\"} | severity_text=~\"(?i)error|fatal\" [1m]))",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          },
+          "noValue": "0"
+        }
+      },
+      "options": {
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Recent traces (Tempo)",
+      "description": "Latest app traces. Click a trace ID to open the waterfall.",
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "refId": "A",
+          "limit": 20,
+          "tableType": "traces",
+          "query": "{resource.service.name=\"radar-ng-mobile\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No app telemetry received"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Failed or slow traces (Tempo)",
+      "description": "Traces with an error span or taking longer than 2 seconds.",
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "refId": "A",
+          "limit": 20,
+          "tableType": "traces",
+          "query": "{resource.service.name=\"radar-ng-mobile\" && (status = error || duration > 2s)}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "None"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "Recent app errors",
+      "description": "Live tail of the app's error log. Click a line to copy the stack.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "expr": "{service_name=\"radar-ng-mobile\"} | severity_text=~\"(?i)error|fatal\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "dedupStrategy": "exact",
+        "sortOrder": "Descending",
+        "enableLogDetails": true
+      }
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Top error messages",
+      "description": "Error records grouped by message over the selected range — fastest way to spot a regression.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "topk(20, sum by (msg) (count_over_time({service_name=\"radar-ng-mobile\"} | severity_text=~\"(?i)error|fatal\" | label_format msg=\"{{__line__}}\" [$__range])))",
+          "refId": "A",
+          "instant": true,
+          "format": "table",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "None"
+        },
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "msg": "Message",
+              "Value #A": "Count"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "id": null,
+  "description": "radar-ng mobile app telemetry (OTel SDK → OTLP gateway): active installs, errors from Loki, traces from Tempo."
+}

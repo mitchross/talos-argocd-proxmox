@@ -305,11 +305,6 @@ alertmanager:
 # Grafana Configuration
 grafana:
   enabled: true
-  extraVolumes:
-    - name: repo-scripts
-      configMap:
-        name: prometheus-stack-scripts
-        defaultMode: 0555
   deploymentStrategy:
     type: Recreate
   admin:
@@ -343,88 +338,25 @@ grafana:
     fsGroup: 472
   # Enable plugins
   plugins: []
-  # Sidecar configuration - discover dashboards from all namespaces
+  # Sidecar discovers every grafana_dashboard=1 ConfigMap cluster-wide; the grafana_folder annotation picks its folder.
   sidecar:
     dashboards:
       enabled: true
       searchNamespace: ALL
       label: grafana_dashboard
       labelValue: "1"
-  # Removing a gnetId does not remove its JSON from the data volume — prune retired files before the downloader runs.
-  extraInitContainers:
-    - name: prune-retired-dashboards
-      image: docker.io/library/busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
-      imagePullPolicy: IfNotPresent
-      command: ["/bin/sh", "-ec"]
-      args:
-        - /opt/repo-scripts/prune-retired-dashboards.sh
-      securityContext:
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop: ["ALL"]
-        runAsNonRoot: true
-        runAsUser: 472
-        seccompProfile:
-          type: RuntimeDefault
-      volumeMounts:
-        - name: repo-scripts
-          mountPath: /opt/repo-scripts
-          readOnly: true
-        - name: storage
-          mountPath: /var/lib/grafana
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
   # Stock dashboard bundle disabled: two dozen overlapping boards made triage a search problem.
   defaultDashboardsEnabled: false
   defaultDashboardsTimezone: UTC
-  # Community dashboards - auto-provisioned from grafana.com
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-      - name: 'grafana-dashboards-kubernetes'
-        orgId: 1
-        folder: 'Kubernetes'
-        type: file
-        disableDeletion: false
-        editable: false
-        options:
-          path: /var/lib/grafana/dashboards/kubernetes
-      - name: 'grafana-dashboards-infrastructure'
-        orgId: 1
-        folder: 'Infrastructure'
-        type: file
-        disableDeletion: false
-        editable: false
-        options:
-          path: /var/lib/grafana/dashboards/infrastructure
-      - name: 'grafana-dashboards-logging'
-        orgId: 1
-        folder: 'Logging'
-        type: file
-        disableDeletion: false
-        editable: false
-        options:
-          path: /var/lib/grafana/dashboards/logging
-  dashboards:
-    kubernetes: {}
-    # Community Loki dashboards key on Promtail's 'job' label; OTEL logs carry 'service_name' — see loki-logs-dashboard.yaml.
-    logging: {}
-    infrastructure:
-      argocd:
-        gnetId: 14584
-        revision: 1
-        datasource: Prometheus
-      longhorn:
-        gnetId: 13032
-        revision: 6
-        datasource: Prometheus
-      cloudnative-pg:
-        gnetId: 20417
-        revision: 3
-        datasource: Prometheus
   # Additional data sources configuration
   additionalDataSources:
+    # Pinned UIDs: dashboards, derived fields and trace links reference these.
     - name: Loki
       type: loki
+      uid: loki
       access: proxy
       url: http://loki-gateway.loki-stack.svc.cluster.local
       jsonData:
@@ -432,24 +364,35 @@ grafana:
         timeout: 60
         maxLines: 1000
         derivedFields:
-          - datasourceUid: prometheus-uid
-            matcherRegex: "(?:logger=rpc\\.server|report).*?(?:traceID|trace_id)=([a-f\\d]+)"
+          - datasourceUid: tempo
+            matcherType: label
+            matcherRegex: trace_id
             name: TraceID
             url: "$${__value.raw}"
       secureJsonData:
         httpHeaderValue1: "1"
     - name: Tempo
       type: tempo
+      uid: tempo
       access: proxy
       url: http://tempo.monitoring.svc:3200
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: loki
+          filterByTraceID: true
+          spanStartTimeShift: -5m
+          spanEndTimeShift: 5m
+        lokiSearch:
+          datasourceUid: loki
+        nodeGraph:
+          enabled: true
   # Grafana configuration
   grafana.ini:
     server:
       root_url: https://grafana.vanillax.me
     dashboards:
-      # The dashboard sidecar writes this GitOps-managed file into the shared
-      # /tmp/dashboards volume. Opening Grafana now lands on the cockpit.
-      default_home_dashboard_path: /tmp/dashboards/performance-cockpit.json
+      # Sidecar path = /tmp/dashboards/<grafana_folder>/<file>; renaming the folder breaks the home page.
+      default_home_dashboard_path: /tmp/dashboards/Start Here/performance-cockpit.json
     security:
       allow_embedding: true
       cookie_secure: true
@@ -461,8 +404,6 @@ grafana:
       external_enabled: false
     explore:
       enabled: true
-    feature_toggles:
-      enable: correlations
 # Node Exporter Configuration
 # Enable for comprehensive node-level metrics (VPA-optimized 2026-02-28)
 nodeExporter:

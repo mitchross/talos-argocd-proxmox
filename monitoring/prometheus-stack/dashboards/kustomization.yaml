@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# One directory per Grafana folder; each sets the grafana_folder annotation the sidecar maps to a folder.
+resources:
+  - start-here
+  - cluster
+  - ai
+  - apps
+  - logs
+  - home-energy
