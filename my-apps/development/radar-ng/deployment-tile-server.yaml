@@ -56,7 +56,7 @@ spec:
         - name: tile-server
           # v1.1.6/v1.1.7 crashloop: caddy binary carried a file capability
           # that exec-fails under drop-ALL. Fixed in v1.1.8 (radar-ng 144dcb9).
-          image: ghcr.io/mitchross/radar-ng-tile-server:v1.1.18@sha256:faebbae674cb61f04f4035884975453c80ea76a3d0dd50f362e55ca3a312d540
+          image: ghcr.io/mitchross/radar-ng-tile-server:v1.1.19@sha256:47e6def12feaeeeb8e9f427ba7c868c7992fbd9f9ee2d140ef30bb9452557197
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
