@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: photon-data
+  namespace: photon
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Prebuilt Photon search index; re-downloaded by the container on an empty volume"
+spec:
+  accessModes: [ReadWriteOnce]
+  # longhorn-flash lives only on the GPU node, which is already over-scheduled; default longhorn places anywhere.
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 150Gi

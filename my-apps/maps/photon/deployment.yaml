@@ -1,0 +1,72 @@
+# First start downloads and unpacks the north-america index (~30 GB compressed) before Photon listens.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photon
+  namespace: photon
+  labels:
+    app.kubernetes.io/name: photon
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: photon
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: photon
+    spec:
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: photon
+          image: rtuszik/photon-docker:2.4.0@sha256:21549c60f9e6488fff3217e40429a652c4b445f374800333fe32859e47cec293
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REGION
+              value: north-america  # US, Canada and Mexico
+            - name: UPDATE_STRATEGY
+              value: SEQUENTIAL
+            - name: UPDATE_INTERVAL
+              value: 60d
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          ports:
+            - containerPort: 2322
+              name: http
+          startupProbe:
+            httpGet:
+              path: /status
+              port: http
+            periodSeconds: 30
+            failureThreshold: 480  # up to 4 h for the first download + unpack
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: http
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: http
+            periodSeconds: 60
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 3Gi
+            limits:
+              memory: 10Gi
+          volumeMounts:
+            - name: data
+              mountPath: /photon/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: photon-data
