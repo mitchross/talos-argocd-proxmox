@@ -22,7 +22,7 @@ spec:
     spec:
       initContainers:
         - name: fetch-mmdb
-          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:043b4c90f3fa9fb7adddf9c9295594a43752c2a0029cb01ccfcd1593953773d6
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:0f1ca93a950dc7282e532edb02fd0cfb98ae177baea5cc79225e90d6179f46ad
           command:
             - sh
             - -c
