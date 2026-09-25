@@ -95,10 +95,6 @@
         icon: headlamp.png
         href: https://headlamp.vanillax.me
         description: Kubernetes Dashboard
-    - n8n:
-        icon: n8n.png
-        href: https://n8n.vanillax.me
-        description: Workflow Automation
     - Temporal:
         icon: temporal.png
         href: https://temporal.vanillax.me
