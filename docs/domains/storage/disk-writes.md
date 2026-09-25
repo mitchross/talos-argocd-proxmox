@@ -20,6 +20,8 @@ persistent storage. Each rule below closes one of those.
 | Deleted blocks | Longhorn `fstrim-daily` trims every volume in the `default` group, so clones and replicas stop copying freed blocks. | `infrastructure/storage/longhorn/recurringjob-fstrim.yaml` |
 | Scratch caches | Put throwaway caches on a memory `emptyDir` (`medium: Memory`, with a size limit), not a PVC or node disk. Example: Frigate `/tmp/cache`. | `my-apps/home/frigate/deployment.yaml` |
 | App history databases | Exclude high-churn derived sensors from history. Example: Home Assistant's recorder skips computed power/cost sensors (Prometheus still has them). | `my-apps/home/home-assistant/configuration.yaml` |
+| Pod moves | Longhorn `dataLocality` is `disabled` on the default class: best-effort locality copies the whole volume whenever its pod lands on another node, so every reboot or drain became a copy storm. | `infrastructure/storage/longhorn/storageclass-default.yaml` |
+| Duplicate telemetry | One observability stack: Prometheus, Loki, Tempo, Grafana. Don't add tools that keep their own copy of metrics/logs (e.g. an eBPF APM with its own ClickHouse) or in-cluster scanners that spawn a pod per image. | `monitoring/` |
 | Rebalancing | The descheduler never evicts pods with PVCs; moving one would copy its Longhorn replica. | [descheduler](../scheduling/vpa-and-topology.md#descheduler-rebalancing-stateless-pods) |
 
 When adding an app, ask the same questions: does it log about itself to disk,

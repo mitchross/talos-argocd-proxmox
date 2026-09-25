@@ -15,7 +15,8 @@ parameters:
   staleReplicaTimeout: "30"
   fromBackup: ""
   fsType: "ext4"
-  dataLocality: "best-effort"
+  # Off: best-effort re-copies the whole volume whenever its pod lands on another node (reboots, drains).
+  dataLocality: "disabled"
   disableRevisionCounter: "true"
   dataEngine: "v1"
   unmapMarkSnapChainRemoved: "ignored"

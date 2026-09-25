@@ -54,8 +54,6 @@ namespaceExemptions:
     reason: "Bootstrap secret controllers are chart-owned."
   - namespace: cert-manager
     reason: "Bootstrap certificate controllers are chart-owned."
-  - namespace: coroot
-    reason: "Disposable Coroot CE trial; workloads are operator-materialized with explicit CR resources."
   - namespace: csi-driver-nfs
     reason: "CSI controllers are chart-owned."
   - namespace: csi-driver-smb
@@ -90,8 +88,6 @@ namespaceExemptions:
     reason: "CSI snapshot controller is chart-owned."
   - namespace: temporal-worker-controller
     reason: "Temporal operator controller is chart-owned."
-  - namespace: trivy-operator
-    reason: "Trivy server has a VPA; the operator controller is chart-owned."
   - namespace: truenas-csi
     reason: "CSI controllers are chart-owned."
   - namespace: vertical-pod-autoscaler

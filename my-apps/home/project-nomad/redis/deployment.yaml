@@ -5,10 +5,6 @@ metadata:
   namespace: project-nomad
   labels:
     app: project-nomad-redis
-  annotations:
-    # NOMAD's blocking queue pops park longer than 10s — Coroot's max latency
-    # bucket — so no threshold works; latency SLO off, availability SLO stays.
-    coroot.com/slo-latency-objective: "0%"
 spec:
   strategy:
     type: Recreate

@@ -273,10 +273,10 @@ alertmanager:
     # Retention
     retention: 72h
     configSecret: ""
-  # Keep console (keep.vanillax.me) is the delivery destination; Watchdog and InfoInhibitor route to null.
+  # No push receiver yet: alerts are viewed in Alertmanager/Grafana. Watchdog and InfoInhibitor route to null.
   config:
     route:
-      receiver: "keep"
+      receiver: "null"
       group_by: ["alertname", "namespace"]
       group_wait: 30s
       group_interval: 5m
@@ -292,16 +292,6 @@ alertmanager:
     receivers:
       # This receivers list REPLACES the chart's — omitting "null" fails operator validation and the old config silently stays live.
       - name: "null"
-      - name: "keep"
-        webhook_configs:
-          - url: "http://keep-backend.keep.svc.cluster.local:8080/alerts/event/prometheus"
-            send_resolved: true
-            # Keep's NOAUTH verifier accepts any credential but rejects NONE —
-            # this placeholder is not a secret, it just has to exist.
-            http_config:
-              basic_auth:
-                username: api_key
-                password: noauth
 # Grafana Configuration
 grafana:
   enabled: true

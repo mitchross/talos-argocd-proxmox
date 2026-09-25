@@ -18,7 +18,7 @@ JSON file into a ConfigMap and stamps two things on it:
 | Directory | Grafana folder | What lives there |
 |-----------|----------------|------------------|
 | `start-here/` | Start Here | Cockpit (Grafana home page), Why Is This App Slow, Capacity |
-| `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, Trivy, hardware report (+ kopiur from its chart) |
+| `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report (+ kopiur from its chart) |
 | `ai/` | AI | GPU, vLLM, AI gateway (LiteLLM), Pi auto-routing |
 | `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate |
 | `logs/` | Logs | Logs Explorer, node crash logs |
@@ -59,14 +59,12 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
 
 - **Capacity:** 7d/15d peaks read the `workload:*:pod_max` recording rules in
   `../capacity-rules.yaml`. Raw per-pod `*_over_time` queries time out on
-  short-lived pod churn (Trivy scan jobs, versioned radar workers).
+  short-lived pod churn (versioned radar workers, backup jobs).
 - **etcd:** filter on `job="kube-etcd"`. DB size is `etcd_mvcc_db_total_size_in_bytes`,
   not `etcd_debugging_*`. API server → etcd latency comes from `job="apiserver"`.
 - **VPA:** join requests to VPA metrics through
   `namespace_workload_pod:kube_pod_owner:relabel` (workload → `target_name`),
   never on `container` alone.
-- **Trivy:** each image is reported once per workload. Dedupe with
-  `max by (image_digest, severity)` before summing.
 - **Argo CD:** `namespace` on `argocd_*` is Argo CD's own namespace. The app's
   namespace is `dest_namespace`.
 - **Longhorn:** `longhorn_volume_robustness` and `longhorn_volume_state` are

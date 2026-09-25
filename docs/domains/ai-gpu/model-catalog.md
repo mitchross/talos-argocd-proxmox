@@ -103,12 +103,11 @@ Auth is a namespace-local ExternalSecret from `litellm/master_key`.
 
 Every declared LLM consumer uses LiteLLM: Open WebUI, Perplexica/Vane,
 Presenton, SurfSense, HolmesGPT, Hindsight, Project Nomad, ComfyUI's vision
-bridge, WorldMonitor, Keep, Deal Scout, Karakeep and News Reader. They all
+bridge, WorldMonitor, Deal Scout, Karakeep and News Reader. They all
 stay on local Qwen unless their model is changed explicitly.
 
 Direct vLLM callers bypass Langfuse. Applications must use the authenticated
-gateway to appear in telemetry. Keep's provider appends `/v1/completions`
-itself, so its configured URL omits `/v1`.
+gateway to appear in telemetry.
 
 ## Storage
 

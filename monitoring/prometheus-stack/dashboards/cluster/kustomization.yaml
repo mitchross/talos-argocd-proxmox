@@ -19,9 +19,6 @@ configMapGenerator:
   - name: longhorn-dashboard
     files:
       - longhorn.json
-  - name: trivy-operator-dashboard
-    files:
-      - trivy-operator.json
   - name: vpa-recommendations-dashboard
     files:
       - vpa-recommendations.json
