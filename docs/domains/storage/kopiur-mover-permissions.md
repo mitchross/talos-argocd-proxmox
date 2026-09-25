@@ -116,7 +116,7 @@ UID can read all of them, and group membership doesn't help. Two options:
   **not** set the mover — UID varies per PVC.
 - Each per-PVC stub sets its own mover `securityContext` to the data owner.
   UIDs in use here: `568` (open-webui, perplexica, immich, qdrant, copyparty,
-  frigate, restore-canary), `1000` (n8n, paperless, flatnotes, zomboid, homepage,
+  frigate, restore-canary), `1000` (paperless, flatnotes, zomboid, homepage,
   jellyfin, gitea), `1001` (karakeep), `999:568` (mysql), `0:0`
   (home-assistant, tubesync, nginx).
 
