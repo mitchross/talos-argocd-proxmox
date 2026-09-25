@@ -83,7 +83,7 @@ spec:
             cpu: 500m
             memory: 4Gi
           limits:
-            memory: 16Gi
+            memory: 8Gi
         volumeMounts:
         - name: clickhouse-data
           mountPath: /var/lib/clickhouse

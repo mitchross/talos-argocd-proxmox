@@ -42,7 +42,7 @@ spec:
               memory: 2Gi
               gpu.intel.com/i915: 1
             limits:
-              memory: 6Gi
+              memory: 4Gi
               gpu.intel.com/i915: 1
           envFrom:
             - configMapRef:
