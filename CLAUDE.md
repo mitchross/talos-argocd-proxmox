@@ -64,7 +64,7 @@ Applications deploy in strict order to prevent race conditions:
 
 **Databases** are plain Postgres Deployments inside the owning app's directory
 (reference: `my-apps/development/gitea/postgres/`), backed up by kopiur on the
-hourly tier with restore-before-bind — no operator, no recovery script, no
+daily tier (6h for data you can't re-create) with restore-before-bind — no operator, no recovery script, no
 manual sync gates. CNPG was fully retired 2026-08-13 (paperless and temporal
 were cut over as fresh empty databases by explicit decision). A separate
 Database AppSet still discovers `infrastructure/database/*/*` (Redis + shared
@@ -210,7 +210,7 @@ Detailed instructions load automatically when working in these directories:
 | **Multi-PVC + backup-exempt mix** | `my-apps/home/project-zomboid/` (backs up `zomboid-data`, exempts `zomboid-server-files`) |
 | **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
-| **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, hourly kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
+| **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
 | **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development/temporal/postgres/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |

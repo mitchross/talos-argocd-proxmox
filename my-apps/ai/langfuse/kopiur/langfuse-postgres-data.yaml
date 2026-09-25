@@ -13,7 +13,6 @@ spec:
     username: langfuse-postgres-data
     hostname: langfuse
   retention:
-    keepHourly: 24
     keepDaily: 7
     keepWeekly: 4
   mover:
@@ -47,7 +46,7 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: langfuse-postgres-data-hourly
+  name: langfuse-postgres-data-daily
   namespace: langfuse
   annotations:
     argocd.argoproj.io/sync-wave: '0'
@@ -55,7 +54,7 @@ spec:
   policyRef:
     name: langfuse-postgres-data
   schedule:
-    cron: 16 * * * *
+    cron: "16 4 * * *"
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore

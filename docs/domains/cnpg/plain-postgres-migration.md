@@ -23,8 +23,8 @@ kopiur pattern needs **zero commits**: nuke, bootstrap, the PVC hydrates via
 restore-before-bind, Postgres WAL-recovers like a power loss, done — the same
 DR story as the other protected application PVCs.
 
-**The trade, stated honestly:** restores land on the **last snapshot** (hourly
-tier targets hourly snapshots; failures can make the recoverable point older), not any point in time. No replicas/failover (single pod,
+**The trade, stated honestly:** restores land on the **last snapshot** (daily
+tier targets daily snapshots, 6h for irreplaceable data; failures can make the recoverable point older), not any point in time. No replicas/failover (single pod,
 `Recreate`). Postgres **major** upgrades become a manual dump/restore (minors
 and patches stay Renovate-automated).
 
@@ -38,7 +38,7 @@ the owning app's directory:
 | `postgres/deployment.yaml` | `postgres:<MAJOR.MINOR>` pinned; `Recreate`; uid/gid/fsGroup **999**; `PGDATA` subdir; `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` env declare the database on first (empty-volume) boot — no admin tool; `--data-checksums`; `pg_isready` startup/readiness/liveness probes; 60s termination grace |
 | `postgres/service.yaml` | named port `postgres`/5432 |
 | `postgres/pvc.yaml` | `longhorn` + `dataSourceRef` → the kopiur `Restore` + the two masking annotations |
-| `kopiur/<app>-postgres-data.yaml` | stub with mover `999:999`, **hourly** retention tier (`keepHourly: 24, keepDaily: 7, keepWeekly: 4`), distinct cron minute |
+| `kopiur/<app>-postgres-data.yaml` | stub with mover `999:999`, **daily** retention tier (`keepDaily: 7, keepWeekly: 4`), distinct cron minute |
 
 Consistency model: kopiur's CSI VolumeSnapshot is crash-consistent
 (point-in-time, single volume). Postgres is designed to recover from exactly
