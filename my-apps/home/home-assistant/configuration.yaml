@@ -39,6 +39,15 @@ recorder:
     entity_globs:
       - sensor.*_rssi
       - sensor.*_lqi
+      # Derived power/cost sensors recompute on every plug report (~24 writes/s): they filled the DB. Prometheus still exports them.
+      - sensor.*_power_share
+      - sensor.*_cost_rate
+      - sensor.*_cost_daily
+      - sensor.*_cost_weekly
+      - sensor.*_cost_monthly
+      - sensor.*_cost_yearly
+    entities:
+      - sensor.combined_total_power
 
 # Only the metered plugs and the derived totals are exported. Household plugs stay out.
 prometheus:
