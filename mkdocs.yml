@@ -106,7 +106,7 @@ nav:
       - Storage:
           - Storage architecture (source of truth): storage-architecture.md
           - Disk writes and SSD wear: domains/storage/disk-writes.md
-          - Talos SELinux audit remediation: domains/storage/selinux-mount-context.md
+          - Longhorn volumes and SELinux labels: domains/storage/selinux-mount-context.md
           - Storage model (RWO/RWX & sizing): domains/storage/storage-model-rwo-rwx-and-sizing.md
           - TrueNAS special-vdev stall runbook: truenas-special-vdev-stall-runbook.md
       - Backups & disaster recovery (kopiur):
