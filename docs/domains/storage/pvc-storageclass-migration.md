@@ -170,7 +170,7 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    garbage-collected in step 4.
 
    ```sh
-   kubectl -n <ns> get snapshot --sort-by=.metadata.creationTimestamp | tail -2   # newest hourly: Succeeded
+   kubectl -n <ns> get snapshot --sort-by=.metadata.creationTimestamp | tail -2   # newest: Succeeded
    ```
 
 ## Failure path

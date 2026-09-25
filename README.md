@@ -74,13 +74,13 @@ wait for all the Applications it generates; those reconcile independently. See
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
-| Omni server + `omnictl` | `v1.11.0` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.14.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Omni server + `omnictl` | `v1.12.2` | `omni/omni/omni.env.example` |
+| Talos Linux | `v1.14.1` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Kubernetes | `v1.37.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.1` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.8.0` (Argo CD `v3.5.2`) | `scripts/bootstrap-argocd.sh` |
-| Proxmox provider | `v0.2.0-3-g7cefedd@sha256:5dcddc…` | `omni/proxmox-providers/docker-compose.yml` |
+| Proxmox provider | `v0.3.0@sha256:ff59ae…` | `omni/proxmox-providers/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
 
@@ -319,14 +319,14 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ## What Happens After Bootstrap
 
-ArgoCD takes over and deploys everything from Git in the order shown in the [Sync Wave Architecture](#sync-wave-architecture) table — Wave 0 (Cilium, secrets) through Wave 6 (user apps). There are **zero manual storage steps**: Longhorn registers the filesystem disks declared by each node template (the active Threadripper worker uses `/var/lib/longhorn` and `/var/mnt/longhorn-nvme1`), the kopiur operator comes up at Wave 2, and any restore-before-bind PVCs populate unattended.
+ArgoCD takes over and deploys everything from Git in the order shown in the [Sync Wave Architecture](#sync-wave-architecture) table — Wave 0 (Cilium, secrets) through Wave 6 (user apps). There are **zero manual storage steps**: Longhorn registers the filesystem disks declared by each node template (for example the GPU worker's `/var/mnt/longhorn-ssd-flash`; see [disk placement](docs/storage-architecture.md#disk-placement-follows-drive-endurance)), the kopiur operator comes up at Wave 2, and any restore-before-bind PVCs populate unattended.
 
 From here, new applications are discovered automatically — add a directory with a `kustomization.yaml` and push to Git.
 
 > **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
 >
 > ```bash
-> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.14.0)
+> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node on the pinned Talos version
 > talosctl -n <worker-ip> get disks               # expect a single ~800G sda (sda+sdb = STALE 2-disk layout)
 > kubectl get nodes.longhorn.io -n longhorn-system # expect 4 Ready storage nodes after Longhorn starts
 > ```
@@ -380,14 +380,14 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 - **How a PVC opts in**: label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy` + `SnapshotSchedule` + `Restore`) via the shared `my-apps/common/kopiur-backup` Kustomize component, and point the PVC's `dataSourceRef` at `<pvc>-restore`. See [`.claude/commands/add-backup.md`](.claude/commands/add-backup.md).
 - **Restore-before-bind DR**: a restore against an **unreachable** repo leaves the PVC `Pending` (never binds an empty volume); a brand-new PVC against a **reachable** repo with no snapshot binds empty and backs up forward (`onMissingSnapshot: Continue` = deploy-or-restore).
 - **Mover permissions**: the mover runs as the **data owner's uid:gid**, not root — under baseline Pod Security, root can't read non-root data. See [docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md).
-- **Databases included**: every Postgres is a plain Deployment on the same kopiur pipeline (hourly tier). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
+- **Databases included**: every Postgres is a plain Deployment on the same kopiur pipeline (daily by default, every 6 hours for data that can't be re-created). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
 - **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md) (the database operator guide).
 
 ## Cluster Upgrades & Talos 1.14 Notes
 
-All six nodes were verified Ready on Talos **1.14.0** and Kubernetes **1.37.0**
-at **2026-09-06 01:48 UTC** (September 5 evening in Detroit). The templates,
-kopiur rendering target and Cluster CI already match those versions.
+The templates pin Talos **1.14.1** and Kubernetes **1.37.0**; the kopiur
+rendering target and Cluster CI match. `kubectl get nodes -o wide` shows what
+each node actually runs, since Omni rolls an upgrade out one node at a time.
 
 The [upgrade results and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
 record the Longhorn fix and recovery checks. Merging a version change still
@@ -397,7 +397,7 @@ replacement disk layout below takes effect when new VMs are provisioned.
 ### Fresh GPU disk layout
 
 The GPU gets a 16 GiB boot disk and 434 GiB `/var` disk on NVMe0, plus its
-existing 450 GiB model and 300 GiB flash allocations. The smallest disk is now
+existing 450 GiB model and 440 GiB flash allocations. The smallest disk is now
 the boot disk, matching Omni's default selection. Physical drives stay put;
 see [sizing](omni/docs/threadripper-gpu-cluster.md#sizing).
 
@@ -426,7 +426,7 @@ still have only one replica.
 
 ### Upgrading Omni / omnictl
 
-Run Omni and `omnictl` **on the same release** (currently `v1.11.0`, pinned in `omni/omni/omni.env.example`). When upgrading:
+Run Omni and `omnictl` **on the same release** (currently `v1.12.2`, pinned in `omni/omni/omni.env.example`). When upgrading:
 
 1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.

@@ -56,7 +56,7 @@ LOOP 1 — ArgoCD (every ~3 min, or on git push)
   "Does the cluster match Git?"  If not → make it match.
   This includes re-creating things you deleted and reverting things you edited.
 
-LOOP 2 — kopiur backup (hourly cron per database)
+LOOP 2 — kopiur backup (daily cron per database; 6-hourly if irreplaceable)
   "Snapshot the PVC → upload to S3 (RustFS bucket)."
   Postgres is never stopped for this; the snapshot is crash-consistent,
   which Postgres is designed to recover from (it looks like a power cut).
@@ -79,7 +79,7 @@ Where the pieces live (gitea is the reference — copy it, don't invent):
 | The database | `my-apps/development/gitea/postgres/deployment.yaml` | Plain `postgres:18.x` Deployment, `Recreate` strategy, runs as uid 999 |
 | The address apps use | `my-apps/development/gitea/postgres/service.yaml` | `gitea-postgres.gitea.svc.cluster.local:5432` |
 | The disk | `my-apps/development/gitea/postgres/pvc.yaml` | Longhorn PVC whose `dataSourceRef` points at the kopiur `Restore` |
-| The backup contract | `my-apps/development/gitea/kopiur/gitea-postgres-data.yaml` | `SnapshotPolicy` (hourly tier) + `SnapshotSchedule` + `Restore` |
+| The backup contract | `my-apps/development/gitea/kopiur/gitea-postgres-data.yaml` | `SnapshotPolicy` (daily) + `SnapshotSchedule` + `Restore` |
 | The password | 1Password → ExternalSecret → `gitea-db-secret` | Never in Git. See [rotation gotcha](#gotcha-4-the-password-lives-in-two-places) |
 
 To **create** a new database, follow
@@ -198,7 +198,7 @@ describes a database that never existed before.
 ```text
 PVC created ──┬─ snapshot exists  → fills from newest snapshot → binds WITH data
               ├─ S3 unreachable   → waits Pending + retries — NEVER binds empty
-              └─ brand-new DB     → binds empty once → hourly backups begin
+              └─ brand-new DB     → binds empty once → scheduled backups begin
 ```
 
 ```bash
@@ -244,8 +244,8 @@ For: bad migration, corrupted data, "the app wrote garbage for the last
 20 minutes and I want the 10 a.m. state back."
 
 !!! warning "This discards data — check what you're rolling back to first"
-    Everything written **after the newest snapshot is gone** (hourly schedule
-    ⇒ up to 1 hour). Confirm the newest snapshot's age and size *before*
+    Everything written **after the newest snapshot is gone** (daily schedule
+    ⇒ up to a day; 6-hourly ⇒ up to 6 hours). Confirm the newest snapshot's age and size *before*
     deleting anything:
     ```bash
     kubectl -n <ns> get snapshot   # newest age + Succeeded + non-zero files?
