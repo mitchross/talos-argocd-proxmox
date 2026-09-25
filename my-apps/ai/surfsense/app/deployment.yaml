@@ -70,7 +70,7 @@ spec:
             periodSeconds: 30
           resources:
             requests: {cpu: 500m, memory: 1Gi}
-            limits: {memory: 6Gi}
+            limits: {memory: 2Gi}
           volumeMounts:
             - {name: object-store, mountPath: /app/.local_object_store}
             - {name: shared-temp, mountPath: /shared_tmp}
@@ -102,7 +102,7 @@ spec:
             - {name: CELERY_MAX_TASKS_PER_CHILD, value: "50"}
           resources:
             requests: {cpu: 500m, memory: 1Gi}
-            limits: {memory: 8Gi}
+            limits: {memory: 4Gi}
           volumeMounts:
             - {name: object-store, mountPath: /app/.local_object_store}
             - {name: shared-temp, mountPath: /shared_tmp}
