@@ -66,7 +66,7 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "2"
-          memory: 2Gi
+          memory: 6Gi
       - containerName: sync-worker
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
