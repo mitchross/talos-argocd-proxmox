@@ -5,8 +5,8 @@ metadata:
   name: longhorn-wired-ha
   annotations:
     storageclass.kubernetes.io/is-default-class: "false"
+    # Parameters are immutable: to change them, delete the live StorageClass once; ArgoCD re-creates it.
     argocd.argoproj.io/sync-options: Replace=true
-    argocd.argoproj.io/compare-options: ServerSideDiff=false
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -20,7 +20,7 @@ parameters:
   dataEngine: "v1"
   nodeSelector: "wired-storage"
   dataLocality: "best-effort"
-  # Immutable once created (Replace=true still fails); change replicaAutoBalance per volume, not here.
+  # Only read when a volume is created; change replicaAutoBalance on existing volumes per volume.
   replicaAutoBalance: "best-effort"
   replicaSoftAntiAffinity: "disabled"
   replicaZoneSoftAntiAffinity: "disabled"

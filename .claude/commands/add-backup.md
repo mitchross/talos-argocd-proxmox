@@ -45,7 +45,7 @@ are gone.
    spec:
      sources: [{ pvc: { name: <pvc> } }]
      identity: { username: <pvc>, hostname: <ns> }
-     retention: { keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }   # hourly: keepHourly:24,keepDaily:7,keepWeekly:4
+     retention: { keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }   # 6h tier (can't re-create): keepHourly:8,keepDaily:7,keepWeekly:4
      mover:
        securityContext: { runAsUser: <UID>, runAsGroup: <GID>, runAsNonRoot: true }   # root: {runAsUser:0,runAsNonRoot:false}
        podSecurityContext: { fsGroup: <GID>, supplementalGroups: [<GID>] }
@@ -53,7 +53,7 @@ are gone.
    apiVersion: kopiur.home-operations.com/v1alpha1
    kind: SnapshotSchedule
    metadata: { name: <pvc>-daily, namespace: <ns> }
-   spec: { policyRef: { name: <pvc> }, schedule: { cron: "MM 3 * * *" } }   # distinct minute vs ALL schedules — incl. hourly "MM * * * *" tiers (an hourly at :MM collides with a daily at 03:MM)
+   spec: { policyRef: { name: <pvc> }, schedule: { cron: "MM 3 * * *" } }   # daily default (each run clones the whole volume); distinct minute vs ALL schedules, incl. 6h "MM */6 * * *" (collides with 00/06/12/18:MM)
    # Taken minutes: grep -rh 'cron:' my-apps/*/*/kopiur* my-apps/*/*/*/kopiur* | sort
    ---
    apiVersion: kopiur.home-operations.com/v1alpha1

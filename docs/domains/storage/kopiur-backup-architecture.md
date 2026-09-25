@@ -269,11 +269,11 @@ holds at `Pending` until kopiur restores its data, *then* binds.
 2. Namespace: add label `kopiur.home-operations.com/repo: cluster-kopia` (+ the
    `privileged-movers` annotation only if owner is `0`).
 3. Add `kopiur/<pvc>.yaml` stub (SnapshotPolicy + Schedule + Restore) with the
-   mover set to that uid:gid; pick a distinct cron minute — check **both**
-   tiers: an hourly `MM * * * *` occupies minute MM of *every* hour, so a
-   daily `MM 3 * * *` with the same MM collides at 03:MM (caught in the
-   2026-07-04 audit: mysql 03:25 vs meilisearch hourly :25). List the taken
-   minutes before picking:
+   mover set to that uid:gid. Schedule **daily** unless the data can't be
+   re-created (then every 6 hours, `keepHourly: 8`; never hourly — each run
+   clones the whole volume). Pick a distinct cron minute across **all**
+   schedules: a 6-hourly `MM */6 * * *` also runs at 00/06/12/18:MM. List the
+   taken minutes before picking:
    ```bash
    grep -rh 'cron:' my-apps/*/*/kopiur* my-apps/*/*/*/kopiur* | sort
    ```

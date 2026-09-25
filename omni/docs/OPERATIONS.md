@@ -93,3 +93,40 @@ If machines are not appearing in Proxmox:
    ```
 2. Ensure the `storage_selector` in your Machine Class matches a storage pool name in Proxmox.
 3. Verify that the Proxmox Provider has a valid Infrastructure Provider Key.
+
+## 5. Host Maintenance and Upgrade Rules
+
+- **Reboot Proxmox hosts one at a time.** Most Longhorn volumes have one
+  replica and there is one control plane, so two hosts down at once takes
+  apps (or the Kubernetes API) offline. Before the next host, wait until
+  `kubectl get nodes` is all `Ready` and Longhorn shows no degraded volumes.
+- **After a host reboot, check that every Talos VM started.** A failed
+  autostart is silent. On the Proxmox host:
+  ```bash
+  qm list               # every Talos VM should be "running"
+  qm start <vmid>       # a stopped VM prints the real error here
+  ```
+  If it fails with `missing expected property 'subsystem-id'`, the VM's PCI
+  resource mapping predates that field. Re-select the device in
+  **Datacenter → Resource Mappings**, or add it on the CLI, keeping the
+  mapping's other values (`pvesh get /cluster/mapping/pci/<name>`;
+  `lspci -nnv -s <pci-address>` shows the subsystem ID):
+  ```bash
+  pvesh set /cluster/mapping/pci/<name> \
+    --map 'node=<host>,path=<pci-address>,id=<vendor:device>,subsystem-id=<subvendor:subdevice>,iommugroup=<n>'
+  ```
+- **One stuck node stalls a whole Talos upgrade.** Omni upgrades one node at
+  a time and waits for the cluster to be ready before moving on. A node that
+  reports `failed to pull installer image: deadline exceeded` is usually
+  waiting on the Image Factory to finish building a large schematic (for
+  example the NVIDIA extensions); it retries and succeeds once the image
+  exists. Find the blocker with `omnictl get clustermachinestatus` and fix
+  that node; never delete the control plane to "unstick" an upgrade.
+- **Treat kernel arguments as risky.** Cluster templates cannot set
+  `kernelArgs` on machine sets that use a machine class, and Omni has an open
+  reboot-loop bug with kernel arguments
+  ([siderolabs/omni#2382](https://github.com/siderolabs/omni/issues/2382)).
+  Try any kernel-argument change on one worker first.
+- **hp-sff's second SSD belongs to etcd.** It holds only the control-plane VM
+  (`hp-sff-cp-vmstore`); keep Longhorn disks off it
+  ([why](threadripper-gpu-cluster.md#sizing)).

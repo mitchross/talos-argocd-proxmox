@@ -572,7 +572,7 @@ can safely re-run the destructive delete→recreate→populate→byte-verify dri
 The honest boundaries:
 
 - **Database recovery is an explicit RPO choice** — plain single-instance
-  Postgres uses a single-volume crash-consistent kopiur snapshot (hourly tier)
+  Postgres uses a single-volume crash-consistent kopiur snapshot (daily, or every 6 hours for irreplaceable data)
   and WAL crash recovery. There is **no point-in-time recovery**; the last
   snapshot is the only stop. That trade was accepted when CNPG was retired
   (2026-08-13).

@@ -11,13 +11,14 @@ The class name alone does not describe the physical device or prove availability
 | Class | Current backing / selection | Appropriate use and limitation |
 |---|---|---|
 | `longhorn` (default) | One V1 replica on an eligible Longhorn disk. Live claims span Threadripper, SFF, Elite and Dell; the latter three use dedicated data disks, not their Talos boot filesystems. | Small app state and caches with an explicit one-copy availability trade-off. Kopiur protects enrolled state, but a backup does not provide immediate failover. |
-| `longhorn-flash` | One replica selected by disk tag `flash`; currently the Threadripper's 300 GB guest disk on two mirrored HPE SATA SSDs with PLP and thick LVM | Selected write-heavy state and noisy local I/O. The mirror survives one member disk loss; it does not survive loss of the Threadripper host. |
+| `longhorn-flash` | One replica selected by disk tag `flash`; currently the Threadripper's 440 GiB guest disk on two mirrored HPE SATA SSDs with PLP and thick LVM | Selected write-heavy state and noisy local I/O. The mirror survives one member disk loss; it does not survive loss of the Threadripper host. |
 | `longhorn-wired-ha` | Two replicas with hard node/zone/disk separation on Longhorn nodes tagged `wired-storage` | Selected state that needs a surviving live copy. Requires healthy replicas, a working control plane, eligible compute and the rest of the application's dependencies. |
 | `truenas-nfs` | TrueNAS BigTank, HDD-backed, RWX | Shared files and bulk data where NAS downtime is accepted. Measure small-file and synchronous-write workloads before moving them here. |
 | Static NFS / SMB classes | The specific NAS share named in each PV | Media, model files and shared data. Inspect the backing dataset: BigTank and the unmirrored AI SSD pool have different failure behavior. |
 
 `longhorn-kopiur-staging-local` is a separate, disposable restore/backup staging
-mechanism. Do not select it for authoritative application data. Its
+mechanism. Do not select it for authoritative application data. Its clones
+land only on disks tagged `clone-ok` (the Threadripper flash disk). Its
 WaitForFirstConsumer behavior and the existing Longhorn overprovisioning allowance
 support the Kopiur workflow; capacity planning must include staging claims.
 
@@ -28,10 +29,9 @@ Threadripper. The shed's disks are registered but have scheduling disabled. Dell
 is wired; the HP Micro in the shed is the machine behind the Wi-Fi media bridge.
 See the [dated physical inventory](../../audits/2026-09-05-inventory.md).
 
-The `wired-storage` tag currently includes SFF, Elite and Dell. Temporal Postgres
-is the existing two-copy user; at the audit snapshot its copies were on Dell and
-Elite. The proposed design moves durable responsibility toward SFF/Elite after
-qualification and a healthy replacement copy. That migration is not complete.
+The `wired-storage` tag includes SFF, Elite and Dell. Which disk holds what,
+and which volumes keep two copies, is listed once in
+[storage architecture](../../storage-architecture.md#disk-placement-follows-drive-endurance).
 
 The Omni `node.longhorn.io/default-node-tags` annotation initializes Longhorn
 nodes whose tag list is empty. It does not continuously reconcile tags on an
