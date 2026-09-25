@@ -249,7 +249,7 @@ class AllLLMClientsTests(unittest.TestCase):
     APPS = [
         'my-apps/ai/open-webui', 'my-apps/ai/hindsight', 'my-apps/ai/surfsense',
         'my-apps/ai/perplexica', 'my-apps/ai/presenton', 'my-apps/ai/comfyui',
-        'my-apps/home/n8n', 'my-apps/home/project-nomad',
+        'my-apps/home/project-nomad',
         'my-apps/media/karakeep', 'my-apps/media/worldmonitor',
         'my-apps/utility/deal-scout', 'my-apps/development/news-reader',
         'monitoring/holmesgpt', 'monitoring/keep',

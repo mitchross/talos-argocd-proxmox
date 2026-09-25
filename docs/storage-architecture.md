@@ -266,7 +266,7 @@ different wired nodes (hard replica anti-affinity):
 - **Raised by hand on the Longhorn Volume** (a PVC's StorageClass cannot be
   changed) — `home-assistant/config`, `paperless-ngx/data`,
   `paperless-ngx/media`, `paperless-ngx/paperless-postgres-data`,
-  `immich/immich-postgres-data`, `n8n/data`, `gitea/gitea-postgres-data`.
+  `immich/immich-postgres-data`, `gitea/gitea-postgres-data`.
 
 The hand-raised setting lives only on the live Volume, so a rebuild or restore
 brings these back as one replica. Re-apply it for each `<ns>/<pvc>` above:
