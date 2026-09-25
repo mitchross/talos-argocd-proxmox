@@ -8,6 +8,8 @@ metadata:
     storageclass.kubernetes.io/is-default-class: "false"
     # Longhorn SC parameters are immutable — Replace lets ArgoCD swap the object.
     argocd.argoproj.io/sync-options: Replace=true
+    # Server-side diff dry-runs the change and fails on the immutable parameters before Replace can run.
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
