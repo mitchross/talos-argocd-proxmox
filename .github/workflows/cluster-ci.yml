@@ -154,7 +154,7 @@ jobs:
       - name: Generate CRD schemas
         # Without these, every CR whose CRD the datree catalog does not carry is
         # silently skipped by -ignore-missing-schemas below (kopiur, longhorn,
-        # temporal, holmesgpt, coroot...). Schemas come from the same rendered
+        # temporal, holmesgpt...). Schemas come from the same rendered
         # stream, so they track the chart versions in git automatically.
         run: |
           set -euo pipefail

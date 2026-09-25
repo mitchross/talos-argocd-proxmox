@@ -239,6 +239,8 @@ of duplicating procedures.
 > - **Do NOT add pvc-plumber/VolSync labels, `ReplicationSource`/`ReplicationDestination`, the `wait-for-rustfs` MAP, or `/audit` calls** — that whole stack was retired 2026-06-27. Backups are kopiur (per-PVC stub + `kopiur-backup` component); see `docs/domains/storage/kopiur-backup-architecture.md`.
 > - **Do NOT resurrect CNPG** — retired 2026-08-13 (operator, Barman plugin, recovery script, manual sync gates all deleted; old Barman buckets aging out via lifecycle policy). All Postgres is plain + kopiur. Redis and PostHog's ClickHouse/Kafka stay backup-exempt; PostHog's Postgres uses the standard kopiur component (do not exempt it again — it carries the API keys).
 > - **Do NOT make observability foundational** — core apps bootstrap without Prometheus; do not resurrect an early Prometheus Operator CRD app.
+> - **Do NOT set Longhorn `dataLocality: best-effort` on general StorageClasses** — every pod move then copies the whole volume (a reboot re-copied 77 of 123 replicas). Disk-write rules: `docs/domains/storage/disk-writes.md`.
+> - **Do NOT re-add Coroot, Trivy Operator or Keep** — removed as duplicate telemetry / disk churn; the Prometheus + Loki + Tempo + Grafana stack is the one observability stack.
 > - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open Longhorn bugs #13315/#13314: interrupted rebuilds corrupt replica metadata). Forensics in git history; the DR doc carries the short version.
 > - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/research/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files.
 

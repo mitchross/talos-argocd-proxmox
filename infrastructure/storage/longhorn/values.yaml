@@ -29,8 +29,8 @@ defaultSettings:
   # Percent of allocatable CPU per instance-manager pod (NOT cores); chart default is 12.
   guaranteedInstanceManagerCPU: "8"
   # No guaranteedInstanceManagerMemory setting exists — the key renders into the ConfigMap but is silently ignored.
-  # Performance: prefer local disk for reads when replica is on same node
-  defaultDataLocality: "best-effort"
+  # New volumes only (StorageClass params win); see storageclass-default.yaml for why locality is off.
+  defaultDataLocality: "disabled"
   # Each failed kopiur backup burns a snapshot slot; a full volume can never back up again without a manual purge.
   snapshotMaxCount: "30"
   autoCleanupSystemGeneratedSnapshot: "true"

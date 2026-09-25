@@ -64,7 +64,6 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 | **Loki** | `monitoring/loki-stack/` | Log storage (S3 on RustFS) |
 | **Tempo** | `monitoring/tempo/` | Trace storage (S3 on RustFS) |
 | **HolmesGPT** | `monitoring/holmesgpt/` | AI cluster diagnostics via vLLM (`qwen3.8-27b`) |
-| **Trivy Operator** | `monitoring/trivy-operator/` | Conservative vulnerability + exposed-secret scanning |
 | **pod-cleanup** | `monitoring/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
 
 ## Telemetry scope
@@ -177,7 +176,6 @@ folder map, how to add a board, and per-board query gotchas.
 - Capacity recording rules: `monitoring/prometheus-stack/capacity-rules.yaml`
 - OTEL Collectors: `infrastructure/controllers/opentelemetry-operator/collector-*.yaml`
 - k8sgpt runbook: `monitoring/k8sgpt/README.md`
-- Trivy Operator runbook: `monitoring/trivy-operator/README.md`
 
 ## Retention
 
@@ -189,10 +187,9 @@ folder map, how to add a board, and per-board query gotchas.
 | Alerts | 72 hours (Alertmanager) |
 
 Alert evaluation and notification delivery are separate. Prometheus evaluates
-the rules and Grafana/Prometheus/Alertmanager show their state today. The live
-Alertmanager receiver is intentionally `null`, so no message is delivered
-outside the cluster until a real receiver credential and destination are
-selected. Argo CD Notifications is not needed for this metrics-based path.
+the rules and Grafana/Prometheus/Alertmanager show their state. Every alert
+routes to the `null` receiver, so nothing is delivered outside the cluster and
+nothing pages; add a push receiver (for example ntfy) before relying on alerts. Argo CD Notifications is not needed for this metrics-based path.
 
 Argo CD is already covered by component ServiceMonitors, Grafana dashboard
 14584, and dedicated alerts for component availability, reconcile stalls,

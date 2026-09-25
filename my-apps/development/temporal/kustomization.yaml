@@ -64,18 +64,3 @@ patches:
       - op: add
         path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
         value: BeforeHookCreation
-  # gRPC long-polls (60s+) read as permanently slow to Coroot's latency SLI (10s histogram cap) — latency SLO off, availability stays.
-  - target:
-      kind: Deployment
-      name: temporal-frontend
-    patch: |
-      - op: add
-        path: /metadata/annotations/coroot.com~1slo-latency-objective
-        value: "0%"
-  - target:
-      kind: Deployment
-      name: temporal-matching
-    patch: |
-      - op: add
-        path: /metadata/annotations/coroot.com~1slo-latency-objective
-        value: "0%"
