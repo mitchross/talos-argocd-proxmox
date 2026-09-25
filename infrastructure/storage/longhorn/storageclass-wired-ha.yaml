@@ -6,6 +6,7 @@ metadata:
   annotations:
     storageclass.kubernetes.io/is-default-class: "false"
     argocd.argoproj.io/sync-options: Replace=true
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
