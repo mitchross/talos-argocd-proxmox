@@ -422,7 +422,7 @@
       "id": 10,
       "type": "timeseries",
       "title": "Tile-server replicas (HPA)",
-      "description": "Current vs desired vs min/max. If current pins at maxReplicas you're undersized — bump the HPA cap.",
+      "description": "Current vs desired vs min/max. If current pins at maxReplicas you're undersized \u2014 bump the HPA cap.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -481,7 +481,7 @@
     {
       "id": 11,
       "type": "stat",
-      "title": "OOM kills — 1h",
+      "title": "OOM kills \u2014 1h",
       "description": "Pods killed for exceeding memory limit in the last hour. Should be 0 in steady state.",
       "datasource": {
         "type": "prometheus",
@@ -530,7 +530,7 @@
     {
       "id": 12,
       "type": "stat",
-      "title": "Container restarts — 1h",
+      "title": "Container restarts \u2014 1h",
       "description": "All restarts in radar-ng over the last hour. A tile-server spike is the one to chase.",
       "datasource": {
         "type": "prometheus",
@@ -579,6 +579,787 @@
         "colorMode": "background",
         "graphMode": "none"
       }
+    },
+    {
+      "type": "row",
+      "title": "Clients \u2014 app, widget, Watch, CarPlay (tile-server access logs)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
+      "panels": [],
+      "id": 101
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests by client",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (client) (count_over_time({k8s_namespace_name=\"radar-ng\", k8s_container_name=\"tile-server\"} |= \"handled request\" | regexp `(?P<body>\\{.*)` | line_format \"{{.body}}\" | json ua=`request.headers[\"User-Agent\"][0]`, uri=`request.uri`, status=`status`, duration=`duration` | __error__=\"\" | ua !~ \"kube-probe.*|Prometheus.*\" | label_format client=`{{ if hasPrefix \"RadarWidget\" .ua }}widget{{ else if hasPrefix \"radar-ngWatch\" .ua }}watch{{ else if hasPrefix \"RadarNG-CarPlay\" .ua }}carplay{{ else if hasPrefix \"radarng/\" .ua }}ios app{{ else if contains \"okhttp\" .ua }}android app{{ else }}other{{ end }}` [$__auto]))",
+          "legendFormat": "{{client}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "Every request through Caddy (tiles and API), classified by User-Agent. Probes and Prometheus scrapes excluded.",
+      "id": 102
+    },
+    {
+      "type": "timeseries",
+      "title": "Errors by client",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (client, status) (count_over_time({k8s_namespace_name=\"radar-ng\", k8s_container_name=\"tile-server\"} |= \"handled request\" | regexp `(?P<body>\\{.*)` | line_format \"{{.body}}\" | json ua=`request.headers[\"User-Agent\"][0]`, uri=`request.uri`, status=`status`, duration=`duration` | __error__=\"\" | ua !~ \"kube-probe.*|Prometheus.*\" | status >= 500 or (status >= 400 and uri !~ \"/tiles/.*\") | label_format client=`{{ if hasPrefix \"RadarWidget\" .ua }}widget{{ else if hasPrefix \"radar-ngWatch\" .ua }}watch{{ else if hasPrefix \"RadarNG-CarPlay\" .ua }}carplay{{ else if hasPrefix \"radarng/\" .ua }}ios app{{ else if contains \"okhttp\" .ua }}android app{{ else }}other{{ end }}` [$__auto]))",
+          "legendFormat": "{{client}} {{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "5xx anywhere, and 4xx outside /tiles. A 404 tile is normal: the tiler writes no file where there is no precipitation.",
+      "id": 103
+    },
+    {
+      "type": "stat",
+      "title": "Widget requests \u2014 24h",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 56
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({k8s_namespace_name=\"radar-ng\", k8s_container_name=\"tile-server\"} |= \"handled request\" | regexp `(?P<body>\\{.*)` | line_format \"{{.body}}\" | json ua=`request.headers[\"User-Agent\"][0]`, uri=`request.uri`, status=`status`, duration=`duration` | __error__=\"\" | ua !~ \"kube-probe.*|Prometheus.*\" | ua =~ \"RadarWidget.*\" [24h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 104
+    },
+    {
+      "type": "stat",
+      "title": "Widget failures \u2014 24h",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 56
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({k8s_namespace_name=\"radar-ng\", k8s_container_name=\"tile-server\"} |= \"handled request\" | regexp `(?P<body>\\{.*)` | line_format \"{{.body}}\" | json ua=`request.headers[\"User-Agent\"][0]`, uri=`request.uri`, status=`status`, duration=`duration` | __error__=\"\" | ua !~ \"kube-probe.*|Prometheus.*\" | ua =~ \"RadarWidget.*\" | status >= 500 [24h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 105
+    },
+    {
+      "type": "stat",
+      "title": "Watch requests \u2014 24h",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 56
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({k8s_namespace_name=\"radar-ng\", k8s_container_name=\"tile-server\"} |= \"handled request\" | regexp `(?P<body>\\{.*)` | line_format \"{{.body}}\" | json ua=`request.headers[\"User-Agent\"][0]`, uri=`request.uri`, status=`status`, duration=`duration` | __error__=\"\" | ua !~ \"kube-probe.*|Prometheus.*\" | ua =~ \"radar-ngWatch.*\" [24h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 106
+    },
+    {
+      "type": "stat",
+      "title": "CarPlay requests \u2014 24h",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 56
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({k8s_namespace_name=\"radar-ng\", k8s_container_name=\"tile-server\"} |= \"handled request\" | regexp `(?P<body>\\{.*)` | line_format \"{{.body}}\" | json ua=`request.headers[\"User-Agent\"][0]`, uri=`request.uri`, status=`status`, duration=`duration` | __error__=\"\" | ua !~ \"kube-probe.*|Prometheus.*\" | ua =~ \"RadarNG-CarPlay.*\" [24h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 107
+    },
+    {
+      "type": "logs",
+      "title": "Widget, Watch and CarPlay requests",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{k8s_namespace_name=\"radar-ng\", k8s_container_name=\"tile-server\"} |= \"handled request\" | regexp `(?P<body>\\{.*)` | line_format \"{{.body}}\" | json ua=`request.headers[\"User-Agent\"][0]`, uri=`request.uri`, status=`status`, duration=`duration` | __error__=\"\" | ua !~ \"kube-probe.*|Prometheus.*\" | ua =~ \"RadarWidget.*|radar-ngWatch.*|RadarNG-CarPlay.*\" | line_format \"{{.status}}  {{.uri}}  {{.duration}}s  {{.ua}}\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      },
+      "id": 108
+    },
+    {
+      "type": "row",
+      "title": "Forecast pipeline \u2014 Open-Meteo sync (Temporal)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 69
+      },
+      "panels": [],
+      "id": 109
+    },
+    {
+      "type": "timeseries",
+      "title": "Open-Meteo sync runs",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 70
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(temporal_workflow_completed{workflow_type=\"OpenMeteoSyncWorkflow\"}[1h]))",
+          "legendFormat": "completed / h"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(temporal_workflow_failed{workflow_type=\"OpenMeteoSyncWorkflow\"}[1h])) or vector(0)",
+          "legendFormat": "failed / h"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "HRRR syncs hourly, GFS every 6 h. Since 2026-09-25 a run fails when openmeteo-api logs CRITICAL/ERROR, so failures show here instead of silently freezing data.",
+      "id": 110
+    },
+    {
+      "type": "stat",
+      "title": "Sync failures \u2014 24h",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 70
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(temporal_workflow_failed{workflow_type=\"OpenMeteoSyncWorkflow\"}[24h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 111
+    },
+    {
+      "type": "stat",
+      "title": "Forecast upstream errors \u2014 24h",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 70
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(radar_ng_forecast_upstream_errors_total[24h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 112
+    },
+    {
+      "type": "timeseries",
+      "title": "Workflow failures by type",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 78
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (workflow_type) (increase(temporal_workflow_failed[1h]))",
+          "legendFormat": "{{workflow_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "All radar-ng Temporal workflows: MRMS, HRRR, nowcast, lightning, tropical, alerts, Open-Meteo.",
+      "id": 113
+    },
+    {
+      "type": "row",
+      "title": "API, alerts and geocoding",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 86
+      },
+      "panels": [],
+      "id": 114
+    },
+    {
+      "type": "timeseries",
+      "title": "API requests by route",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 87
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (path) (rate(radar_ng_http_requests_total{path!~\"/api/(livez|metrics)\"}[5m]))",
+          "legendFormat": "{{path}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "id": 115
+    },
+    {
+      "type": "timeseries",
+      "title": "API 5xx by route",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 87
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (path, status) (rate(radar_ng_http_requests_total{status=~\"5..\"}[5m]))",
+          "legendFormat": "{{path}} {{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "502 on /api/alerts = NWS unreachable; on /api/geocode or /api/reverse-geocode = Photon unreachable; 503 = geocoder not configured.",
+      "id": 116
+    },
+    {
+      "type": "timeseries",
+      "title": "API latency (mean) by route",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 95
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (path) (rate(radar_ng_http_request_duration_seconds_sum{path!~\"/api/(livez|metrics)\"}[5m])) / sum by (path) (rate(radar_ng_http_requests_total{path!~\"/api/(livez|metrics)\"}[5m]))",
+          "legendFormat": "{{path}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "id": 117
+    },
+    {
+      "type": "stat",
+      "title": "Photon geocoder",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 95
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(kube_deployment_status_replicas_available{namespace=\"photon\",deployment=\"photon\"}) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "description": "Available Photon replicas. 0 = city search and reverse geocoding return 502.",
+      "id": 118
+    },
+    {
+      "type": "stat",
+      "title": "Rate-limited requests \u2014 24h",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 95
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(radar_ng_rate_limited_requests_total[24h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 119
     }
   ],
   "id": null,
