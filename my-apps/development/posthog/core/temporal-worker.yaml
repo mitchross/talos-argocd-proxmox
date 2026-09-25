@@ -27,7 +27,7 @@ spec:
       containers:
         - name: temporal-django-worker
           # Keep this aligned with the posthog-migrate hook in jobs.yaml.
-          image: posthog/posthog:latest@sha256:f702a87edfbc8f823c89d2f8f56719282ad51796f3bceeba672e5e7003612ad3
+          image: posthog/posthog:latest@sha256:ae482be45e5062055eb9b1380d7ea50f3c4f7a3608846098532358daf7503590
           command:
             - ./bin/temporal-django-worker
           envFrom:
