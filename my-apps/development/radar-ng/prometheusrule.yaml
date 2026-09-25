@@ -37,6 +37,50 @@ spec:
           annotations:
             summary: radar-ng API error rate is above 5 percent
             description: The five-minute API 5xx ratio has stayed above 5 percent for 10 minutes.
+    - name: radar-ng.forecast
+      rules:
+        - alert: RadarNgOpenMeteoSyncFailing
+          expr: sum(increase(temporal_workflow_failed{workflow_type="OpenMeteoSyncWorkflow"}[6h])) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng Open-Meteo sync is failing
+            description: >-
+              An Open-Meteo sync workflow failed in the last 6 hours. Runs fail when
+              openmeteo-api logs CRITICAL/ERROR (radar-ng#62). Check the workflow's
+              activity error in Temporal namespace default; forecasts stop updating
+              while this persists.
+        - alert: RadarNgOpenMeteoSyncStalled
+          expr: (sum(increase(temporal_workflow_completed{workflow_type="OpenMeteoSyncWorkflow"}[3h])) or vector(0)) == 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng Open-Meteo has not synced in 3 hours
+            description: >-
+              No Open-Meteo sync completed in 3 hours (HRRR runs hourly). Forecast
+              data is going stale. Check the open-meteo pod, its volume attach, and
+              the aux worker.
+        - alert: RadarNgPhotonDown
+          expr: (sum(kube_deployment_status_replicas_available{namespace="photon", deployment="photon"}) or vector(0)) < 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Photon geocoder is down
+            description: >-
+              No Photon replica has been available for 15 minutes, so radar-ng city
+              search and reverse geocoding return 502.
+        - alert: RadarNgPlacesUpstreamErrors
+          expr: sum by (path) (rate(radar_ng_http_requests_total{path=~"/api/(alerts|geocode|reverse-geocode)", status="502"}[10m])) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'radar-ng {{ $labels.path }} upstream is failing'
+            description: >-
+              {{ $labels.path }} has returned 502 for 15 minutes: NWS for /api/alerts,
+              Photon for the geocode routes.
     - name: radar-ng.worker
       rules:
         - alert: RadarNgWorkerOOMKilled
