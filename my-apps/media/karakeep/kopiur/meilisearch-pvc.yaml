@@ -14,7 +14,6 @@ spec:
     username: meilisearch-pvc
     hostname: karakeep
   retention:
-    keepHourly: 24
     keepDaily: 7
   mover:
     securityContext:
@@ -30,13 +29,13 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: meilisearch-pvc-hourly
+  name: meilisearch-pvc-daily
   namespace: karakeep
 spec:
   policyRef:
     name: meilisearch-pvc
   schedule:
-    cron: "25 * * * *"
+    cron: "25 4 * * *"
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
