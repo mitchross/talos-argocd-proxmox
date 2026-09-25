@@ -170,6 +170,16 @@ patches:
         match: system_disk
       minSize: 32GiB
       maxSize: 32GiB
+# The default Metadata-level policy logged every API request to the control-plane disk (~11 GB/day); nothing reads it.
+- name: control-plane-audit-policy
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeAuditPolicyConfig
+    configuration:
+      apiVersion: audit.k8s.io/v1
+      kind: Policy
+      rules:
+      - level: None
 ---
 kind: Workers
 name: hp-micro-workers
