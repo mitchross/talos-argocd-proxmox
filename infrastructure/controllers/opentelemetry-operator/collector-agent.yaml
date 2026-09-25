@@ -120,6 +120,12 @@ spec:
           value: EXPR(env("K8S_NODE_NAME"))
 
     processors:
+      # Permissive SELinux audits every pod write to unlabeled Longhorn volumes (~1.6k lines/s from ClickHouse); pure noise.
+      filter/auditd:
+        error_mode: ignore
+        logs:
+          log_record:
+            - 'attributes["talos-service"] == "auditd"'
       memory_limiter:
         check_interval: 1s
         limit_mib: 768
@@ -168,7 +174,7 @@ spec:
       pipelines:
         logs/node:
           receivers: [tcp_log/talos]
-          processors: [memory_limiter]
+          processors: [memory_limiter, filter/auditd]
           exporters: [otlphttp/node_logs]
         logs:
           receivers: [filelog]

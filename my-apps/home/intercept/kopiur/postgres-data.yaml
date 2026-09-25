@@ -22,7 +22,6 @@ spec:
           command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
           timeout: 2m
   retention:
-    keepHourly: 24
     keepDaily: 7
     keepWeekly: 4
   mover:
@@ -38,13 +37,13 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: intercept-postgres-data-hourly
+  name: intercept-postgres-data-daily
   namespace: intercept
 spec:
   policyRef:
     name: intercept-postgres-data
   schedule:
-    cron: "1 * * * *"
+    cron: "1 3 * * *"
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore

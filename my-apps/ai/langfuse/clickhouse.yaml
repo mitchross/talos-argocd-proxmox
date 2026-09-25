@@ -72,6 +72,10 @@ spec:
           mountPath: /etc/clickhouse-server/config.d/langfuse-prometheus.xml
           subPath: clickhouse-prometheus.xml
           readOnly: true
+        - name: settings
+          mountPath: /etc/clickhouse-server/config.d/langfuse-system-logs.xml
+          subPath: clickhouse-system-logs.xml
+          readOnly: true
         startupProbe:
           httpGet:
             path: /ping

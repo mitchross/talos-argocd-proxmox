@@ -32,6 +32,7 @@ configMapGenerator:
   files:
   - clickhouse-settings.xml
   - clickhouse-prometheus.xml
+  - clickhouse-system-logs.xml
 patches:
 - target:
     kind: Deployment
