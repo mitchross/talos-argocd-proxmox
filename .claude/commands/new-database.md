@@ -14,8 +14,8 @@ rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
    `my-apps/<category>/<app>/postgres/` and rename `gitea` → `<app>`
    throughout.
 2. Copy the kopiur stub to `kopiur/<app>-postgres-data.yaml`: mover stays
-   `999:999` (official postgres image uid), retention stays the **hourly
-   tier**, and the cron minute must be **distinct across ALL schedules**
+   `999:999` (official postgres image uid), retention is the **daily
+   tier** (every run clones the whole volume; use 6h only for data you can't re-create), and the cron minute must be **distinct across ALL schedules**
    (`grep -rn "cron:" my-apps --include=*.yaml`).
 3. Declare the database in the Deployment env: `POSTGRES_DB` /
    `POSTGRES_USER` / `POSTGRES_PASSWORD` (from an ExternalSecret) — created
@@ -36,7 +36,7 @@ rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
 
 ### Critical rules
 
-- The app's PVC restore-point is the last snapshot (~1h with the hourly
+- The app's PVC restore-point is the last snapshot (up to ~24h on the daily
   tier) — restores land on the last snapshot, not a point in time.
 - The password stored inside a restored database is restored state. Never
   rotate only the 1Password item: connect with the current credential, run
