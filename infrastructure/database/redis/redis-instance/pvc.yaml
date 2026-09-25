@@ -8,9 +8,6 @@ metadata:
     component: master
     backup-exempt: "true"
   annotations:
-    # Kept defensively so any future immutable-field SSA dry-run on this bound,
-    # chart-referenced PVC can't wedge the app's comparison.
-    argocd.argoproj.io/compare-options: ServerSideDiff=false
     storage.vanillax.dev/backup-exempt-reason: "Redis persistence is disposable/cache-like in this homelab (paperless Celery broker + redis-commander UI; system-of-record is paperless data/media PVCs + paperless-postgres, all kopiur-backed); do not back up."
 spec:
   accessModes:

@@ -238,25 +238,48 @@ and gating mechanics: [entrypoints](domains/argocd/entrypoints.md) ·
 [how Argo waits](easy-guide.md#part-2-how-argo-waits-sync-waves).
 
 
-**Disk placement follows drive endurance.** Longhorn disks are tiered by what
-the physical SSD can survive, not by free space:
+### Disk placement follows drive endurance
+
+Longhorn disks are tiered by what the physical SSD can survive, not by free
+space:
 
 | Disk | Physical drive | Holds |
 |---|---|---|
-| `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | HPE enterprise SATA pair | GPU-node hot volumes and **every kopiur backup clone** (`longhorn-kopiur-staging-local` selects `clone-ok`) |
+| `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | 440 GiB guest disk on a mirrored HPE enterprise SATA pair | GPU-node hot volumes and **every kopiur backup clone** (`longhorn-kopiur-staging-local` selects `clone-ok`) |
 | `talos-ephemeral` on the GPU node | budget NVMe that also carries `/var` | nothing new (`allowScheduling: false`) |
 | `dell-ssd`, `hp-elite-nvme`, `hp-sff-ssd` (`wired-storage` nodes) | consumer SATA/QLC | ordinary replicas |
 | hp-sff's second SSD | budget SATA | **etcd only** — keep Longhorn traffic off the single control plane's disk |
-| `hp-micro-ssd` (shed) | budget SATA behind Wi-Fi | shed-bound apps only; never general replicas or second copies |
+| `hp-micro-ssd` (shed) | budget SATA behind Wi-Fi | nothing (`allowScheduling: false`) — never replicas or second copies |
 
-**Two copies for data that can't be re-created.** Most volumes are one
-replica: losing a node takes its apps down until it returns (or kopiur
-restores them). Data you'd hate to lose runs two replicas on different wired
-nodes (hard replica anti-affinity): Home Assistant config, paperless
-data/media/Postgres, immich Postgres, n8n, gitea Postgres, plus the
-`longhorn-wired-ha` volumes (open-webui, temporal, surfsense, intercept). A
-PVC's StorageClass is immutable, so existing volumes are raised with
-`spec.numberOfReplicas` on the Longhorn Volume; re-apply it after a rebuild.
+Only the `clone-ok` disk takes backup clones because every kopiur run clones
+the whole volume; see [disk writes](domains/storage/disk-writes.md) for the
+rest of the write budget.
+
+### Two copies for data that can't be re-created
+
+Most volumes are one replica: losing a node takes its apps down until it
+returns (or kopiur restores them). Data you'd hate to lose runs two replicas on
+different wired nodes (hard replica anti-affinity):
+
+- **`longhorn-wired-ha` StorageClass** — open-webui, temporal, surfsense,
+  intercept. Two copies come from the class itself.
+- **Raised by hand on the Longhorn Volume** (a PVC's StorageClass cannot be
+  changed) — `home-assistant/config`, `paperless-ngx/data`,
+  `paperless-ngx/media`, `paperless-ngx/paperless-postgres-data`,
+  `immich/immich-postgres-data`, `n8n/data`, `gitea/gitea-postgres-data`.
+
+The hand-raised setting lives only on the live Volume, so a rebuild or restore
+brings these back as one replica. Re-apply it for each `<ns>/<pvc>` above:
+
+```bash
+pv=$(kubectl -n <ns> get pvc <pvc> -o jsonpath='{.spec.volumeName}')
+kubectl -n longhorn-system patch volumes.longhorn.io "$pv" --type merge \
+  -p '{"spec":{"numberOfReplicas":2}}'
+kubectl -n longhorn-system get volumes.longhorn.io "$pv" \
+  -o jsonpath='{.spec.numberOfReplicas} {.status.robustness}{"\n"}'
+```
+
+Expect `2 degraded` while Longhorn copies the second replica, then `2 healthy`.
 
 ---
 
@@ -297,13 +320,18 @@ non-zero files, and the PVC `Bound`.
 
 There is **no tier abstraction**. Each stub carries its own
 `SnapshotSchedule.spec.schedule.cron` and its own
-`SnapshotPolicy.spec.retention` (`keepHourly`/`keepDaily`/`keepWeekly`/
-`keepMonthly` as needed). Pick a distinct cron minute per PVC to avoid a
+`SnapshotPolicy.spec.retention`. Pick a distinct cron minute per PVC to avoid a
 backup stampede on the same node.
+
+Every run clones the whole volume before Kopia reads it, so frequency costs
+disk writes. Use **daily** by default (databases included). Use **every 6
+hours** (`keepHourly: 8`) only for data that can't be re-created — today
+paperless data/media/Postgres, immich Postgres and Home Assistant config.
+Do not add hourly schedules.
 
 | Field | Where | Example |
 |---|---|---|
-| cadence | stub `SnapshotSchedule.spec.schedule.cron` | `"5 3 * * *"` (daily 03:05), `"10 * * * *"` (hourly :10) |
+| cadence | stub `SnapshotSchedule.spec.schedule.cron` | `"5 3 * * *"` (daily 03:05), `"19 */6 * * *"` (every 6 h at :19) |
 | retention | stub `SnapshotPolicy.spec.retention` | `{ keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }` |
 | concurrency | component → `concurrencyPolicy: Forbid` | no overlapping snapshot Jobs |
 
@@ -551,9 +579,9 @@ negative space.
 pin lives in `infrastructure/controllers/kopiur-operator/kustomization.yaml`.
 Review the versioned CRDs and recovery behavior when upgrading it.
 
-**Recoverable data age is the age of the latest successful snapshot.** An
-hourly schedule is a target, not a guaranteed one-hour loss bound: delayed or
-failed snapshots make it older. Databases use crash-consistent filesystem
+**Recoverable data age is the age of the latest successful snapshot.** A
+schedule is a target, not a guaranteed loss bound: delayed or failed snapshots
+make it older. Databases use crash-consistent filesystem
 snapshots with Postgres WAL recovery, not continuous WAL archiving or PITR.
 
 **The canary proves the storage loop, not every application.** Its scheduled
