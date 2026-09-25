@@ -13,7 +13,6 @@ spec:
     username: langfuse-clickhouse-data
     hostname: langfuse
   retention:
-    keepHourly: 24
     keepDaily: 7
     keepWeekly: 4
   mover:
@@ -29,7 +28,7 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: langfuse-clickhouse-data-hourly
+  name: langfuse-clickhouse-data-daily
   namespace: langfuse
   annotations:
     argocd.argoproj.io/sync-wave: '0'
@@ -37,7 +36,7 @@ spec:
   policyRef:
     name: langfuse-clickhouse-data
   schedule:
-    cron: 18 * * * *
+    cron: 18 3 * * * # daily: each run clones the whole ~15 GB volume
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore
