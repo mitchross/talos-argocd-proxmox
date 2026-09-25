@@ -84,7 +84,7 @@ spec:
             cpu: 1000m
             memory: 2Gi
           limits:
-            memory: 12Gi
+            memory: 8Gi
         securityContext:
           privileged: true
           allowPrivilegeEscalation: true

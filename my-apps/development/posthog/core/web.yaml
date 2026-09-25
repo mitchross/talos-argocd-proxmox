@@ -140,7 +140,7 @@ spec:
             cpu: 600m
             memory: 4Gi
           limits:
-            memory: 12Gi
+            memory: 8Gi
         volumeMounts:
         - name: repo-scripts
           mountPath: /opt/repo-scripts

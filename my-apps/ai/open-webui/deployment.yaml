@@ -38,7 +38,7 @@ spec:
             memory: 1000Mi
             ephemeral-storage: "30Gi"
           limits:
-            memory: 8000Mi
+            memory: 4Gi
             ephemeral-storage: "40Gi"
         envFrom:
         - configMapRef:
