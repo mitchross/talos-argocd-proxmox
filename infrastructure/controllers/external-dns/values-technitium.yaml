@@ -65,6 +65,5 @@ podSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
-# v0.22.0 failed Cloudflare TLS verification (x509 unknown authority) on the GPU node; v0.23.0 passes. Drop once the chart ships >= v0.23.
 image:
   tag: v0.23.0@sha256:1854499e2b08cee47c40a08e356bff20dcb192dbcfde8378fc3f900f12cad5a3
