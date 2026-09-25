@@ -14,7 +14,7 @@ spec:
     username: data
     hostname: paperless-ngx
   retention:
-    keepHourly: 24
+    keepHourly: 8
     keepDaily: 7
     keepWeekly: 4
   mover:
@@ -31,13 +31,13 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: data-hourly
+  name: data-6h
   namespace: paperless-ngx
 spec:
   policyRef:
     name: data
   schedule:
-    cron: "19 * * * *"
+    cron: "19 */6 * * *"
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1

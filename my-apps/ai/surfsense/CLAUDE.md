@@ -22,7 +22,7 @@ Do not split these child folders into independent Argo Applications unless there
 | `app/pvc.yaml` | Durable SurfSense knowledge/object-store PVC |
 | `postgres/` | pgvector/PostgreSQL Deployment, Service, and restore-before-bind PVC |
 | `redis/` | Redis Deployment, Service, and backup-exempt PVC |
-| `kopiur/postgres-data.yaml` | Hourly Postgres backup + Restore |
+| `kopiur/postgres-data.yaml` | Daily Postgres backup + Restore |
 | `kopiur/object-store.yaml` | Daily knowledge/object-store backup + Restore |
 | `externalsecret.yaml` | 1Password-backed application/database/Zero secrets; wave -1 |
 | `global_llm_config.yaml` | Operator-owned global chat model catalog; points SurfSense at the authenticated LiteLLM gateway |
@@ -52,7 +52,7 @@ Do not put the Kopiur `Restore` CR in an earlier isolated wave than its PVC. The
 ## Invariants — do not break these
 
 1. **PostgreSQL logical replication is required.** Keep `wal_level=logical`, replication slots, and WAL senders enabled; Zero depends on the `zero_publication` verified by the migration job.
-2. **Postgres follows the repo's plain-Postgres + Kopiur pattern.** RWO, `Recreate`, uid/gid 999, `PGDATA` subdir, data checksums, startup/readiness/liveness probes, hourly snapshots, and restore-before-bind.
+2. **Postgres follows the repo's plain-Postgres + Kopiur pattern.** RWO, `Recreate`, uid/gid 999, `PGDATA` subdir, data checksums, startup/readiness/liveness probes, daily snapshots, and restore-before-bind.
 3. **API and worker MUST see the exact same object-store filesystem.** SurfSense keeps workspace knowledge-store Git working trees beneath `FILE_STORAGE_LOCAL_PATH`. They are co-located in one pod to share one local `longhorn` RWO PVC. Do not split them into separate pods unless the storage design becomes true RWX.
 4. **`/shared_tmp` is intentionally `emptyDir`.** It only coordinates temporary upload/processing files between API and worker in the same pod.
 5. **Redis is not backed up.** Its PVC exists for ordinary restart continuity only and is explicitly backup-exempt.

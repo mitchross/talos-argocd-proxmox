@@ -26,7 +26,6 @@ spec:
           command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
           timeout: 2m
   retention:
-    keepHourly: 24
     keepDaily: 7
     keepWeekly: 4
   mover:
@@ -43,7 +42,7 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: temporal-postgres-data-hourly
+  name: temporal-postgres-data-daily
   namespace: temporal
   annotations:
     argocd.argoproj.io/sync-wave: "-3"
@@ -51,9 +50,7 @@ spec:
   policyRef:
     name: temporal-postgres-data
   schedule:
-    # :6 hourly — distinct minute vs ALL schedules including the 3 AM daily
-    # tier (hourly :MM collides with daily 03:MM).
-    cron: "6 * * * *"
+    cron: "6 4 * * *"
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
