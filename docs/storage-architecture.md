@@ -237,6 +237,27 @@ that don't exist, movers failing on creds that haven't fanned out. Wave table
 and gating mechanics: [entrypoints](domains/argocd/entrypoints.md) ·
 [how Argo waits](easy-guide.md#part-2-how-argo-waits-sync-waves).
 
+
+**Disk placement follows drive endurance.** Longhorn disks are tiered by what
+the physical SSD can survive, not by free space:
+
+| Disk | Physical drive | Holds |
+|---|---|---|
+| `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | HPE enterprise SATA pair | GPU-node hot volumes and **every kopiur backup clone** (`longhorn-kopiur-staging-local` selects `clone-ok`) |
+| `talos-ephemeral` on the GPU node | budget NVMe that also carries `/var` | nothing new (`allowScheduling: false`) |
+| `dell-ssd`, `hp-elite-nvme`, `hp-sff-ssd` (`wired-storage` nodes) | consumer SATA/QLC | ordinary replicas |
+| hp-sff's second SSD | budget SATA | **etcd only** — keep Longhorn traffic off the single control plane's disk |
+| `hp-micro-ssd` (shed) | budget SATA behind Wi-Fi | shed-bound apps only; never general replicas or second copies |
+
+**Two copies for data that can't be re-created.** Most volumes are one
+replica: losing a node takes its apps down until it returns (or kopiur
+restores them). Data you'd hate to lose runs two replicas on different wired
+nodes (hard replica anti-affinity): Home Assistant config, paperless
+data/media/Postgres, immich Postgres, n8n, gitea Postgres, plus the
+`longhorn-wired-ha` volumes (open-webui, temporal, surfsense, intercept). A
+PVC's StorageClass is immutable, so existing volumes are raised with
+`spec.numberOfReplicas` on the Longhorn Volume; re-apply it after a rebuild.
+
 ---
 
 ## The scenarios

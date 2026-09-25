@@ -43,6 +43,7 @@ spec:
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/intel-gpu-plugin
       - path: infrastructure/controllers/metrics-server
+      - path: infrastructure/controllers/descheduler
       # NOTE: keda and temporal-worker-controller are NOT listed here.
       # They have dedicated standalone Applications at Wave 4
       # (keda-app.yaml, temporal-worker-controller-app.yaml) because

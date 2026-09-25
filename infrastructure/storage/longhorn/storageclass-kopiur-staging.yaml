@@ -22,5 +22,7 @@ parameters:
   # NEVER strict-local: clone provisioning can ignore the WFFC hint (longhorn#12792)
   # and strict-local turns that into a permanent attach deadlock + Forbid backup stall.
   dataLocality: "disabled"
+  # Clone churn lands on the enterprise flash only; the 850 EVO / 660p Longhorn disks were absorbing ~440 GB/day of it.
+  diskSelector: "clone-ok"
   disableRevisionCounter: "true"
   unmapMarkSnapChainRemoved: "ignored"
