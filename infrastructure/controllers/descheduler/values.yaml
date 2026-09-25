@@ -1,0 +1,45 @@
+# Rebalances stateless pods only. Moving a pod with a PVC makes Longhorn rebuild its
+# replica on the new node (a full copy), so PodsWithPVC stays protected.
+kind: CronJob
+schedule: "*/30 * * * *"
+successfulJobsHistoryLimit: 1
+failedJobsHistoryLimit: 1
+image:
+  tag: v0.36.0@sha256:7ca92c0a7b4f1c51d306409da6b832005fcadb224e384795646376726734c6e5
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+deschedulerPolicy:
+  maxNoOfPodsToEvictPerNode: 3
+  profiles:
+    - name: balance
+      pluginConfig:
+        - name: DefaultEvictor
+          args:
+            nodeFit: true
+            podProtections:
+              extraEnabled:
+                - PodsWithPVC
+        - name: RemoveDuplicates
+        # Requests-based: under 25% is a donor target, over 60% sheds pods.
+        - name: LowNodeUtilization
+          args:
+            thresholds:
+              cpu: 25
+              memory: 25
+              pods: 25
+            targetThresholds:
+              cpu: 60
+              memory: 60
+              pods: 60
+      plugins:
+        balance:
+          enabled:
+            - RemoveDuplicates
+            - LowNodeUtilization

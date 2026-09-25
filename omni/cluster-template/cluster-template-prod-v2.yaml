@@ -477,7 +477,7 @@ patches:
       node.longhorn.io/create-default-disk: config
     annotations:
       node.longhorn.io/default-disks-config: >-
-        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash"]}]
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash","clone-ok"]}]
 - file: patches/threadripper-gpu-workers.yaml
 - name: kubelet-performance
   inline:
@@ -498,7 +498,7 @@ patches:
           - bind
           - rshared
           - rw
-# Exact GiB sizes keep the 434 GiB EPHEMERAL, 450 GiB model and 300 GiB flash selectors disjoint.
+# Exact GiB sizes keep the 434 GiB EPHEMERAL, 450 GiB model and 440 GiB flash selectors disjoint.
 - name: ai-model-cache-volume
   inline:
     apiVersion: v1alpha1
@@ -516,7 +516,7 @@ patches:
     name: longhorn-ssd-flash
     provisioning:
       diskSelector:
-        match: '!system_disk && disk.size == 300u * GiB'
+        match: '!system_disk && disk.size == 440u * GiB'
       minSize: 250GiB
       grow: true
 # /var stays on NVMe0; the separate 16 GiB boot disk is uniquely smallest for Omni.
