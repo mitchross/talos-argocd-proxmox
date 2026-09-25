@@ -1,9 +1,34 @@
 # Talos 1.14 Longhorn SELinux mount context
 
-**Status:** staged remediation, pending a live canary remount. Local tests and
-rendering validate the manifests and migration logic; they do not prove runtime
-mount behavior. All deployment and remount changes go through reviewed GitOps
-PRs. This procedure does not require replacing PVCs or rebuilding the cluster.
+**Status:** mount option on every StorageClass and PV, plus an admission policy
+that lets the CSI plugin actually apply it. Each volume picks up the label the
+next time it is staged (its workload is stopped and started).
+
+## Why the option was silently ignored
+
+Longhorn passes `context=` to the `mount` binary inside the
+`longhorn-csi-plugin` container. That util-linux build strips SELinux mount
+options whenever libselinux reports SELinux as disabled, and libselinux only
+reports it enabled when `/etc/selinux/config` exists; the container has none.
+The kernel therefore never sees the option: mounts show `seclabel` and files
+stay `unlabeled_t`. Longhorn creates that DaemonSet itself, so
+`infrastructure/storage/longhorn/csi-selinux-config.yaml` injects a minimal
+`/etc/selinux/config` at pod admission (`failurePolicy: Ignore`: a broken policy
+only loses the label, never the CSI plugin).
+
+## Roll out and verify
+
+1. After sync, delete one `longhorn-csi-plugin` pod. In the new pod,
+   `python3 -c 'import ctypes; print(ctypes.CDLL("libselinux.so.1").is_selinux_enabled())'`
+   prints `1`.
+2. Stop and start one workload on that node (for example scale to 0 and back).
+   Its mount in `/proc/mounts` now shows
+   `context="system_u:object_r:ephemeral_t:s0"` instead of `seclabel`.
+3. Roll the remaining CSI plugin pods one node at a time; volumes relabel as
+   their workloads restart.
+
+**Rollback:** remove the policy and ConfigMap and delete the CSI plugin pods.
+Volumes staged afterwards mount unlabeled again.
 
 ## Why the audit log floods
 
