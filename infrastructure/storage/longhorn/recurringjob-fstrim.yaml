@@ -1,0 +1,16 @@
+# Backup clones copy every allocated block; trimming returns freed blocks so clones and replicas shrink (~200 GB was reclaimable).
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: fstrim-daily
+  namespace: longhorn-system
+  annotations:
+    # CRD ships in this same app's chart; skip the dry-run on a fresh bootstrap.
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  task: filesystem-trim
+  cron: "45 2 * * *"
+  groups:
+    - default
+  retain: 0
+  concurrency: 2
