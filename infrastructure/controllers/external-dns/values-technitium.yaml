@@ -10,8 +10,8 @@ sources:
 domainFilters:
   - vanillax.me
 
-# Start without deletions until record creation and ownership are verified.
-policy: upsert-only
+# sync deletes only records whose TXT owner is talos-prod-technitium; hand-made Technitium records are untouched.
+policy: sync
 registry: txt
 txtOwnerId: talos-prod-technitium
 txtPrefix: "external-dns-"
