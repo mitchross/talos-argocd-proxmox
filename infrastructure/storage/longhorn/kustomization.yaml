@@ -14,6 +14,7 @@ resources:
   - storageclass-wired-ha.yaml
   # Disposable kopiur snapshot clones. WFFC lets the mover pick the node before the clone is provisioned (avoids V1 clone attach race).
   - storageclass-kopiur-staging.yaml
+  - recurringjob-fstrim.yaml
   # All StorageClasses use Talos's pod-writable SELinux context; see docs/domains/storage/selinux-mount-context.md.
 helmCharts:
   - name: longhorn

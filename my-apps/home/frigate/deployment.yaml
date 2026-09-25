@@ -119,6 +119,9 @@ spec:
           mountPath: /media
         - name: cache
           mountPath: /dev/shm
+        # Recording segments stage here before moving to /media; on the root disk this wrote ~100 GB/day.
+        - name: tmp-cache
+          mountPath: /tmp/cache
         - name: coral-usb
           mountPath: /dev/bus/usb
       volumes:
@@ -138,6 +141,10 @@ spec:
         emptyDir:
           medium: Memory
           sizeLimit: 4Gi
+      - name: tmp-cache
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
       # Coral re-enumerates after firmware loading; mount the bus, not one device number.
       - name: coral-usb
         hostPath:
