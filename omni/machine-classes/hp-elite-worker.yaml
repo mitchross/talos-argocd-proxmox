@@ -16,7 +16,7 @@ spec:
       # 16 of 20 logical CPUs and 24 of 30 GiB leave host headroom.
       cores: 16
       sockets: 1
-      memory: 24576
+      memory: 26624
       # The 128 GiB boot disk fits the otherwise-empty 141 GiB local-lvm pool.
       disk_size: 128
       storage_selector: name == "local-lvm"
