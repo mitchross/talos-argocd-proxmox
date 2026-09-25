@@ -271,7 +271,6 @@ patches:
       node.vanillax.dev/pool: general
       topology.kubernetes.io/zone: hp-sff
       node.vanillax.dev/link: wired
-      coroot.vanillax.dev/enabled: "true"
     nodeIP:
       validSubnets:
       - 192.168.10.0/24

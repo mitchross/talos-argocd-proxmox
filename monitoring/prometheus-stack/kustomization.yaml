@@ -19,7 +19,6 @@ resources:
   - capacity-rules.yaml # per-workload peak series for the Capacity dashboard
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
-  - trivy-alerts.yaml # Trivy critical-vuln alerting (high per-image critical count)
   - dashboards # Grafana dashboards, one subdirectory per folder
   - network-policy.yaml # Allow Grafana to access Prometheus
 

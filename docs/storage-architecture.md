@@ -240,8 +240,10 @@ and gating mechanics: [entrypoints](domains/argocd/entrypoints.md) ·
 
 ### Disk placement follows drive endurance
 
-Longhorn disks are tiered by what the physical SSD can survive, not by free
-space:
+Data stays on the disk it was written to: `dataLocality` is `disabled` on the
+default class, so a pod that moves reads its volume over the network instead of
+Longhorn copying the volume after it. Longhorn disks are tiered by what the
+physical SSD can survive, not by free space:
 
 | Disk | Physical drive | Holds |
 |---|---|---|

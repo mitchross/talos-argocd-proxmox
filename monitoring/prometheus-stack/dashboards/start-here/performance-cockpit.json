@@ -863,7 +863,7 @@
       "id": 14,
       "type": "table",
       "title": "Active alerts",
-      "description": "Critical and warning reliability alerts. Security findings stay in the Trivy dashboard.",
+      "description": "Critical and warning reliability alerts.",
       "gridPos": {
         "x": 0,
         "y": 33,
