@@ -23,11 +23,11 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn V1, mostly one replica despite multiple physical hosts;
-  Temporal Postgres uses the wired two-replica class. NAS provides bulk files and
+- **Storage**: Longhorn V1, placed by drive endurance; mostly one replica, with
+  two for data that can't be re-created. NAS provides bulk files and
   off-cluster backups. [Current capacity and storage dependencies](inventory/2026-09-20-capacity-and-benchmarks.md).
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
-- **Database**: plain Postgres Deployments backed up by kopiur — hourly snapshots, restore-before-bind (CNPG retired 2026-08-13)
+- **Database**: plain Postgres Deployments backed up by kopiur — daily snapshots (every 6 hours for data that can't be re-created), restore-before-bind
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
 - **AI**: the production backend serves official `qwen3.8-27b` FP8 through vLLM
@@ -69,6 +69,8 @@ collection date; other host inventories retain their original dates.
    The [backup simulator](kopiur-playground.md) provides a safe browser-only walkthrough.
 5. **Release a worker:** use the
    [Temporal safe deployment runbook](domains/temporal/safe-deployments.md).
+6. **Keep SSD wear down:** follow the [disk-write rules](domains/storage/disk-writes.md)
+   and check the top writers there.
 
 Every page follows the [documentation reader contract](documentation-standard.md):
 state the current posture, explain unfamiliar choices, provide verifiable steps,

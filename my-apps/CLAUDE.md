@@ -229,7 +229,7 @@ metadata: { name: app-data, namespace: app-name }
 spec:
   sources: [{ pvc: { name: app-data } }]
   identity: { username: app-data, hostname: app-name }
-  retention: { keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }   # hourly tier: keepHourly:24,keepDaily:7,keepWeekly:4
+  retention: { keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }   # 6h tier (can't re-create): keepHourly:8,keepDaily:7,keepWeekly:4
   mover:                          # <-- run as the DATA owner (example uid 1000)
     securityContext: { runAsUser: 1000, runAsGroup: 1000, runAsNonRoot: true }
     podSecurityContext: { fsGroup: 1000, supplementalGroups: [1000] }
@@ -237,7 +237,7 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata: { name: app-data-daily, namespace: app-name }
-spec: { policyRef: { name: app-data }, schedule: { cron: "MM 3 * * *" } }   # distinct minute vs ALL schedules incl. hourly "MM * * * *" tiers (hourly :MM collides with daily 03:MM)
+spec: { policyRef: { name: app-data }, schedule: { cron: "MM 3 * * *" } }   # daily default (each run clones the whole volume); distinct minute vs ALL schedules, incl. 6h "MM */6 * * *" (collides with 00/06/12/18:MM)
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore

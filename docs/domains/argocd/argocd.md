@@ -210,6 +210,22 @@ and updates, while global prune-last can make destructive migrations less
 obvious. Add it to a specific Application only when its deletion ordering has a
 tested requirement.
 
+### Immutable fields: delete once, let Argo re-create
+
+Some fields cannot be changed in place — for example a `StorageClass`'s
+`parameters`. When Git changes one, the Application sits in `ComparisonError`
+("field is immutable"), and `Replace=true` does not help because the
+comparison fails before any sync runs. (Jobs avoid this with sync hooks; see
+the root `CLAUDE.md` rule on Job hook annotations.)
+
+- **Fix:** delete the live object once (`kubectl delete storageclass <name>`);
+  Argo re-creates it from Git on the next sync. Existing PVCs keep working —
+  a StorageClass is only read when a volume is created.
+- **Do not** put `argocd.argoproj.io/compare-options: ServerSideDiff=false` on
+  an individual resource. Argo only reads that option from the `Application`
+  (as the `my-apps` ApplicationSet template and `root.yaml` do); on a resource
+  it does nothing.
+
 ## Renderer version contract
 
 CI must render with the same major/minor tool behavior as the Argo CD

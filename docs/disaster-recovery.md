@@ -77,7 +77,7 @@ after deleting that cluster.
 
 The control plane reserves **32 GiB ETCD + 64 GiB EPHEMERAL** within its existing
 100 GiB disk. The GPU uses **16 GiB boot + 434 GiB EPHEMERAL** on NVMe0 so Omni
-selects the boot disk. Model and flash allocations stay at 450 and 300 GiB.
+selects the boot disk. Model and flash allocations stay at 450 and 440 GiB.
 Check the resulting disks and mount paths with `talosctl get disks`,
 `talosctl get volumestatus` and `talosctl get mountstatus` before restoring.
 
@@ -103,6 +103,7 @@ so the beta `secure: false` workaround is unnecessary for Longhorn V1.
     -> bootstrap-argocd.sh
     -> sync waves install Cilium management -> Longhorn -> kopiur -> DB support
     -> generated apps: backed-up PVCs hydrate via restore-before-bind
+    -> re-raise the hand-set two-replica volumes
     -> verify application reads/writes, credentials and fresh backups
 ```
 
@@ -285,7 +286,7 @@ kubectl top nodes
 
 ## Post-restore acceptance
 
-Record all three acceptance checks, with live evidence:
+Record all four acceptance checks, with live evidence:
 
 1. **Restore contract**: every backed-up PVC `Bound` via its kopiur `Restore`
    populator (none stuck `Pending`), and the first post-restore `Snapshot` for
@@ -307,6 +308,10 @@ Record all three acceptance checks, with live evidence:
    a new workflow/timer. For apps with separate file/database PVCs, confirm both
    restore points describe compatible data. Validate restored credentials against
    1Password before treating an authentication failure as data corruption.
+4. **Second replicas**: restored volumes come back with one replica. Re-apply
+   `numberOfReplicas: 2` to the volumes listed in
+   [two copies for data that can't be re-created](storage-architecture.md#two-copies-for-data-that-cant-be-re-created)
+   (the command is there), and confirm each reaches `2 healthy`.
 
 ---
 
