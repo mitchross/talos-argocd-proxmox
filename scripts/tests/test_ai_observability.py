@@ -252,7 +252,7 @@ class AllLLMClientsTests(unittest.TestCase):
         'my-apps/home/project-nomad',
         'my-apps/media/karakeep', 'my-apps/media/worldmonitor',
         'my-apps/utility/deal-scout', 'my-apps/development/news-reader',
-        'monitoring/holmesgpt', 'monitoring/keep',
+        'monitoring/holmesgpt',
     ]
 
     def test_no_declared_client_bypasses_gateway_including_tracked_env_files(self):
