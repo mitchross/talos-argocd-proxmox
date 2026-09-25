@@ -20,6 +20,15 @@ spec:
         app: open-meteo
     spec:
       terminationGracePeriodSeconds: 40
+      # openmeteo-data is longhorn-flash, whose only disk is on this node.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: In
+                    values: ["true"]
       # Keep UID 999 (the image's "openmeteo" user) so PVC writes match the files the sync worker writes.
       securityContext:
         runAsNonRoot: true
@@ -71,7 +80,8 @@ spec:
               memory: 512Mi
             limits:
               cpu: 2000m
-              memory: 2Gi
+              # Page cache counts toward the limit; 2Gi evicted each location's data before the next request.
+              memory: 6Gi
         # Sidecar, not a standalone WorkerDeployment: it must share this RWO volume with the serve container (same pod).
         # Runs non-versioned (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env).
         - name: sync-worker

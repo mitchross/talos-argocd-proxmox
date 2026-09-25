@@ -61,8 +61,9 @@ metadata:
 spec:
   # Must be Longhorn RWO (ext4): Open-Meteo's .om writer fails with errno 95 on NFS (truenas-nfs and Longhorn RWX alike).
   # RWO = single-node attach, so the sync worker runs as a sidecar in the serve pod.
+  # Flash, next to tile-server: cold forecasts read GBs, and remote Longhorn reads made them time out.
   accessModes: [ReadWriteOnce]
-  storageClassName: longhorn
+  storageClassName: longhorn-flash
   resources:
     requests:
       # ~15Gi once radar-ng#59 syncs the raw GFS/HRRR fields (weather codes,
