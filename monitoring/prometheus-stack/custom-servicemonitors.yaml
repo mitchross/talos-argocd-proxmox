@@ -157,3 +157,9 @@ spec:
     - port: envoy-metrics
       interval: 30s
       path: /metrics
+      # Allowlist: latency, errors, saturation and backend health (~12k series). The other ~500 envoy
+      # metrics were 110k mostly-zero series no dashboard used; add a name here to bring one back.
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          action: keep
+          regex: envoy_(cluster_(external_)?upstream_rq_time_(bucket|sum|count)|http_downstream_rq_time_(bucket|sum|count)|cluster_upstream_rq(_xx|_total|_timeout|_retry|_active|_pending_active|_pending_overflow|_503)?|cluster_upstream_cx_(active|connect_fail|connect_timeout|overflow)|cluster_membership_(healthy|total|degraded)|http_downstream_(rq_xx|rq_total|rq_active|cx_active)|listener_downstream_cx_(active|overflow)|server_(memory_allocated|memory_heap_size|uptime|live|concurrency))
