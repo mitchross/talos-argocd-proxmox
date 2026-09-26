@@ -147,6 +147,7 @@ nav:
       - inventory/index.md
       - Explore the lab: lab.md
       - Hardware diagnostics: diagnostics.md
+      - radar-ng stress test — 26 September: inventory/2026-09-26-radar-ng-stress-test.md
       - Storage audit — 26 September: inventory/2026-09-26-storage-audit.md
       - Repository and hardware inventory — 5 September: audits/2026-09-05-inventory.md
   - Audits:
