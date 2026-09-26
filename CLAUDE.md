@@ -128,7 +128,8 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Store secrets in 1Password, reference via ExternalSecret
 - Add backups to a normal application PVC with **kopiur**: label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy`+`SnapshotSchedule`+`Restore` in `kopiur/<pvc>.yaml`) with the **mover `securityContext` set to the data owner uid:gid**, pull in the `../../common/kopiur-backup` component, and point the PVC `dataSourceRef` at `<pvc>-restore`. See `.claude/commands/add-backup.md` and `docs/domains/storage/kopiur-backup-architecture.md`.
 - When marking a PVC `backup-exempt: "true"`, pair it with the fully-qualified reason annotation `storage.vanillax.dev/backup-exempt-reason`. There is **no runtime admission gate anymore** (pvc-plumber is gone) — the bare `backup-exempt-reason` key simply fails to record the reason; the kopiur backup-coverage CI check warns on missing/unqualified keys (it does not block)
-- Use `storageClassName: longhorn` for PVCs that need backups (volumesnapshot required)
+- Use `storageClassName: longhorn` for PVCs that need backups (volumesnapshot required); bulk read-mostly data goes on `truenas-nfs` with a kopiur `copyMethod: Direct` policy instead. Which disk holds what: `docs/domains/storage/disk-map.md`
+- Size PVCs to actual use plus headroom — Longhorn books the full request, and oversized volumes filled the backup-clone disk and hung backups
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
@@ -194,6 +195,9 @@ Detailed instructions load automatically when working in these directories:
 | `/project:new-app <category/name>` | Guided workflow for adding a new application |
 | `/project:add-backup <app-path>` | Add automatic backup to PVC(s) |
 | `/project:new-database <app-name>` | Create a database (plain Postgres + kopiur — the only pattern) |
+| `/project:place-storage <app or pvc>` | Pick a PVC's storage class and size (disk map: `docs/domains/storage/disk-map.md`) |
+
+Codex uses the same procedures through `.agents/skills/` (see `AGENTS.md`).
 
 ## Reference Examples
 

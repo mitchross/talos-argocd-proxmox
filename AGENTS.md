@@ -19,6 +19,20 @@ rules. Before editing a file, read each applicable `CLAUDE.md` along its
 path from the repo root to the file, in parent-to-child order. Load these
 files yourself; do not wait for the user to mention or attach them.
 
+## Skills and commands (Claude Code and Codex)
+
+Repo procedures live once, in `.claude/commands/*.md`. Claude Code runs them as
+`/project:<name>`; Codex finds the same ones through the thin wrappers in
+`.agents/skills/<name>/SKILL.md`. Change the procedure in `.claude/commands/`,
+never in a wrapper.
+
+| Skill | Use it to |
+|---|---|
+| `new-app` | add an ArgoCD-discovered app |
+| `add-backup` | back up a PVC with kopiur |
+| `new-database` | add a plain Postgres database |
+| `place-storage` | choose a PVC's storage class and size |
+
 ## Mink Knowledge Capture
 
 Keep Mink updated during substantive work. Hooks may track session state automatically, but durable decisions, verified root causes, runbooks, and gotchas require explicit note capture with `mink note` or `/mink:note`.
