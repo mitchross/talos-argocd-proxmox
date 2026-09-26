@@ -19,6 +19,9 @@ configMapGenerator:
   - name: longhorn-dashboard
     files:
       - longhorn.json
+  - name: storage-and-ssd-wear-dashboard
+    files:
+      - storage-and-ssd-wear.json
   - name: vpa-recommendations-dashboard
     files:
       - vpa-recommendations.json
