@@ -142,7 +142,7 @@ until the next 13:17 run. The statistics persist.
 ```bash
 # local checkout: node --env-file=.env index.mjs [--download-only|--import-only|--dry-run]
 docker run --rm --user 1001:1001 --env-file .env -v ce-data:/data \
-  ghcr.io/mitchross/consumers-energy-sync:v0.1.1
+  ghcr.io/mitchross/consumers-energy-sync:v0.1.4
 ```
 
 `/data` holds the Playwright cookie jar (a credential) and the CSVs; keep it
