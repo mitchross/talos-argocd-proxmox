@@ -58,8 +58,10 @@ collection date; other host inventories retain their original dates.
 
 ## Frequent tasks
 
-1. **Find a machine or its disks:** [Explore the lab](lab.md), or open the
-   [hardware diagnostics report](diagnostics.md) for detailed evidence.
+1. **Find a machine or its disks:** the [disk map](domains/storage/disk-map.md) shows
+   every physical disk, what it holds, and where new data should go.
+   [Explore the lab](lab.md) and the [hardware diagnostics report](diagnostics.md)
+   hold the dated hardware snapshots.
 2. **Understand NAS speeds and RAM:** [NAS performance](nas-performance.md)
    separates physical-disk reads, RAM-cache reads, and flushed writes.
 3. **Add or troubleshoot backups:** start with the
