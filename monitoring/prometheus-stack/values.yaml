@@ -43,8 +43,9 @@ prometheus:
       requests:
         cpu: 500m
         memory: 3Gi
+      # Head series fill ~5 GiB; at a 6Gi cap no page cache was left and queries re-read ~11 TB/day of TSDB.
       limits:
-        memory: 6Gi
+        memory: 10Gi
     # Security context
     securityContext:
       runAsNonRoot: true

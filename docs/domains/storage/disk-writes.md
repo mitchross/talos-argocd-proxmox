@@ -33,6 +33,11 @@ a backup?
 
 ## Measure
 
+The **Storage & SSD wear** Grafana dashboard (Cluster folder) shows all of this at a
+glance: TB written per day, writes per drive, SSD wear, top writing and reading
+pods, Longhorn space booked per node, and hours since each backup succeeded. The
+raw queries are below for Grafana Explore.
+
 Run in Grafana Explore (Prometheus data source).
 
 ```promql
