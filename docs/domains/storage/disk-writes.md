@@ -25,7 +25,7 @@ persistent storage. Each rule below closes one of those.
 | Bulk files | Bulk, read-mostly data (photo libraries, downloads) lives on the NAS (`truenas-nfs`), and its kopiur policy uses `copyMethod: Direct`, so no Longhorn clone is made. | [disk map](disk-map.md#where-should-new-data-go) |
 | Right-sized volumes | Request what the app uses plus headroom. Longhorn books the full request, so oversized volumes fill the clone disk on paper and block backups. | [disk map](disk-map.md#where-should-new-data-go) |
 | GPU-node trim | The weekly `talos-fstrim` job trims each GPU-node data mount by path; a missing path stops the job before the rest are trimmed. | `infrastructure/storage/talos-fstrim/scripts/trim-node-filesystems.sh` |
-| Rebalancing | The descheduler never evicts pods with PVCs; moving one would copy its Longhorn replica. | [descheduler](../scheduling/vpa-and-topology.md#descheduler-rebalancing-stateless-pods) |
+| Rebalancing | The descheduler never evicts pods with PVCs; moving one would copy its Longhorn replica. | [descheduler](../scheduling/descheduler.md) |
 
 When adding an app, ask the same questions: does it log about itself to disk,
 does it need its cache on persistent storage, and how often does it really need

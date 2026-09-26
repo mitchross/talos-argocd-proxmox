@@ -105,6 +105,8 @@ nav:
           - Temporal safe worker deployments: domains/temporal/safe-deployments.md
       - Storage:
           - Storage architecture (source of truth): storage-architecture.md
+          - Disk map — every disk and where data goes: domains/storage/disk-map.md
+          - Storage tiers (which class): domains/storage/storage-tiers.md
           - Disk writes and SSD wear: domains/storage/disk-writes.md
           - Longhorn volumes and SELinux labels: domains/storage/selinux-mount-context.md
           - Storage model (RWO/RWX & sizing): domains/storage/storage-model-rwo-rwx-and-sizing.md
@@ -136,6 +138,7 @@ nav:
           - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
       - Reference & ops:
           - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
+          - Descheduler — why pods get moved: domains/scheduling/descheduler.md
           - RustFS credential runbook: domains/rustfs/credential-runbook.md
           - Observability — radar-ng cookbook: domains/observability/radar-ng.md
           - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
@@ -144,6 +147,7 @@ nav:
       - inventory/index.md
       - Explore the lab: lab.md
       - Hardware diagnostics: diagnostics.md
+      - Storage audit — 26 September: inventory/2026-09-26-storage-audit.md
       - Repository and hardware inventory — 5 September: audits/2026-09-05-inventory.md
   - Audits:
       - audits/index.md

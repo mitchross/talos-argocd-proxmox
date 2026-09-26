@@ -168,29 +168,10 @@ node, first correct ceilings and placement constraints.
 
 ### Descheduler: rebalancing stateless pods
 
-The scheduler places a pod once; the
-[descheduler](https://github.com/kubernetes-sigs/descheduler)
-(`infrastructure/controllers/descheduler/`) moves pods later. It runs as a
-CronJob every 30 minutes with two plugins:
-
-- **RemoveDuplicates** — spreads replicas of one controller that ended up on
-  the same node.
-- **LowNodeUtilization** — based on pod *requests*, not live usage: a node
-  above 60% sheds pods, a node below 25% receives them.
-
-Guards: `nodeFit` (evict only if another node can take the pod), at most 3
-evictions per node per run, and **pods with PVCs are never evicted**. Moving a
-pod with a Longhorn volume would make Longhorn copy its replica to the new
-node, so stateful pods stay put; rebalance those by hand if needed. PDBs are
-respected. Check a run with:
-
-```sh
-kubectl -n descheduler get jobs
-kubectl -n descheduler logs job/<newest-job>
-```
-
-Expect lines naming evicted pods, or none when the cluster is balanced. To
-pause it, set `suspend: true` in `infrastructure/controllers/descheduler/values.yaml`.
+The scheduler places a pod once; the descheduler moves stateless pods later so
+reboots don't leave some nodes overloaded and others idle. Pods with PVCs are
+never moved. What it does, why it matters and how to read a run:
+[descheduler](descheduler.md).
 
 The [hardware and placement review](../../audits/2026-09-05-hardware-and-placement-review.md)
 proposes workload pools alongside these existing physical-host zones. Pool labels,
