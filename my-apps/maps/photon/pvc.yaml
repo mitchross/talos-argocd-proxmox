@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: photon-data
+  name: photon-index
   namespace: photon
   labels:
     backup-exempt: "true"
@@ -13,4 +13,4 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 150Gi
+      storage: 80Gi

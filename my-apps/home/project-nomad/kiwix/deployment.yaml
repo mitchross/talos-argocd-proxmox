@@ -17,13 +17,7 @@ spec:
       labels:
         app: project-nomad-kiwix
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: project-nomad
-              topologyKey: kubernetes.io/hostname
+      # No podAffinity to nomad: nomad-storage-nas is NFS (ReadWriteMany), so both pods can mount it from any node.
       containers:
         - name: kiwix
           image: ghcr.io/kiwix/kiwix-serve:3.8.2
@@ -53,4 +47,4 @@ spec:
             defaultMode: 0555
         - name: nomad-storage
           persistentVolumeClaim:
-            claimName: nomad-storage
+            claimName: nomad-storage-nas
