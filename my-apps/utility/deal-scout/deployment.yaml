@@ -84,8 +84,9 @@ spec:
             requests:
               cpu: 25m
               memory: 96Mi
+            # VPA only moves requests; its ~420Mi recommendation was capped here and the pod OOM-looped.
             limits:
-              memory: 256Mi
+              memory: 768Mi
           volumeMounts:
             - name: data
               mountPath: /data
