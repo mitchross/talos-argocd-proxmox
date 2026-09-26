@@ -133,7 +133,10 @@ spec:
               # Burst path OOMKilled at a 1Gi limit; keep request >=512Mi with the 2Gi limit.
               memory: 512Mi
             limits:
-              cpu: "1"
+              # Caddy (tiles) and uvicorn (API) share this container. A 2026-09-26
+              # load test (200 users, 1,100 req/s) pinned it at 1 core and
+              # throttled every period, pushing /api/manifest.json p95 to 537 ms.
+              cpu: "2"
               memory: 2Gi
       volumes:
         - name: tiles
