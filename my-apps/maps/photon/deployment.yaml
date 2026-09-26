@@ -70,7 +70,11 @@ spec:
               cpu: 250m
               memory: 3Gi
             limits:
-              memory: 10Gi
+              # The North America index is ~22 GB and Photon memory-maps it; the
+              # JVM heap is under 1 GB. At 10Gi only ~9.9 GB of index fit in page
+              # cache and uncached searches took 4–7 s reading from Longhorn.
+              # Page cache is reclaimable, and the VPA keeps the request small.
+              memory: 28Gi
           volumeMounts:
             - name: data
               mountPath: /photon/data
