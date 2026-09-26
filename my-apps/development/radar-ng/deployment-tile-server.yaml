@@ -106,15 +106,23 @@ spec:
               value: radar-ng-alerts
           # Probe /api/livez through Caddy so a dead backgrounded uvicorn restarts the pod.
           # Do NOT probe /api/health: it degrades on stale NOAA data fleet-wide and would restart every replica.
+          # A busy API must not restart the pod: the 2026-09-26 stress test (1,200 users)
+          # queued /api/livez past the 1 s default timeout, and liveness killed the
+          # container twice, taking tiles down with it. Restart only after about 60 s
+          # of a dead or wedged API.
           livenessProbe:
             httpGet:
               path: /api/livez
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+          # Ready while Caddy accepts connections. Tiles (most traffic) keep flowing
+          # while the API is slow; with one replica, an HTTP readiness check on the
+          # API emptied the Service and every request got "connection refused".
           readinessProbe:
-            httpGet:
-              path: /api/livez
+            tcpSocket:
               port: 8080
             periodSeconds: 10
           volumeMounts:
@@ -136,7 +144,10 @@ spec:
               # Caddy (tiles) and uvicorn (API) share this container. A 2026-09-26
               # load test (200 users, 1,100 req/s) pinned it at 1 core and
               # throttled every period, pushing /api/manifest.json p95 to 537 ms.
-              cpu: "2"
+              # The evening stress test held it at ~1.85 of 2 cores, throttled
+              # 25-49% of periods, while its node was ~35% busy. Caddy and the
+              # single uvicorn process each use about a core.
+              cpu: "3"
               memory: 2Gi
       volumes:
         - name: tiles

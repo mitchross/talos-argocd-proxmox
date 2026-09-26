@@ -10,6 +10,12 @@ health and repair evidence. For speed verdicts and upgrade priorities, open
 The [disk map](../domains/storage/disk-map.md) is the current, maintained answer
 to "which physical disk holds this data, and where should new data go?".
 
+## radar-ng stress test — September 26, 2026
+
+| Open | What it answers |
+| --- | --- |
+| [radar-ng stress test](2026-09-26-radar-ng-stress-test.md) | Where does the radar-ng tile-server break, and why did it restart under load? |
+
 ## Storage audit — September 26, 2026
 
 | Open | What it answers |
