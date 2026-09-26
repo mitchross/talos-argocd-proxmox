@@ -127,6 +127,9 @@ If machines are not appearing in Proxmox:
   reboot-loop bug with kernel arguments
   ([siderolabs/omni#2382](https://github.com/siderolabs/omni/issues/2382)).
   Try any kernel-argument change on one worker first.
+- **Adding a disk to a VM is four steps**, not one: Proxmox storage on the host,
+  the machine class, `qm set` on the running VM, then the cluster template and the
+  Longhorn node. Walkthrough: [disk map](../../docs/domains/storage/disk-map.md#adding-a-disk-to-a-running-node).
 - **hp-sff's second SSD belongs to etcd.** It holds only the control-plane VM
   (`hp-sff-cp-vmstore`); keep Longhorn disks off it
   ([why](threadripper-gpu-cluster.md#sizing)).
