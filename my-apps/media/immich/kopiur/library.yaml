@@ -45,6 +45,9 @@ kind: Restore
 metadata:
   name: library-nas-restore
   namespace: immich
+  annotations:
+    # Same wave as library-nas: ArgoCD waits for that PVC to bind, and it can't bind until this Restore exists.
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   source:
     fromPolicy:
