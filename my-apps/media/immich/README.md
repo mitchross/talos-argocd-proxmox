@@ -59,26 +59,6 @@ second over NFS), so a big import or a "regenerate all thumbnails" job runs slow
 backups, which is why this volume stays backed up. The Postgres database stays on
 Longhorn: databases wait on every disk write, and NFS makes each of those slow.
 
-### Moving from Longhorn to the NAS (one-time)
-
-The old Longhorn `library` PVC stays until the move is checked:
-
-1. ArgoCD creates `library-nas`; kopiur fills it from the latest `library` backup.
-2. `immich-server` restarts on `library-nas`.
-3. The `migrate-library-to-nas` PostSync Job copies files newer than that backup
-   from the old volume (`scripts/migrate-library-to-nas.sh`), then writes
-   `/library/.migrated-from-longhorn` so later syncs skip it.
-
-Check it worked, then remove `library-pvc.yaml`, `migrate-library-job.yaml` and the
-`library-restore` Restore in a follow-up PR:
-
-```bash
-kubectl -n immich logs job/migrate-library-to-nas     # ends with "copy finished"
-kubectl -n immich exec deploy/immich-server -- cat /library/.migrated-from-longhorn
-```
-
-Also open a few old and new photos in the web UI.
-
 ### The NFS mount (originals)
 
 Static PV `nfs-immich-photos`, defined in
