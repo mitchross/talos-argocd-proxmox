@@ -11,7 +11,9 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - nfs-photos-pvc.yaml
+  - library-nas-pvc.yaml
   - library-pvc.yaml
+  - migrate-library-job.yaml
   - ml-cache-pvc.yaml
   - httproute.yaml
   - deployment-server.yaml
@@ -28,7 +30,23 @@ configMapGenerator:
   - name: immich-scripts
     files:
       - scripts/prepare-library.sh
+      - scripts/migrate-library-to-nas.sh
 
 # Injects the uniform kopiur fields (repository, copyMethod, populator) into the per-PVC stubs in kopiur/.
 components:
   - ../../common/kopiur-backup
+
+# Runs after the component, so it wins: the NAS library is read in place (no Longhorn snapshot clone).
+patches:
+  - target:
+      kind: SnapshotPolicy
+      group: kopiur.home-operations.com
+      name: library
+    patch: |
+      - op: replace
+        path: /spec/copyMethod
+        value: Direct
+      - op: remove
+        path: /spec/volumeSnapshotClassName
+      - op: remove
+        path: /spec/staging

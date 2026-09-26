@@ -1,6 +1,7 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
 # immich library backup STUB — uniform fields from ../../common/kopiur-backup; mover uid:gid stays HERE (docs/domains/storage/kopiur-mover-permissions.md).
+# The source is the NAS volume; kustomization.yaml switches this policy to copyMethod Direct (no snapshot clone).
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -9,7 +10,8 @@ metadata:
 spec:
   sources:
     - pvc:
-        name: library
+        name: library-nas
+  # Same identity as the old Longhorn volume, so backup history continues unbroken.
   identity:
     username: library
     hostname: immich
@@ -17,15 +19,12 @@ spec:
     keepDaily: 14
     keepWeekly: 6
     keepMonthly: 3
+  # No fsGroup: on NFS it would make the node re-chown every file on each run. The NAS maps all clients to root, so reads succeed.
   mover:
     securityContext:
       runAsUser: 568
       runAsGroup: 568
       runAsNonRoot: true
-    podSecurityContext:
-      fsGroup: 568
-      supplementalGroups:
-        - 568
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -40,6 +39,25 @@ spec:
     cron: "37 3 * * *"
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+# Restore for library-nas: fills it from the latest `library` snapshot when the PVC is created.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: library-nas-restore
+  namespace: immich
+spec:
+  source:
+    fromPolicy:
+      name: library
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      runAsNonRoot: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+# Old Longhorn `library` PVC's Restore; remove together with that PVC once the NAS copy is verified.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore
 metadata:

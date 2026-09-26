@@ -64,4 +64,4 @@ spec:
             name: imagery-nginx
         - name: cache
           persistentVolumeClaim:
-            claimName: imagery-cache
+            claimName: imagery-tiles

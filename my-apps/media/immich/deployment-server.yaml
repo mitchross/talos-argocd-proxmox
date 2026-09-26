@@ -9,7 +9,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    # RWO Longhorn library PVC -> Recreate (RollingUpdate risks Multi-Attach).
+    # One server at a time: two would run Immich background jobs against the same library.
     type: Recreate
   selector:
     matchLabels:
@@ -130,7 +130,7 @@ spec:
           defaultMode: 0555
       - name: library
         persistentVolumeClaim:
-          claimName: library
+          claimName: library-nas
       - name: nfs-photos
         persistentVolumeClaim:
           claimName: nfs-photos

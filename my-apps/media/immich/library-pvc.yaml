@@ -8,20 +8,18 @@ metadata:
     # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
     argocd.argoproj.io/sync-options: ServerSideApply=false
+    storage.vanillax.dev/backup-exempt-reason: "Old Longhorn library, kept only as the source for the one-time copy to library-nas; delete after verifying the NAS copy"
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: library
+    backup-exempt: "true"
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
-      # Working set only (thumbnails/transcodes/new uploads); originals live on the read-only nfs-photos external library.
-      # Sized for the ~1.3 TB external library: thumbnails + previews alone approach 40Gi before encoded-video.
       storage: 150Gi
   storageClassName: longhorn
-  # kopiur restore-before-bind: on recreate binds Pending until the Restore populator hydrates it; no-op while Bound. CRs in kopiur/library.yaml.
-  # Restores the library working set only — originals stay on the exempt nfs-photos NFS.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
