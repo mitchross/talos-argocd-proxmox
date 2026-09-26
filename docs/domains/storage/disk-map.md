@@ -139,6 +139,32 @@ exist with that exact name. Check each host with `pvesm status`.
 5. If the disk is on the GPU node, add its mount to
    `infrastructure/storage/talos-fstrim/scripts/trim-node-filesystems.sh`.
 
+## Moving a volume to another disk on the same node
+
+Most volumes have one copy. To move it, add a second copy on the new disk, wait
+until the volume is healthy, then remove the old copy. Two settings get in the way
+when both disks are on the **same node**:
+
+- Longhorn is set to never keep two copies of a volume on one node
+  (`replica-soft-anti-affinity: false`), so the second copy is refused with
+  "tags not fulfilled". Allow it for that one volume during the move.
+- When the copy count drops back to 1, Longhorn chooses which copy to delete, and
+  it may pick the new one. Delete the **old** copy yourself first, then lower the count.
+
+```bash
+V=$(kubectl -n <ns> get pvc <pvc> -o jsonpath='{.spec.volumeName}')
+kubectl -n longhorn-system patch volumes.longhorn.io $V --type merge \
+  -p '{"spec":{"diskSelector":["gpu-bulk"],"replicaSoftAntiAffinity":"enabled","numberOfReplicas":2}}'
+kubectl -n longhorn-system get volumes.longhorn.io $V -o jsonpath='{.status.robustness}'   # wait for: healthy
+kubectl -n longhorn-system get replicas.longhorn.io -l longhornvolume=$V                  # note the OLD copy's name
+kubectl -n longhorn-system delete replicas.longhorn.io <old-copy>
+kubectl -n longhorn-system patch volumes.longhorn.io $V --type merge \
+  -p '{"spec":{"numberOfReplicas":1,"replicaSoftAntiAffinity":"ignored"}}'
+```
+
+Longhorn refuses to delete the last healthy copy, so a mistake in this order
+cannot lose data. It just stops.
+
 ## Check the live layout
 
 ```bash

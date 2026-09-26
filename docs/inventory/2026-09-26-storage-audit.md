@@ -56,7 +56,12 @@ imagery and the CI Docker cache were resized to what they use.
 | HDD temperatures | 43–57 °C against a 60 °C stop threshold |
 | Reclaimable datasets | `k8s/ollama` (152 GB; Ollama is not used here), `k8s/volsync-kopia-nfs` (28 GB; VolSync is retired), `k8s/llama-cpp-archive` (104 GB), `benchmark` (12 GB) |
 
-NFS performance from a pod is in [NAS performance](../nas-performance.md#from-a-kubernetes-pod-over-nfs--measured).
+Cleaned up the same day: the old boot environments (all but the running one and
+the two before it) and the home-folder model files (boot pool now 42 GB used), and
+the `ollama`, `volsync-kopia-nfs` and `benchmark` datasets with their shares.
+`llama-cpp-archive` is kept on purpose.
+
+NFS performance from a pod is in [NAS performance](../nas-performance.md#from-a-kubernetes-pod-over-nfs-measured).
 
 ## Found along the way
 
