@@ -40,6 +40,10 @@ prunes the old one.
   (reference: `my-apps/media/immich/kustomization.yaml`). Give the mover no
   `fsGroup`: the NAS maps every client to root, and `fsGroup` would re-chown every
   file on each run.
+- **Moving a backed-up volume to a new PVC name?** Point the existing policy at the
+  new PVC and set `sourcePathOverride: /pvc/<old-name>` on that source. kopiur
+  otherwise records a new path, rejects the change, and would start a second
+  backup history (reference: `my-apps/media/immich/kopiur/library.yaml`).
 
 ## 4. Report
 
