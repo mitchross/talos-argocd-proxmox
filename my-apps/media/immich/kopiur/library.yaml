@@ -11,7 +11,8 @@ spec:
   sources:
     - pvc:
         name: library-nas
-  # Same identity as the old Longhorn volume, so backup history continues unbroken.
+      # Keep the old volume's kopia path, or kopiur forks a second backup history under /pvc/library-nas.
+      sourcePathOverride: /pvc/library
   identity:
     username: library
     hostname: immich
