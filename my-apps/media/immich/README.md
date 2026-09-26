@@ -11,7 +11,7 @@ them. It owns only thumbnails, transcodes, ML embeddings and database rows.
        │
        ▼
  immich-server ──────── reads /mnt/photos (read-only NFS, the originals)
-       │                writes /library   (thumbnails, previews, transcodes)
+       │                writes /library   (NFS on the NAS: uploads, thumbnails, transcodes)
        │
        ├── immich-postgres ── plain Postgres Deployment, Longhorn PVC
        ├── immich-valkey ──── cache, ephemeral
@@ -33,7 +33,7 @@ and never touches the media filesystem.
 | Data | Where | Backup |
 |---|---|---|
 | Originals (~1.3 TB) | TrueNAS NFS, read-only static PV | NAS-side ZFS + replication; `backup-exempt` |
-| Thumbnails, previews, transcodes | `library` PVC, 150Gi Longhorn | kopiur **daily** 03:37 |
+| Phone uploads, thumbnails, previews, transcodes, DB dumps | `library-nas` PVC, 200Gi `truenas-nfs` (NAS) | kopiur **daily** 03:37, read in place (`copyMethod: Direct`) |
 | Database | `immich-postgres-data` PVC, 20Gi Longhorn | kopiur **hourly** :23, CHECKPOINT before-hook |
 | ML models | `immich-ml-cache` PVC, 20Gi Longhorn | `backup-exempt` — re-downloads on demand |
 
@@ -43,11 +43,43 @@ Immich writes its own SQL dump to `/library/backups` at 02:00 — which the dail
 written before the volume that carries it is snapshotted. The snapshot restores
 fast but reproduces any corruption it captured; the dump is the escape hatch.
 
-Both PVCs use kopiur restore-before-bind: on recreate they sit `Pending` until
+`library-nas` and `immich-postgres-data` use kopiur restore-before-bind: on recreate they sit `Pending` until
 the populator hydrates them, then bind with data. If the repo is unreachable
 they stay `Pending` rather than binding empty.
 
-### The NFS mount
+### Why the library is on the NAS
+
+`/library` is read far more than it is written: thumbnails are made once and then
+shown thousands of times. The NAS serves those reads from its RAM cache, and the
+folder no longer takes space on a node SSD or needs a full-volume Longhorn clone
+for every backup. The trade-off is slower file creation (about 50 new files a
+second over NFS), so a big import or a "regenerate all thumbnails" job runs slower.
+
+`upload/` holds **originals from the phone app** — they exist only here and in the
+backups, which is why this volume stays backed up. The Postgres database stays on
+Longhorn: databases wait on every disk write, and NFS makes each of those slow.
+
+### Moving from Longhorn to the NAS (one-time)
+
+The old Longhorn `library` PVC stays until the move is checked:
+
+1. ArgoCD creates `library-nas`; kopiur fills it from the latest `library` backup.
+2. `immich-server` restarts on `library-nas`.
+3. The `migrate-library-to-nas` PostSync Job copies files newer than that backup
+   from the old volume (`scripts/migrate-library-to-nas.sh`), then writes
+   `/library/.migrated-from-longhorn` so later syncs skip it.
+
+Check it worked, then remove `library-pvc.yaml`, `migrate-library-job.yaml` and the
+`library-restore` Restore in a follow-up PR:
+
+```bash
+kubectl -n immich logs job/migrate-library-to-nas     # ends with "copy finished"
+kubectl -n immich exec deploy/immich-server -- cat /library/.migrated-from-longhorn
+```
+
+Also open a few old and new photos in the web UI.
+
+### The NFS mount (originals)
 
 Static PV `nfs-immich-photos`, defined in
 `infrastructure/storage/csi-driver-nfs/storage-class.yaml`:
@@ -96,13 +128,13 @@ it never touches external-library files, and the mount is read-only regardless.
   holds asset rows — it checks for `.immich` marker files rather than
   re-initialising. The init container seeds them idempotently, which is what
   makes a cold DR restore work. Do not remove it.
-- **`immich-server` uses `Recreate`.** It holds the RWO `library` PVC;
-  `RollingUpdate` would Multi-Attach deadlock.
+- **`immich-server` uses `Recreate`.** Only one server may run at a time; two
+  would run background jobs against the same library.
 - **Deleting the namespace does not delete your photos**, but it does delete the
   thumbnails and the database — albums, tags and faces included.
 
 ## Recovery
 
 Originals survive anything short of losing the NAS. `immich-postgres-data` and
-`library` restore from kopiur automatically on a rebuild, bringing back albums,
+`library-nas` restore from kopiur automatically on a rebuild, bringing back albums,
 faces and the thumbnail working set. See `docs/disaster-recovery.md`.

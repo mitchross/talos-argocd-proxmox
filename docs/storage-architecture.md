@@ -243,11 +243,13 @@ and gating mechanics: [entrypoints](domains/argocd/entrypoints.md) ·
 Data stays on the disk it was written to: `dataLocality` is `disabled` on the
 default class, so a pod that moves reads its volume over the network instead of
 Longhorn copying the volume after it. Longhorn disks are tiered by what the
-physical SSD can survive, not by free space:
+physical SSD can survive, not by free space. The full per-host layout (physical
+drive → Proxmox storage → VM disk → mount) is in the [disk map](domains/storage/disk-map.md).
 
 | Disk | Physical drive | Holds |
 |---|---|---|
 | `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | 440 GiB guest disk on a mirrored HPE enterprise SATA pair | GPU-node hot volumes and **every kopiur backup clone** (`longhorn-kopiur-staging-local` selects `clone-ok`) |
+| `gpu-bulk` (GPU node, tag `gpu-bulk`) | 800 GiB guest disk on the Threadripper's consumer PNY boot SSD | ordinary GPU-node volumes, so they don't take `clone-ok` space from backup clones |
 | `talos-ephemeral` on the GPU node | budget NVMe that also carries `/var` | nothing new (`allowScheduling: false`) |
 | `dell-ssd`, `hp-elite-nvme`, `hp-sff-ssd` (`wired-storage` nodes) | consumer SATA/QLC | ordinary replicas |
 | hp-sff's second SSD | budget SATA | **etcd only** — keep Longhorn traffic off the single control plane's disk |

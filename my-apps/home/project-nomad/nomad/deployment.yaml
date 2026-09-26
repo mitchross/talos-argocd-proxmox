@@ -111,4 +111,4 @@ spec:
             defaultMode: 0555
         - name: nomad-storage
           persistentVolumeClaim:
-            claimName: nomad-storage
+            claimName: nomad-storage-nas

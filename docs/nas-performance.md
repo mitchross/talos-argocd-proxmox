@@ -279,6 +279,30 @@ and refuses to adopt a pre-existing benchmark dataset.
 [Independent final verification](assets/nas-benchmarks/2026-09-20/verification.json).
 
 
+## From a Kubernetes pod over NFS — measured
+
+This is the path apps actually use: a pod on the hp-sff worker (2.5 GbE) with a
+fresh `truenas-nfs` volume (BigTank, `sync=standard`), next to a fresh local
+`longhorn` volume on the same node. One run each, September 26.
+
+| Test | NFS on the NAS | Longhorn (local SSD) |
+|---|---:|---:|
+| Create 2,000 files of 30 KB | 52 files/s | 493 files/s |
+| Read those files back | 2,207 files/s | 25,533 files/s |
+| Sequential write, 1 MiB direct | 30 MB/s | 71 MB/s |
+| Sequential read, 1 MiB direct | 204 MB/s | 110 MB/s |
+| 4 KiB random read, one at a time | 2,449 IOPS | 855 IOPS |
+| 4 KiB random write + `fsync`, one at a time | 111 IOPS | 464 IOPS |
+
+**Reading it:** the NAS wins at reading (its RAM cache) and loses at creating
+files and durable writes, because each one waits for the HDD mirrors. That makes
+it a good home for read-mostly bulk data and a poor one for databases. Placement
+rules built on this are in the [disk map](domains/storage/disk-map.md#where-should-new-data-go).
+
+**Network:** the NAS has one 10 GbE port, but only the Threadripper host also has
+10 GbE. hp-sff, hp-elite and Dell connect at 2.5 GbE (about 312 MB/s at most) and
+the shed host at 1 GbE, so a pod's NFS speed is capped by its host's link.
+
 ## Earlier measurements — retained for context
 
 These figures came from the previous performance reference. Their full raw run

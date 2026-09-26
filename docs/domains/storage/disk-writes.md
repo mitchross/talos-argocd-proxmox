@@ -22,7 +22,10 @@ persistent storage. Each rule below closes one of those.
 | App history databases | Exclude high-churn derived sensors from history. Example: Home Assistant's recorder skips computed power/cost sensors (Prometheus still has them). | `my-apps/home/home-assistant/configuration.yaml` |
 | Pod moves | Longhorn `dataLocality` is `disabled` on the default class: best-effort locality copies the whole volume whenever its pod lands on another node, so every reboot or drain became a copy storm. | `infrastructure/storage/longhorn/storageclass-default.yaml` |
 | Duplicate telemetry | One observability stack: Prometheus, Loki, Tempo, Grafana. Don't add tools that keep their own copy of metrics/logs (e.g. an eBPF APM with its own ClickHouse) or in-cluster scanners that spawn a pod per image. | `monitoring/` |
-| Rebalancing | The descheduler never evicts pods with PVCs; moving one would copy its Longhorn replica. | [descheduler](../scheduling/vpa-and-topology.md#descheduler-rebalancing-stateless-pods) |
+| Bulk files | Bulk, read-mostly data (photo libraries, downloads) lives on the NAS (`truenas-nfs`), and its kopiur policy uses `copyMethod: Direct`, so no Longhorn clone is made. | [disk map](disk-map.md#where-should-new-data-go) |
+| Right-sized volumes | Request what the app uses plus headroom. Longhorn books the full request, so oversized volumes fill the clone disk on paper and block backups. | [disk map](disk-map.md#where-should-new-data-go) |
+| GPU-node trim | The weekly `talos-fstrim` job trims each GPU-node data mount by path; a missing path stops the job before the rest are trimmed. | `infrastructure/storage/talos-fstrim/scripts/trim-node-filesystems.sh` |
+| Rebalancing | The descheduler never evicts pods with PVCs; moving one would copy its Longhorn replica. | [descheduler](../scheduling/descheduler.md) |
 
 When adding an app, ask the same questions: does it log about itself to disk,
 does it need its cache on persistent storage, and how often does it really need
@@ -36,13 +39,17 @@ Run in Grafana Explore (Prometheus data source).
 # Top writers by pod (bytes/s over the last hour)
 topk(10, sum by (namespace, pod) (rate(container_fs_writes_bytes_total{container!=""}[1h])))
 
-# Bytes written per physical disk in the last day
-sum by (physical_host, disk) (increase(node_disk_written_bytes_total{job="physical-node"}[1d]))
+# Bytes written per physical disk in the last day. Exclude dm-*/md* (LVM and RAID
+# layers sit on top of sd*/nvme* and would count the same bytes two or three times).
+sum by (physical_host, disk) (increase(node_disk_written_bytes_total{job="physical-node",disk!~"dm-.*|md.*"}[1d]))
+
+# Whole fleet, TB per day (NAS excluded)
+sum(increase(node_disk_written_bytes_total{job="physical-node",disk!~"dm-.*|md.*",physical_host!="truenas"}[1d])) / 1e12
 
 # SSD wear (NVMe percent used; SATA drives report wear via smartctl_device_attribute)
 smartctl_device_percentage_used
 ```
 
-Expected: no single pod dominates the first query for long, and the per-disk
+Expected: the fleet total stays around 1.5 TB/day or less, no single pod dominates the first query for long, and the per-disk
 daily total stays roughly flat week to week. A sudden jump usually points at
 one new pod — find it with the first query, then apply the matching rule.

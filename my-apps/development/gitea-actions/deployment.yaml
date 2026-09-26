@@ -114,7 +114,7 @@ spec:
         # PVC, not emptyDir: keeps the 3 GB catthehacker image + base layers warm across restarts (pvc.yaml).
         - name: docker-storage
           persistentVolumeClaim:
-            claimName: act-runner-docker-cache
+            claimName: act-runner-docker
         - name: config
           configMap:
             name: act-runner-config
