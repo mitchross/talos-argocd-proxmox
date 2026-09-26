@@ -1,5 +1,5 @@
-# Rebalances stateless pods only. Moving a pod with a PVC makes Longhorn rebuild its
-# replica on the new node (a full copy), so PodsWithPVC stays protected.
+# Rebalances stateless pods only (docs/domains/scheduling/descheduler.md). PodsWithPVC stays protected:
+# moving one means volume downtime, and a full Longhorn copy on the flash/wired-ha classes.
 kind: CronJob
 schedule: "*/30 * * * *"
 successfulJobsHistoryLimit: 1

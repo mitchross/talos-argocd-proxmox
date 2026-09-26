@@ -11,7 +11,7 @@ fetches each tile from USGS once and then serves it from disk.
   is "USDA, USGS The National Map: Orthoimagery". Detail is street-level (zoom 16) across the US.
   Canada and Mexico get the service's lower-detail regional imagery.
 - **Server:** `nginx-unprivileged` with `proxy_cache`. Config is in `nginx-imagery.conf`.
-- **Cache:** 100 Gi Longhorn PVC `imagery-cache`, capped at 90 GB by nginx, least-recently-used
+- **Cache:** 20 Gi Longhorn PVC `imagery-tiles`, capped at 18 GB by nginx, least-recently-used
   eviction. It is backup-exempt because it refills from the source.
 - **URL:** `https://maps.vanillax.me/imagery/{z}/{x}/{y}.jpg` (XYZ, zoom 0–16). The style that uses
   it is `https://maps.vanillax.me/styles/satellite.json`, served by `../versatiles`' map-styles

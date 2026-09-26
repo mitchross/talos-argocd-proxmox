@@ -13,7 +13,7 @@ the cluster can use the same Service.
 - **Image:** `rtuszik/photon-docker:2.4.0`, pinned by digest. It is a community image that
   downloads a prebuilt Photon index on first start. Upstream publishes no official container.
 - **Region:** `north-america`, which covers the US, Canada and Mexico. About 30 GB compressed.
-- **Storage:** 150 Gi Longhorn PVC `photon-data`, backup-exempt. An empty volume re-downloads the
+- **Storage:** 80 Gi Longhorn PVC `photon-index`, backup-exempt. An empty volume re-downloads the
   index, so a cluster rebuild needs no restore.
 - **Network:** a ClusterIP Service on port 2322 only. There is no HTTPRoute because nothing outside
   the cluster should call Photon.

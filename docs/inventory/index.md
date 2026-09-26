@@ -5,6 +5,17 @@ workload placement. Use [hardware diagnostics](../diagnostics.md) for disk
 health and repair evidence. For speed verdicts and upgrade priorities, open
 [Audits](../audits/index.md) in the sidebar.
 
+## Where every disk is
+
+The [disk map](../domains/storage/disk-map.md) is the current, maintained answer
+to "which physical disk holds this data, and where should new data go?".
+
+## Storage audit — September 26, 2026
+
+| Open | What it answers |
+| --- | --- |
+| [Storage audit](2026-09-26-storage-audit.md) | How much do the SSDs write per day? Which disks are full on paper? What is at risk on the NAS? |
+
 ## Current measurements — September 20, 2026
 
 | Open | What it answers |

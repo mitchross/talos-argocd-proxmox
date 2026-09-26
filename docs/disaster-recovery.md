@@ -66,6 +66,7 @@ Block the nuke until every box checks — **you restore *from* these**:
       To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
 - [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists (kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward). Confirm every PVC you intend to *restore* (not seed) shows at least one `Succeeded` Snapshot before the nuke.
 - [ ] Restore canary green: recent `last-drill-result=pass`
+- [ ] Every Proxmox storage the machine classes select exists on its host (`pvesm status`), including `tr-sda-vmstore` on the Threadripper — a reinstalled host loses it ([disk map](domains/storage/disk-map.md#rebuild-prerequisites))
 
 ## Talos 1.14 rebuild
 
@@ -77,7 +78,8 @@ after deleting that cluster.
 
 The control plane reserves **32 GiB ETCD + 64 GiB EPHEMERAL** within its existing
 100 GiB disk. The GPU uses **16 GiB boot + 434 GiB EPHEMERAL** on NVMe0 so Omni
-selects the boot disk. Model and flash allocations stay at 450 and 440 GiB.
+selects the boot disk. Model, flash and bulk allocations stay at 450, 440 and 800 GiB;
+each Talos volume selects its disk by that exact size.
 Check the resulting disks and mount paths with `talosctl get disks`,
 `talosctl get volumestatus` and `talosctl get mountstatus` before restoring.
 

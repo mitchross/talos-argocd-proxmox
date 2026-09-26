@@ -476,7 +476,7 @@ patches:
       node.longhorn.io/create-default-disk: config
     annotations:
       node.longhorn.io/default-disks-config: >-
-        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash","clone-ok"]}]
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash","clone-ok"]},{"name":"gpu-bulk","path":"/var/mnt/longhorn-gpu-bulk","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["gpu-bulk"]}]
 - file: patches/threadripper-gpu-workers.yaml
 - name: kubelet-performance
   inline:
@@ -497,7 +497,7 @@ patches:
           - bind
           - rshared
           - rw
-# Exact GiB sizes keep the 434 GiB EPHEMERAL, 450 GiB model and 440 GiB flash selectors disjoint.
+# Exact GiB sizes keep the 434 GiB EPHEMERAL, 450 GiB model, 440 GiB flash and 800 GiB bulk selectors disjoint.
 - name: ai-model-cache-volume
   inline:
     apiVersion: v1alpha1
@@ -528,4 +528,15 @@ patches:
       diskSelector:
         match: '!system_disk && disk.size == 434u * GiB'
       minSize: 400GiB
+      grow: true
+# Keep last: patch IDs are positional. Consumer PNY for ordinary app volumes; clones stay on clone-ok flash.
+- name: longhorn-gpu-bulk-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-gpu-bulk
+    provisioning:
+      diskSelector:
+        match: '!system_disk && disk.size == 800u * GiB'
+      minSize: 700GiB
       grow: true

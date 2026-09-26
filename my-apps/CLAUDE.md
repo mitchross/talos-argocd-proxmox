@@ -173,7 +173,11 @@ Full reasoning + measured numbers: **`docs/domains/storage/storage-tiers.md`**.
 | Use | Class | Why |
 |-----|-------|-----|
 | **Anything RWO** — app state, databases, caches | `longhorn` (default) | node-local block. **Databases included.** |
-| **Bulk media / model weights / hand-browsable / RWX** | SMB or NFS classes | files, not blocks |
+| **Heavy writers** — ClickHouse, time-series, tile renderers | `longhorn-flash` | the only enterprise (high-endurance) drive |
+| **Bulk, read-mostly files you create** — photo libraries, downloads, archives | `truenas-nfs` | NAS space, no SSD wear; ~50 creates/s, so not for write-heavy or many-tiny-file churn. kopiur policy uses `copyMethod: Direct` (see `my-apps/media/immich/`) |
+| **Existing NAS shares / media / model weights** | static NFS or SMB PVs | files, not blocks |
+
+Size PVCs to real use plus headroom: Longhorn books the full request, and oversized volumes block backup clones. Never put Docker/overlay storage or embedded search engines on NFS. Full map of disks: `docs/domains/storage/disk-map.md`.
 
 **Do NOT put databases on network-attached block storage.** A `flashpool`-over-NVMe-oF tier was
 built and measured on 2026-07-13 and **abandoned**: the same zvol did **2,510 fsync IOPS locally
