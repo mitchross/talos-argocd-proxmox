@@ -18,7 +18,7 @@ JSON file into a ConfigMap and stamps two things on it:
 | Directory | Grafana folder | What lives there |
 |-----------|----------------|------------------|
 | `start-here/` | Start Here | Cockpit (Grafana home page), Why Is This App Slow, Capacity |
-| `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report (+ kopiur from its chart) |
+| `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear (+ kopiur from its chart) |
 | `ai/` | AI | GPU, vLLM, AI gateway (LiteLLM), Pi auto-routing |
 | `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate |
 | `logs/` | Logs | Logs Explorer, node crash logs |
