@@ -37,6 +37,7 @@ or dashboard; send it to the gateway, not the per-node log agents.
 
 - **Tempo/Loki S3 creds**: Use `extraEnvFrom` with secretRef, NOT inline `${VAR}` in config (they don't expand env vars)
 - **ArgoCD metrics**: Must be per-component (`controller.metrics`, `server.metrics`, etc.), top-level `metrics:` key does nothing
+- **cilium-envoy metrics are an allowlist** (`metricRelabelings` in `custom-servicemonitors.yaml`): a new envoy metric shows up only after its name is added there.
 - **Longhorn ServiceMonitor**: Select `app: longhorn-manager` (NOT `app.kubernetes.io/name: longhorn-manager`)
 - **ArgoCD ignoreDifferences**: Use `jqPathExpressions` NOT `jsonPointers` for wildcards (RFC 6901 doesn't support `*`)
 - **PVC storage drift**: Do not globally ignore `.spec.resources.requests.storage`.
