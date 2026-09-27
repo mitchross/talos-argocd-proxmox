@@ -42,7 +42,7 @@ Manual Bootstrap → ArgoCD → Root App → ApplicationSets → Auto-discovered
 ```
 my-apps/ai/comfyui/             → ArgoCD Application "my-apps-comfyui"
 infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
+monitoring/metrics/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 ## Sync Wave Architecture
@@ -92,13 +92,21 @@ infrastructure/          # Core cluster components (Wave 4)
 ├── networking/        # Cilium, Gateway API, DNS
 └── storage/           # Longhorn, NFS, SMB, Local storage
 
-monitoring/             # Observability stack (Wave 5)
+monitoring/             # Observability stack (Wave 5): metrics/, logs/, tracing/
 my-apps/                # User applications (Wave 6)
-├── ai/                # GPU workloads
-├── development/       # Dev tools
-├── home/              # Home automation
+├── ai/                # GPU/LLM serving and AI apps
+├── knowledge/         # Search, reading, notes, documents, AI memory
+├── home-automation/   # Home Assistant, cameras, energy
 ├── media/             # Media services
-└── common/            # Shared Kustomize components
+├── utility/           # Small browser tools and dashboards
+├── storage-utility/   # File sharing and transfer
+├── development/       # Dev tools (git, CI, Renovate, Strimzi files)
+├── development-infra/ # Services other apps run on (Temporal, PostHog, map tiles)
+├── personal-projects/ # Apps built from your own images
+├── demo/              # Toys and learning experiments
+├── system/            # Cluster-side helpers
+├── common/            # Shared Kustomize components
+└── */_archive/        # Retired apps: excluded from ArgoCD, kopiur backups kept
 
 scripts/                # Automation tools
 omni/                   # Omni (Sidero) deployment configs
@@ -185,7 +193,7 @@ Detailed instructions load automatically when working in these directories:
 | `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
 | `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
 | `my-apps/ai/` | GPU workload patterns, dual-card vLLM backend |
-| `my-apps/development/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
+| `my-apps/development-infra/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
 | `monitoring/` | Monitoring pitfalls (S3 creds, ServiceMonitor selectors) |
 
 ## Custom Commands
@@ -204,23 +212,23 @@ Codex uses the same procedures through `.agents/skills/` (see `AGENTS.md`).
 | Pattern | Reference Location |
 |---------|-------------------|
 | **Minimal app** | template in `my-apps/CLAUDE.md` § "Minimal Application" (no live example is truly minimal) |
-| **Backup with root-uid mover** | `my-apps/development/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
+| **Backup with root-uid mover** | `my-apps/demo/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup (kopiur)** | `my-apps/ai/open-webui/` (component + `kopiur/storage.yaml` stub + PVC `dataSourceRef`) |
 | **kopiur backup component (shared)** | `my-apps/common/kopiur-backup/` |
 | **kopiur repo + cred fanout + snapclass** | `infrastructure/controllers/kopiur/` |
-| **Daemon-drop mover uid (999:568)** | `my-apps/home/project-nomad/mysql/kopiur-backup.yaml` |
-| **Multi-PVC + backup-exempt mix** | `my-apps/home/project-zomboid/` (backs up `zomboid-data`, exempts `zomboid-server-files`) |
+| **Daemon-drop mover uid (999:568)** | `my-apps/knowledge/project-nomad/mysql/kopiur-backup.yaml` |
+| **Multi-PVC + backup-exempt mix** | `my-apps/games/_archive/project-zomboid/` (backs up `zomboid-data`, exempts `zomboid-server-files`) |
 | **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
-| **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development/temporal/postgres/` |
+| **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development-infra/temporal/postgres/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
-| **Jobs with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
-| **Helm Job Kustomize patch** | `my-apps/development/temporal/kustomization.yaml` |
+| **Jobs with ArgoCD hooks** | `my-apps/development-infra/posthog/core/jobs.yaml` |
+| **Helm Job Kustomize patch** | `my-apps/development-infra/temporal/kustomization.yaml` |
 
 ## Additional Documentation
 

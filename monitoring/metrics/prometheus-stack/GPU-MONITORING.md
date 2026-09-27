@@ -61,7 +61,7 @@ curl localhost:9400/metrics | grep DCGM_FI_DEV
 ### Deploy Changes
 ```bash
 # Deploy monitoring stack with GPU monitoring
-kubectl apply -k monitoring/prometheus-stack/
+kubectl apply -k monitoring/metrics/prometheus-stack/
 ```
 
 ### Troubleshooting

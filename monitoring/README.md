@@ -60,11 +60,11 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 | **OTEL Operator** | `infrastructure/controllers/opentelemetry-operator/` | Manages the two Collectors |
 | **OTEL Agent** | Same (CRD: `collector-agent.yaml`) | DaemonSet, scrapes pod logs via filelog |
 | **OTEL Gateway** | Same (CRD: `collector-gateway.yaml`) | Enriches logs and routes logs/traces to their backends |
-| **Prometheus** | `monitoring/prometheus-stack/` | Metrics storage, alerting, Grafana |
-| **Loki** | `monitoring/loki-stack/` | Log storage (S3 on RustFS) |
-| **Tempo** | `monitoring/tempo/` | Trace storage (S3 on RustFS) |
-| **HolmesGPT** | `monitoring/holmesgpt/` | AI cluster diagnostics via vLLM (`qwen3.8-27b`) |
-| **pod-cleanup** | `monitoring/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
+| **Prometheus** | `monitoring/metrics/prometheus-stack/` | Metrics storage, alerting, Grafana |
+| **Loki** | `monitoring/logs/loki-stack/` | Log storage (S3 on RustFS) |
+| **Tempo** | `monitoring/tracing/tempo/` | Trace storage (S3 on RustFS) |
+| **HolmesGPT** | `monitoring/ai-ops/_archive/holmesgpt/` | AI cluster diagnostics via vLLM (`qwen3.8-27b`) |
+| **pod-cleanup** | `my-apps/system/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
 
 ## Telemetry scope
 
@@ -94,7 +94,7 @@ Two sources of Kubernetes metrics — they are NOT interchangeable:
 |---|---|---|
 | **What it stores** | Historical time-series (15-day retention) | Last ~30 seconds only, in-memory |
 | **Consumers** | Grafana, Alertmanager | HPA, `kubectl top` |
-| **Installed via** | `monitoring/prometheus-stack/` (Wave 5) | `infrastructure/controllers/metrics-server/` (Wave 4) |
+| **Installed via** | `monitoring/metrics/prometheus-stack/` (Wave 5) | `infrastructure/controllers/metrics-server/` (Wave 4) |
 
 If `kubectl top` works but Grafana dashboards are empty, metrics-server is
 fine and Prometheus is the problem. If HPA is stuck at "unknown" but
@@ -162,18 +162,18 @@ labels.
 The kube-prometheus-stack stock dashboard bundle is deliberately disabled; it
 duplicated the same signals across menus and obscured the incident workflow.
 Every dashboard is GitOps-managed JSON under
-`monitoring/prometheus-stack/dashboards/`, one directory per Grafana folder.
+`monitoring/metrics/prometheus-stack/dashboards/`, one directory per Grafana folder.
 See [dashboards/README.md](prometheus-stack/dashboards/README.md) for the
 folder map, how to add a board, and per-board query gotchas.
 
 ## Key Files
 
-- Custom ServiceMonitors: `monitoring/prometheus-stack/custom-servicemonitors.yaml`
-- Custom alerts: `monitoring/prometheus-stack/custom-alerts.yaml`
-- Argo CD alerts: `monitoring/prometheus-stack/argocd-sync-alerts.yaml`
-- GPU alerts: `monitoring/prometheus-stack/gpu-alerts.yaml`
-- Dashboards: `monitoring/prometheus-stack/dashboards/<folder>/*.json`
-- Capacity recording rules: `monitoring/prometheus-stack/capacity-rules.yaml`
+- Custom ServiceMonitors: `monitoring/metrics/prometheus-stack/custom-servicemonitors.yaml`
+- Custom alerts: `monitoring/metrics/prometheus-stack/custom-alerts.yaml`
+- Argo CD alerts: `monitoring/metrics/prometheus-stack/argocd-sync-alerts.yaml`
+- GPU alerts: `monitoring/metrics/prometheus-stack/gpu-alerts.yaml`
+- Dashboards: `monitoring/metrics/prometheus-stack/dashboards/<folder>/*.json`
+- Capacity recording rules: `monitoring/metrics/prometheus-stack/capacity-rules.yaml`
 - OTEL Collectors: `infrastructure/controllers/opentelemetry-operator/collector-*.yaml`
 - k8sgpt runbook: `monitoring/k8sgpt/README.md`
 

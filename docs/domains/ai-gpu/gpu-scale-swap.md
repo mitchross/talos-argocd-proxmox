@@ -21,10 +21,10 @@ Two things make this safe:
 | App | Cards | `replicas` in git | File |
 |---|---:|---:|---|
 | **vLLM** (Qwen3.8-27B FP8) | **2** | `1` | `my-apps/ai/vllm/deployment.yaml` |
-| NInfer-3090 | 1 | `0` | `my-apps/ai/ninfer/deployment.yaml` |
+| NInfer-3090 | 1 | `0` | `my-apps/ai/_archive/ninfer/deployment.yaml` |
 | ComfyUI | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | SwarmUI | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
-| llmfit (batch Jobs) | 1 | n/a | `my-apps/ai/llmfit/` |
+| llmfit (batch Jobs) | 1 | n/a | `my-apps/ai/_archive/llmfit/` |
 
 vLLM owns both cards, so **there is no spare GPU while it runs**. Sum
 `replicas × cards` across active workloads; the total must not exceed two.

@@ -274,7 +274,7 @@ The active backend is again the single-card vLLM W4A16 profile. This section
 preserves the earlier vLLM/NInfer comparison method and results; the numbers
 predate the current pin and are not a claim about it.
 
-The candidate is `my-apps/ai/ninfer/` (NInfer-3090 `v0.6.0-rtx3090`, commit
+The candidate is `my-apps/ai/_archive/ninfer/` (NInfer-3090 `v0.6.0-rtx3090`, commit
 `2ae51915225d`, official `qwen3_8_27b.ninfer` artifact, SHA-pinned). The
 chassis holds **one RTX 3090 — permanently** — so the engines are compared
 **sequentially on the identical card** by scale-swapping committed replicas

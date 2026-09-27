@@ -2,7 +2,7 @@
 
 A working recipe for running full PostHog (product analytics, session replay,
 feature flags) on any Kubernetes cluster. The reference implementation lives in
-[`my-apps/development/posthog/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/posthog)
+[`my-apps/development-infra/posthog/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development-infra/posthog)
 — plain Deployments + Kustomize, no Helm, portable to any cluster.
 
 ## 1. Reality check
@@ -82,7 +82,7 @@ validator. No license or billing feature records are created.
 The migration hook checks the upstream validator's hash before running; web
 applies the same patch to its ephemeral container source before starting.
 Unexpected source changes fail the hook and require the
-[upgrade review](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/UPGRADE.md). The scripts are
+[upgrade review](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/UPGRADE.md). The scripts are
 mounted from a generated ConfigMap, so a fresh pod repeats the declared fix.
 
 After the PR is merged and ArgoCD finishes syncing, confirm the migration Job
@@ -113,7 +113,7 @@ wave  3  everything else
 ```
 
 **kafka-init** pre-creates the topics ingestion expects
-([`core/jobs.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/core/jobs.yaml)):
+([`core/jobs.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/core/jobs.yaml)):
 `events_plugin_ingestion`, `exceptions_ingestion`, `clickhouse_events_json`,
 `session_recording_events`, `session_recording_events2`,
 `session_recording_snapshot_item_events`, `clickhouse_app_metrics2`,
@@ -134,7 +134,7 @@ the sync otherwise).
 
 PostHog's code assumes a sharded, replicated ClickHouse cluster. A single node
 works, but only with all of the following
-([`config/clickhouse/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/posthog/config/clickhouse)):
+([`config/clickhouse/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development-infra/posthog/config/clickhouse)):
 
 - **Embedded Keeper, no ZooKeeper.** `Replicated*` engines need a Keeper;
   ClickHouse ships one (`keeper.xml`: port 9181, single `server_id`). One less
@@ -155,7 +155,7 @@ works, but only with all of the following
   sharded table already exists on each shard. On a single node, create
   `posthog.sharded_events` as a local `ReplicatedReplacingMergeTree` (plus the
   migration-tracking tables) in an init Job before migrate runs — see
-  [`core/clickhouse-init.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/core/clickhouse-init.yaml).
+  [`core/clickhouse-init.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/core/clickhouse-init.yaml).
   Skipping this surfaces later as async-migration failures referencing
   `sharded_events`.
 - Create the `posthog` and `cyclotron` databases in the image's
@@ -164,7 +164,7 @@ works, but only with all of the following
 ## 5. Routing
 
 One hostname, path-routed to five backends. Works with Gateway API HTTPRoute or
-any Ingress ([`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/httproute.yaml)):
+any Ingress ([`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/httproute.yaml)):
 
 | Path prefixes | Backend | Port |
 |---|---|---|
@@ -191,7 +191,7 @@ the name is hash-suffixed, so any env edit automatically rolls every consumer �
 no manual restarts, no stale-config pods.
 
 Baseline that matters
-([`posthog-env.env`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/posthog/posthog-env.env)):
+([`posthog-env.env`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/posthog-env.env)):
 
 ```bash
 SITE_URL=https://posthog.example.com
@@ -315,7 +315,7 @@ Rules that make a cluster rebuild painless:
    `pg_dump` to S3). A crash-consistent volume snapshot is fine — Postgres
    WAL-recovers from it like a power loss. The reference repo uses a
    restore-before-bind populator
-   (`my-apps/development/posthog/kopiur/postgres-data.yaml`): the PVC's
+   (`my-apps/development-infra/posthog/kopiur/postgres-data.yaml`): the PVC's
    `dataSourceRef` points at a Restore object, so on rebuild the volume
    hydrates from the latest snapshot *before* Postgres starts.
 2. **Keep `SECRET_KEY` and `ENCRYPTION_SALT_KEYS` in an external secret

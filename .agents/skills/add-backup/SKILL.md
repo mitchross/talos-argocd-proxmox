@@ -7,7 +7,7 @@ description: Add kopiur backup to one or more PVCs in this talos-argocd-proxmox 
 
 The procedure lives in `.claude/commands/add-backup.md` (shared with Claude Code).
 Read it and follow it exactly, treating `$ARGUMENTS` as the app path the user gave
-(for example `my-apps/home/paperless-ngx`).
+(for example `my-apps/knowledge/paperless-ngx`).
 
 Before writing the PVC, pick its storage class with the `place-storage` skill.
 NAS (`truenas-nfs`) volumes use `copyMethod: Direct`; see `my-apps/media/immich/kustomization.yaml`.

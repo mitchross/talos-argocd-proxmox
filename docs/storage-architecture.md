@@ -381,8 +381,8 @@ kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot,secret
 ```
 
 Copy from a canonical example: `my-apps/ai/open-webui/` (simple, single-UID
-`568`), `my-apps/home/project-nomad/mysql/` (daemon-drop `999:568`), or
-`my-apps/home/home-assistant/kopiur/` (root-owned, uid `0` + the
+`568`), `my-apps/knowledge/project-nomad/mysql/` (daemon-drop `999:568`), or
+`my-apps/home-automation/home-assistant/kopiur/` (root-owned, uid `0` + the
 `privileged-movers` annotation). Helm-rendered PVCs get the `dataSourceRef`
 injected via Kustomize `patches:`.
 
@@ -608,8 +608,8 @@ file and database restore points. See [post-restore acceptance](disaster-recover
 | Longhorn + rebuild throttle | `infrastructure/storage/longhorn/` (`node-failure-settings.yaml`) |
 | App PVCs + per-PVC stubs | `my-apps/<category>/<app>/pvc.yaml` + `…/kopiur/<pvc>.yaml` |
 | Simple example (single UID 568) | `my-apps/ai/open-webui/` |
-| Daemon-drop example (uid 999:568) | `my-apps/home/project-nomad/mysql/` |
-| Root-owned example (uid 0) | `my-apps/home/home-assistant/kopiur/` |
+| Daemon-drop example (uid 999:568) | `my-apps/knowledge/project-nomad/mysql/` |
+| Root-owned example (uid 0) | `my-apps/home-automation/home-assistant/kopiur/` |
 | Restore canary | `my-apps/system/restore-canary/` |
 | Operator source | [`home-operations/kopiur`](https://github.com/home-operations/kopiur) |
 | Mechanism docs | [`kopiur backup architecture`](domains/storage/kopiur-backup-architecture.md) · [`mover permissions`](domains/storage/kopiur-mover-permissions.md) · [`evaluation`](domains/storage/kopiur-evaluation.md) · [`trial`](kopiur-trial.md) |

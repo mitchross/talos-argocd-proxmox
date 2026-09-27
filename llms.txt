@@ -44,9 +44,9 @@ instructions. Check the owning manifests and canonical runbook before acting.
 
 - [docs/posthog-self-host-k8s.md](docs/posthog-self-host-k8s.md) — deployment,
   boot order, upgrades, and recovery.
-- [my-apps/development/posthog/CLAUDE.md](my-apps/development/posthog/CLAUDE.md)
+- [my-apps/development-infra/posthog/CLAUDE.md](my-apps/development-infra/posthog/CLAUDE.md)
   — agent-facing file map and invariants.
-- [my-apps/development/posthog/UPGRADE.md](my-apps/development/posthog/UPGRADE.md)
+- [my-apps/development-infra/posthog/UPGRADE.md](my-apps/development-infra/posthog/UPGRADE.md)
   — checks before changing PostHog images.
 
 PostHog's Postgres stores its identity and configuration and is kopiur-backed.
