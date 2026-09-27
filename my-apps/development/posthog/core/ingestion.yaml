@@ -49,6 +49,12 @@ spec:
               value: "ingestion-v2-combined"
             - name: MMDB_FILE_LOCATION
               value: "/code/share/GeoLite2-City.mmdb"
+            # Anonymous public redlib visitors would each become a Postgres person row; events keep $ip/GeoIP.
+            - name: SKIP_PERSONS_PROCESSING_BY_TOKEN_DISTINCT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: skip-persons-tokens
             - name: INTERNAL_API_SECRET
               valueFrom:
                 secretKeyRef:
