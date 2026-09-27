@@ -440,8 +440,8 @@ unpriced when the live configured rate is unknown.
 The owner's confirmed arrangement retains both RTX 3090s, using an external
 GPU PSU and PCIe risers with the DL360. Physical feasibility was established by
 prior use. Mink's historical compute inventory lists two E5-2680 v4 CPUs and
-approximately 768 GB physical RAM; current installed CPUs and DIMMs still need
-verification. The separate NAS has one E5-2680 v4 and 384 GB, per the September
+conflicting RAM totals (736 GB, 724.24 GiB OS-visible, and approximately
+768 GB physical claims); current installed CPUs and DIMMs still need verification. The separate NAS has one E5-2680 v4 and 384 GB, per the September
 20 inspection. Do not substitute its power reading for the spare GPU server.
 
 On September 27, a read-only trailing-24-hour Prometheus sample showed about
@@ -453,9 +453,12 @@ other host work, fans, and PSU losses. It is not a measured CPU-only idle figure
 or guaranteed removable overhead. The earlier 246.6 W average covers a different,
 eight-day cohort.
 
-The old Mink comparison note contains only a title, not watt measurements;
-there is no preserved numeric basis there to accept or overturn the previous
-power verdict. A matched comparison should include:
+The first local Mink search found only an empty comparison note. The owner
+subsequently supplied historical chat extracts on September 27 with numerical
+readings. These are owner-reported historical observations; raw meter exports
+were not independently recovered. They support the earlier Threadripper move
+for the old dual-CPU DL360 configuration. A changed single-CPU arrangement still
+needs a new measurement. A matched comparison should include:
 
 - the same two GPUs, power caps, model, context, concurrency, and completed work;
 - all wall outlets including the external GPU supply;
@@ -469,3 +472,47 @@ benefits, while sustained and durable writes remain bounded by storage/network
 behavior. See [NAS measurements](../../nas-performance.md),
 [HPE DL360 Gen9 platform features](https://support.hpe.com/hpesc/public/docDisplay?docId=c04442953&docLocale=en_US&page=GUID-A8ED5EBD-51AB-4EDC-AEAA-FA318CF1B483.html),
 and [TrueNAS caching and write behavior](https://www.truenas.com/docs/references/zilandslog/).
+
+
+### Historical power readings supplied by the owner
+
+These records span different configurations and measurement boundaries. They
+are reference observations, not new live entities or values to backfill into
+recorder statistics.
+
+| Period and measurement | Reported draw | Boundary / limitation |
+|---|---|---|
+| February whole-basement plug | ~571 W / 13.7 kWh/day | Earlier configuration and all equipment on that feed |
+| April post-tuning whole-rack trend | ~620 → 520 → 484 W | Attributed in the old account to low-power settings and GPU limits; not a controlled isolation of each change |
+| May whole-rack Tapo | 484 W mean/median; central 80% 472–498 W; p99 ~640 W | Both servers, external supplies, switches and fan; p99 is not maximum |
+| May Proxmox DL360 iLO | 240 W average / 318 W peak | Excludes external GPU supply; do not compare iLO directly with AC plug readings |
+| May NAS iLO | 85 W average / 139 W peak | Old E5-2640 v3 / 160 GB configuration; drive PSU separate |
+| June owner-reported plug averages | DL360 host 259 W + GPU supply 66 W ≈ 325 W | Dual E5-2680 v4, large RAM configuration; llama-swap unloading models |
+| June owner-reported Threadripper plug average | 246 W | 2950X, 128 GB and both 3090s on one plug |
+| June NAS plus drive PSU | ~125–133 W | Other dated accounts give host 77–82 W plus supply 48–51 W |
+| September 5 audit snapshots | Threadripper 182 W; NAS 114 W + drive PSU 43 W | Threadripper had one GPU then; NAS later E5-2680 v4 / 384 GB |
+| September 6 historical baseline | Threadripper ~230–240 W, peak 764.7 W | Second 3090 restored; baseline and peak are different statistics |
+
+The June host comparison is approximately **325 − 246 = 79 W** in favor of
+Threadripper, or **$12.13 per 30 days / $147.60 per 365-day year** at the current
+configured $0.21328/kWh. The old reported NAS-inclusive totals (~452 versus
+~371 W) give about 81 W because their components were rounded. These savings
+are repriced historical scenarios, not current utility-bill promises.
+
+Another June 18 account reported host-only 334 W for DL360 and 135 W for
+Threadripper, plus a separate GPU feed at ~60 W settled or 230–450 W active.
+Adding those gives 394 versus 195 W settled, 564 versus 365 W at the lower GPU
+load, and 784 versus 585 W at the higher load. These are calculated alternatives
+for the SAME GPUs, not synchronized whole-system tests, and are not the same
+observation as the later 259/66/246 W averages.
+
+The May allocation (205 W host, 125 W GPUs/supply, 110 W NAS/drives, 30 W network,
+15 W fan) approximately reconciles the 484 W rack meter. Those allocations do
+not establish individually measured component watts or a universal 15% iLO
+error. The external PSU's 1,000 W rating is capacity, not draw.
+
+Old summaries calling Threadripper retired or inferring a return to DL360 from
+stale August memory are superseded by the verified September Threadripper
+configuration. Likewise, historical "unmeasured desktop/mini" labels do not
+override their current HA plug readings. Keep the old NAS CPU/RAM configuration
+separate from today's E5-2680 v4 / 384 GB evidence.
