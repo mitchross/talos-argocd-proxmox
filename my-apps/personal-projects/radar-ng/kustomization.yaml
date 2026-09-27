@@ -12,6 +12,7 @@ resources:
   - pdb-tile-server.yaml
   - deployment-basemap.yaml
   - deployment-open-meteo.yaml
+  - deployment-web.yaml
   - servicemonitor.yaml
   - prometheusrule.yaml
   # The open-meteo sync worker is NOT here — it's a sidecar in deployment-open-meteo.yaml (shares that RWO volume).
