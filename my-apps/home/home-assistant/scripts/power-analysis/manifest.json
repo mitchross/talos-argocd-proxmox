@@ -1,0 +1,10 @@
+{
+  "domain": "power_analysis",
+  "name": "Power Spending Analysis",
+  "version": "1.0.0",
+  "documentation": "https://github.com/mitchross/talos-argocd-proxmox/blob/main/docs/domains/power/metering.md",
+  "dependencies": ["recorder"],
+  "codeowners": ["@mitchross"],
+  "integration_type": "helper",
+  "iot_class": "local_polling"
+}

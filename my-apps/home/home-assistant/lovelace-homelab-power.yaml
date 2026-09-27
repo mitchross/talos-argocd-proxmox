@@ -22,7 +22,7 @@ views:
             content: |
               **Today is still accumulating; yesterday is a complete day.** Plug costs use the configured time-of-use rate. All plugs = homelab + office. Cooling is a separate estimate; CE reports the house later.
 
-              [Daily spend](/homelab-power/daily-spend) · [Bill breakdown](/homelab-power/bill-breakdown) · [Rates & savings](/homelab-power/rates-savings)
+              [Findings](/homelab-power/findings) · [Daily spend](/homelab-power/daily-spend) · [Bill breakdown](/homelab-power/bill-breakdown) · [Rates & savings](/homelab-power/rates-savings)
             grid_options:
               columns: full
       - type: grid
@@ -338,6 +338,7 @@ views:
               columns: 6
               rows: 1
             color: blue
+  - !include lovelace-power-findings.yaml
   - title: Daily spend
     path: daily-spend
     icon: mdi:calendar-compare
