@@ -30,13 +30,14 @@ labels:
       environment: production
 
 generatorOptions:
-  disableNameSuffixHash: true
+  disableNameSuffixHash: false
 
 configMapGenerator:
 - name: home-assistant-scripts
   files:
   - scripts/copy-config.sh
   - scripts/install-hacs.sh
+  - scripts/repair-power-statistics.py
 - name: config
   files:
   - configuration.yaml
@@ -45,9 +46,7 @@ configMapGenerator:
   - scenes.yaml
   - customize.yaml
   - lovelace-homelab-power.yaml
+  - power-insights.yaml
   # AirCube ZHA quirk — copied to /config/custom_zha_quirks/aircube.py by the
   # copy-config initContainer (see deployment.yaml). Loaded via zha.custom_quirks_path.
   - aircube.py
-  options:
-    # Better ConfigMap handling
-    disableNameSuffixHash: true

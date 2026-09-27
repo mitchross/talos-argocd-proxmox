@@ -81,9 +81,9 @@ previous cycle in a `last_period` attribute, and template sensors surface it:
 | `sensor.<prefix>_cost_last_month` | Per-device, last month |
 | `sensor.<prefix>_energy_last_month` | Per-device, last month |
 
-These stop moving once the cycle closes. The dashboards' *This Month vs Last*
-panel subtracts one from the other; expect it to read negative early in the
-month, since a young month has not accrued yet.
+These stop moving once the cycle closes. Compare today-so-far with yesterday
+only as partial versus complete totals. Missing previous-period data is shown
+as unavailable. A smaller partial-day total does not establish a saving.
 
 ## Where to look
 
@@ -91,7 +91,7 @@ month, since a young month has not accrued yet.
 |---|---|
 | Grafana **Power & Cost** (`homelab-power-cost`, folder Home & Energy) | Mirrors HA's Overview/Devices/House views: draw, cost today/month/year, per-device table, 14-day trends, and per-plug volts/amps in a collapsed row |
 | Grafana **Gaming PC** (`gaming-pc`) and **Cooling** (`ac-cooling`) | Mirror HA's Gaming and Cooling views, with 14-day per-day history |
-| Home Assistant **Homelab Power** dashboard | Same numbers inside HA, plus the editable rate inputs |
+| Home Assistant **Homelab Power** dashboard | Overview, Daily spend, Bill breakdown, Rates & savings, Devices, House, Solar, Gaming, Cooling, and Settings |
 | HA **Energy** dashboard | Configured in the UI; each `sensor.<prefix>_energy` is an Individual device |
 
 ### How Grafana names a plug
@@ -201,12 +201,11 @@ first.**
 > `sensor.hp_sff_energy`. If the slug drifts, every template and dashboard
 > reference silently reads nothing: no error, just empty panels.
 
-Changes reach the pod through the `config` ConfigMap and an initContainer that
-copies files onto the PVC, so **Home Assistant must restart** to pick them up:
-
-```bash
-kubectl rollout restart deployment/home-assistant -n home-assistant
-```
+Changes reach the pod through hashed ConfigMaps and an initContainer that
+copies files onto the PVC. A merged PR changes the pod's ConfigMap references,
+so ArgoCD automatically performs a `Recreate` rollout. This briefly interrupts
+Home Assistant. Do not copy config into the live PVC or manually restart the
+Deployment to publish changes. Revert dashboard/config changes through a PR.
 
 Verify afterwards:
 
@@ -218,6 +217,88 @@ kubectl exec -n home-assistant deploy/home-assistant -c home-assistant -- \
 
 Newly created integrations and utility meters start at zero. Totals only fill in
 as data accumulates; an empty panel on day one is expected, not a bug.
+
+## Daily comparisons and bill allocation
+
+**Daily spend** puts group and per-plug dollars and kWh beside yesterday's
+completed totals. Previous-day values come from each daily utility meter's
+`last_period`, checked against its local `last_reset` date. Segmented bars show
+how the tracked loads contribute to cost; the Devices view does the same for
+watts. The graph cards fill their sections on desktop and collapse on phones.
+
+**Bill breakdown** separates energy share from estimated cost share. Its
+non-overlapping buckets are homelab, office, modeled cooling, and the remainder.
+Gaming is already in office. The solar shed is never included. Cost remainder
+also contains the difference between the configured marginal rate and CE's
+reported cost; it is not a measured appliance load. Negative remainders stay
+visible so a model mismatch cannot masquerade as perfect attribution.
+
+`power-insights.yaml` holds these derived sensors. House comparisons are only
+available when `consumers_energy_last_reading` equals yesterday's local date
+and both utility totals exist. The report may arrive late or disappear after
+an HA restart; that produces unavailable comparisons, not zero consumption.
+
+**Rates & savings** translates a constant load into dollars/day and dollars/30
+days at the configured current rate. These are what-if calculations, not bill
+forecasts or newly verified utility tariffs. Fixed monthly fees are excluded.
+The three rate windows and permanent GitOps rate settings remain unchanged.
+
+## September 24 statistics repair
+
+The recorder contains a verified discontinuity: hourly power statistics stop
+at **2026-09-24 14:00 UTC** and resume at **23:00 UTC** with their cumulative
+`sum` near zero, while meter `state` values continue increasing. For example,
+homelab energy goes from 247.005 to 252.296 kWh while its statistical sum drops
+from 104.892 to 0.309. This explains the negative daily bars and understated
+monthly graph. The first retained homelab cost statistic is September 16, so
+even after repair its September chart covers less time than the monthly meter
+tile. The dashboard labels this partial history. The available evidence
+establishes the statistics discontinuity;
+it does not establish which maintenance operation caused it.
+
+The repo-owned `scripts/repair-power-statistics.py` initContainer runs while HA
+is stopped under the Deployment's `Recreate` strategy. It only considers the
+explicit power-entity pattern and the two exact hourly boundary timestamps.
+The offset is `previous.sum + (next.state - previous.state) - next.sum`.
+Both timestamps are on the same local day, with no daily, weekly, monthly or
+yearly cycle boundary between them. It adds that offset to subsequent long-
+and short-term sums; meter states, CE imports, and unrelated statistics stay
+unchanged. Surviving cumulative readings recover the day's total across the
+gap, but do not reconstruct when during those missing hours energy was used.
+
+Before writing, it saves affected row IDs, timestamps and original sums in
+`/config/statistics-repairs/power-2026-09-24.json`, then updates in one SQLite
+transaction. Unexpected boundary data aborts the initContainer. A fresh
+installation or repaired database is a no-op. The September 27 read-only
+export yielded 130 repairable series; a local replay and repeat run verified
+the offsets and idempotence. No production database was changed during review.
+
+After merge, verify the GitOps rollout and init logs:
+
+```bash
+kubectl -n home-assistant rollout status deployment/home-assistant
+kubectl -n home-assistant logs deployment/home-assistant -c repair-power-statistics
+```
+
+Expected: a repair list and saved journal on the first rollout, then an empty
+repair list on later starts. Check the September 24 daily bars, monthly cost
+graph, and new dashboard tabs. CE comparison sensors may remain unavailable
+until the next successful utility import.
+
+For a failure, retain the journal and inspect the init log. Do not delete the
+recorder database or zero the meters. A code revert does not undo a committed
+statistics repair. To undo, first use a PR to remove the repair initContainer
+and stop HA through GitOps (`replicas: 0`). With the PVC mounted by an approved
+maintenance workload and HA stopped, run the same repository script:
+
+```bash
+python /opt/repo-scripts/repair-power-statistics.py --apply --undo
+```
+
+This reverses the recorded offsets, including later rows that inherited the
+corrected baseline. It restores the original graph discontinuity. Restore
+`replicas: 1` through a PR after checking the result. The journal is retained
+on the backed-up config PVC for inspection.
 
 ## Resetting the history
 

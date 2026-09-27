@@ -348,6 +348,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.nas_psu_current_consumption
     name: "NAS PSU Energy"
@@ -355,6 +357,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.truenas_current_consumption
     name: "TrueNAS Energy"
@@ -362,6 +366,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.hp_sff_current_consumption
     name: "HP SFF Energy"
@@ -369,6 +375,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.hp_elite_current_consumption
     name: "HP Elite Energy"
@@ -376,6 +384,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.gaming_pc_current_consumption
     name: "Gaming PC Energy"
@@ -383,6 +393,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.macbook_current_consumption
     name: "MacBook Energy"
@@ -390,6 +402,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.shed_lab_current_consumption
     name: "Shed Lab Energy"
@@ -397,6 +411,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.homelab_total_power
     name: "Homelab Total Energy"
@@ -404,6 +420,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.office_total_power
     name: "Office Total Energy"
@@ -411,6 +429,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.combined_total_power
     name: "Combined Total Energy"
@@ -418,6 +438,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
 
   # --- cost (USD): integrates the USD/h cost-rate ---
   - platform: integration
@@ -427,6 +449,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.nas_psu_cost_rate
     name: "NAS PSU Cost"
@@ -434,6 +458,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.truenas_cost_rate
     name: "TrueNAS Cost"
@@ -441,6 +467,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.hp_sff_cost_rate
     name: "HP SFF Cost"
@@ -448,6 +476,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.hp_elite_cost_rate
     name: "HP Elite Cost"
@@ -455,6 +485,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.gaming_pc_cost_rate
     name: "Gaming PC Cost"
@@ -462,6 +494,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.macbook_cost_rate
     name: "MacBook Cost"
@@ -469,6 +503,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   # --- gaming sessions: only the watts drawn while binary_sensor.gaming_pc_gaming is on ---
   - platform: integration
     source: sensor.gaming_pc_gaming_power
@@ -477,6 +513,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.gaming_pc_gaming_cost_rate
     name: "Gaming PC Gaming Cost"
@@ -484,6 +522,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   # 1 while gaming, else 0, integrated over hours = hours gamed. Survives the recorder purge.
   - platform: integration
     source: sensor.gaming_pc_gaming_flag
@@ -492,6 +532,8 @@ sensor:
     unit_time: h
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   # --- AC cooling: modeled draw while the Nest reports hvac_action == 'cooling' ---
   - platform: integration
     source: sensor.ac_cooling_power
@@ -500,6 +542,8 @@ sensor:
     unit_prefix: k
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.ac_cooling_cost_rate
     name: "AC Cooling Cost"
@@ -507,6 +551,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   # 1 while cooling, else 0, integrated over hours = cooling hours. Survives the recorder purge.
   - platform: integration
     source: sensor.ac_cooling_flag
@@ -515,6 +561,8 @@ sensor:
     unit_time: h
     round: 3
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: history_stats
     name: "Gaming PC Sessions Today"
     unique_id: gaming_pc_sessions_today
@@ -530,6 +578,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.office_cost_rate
     name: "Office Cost"
@@ -537,6 +587,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
   - platform: integration
     source: sensor.combined_cost_rate
     name: "Combined Cost"
@@ -544,6 +596,8 @@ sensor:
     unit_time: h
     round: 4
     method: left
+    max_sub_interval:
+      minutes: 1
 
 utility_meter:
   # ===== ENERGY (kWh) =====
@@ -1007,6 +1061,7 @@ utility_meter:
 
 # Template sensors: live all-in rate, tariff window, group totals, per-device cost-rate and share.
 template:
+  - !include power-insights.yaml
   # Gaming = plug draw above the threshold; 5 min of quiet ends the session (menus, loading).
   - binary_sensor:
       - name: "Gaming PC Gaming"
@@ -1047,6 +1102,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.gaming_pc_gaming_power') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.gaming_pc_gaming_power') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1074,7 +1130,8 @@ template:
         unique_id: gaming_pc_gaming_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.gaming_pc_gaming_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.gaming_pc_gaming_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1082,7 +1139,8 @@ template:
         unique_id: gaming_pc_gaming_hours_last_month
         unit_of_measurement: "h"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.gaming_pc_gaming_hours_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.gaming_pc_gaming_hours_monthly', 'last_period') | float(0) | round(2) }}
 
@@ -1117,6 +1175,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.ac_cooling_power') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.ac_cooling_power') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1125,7 +1184,9 @@ template:
         unique_id: ac_cooling_cost_yesterday
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {% set reset = state_attr('sensor.ac_cooling_cost_daily', 'last_reset') | as_datetime(none) %}
+          {{ is_number(state_attr('sensor.ac_cooling_cost_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
         state: >
           {{ state_attr('sensor.ac_cooling_cost_daily', 'last_period') | float(0) | round(4) }}
 
@@ -1133,14 +1194,17 @@ template:
         unique_id: ac_cooling_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.ac_cooling_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.ac_cooling_cost_monthly', 'last_period') | float(0) | round(4) }}
 
       - name: "AC Cooling Hours Yesterday"
         unique_id: ac_cooling_hours_yesterday
         unit_of_measurement: "h"
-        state_class: total
+        availability: >
+          {% set reset = state_attr('sensor.ac_cooling_hours_daily', 'last_reset') | as_datetime(none) %}
+          {{ is_number(state_attr('sensor.ac_cooling_hours_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
         state: >
           {{ state_attr('sensor.ac_cooling_hours_daily', 'last_period') | float(0) | round(2) }}
 
@@ -1148,7 +1212,8 @@ template:
         unique_id: ac_cooling_hours_last_month
         unit_of_measurement: "h"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.ac_cooling_hours_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.ac_cooling_hours_monthly', 'last_period') | float(0) | round(2) }}
 
@@ -1157,7 +1222,8 @@ template:
         unit_of_measurement: "kWh"
         device_class: energy
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.ac_cooling_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.ac_cooling_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1176,7 +1242,7 @@ template:
         unit_of_measurement: "%"
         state_class: measurement
         icon: mdi:home-percent
-        availability: "{{ states('sensor.consumers_energy_cost_yesterday') | is_number and states('sensor.ac_cooling_cost_yesterday') | is_number }}"
+        availability: "{{ is_state('binary_sensor.power_bill_data_current', 'on') and states('sensor.consumers_energy_cost_yesterday') | is_number and states('sensor.ac_cooling_cost_yesterday') | is_number }}"
         state: >
           {% set house = states('sensor.consumers_energy_cost_yesterday') | float(0) %}
           {% if house > 0 %}
@@ -1191,7 +1257,7 @@ template:
         state_class: measurement
         icon: mdi:air-conditioner
         availability: >
-          {{ states('sensor.consumers_energy_kwh_yesterday') | is_number
+          {{ has_value('sensor.combined_total_energy_yesterday') and is_state('binary_sensor.power_bill_data_current', 'on') and states('sensor.consumers_energy_kwh_yesterday') | is_number
              and states('sensor.ac_cooling_hours_yesterday') | float(0) > 0.25 }}
         state: >
           {% set h = states('sensor.ac_cooling_hours_yesterday') | float(1) %}
@@ -1242,10 +1308,10 @@ template:
         state_class: measurement
         availability: >
           {{ states('sensor.threadripper_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.truenas_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.hp_sff_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.hp_elite_current_consumption') not in ['unknown','unavailable'] }}
+             and states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.truenas_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.hp_sff_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.hp_elite_current_consumption') not in ['unknown','unavailable'] }}
         state: >
           {{ (states('sensor.threadripper_current_consumption') | float(0)
             + states('sensor.nas_psu_current_consumption') | float(0)
@@ -1260,7 +1326,7 @@ template:
         state_class: measurement
         availability: >
           {{ states('sensor.gaming_pc_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.macbook_current_consumption') not in ['unknown','unavailable'] }}
+             and states('sensor.macbook_current_consumption') not in ['unknown','unavailable'] }}
         state: >
           {{ (states('sensor.gaming_pc_current_consumption') | float(0)
             + states('sensor.macbook_current_consumption') | float(0)) | round(1) }}
@@ -1272,12 +1338,12 @@ template:
         state_class: measurement
         availability: >
           {{ states('sensor.threadripper_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.truenas_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.hp_sff_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.hp_elite_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.gaming_pc_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.macbook_current_consumption') not in ['unknown','unavailable'] }}
+             and states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.truenas_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.hp_sff_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.hp_elite_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.gaming_pc_current_consumption') not in ['unknown','unavailable']
+             and states('sensor.macbook_current_consumption') not in ['unknown','unavailable'] }}
         state: >
           {{ (states('sensor.threadripper_current_consumption') | float(0)
             + states('sensor.nas_psu_current_consumption') | float(0)
@@ -1293,6 +1359,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.homelab_total_power') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.homelab_total_power') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1302,6 +1369,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.office_total_power') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.office_total_power') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1311,6 +1379,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.combined_total_power') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.combined_total_power') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1320,6 +1389,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.threadripper_current_consumption') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.threadripper_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1329,6 +1399,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.nas_psu_current_consumption') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.nas_psu_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1338,6 +1409,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.truenas_current_consumption') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.truenas_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1347,6 +1419,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.hp_sff_current_consumption') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.hp_sff_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1356,6 +1429,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.hp_elite_current_consumption') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.hp_elite_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1365,6 +1439,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.gaming_pc_current_consumption') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.gaming_pc_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1374,6 +1449,7 @@ template:
         unit_of_measurement: "USD/h"
         state_class: measurement
         icon: mdi:cash-fast
+        availability: "{{ has_value('sensor.macbook_current_consumption') and has_value('sensor.current_electricity_rate') }}"
         state: >
           {{ (states('sensor.macbook_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
@@ -1383,7 +1459,8 @@ template:
         unique_id: homelab_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.homelab_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.homelab_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1391,7 +1468,9 @@ template:
         unique_id: homelab_cost_yesterday
         unit_of_measurement: "USD"
         icon: mdi:calendar-arrow-left
-        state_class: total
+        availability: >
+          {% set reset = state_attr('sensor.homelab_cost_daily', 'last_reset') | as_datetime(none) %}
+          {{ is_number(state_attr('sensor.homelab_cost_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
         state: >
           {{ state_attr('sensor.homelab_cost_daily', 'last_period') | float(0) | round(4) }}
 
@@ -1399,7 +1478,8 @@ template:
         unique_id: homelab_total_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.homelab_total_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.homelab_total_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1407,7 +1487,8 @@ template:
         unique_id: office_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.office_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.office_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1415,7 +1496,9 @@ template:
         unique_id: office_cost_yesterday
         unit_of_measurement: "USD"
         icon: mdi:calendar-arrow-left
-        state_class: total
+        availability: >
+          {% set reset = state_attr('sensor.office_cost_daily', 'last_reset') | as_datetime(none) %}
+          {{ is_number(state_attr('sensor.office_cost_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
         state: >
           {{ state_attr('sensor.office_cost_daily', 'last_period') | float(0) | round(4) }}
 
@@ -1423,7 +1506,8 @@ template:
         unique_id: office_total_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.office_total_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.office_total_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1431,7 +1515,8 @@ template:
         unique_id: combined_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.combined_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.combined_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1439,7 +1524,9 @@ template:
         unique_id: combined_cost_yesterday
         unit_of_measurement: "USD"
         icon: mdi:calendar-arrow-left
-        state_class: total
+        availability: >
+          {% set reset = state_attr('sensor.combined_cost_daily', 'last_reset') | as_datetime(none) %}
+          {{ is_number(state_attr('sensor.combined_cost_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
         state: >
           {{ state_attr('sensor.combined_cost_daily', 'last_period') | float(0) | round(4) }}
 
@@ -1447,7 +1534,8 @@ template:
         unique_id: combined_total_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.combined_total_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.combined_total_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1455,7 +1543,8 @@ template:
         unique_id: threadripper_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.threadripper_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.threadripper_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1463,7 +1552,8 @@ template:
         unique_id: threadripper_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.threadripper_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.threadripper_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1471,7 +1561,8 @@ template:
         unique_id: nas_psu_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.nas_psu_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.nas_psu_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1479,7 +1570,8 @@ template:
         unique_id: nas_psu_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.nas_psu_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.nas_psu_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1487,7 +1579,8 @@ template:
         unique_id: truenas_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.truenas_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.truenas_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1495,7 +1588,8 @@ template:
         unique_id: truenas_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.truenas_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.truenas_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1503,7 +1597,8 @@ template:
         unique_id: hp_sff_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.hp_sff_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.hp_sff_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1511,7 +1606,8 @@ template:
         unique_id: hp_sff_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.hp_sff_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.hp_sff_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1519,7 +1615,8 @@ template:
         unique_id: hp_elite_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.hp_elite_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.hp_elite_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1527,7 +1624,8 @@ template:
         unique_id: hp_elite_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.hp_elite_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.hp_elite_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1535,7 +1633,8 @@ template:
         unique_id: gaming_pc_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.gaming_pc_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.gaming_pc_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1543,7 +1642,8 @@ template:
         unique_id: gaming_pc_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.gaming_pc_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.gaming_pc_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1551,7 +1651,8 @@ template:
         unique_id: macbook_cost_last_month
         unit_of_measurement: "USD"
         icon: mdi:calendar-check
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.macbook_cost_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.macbook_cost_monthly', 'last_period') | float(0) | round(4) }}
 
@@ -1559,7 +1660,8 @@ template:
         unique_id: macbook_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.macbook_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.macbook_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1567,7 +1669,8 @@ template:
         unique_id: shed_lab_energy_last_month
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {{ is_number(state_attr('sensor.shed_lab_energy_monthly', 'last_period')) }}
         state: >
           {{ state_attr('sensor.shed_lab_energy_monthly', 'last_period') | float(0) | round(3) }}
 
@@ -1654,7 +1757,9 @@ template:
         unique_id: homelab_total_energy_yesterday
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {% set reset = state_attr('sensor.homelab_total_energy_daily', 'last_reset') | as_datetime(none) %}
+          {{ is_number(state_attr('sensor.homelab_total_energy_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
         state: >
           {{ state_attr('sensor.homelab_total_energy_daily', 'last_period') | float(0) | round(3) }}
 
@@ -1662,7 +1767,9 @@ template:
         unique_id: combined_total_energy_yesterday
         unit_of_measurement: "kWh"
         device_class: energy
-        state_class: total
+        availability: >
+          {% set reset = state_attr('sensor.combined_total_energy_daily', 'last_reset') | as_datetime(none) %}
+          {{ is_number(state_attr('sensor.combined_total_energy_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
         state: >
           {{ state_attr('sensor.combined_total_energy_daily', 'last_period') | float(0) | round(3) }}
 
@@ -1671,7 +1778,7 @@ template:
         unit_of_measurement: "%"
         state_class: measurement
         icon: mdi:home-percent
-        availability: "{{ states('sensor.consumers_energy_kwh_yesterday') | is_number }}"
+        availability: "{{ has_value('sensor.homelab_total_energy_yesterday') and states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 and is_state('binary_sensor.power_bill_data_current', 'on') and states('sensor.consumers_energy_kwh_yesterday') | is_number }}"
         state: >
           {% set house = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
           {% if house > 0 %}
@@ -1683,7 +1790,7 @@ template:
         unit_of_measurement: "%"
         state_class: measurement
         icon: mdi:home-percent
-        availability: "{{ states('sensor.consumers_energy_kwh_yesterday') | is_number }}"
+        availability: "{{ has_value('sensor.combined_total_energy_yesterday') and states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 and is_state('binary_sensor.power_bill_data_current', 'on') and states('sensor.consumers_energy_kwh_yesterday') | is_number }}"
         state: >
           {% set house = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
           {% if house > 0 %}
@@ -1696,7 +1803,7 @@ template:
         unit_of_measurement: "USD/kWh"
         state_class: measurement
         icon: mdi:cash-check
-        availability: "{{ states('sensor.consumers_energy_kwh_yesterday') | is_number and states('sensor.consumers_energy_cost_yesterday') | is_number }}"
+        availability: "{{ is_state('binary_sensor.power_bill_data_current', 'on') and states('sensor.consumers_energy_kwh_yesterday') | is_number and states('sensor.consumers_energy_cost_yesterday') | is_number }}"
         state: >
           {% set kwh = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
           {% if kwh > 0 %}

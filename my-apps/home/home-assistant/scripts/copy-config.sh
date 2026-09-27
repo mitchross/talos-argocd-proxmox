@@ -1,4 +1,6 @@
 #!/bin/sh
+set -eu
+
 # Copy config from ConfigMap to PVC (HA needs writable config files)
 cp /config-source/configuration.yaml /config/configuration.yaml
 cp /config-source/automations.yaml /config/automations.yaml
@@ -6,6 +8,7 @@ cp /config-source/scripts.yaml /config/scripts.yaml
 cp /config-source/scenes.yaml /config/scenes.yaml
 cp /config-source/customize.yaml /config/customize.yaml
 cp /config-source/lovelace-homelab-power.yaml /config/lovelace-homelab-power.yaml
+cp /config-source/power-insights.yaml /config/power-insights.yaml
 # Ensure themes directory exists
 mkdir -p /config/themes
 # AirCube ZHA quirk -> custom_zha_quirks/ (loaded via zha.custom_quirks_path)

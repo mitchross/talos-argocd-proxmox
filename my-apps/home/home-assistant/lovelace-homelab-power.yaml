@@ -13,6 +13,90 @@ views:
     dense_section_placement: true
     sections:
       - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: Power & cost
+            heading_style: title
+          - type: markdown
+            content: |
+              **Today is still accumulating; yesterday is a complete day.** Plug costs use the configured time-of-use rate. All plugs = homelab + office. Cooling is a separate estimate; CE reports the house later.
+
+              [Daily spend](/homelab-power/daily-spend) · [Bill breakdown](/homelab-power/bill-breakdown) · [Rates & savings](/homelab-power/rates-savings)
+            grid_options:
+              columns: full
+      - type: grid
+        cards:
+          - type: heading
+            heading: Today so far
+            heading_style: title
+          - type: tile
+            entity: sensor.homelab_cost_daily
+            name: Homelab cost
+            color: blue
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.office_cost_daily
+            name: Office cost
+            color: purple
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.ac_cooling_cost_daily
+            name: Cooling estimate
+            color: cyan
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.combined_cost_daily
+            name: All plugs
+            color: amber
+            grid_options:
+              columns: 6
+              rows: 1
+      - type: grid
+        column_span: 1
+        cards:
+          - type: heading
+            heading: Yesterday · completed day
+            heading_style: title
+          - type: tile
+            entity: sensor.homelab_cost_yesterday
+            name: Homelab cost
+            color: blue
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.office_cost_yesterday
+            name: Office cost
+            color: purple
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.ac_cooling_cost_yesterday
+            name: Cooling estimate
+            color: cyan
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.consumers_energy_cost_yesterday
+            name: House · CE reported
+            color: grey
+            grid_options:
+              columns: 6
+              rows: 1
+            visibility:
+              - condition: state
+                entity: binary_sensor.power_bill_data_current
+                state: on
+      - type: grid
         cards:
           - type: heading
             heading: Right now
@@ -47,7 +131,7 @@ views:
             color: green
           - type: tile
             entity: sensor.combined_cost_rate
-            name: Burn rate
+            name: Cost per hour now
             grid_options:
               columns: 6
               rows: 1
@@ -55,12 +139,8 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: This month
+            heading: Month to date
             heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.homelab_cost_last_month
-                name: Homelab last month
           - type: tile
             entity: sensor.homelab_cost_monthly
             name: Homelab
@@ -84,57 +164,148 @@ views:
             color: amber
           - type: tile
             entity: sensor.consumers_energy_cost_month
-            name: Whole house (CE)
+            name: House · CE reported
             grid_options:
               columns: 6
               rows: 1
             color: grey
+          - type: markdown
+            grid_options:
+              columns: full
+            content: |
+              CE through **{{ states("sensor.consumers_energy_last_reading") }}**; plug totals include today.
       - type: grid
+        column_span: 2
         cards:
           - type: heading
-            heading: Today
+            heading: Cost share today · tracked loads
             heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.homelab_cost_yesterday
-                name: Homelab yesterday
-          - type: tile
-            entity: sensor.homelab_cost_daily
-            name: Homelab cost
+          - type: distribution
+            entities:
+              - entity: sensor.homelab_cost_daily
+                name: Homelab
+                color: '#42a5f5'
+              - entity: sensor.office_cost_daily
+                name: Office
+                color: '#ab47bc'
+              - entity: sensor.ac_cooling_cost_daily
+                name: Cooling estimate
+                color: '#26c6da'
             grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.office_cost_daily
-            name: Office cost
+              columns: full
+          - type: heading
+            heading: Draw, last 24 hours
+            heading_style: title
+          - type: history-graph
+            title:
+            hours_to_show: 24
+            refresh_interval: 60
+            entities:
+              - entity: sensor.homelab_total_power
+                name: Homelab
+                color: '#42a5f5'
+              - entity: sensor.office_total_power
+                name: Office
+                color: '#ab47bc'
+              - entity: sensor.shed_lab_current_consumption
+                name: Shed (solar)
+                color: '#66bb6a'
             grid_options:
-              columns: 6
-              rows: 1
-            color: purple
-          - type: tile
-            entity: sensor.homelab_total_energy_daily
-            name: Homelab kWh
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: House vs homelab, by day
+            heading_style: title
+          - type: statistics-graph
+            chart_type: bar
+            period: day
+            days_to_show: 14
+            stat_types:
+              - change
+            entities:
+              - entity: consumers_energy:grid_kwh
+                color: '#90a4ae'
+              - entity: sensor.homelab_total_energy
+                color: '#42a5f5'
+              - entity: sensor.office_total_energy
+                color: '#ab47bc'
             grid_options:
-              columns: 6
-              rows: 1
-            color: blue
-          - type: tile
-            entity: sensor.office_total_energy_daily
-            name: Office kWh
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Where the energy goes, by day
+            heading_style: title
+          - type: statistics-graph
+            chart_type: bar
+            period: day
+            days_to_show: 14
+            stat_types:
+              - change
+            entities:
+              - entity: sensor.threadripper_energy
+                color: '#42a5f5'
+              - entity: sensor.nas_psu_energy
+                color: '#ffa726'
+              - entity: sensor.truenas_energy
+                color: '#26a69a'
+              - entity: sensor.hp_sff_energy
+                color: '#ef5350'
+              - entity: sensor.hp_elite_energy
+                color: '#8d6e63'
+              - entity: sensor.gaming_pc_energy
+                color: '#ab47bc'
+              - entity: sensor.macbook_energy
+                color: '#ec407a'
+              - entity: sensor.shed_lab_energy
+                color: '#66bb6a'
             grid_options:
-              columns: 6
-              rows: 1
-            color: purple
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Cost by month · recorded history
+            heading_style: title
+          - type: statistics-graph
+            chart_type: bar
+            period: month
+            days_to_show: 365
+            stat_types:
+              - change
+            entities:
+              - entity: sensor.homelab_cost
+                color: '#42a5f5'
+              - entity: sensor.office_cost
+                color: '#ab47bc'
+            grid_options:
+              columns: full
+          - type: markdown
+            grid_options:
+              columns: full
+            content: |
+              Graphs cover recorded history only. The first month can be partial; meter tiles may include usage from before that history began. Today’s bars are still accumulating.
       - type: grid
         cards:
           - type: heading
-            heading: Share of the house
+            heading: House energy share · yesterday
             heading_style: title
             badges:
               - type: entity
                 entity: sensor.consumers_energy_last_reading
                 name: CE data through
+          - type: markdown
+            content: |
+              {% if not is_state('binary_sensor.power_bill_data_current', 'on') %}
+              **Waiting for matching utility data.** Latest CE day: {{ states('sensor.consumers_energy_last_reading') }}. House shares appear when CE reaches yesterday.
+              {% else %}
+              CE date: **{{ states('sensor.consumers_energy_last_reading') }}**. Shares below compare kWh.
+              {% endif %}
+            grid_options:
+              columns: full
           - type: tile
             entity: sensor.homelab_share_of_house
             name: Homelab
@@ -156,6 +327,10 @@ views:
               columns: 6
               rows: 1
             color: grey
+            visibility:
+              - condition: state
+                entity: binary_sensor.power_bill_data_current
+                state: on
           - type: tile
             entity: sensor.homelab_total_energy_yesterday
             name: Homelab yesterday
@@ -163,80 +338,491 @@ views:
               columns: 6
               rows: 1
             color: blue
+  - title: Daily spend
+    path: daily-spend
+    icon: mdi:calendar-compare
+    type: sections
+    max_columns: 4
+    sections:
       - type: grid
-        column_span: 2
+        column_span: 4
         cards:
           - type: heading
-            heading: House vs homelab, by day
+            heading: Today vs yesterday
             heading_style: title
-          - type: statistics-graph
-            title: 
-            chart_type: bar
-            period: day
-            days_to_show: 30
-            stat_types:
-              - change
-            entities:
-              - consumers_energy:grid_kwh
-              - sensor.homelab_total_energy
-              - sensor.office_total_energy
-      - type: grid
-        column_span: 2
-        cards:
-          - type: heading
-            heading: Draw, last 24 hours
-            heading_style: title
-          - type: history-graph
-            title: 
-            hours_to_show: 24
-            refresh_interval: 60
-            entities:
-              - entity: sensor.homelab_total_power
-                name: Homelab
-              - entity: sensor.office_total_power
-                name: Office
-              - entity: sensor.shed_lab_current_consumption
-                name: Shed (solar)
-      - type: grid
-        column_span: 2
-        cards:
-          - type: heading
-            heading: Where the energy goes, by day
-            heading_style: title
-          - type: statistics-graph
-            title: 
-            chart_type: bar
-            period: day
-            days_to_show: 30
-            stat_types:
-              - change
-            entities:
-              - sensor.threadripper_energy
-              - sensor.nas_psu_energy
-              - sensor.truenas_energy
-              - sensor.hp_sff_energy
-              - sensor.hp_elite_energy
-              - sensor.gaming_pc_energy
-              - sensor.macbook_energy
-              - sensor.shed_lab_energy
-      - type: grid
-        column_span: 2
-        cards:
-          - type: heading
-            heading: Cost by month
-            heading_style: title
-          - type: statistics-graph
-            title: 
-            chart_type: bar
-            period: month
-            days_to_show: 365
-            stat_types:
-              - change
-            entities:
-              - sensor.homelab_cost
-              - sensor.office_cost
+          - type: markdown
+            content: |
+              Today: **{{ now().date() }}**, through **{{ now().strftime("%H:%M") }}**. Yesterday: **{{ (now() - timedelta(days=1)).date() }}**, full day.
 
-  # ───────────────────────── Devices: one section per plug ─────────────────────────
+              A smaller total today does not yet mean a saving. Costs below are estimates from metered energy and the configured rate. **—** means unavailable, not zero.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Cost by group · USD
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              <table width="100%">
+              <tr><th>Load</th><th>Today so far</th><th>Yesterday</th></tr>
+              <tr><td>Homelab</td><td>{{ num(states('sensor.homelab_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.homelab_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>Office</td><td>{{ num(states('sensor.office_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.office_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>Cooling · estimate</td><td>{{ num(states('sensor.ac_cooling_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.ac_cooling_cost_daily', 2, '$') }}</td></tr>
+              </table>
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Energy by group
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              <table width="100%">
+              <tr><th>Load</th><th>Today kWh</th><th>Yesterday kWh</th></tr>
+              <tr><td>Homelab</td><td>{{ num(states('sensor.homelab_total_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.homelab_total_energy_daily', 3) }}</td></tr>
+              <tr><td>Office</td><td>{{ num(states('sensor.office_total_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.office_total_energy_daily', 3) }}</td></tr>
+              <tr><td>Cooling · estimate</td><td>{{ num(states('sensor.ac_cooling_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.ac_cooling_energy_daily', 3) }}</td></tr>
+              </table>
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Every plug · USD
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              <table width="100%">
+              <tr><th>Plug</th><th>Today</th><th>Yesterday</th></tr>
+              <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.threadripper_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.nas_psu_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.truenas_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.hp_sff_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.hp_elite_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.gaming_pc_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.macbook_cost_daily', 2, '$') }}</td></tr>
+              </table>
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Every plug · kWh
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              <table width="100%">
+              <tr><th>Plug</th><th>Today kWh</th><th>Yesterday kWh</th></tr>
+              <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.threadripper_energy_daily', 3) }}</td></tr>
+              <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.nas_psu_energy_daily', 3) }}</td></tr>
+              <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.truenas_energy_daily', 3) }}</td></tr>
+              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.hp_sff_energy_daily', 3) }}</td></tr>
+              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.hp_elite_energy_daily', 3) }}</td></tr>
+              <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.gaming_pc_energy_daily', 3) }}</td></tr>
+              <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.macbook_energy_daily', 3) }}</td></tr>
+              </table>
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Daily cost · homelab, office and cooling
+            heading_style: title
+          - type: statistics-graph
+            chart_type: bar-stack
+            period: day
+            days_to_show: 14
+            stat_types:
+              - change
+            entities:
+              - entity: sensor.homelab_cost
+                name: Homelab
+                color: '#42a5f5'
+              - entity: sensor.office_cost
+                name: Office
+                color: '#ab47bc'
+              - entity: sensor.ac_cooling_cost
+                name: Cooling · estimate
+                color: '#26c6da'
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Who contributes most today?
+            heading_style: title
+          - type: distribution
+            entities:
+              - entity: sensor.threadripper_cost_daily
+                name: Threadripper
+                color: '#42a5f5'
+              - entity: sensor.nas_psu_cost_daily
+                name: NAS drive PSU
+                color: '#ffa726'
+              - entity: sensor.truenas_cost_daily
+                name: TrueNAS
+                color: '#26a69a'
+              - entity: sensor.hp_sff_cost_daily
+                name: HP SFF + Optiplex
+                color: '#ef5350'
+              - entity: sensor.hp_elite_cost_daily
+                name: HP Elite Mini
+                color: '#8d6e63'
+              - entity: sensor.gaming_pc_cost_daily
+                name: Gaming PC
+                color: '#ab47bc'
+              - entity: sensor.macbook_cost_daily
+                name: MacBook + monitor
+                color: '#ec407a'
+            grid_options:
+              columns: full
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              {% set total = states('sensor.combined_cost_daily') | float(0) %}
+              <table width="100%">
+              <tr><th>Plug</th><th>Share of plug cost today</th></tr>
+              <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.threadripper_cost_daily') else '—' }}</td></tr>
+              <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.nas_psu_cost_daily') else '—' }}</td></tr>
+              <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.truenas_cost_daily') else '—' }}</td></tr>
+              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.hp_sff_cost_daily') else '—' }}</td></tr>
+              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.hp_elite_cost_daily') else '—' }}</td></tr>
+              <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.gaming_pc_cost_daily') else '—' }}</td></tr>
+              <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.macbook_cost_daily') else '—' }}</td></tr>
+              </table>
+
+              Denominator: homelab + office cost today. Cooling and the solar shed are excluded. This is not a share of the whole-house bill.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Solar shed · separate supply
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              Today: **{{ num(states('sensor.shed_lab_energy_daily'), 3) }} kWh** · yesterday: **{{ yesterday('sensor.shed_lab_energy_daily', 3) }} kWh**. No grid electricity cost is assigned to the shed.
+            grid_options:
+              columns: full
+  - title: Bill breakdown
+    path: bill-breakdown
+    icon: mdi:receipt-text
+    type: sections
+    max_columns: 4
+    sections:
+      - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: Where yesterday’s bill went
+            heading_style: title
+          - type: markdown
+            content: |
+              **Homelab + office + cooling + other = whole house.** These are separate loads; gaming is already inside office. The solar shed is outside the grid bill.
+
+              CE provides reported whole-house cost. Plug costs use the configured rate; AC energy and cost are modeled.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Energy allocation · yesterday
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              {% if is_state('binary_sensor.power_bill_data_current', 'on') %}
+              CE date: **{{ states('sensor.consumers_energy_last_reading') }}**
+
+              <table width="100%">
+              <tr><th>Load</th><th>kWh</th><th>Energy share</th></tr>
+              <tr><td>Homelab</td><td>{{ num(states('sensor.homelab_total_energy_yesterday'), 3) }}</td><td>{{ num(states('sensor.homelab_energy_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td>Office</td><td>{{ num(states('sensor.office_total_energy_yesterday'), 3) }}</td><td>{{ num(states('sensor.office_energy_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td>Cooling · estimate</td><td>{{ num(states('sensor.ac_cooling_energy_yesterday'), 3) }}</td><td>{{ num(states('sensor.ac_cooling_energy_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td>Other / model difference</td><td>{{ num(states('sensor.house_other_energy_yesterday'), 3) }}</td><td>{{ num(states('sensor.house_other_energy_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td><strong>Whole house · CE</strong></td><td><strong>{{ num(states('sensor.consumers_energy_kwh_yesterday'), 3) }}</strong></td><td><strong>100%</strong></td></tr>
+              </table>
+
+              {% else %}
+              **Waiting for yesterday's CE data.** Latest CE day: {{ states('sensor.consumers_energy_last_reading') }}. Shares are unavailable until the dates match.
+              {% endif %}
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Cost allocation · yesterday
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              {% if is_state('binary_sensor.power_bill_data_current', 'on') %}
+              <table width="100%">
+              <tr><th>Load</th><th>Estimated cost</th><th>Share of CE cost</th></tr>
+              <tr><td>Homelab</td><td>{{ num(states('sensor.homelab_cost_yesterday'), 2, '$') }}</td><td>{{ num(states('sensor.homelab_bill_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td>Office</td><td>{{ num(states('sensor.office_cost_yesterday'), 2, '$') }}</td><td>{{ num(states('sensor.office_bill_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td>Cooling · estimate</td><td>{{ num(states('sensor.ac_cooling_cost_yesterday'), 2, '$') }}</td><td>{{ num(states('sensor.ac_cooling_bill_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td>Other / model difference</td><td>{{ num(states('sensor.house_other_cost_yesterday'), 2, '$') }}</td><td>{{ num(states('sensor.house_other_bill_share_yesterday'), 1, '', '%') }}</td></tr>
+              <tr><td><strong>Whole house · CE reported</strong></td><td><strong>{{ num(states('sensor.consumers_energy_cost_yesterday'), 2, '$') }}</strong></td><td><strong>100%</strong></td></tr>
+              </table>
+
+              {% else %}
+              **Cost shares need matching dates.** The utility has not supplied yesterday's full-day comparison yet.
+              {% endif %}
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Does the price model match?
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              <table width="100%">
+              <tr><th>Yesterday's average price</th><th>USD/kWh</th></tr>
+              <tr><td>CE · whole-house cost / energy</td><td>{{ num(states('sensor.consumers_energy_effective_rate'), 4, '$') }}</td></tr>
+              <tr><td>Model · plug cost / plug energy</td><td>{{ num(states('sensor.plug_effective_rate_yesterday'), 4, '$') }}</td></tr>
+              </table>
+
+              **Other / model difference** includes unmetered appliances and differences between estimated and CE-reported costs. A negative residual or shares over 100% mean the model, coverage or timing needs checking; they are not negative electricity use.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: House, plugs and cooling · daily kWh
+            heading_style: title
+          - type: statistics-graph
+            chart_type: bar
+            period: day
+            days_to_show: 14
+            stat_types:
+              - change
+            entities:
+              - entity: consumers_energy:grid_kwh
+                name: House · CE
+                color: '#90a4ae'
+              - entity: sensor.combined_total_energy
+                name: All plugs
+                color: '#ffca28'
+              - entity: sensor.ac_cooling_energy
+                name: Cooling estimate
+                color: '#26c6da'
+            grid_options:
+              columns: full
+  - title: Rates & savings
+    path: rates-savings
+    icon: mdi:cash-clock
+    type: sections
+    max_columns: 4
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: What does leaving it on cost?
+            heading_style: title
+          - type: tile
+            entity: sensor.current_electricity_rate
+            name: Rate now
+            color: amber
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.combined_cost_rate
+            name: Plugs · $/h
+            color: amber
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: markdown
+            content: |
+              Start with watts that run for many hours. **100 W for 24 hours = 2.4 kWh**. Use Daily spend for actual accumulated cost; use the scenarios below to assess a possible change.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Configured electricity prices
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              {% set riders = states('input_number.rate_delivery_riders') | float(0) %}
+              {% set tax = 1 + states('input_number.rate_sales_tax_pct') | float(0) / 100 %}
+              <table width="100%">
+              <tr><th>Configured tariff</th><th>Energy $/kWh</th><th>With riders + tax</th></tr>
+              {% for key, label in [('rate_nonsummer', 'Sep–May'), ('rate_summer_offpeak', 'Summer off-peak'), ('rate_summer_onpeak', 'Summer on-peak')] %}
+              <tr><td>{{ label }}</td><td>{{ num(states('input_number.' ~ key), 4, '$') }}</td><td>{{ num((states('input_number.' ~ key) | float(0) + riders) * tax, 4, '$') }}</td></tr>
+              {% endfor %}
+              </table>
+
+              Summer: June–August. On-peak: weekdays 14:00–19:00, local time. Riders: **{{ num(riders, 4, '$') }}/kWh**; tax: **{{ states('input_number.rate_sales_tax_pct') }}%**.
+
+              These are the configured assumptions, not a fresh tariff quote. Usage cost excludes fixed monthly fees. Permanent rate changes go through GitOps.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Always-on scenarios
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              {% set rate = states('sensor.current_electricity_rate') %}
+              <table width="100%">
+              <tr><th>Constant load</th><th>Per day</th><th>30 days</th></tr>
+              {% for watts in [10, 50, 100, 200, 500] %}
+              <tr><td>{{ watts }} W</td><td>{{ num(watts / 1000 * 24 * rate | float(0), 2, '$') if is_number(rate) else '—' }}</td><td>{{ num(watts / 1000 * 720 * rate | float(0), 2, '$') if is_number(rate) else '—' }}</td></tr>
+              {% endfor %}
+              </table>
+
+              What-if: the same watts and today's rate for every hour. These are not bill forecasts; tariff changes and actual runtime matter.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Current draw translated into money
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              <table width="100%">
+              <tr><th>Plug</th><th>Watts now</th><th>30 days at this draw</th></tr>
+              <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_current_consumption'), 0) }}</td><td>{{ num(states('sensor.threadripper_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.threadripper_cost_rate') else '—' }}</td></tr>
+              <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_current_consumption'), 0) }}</td><td>{{ num(states('sensor.nas_psu_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.nas_psu_cost_rate') else '—' }}</td></tr>
+              <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_current_consumption'), 0) }}</td><td>{{ num(states('sensor.truenas_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.truenas_cost_rate') else '—' }}</td></tr>
+              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_current_consumption'), 0) }}</td><td>{{ num(states('sensor.hp_sff_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.hp_sff_cost_rate') else '—' }}</td></tr>
+              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_current_consumption'), 0) }}</td><td>{{ num(states('sensor.hp_elite_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.hp_elite_cost_rate') else '—' }}</td></tr>
+              <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_current_consumption'), 0) }}</td><td>{{ num(states('sensor.gaming_pc_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.gaming_pc_cost_rate') else '—' }}</td></tr>
+              <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_current_consumption'), 0) }}</td><td>{{ num(states('sensor.macbook_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.macbook_cost_rate') else '—' }}</td></tr>
+              </table>
+
+              Same load, same current rate, 24 hours/day. This describes the cost of leaving it at this draw; it does not predict actual usage.
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Gaming and cooling
+            heading_style: title
+          - type: markdown
+            content: |
+              {% macro num(v, digits=2, prefix='', suffix='') -%}
+              {{ prefix ~ ('%.*f' | format(digits, v | float)) ~ suffix if is_number(v) else '—' }}
+              {%- endmacro %}
+              {% macro yesterday(entity, digits=2, prefix='') -%}
+              {%- set reset = state_attr(entity, 'last_reset') | as_datetime(none) -%}
+              {{ num(state_attr(entity, 'last_period'), digits, prefix) if reset is not none and (reset | as_local).date() == now().date() else '—' }}
+              {%- endmacro %}
+              <table width="100%">
+              <tr><th>Cost today</th><th>USD</th></tr>
+              <tr><td>Gaming sessions · estimate</td><td>{{ num(states('sensor.gaming_pc_gaming_cost_daily'), 2, '$') }}</td></tr>
+              <tr><td>PC outside gaming</td><td>{{ num(states('sensor.gaming_pc_idle_cost_daily'), 2, '$') }}</td></tr>
+              <tr><td>Cooling · estimate</td><td>{{ num(states('sensor.ac_cooling_cost_daily'), 2, '$') }}</td></tr>
+              </table>
+
+              One cooling hour at the configured wattage and current rate: **{{ num(states('input_number.ac_cooling_wattage') | float(0) / 1000 * states('sensor.current_electricity_rate') | float(0), 2, '$') }}**. Gaming is part of office; do not add it again.
+            grid_options:
+              columns: full
   - title: Devices
     icon: mdi:power-plug
     path: devices
@@ -265,7 +851,7 @@ views:
             min: 0
             max: 900
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
           - type: gauge
             entity: sensor.gaming_pc_current_consumption
@@ -273,7 +859,7 @@ views:
             min: 0
             max: 700
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
           - type: gauge
             entity: sensor.hp_sff_current_consumption
@@ -281,7 +867,7 @@ views:
             min: 0
             max: 200
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
           - type: gauge
             entity: sensor.truenas_current_consumption
@@ -289,7 +875,7 @@ views:
             min: 0
             max: 200
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
           - type: gauge
             entity: sensor.macbook_current_consumption
@@ -297,7 +883,7 @@ views:
             min: 0
             max: 160
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
           - type: gauge
             entity: sensor.nas_psu_current_consumption
@@ -305,7 +891,7 @@ views:
             min: 0
             max: 100
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
           - type: gauge
             entity: sensor.hp_elite_current_consumption
@@ -313,7 +899,7 @@ views:
             min: 0
             max: 80
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
           - type: gauge
             entity: sensor.shed_lab_current_consumption
@@ -321,8 +907,39 @@ views:
             min: 0
             max: 50
             grid_options:
-              columns: 3
+              columns: 6
               rows: 3
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Share of metered plug power · now
+            heading_style: title
+          - type: distribution
+            entities:
+              - entity: sensor.threadripper_current_consumption
+                name: Threadripper
+                color: '#42a5f5'
+              - entity: sensor.nas_psu_current_consumption
+                name: NAS drive PSU
+                color: '#ffa726'
+              - entity: sensor.truenas_current_consumption
+                name: TrueNAS
+                color: '#26a69a'
+              - entity: sensor.hp_sff_current_consumption
+                name: HP SFF + Optiplex
+                color: '#ef5350'
+              - entity: sensor.hp_elite_current_consumption
+                name: HP Elite Mini
+                color: '#8d6e63'
+              - entity: sensor.gaming_pc_current_consumption
+                name: Gaming PC
+                color: '#ab47bc'
+              - entity: sensor.macbook_current_consumption
+                name: MacBook + monitor
+                color: '#ec407a'
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -334,61 +951,88 @@ views:
             entities:
               - entity: sensor.threadripper_current_consumption
                 name: Threadripper
+                color: '#42a5f5'
               - entity: sensor.gaming_pc_current_consumption
                 name: Gaming PC
+                color: '#ab47bc'
               - entity: sensor.hp_sff_current_consumption
                 name: HP SFF + Optiplex
+                color: '#ef5350'
               - entity: sensor.truenas_current_consumption
                 name: TrueNAS
+                color: '#26a69a'
               - entity: sensor.macbook_current_consumption
                 name: MacBook + Mon.
+                color: '#ec407a'
               - entity: sensor.nas_psu_current_consumption
                 name: NAS Drive PSU
+                color: '#ffa726'
               - entity: sensor.hp_elite_current_consumption
                 name: HP Elite Mini
+                color: '#8d6e63'
               - entity: sensor.shed_lab_current_consumption
                 name: Shed (solar)
+                color: '#66bb6a'
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
             heading: Cost per device, by day
             heading_style: title
           - type: statistics-graph
-            title:
             chart_type: bar
             period: day
-            days_to_show: 30
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - sensor.threadripper_cost
-              - sensor.gaming_pc_cost
-              - sensor.hp_sff_cost
-              - sensor.truenas_cost
-              - sensor.macbook_cost
-              - sensor.nas_psu_cost
-              - sensor.hp_elite_cost
+              - entity: sensor.threadripper_cost
+                color: '#42a5f5'
+              - entity: sensor.gaming_pc_cost
+                color: '#ab47bc'
+              - entity: sensor.hp_sff_cost
+                color: '#ef5350'
+              - entity: sensor.truenas_cost
+                color: '#26a69a'
+              - entity: sensor.macbook_cost
+                color: '#ec407a'
+              - entity: sensor.nas_psu_cost
+                color: '#ffa726'
+              - entity: sensor.hp_elite_cost
+                color: '#8d6e63'
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
             heading: Energy per device, by day
             heading_style: title
           - type: statistics-graph
-            title:
             chart_type: bar
             period: day
-            days_to_show: 30
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - sensor.threadripper_energy
-              - sensor.gaming_pc_energy
-              - sensor.hp_sff_energy
-              - sensor.truenas_energy
-              - sensor.macbook_energy
-              - sensor.nas_psu_energy
-              - sensor.hp_elite_energy
-              - sensor.shed_lab_energy
+              - entity: sensor.threadripper_energy
+                color: '#42a5f5'
+              - entity: sensor.gaming_pc_energy
+                color: '#ab47bc'
+              - entity: sensor.hp_sff_energy
+                color: '#ef5350'
+              - entity: sensor.truenas_energy
+                color: '#26a69a'
+              - entity: sensor.macbook_energy
+                color: '#ec407a'
+              - entity: sensor.nas_psu_energy
+                color: '#ffa726'
+              - entity: sensor.hp_elite_energy
+                color: '#8d6e63'
+              - entity: sensor.shed_lab_energy
+                color: '#66bb6a'
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -418,6 +1062,8 @@ views:
               - entity: sensor.hp_elite_cost_daily
                 name: HP Elite Mini
                 icon: mdi:desktop-classic
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -447,6 +1093,8 @@ views:
               - entity: sensor.hp_elite_cost_monthly
                 name: HP Elite Mini
                 icon: mdi:desktop-classic
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -476,6 +1124,8 @@ views:
               - entity: sensor.hp_elite_cost_last_month
                 name: HP Elite Mini
                 icon: mdi:desktop-classic
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -505,6 +1155,8 @@ views:
               - entity: sensor.hp_elite_power_share
                 name: HP Elite Mini
                 icon: mdi:desktop-classic
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -512,13 +1164,12 @@ views:
             heading_style: subtitle
           - type: markdown
             content: |
-              Each dial is scaled to that device's own 14-day peak, so a full needle
-              means "busy for this box", not "busy compared to the Threadripper".
-              **HP SFF + Optiplex** share one plug, so their draw cannot be split. Homelab switches are
-              locked on by the *Homelab plug power-off lockout* automation; the office plugs are not.
-              **Shed Lab** runs on solar: kWh only, no cost, not in any group.
+              Dials use fixed, device-specific watt scales; compare the numbers, not the needle positions.
+              **HP SFF + Optiplex** share one plug. **Shed Lab** is solar-fed and excluded from grid cost and shares.
 
   # ───────────────────────── House: what Consumers Energy says ─────────────────────────
+            grid_options:
+              columns: full
   - title: House
     icon: mdi:home-lightning-bolt
     path: house
@@ -526,6 +1177,17 @@ views:
     max_columns: 4
     dense_section_placement: true
     sections:
+      - type: grid
+        column_span: 4
+        cards:
+          - type: markdown
+            grid_options:
+              columns: full
+            content: |
+              CE data through **{{ states('sensor.consumers_energy_last_reading') }}**. House comparisons use yesterday's completed day.
+              {% if not is_state('binary_sensor.power_bill_data_current', 'on') %}
+              **Waiting for matching utility data; house shares are unavailable.**
+              {% endif %}
       - type: grid
         cards:
           - type: heading
@@ -542,6 +1204,10 @@ views:
               columns: 6
               rows: 1
             color: grey
+            visibility:
+              - condition: state
+                entity: binary_sensor.power_bill_data_current
+                state: on
           - type: tile
             entity: sensor.consumers_energy_cost_yesterday
             name: Cost yesterday
@@ -549,6 +1215,10 @@ views:
               columns: 6
               rows: 1
             color: grey
+            visibility:
+              - condition: state
+                entity: binary_sensor.power_bill_data_current
+                state: on
           - type: tile
             entity: sensor.consumers_energy_kwh_month
             name: kWh this month
@@ -558,7 +1228,7 @@ views:
             color: grey
           - type: tile
             entity: sensor.consumers_energy_cost_month
-            name: Cost this month
+            name: House · CE reported
             grid_options:
               columns: 6
               rows: 1
@@ -624,16 +1294,20 @@ views:
             heading: House vs homelab, by day
             heading_style: title
           - type: statistics-graph
-            title: 
             chart_type: bar
             period: day
-            days_to_show: 60
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - consumers_energy:grid_kwh
-              - sensor.homelab_total_energy
-              - sensor.office_total_energy
+              - entity: consumers_energy:grid_kwh
+                color: '#90a4ae'
+              - entity: sensor.homelab_total_energy
+                color: '#42a5f5'
+              - entity: sensor.office_total_energy
+                color: '#ab47bc'
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -646,6 +1320,8 @@ views:
               today is always blank on the Energy dashboard. Cost is what CE actually billed for the day.
 
   # ───────────────────────── Solar: the shed ─────────────────────────
+            grid_options:
+              columns: full
   - title: Solar
     icon: mdi:solar-power-variant
     path: solar
@@ -810,6 +1486,8 @@ views:
                 name: Controller temp
               - entity: sensor.solar_last_update
                 name: Last reading
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -817,7 +1495,7 @@ views:
             heading: Power flow, last 24 hours
             heading_style: title
           - type: history-graph
-            title: 
+            title:
             hours_to_show: 24
             refresh_interval: 30
             entities:
@@ -829,6 +1507,9 @@ views:
                 name: Battery net
               - entity: sensor.shed_lab_current_consumption
                 name: HP micro
+                color: '#66bb6a'
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -836,7 +1517,7 @@ views:
             heading: Battery, last 24 hours
             heading_style: title
           - type: history-graph
-            title: 
+            title:
             hours_to_show: 24
             refresh_interval: 60
             entities:
@@ -846,6 +1527,8 @@ views:
                 name: SOC local
               - entity: sensor.solar_battery_soc_controller
                 name: SOC controller
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -853,16 +1536,18 @@ views:
             heading: Generated vs used, by day
             heading_style: title
           - type: statistics-graph
-            title: 
             chart_type: bar
             period: day
-            days_to_show: 30
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - sensor.solar_generated_total
-              - sensor.solar_consumed_total
-              - sensor.shed_lab_energy
+              - entity: sensor.solar_generated_total
+              - entity: sensor.solar_consumed_total
+              - entity: sensor.shed_lab_energy
+                color: '#66bb6a'
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -876,6 +1561,8 @@ views:
               here costs anything on the bill.
 
   # ───────────────────────── Gaming: sessions on the Gaming PC ─────────────────────────
+            grid_options:
+              columns: full
   - title: Gaming
     icon: mdi:controller
     path: gaming
@@ -901,7 +1588,7 @@ views:
             color: purple
           - type: tile
             entity: sensor.gaming_pc_gaming_cost_rate
-            name: Burn rate
+            name: Cost per hour now
             grid_options:
               columns: 6
               rows: 1
@@ -923,7 +1610,7 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: Today
+            heading: Today so far
             heading_style: title
           - type: tile
             entity: sensor.gaming_pc_gaming_hours_daily
@@ -948,7 +1635,7 @@ views:
             color: amber
           - type: tile
             entity: sensor.gaming_pc_idle_cost_daily
-            name: Idle tax
+            name: Outside gaming
             grid_options:
               columns: 6
               rows: 1
@@ -956,15 +1643,8 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: This month
+            heading: Month to date
             heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.gaming_pc_gaming_hours_last_month
-                name: Hours last month
-              - type: entity
-                entity: sensor.gaming_pc_gaming_cost_last_month
-                name: Cost last month
           - type: tile
             entity: sensor.gaming_pc_gaming_hours_monthly
             name: Hours gamed
@@ -988,7 +1668,7 @@ views:
             color: amber
           - type: tile
             entity: sensor.gaming_pc_idle_cost_monthly
-            name: Idle tax
+            name: Outside gaming
             grid_options:
               columns: 6
               rows: 1
@@ -1000,14 +1680,17 @@ views:
             heading: Draw and sessions, last 24 hours
             heading_style: title
           - type: history-graph
-            title: 
+            title:
             hours_to_show: 24
             refresh_interval: 30
             entities:
               - entity: sensor.gaming_pc_current_consumption
                 name: Gaming PC
+                color: '#ab47bc'
               - entity: binary_sensor.gaming_pc_gaming
                 name: Session
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -1015,15 +1698,18 @@ views:
             heading: Gaming vs whole PC, by day
             heading_style: title
           - type: statistics-graph
-            title: 
             chart_type: bar
             period: day
-            days_to_show: 30
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - sensor.gaming_pc_gaming_energy
-              - sensor.gaming_pc_energy
+              - entity: sensor.gaming_pc_gaming_energy
+                color: '#ab47bc'
+              - entity: sensor.gaming_pc_energy
+                color: '#ab47bc'
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -1031,14 +1717,16 @@ views:
             heading: Hours gamed, by day
             heading_style: title
           - type: statistics-graph
-            title: 
             chart_type: bar
             period: day
-            days_to_show: 30
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - sensor.gaming_pc_gaming_hours
+              - entity: sensor.gaming_pc_gaming_hours
+                color: '#ab47bc'
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -1047,11 +1735,13 @@ views:
             heading_style: subtitle
           - type: markdown
             content: |
-              A **session** is the plug drawing more than the threshold (350 W; idle is ~200 W, gaming
-              450–600 W) until five quiet minutes pass. **Idle tax** is everything the PC costs outside
-              sessions: sitting on at 200 W is about 1.4 kWh a day. Tune the threshold under Settings.
+              A **session** means plug draw above {{ states("input_number.gaming_pc_active_threshold_w") }} W, ending after five quiet minutes. This is a power-based estimate, not game detection.
+
+              **Outside gaming** includes idle time and other PC work. At a constant 200 W for 24 hours, consumption is **4.8 kWh**. Tune the threshold under Settings.
 
   # ───────────────────────── Cooling: central AC (Nest-modeled) ─────────────────────────
+            grid_options:
+              columns: full
   - title: Cooling
     icon: mdi:snowflake
     path: cooling
@@ -1059,6 +1749,17 @@ views:
     max_columns: 4
     dense_section_placement: true
     sections:
+      - type: grid
+        column_span: 4
+        cards:
+          - type: markdown
+            grid_options:
+              columns: full
+            content: |
+              CE data through **{{ states('sensor.consumers_energy_last_reading') }}**. House comparisons use yesterday's completed day.
+              {% if not is_state('binary_sensor.power_bill_data_current', 'on') %}
+              **Waiting for matching utility data; house shares are unavailable.**
+              {% endif %}
       - type: grid
         cards:
           - type: heading
@@ -1080,7 +1781,7 @@ views:
             color: blue
           - type: tile
             entity: sensor.ac_cooling_cost_rate
-            name: Burn rate
+            name: Cost per hour now
             grid_options:
               columns: 6
               rows: 1
@@ -1102,7 +1803,7 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: Today
+            heading: Today so far
             heading_style: title
           - type: tile
             entity: sensor.ac_cooling_hours_daily
@@ -1128,15 +1829,8 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: This month
+            heading: Month to date
             heading_style: title
-            badges:
-              - type: entity
-                entity: sensor.ac_cooling_hours_last_month
-                name: Hours last month
-              - type: entity
-                entity: sensor.ac_cooling_cost_last_month
-                name: Cost last month
           - type: tile
             entity: sensor.ac_cooling_hours_monthly
             name: Hours cooling
@@ -1165,7 +1859,7 @@ views:
             heading_style: title
           - type: tile
             entity: sensor.ac_share_of_house_yesterday
-            name: AC share of bill
+            name: Est. bill share · yesterday
             grid_options:
               columns: 6
               rows: 1
@@ -1184,6 +1878,10 @@ views:
               columns: 6
               rows: 1
             color: grey
+            visibility:
+              - condition: state
+                entity: binary_sensor.power_bill_data_current
+                state: on
           - type: tile
             entity: sensor.consumers_energy_effective_rate
             name: CE charged (per kWh)
@@ -1198,16 +1896,20 @@ views:
             heading: Cooling vs house, by day
             heading_style: title
           - type: statistics-graph
-            title: 
             chart_type: bar
             period: day
-            days_to_show: 60
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - consumers_energy:grid_kwh
-              - sensor.ac_cooling_energy
-              - sensor.combined_total_energy
+              - entity: consumers_energy:grid_kwh
+                color: '#90a4ae'
+              - entity: sensor.ac_cooling_energy
+                color: '#26c6da'
+              - entity: sensor.combined_total_energy
+                color: '#ffca28'
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -1215,14 +1917,16 @@ views:
             heading: Cooling hours, by day
             heading_style: title
           - type: statistics-graph
-            title: 
             chart_type: bar
             period: day
-            days_to_show: 30
+            days_to_show: 14
             stat_types:
               - change
             entities:
-              - sensor.ac_cooling_hours
+              - entity: sensor.ac_cooling_hours
+                color: '#26c6da'
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -1258,6 +1962,8 @@ views:
               CE data is one day late, so every house comparison is yesterday-vs-yesterday.
 
   # ───────────────────────── Settings: rates and thresholds ─────────────────────────
+            grid_options:
+              columns: full
   - title: Settings
     icon: mdi:tune
     path: settings
@@ -1287,6 +1993,8 @@ views:
                 name: Sales tax
               - entity: sensor.electricity_tariff_period
                 name: Tariff window now
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -1298,6 +2006,8 @@ views:
                 name: Session threshold
               - entity: binary_sensor.gaming_pc_gaming
                 name: Session now
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: heading
@@ -1311,6 +2021,8 @@ views:
                 name: House baseline (non-AC)
               - entity: binary_sensor.ac_cooling
                 name: Compressor now
+            grid_options:
+              columns: full
       - type: grid
         column_span: 2
         cards:
@@ -1326,5 +2038,7 @@ views:
               **Lockout.** Homelab plugs are switched back on within seconds if turned off. To power-cycle
               one on purpose, disable the *Homelab plug power-off lockout* automation first.
 
-              **Two dashboards.** The built-in **Energy** page is the per-day ledger (grid from Consumers,
-              solar, per-device). This one is the live view with cost.
+              **Energy** tracks the grid-fed house. **Daily spend** compares today with yesterday;
+              **Bill breakdown** connects metered loads to the utility bill. The solar shed is separate.
+            grid_options:
+              columns: full
