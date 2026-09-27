@@ -15,7 +15,8 @@ spec:
   storageClassName: longhorn-flash
   resources:
     requests:
-      storage: 40Gi
+      # Grows ~2 GB/day unsampled (redlib crawler events); PVCs cannot shrink, so grow in place.
+      storage: 60Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
