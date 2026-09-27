@@ -38,6 +38,9 @@ configMapGenerator:
   - scripts/copy-config.sh
   - scripts/install-hacs.sh
   - scripts/repair-power-statistics.py
+  - consumers-energy-restore.py=scripts/consumers-energy-restore/__init__.py
+  - consumers-energy-snapshot.py=scripts/consumers-energy-restore/snapshot.py
+  - consumers-energy-manifest.json=scripts/consumers-energy-restore/manifest.json
 - name: config
   files:
   - configuration.yaml

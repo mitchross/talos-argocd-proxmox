@@ -133,8 +133,20 @@ into Home Assistant. Source and image: `github.com/mitchross/consumers-energy-sy
 | `sensor.homelab_share_of_house`, `sensor.combined_share_of_house` | Homelab kWh yesterday as a share of the house |
 | `sensor.consumers_energy_effective_rate` | CE cost / kWh yesterday, next to the modelled rate |
 
-The live sensors are set through the REST API, so they vanish on an HA restart
-until the next 13:17 run. The statistics persist.
+The importer sets nine live sensors through the REST API, including
+`sensor.consumers_energy_last_reading`. Those states normally disappear on an
+HA restart even though recorder history and statistics persist. The local
+`consumers_energy_restore` integration restores the last recorded values after
+HA starts. Its source lives in `scripts/consumers-energy-restore/` and the config
+copier installs it under `/config/custom_components/consumers_energy_restore`.
+
+Recovery reads the SQLite recorder in a worker thread and preserves the original
+reading date. It requires all nine recorded states and skips recovery if a newer
+import has already populated any of them. Missing or invalid history leaves the
+comparisons unavailable until the next successful daily import at 13:17. Derived
+rates and shares recompute from the restored inputs. This integration assumes
+the current local SQLite recorder; revisit it if the recorder moves to another
+database backend.
 
 **Running it elsewhere.** The same image runs anywhere with the same env vars
 (`CE_PORTAL_USERNAME`, `CE_PORTAL_PASSWORD`, `HASS_URL`, `HASS_TOKEN`):
@@ -235,8 +247,9 @@ visible so a model mismatch cannot masquerade as perfect attribution.
 
 `power-insights.yaml` holds these derived sensors. House comparisons are only
 available when `consumers_energy_last_reading` equals yesterday's local date
-and both utility totals exist. The report may arrive late or disappear after
-an HA restart; that produces unavailable comparisons, not zero consumption.
+and both utility totals exist. A late report or missing recovery history produces
+unavailable comparisons, not zero consumption. Startup recovery preserves the
+report date, so an old report cannot pass the freshness check.
 
 **Rates & savings** translates a constant load into dollars/day and dollars/30
 days at the configured current rate. These are what-if calculations, not bill
