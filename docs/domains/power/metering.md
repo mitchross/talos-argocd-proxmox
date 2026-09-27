@@ -10,12 +10,12 @@ what it costs, and how to add a plug.
 
 | Plug (HA device) | Entity prefix | Group | What it powers |
 |---|---|---|---|
-| Threadripper Host | `threadripper_*` | homelab | Threadripper X399 host (`192.168.10.14`): GPU worker + general worker VMs, 1x RTX 3090 |
+| Threadripper Host | `threadripper_*` | homelab | Threadripper 2950X/X399 host (`192.168.10.14`): GPU worker + general worker VMs, 2× RTX 3090 |
 | NAS Drive PSU | `nas_psu_*` | homelab | The drive-shelf PSU for the NAS |
 | TrueNAS (DL360) | `truenas_*` | homelab | The TrueNAS/DL360 host itself (`192.168.10.133`) |
 | HP SFF + Optiplex | `hp_sff_*` | homelab | **Two hosts on one outlet**: HP 8500 SFF (`.21`) and Dell Optiplex 8500 |
 | HP Elite Mini G9 | `hp_elite_*` | homelab | HP Elite Mini 600 G9 (`.22`) |
-| Gaming PC | `gaming_pc_*` | office | 7800X3D workstation with the second RTX 3090. **Not a cluster node** |
+| Gaming PC | `gaming_pc_*` | office | 7800X3D workstation. **Not a cluster node**; the two AI RTX 3090s are on Threadripper |
 | MacBook + Monitor | `macbook_*` | office | Office desk |
 | Shed Lab (solar) | `shed_lab_*` | none | HP micro in the shed (`.20`), solar-fed |
 
@@ -405,3 +405,67 @@ reads low on those days — calibrate from long, sustained cooling days.
 Dashboards: the **Cooling** view of the Homelab Power dashboard and the AC tile
 on its House view; `sensor.ac_*` / `binary_sensor.ac_cooling` are in the
 Prometheus filter globs, so Grafana can read them.
+
+## Rolling findings and hardware comparisons
+
+The **Findings** view uses `sensor.power_spending_analysis`, a local integration
+whose source is `scripts/power-analysis/`. It refreshes hourly after HA starts,
+reads the SQLite recorder in an executor thread, and is excluded from recorder
+history itself. The view is in `lovelace-power-findings.yaml`; the existing
+Overview remains the landing page.
+
+The analysis uses the preceding 14 local days, excludes today, and requires a
+common set of complete hourly readings across the seven plug-energy series,
+homelab/office groups, detected gaming energy, and cooling hours. It needs the
+previous hourly boundary and matching CE daily energy/cost records. Missing
+hours, nonfinite values, counter discontinuities, and impossible gaming/runtime
+values exclude the day. Local-day length handles daylight saving transitions.
+This establishes recorded coverage; it cannot prove every physical sensor was
+accurate or responsive throughout the day.
+
+Device ranking shows average watts and 720-hour projections at the current
+configured rate. Neither is an idle-only measurement or a full-month bill.
+Cooling correlation needs at least seven matched days and one hour of runtime
+variation. A fit against house energy minus computer energy is shown for
+investigation only. Its largest positive residual identifies a day to review;
+it cannot identify an appliance. The report does not change assumed AC wattage.
+
+Use the `power-analysis` agent skill (shared procedure:
+`.claude/commands/power-analysis.md`) for repeatable analysis and safe accounting.
+The CLI emits the same report read-only; omit `--rate` to leave projections
+unpriced when the live configured rate is unknown.
+
+### Reassessing Threadripper vs the spare DL360
+
+The owner's confirmed arrangement retains both RTX 3090s, using an external
+GPU PSU and PCIe risers with the DL360. Physical feasibility was established by
+prior use. Mink's historical compute inventory lists two E5-2680 v4 CPUs and
+approximately 768 GB physical RAM; current installed CPUs and DIMMs still need
+verification. The separate NAS has one E5-2680 v4 and 384 GB, per the September
+20 inspection. Do not substitute its power reading for the spare GPU server.
+
+On September 27, a read-only trailing-24-hour Prometheus sample showed about
+222.4 W at the Threadripper outlet (1,437 samples across HA pod changes) and
+48.4 W combined GPU board power (5,760 samples per GPU). GPU utilization averaged
+about 0.3% per GPU across those samples. These clocks and measurement boundaries
+are close but different: the roughly 174 W difference includes CPU/RAM/drives,
+other host work, fans, and PSU losses. It is not a measured CPU-only idle figure
+or guaranteed removable overhead. The earlier 246.6 W average covers a different,
+eight-day cohort.
+
+The old Mink comparison note contains only a title, not watt measurements;
+there is no preserved numeric basis there to accept or overturn the previous
+power verdict. A matched comparison should include:
+
+- the same two GPUs, power caps, model, context, concurrency, and completed work;
+- all wall outlets including the external GPU supply;
+- both idle energy and Wh per inference workload, with tokens/sec and latency;
+- PCIe link width/speed under load and one-vs-two CPU memory/slot dependencies.
+
+At $0.21328/kWh, saving 25/50/100 W continuously is $3.84/$7.68/$15.36 per 30 days.
+A low-power single-Xeon trial is a plausible candidate, not an established winner.
+More RAM helps when the workload needs it; the NAS has demonstrated ARC read
+benefits, while sustained and durable writes remain bounded by storage/network
+behavior. See [NAS measurements](../../nas-performance.md),
+[HPE DL360 Gen9 platform features](https://support.hpe.com/hpesc/public/docDisplay?docId=c04442953&docLocale=en_US&page=GUID-A8ED5EBD-51AB-4EDC-AEAA-FA318CF1B483.html),
+and [TrueNAS caching and write behavior](https://www.truenas.com/docs/references/zilandslog/).
