@@ -92,6 +92,9 @@ spec:
               value: "(radar-ng, mitch@vanillax.me)"
             - name: PHOTON_URL
               value: http://photon.photon.svc.cluster.local:2322
+            # Photon's first query after idle can take 4-7 s; at the 6 s default the API returned 502.
+            - name: PLACES_UPSTREAM_TIMEOUT_S
+              value: "12"
             # Push/watch routes stay closed until the mobile identity provider
             # can issue the per-user HMAC session tokens the API now requires.
             - name: DISABLE_WORKFLOW_ROUTES
