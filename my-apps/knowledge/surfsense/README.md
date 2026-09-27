@@ -4,7 +4,7 @@ Self-hosted SurfSense research platform for the Talos cluster.
 
 ## Argo CD boundary
 
-`my-apps/ai/surfsense` is one generated Argo CD Application: `my-apps-surfsense`. Internal `app/`, `postgres/`, `redis/`, and `kopiur/` directories are organizational/resource boundaries only; the `my-apps` ApplicationSet discovers only `my-apps/*/*`.
+`my-apps/knowledge/surfsense` is one generated Argo CD Application: `my-apps-surfsense`. Internal `app/`, `postgres/`, `redis/`, and `kopiur/` directories are organizational/resource boundaries only; the `my-apps` ApplicationSet discovers only `my-apps/*/*`.
 
 ## Deployment shape
 
@@ -123,8 +123,8 @@ remove its access; never print the 1Password values in logs.
 
 For rollback, commit `suspend: true`; existing imported documents remain available.
 Suspension prevents future Jobs and does not cancel a Job already running.
-Validate locally with `kustomize build my-apps/ai/surfsense` and
-`python -m unittest discover -s my-apps/ai/surfsense/scripts -p 'test_*.py'` (requires `httpx`).
+Validate locally with `kustomize build my-apps/knowledge/surfsense` and
+`python -m unittest discover -s my-apps/knowledge/surfsense/scripts -p 'test_*.py'` (requires `httpx`).
 
 ## Self-host billing policy
 

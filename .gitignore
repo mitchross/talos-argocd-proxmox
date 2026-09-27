@@ -104,7 +104,7 @@ omni/configs/*.yaml
 
 # Misc
 config.xml
-!my-apps/development/posthog/config/clickhouse/config.xml
+!my-apps/development-infra/posthog/config/clickhouse/config.xml
 *.pid
 /node_modules
 /dist

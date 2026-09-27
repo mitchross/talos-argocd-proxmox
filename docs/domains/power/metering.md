@@ -58,7 +58,7 @@ energy component steps between three windows:
 | Summer off-peak | June–August, all other hours | ~$0.235 |
 | Non-summer | September–May | ~$0.213 |
 
-Rates live in `my-apps/home/home-assistant/configuration.yaml` under
+Rates live in `my-apps/home-automation/home-assistant/configuration.yaml` under
 `input_number:`. **Git is the source of truth**: the `initial:` values reset the
 UI sliders on every Home Assistant restart, so a permanent rate change goes in
 the file, not the dashboard.
@@ -121,7 +121,7 @@ before concluding which of the two to retire.
 ## House-level data from Consumers Energy
 
 The plugs only see the homelab. The whole-house number comes from the utility:
-a daily CronJob (`my-apps/home/consumers-energy-sync/`) drives a headless
+a daily CronJob (`my-apps/home-automation/consumers-energy-sync/`) drives a headless
 Chromium through the Consumers Energy portal, downloads the *Share data → CSV*
 export (one row per day, trailing 30 days, with CE's own cost), and pushes it
 into Home Assistant. Source and image: `github.com/mitchross/consumers-energy-sync`.
@@ -193,7 +193,7 @@ first.**
    then rename its entities so they share one short prefix (`sensor.<prefix>_current_consumption`,
    `switch.<prefix>`, …). The prefix is permanent: renaming it later orphans
    every statistic recorded under it.
-2. In `my-apps/home/home-assistant/configuration.yaml`, add
+2. In `my-apps/home-automation/home-assistant/configuration.yaml`, add
    `sensor.<prefix>_*` to `prometheus.filter.include_entity_globs`, then add its
    energy integration, cost integration, four energy `utility_meter`s, four cost
    `utility_meter`s, a `*_cost_rate` template, `*_cost_last_month` and
@@ -203,7 +203,7 @@ first.**
    form), and the switch to the lockout automation if the device must stay on.
 4. Add it to `lovelace-homelab-power.yaml`, and to the entity regex of the
    per-plug queries in both Grafana dashboards under
-   `monitoring/prometheus-stack/dashboards/`. Those are plain `.json` files
+   `monitoring/metrics/prometheus-stack/dashboards/`. Those are plain `.json` files
    assembled into ConfigMaps by `configMapGenerator`; edit the `.json`, never a
    rendered manifest.
 5. Add `sensor.<prefix>_energy` as an Individual device on the HA Energy dashboard.
@@ -341,7 +341,7 @@ the guarded LOAD automation, and serves two feeds:
 
 | Feed | Consumer |
 |---|---|
-| `:8080/metrics` (`epever_*`, `epsolar_*`, `solar_buffer_*`) | cluster Prometheus, job `epever-solar` (`monitoring/prometheus-stack/values.yaml`) |
+| `:8080/metrics` (`epever_*`, `epsolar_*`, `solar_buffer_*`) | cluster Prometheus, job `epever-solar` (`monitoring/metrics/prometheus-stack/values.yaml`) |
 | `:8080/api/v1/status` (JSON) | Home Assistant `rest:` sensors `sensor.solar_*` / `binary_sensor.solar_*` (30 s) |
 
 Grafana: **Solar** (`dashboards/home-energy/shed-solar.json`), which mirrors

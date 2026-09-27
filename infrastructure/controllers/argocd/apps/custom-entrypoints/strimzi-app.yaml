@@ -7,7 +7,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "4"
-    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/strimzi
+    argocd.argoproj.io/manifest-generate-paths: my-apps/development/strimzi
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -16,7 +16,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: infrastructure/controllers/strimzi
+    path: my-apps/development/strimzi
   destination:
     server: https://kubernetes.default.svc
     namespace: kafka

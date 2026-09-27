@@ -42,7 +42,7 @@ this repo.
 ```
 my-apps/ai/comfyui/              → ArgoCD Application "my-apps-comfyui"
 infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
+monitoring/metrics/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 ### Sync Wave Architecture

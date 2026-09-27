@@ -29,7 +29,7 @@ def main() -> int:
     parser.add_argument("--suite", choices=("collector", "kopiur", "langfuse"), default="collector")
     args = parser.parse_args()
     try:
-        source_dir = SOURCE_DIR if args.suite == "collector" else REPO_ROOT / "monitoring/prometheus-stack"
+        source_dir = SOURCE_DIR if args.suite == "collector" else REPO_ROOT / "monitoring/metrics/prometheus-stack"
         prepare_tests(source_dir, args.output_dir, args.suite)
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"ERROR: could not prepare telemetry rule tests: {exc}", file=sys.stderr)

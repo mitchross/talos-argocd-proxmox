@@ -189,4 +189,4 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
 
 - StorageClass contract: [storage-tiers.md](storage-tiers.md)
 - Backup/restore mechanics and the `Restore` pin: [kopiur-backup-architecture.md](kopiur-backup-architecture.md), [../../disaster-recovery.md](../../disaster-recovery.md)
-- Worked example manifests: `my-apps/development/temporal/postgres/pvc.yaml`, `my-apps/development/temporal/kopiur/temporal-postgres-data.yaml`
+- Worked example manifests: `my-apps/development-infra/temporal/postgres/pvc.yaml`, `my-apps/development-infra/temporal/kopiur/temporal-postgres-data.yaml`

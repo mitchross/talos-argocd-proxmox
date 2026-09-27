@@ -2,16 +2,16 @@ name: Holmes Console Tests
 on:
   pull_request:
     paths:
-      - 'monitoring/holmesgpt/scripts/server.py'
-      - 'monitoring/holmesgpt/ui/**'
-      - 'monitoring/holmesgpt/tests/test_console.py'
+      - 'monitoring/ai-ops/_archive/holmesgpt/scripts/server.py'
+      - 'monitoring/ai-ops/_archive/holmesgpt/ui/**'
+      - 'monitoring/ai-ops/_archive/holmesgpt/tests/test_console.py'
       - '.github/workflows/holmes-console-tests.yml'
   push:
     branches: [main]
     paths:
-      - 'monitoring/holmesgpt/scripts/server.py'
-      - 'monitoring/holmesgpt/ui/**'
-      - 'monitoring/holmesgpt/tests/test_console.py'
+      - 'monitoring/ai-ops/_archive/holmesgpt/scripts/server.py'
+      - 'monitoring/ai-ops/_archive/holmesgpt/ui/**'
+      - 'monitoring/ai-ops/_archive/holmesgpt/tests/test_console.py'
       - '.github/workflows/holmes-console-tests.yml'
 permissions:
   contents: read
@@ -23,5 +23,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m unittest discover -s monitoring/holmesgpt/tests -p test_console.py -v
-      - run: node --check monitoring/holmesgpt/ui/app.js
+      - run: python -m unittest discover -s monitoring/ai-ops/_archive/holmesgpt/tests -p test_console.py -v
+      - run: node --check monitoring/ai-ops/_archive/holmesgpt/ui/app.js

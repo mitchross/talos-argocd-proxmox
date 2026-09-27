@@ -37,8 +37,8 @@ read-only cluster logs/configuration can be sensitive.
 ## Offline tests
 
 ```sh
-python -m unittest discover -s monitoring/holmesgpt/tests -p test_console.py -v
-node --check monitoring/holmesgpt/ui/app.js
+python -m unittest discover -s monitoring/ai-ops/_archive/holmesgpt/tests -p test_console.py -v
+node --check monitoring/ai-ops/_archive/holmesgpt/ui/app.js
 ```
 
 The tests use a mock Holmes function and a loopback HTTP server. They prove

@@ -31,7 +31,7 @@ The review map for everything directly rendered by the root Application from `in
 | `custom-entrypoints/vertical-pod-autoscaler-app.yaml` | Application | 4 | VPA controller (recommender/updater/admission) | Maybe, if AppSet render stays stable |
 | `custom-entrypoints/vertical-pod-autoscaler-observability-app.yaml` | Application | 6 | Optional VPA PodMonitor and alerts after monitoring CRDs exist | No, keeps observability out of core |
 | `custom-entrypoints/temporal-worker-controller-app.yaml` | Application | 4 | Standalone to isolate its render from the AppSet generator | Maybe, if AppSet render stays stable |
-| `custom-entrypoints/strimzi-app.yaml` | Application | 4 | Kafka CRDs/operator must precede wave-6 Kafka resources; standalone destination `kafka` also avoids the infrastructure AppSet's basename→namespace assumption (`strimzi` would be wrong) | No, both ordering and destination namespace are exceptional |
+| `custom-entrypoints/strimzi-app.yaml` | Application | 4 | Source lives at `my-apps/development/strimzi` (excluded from the my-apps AppSet). Kafka CRDs/operator must precede wave-6 Kafka resources; standalone destination `kafka` also avoids the AppSet basename→namespace assumption (`strimzi` would be wrong) | No, both ordering and destination namespace are exceptional |
 | `custom-entrypoints/opentelemetry-operator-app.yaml` | Application | 6 | Optional telemetry alongside workloads; health cannot gate workload discovery | Maybe; preserve its bootstrap independence |
 | `custom-entrypoints/keda-observability-app.yaml` | Application | 6 | Optional KEDA ServiceMonitor resources after monitoring CRDs exist | No, keeps observability out of core |
 | `custom-entrypoints/vpa-system-policies-app.yaml` | Application | 6 | VPA policies for the small set of bootstrap/system workloads without a co-located owner | No, ownership exception is explicit |
@@ -89,12 +89,12 @@ Two rules follow:
   control plane is down, admission is moot.
 - **Do not add a custom Lua health check to probe webhook reachability.** Argo CD
   configuration stays simple; the reachability signal belongs in alerting
-  (`monitoring/prometheus-stack/admission-webhook-alerts.yaml`, which reads the
+  (`monitoring/metrics/prometheus-stack/admission-webhook-alerts.yaml`, which reads the
   API server's own `apiserver_admission_webhook_*` metrics), not in the wave gate.
 
 ## Notes
 
-- `project-nomad` is intentionally managed by `appsets/my-apps-appset.yaml` as a single bundled app at `my-apps/home/project-nomad`. Its child folders are resources inside that app, not generated Argo CD Applications.
+- `project-nomad` is intentionally managed by `appsets/my-apps-appset.yaml` as a single bundled app at `my-apps/knowledge/project-nomad`. Its child folders are resources inside that app, not generated Argo CD Applications.
 - `my-apps/common/*` is **excluded** from the my-apps generator: those directories are shared Kustomize Components (`kind: Component`), which kustomize builds as an *empty* render — without the exclude the AppSet generates a phantom zero-resource Application. `validate-argocd-apps.sh` Check 8 fails CI if a Component dir ever becomes discoverable again.
 - All four ApplicationSets use strict Go templates (`missingkey=error`). Git
   directory fields are objects in Go-template mode. The leading `.` means
@@ -117,8 +117,8 @@ Two rules follow:
 
 ## Project Nomad App Boundary
 
-Project Nomad is not special to Argo CD; it is special only in repo shape. The `my-apps` ApplicationSet discovers app directories with `my-apps/*/*`, so `my-apps/home/project-nomad` is the generated Application boundary.
+Project Nomad is not special to Argo CD; it is special only in repo shape. The `my-apps` ApplicationSet discovers app directories with `my-apps/*/*`, so `my-apps/knowledge/project-nomad` is the generated Application boundary.
 
 Inside that directory there is one parent `kustomization.yaml`. Subdirectories such as `mysql/`, `redis/`, `qdrant/`, `embeddings/`, `kiwix/`, `protomaps/`, `cyberchef/`, and `flatnotes/` are resource folders referenced by the parent kustomization, not independent app directories.
 
-Do not exclude `my-apps/home/project-nomad/*`; that pattern targets child folders the AppSet does not generate. If Project Nomad should ever become multiple Argo CD Applications, add child `kustomization.yaml` files deliberately and update the generator/validation model at the same time.
+Do not exclude `my-apps/knowledge/project-nomad/*`; that pattern targets child folders the AppSet does not generate. If Project Nomad should ever become multiple Argo CD Applications, add child `kustomization.yaml` files deliberately and update the generator/validation model at the same time.

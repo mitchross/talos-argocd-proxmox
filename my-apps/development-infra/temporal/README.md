@@ -215,7 +215,7 @@ Important distinction (this confuses everyone the first time):
 
 | Thing | Where | What it manages |
 |---|---|---|
-| **Temporal server** | `my-apps/development/temporal/` (this dir) | The server itself — frontend, history, matching, web, server-worker. Deployed via the official Helm chart. |
+| **Temporal server** | `my-apps/development-infra/temporal/` (this dir) | The server itself — frontend, history, matching, web, server-worker. Deployed via the official Helm chart. |
 | **Temporal Worker Controller** | `infrastructure/controllers/temporal-worker-controller/` | A *Kubernetes controller* (CRD-based). Watches your `WorkerDeployment` CRs and turns each into a versioned `apps/v1 Deployment`. Handles Worker Versioning rollouts. |
 
 You can run the server without the worker controller — workers would
@@ -228,9 +228,9 @@ both because Worker Versioning is the whole point.
 
 | App | Path |
 |---|---|
-| `news-reader-temporal-worker` (news-digest task queue) | `my-apps/development/news-reader/temporal-workers/` |
-| `radar-ng` workers | `my-apps/development/radar-ng/temporal-workers/worker-pools.yaml` |
-| `deal-scout` worker | `my-apps/utility/deal-scout/temporal-workers/temporal-worker-deployment.yaml` |
+| `news-reader-temporal-worker` (news-digest task queue) | `my-apps/personal-projects/news-reader/temporal-workers/` |
+| `radar-ng` workers | `my-apps/personal-projects/radar-ng/temporal-workers/worker-pools.yaml` |
+| `deal-scout` worker | `my-apps/personal-projects/deal-scout/temporal-workers/temporal-worker-deployment.yaml` |
 
 Each ships its own `Connection` CR pointing at
 `temporal-frontend.temporal.svc.cluster.local:7233` and its own

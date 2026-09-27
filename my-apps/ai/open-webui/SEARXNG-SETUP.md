@@ -42,13 +42,13 @@ kubectl apply -k my-apps/ai/open-webui/
 **Solution**: Deploy the updated SearXNG configuration that disables bot detection:
 ```bash
 # Redeploy SearXNG with API-friendly configuration
-kubectl apply -k my-apps/privacy/searxng/
+kubectl apply -k my-apps/knowledge/searxng/
 
 # Wait for rollout to complete
 kubectl rollout status deployment/searxng -n searxng
 
 # Test the API
-bash my-apps/privacy/searxng/test-api.sh
+bash my-apps/knowledge/searxng/test-api.sh
 ```
 
 **What was fixed**:
@@ -67,7 +67,7 @@ bash my-apps/privacy/searxng/test-api.sh
 
 1. **Test API directly** (use the provided test script):
    ```bash
-   bash my-apps/privacy/searxng/test-api.sh
+   bash my-apps/knowledge/searxng/test-api.sh
    ```
 
 2. **Verify SearXNG is accessible**:
@@ -151,7 +151,7 @@ curl "https://search.vanillax.me/search?q=weather&format=json" \
   -H "User-Agent: OpenWebUI/1.0"
 
 # Run comprehensive test
-bash my-apps/privacy/searxng/test-api.sh
+bash my-apps/knowledge/searxng/test-api.sh
 
 # Check if bot detection is disabled
 kubectl logs -n searxng deployment/searxng | grep -i bot

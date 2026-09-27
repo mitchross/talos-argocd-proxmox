@@ -109,7 +109,7 @@ the Applications:
 my-apps/ai/open-webui/           →  ArgoCD Application "my-apps-open-webui"
 infrastructure/storage/longhorn/ →  ArgoCD Application "longhorn"
 infrastructure/networking/gateway/ → ArgoCD Application "infrastructure-gateway"
-monitoring/prometheus-stack/     →  ArgoCD Application "monitoring-prometheus-stack"
+monitoring/metrics/prometheus-stack/     →  ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 Deploying a new app = `mkdir`, add a `kustomization.yaml`, `git push`. That's
