@@ -146,8 +146,8 @@ spec:
   storageClassName: longhorn-flash
   resources:
     requests:
-      # PostHog's Postgres holds identity metadata (small); 8Gi is ample.
-      storage: 8Gi
+      # 8Gi ran out and Postgres PANICs on ENOSPC; grow in place (PVCs cannot shrink).
+      storage: 16Gi
   # Restore-before-bind from the latest kopiur snapshot — the identity layer (API keys, users, dashboards) survives rebuild.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
