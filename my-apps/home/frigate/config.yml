@@ -89,10 +89,6 @@ go2rtc:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv2h0W3viecoGaYuzNnJYw5JpuFl22mo6_2OxWG7xIs8fTPCL0uwgrIOU8WEm7IiTIOQ_cgyzkh18OaR6nBzlTUWQ0&protocols=WEB_RTC&video=h264&audio=opus"
     garage-outside-sub:
     - "ffmpeg:garage-outside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
-    front-porch-nest:
-    - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtOw3n2_DdhAm0wdt_NFRX7r04GI3RgzvQ2l2jt7KrpS7kCuvSvUtlDAmDCxg9nqMYUMEQz2IaXjtYJmT3A7gH1vPQ&protocols=WEB_RTC&video=h264&audio=opus"
-    front-porch-sub:
-    - "ffmpeg:front-porch-nest#video=h264#width=480#height=640#raw=-fpsmax 5#input=nest-buffered"
     living-room-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEvWU1Xm4--F8EQvLgj32449ix_pnGNv82a1xR6gJoWCsdxUyyWk1b3C9Aox-hLzJtQ2rp85L1F_BAw1HYaMgaLIa5U&protocols=WEB_RTC&video=h264&audio=opus"
     living-room-sub:
@@ -188,37 +184,6 @@ cameras:
     objects:
       track:
       - person
-      - car
-  front-porch:
-    enabled: true
-    ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
-      inputs:
-      - path: rtsp://127.0.0.1:8554/front-porch-sub
-        roles:
-        - detect
-        - record
-    detect:
-      enabled: true
-      width: 480
-      height: 640
-      fps: 5
-    record:
-      alerts:
-        retain:
-          days: 14
-      detections:
-        retain:
-          days: 14
-    live:
-      streams:
-        Camera: front-porch-sub
-      height: 720
-    objects:
-      track:
-      - person
-      - dog
-      - cat
       - car
   living-room:
     enabled: true
