@@ -18,5 +18,11 @@ mkdir -p /config/custom_components/consumers_energy_restore
 cp /opt/repo-scripts/consumers-energy-restore.py /config/custom_components/consumers_energy_restore/__init__.py
 cp /opt/repo-scripts/consumers-energy-snapshot.py /config/custom_components/consumers_energy_restore/snapshot.py
 cp /opt/repo-scripts/consumers-energy-manifest.json /config/custom_components/consumers_energy_restore/manifest.json
+cp /config-source/lovelace-power-findings.yaml /config/lovelace-power-findings.yaml
+mkdir -p /config/custom_components/power_analysis
+cp /opt/repo-scripts/power-analysis-init.py /config/custom_components/power_analysis/__init__.py
+cp /opt/repo-scripts/power-analysis-sensor.py /config/custom_components/power_analysis/sensor.py
+cp /opt/repo-scripts/power-analysis.py /config/custom_components/power_analysis/analysis.py
+cp /opt/repo-scripts/power-analysis-manifest.json /config/custom_components/power_analysis/manifest.json
 echo "Config files copied to PVC"
 
