@@ -1,0 +1,106 @@
+binary_sensor:
+  - name: Power Bill Data Current
+    unique_id: power_bill_data_current
+    icon: mdi:calendar-check
+    state: |-
+      {{ states('sensor.consumers_energy_last_reading') == (now() - timedelta(days=1)).date() | string
+         and has_value('sensor.consumers_energy_kwh_yesterday')
+         and has_value('sensor.consumers_energy_cost_yesterday') }}
+sensor:
+  - name: Office Total Energy Yesterday
+    unique_id: office_total_energy_yesterday
+    unit_of_measurement: kWh
+    state: |-
+      {{ state_attr('sensor.office_total_energy_daily', 'last_period') | float(0) | round(3) }}
+    device_class: energy
+    availability: |-
+      {% set reset = state_attr('sensor.office_total_energy_daily', 'last_reset') | as_datetime(none) %}
+      {{ is_number(state_attr('sensor.office_total_energy_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
+  - name: AC Cooling Energy Yesterday
+    unique_id: ac_cooling_energy_yesterday
+    unit_of_measurement: kWh
+    state: |-
+      {{ state_attr('sensor.ac_cooling_energy_daily', 'last_period') | float(0) | round(3) }}
+    device_class: energy
+    availability: |-
+      {% set reset = state_attr('sensor.ac_cooling_energy_daily', 'last_reset') | as_datetime(none) %}
+      {{ is_number(state_attr('sensor.ac_cooling_energy_daily', 'last_period')) and reset is not none and (reset | as_local).date() == now().date() }}
+  - name: Homelab Energy Share Yesterday
+    unique_id: homelab_energy_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.homelab_total_energy_yesterday') | float(0) / states('sensor.consumers_energy_kwh_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.homelab_total_energy_yesterday') and states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 }}
+  - name: Homelab Bill Share Yesterday
+    unique_id: homelab_bill_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.homelab_cost_yesterday') | float(0) / states('sensor.consumers_energy_cost_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.homelab_cost_yesterday') and states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 }}
+  - name: Office Energy Share Yesterday
+    unique_id: office_energy_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.office_total_energy_yesterday') | float(0) / states('sensor.consumers_energy_kwh_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.office_total_energy_yesterday') and states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 }}
+  - name: Office Bill Share Yesterday
+    unique_id: office_bill_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.office_cost_yesterday') | float(0) / states('sensor.consumers_energy_cost_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.office_cost_yesterday') and states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 }}
+  - name: AC Cooling Energy Share Yesterday
+    unique_id: ac_cooling_energy_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.ac_cooling_energy_yesterday') | float(0) / states('sensor.consumers_energy_kwh_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.ac_cooling_energy_yesterday') and states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 }}
+  - name: AC Cooling Bill Share Yesterday
+    unique_id: ac_cooling_bill_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.ac_cooling_cost_yesterday') | float(0) / states('sensor.consumers_energy_cost_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.ac_cooling_cost_yesterday') and states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 }}
+  - name: House Other Energy Yesterday
+    unique_id: house_other_energy_yesterday
+    unit_of_measurement: kWh
+    state: |-
+      {{ (states('sensor.consumers_energy_kwh_yesterday') | float(0) - states('sensor.combined_total_energy_yesterday') | float(0) - states('sensor.ac_cooling_energy_yesterday') | float(0)) | round(3) }}
+    device_class: energy
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.combined_total_energy_yesterday') and has_value('sensor.ac_cooling_energy_yesterday') }}
+  - name: House Other Energy Share Yesterday
+    unique_id: house_other_energy_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.house_other_energy_yesterday') | float(0) / states('sensor.consumers_energy_kwh_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.house_other_energy_yesterday') and states('sensor.consumers_energy_kwh_yesterday') | float(0) > 0 }}
+  - name: House Other Cost Yesterday
+    unique_id: house_other_cost_yesterday
+    unit_of_measurement: USD
+    state: |-
+      {{ (states('sensor.consumers_energy_cost_yesterday') | float(0) - states('sensor.combined_cost_yesterday') | float(0) - states('sensor.ac_cooling_cost_yesterday') | float(0)) | round(3) }}
+    device_class: monetary
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.combined_cost_yesterday') and has_value('sensor.ac_cooling_cost_yesterday') }}
+  - name: House Other Bill Share Yesterday
+    unique_id: house_other_bill_share_yesterday
+    unit_of_measurement: '%'
+    state: |-
+      {{ (states('sensor.house_other_cost_yesterday') | float(0) / states('sensor.consumers_energy_cost_yesterday') | float(1) * 100) | round(1) if states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ is_state('binary_sensor.power_bill_data_current', 'on') and has_value('sensor.house_other_cost_yesterday') and states('sensor.consumers_energy_cost_yesterday') | float(0) > 0 }}
+  - name: Plug Effective Rate Yesterday
+    unique_id: plug_effective_rate_yesterday
+    unit_of_measurement: USD/kWh
+    state: |-
+      {{ (states('sensor.combined_cost_yesterday') | float(0) / states('sensor.combined_total_energy_yesterday') | float(1)) | round(5) if states('sensor.combined_total_energy_yesterday') | float(0) > 0 else none }}
+    availability: |-
+      {{ has_value('sensor.combined_cost_yesterday') and states('sensor.combined_total_energy_yesterday') | float(0) > 0 }}
