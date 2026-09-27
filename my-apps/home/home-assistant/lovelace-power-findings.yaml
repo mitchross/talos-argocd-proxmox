@@ -141,11 +141,15 @@ sections:
         grid_options:
           columns: full
         content: |
-          **Threadripper vs spare DL360: retain both 3090s in the comparison.** No DL360 result has been measured yet.
+          **Historical comparison · June 2026, owner-reported plug readings**
+
+          DL360 host **259 W** + external dual-3090 supply **66 W** ≈ **325 W**, versus **246 W** for Threadripper with both GPUs on one plug. The recorded migration reduced average draw by about **79 W** (roughly **$12 per 30 days at $0.21328/kWh**).
+
+          These were different observation periods, not a simultaneous controlled test. They support keeping Threadripper over the old dual-Xeon configuration. **A reduced single-Xeon DL360 has not been measured with the same workload.**
 
           Measure whole-system wall energy for the same idle period and the same model, context, concurrency, and completed requests. Include external GPU power if used. Compare tokens/sec and Wh per completed workload. One PSU or one CPU does not establish lower wall draw.
 
-          The external PSU and riser arrangement has been used before. Meter the DL360 and external GPU supply together. Compare PCIe link width/speed under load and the same model throughput; an idle-only comparison misses inference slowdowns. The prior high-power result needs a matched-workload retest.
+          The external PSU and riser arrangement has been used before. Meter the DL360 and external GPU supply together. Compare PCIe link width/speed under load and the same model throughput; an idle-only comparison misses inference slowdowns. Use a matched-workload retest to evaluate a changed single-CPU configuration; the old dual-CPU result is already documented.
 
           **NAS RAM has a different job.** September 20 inventory recorded an E5-2680 v4 and 384 GB RAM. ARC helps repeated reads; the useful capacity depends on the working set. RAM cannot remove pool/network limits on sustained or durable writes. Keep the current cache as the comparison baseline.
   - type: grid
