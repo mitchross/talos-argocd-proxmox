@@ -1,6 +1,9 @@
 # Loads default set of integrations. Do not remove.
 default_config:
 
+# Recover the utility importer's REST states after restart; their reading date stays unchanged.
+consumers_energy_restore:
+
 # Apply per-entity overrides (friendly names, hide flags for homelab switches).
 homeassistant:
   customize: !include customize.yaml
