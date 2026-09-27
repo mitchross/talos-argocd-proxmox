@@ -53,3 +53,29 @@ The stress test is rerun after both land to measure the new API ceiling.
 
 - **More uvicorn workers:** per-process state (the rate limiter's buckets, caches, the `/api/metrics` counters) would split per worker, so it needs its own change.
 - **Rust:** serving is dominated by avoidable per-request work in Python, not by Python's speed. Fix that first, and revisit only if the API still caps below the target after the rerun.
+
+## Rerun after the fixes (September 27, 03:14–03:27 UTC)
+
+The same stress profile ran against tile-server v1.1.21 (the radar-ng API fix), with #2592's probes and a CPU limit of 3.
+
+| Users | Tile req/s | API req/s | API p95 | before: API req/s, p95 |
+|---:|---:|---:|---:|---|
+| 300 | 2,000–2,735 | 166–221 | 0.02 s | 150–197, 0.3 s |
+| 600 | 4,420–4,980 | 361–401 | 0.17–0.44 s | 180–196, 3 s |
+| 900 | 4,420–4,600 | 359–379 | 1.8–2.6 s | 171–182, 7 s |
+| 1,200 | 4,050–4,390 | 303–362 | 3.4–4.5 s | 138–178, 10–12 s |
+
+| Whole run | Before | After |
+|---|---:|---:|
+| Requests | 1.81 M | 3.40 M |
+| Average throughput | 2,318 req/s | 4,340 req/s |
+| Failed requests | 17,011 | 19 (all 5xx, no connection refusals) |
+| Tile-server restarts | 2 | 0 |
+| Tile p95 | 30 ms | 23 ms |
+| Playback frame p95 | 68 ms | 54 ms |
+
+- **The API ceiling doubled,** from about 190 to about 400 req/s. The API is still one uvicorn process, about 1 core. At 900 users and above, manifest and nowcast point p95 are 2–4 s, so those two are still the first to degrade.
+- **The pod stayed up and in the Service throughout.** The probe change did what it was meant to.
+- **The container peaked around 2.5–2.8 of 3 cores,** throttled 12–25% of periods. Its node stayed under 51% busy.
+
+What's next if more headroom is ever needed: more uvicorn workers, which needs the rate limiter's buckets and the `/api/metrics` counters moved out of process memory. Or serve `/api/manifest.json` as a static file that Caddy writes, so the hottest route never reaches Python. Neither is needed at the app's real traffic, which is orders of magnitude below 600 simultaneous users.
