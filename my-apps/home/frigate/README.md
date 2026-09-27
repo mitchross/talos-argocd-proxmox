@@ -25,8 +25,8 @@ must be checked after deployment.
 [config.yml](config.yml) retains alert and detection recordings with 60 seconds
 before the event and 180 seconds after it ends. Frigate 0.18 RC2 limits
 `pre_capture` to 60 seconds. `retain.mode: all` preserves quiet segments within
-that window. Recordings remain available for 10 days, or 14 days for
-`front-porch`; overlapping events can produce a longer continuous stretch.
+that window. Recordings remain available for 10 days; overlapping events can
+produce a longer continuous stretch.
 
 Both continuous and general motion retention are zero. Clips therefore follow
 Frigate's object review events using each camera's existing tracked objects,
@@ -137,7 +137,7 @@ read-only at its supported `/config/go2rtc` override path. Nothing is written
 to the backed-up config PVC, so a rollback does not leave a custom binary
 behind. VPA targets the Frigate container by name.
 
-Verify the startup log identifies `1.9.14+dev.ec152af`, all six cameras maintain
+Verify the startup log identifies `1.9.14+dev.ec152af`, all five cameras maintain
 nonzero FPS, and successful `ExtendWebRtcStream` operations continue through
 multiple five-minute session windows. Pod readiness alone is insufficient.
 The isolated pre-merge trial still saw a stream disconnect and a doorbell
@@ -188,7 +188,7 @@ kubectl -n frigate logs deployment/frigate --since=5m
 
 Expect a ready Frigate pod on the HP Elite, ArgoCD Synced/Healthy, a running
 Coral detector, and no repeated MQTT authentication or FFmpeg restart
-errors. Use the stream check below to verify all six cameras receive frames;
+errors. Use the stream check below to verify all five cameras receive frames;
 pod readiness alone does not establish that cameras or recordings work.
 
 To stop a failing rollout, submit a PR setting `replicas: 0`. To return to the
@@ -267,7 +267,6 @@ Expected output for working cameras:
 backyard-nest: nest/webrtc - 3921351 bytes
 garage-inside-nest: nest/webrtc - 9738102 bytes
 garage-outside-nest: nest/webrtc - 10256527 bytes
-front-porch-nest: nest/webrtc - 306955 bytes
 kitchen-nest: nest/webrtc - 9016256 bytes
 living-room-nest: nest/webrtc - 10817595 bytes
 ```
@@ -284,7 +283,7 @@ and mappings below. All seven devices advertise only `WEB_RTC` through SDM.
 | Backyard camera | Nest Cam Indoor, wired | `backyard` |
 | Garage Inside | Nest Cam Indoor, wired | `garage-inside` |
 | Garage camera | Nest Cam Battery, external cable power | `garage-outside` |
-| Front Porch doorbell | Nest Doorbell Battery, house doorbell wiring | `front-porch` |
+| Front Porch doorbell | Nest Doorbell Battery, house doorbell wiring | Not configured (streaming drains the battery) |
 | Front Porch doorbell 2 | Nest Doorbell Wired, 3rd generation | Not configured |
 
 Each camera's `live.streams` explicitly selects its existing `-sub` stream.
@@ -294,11 +293,9 @@ use `-sub`, explaining how recordings can work while live viewing fails.
 These derived streams provide video only at 5 FPS; this correction does not
 add audio or increase live resolution. See [Frigate live stream selection](https://docs.frigate.video/configuration/live/#setting-streams-for-live-ui).
 
-The battery doorbell remains battery-operated with house wiring supplying a
-trickle charge. Its zero-day continuous retention setting does not stop the
-active detect/record input. Google's session extension exception for battery
-doorbells also applies despite that wiring. The externally powered garage
-camera is a different case. See [Google power behavior](https://support.google.com/googlehome/answer/11830989?hl=en)
+Keep the battery doorbell out of Frigate: a continuous detect/record stream keeps it
+awake and drains it even on house wiring, because house wiring only trickle-charges it.
+The externally powered garage camera is a different case. See [Google power behavior](https://support.google.com/googlehome/answer/11830989?hl=en)
 and [SDM live-session rules](https://developers.google.com/nest/device-access/traits/device/camera-live-stream#extendwebrtcstream).
 
 ### Garage outside and kitchen recovery trial
