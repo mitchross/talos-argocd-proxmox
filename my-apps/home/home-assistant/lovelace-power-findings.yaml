@@ -1,0 +1,174 @@
+title: Findings
+path: findings
+icon: mdi:chart-box-outline
+type: sections
+max_columns: 4
+dense_section_placement: true
+sections:
+  - type: grid
+    column_span: 4
+    cards:
+      - type: heading
+        heading: What is driving the spend?
+        heading_style: title
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          {% set report = 'sensor.power_spending_analysis' %}
+          {% if has_value(report) %}
+          **{{ states(report) }} complete days** in {{ state_attr(report, 'window_start') }} → {{ state_attr(report, 'window_end') }}. Today is excluded. Refreshed {{ as_local(as_datetime(state_attr(report, 'generated_at'))).strftime('%b %d, %H:%M') }}.
+
+          {% if states(report) | int(0) < 7 %}**Early sample:** use the cost ranking cautiously; correlations need at least seven complete days and an hour of cooling-runtime variation.{% endif %}
+          {% else %}**Waiting for the power analysis.** Findings refresh hourly after startup; missing history is not treated as zero.{% endif %}
+
+          [Daily spend](/homelab-power/daily-spend) · [Bill breakdown](/homelab-power/bill-breakdown) · [Rates & savings](/homelab-power/rates-savings)
+  - type: grid
+    column_span: 2
+    cards:
+      - type: heading
+        heading: The steady cost of each device
+        heading_style: title
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          {% set report = 'sensor.power_spending_analysis' %}
+          {% set devices = state_attr(report, 'devices') or [] %}
+          {% if has_value(report) and devices %}
+          <table><thead><tr><th>Device</th><th>Average W</th><th>30 days*</th></tr></thead><tbody>
+          {% for device in devices %}
+          <tr><td>{{ device.name }}</td><td>{{ device.average_w }}</td><td>{{ '$%.2f' | format(device.cost_30d) if device.cost_30d is not none else '—' }}</td></tr>
+          {% endfor %}
+          </tbody></table>
+
+          {% set total = state_attr(report, 'plug_30d_cost') %}
+          **All plugs: {{ '$%.2f' | format(total) if total is not none else '—' }} per 30 days.**
+          *Same average draw for 720 hours at the current configured rate; a scenario, not a bill forecast. Average draw includes useful work and idle time. Cooling and solar shed are excluded.*
+          {% else %}Waiting for complete device history.{% endif %}
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          **Threadripper is the AI host: 2950X + two RTX 3090s.** Its plug measures GPUs, CPU, memory, drives, fans, and power-supply losses together. High average draw alone does not identify waste.
+
+          **NAS total = TrueNAS host + drive PSU.** Compare both outlets together when considering a replacement.
+  - type: grid
+    column_span: 2
+    cards:
+      - type: heading
+        heading: What moves with the house bill?
+        heading_style: title
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          {% set report = 'sensor.power_spending_analysis' %}
+          {% set r = state_attr(report, 'cooling_house_r') %}
+          {% set fitted = state_attr(report, 'cooling_residual_fit_w') %}
+          {% if has_value(report) and r is not none %}
+          **Cooling runtime ↔ utility energy: r = {{ r }}** across {{ states(report) }} complete days.
+
+          Values near +1 move together, near 0 show little linear association, and near −1 move in opposite directions. This is an association, not proof that cooling caused every change.
+
+          {% if fitted is not none %}After subtracting metered computers, the fitted relationship is **{{ fitted }} W equivalent per cooling hour**, versus **{{ states('input_number.ac_cooling_wattage') }} W assumed**. Other appliances and thermostat timing affect this fit; do not automatically use it as the AC wattage.{% endif %}
+          {% else %}Correlation needs at least seven complete days and one hour of variation in daily cooling runtime.{% endif %}
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          {% set report = 'sensor.power_spending_analysis' %}
+          {% set day = state_attr(report, 'largest_other_day') %}
+          {% if has_value(report) and day %}
+          **A day to investigate: {{ day.date }}**
+
+          House usage was **{{ day.house_kwh }} kWh**, with **{{ day.cooling_hours }} hours** of cooling. Usage was **{{ day.excess_kwh }} kWh above** the fitted relationship after accounting for metered computers and cooling runtime.
+
+          Check activity such as laundry, cooking, or water heating. This does not identify an appliance or prove a fault.
+          {% else %}An unusual-day comparison will appear once enough complete days are available.{% endif %}
+  - type: grid
+    column_span: 2
+    cards:
+      - type: heading
+        heading: Gaming sessions and pricing assumptions
+        heading_style: title
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          {% set report = 'sensor.power_spending_analysis' %}
+          {% set share = state_attr(report, 'non_session_pct') %}
+          {% if has_value(report) and share is not none %}**{{ share }}% of gaming-PC energy occurred outside detected sessions.**{% else %}Waiting for gaming-PC history.{% endif %}
+
+          A session starts above **{{ states('input_number.gaming_pc_active_threshold_w') }} W** and ends after five quiet minutes. Lighter games, desktop work, and background jobs can be outside sessions. Check sleep behavior and the threshold before calling this idle waste.
+
+          {% set gap = state_attr(report, 'model_rate_difference_pct') %}
+          {% if has_value(report) and gap is not none %}The current configured price is **{{ gap | abs }}% {{ 'above' if gap >= 0 else 'below' }}** the utility's blended price across the same days. Estimated cost shares can therefore differ from energy shares.{% endif %}
+      - type: statistics-graph
+        title: Gaming PC energy · all use and detected sessions
+        chart_type: bar
+        period: day
+        days_to_show: 14
+        stat_types: [change]
+        grid_options:
+          columns: full
+        entities:
+          - entity: sensor.gaming_pc_energy
+            name: Whole PC
+            color: '#ab47bc'
+          - entity: sensor.gaming_pc_gaming_energy
+            name: Detected gaming · part of whole PC
+            color: '#26c6da'
+  - type: grid
+    column_span: 2
+    cards:
+      - type: heading
+        heading: The cost of a sustained reduction
+        heading_style: title
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          {% set rate = states('sensor.current_electricity_rate') | float(none) %}
+          {% if rate is not none and rate > 0 %}
+          <table><thead><tr><th>Lower average wall draw</th><th>Saved / 30 days</th></tr></thead><tbody>
+          {% for watts in [10, 25, 50, 100] %}<tr><td>{{ watts }} W</td><td>${{ '%.2f' | format(watts / 1000 * 720 * rate) }}</td></tr>{% endfor %}
+          </tbody></table>
+          {% else %}Savings need a valid current electricity rate.{% endif %}
+
+          Reductions must persist across the day. Compare equal useful work: task duration, AI throughput, and service availability matter as well as watts.
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          **Threadripper vs spare DL360: retain both 3090s in the comparison.** No DL360 result has been measured yet.
+
+          Measure whole-system wall energy for the same idle period and the same model, context, concurrency, and completed requests. Include external GPU power if used. Compare tokens/sec and Wh per completed workload. One PSU or one CPU does not establish lower wall draw.
+
+          The external PSU and riser arrangement has been used before. Meter the DL360 and external GPU supply together. Compare PCIe link width/speed under load and the same model throughput; an idle-only comparison misses inference slowdowns. The prior high-power result needs a matched-workload retest.
+
+          **NAS RAM has a different job.** September 20 inventory recorded an E5-2680 v4 and 384 GB RAM. ARC helps repeated reads; the useful capacity depends on the working set. RAM cannot remove pool/network limits on sustained or durable writes. Keep the current cache as the comparison baseline.
+  - type: grid
+    column_span: 4
+    cards:
+      - type: heading
+        heading: Which days are behind these findings?
+        heading_style: title
+      - type: markdown
+        grid_options:
+          columns: full
+        content: |
+          {% set report = 'sensor.power_spending_analysis' %}
+          {% set days = state_attr(report, 'days') or [] %}
+          {% if has_value(report) and days %}
+          <table><thead><tr><th>Day</th><th>House kWh</th><th>CE $</th><th>Plugs kWh</th><th>Cooling h</th></tr></thead><tbody>
+          {% for day in days %}<tr><td>{{ day.date[5:] }}</td><td>{{ '%.2f' | format(day.house) }}</td><td>{{ '%.2f' | format(day.house_cost) }}</td><td>{{ '%.2f' | format(day.homelab + day.office) }}</td><td>{{ '%.2f' | format(day.cooling_hours) }}</td></tr>{% endfor %}
+          </tbody></table>
+          {% else %}No complete matched days yet.{% endif %}
+
+          {% if has_value(report) %}
+          {% set excluded = state_attr(report, 'excluded') or [] %}
+          **Excluded days:** {% for day in excluded %}{{ day.date[5:] }} ({{ day.reason }}){{ '; ' if not loop.last else '' }}{% else %}none{% endfor %}.
+          {% endif %}
+
+          Each included day needs every hourly cumulative reading, the previous boundary, and a matching utility report. Days with missing data or counter resets are excluded. Local daylight-saving days use their actual length. Historical charts elsewhere can include days excluded here.

@@ -3,6 +3,7 @@ default_config:
 
 # Recover the utility importer's REST states after restart; their reading date stays unchanged.
 consumers_energy_restore:
+power_analysis:
 
 # Apply per-entity overrides (friendly names, hide flags for homelab switches).
 homeassistant:
@@ -51,6 +52,7 @@ recorder:
       - sensor.*_cost_yearly
     entities:
       - sensor.combined_total_power
+      - sensor.power_spending_analysis
 
 # Only the metered plugs and the derived totals are exported. Household plugs stay out.
 prometheus:

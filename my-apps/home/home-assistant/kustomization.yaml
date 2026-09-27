@@ -41,6 +41,10 @@ configMapGenerator:
   - consumers-energy-restore.py=scripts/consumers-energy-restore/__init__.py
   - consumers-energy-snapshot.py=scripts/consumers-energy-restore/snapshot.py
   - consumers-energy-manifest.json=scripts/consumers-energy-restore/manifest.json
+  - power-analysis-init.py=scripts/power-analysis/__init__.py
+  - power-analysis-sensor.py=scripts/power-analysis/sensor.py
+  - power-analysis.py=scripts/power-analysis/analysis.py
+  - power-analysis-manifest.json=scripts/power-analysis/manifest.json
 - name: config
   files:
   - configuration.yaml
@@ -50,6 +54,7 @@ configMapGenerator:
   - customize.yaml
   - lovelace-homelab-power.yaml
   - power-insights.yaml
+  - lovelace-power-findings.yaml
   # AirCube ZHA quirk — copied to /config/custom_zha_quirks/aircube.py by the
   # copy-config initContainer (see deployment.yaml). Loaded via zha.custom_quirks_path.
   - aircube.py
