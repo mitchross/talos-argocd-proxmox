@@ -63,7 +63,7 @@ The Infrastructure AppSet uses an **explicit list of paths** (not glob discovery
 
 1. Add the directory with `kustomization.yaml`
 2. Add the path to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml`
-3. Moving an existing component: list the new path first, move the folder in a later PR, then drop the old path. The infra and monitoring AppSets set `preserveResourcesOnDeletion: true`, so a missed step removes only the Application, never the workloads.
+3. Moving an existing component: list the new path first, move the folder in a later PR, then drop the old path. Merge each step only after root reports `Succeeded` at the previous merge commit (root can take ~20 min). The infra and monitoring AppSets set `preserveResourcesOnDeletion: true`, so a missed step removes only the Application, never the workloads.
 4. Add any new explicit Application/ApplicationSet entrypoint to
    `infrastructure/controllers/argocd/apps/kustomization.yaml`. Editing an existing
    AppSet path list does not require another entrypoint.

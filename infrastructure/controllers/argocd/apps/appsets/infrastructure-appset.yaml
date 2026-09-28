@@ -38,16 +38,18 @@ spec:
       # caused a circular deadlock with a Wave-3 webhook-cert consumer (the
       # since-retired cnpg-barman-plugin). Do NOT re-add it here or it will
       # be double-managed.
-      - path: infrastructure/controllers/external-dns
-      - path: infrastructure/controllers/gpu-priority-classes
-      - path: infrastructure/controllers/node-feature-discovery
+      - path: infrastructure/networking/external-dns
+      - path: infrastructure/networking/cloudflared
+      - path: infrastructure/networking/gateway
+      - path: infrastructure/gpu/gpu-priority-classes
       # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
       # (in nvidia-gpu-operator) now owns the device plugin on top of the
       # CDI-based driver/toolkit shipped by Talos system extensions.
-      - path: infrastructure/controllers/nvidia-gpu-operator
-      - path: infrastructure/controllers/intel-gpu-plugin
-      - path: infrastructure/controllers/metrics-server
-      - path: infrastructure/controllers/descheduler
+      - path: infrastructure/gpu/nvidia-gpu-operator
+      - path: infrastructure/gpu/intel-gpu-plugin
+      - path: infrastructure/scheduling/node-feature-discovery
+      - path: infrastructure/scheduling/metrics-server
+      - path: infrastructure/scheduling/descheduler
       # NOTE: keda and temporal-worker-controller are NOT listed here.
       # They have dedicated standalone Applications at Wave 4
       # (keda-app.yaml, temporal-worker-controller-app.yaml) because
@@ -55,9 +57,7 @@ spec:
       # where Argo kept reverting the new generator paths (see git log
       # around 2026-04-20). Standalone Applications dodge that entirely.
       # OTEL has a standalone wave-6 Application so its health cannot gate workload discovery.
-      - path: infrastructure/networking/cloudflared
-      - path: infrastructure/networking/gateway
-      - path: infrastructure/storage/container-registry
+      - path: infrastructure/platform/container-registry
       - path: infrastructure/storage/csi-driver-nfs
       - path: infrastructure/storage/csi-driver-smb
       # Official TrueNAS CSI: dynamic RWX NFS only for the initial canary.
@@ -70,17 +70,6 @@ spec:
       # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
       # snapshot-controller-app.yaml) so storage is healthy before the
       # kopiur operator (Wave 2).
-      - path: infrastructure/storage/rustfs-lifecycle
-      # Regroup target paths, listed BEFORE the folders move: a move in the same commit as a
-      # generator change cascade-deletes apps (monitoring, 2026-09-28). Old paths drop after the move.
-      - path: infrastructure/networking/external-dns
-      - path: infrastructure/gpu/gpu-priority-classes
-      - path: infrastructure/scheduling/node-feature-discovery
-      - path: infrastructure/gpu/nvidia-gpu-operator
-      - path: infrastructure/gpu/intel-gpu-plugin
-      - path: infrastructure/scheduling/metrics-server
-      - path: infrastructure/scheduling/descheduler
-      - path: infrastructure/platform/container-registry
       - path: infrastructure/backup/rustfs-lifecycle
   template:
     metadata:
