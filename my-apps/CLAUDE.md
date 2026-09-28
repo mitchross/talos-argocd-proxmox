@@ -301,7 +301,7 @@ PostHog ClickHouse/Kafka/Redis (disposable — but PostHog **Postgres** is kopiu
 **Multi-PVC apps**: each PVC gets its own stub + `dataSourceRef`; the mover uid
 is per-PVC (e.g. `my-apps/knowledge/project-nomad/` runs `1000` / `999:568` / `568`
 in one namespace). Mix backed-up and `backup-exempt` freely — e.g.
-`my-apps/games/_archive/project-zomboid/` backs up `zomboid-data`, exempts `zomboid-server-files`.
+`my-apps/home-automation/frigate/` backs up `frigate-config`, exempts `frigate-media`.
 
 **Helm-rendered PVCs**: the chart owns the PVC manifest — inject the
 `dataSourceRef` + masking annotations via a Kustomize `patches:` block targeting
@@ -347,7 +347,8 @@ components:
 | **Backup with root-uid mover** | `my-apps/demo/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
-| **PVC with automatic backup** | `my-apps/games/_archive/project-zomboid/pvc.yaml` (see `zomboid-data`) |
+| **PVC with automatic backup** | `my-apps/ai/open-webui/pvc.yaml` + `kopiur/` stub |
+| **Archived app** | `my-apps/games/_archive/project-zomboid/` — not deployed, backups kept; see `docs/domains/argocd/entrypoints.md` § Archived apps |
 | **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Secret management** | Any app with `externalsecret.yaml` |

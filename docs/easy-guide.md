@@ -106,10 +106,10 @@ cluster. **ApplicationSets** scan the repo's directory structure and generate
 the Applications:
 
 ```text
-my-apps/ai/open-webui/           →  ArgoCD Application "my-apps-open-webui"
-infrastructure/storage/longhorn/ →  ArgoCD Application "longhorn"
-infrastructure/networking/gateway/ → ArgoCD Application "infrastructure-gateway"
-monitoring/metrics/prometheus-stack/     →  ArgoCD Application "monitoring-prometheus-stack"
+my-apps/ai/open-webui/               →  ArgoCD Application "my-apps-open-webui"
+infrastructure/storage/longhorn/     →  ArgoCD Application "longhorn"
+infrastructure/networking/gateway/   →  ArgoCD Application "infrastructure-gateway"
+monitoring/metrics/prometheus-stack/ →  ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 Deploying a new app = `mkdir`, add a `kustomization.yaml`, `git push`. That's
