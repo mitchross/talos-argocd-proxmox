@@ -8,13 +8,8 @@ cd "$ROOT"
 DRIVER_DIR="infrastructure/storage/truenas-csi"
 APPSET="infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml"
 POLICY="infrastructure/networking/cilium/policies/block-lan-access.yaml"
-# Match the CONTRACT, not a specific version: the official driver image must
-# be the official repo, pinned to a semver tag AND a sha256 digest. Renovate
-# owns the version+digest of this image, so hardcoding an exact value here
-# made every Renovate bump fail this check and deadlock auto-merge repo-wide
-# (the v1.0.4->v1.1.0 bump did exactly that). Asserting the format keeps the
-# real intent (official + version-and-digest-pinned, never :latest/unpinned)
-# while letting Renovate move the pin freely.
+# Match the CONTRACT (official repo, semver tag AND sha256 digest), not an exact version:
+# Renovate owns the pin, so hardcoding it here would fail this check on every bump.
 EXPECTED_IMAGE_RE='^[[:space:]]+image: ghcr\.io/truenas/truenas-csi:v[0-9]+\.[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}$'
 fail=0
 

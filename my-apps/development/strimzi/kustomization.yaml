@@ -2,8 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kafka
 labels:
-  # Preserve the existing immutable selectors while ownership moves from the
-  # old wave-6 my-apps Application to this wave-4 infrastructure Application.
+  # Keep: includeSelectors bakes these into live Deployment selectors, which are immutable.
   - includeSelectors: true
     pairs:
       app.kubernetes.io/name: strimzi

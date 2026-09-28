@@ -13,7 +13,6 @@ cluster:
 k8sServiceHost: localhost
 k8sServicePort: "7445"
 
-# Kube-proxy Replacement
 kubeProxyReplacement: true
 
 # Talos-specific Security Context (required for init containers)
@@ -47,7 +46,6 @@ cgroup:
 routingMode: tunnel
 tunnelProtocol: vxlan
 
-# IPAM Configuration
 ipam:
   mode: kubernetes
 
@@ -59,9 +57,8 @@ socketLB:
 # Enable Bandwidth Manager for better TCP performance
 bandwidthManager:
   enabled: true
-  bbr: true # Enable BBR congestion control
+  bbr: true
 
-# BPF Host Routing
 bpf:
   masquerade: true
   ctTcpTimeout: 21600
@@ -112,22 +109,15 @@ envoy:
       memory: 1Gi
   xdsMode: split
 
-# Gateway API Support
 gatewayAPI:
   enabled: true
-  # Must stay Cluster (also Cilium's default). With Local, Cilium >=1.20.2's l2announcer
-  # drops any service whose backends are not node-local, and the generated Gateway
-  # services use the nodeless 192.192.192.192 placeholder backend — so no node ever takes
-  # the lease, no node answers ARP for the VIP, and every LAN client times out on
-  # .49/.50/.52 while the ClusterIP tunnel path keeps working.
-  # Source IP is preserved either way: Cilium's per-node Envoy keeps the visible source
-  # address for both Cluster and Local (see docs/audits/2026-09-05-architecture-audit.md).
+  # Must stay Cluster: with Local, Cilium >=1.20.2's l2announcer drops Gateway services (nodeless placeholder
+  # backend), no node answers ARP for the VIP, and LAN clients time out. Source IP is preserved either way.
   externalTrafficPolicy: Cluster
-  # Enable session affinity for consistent routing
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
-# Agent memory limit keeps headroom on purpose — endpoint maps grow with churn and pods hit the old 2Gi limit.
+# Memory limit keeps headroom on purpose: endpoint maps grow with churn.
 resources:
   requests:
     cpu: 500m
@@ -151,7 +141,6 @@ hubble:
   ui:
     enabled: true
 
-# Operator Configuration
 operator:
   # ConfigMap checksum restarts operators so startup-only settings reach generated Services.
   rollOutPods: true

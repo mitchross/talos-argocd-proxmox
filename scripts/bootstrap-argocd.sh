@@ -79,11 +79,8 @@ echo "📦 Creating argocd namespace..."
 kubectl apply -f "$ROOT_DIR/infrastructure/controllers/argocd/ns.yaml"
 
 # Step 1.5: Ensure the argocd-redis auth secret exists.
-# values.yaml disables the chart's redis-secret-init hook (it assumes the
-# Secret already exists from a prior install). On a FRESH cluster that Secret
-# is absent, so redis crashes with `secret "argocd-redis" not found` and the
-# whole install wedges. Create it idempotently here so a destroy/recreate
-# bootstrap runs unattended. (Bit us on the 2026-06-01 nuke/recreate.)
+# values.yaml disables the chart's redis-secret-init hook, so on a fresh cluster redis
+# crashes on the missing Secret and the install wedges; create it idempotently here.
 echo ""
 echo "🔑 Ensuring argocd-redis auth secret exists..."
 if ! kubectl get secret argocd-redis -n argocd > /dev/null 2>&1; then
@@ -106,11 +103,8 @@ if ! helm upgrade --install argocd argo-cd \
   --wait \
   --timeout 10m \
   --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'; then
-  # On a RE-RUN over an already-running ArgoCD, helm can fail with a
-  # server-side-apply conflict on argocd-secret (.data.admin.passwordMtime is
-  # owned by argocd-server once the admin password is used). That's benign:
-  # ArgoCD self-management (root.yaml below) owns argocd-secret via
-  # ServerSideApply=true. Only abort if ArgoCD isn't actually running.
+  # A re-run can hit a benign server-side-apply conflict on argocd-secret (argocd-server owns
+  # .data.admin.passwordMtime); root.yaml self-management owns it. Only abort if ArgoCD isn't running.
   if kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=10s > /dev/null 2>&1; then
     echo "⚠️  Helm reported a conflict, but argocd-server is already Available."
     echo "    This is expected on a re-run — continuing to self-management (root.yaml)."
@@ -130,8 +124,7 @@ echo ""
 echo "⏳ Waiting for ArgoCD server to be available..."
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 
-# Step 5: HTTPRoute deploys automatically with Gateway at Wave 4
-# (moved to infrastructure/networking/gateway/ to avoid bootstrap deadlock)
+# Step 5: The ArgoCD HTTPRoute deploys with the Gateway at Wave 4 (infrastructure/networking/gateway/)
 
 # Step 6: Apply root application to start GitOps self-management
 echo ""

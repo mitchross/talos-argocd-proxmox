@@ -51,15 +51,9 @@ PYEOF
 chmod 755 "$WORK"
 chmod 644 "$WORK"/*.yaml
 
-# `otelcol validate` partially initializes receivers/extensions during
-# validation. Some receivers (`kubeletstats`, `k8s_cluster`) try to read
-# the serviceaccount CA cert at `/var/run/secrets/kubernetes.io/
-# serviceaccount/ca.crt`, which doesn't exist outside a pod. Provide a
-# dummy cert so the Start() path succeeds — we don't care about the cert
-# content, only that the config references are valid.
+# `otelcol validate` starts receivers such as `kubeletstats` and `k8s_cluster`, which read the
+# serviceaccount CA cert (absent outside a pod); a real self-signed cert satisfies AppendCertsFromPEM.
 mkdir -p "$WORK/sa"
-# Real self-signed cert so `AppendCertsFromPEM` accepts it. Content is
-# meaningless to the validator — we only care that parsing succeeds.
 openssl req -x509 -newkey rsa:2048 -days 365 -nodes \
   -keyout "$WORK/sa/tls.key" -out "$WORK/sa/ca.crt" \
   -subj "/CN=otel-validate-dummy" >/dev/null 2>&1

@@ -102,8 +102,7 @@ write:
   extraEnvFrom:
   - secretRef:
       name: loki-s3-credentials
-# DISABLED - Using external S3 (TrueNAS RustFS) instead
-# This saves ~200Gi of Longhorn storage
+# Log data lives on external S3 (RustFS), so the chart's bundled MinIO stays off.
 minio:
   enabled: false
 # Chart defaults request ~11Gi of memcached for a trickle of logs; pod request = round(allocatedMemory * 1.2).
@@ -117,8 +116,7 @@ gateway:
     type: Recreate
   service:
     type: LoadBalancer
-    # Pin the LB IP: unpinned services race pinned ones for specific IPs on
-    # rebuild (this one squatted wyze-bridge's .46 after the 06-28 rebuild).
+    # Pin the LB IP: unpinned services race pinned ones for specific IPs on rebuild.
     annotations:
       lbipam.cilium.io/ips: "192.168.10.48"
   resources:

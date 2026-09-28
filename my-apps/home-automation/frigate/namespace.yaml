@@ -7,7 +7,7 @@ metadata:
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
     # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    # tenancy (allowedNamespaces selector).
     kopiur.home-operations.com/repo: cluster-kopia
   annotations:
     # Frigate writes .jwt_secret as root with owner-only permissions. Permit

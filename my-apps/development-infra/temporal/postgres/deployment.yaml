@@ -58,7 +58,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: temporal-db-secret # same 1Password item CNPG used
+                  name: temporal-db-secret # ExternalSecret from 1Password (../externalsecret.yaml)
                   key: password
             - name: POSTGRES_INITDB_ARGS
               value: "--data-checksums"

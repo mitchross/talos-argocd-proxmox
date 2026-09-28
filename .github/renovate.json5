@@ -115,10 +115,8 @@
       matchPackageNames: [
         'ghcr.io/ggml-org/llama.cpp',
       ],
-      // Driver on the GPU node is 595.71.05 / CUDA 13.2 (>=580), so track the
-      // CUDA-13 server tag line. Upstream stopped publishing server-cuda12
-      // tags ~b93xx, which is why the old cuda12 pin froze at b9070. See
-      // docs/domains/ai-gpu/3090-llm-optimization.md "llama.cpp image bump (CUDA-13) — RESOLVED".
+      // GPU driver supports CUDA 13 and upstream stopped publishing server-cuda12 tags, so track server-cuda13.
+      // See docs/domains/ai-gpu/3090-llm-optimization.md.
       versioning: 'regex:^server-cuda13-b(?<major>\\d+)$',
     },
     {
@@ -172,40 +170,11 @@
       ],
       automerge: false,
     },
-    // -------------------------------------------------------------------
-    // PostHog image rules
-    // -------------------------------------------------------------------
-    // Context (2026-05-09 incident):
-    //   The posthog-migrate Job entered a perma-retry loop hitting
-    //   `Code: 60. DB::Exception: Could not find table: sharded_events.
-    //   (UNKNOWN_TABLE)` on migration 0026. Root cause: a Renovate
-    //   weekend auto-merge had advanced the `posthog/posthog-node` and
-    //   sidecar digests, which re-fired the ArgoCD Sync hook, which
-    //   re-ran migrate_clickhouse, which discovered single-node CH
-    //   config drift (`posthog.events` is Distributed but the local
-    //   `sharded_events` shard table was never bootstrapped — config
-    //   drift dating back to install). See companion commit b6ef0c78
-    //   for the in-cluster fix and 3b4fbb23 for the tag-format change
-    //   (`:latest` / `:master` -> `master-<sha7>`) that makes future
-    //   PRs surface the upstream commit delta in the title.
-    //
-    //   Sidecar auto-merges are now OFF for the same reason that
-    //   monolith auto-merges are off: every PostHog sidecar bump can
-    //   ride alongside an upstream CH/migration change that breaks our
-    //   self-hosted config silently. Reviewer-required from now on.
-    // -------------------------------------------------------------------
-    // PostHog sidecars: split across two packageRules. Renovate's validator
-    // rejects rules that combine `matchUpdateTypes` and `versioning` in the
-    // same entry — caused issue #1284 ("Action Required: Fix Renovate
-    // Configuration") which stopped all PRs cluster-wide on 2026-05-10.
-    // Renovate merges effects across multiple rules that match the same
-    // dep, so splitting preserves intent: rule (a) declares loose versioning
-    // for the master-<sha7> tag format, rule (b) carries grouping + automerge
-    // off + weekend-only schedule.
+    // PostHog sidecars are split across two rules: Renovate rejects matchUpdateTypes + versioning in one rule, and matching rules merge.
+    // Never automerge PostHog images; review each bump against my-apps/development-infra/posthog/UPGRADE.md.
     {
       description: 'PostHog sidecars: declare loose versioning for master-<sha7> tag format.',
-      // posthog-node is pulled from Docker Hub — match both registry forms
-      // (same dead-rule class as the monolith entry below).
+      // Docker Hub image: list every registry form or the rule silently never applies.
       matchPackageNames: [
         'posthog/posthog-node',
         'docker.io/posthog/posthog-node',
@@ -243,8 +212,7 @@
     },
     {
       description: 'PostHog MONOLITH (posthog/posthog): ride the same "posthog images" group PR as the sidecars — one PR per version roll, digests moving in lockstep with posthog-node (the migrate hook image must match web/worker). NEVER automerge: before merging, run the my-apps/development-infra/posthog/UPGRADE.md checklist (upstream named_collections/remote_servers diff, new sharded_* tables vs clickhouse-init, newly-required env, server entrypoint) — both prior posthog outages (2026-04-19, 2026-05-09) were config drift surfaced by an unreviewed image bump.',
-      // Pulled from Docker Hub — match all registry forms (a ghcr-only
-      // entry here was once dead and let a ~5wk master jump slip through).
+      // Docker Hub image: list every registry form or the rule silently never applies.
       matchPackageNames: [
         'posthog/posthog',
         'docker.io/posthog/posthog',
@@ -258,8 +226,7 @@
     },
     {
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
-      // valkey is pulled from Docker Hub as valkey/valkey — without that form
-      // here, the kubernetes-manager minor/patch automerge rule applies to it.
+      // Keep the Docker Hub valkey/valkey form, or the minor/patch automerge rule applies to it.
       matchPackageNames: [
         'postgres',
         'valkey/valkey',
@@ -273,16 +240,6 @@
       enabled: false,
     },
     {
-      // 2026-07-17 incident: #1621 (postgres 17.10→18.4) crashlooped
-      // gitea-postgres 159x — PG data dirs are NOT major-version compatible
-      // and need a manual dump/restore. The repo-wide major rule already
-      // blocked automerge and the deployment file even carries a warning
-      // comment, but the PR looked like every other green bump and was
-      // merged by hand. Gate PR CREATION on dependency-dashboard approval
-      // so a major never shows up as a mergeable PR in the first place.
-      // Minors/patches keep automerging per the repo-wide rule. PG19 GA is
-      // ~Sept 2026. Migration runbook captured 2026-07-18 (dump/restore
-      // via temp postgres:17 pod on the same PVC).
       description: 'plain-Postgres images (all apps): MAJOR bumps require dependency-dashboard approval — PG data dirs are not major-version compatible; manual dump/restore needed (2026-07-17 incident PR #1621; repeated 2026-08-14 on temporal, PR #1979)',
       matchPackageNames: ['postgres', 'docker.io/library/postgres'],
       matchFileNames: ['**/postgres/deployment.yaml'],
@@ -311,37 +268,20 @@
       allowedVersions: '/^\\d+\\.\\d+\\.\\d+$/',
     },
     {
-      // registry.vanillax.me is a LAN-only Gitea container registry the
-      // hosted Mend GitHub App cannot reach. The self-hosted in-cluster
-      // Renovate CronJob owns these deps via a `force` config + the
-      // custom.gitea-vanillax datasource (see
-      // my-apps/development/renovate/configmap.yaml). Here we just make the
-      // GitHub App ignore every registry.vanillax.me ref, in any manager,
-      // so it never emits no-result dashboard noise for a registry it
-      // cannot resolve. The self-hosted instance re-enables them via
-      // force.packageRules (force is applied last, so it wins there).
+      // The in-cluster Renovate re-enables these via force.packageRules, which is applied last and wins.
       description: 'Ignore all registry.vanillax.me image refs in the hosted GitHub App (LAN-only registry it cannot reach). Self-hosted in-cluster Renovate owns these via force config + custom.gitea-vanillax — see my-apps/development/renovate/configmap.yaml.',
       matchPackageNames: ['/^registry\\.vanillax\\.me//'],
       enabled: false,
     },
     {
-      // kopiur is pre-1.0: 0.x MINORS are breaking by convention, and upstream
-      // has announced a chart refactor with intentional breaking changes
-      // (home-operations/kopiur#203, "maximum breaking changes", 2026-07-05).
-      // CLAUDE.md rule: re-verify CRDs on every bump — impossible if it
-      // automerges. PRs still open immediately; merge is manual.
+      // 0.x minors are breaking and CRDs must be re-verified on every bump, so no automerge (PRs still open immediately).
       description: 'kopiur chart/image bumps require manual review — pre-1.0 breaking minors + announced breaking chart refactor (#203)',
       matchPackageNames: ['kopiur', 'ghcr.io/home-operations/charts/kopiur', 'ghcr.io/home-operations/kopiur-controller', 'ghcr.io/home-operations/kopiur-webhook', 'ghcr.io/home-operations/kopiur-mover'],
       automerge: false,
       prCreation: 'immediate',
     },
     {
-      // argo-cd is the self-managing app: when its sync wedges, the entire
-      // app-of-apps freezes behind a stale manifest snapshot. Renovate PR
-      // #1259 (v9.5.9 chart bump) wedged the cluster for 33+ hours on
-      // 2026-05-01. PR #1259 had no friction. Force every argo-cd chart bump
-      // (minor + patch + major) to wait for explicit reviewer approval via
-      // the dependency dashboard before a PR is even opened.
+      // Argo CD manages itself: a wedged sync freezes the whole app-of-apps, so every chart bump waits for dashboard approval.
       description: 'argo-cd chart bumps require manual review — wedge-prone, see incident 2026-05-01 (PR #1259, v9.5.9). Bound-retry sweep added 2026-05-19 lessens blast radius but does not remove it.',
       matchDatasources: ['helm'],
       matchPackageNames: ['argo-cd'],
@@ -350,12 +290,8 @@
       automerge: false,
     },
     {
-      // deal-scout images are released by scripts/release.sh in the source
-      // repo (github.com/mitchross/deal-scout), which builds both images
-      // under one version and opens its own gitops PR pinning tag+digest.
-      // Renovate would open a competing bump and, under the repo-wide
-      // minor/patch rule, AUTOMERGE it -- racing that PR and splitting the
-      // dashboard and worker onto different versions. Last rule wins.
+      // deal-scout's release script opens its own GitOps PR for both images; a Renovate bump would race it and split their versions.
+      // Keep this rule last: later rules win.
       description: 'deal-scout images are released by their own pipeline; Renovate must not bump them',
       matchPackageNames: [
         'ghcr.io/mitchross/deal-scout',
@@ -366,19 +302,11 @@
   ],
   ignorePaths: [
     '**/charts/**',
-    // NVIDIA gpu-operator ClusterPolicy CR fails Renovate's YAML parse
-    // ("Schema error: Invalid YAML"). Harmless — extraction continues —
-    // but spams the debug log. Image refs in this file are managed by the
-    // gpu-operator chart, not by us, so nothing to extract anyway.
+    // ClusterPolicy fails Renovate's YAML parse, and its images are owned by the gpu-operator chart anyway.
     'infrastructure/gpu/nvidia-gpu-operator/cluster-policy.yaml',
   ],
-  // NOTE: the registry.vanillax.me custom datasource + custom manager that
-  // used to live here moved to the self-hosted in-cluster Renovate's global
-  // config (my-apps/development/renovate/configmap.yaml, under `force`).
-  // The hosted GitHub App cannot reach that LAN-only registry, so keeping
-  // the plumbing here only produced no-result dashboard noise. The
-  // customManagers below are public-datasource only and run in both
-  // instances (the self-hosted one disables them via force.packageRules).
+  // Managers for the LAN registry live in the self-hosted config (my-apps/development/renovate/configmap.yaml);
+  // these use public datasources and run in both instances.
   customManagers: [
     {
       description: 'Keep documented and bootstrap Argo CD chart versions aligned with GitOps',

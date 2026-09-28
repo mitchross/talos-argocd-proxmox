@@ -1,11 +1,7 @@
-# Enhanced kube-prometheus-stack configuration
-# Optimized for production workloads with security and performance considerations
-
-# Global settings
+# kube-prometheus-stack values, rendered through helmCharts in kustomization.yaml.
 global:
   imageRegistry: ""
   imagePullSecrets: []
-# CRD Configuration - Essential for proper functioning
 crds:
   enabled: true
 defaultRules:
@@ -17,13 +13,10 @@ defaultRules:
 prometheus:
   enabled: true
   prometheusSpec:
-    # Data retention and storage
     retention: 15d
-    # PVC below is 50Gi; leave headroom for WAL/compaction but don't strand
-    # ~35Gi (was 15GB).
+    # PVC below is 50Gi; retentionSize leaves headroom for WAL/compaction.
     retentionSize: 40GB
     walCompression: true
-    # Storage configuration with Longhorn
     storageSpec:
       volumeClaimTemplate:
         metadata:
@@ -43,19 +36,17 @@ prometheus:
       requests:
         cpu: 500m
         memory: 3Gi
-      # Head series fill ~5 GiB; at a 6Gi cap no page cache was left and queries re-read ~11 TB/day of TSDB.
+      # Head series fill ~5 GiB; the cap must also leave page cache or queries thrash TSDB reads.
       limits:
         memory: 10Gi
-    # Security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 65534
       fsGroup: 65534
-    # Scrape configuration
     scrapeInterval: 30s
     evaluationInterval: 30s
     scrapeTimeout: 10s
-    # Enable service discovery for dynamic targets
+    # false = select every ServiceMonitor/PodMonitor/rule in any namespace, not just this release's.
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -173,7 +164,7 @@ prometheus:
           - action: labeldrop
             regex: "serial|serial_number|wwn"
       # rpi4 in the shed: the epsolar service (github.com/mitchross/epsolar) serves both the
-      # legacy epever_* and the epsolar_*/solar_buffer_* metrics on 8080. 9812 is retired.
+      # legacy epever_* and the epsolar_*/solar_buffer_* metrics on 8080.
       - job_name: 'epever-solar'
         metrics_path: /metrics
         scheme: http
@@ -229,9 +220,7 @@ prometheus:
             replacement: ${1}:10259
           - source_labels: [__meta_kubernetes_node_name]
             target_label: instance
-    # Remote write configuration (for external storage if needed)
     remoteWrite: []
-    # Alerting configuration
     alerting:
       alertmanagers:
         - namespace: prometheus-stack
@@ -243,7 +232,6 @@ alertmanager:
   alertmanagerSpec:
     strategy:
       type: Recreate
-    # Storage for alertmanager
     storage:
       volumeClaimTemplate:
         metadata:
@@ -259,19 +247,16 @@ alertmanager:
           resources:
             requests:
               storage: 5Gi
-    # Resource allocation
     resources:
       requests:
         cpu: 100m
         memory: 128Mi
       limits:
         memory: 512Mi
-    # Security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 65534
       fsGroup: 65534
-    # Retention
     retention: 72h
     configSecret: ""
   # No push receiver yet: alerts are viewed in Alertmanager/Grafana. Watchdog and InfoInhibitor route to null.
@@ -302,7 +287,6 @@ grafana:
     existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
-  # Persistence
   persistence:
     enabled: true
     storageClassName: longhorn-flash
@@ -315,19 +299,16 @@ grafana:
       backup-exempt: "true"
     annotations:
       storage.vanillax.dev/backup-exempt-reason: "Dashboards/datasources are GitOps-managed; only user prefs in PVC"
-  # Resource allocation
   resources:
     requests:
       cpu: 100m
       memory: 1Gi
     limits:
       memory: 2Gi
-  # Security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 472
     fsGroup: 472
-  # Enable plugins
   plugins: []
   # Sidecar discovers every grafana_dashboard=1 ConfigMap cluster-wide; the grafana_folder annotation picks its folder.
   sidecar:
@@ -342,7 +323,6 @@ grafana:
   # Stock dashboard bundle disabled: two dozen overlapping boards made triage a search problem.
   defaultDashboardsEnabled: false
   defaultDashboardsTimezone: UTC
-  # Additional data sources configuration
   additionalDataSources:
     # Pinned UIDs: dashboards, derived fields and trace links reference these.
     - name: Loki
@@ -377,7 +357,6 @@ grafana:
           datasourceUid: loki
         nodeGraph:
           enabled: true
-  # Grafana configuration
   grafana.ini:
     server:
       root_url: https://grafana.vanillax.me
@@ -396,14 +375,12 @@ grafana:
     explore:
       enabled: true
 # Node Exporter Configuration
-# Enable for comprehensive node-level metrics (VPA-optimized 2026-02-28)
 nodeExporter:
   enabled: true
 prometheus-node-exporter:
   hostRootFsMount:
     enabled: true
     mountPropagation: HostToContainer
-  # Resource allocation
   resources:
     requests:
       cpu: 50m
@@ -581,14 +558,12 @@ prometheusOperator:
   admissionWebhooks:
     certManager:
       enabled: true
-  # Resource allocation
   resources:
     requests:
       cpu: 100m
       memory: 128Mi
     limits:
       memory: 512Mi
-  # Security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
@@ -597,11 +572,12 @@ kubelet:
   enabled: true
   serviceMonitor:
     interval: 30s
-# Talos hides these bind addresses, so we disable scraping to avoid target down alerts
 kubeApiServer:
   enabled: true
   serviceMonitor:
     interval: 30s
+# Off here: Talos hides the etcd/controller-manager/scheduler bind addresses from the chart's selectors, so the
+# additionalScrapeConfigs jobs above scrape them; kube-proxy doesn't exist (Cilium replaces it).
 kubeControllerManager:
   enabled: false
 kubeScheduler:

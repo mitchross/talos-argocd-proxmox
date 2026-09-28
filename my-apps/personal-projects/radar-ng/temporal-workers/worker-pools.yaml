@@ -1,4 +1,4 @@
-# One WorkerDeployment per Temporal task queue (plan Phase 1). Every pool polls only its own queue;
+# One WorkerDeployment per Temporal task queue. Every pool polls only its own queue;
 # Release settings are embedded in each pod template by release-env-patch.yaml.
 # Exactly one pool seeds Schedules: aux carries SEED_SCHEDULES=1, every other pool keeps SKIP_SCHEDULE_SEED=1.
 # All pools share the RWO tiles/grids/state volumes, so they must land on tile-server's node (podAffinity).
@@ -366,7 +366,7 @@ spec:
             - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: aux }
-            # Sole Schedule seeder + stall observer now that legacy is retired; never set this on a second pool.
+            # Sole Schedule seeder + stall observer; never set this on a second pool.
             - { name: SEED_SCHEDULES, value: "1" }
             # Lightning holds one slot ~50 min/h; air quality chunks, tropical and cleanup share the rest.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "4" }

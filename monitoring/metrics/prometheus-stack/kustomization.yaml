@@ -11,14 +11,14 @@ resources:
   - custom-alerts.yaml
   - node-logging-alerts.yaml
   - custom-servicemonitors.yaml
-  - longhorn-alerts.yaml # volume/node health (was longhorn-backup-alerts.yaml; dead backup-target alerts dropped 2026-07-06)
-  - kopiur-alerts.yaml # kopiur backup staleness/failure alerts (the follow-up promised when volsync-alerts were retired 2026-06-27)
+  - longhorn-alerts.yaml # volume/node health
+  - kopiur-alerts.yaml # kopiur backup staleness/failure alerts
   - langfuse-alerts.yaml # LLM trace loss: ClickHouse insert failures + busy-gateway/no-ingest cross-check
-  - argocd-sync-alerts.yaml # ArgoCD control-plane + app-state alerts (stale-sync incident 2026-05-29)
+  - argocd-sync-alerts.yaml # ArgoCD control-plane + app-state alerts
   - admission-webhook-alerts.yaml # API-server-side webhook reachability; pod health cannot prove it
   - capacity-rules.yaml # per-workload peak series for the Capacity dashboard
-  - dcgm-exporter.yaml # DCGM GPU monitoring
-  - gpu-alerts.yaml # GPU alerting rules
+  - dcgm-exporter.yaml
+  - gpu-alerts.yaml
   - dashboards # Grafana dashboards, one subdirectory per folder
   - network-policy.yaml # Allow Grafana to access Prometheus
 
@@ -73,4 +73,4 @@ helmCharts:
     releaseName: kube-prometheus-stack
     namespace: prometheus-stack
     valuesFile: values.yaml
-    includeCRDs: true # This is the key setting!
+    includeCRDs: true # renders the CRDs: this app is the sole owner of monitoring.coreos.com
