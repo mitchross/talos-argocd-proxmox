@@ -14,6 +14,8 @@ helmCharts:
     includeCRDs: true
     namespace: node-feature-discovery
     valuesInline:
+      # Default post-delete hook strips every NFD label from all nodes if the Application is ever deleted.
+      postDeleteCleanup: false
       worker:
         # The shed node is tainted; without this NFD never labels its USB devices.
         tolerations:
