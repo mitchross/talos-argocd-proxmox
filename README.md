@@ -40,10 +40,12 @@ this repo.
 **The core idea: a directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application` automatically. No manual `Application` resources.
 
 ```
-my-apps/ai/comfyui/              → ArgoCD Application "my-apps-comfyui"
-infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
+my-apps/ai/comfyui/                  → ArgoCD Application "my-apps-comfyui"
+infrastructure/storage/longhorn/     → ArgoCD Application "longhorn"
+monitoring/metrics/prometheus-stack/ → ArgoCD Application "monitoring-prometheus-stack"
 ```
+
+The middle folder (`ai/`, `media/`, `metrics/`…) is a category for people; the app name comes from the last folder. Apps under a `_archive/` folder are not deployed, and their backups are kept.
 
 ### Sync Wave Architecture
 

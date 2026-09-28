@@ -14,11 +14,11 @@ External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
 `otel.vanillax.me/v1/{traces,logs}` via `collector-gateway-httproute.yaml`.
 
 - **OTEL Operator** (`infrastructure/controllers/opentelemetry-operator/`) — manages Collectors
-- **Prometheus + Grafana** (`monitoring/prometheus-stack/`) — metrics storage, dashboards, alerting
-- **Loki** (`monitoring/loki-stack/`) — log storage (S3 backend on RustFS)
-- **Tempo** (`monitoring/tempo/`) — trace storage (S3 backend on RustFS)
-- **HolmesGPT** (`monitoring/holmesgpt/`) — AI cluster diagnostics through LiteLLM → vLLM (`qwen3.8-27b`)
-- **pod-cleanup** (`monitoring/pod-cleanup/`) — 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide
+- **Prometheus + Grafana** (`monitoring/metrics/prometheus-stack/`) — metrics storage, dashboards, alerting
+- **Loki** (`monitoring/logs/loki-stack/`) — log storage (S3 backend on RustFS)
+- **Tempo** (`monitoring/tracing/tempo/`) — trace storage (S3 backend on RustFS)
+- **HolmesGPT** (`monitoring/ai-ops/_archive/holmesgpt/`) — **archived, not deployed**; AI cluster diagnostics through LiteLLM → vLLM
+- **pod-cleanup** (`my-apps/system/pod-cleanup/`) — 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide
 
 ## Telemetry boundary
 
@@ -50,9 +50,9 @@ or dashboard; send it to the gateway, not the per-node log agents.
 
 ## Key Files
 
-- Custom ServiceMonitors: `monitoring/prometheus-stack/custom-servicemonitors.yaml`
-- Custom alerts: `monitoring/prometheus-stack/custom-alerts.yaml`
-- GPU alerts: `monitoring/prometheus-stack/gpu-alerts.yaml`
+- Custom ServiceMonitors: `monitoring/metrics/prometheus-stack/custom-servicemonitors.yaml`
+- Custom alerts: `monitoring/metrics/prometheus-stack/custom-alerts.yaml`
+- GPU alerts: `monitoring/metrics/prometheus-stack/gpu-alerts.yaml`
 - OTEL Collector Agent: `infrastructure/controllers/opentelemetry-operator/collector-agent.yaml`
 - OTEL Collector Gateway: `infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml`
 - OTEL Gateway public HTTPRoute: `infrastructure/controllers/opentelemetry-operator/collector-gateway-httproute.yaml`

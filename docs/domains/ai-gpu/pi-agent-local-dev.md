@@ -125,7 +125,7 @@ they cost nothing. Trust the dashboards.
 `qwen3.8-27b-auto` is the same vLLM backend as `qwen3.8-27b` under a second
 name. Failover is keyed on it alone. LiteLLM fallbacks key on the model name, so
 a rule on `qwen3.8-27b` would divert every gateway client — bare `pi`,
-`pi-qwen-only`, Open WebUI, Perplexica, Presenton, Hindsight, ninfer, ComfyUI —
+`pi-qwen-only`, Open WebUI, Perplexica, Presenton, Hindsight, ComfyUI —
 to paid OpenRouter during an outage. Local-only callers must fail closed.
 
 ## Routing changes need no workstation change

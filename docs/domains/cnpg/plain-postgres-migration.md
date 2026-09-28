@@ -30,7 +30,7 @@ and patches stay Renovate-automated).
 
 ## The pattern (reference: `my-apps/development/gitea/postgres/`)
 
-The Postgres twin of `my-apps/home/project-nomad/mysql/` — four pieces inside
+The Postgres twin of `my-apps/knowledge/project-nomad/mysql/` — four pieces inside
 the owning app's directory:
 
 | Piece | Key points |
@@ -113,7 +113,7 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
       pinned to 17 until Temporal upstream declares PG18 support. The postgres
       stack carries sync-waves (-3/-2) because the chart's schema Jobs are
       wave -1 Sync hooks and waves block — see
-      `my-apps/development/temporal/postgres/deployment.yaml`.
+      `my-apps/development-infra/temporal/postgres/deployment.yaml`.
 - [x] paperless migrated (2026-08-13) — greenfield data-zero cutover, same
       rebuild. Document originals live on the kopiur-backed media/data PVCs;
       DB-side tags/metadata start fresh (re-consume to re-import).

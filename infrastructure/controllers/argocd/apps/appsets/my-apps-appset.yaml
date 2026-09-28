@@ -13,8 +13,8 @@ spec:
   # result" (the template context). The Git generator supplies its matched
   # directory as the `path` object: `.path.basename` is the final directory
   # name, while `.path.path` is the complete repository-relative path.
-  # Example: `my-apps/media/karakeep` produces `.path.basename = karakeep` and
-  # `.path.path = my-apps/media/karakeep`, so Argo creates Application
+  # Example: `my-apps/knowledge/karakeep` produces `.path.basename = karakeep` and
+  # `.path.path = my-apps/knowledge/karakeep`, so Argo creates Application
   # `my-apps-karakeep` in namespace `karakeep` and renders that exact folder.
   # `missingkey=error` stops generation when a field is absent instead of
   # silently creating an Application with an empty name, path, or namespace.
@@ -34,7 +34,7 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      # project-nomad is intentionally one bundled app at my-apps/home/project-nomad.
+      # project-nomad is intentionally one bundled app at my-apps/knowledge/project-nomad.
       # Its child folders are resources, not generated apps.
       - path: my-apps/*/*
       # my-apps/common/* holds shared Kustomize Components (kind: Component),
@@ -44,6 +44,12 @@ spec:
       # Application (e.g. my-apps-kopiur-backup, Synced/Healthy, manages
       # nothing). Guarded by validate-argocd-apps.sh Check 8.
       - path: my-apps/common/*
+        exclude: true
+      # `_archive/` parks retired apps: excluded, so Argo prunes them; kopiur keeps their backups (repo onNamespaceDelete: Orphan).
+      - path: my-apps/*/_archive
+        exclude: true
+      # Strimzi lives here as a dev tool but is deployed by custom-entrypoints/strimzi-app.yaml (wave 4, namespace kafka).
+      - path: my-apps/development/strimzi
         exclude: true
   template:
     metadata:

@@ -30,7 +30,7 @@ TAG="${TAG:?TAG is required (e.g. TAG=v1.0.0). Version tags only — no :latest;
 
 # Map: app-name => "<context-relative-path>;<dockerfile-relative-path>"
 declare -A APPS=(
-  [news-reader]="my-apps/development/news-reader/app;my-apps/development/news-reader/app/Dockerfile"
+  [news-reader]="my-apps/personal-projects/news-reader/app;my-apps/personal-projects/news-reader/app/Dockerfile"
   [temporal-worker]="my-apps/development/temporal-worker;my-apps/development/temporal-worker/Dockerfile"
 )
 

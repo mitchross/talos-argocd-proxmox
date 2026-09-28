@@ -263,7 +263,7 @@ runner: cluster-runner-1 ... declare successfully
 ```
 
 For radar-ng, the recovery images are pinned in
-`my-apps/development/radar-ng/`. If the registry is empty and the runner is not
+`my-apps/personal-projects/radar-ng/`. If the registry is empty and the runner is not
 usable yet, manually refill the exact pinned tags from local checkouts:
 
 ```bash

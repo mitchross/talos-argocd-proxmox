@@ -16,7 +16,7 @@ other two per request.
 | Backend | Replicas | Cards | Model | Status |
 |---|---:|---:|---|---|
 | vLLM | `1` | **2** | `qwen3.8-27b` | production |
-| NInfer | `0` | 1 | `qwen3.8-ninfer` | parked |
+| NInfer | n/a | 1 | `qwen3.8-ninfer` | archived (`my-apps/ai/_archive/ninfer/`) |
 | ComfyUI / SwarmUI | `0` | 1 | image generation | parked |
 
 Both cards belong to vLLM. Other GPU workloads stay parked.
@@ -102,7 +102,7 @@ Full behaviour: [Pi agent guide](pi-agent-local-dev.md).
 Auth is a namespace-local ExternalSecret from `litellm/master_key`.
 
 Every declared LLM consumer uses LiteLLM: Open WebUI, Perplexica/Vane,
-Presenton, SurfSense, HolmesGPT, Hindsight, Project Nomad, ComfyUI's vision
+Presenton, SurfSense, Hindsight, Project Nomad, ComfyUI's vision
 bridge, WorldMonitor, Deal Scout, Karakeep and News Reader. They all
 stay on local Qwen unless their model is changed explicitly.
 

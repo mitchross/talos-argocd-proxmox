@@ -17,7 +17,7 @@ Use this order when documents disagree:
 
 1. read-only live evidence plus the Git commit Argo actually applied;
 2. repository `CLAUDE.md` rules;
-3. `my-apps/development/radar-ng/RUNBOOK.md` for current operations;
+3. `my-apps/personal-projects/radar-ng/RUNBOOK.md` for current operations;
 4. this handoff for cross-repository sequencing and verified local work;
 5. Radar's `docs/reliability-and-scale-plan.md` for the long-term design.
 
@@ -485,7 +485,7 @@ kubectl get nodes.longhorn.io -n longhorn-system -o yaml
 
 Read the Schedule list, running Workflow inventory, and timer DLQ with the
 documented Temporal admin commands in
-`my-apps/development/radar-ng/RUNBOOK.md`; never purge it. The current shared
+`my-apps/personal-projects/radar-ng/RUNBOOK.md`; never purge it. The current shared
 Temporal logical namespace is `default`. The future Radar logical namespace is
 `radar-ng`; do not mix them.
 
@@ -739,7 +739,7 @@ the destructive watchdog behavior as an improvised repair.
 **Goal:** CPU/memory failure in one ingest role cannot block the others.
 
 This supersedes the stale canonical-plan instruction that handed seeding to
-`aux`. `my-apps/development/radar-ng/RUNBOOK.md` wins for operations. Legacy
+`aux`. `my-apps/personal-projects/radar-ng/RUNBOOK.md` wins for operations. Legacy
 remains the only Schedule seeder and observer during this phase.
 
 Expected isolated mapping, which must be re-derived from current code before
@@ -1345,8 +1345,8 @@ merge it again.
 
 - Talos: `CLAUDE.md`
 - Talos: `my-apps/CLAUDE.md`
-- Talos: `my-apps/development/radar-ng/RUNBOOK.md`
-- Talos: `my-apps/development/temporal/README.md`
+- Talos: `my-apps/personal-projects/radar-ng/RUNBOOK.md`
+- Talos: `my-apps/development-infra/temporal/README.md`
 - Talos: `docs/domains/storage/storage-tiers.md`
 - Talos: `docs/domains/storage/kopiur-backup-architecture.md`
 - Talos: `infrastructure/storage/longhorn/storageclass-wired-ha.yaml`

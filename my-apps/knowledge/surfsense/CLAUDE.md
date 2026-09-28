@@ -4,7 +4,7 @@ This directory is the Talos/Kubernetes translation of SurfSense's self-hosted to
 
 ## Argo CD boundary
 
-`my-apps/ai/surfsense` is intentionally **one Argo CD Application** (`my-apps-surfsense`). The `my-apps` ApplicationSet discovers only `my-apps/*/*`; child directories such as `app/`, `postgres/`, `redis/`, and `kopiur/` are organization/resource boundaries, not additional Applications.
+`my-apps/knowledge/surfsense` is intentionally **one Argo CD Application** (`my-apps-surfsense`). The `my-apps` ApplicationSet discovers only `my-apps/*/*`; child directories such as `app/`, `postgres/`, `redis/`, and `kopiur/` are organization/resource boundaries, not additional Applications.
 
 Do not split these child folders into independent Argo Applications unless there is a demonstrated independent lifecycle requirement. The stack has tight startup dependencies and is deliberately ordered with resource sync waves inside one Application.
 

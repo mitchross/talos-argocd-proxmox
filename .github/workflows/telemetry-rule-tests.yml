@@ -3,10 +3,10 @@ on:
   pull_request:
     paths:
       - 'infrastructure/controllers/opentelemetry-operator-observability/**'
-      - 'monitoring/prometheus-stack/kopiur-alerts.yaml'
-      - 'monitoring/prometheus-stack/tests/kopiur-alerts.test.yaml'
-      - 'monitoring/prometheus-stack/langfuse-alerts.yaml'
-      - 'monitoring/prometheus-stack/tests/langfuse-alerts.test.yaml'
+      - 'monitoring/metrics/prometheus-stack/kopiur-alerts.yaml'
+      - 'monitoring/metrics/prometheus-stack/tests/kopiur-alerts.test.yaml'
+      - 'monitoring/metrics/prometheus-stack/langfuse-alerts.yaml'
+      - 'monitoring/metrics/prometheus-stack/tests/langfuse-alerts.test.yaml'
       - 'scripts/prepare-telemetry-rule-tests.py'
       - 'scripts/tests/test_prepare_telemetry_rule_tests.py'
       - '.github/workflows/telemetry-rule-tests.yml'
@@ -14,10 +14,10 @@ on:
     branches: [main]
     paths:
       - 'infrastructure/controllers/opentelemetry-operator-observability/**'
-      - 'monitoring/prometheus-stack/kopiur-alerts.yaml'
-      - 'monitoring/prometheus-stack/tests/kopiur-alerts.test.yaml'
-      - 'monitoring/prometheus-stack/langfuse-alerts.yaml'
-      - 'monitoring/prometheus-stack/tests/langfuse-alerts.test.yaml'
+      - 'monitoring/metrics/prometheus-stack/kopiur-alerts.yaml'
+      - 'monitoring/metrics/prometheus-stack/tests/kopiur-alerts.test.yaml'
+      - 'monitoring/metrics/prometheus-stack/langfuse-alerts.yaml'
+      - 'monitoring/metrics/prometheus-stack/tests/langfuse-alerts.test.yaml'
       - 'scripts/prepare-telemetry-rule-tests.py'
       - 'scripts/tests/test_prepare_telemetry_rule_tests.py'
       - '.github/workflows/telemetry-rule-tests.yml'

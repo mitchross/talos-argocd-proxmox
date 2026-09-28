@@ -40,9 +40,9 @@ Manual Bootstrap → ArgoCD → Root App → ApplicationSets → Auto-discovered
 
 **Critical Understanding**: Directory = Application
 ```
-my-apps/ai/comfyui/             → ArgoCD Application "my-apps-comfyui"
-infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
+my-apps/ai/comfyui/                  → ArgoCD Application "my-apps-comfyui"
+infrastructure/storage/longhorn/     → ArgoCD Application "longhorn"
+monitoring/metrics/prometheus-stack/ → ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 ## Sync Wave Architecture
@@ -57,7 +57,7 @@ Applications deploy in strict order to prevent race conditions:
 | **3** | kopiur config | kopiur `ClusterRepository cluster-kopia` + `ClusterExternalSecret` cred fanout + `VolumeSnapshotClass longhorn-snapclass` |
 | **4** | Infrastructure AppSet + custom entrypoints | Explicit path list plus KEDA and Temporal Worker Controller standalone Apps |
 | **4** | Database AppSet | Auto-syncs `infrastructure/database/*/*` (Redis + shared DB support); fully automated since the CNPG retirement (2026-08-13) |
-| **5** | Monitoring AppSet | Discovers `monitoring/*`; generated apps reconcile independently |
+| **5** | Monitoring AppSet | Discovers `monitoring/*/*` (`metrics/`, `logs/`, `tracing/`); generated apps reconcile independently |
 | **6** | OTEL + observability overlays + My-Apps AppSet | Optional telemetry alongside `my-apps/*/*`; no telemetry health gate before workload discovery |
 
 **Backend-down safety** (kopiur, replacing the retired `wait-for-rustfs` MAP): a backup against an unreachable repo errors — the Snapshot Job fails and retries, nothing garbage is written. A **restore against an unreachable repo leaves the PVC `Pending`**: kopiur raises the backend error *before* the `onMissingSnapshot` decision, so an outage can never bind an empty volume. This preserves the exact guarantee the MAP gave VolSync, with no admission policy. (Source-verified: `crates/controller/src/restore/mod.rs` `resolve_snapshot`; a brand-new PVC with a *reachable* repo but no snapshot still binds empty and backs up forward — `onMissingSnapshot: Continue` = deploy-or-restore.)
@@ -92,13 +92,21 @@ infrastructure/          # Core cluster components (Wave 4)
 ├── networking/        # Cilium, Gateway API, DNS
 └── storage/           # Longhorn, NFS, SMB, Local storage
 
-monitoring/             # Observability stack (Wave 5)
+monitoring/             # Observability stack (Wave 5): metrics/, logs/, tracing/
 my-apps/                # User applications (Wave 6)
-├── ai/                # GPU workloads
-├── development/       # Dev tools
-├── home/              # Home automation
+├── ai/                # GPU/LLM serving and AI apps
+├── knowledge/         # Search, reading, notes, documents, AI memory
+├── home-automation/   # Home Assistant, cameras, energy
 ├── media/             # Media services
-└── common/            # Shared Kustomize components
+├── utility/           # Small browser tools and dashboards
+├── storage-utility/   # File sharing and transfer
+├── development/       # Dev tools (git, CI, Renovate, Strimzi files)
+├── development-infra/ # Services other apps run on (Temporal, PostHog, map tiles)
+├── personal-projects/ # Apps built from your own images
+├── demo/              # Toys and learning experiments
+├── system/            # Cluster-side helpers
+├── common/            # Shared Kustomize components
+└── */_archive/        # Retired apps: excluded from ArgoCD, kopiur backups kept
 
 scripts/                # Automation tools
 omni/                   # Omni (Sidero) deployment configs
@@ -185,7 +193,7 @@ Detailed instructions load automatically when working in these directories:
 | `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
 | `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
 | `my-apps/ai/` | GPU workload patterns, dual-card vLLM backend |
-| `my-apps/development/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
+| `my-apps/development-infra/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
 | `monitoring/` | Monitoring pitfalls (S3 creds, ServiceMonitor selectors) |
 
 ## Custom Commands
@@ -204,23 +212,24 @@ Codex uses the same procedures through `.agents/skills/` (see `AGENTS.md`).
 | Pattern | Reference Location |
 |---------|-------------------|
 | **Minimal app** | template in `my-apps/CLAUDE.md` § "Minimal Application" (no live example is truly minimal) |
-| **Backup with root-uid mover** | `my-apps/development/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
+| **Backup with root-uid mover** | `my-apps/demo/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup (kopiur)** | `my-apps/ai/open-webui/` (component + `kopiur/storage.yaml` stub + PVC `dataSourceRef`) |
 | **kopiur backup component (shared)** | `my-apps/common/kopiur-backup/` |
 | **kopiur repo + cred fanout + snapclass** | `infrastructure/controllers/kopiur/` |
-| **Daemon-drop mover uid (999:568)** | `my-apps/home/project-nomad/mysql/kopiur-backup.yaml` |
-| **Multi-PVC + backup-exempt mix** | `my-apps/home/project-zomboid/` (backs up `zomboid-data`, exempts `zomboid-server-files`) |
+| **Daemon-drop mover uid (999:568)** | `my-apps/knowledge/project-nomad/mysql/kopiur-backup.yaml` |
+| **Multi-PVC + backup-exempt mix** | `my-apps/home-automation/frigate/` (backs up `frigate-config`, exempts `frigate-media`) |
+| **Archive a retired app** | `my-apps/<category>/_archive/<app>/` — see `docs/domains/argocd/entrypoints.md` § Archived apps |
 | **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
-| **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development/temporal/postgres/` |
+| **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development-infra/temporal/postgres/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
-| **Jobs with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
-| **Helm Job Kustomize patch** | `my-apps/development/temporal/kustomization.yaml` |
+| **Jobs with ArgoCD hooks** | `my-apps/development-infra/posthog/core/jobs.yaml` |
+| **Helm Job Kustomize patch** | `my-apps/development-infra/temporal/kustomization.yaml` |
 
 ## Additional Documentation
 

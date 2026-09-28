@@ -22,7 +22,7 @@ digests, check all five:
    hook before a changed validator reaches web. Remove the patch when upstream
    accepts the unlicensed self-hosted 30-day option; otherwise update the
    reviewed fixture/hash and run
-   `python3 -m unittest discover -s my-apps/development/posthog/tests -v`
+   `python3 -m unittest discover -s my-apps/development-infra/posthog/tests -v`
    from the repository root. Preserve cloud and existing entitlement checks.
 
 Rules: bump `posthog/posthog` and `posthog/posthog-node` digests **in lockstep**

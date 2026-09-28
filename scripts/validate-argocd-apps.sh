@@ -219,7 +219,7 @@ echo ""
 echo "--- Check 7: Project Nomad AppSet ownership ---"
 
 my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
-project_nomad_path="my-apps/home/project-nomad"
+project_nomad_path="my-apps/knowledge/project-nomad"
 if [ -f "$my_apps_appset" ] && [ -f "$project_nomad_path/kustomization.yaml" ]; then
   nested_nomad_kustomizations=$(find "$project_nomad_path" -mindepth 2 -name kustomization.yaml -print | wc -l | xargs)
 

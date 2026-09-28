@@ -7,7 +7,7 @@ finish. Nothing in flight is touched.
 
 **Status:** runbook for the live cluster. **Scope:** application workers
 (News Reader, Deal Scout, Radar). The Temporal server itself is covered by the
-[server README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/temporal/README.md).
+[server README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/temporal/README.md).
 
 This page follows Michael Jones's
 [Temporal Safe Deploys lab](https://syntaxsugar.io/lab/temporal-safe-deploys/)
@@ -59,9 +59,9 @@ About 15 minutes of your attention. The controller does the waiting.
 3. Before merging, render and test from the repository root:
 
    ```bash
-   kustomize build my-apps/development/news-reader > /dev/null
-   kustomize build my-apps/development/radar-ng > /dev/null
-   kustomize build my-apps/utility/deal-scout > /dev/null
+   kustomize build my-apps/personal-projects/news-reader > /dev/null
+   kustomize build my-apps/personal-projects/radar-ng > /dev/null
+   kustomize build my-apps/personal-projects/deal-scout > /dev/null
    python -m unittest discover -s scripts/tests -p test_temporal_deployments.py -v
    ```
 
@@ -183,7 +183,7 @@ What this cluster actually runs:
 
 - [Controller chart values](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/values.yaml) and [CRD chart pins](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/kustomization.yaml)
 - [Argo CD health rule for WorkerDeployment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/argocd/values.yaml)
-- [News Reader worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/news-reader/temporal-workers/temporal-worker-deployment.yaml)
-- [Deal Scout worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/utility/deal-scout/temporal-workers/temporal-worker-deployment.yaml)
-- [Radar worker pools](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/temporal-workers/worker-pools.yaml) and [release settings patch](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/temporal-workers/release-env-patch.yaml)
+- [News Reader worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/news-reader/temporal-workers/temporal-worker-deployment.yaml)
+- [Deal Scout worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/deal-scout/temporal-workers/temporal-worker-deployment.yaml)
+- [Radar worker pools](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/radar-ng/temporal-workers/worker-pools.yaml) and [release settings patch](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/radar-ng/temporal-workers/release-env-patch.yaml)
 - [Manifest tests](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/tests/test_temporal_deployments.py)

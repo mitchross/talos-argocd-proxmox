@@ -247,12 +247,12 @@ class AIObservabilityTests(unittest.TestCase):
 
 class AllLLMClientsTests(unittest.TestCase):
     APPS = [
-        'my-apps/ai/open-webui', 'my-apps/ai/hindsight', 'my-apps/ai/surfsense',
-        'my-apps/ai/perplexica', 'my-apps/ai/presenton', 'my-apps/ai/comfyui',
-        'my-apps/home/project-nomad',
-        'my-apps/media/karakeep', 'my-apps/media/worldmonitor',
-        'my-apps/utility/deal-scout', 'my-apps/development/news-reader',
-        'monitoring/holmesgpt',
+        'my-apps/ai/open-webui', 'my-apps/knowledge/hindsight', 'my-apps/knowledge/surfsense',
+        'my-apps/knowledge/perplexica', 'my-apps/ai/presenton', 'my-apps/ai/comfyui',
+        'my-apps/knowledge/project-nomad',
+        'my-apps/knowledge/karakeep', 'my-apps/personal-projects/worldmonitor',
+        'my-apps/personal-projects/deal-scout', 'my-apps/personal-projects/news-reader',
+        'monitoring/ai-ops/_archive/holmesgpt',
     ]
 
     def test_no_declared_client_bypasses_gateway_including_tracked_env_files(self):
@@ -262,7 +262,7 @@ class AllLLMClientsTests(unittest.TestCase):
         # Auth used to be an init container that rewrote app.py against a pinned
         # source hash. The image reads the key itself since v0.13.0; reinstating
         # the overlay would fail that hash check and never start the pod.
-        pod = read('my-apps/utility/deal-scout/deployment.yaml')['spec']['template']['spec']
+        pod = read('my-apps/personal-projects/deal-scout/deployment.yaml')['spec']['template']['spec']
         app = next(c for c in pod['containers'] if c['name'] == 'deal-scout')
         self.assertEqual(pod.get('initContainers', []), [])
         self.assertFalse(any(m['mountPath'].startswith('/app') for m in app['volumeMounts']))

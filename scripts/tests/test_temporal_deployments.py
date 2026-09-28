@@ -11,8 +11,8 @@ import unittest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-RADAR = ROOT / "my-apps/development/radar-ng"
-NEWS = ROOT / "my-apps/development/news-reader"
+RADAR = ROOT / "my-apps/personal-projects/radar-ng"
+NEWS = ROOT / "my-apps/personal-projects/news-reader"
 
 
 def render(path):
@@ -41,7 +41,7 @@ class TemporalDeploymentTests(unittest.TestCase):
         self.assertGreaterEqual(version, (1, 10, 0), "The upstream baseline must include the #554 status fix")
 
     def test_all_candidate_images_follow_release_policy_and_are_gated(self):
-        workers = [obj for path in (RADAR, NEWS, ROOT / "my-apps/utility/deal-scout")
+        workers = [obj for path in (RADAR, NEWS, ROOT / "my-apps/personal-projects/deal-scout")
                    for obj in render(path) if obj["kind"] == "WorkerDeployment"]
         self.assertEqual(len(workers), 7)
         for worker in workers:
