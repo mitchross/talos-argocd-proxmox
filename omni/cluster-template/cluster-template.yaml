@@ -1,4 +1,4 @@
-# omnictl cluster template sync -v -f cluster-template-working.yaml
+# omnictl cluster template sync -v -f cluster-template.yaml
 ---
 kind: Cluster
 name: talos-prod-cluster
@@ -76,14 +76,8 @@ patches:
           snapshot-count: "5000"
           auto-compaction-mode: "periodic"
           auto-compaction-retention: "5m"
-          # Expose etcd metrics on port 2381 (HTTP, no mTLS) so Prometheus
-          # can scrape without certificate juggling. Listener is bound to
-          # the host network on CP nodes only — not reachable from worker
-          # pods directly, so node-discovery scraping (see
-          # monitoring/metrics/prometheus-stack/values.yaml additionalScrapeConfigs)
-          # is the way in. Path B (mTLS on 2379) requires extracting
-          # /system/secrets/etcd/* into a K8s Secret on every cert rotation;
-          # not worth it for a single-operator homelab.
+          # etcd metrics on :2381 (HTTP, no mTLS) so Prometheus needs no certs; host network on CP nodes only,
+          # scraped via node discovery (prometheus-stack values.yaml additionalScrapeConfigs).
           listen-metrics-urls: "http://0.0.0.0:2381"
       controllerManager:
         extraArgs:
@@ -130,17 +124,7 @@ patches:
           - bind
           - rshared
           - rw
-# REMOVED 2026-06-12: longhorn-v2-prereqs (hugepages + vfio_pci/nvme_tcp) and
-# longhorn-v2-default-disk (raw /dev/sdb block registration). The V2/SPDK
-# engine failed under full-DR restore load — open Longhorn 1.12 bugs #13315
-# (interrupted rebuild poisons replica metadata) and #13314 (re-crash after
-# auto-reattach) turned a mass restore into an unrecoverable fault loop
-# (2026-06-12 incident; see the attack-storm playbook in README.md). The
-# cluster returned to the V1 engine: data lives as files under
-# /var/lib/longhorn (bind-mounted from /var/local/longhorn by the
-# longhorn-storage patch above) on the single 800G disk — the exact layout
-# that ran this cluster stably before the V2 experiment. Reclaims the 2 GiB
-# hugepage carve-out per worker as bonus RAM.
+# Longhorn runs the V1 engine only: data is files under /var/lib/longhorn on the boot disk. Never re-enable V2.
 ---
 kind: Workers
 name: gpu-workers
@@ -149,8 +133,7 @@ machineClass:
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
-# nfs-utils removed — incompatible with NVIDIA drivers on Talos 1.12.x (siderolabs/extensions#1021)
-# rpc-statd crash loop corrupts containerd boltdb, taking the entire node down
+# No nfs-utils here: rpc-statd crash-loops with the NVIDIA drivers and corrupts containerd's boltdb (siderolabs/extensions#1021).
 # qemu-guest-agent auto-installed by Proxmox provider (see machine-classes/gpu-worker.yaml)
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
@@ -162,15 +145,7 @@ patches:
       nodeLabels:
         gpu-worker: "true"
         nvidia.com/gpu: "true"
-# REMOVED 2026-06-11: the gpu-network-dhcp DHCPv4Config pinned to "ens18"
-# broke the GPU worker on the V2 rebuild — adding the second disk
-# (additional_disks -> extra virtio-scsi controller) shifted PCIe
-# enumeration, the NIC stopped being ens18, the pinned config matched
-# nothing, and the node booted with NO IP (SideroLink down, unreachable —
-# unfixable remotely, required reprovision). Regular workers use Talos's
-# default DHCP-on-all-links and survive hardware reshuffles; the kubelet
-# nodeIP.validSubnets pin in patches/gpu-worker.yaml handles address
-# selection. Do not re-pin DHCP to an interface name.
+# Never pin DHCP to an interface name (ens18): adding a disk shifts PCIe enumeration, the NIC gets renamed and the node boots with no IP.
 - file: patches/gpu-worker.yaml
 - name: kubelet-performance
   inline:
@@ -190,8 +165,3 @@ patches:
           - bind
           - rshared
           - rw
-# REMOVED 2026-06-12: longhorn-v2-prereqs + longhorn-v2-default-disk (see the
-# workers section above for the full rationale — V2 engine retired after the
-# full-DR fault loop; V1 layout restored). GPU-node bonus: the 2 GiB hugepage
-# carve-out returns to AI workloads, and vfio_pci no longer loads alongside
-# the NVIDIA driver.

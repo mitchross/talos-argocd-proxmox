@@ -27,7 +27,6 @@ helmCharts:
           core:
             # Run NFD periodically to catch any changes
             sleepInterval: 60s
-            # Explicitly enable sources for clarity
             sources: ["pci", "system", "usb", "cpu"]
           sources:
             pci:

@@ -8,14 +8,12 @@
 
 set -euo pipefail
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
 OUTPUT_FILE="${PWD}/omni.asc"
 
 # ==============================================================================
@@ -54,7 +52,6 @@ echo "  Omni GPG Key Setup"
 echo "===================================="
 echo ""
 
-# Check prerequisites
 print_info "Checking prerequisites..."
 
 if ! check_command "gpg"; then
@@ -65,7 +62,6 @@ fi
 print_info "GPG version: $(gpg --version | head -1)"
 echo ""
 
-# Get email for key
 print_info "This key will be used to encrypt Omni's etcd data."
 print_warn "Use a real email address - you'll need it to manage the key later."
 echo ""
@@ -76,7 +72,6 @@ if [[ -z "$USER_EMAIL" ]]; then
     exit 1
 fi
 
-# Check if key already exists
 if gpg --list-keys "$USER_EMAIL" &> /dev/null; then
     print_warn "A GPG key for $USER_EMAIL already exists!"
     read -p "Do you want to use the existing key? (y/n): " USE_EXISTING
@@ -91,7 +86,6 @@ if gpg --list-keys "$USER_EMAIL" &> /dev/null; then
 fi
 
 if [[ "${EXISTING_KEY:-false}" != "true" ]]; then
-    # Generate primary key
     print_step "Step 1: Generating primary GPG key (RSA 4096)..."
     echo ""
     print_info "When prompted for a passphrase, press ENTER (no passphrase)"
@@ -111,7 +105,6 @@ if [[ "${EXISTING_KEY:-false}" != "true" ]]; then
     print_info "Primary key generated successfully!"
 fi
 
-# Get key fingerprint
 print_step "Step 2: Retrieving key fingerprint..."
 KEY_FINGERPRINT=$(gpg --list-secret-keys --with-colons "$USER_EMAIL" | awk -F: '/^fpr:/ {print $10; exit}')
 
@@ -122,11 +115,9 @@ fi
 
 print_info "Key fingerprint: $KEY_FINGERPRINT"
 
-# Check if encryption subkey exists
 if gpg --list-keys "$KEY_FINGERPRINT" | grep -q "\[E\]"; then
     print_info "Encryption subkey already exists"
 else
-    # Add encryption subkey
     print_step "Step 3: Adding encryption subkey..."
     echo ""
     print_info "When prompted for a passphrase, press ENTER (no passphrase)"
@@ -142,20 +133,17 @@ else
     print_info "Encryption subkey added successfully!"
 fi
 
-# Display key information
 print_step "Step 4: Verifying key configuration..."
 echo ""
 gpg -K --with-subkey-fingerprint "$USER_EMAIL"
 echo ""
 
-# Export the key
 print_step "Step 5: Exporting key to file..."
 gpg --export-secret-key --armor "$USER_EMAIL" > "$OUTPUT_FILE"
 
 if [[ $? -eq 0 ]]; then
     print_info "Key exported successfully to: $OUTPUT_FILE"
 
-    # Secure the exported key
     chmod 600 "$OUTPUT_FILE"
 
     print_info ""
@@ -183,7 +171,6 @@ else
     exit 1
 fi
 
-# Optional: Backup to additional location
 echo ""
 read -p "Do you want to backup the key to another location? (y/n): " BACKUP_KEY
 

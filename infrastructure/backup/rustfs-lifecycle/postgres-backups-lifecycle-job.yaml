@@ -48,8 +48,7 @@ spec:
             # Region is required by SigV4 even though RustFS ignores it.
             - name: AWS_DEFAULT_REGION
               value: us-east-1
-            # Skip the IMDS lookup attempt — we're not on EC2 and the probe
-            # adds latency / spurious "could not connect" log noise.
+            # Skip the IMDS probe: not on EC2, so it only adds latency and log noise.
             - name: AWS_EC2_METADATA_DISABLED
               value: "true"
             - name: HOME

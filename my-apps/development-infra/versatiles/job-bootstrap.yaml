@@ -14,8 +14,7 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 86400  # hygiene only; hooks aren't selfHeal-recreated
   backoffLimit: 4
-  # download.versatiles.org throttles to ~2.7MB/s per connection (measured
-  # 2026-07-19), so the 62GB pull needs ~6.5h — a 4h ceiling killed it mid-run
+  # download.versatiles.org throttles to ~2.7MB/s per connection, so the 62GB pull needs ~6.5h; keep the deadline above that.
   activeDeadlineSeconds: 28800
   template:
     metadata:

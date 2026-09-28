@@ -8,7 +8,6 @@ metadata:
     app.kubernetes.io/component: home-automation
     app.kubernetes.io/part-of: smart-home
   annotations:
-    # Gateway API best practices
     gateway.networking.k8s.io/timeout: "300s"
 spec:
   parentRefs:
@@ -29,7 +28,6 @@ spec:
           name: home-assistant
           port: 8123
           weight: 1
-      # Add timeout configuration for better reliability
       timeouts:
         request: "60s"
         backendRequest: "30s"

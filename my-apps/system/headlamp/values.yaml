@@ -6,7 +6,6 @@ serviceAccount:
 clusterRoleBinding:
   create: false
 
-# Basic configuration
 replicaCount: 1
 image:
   registry: "ghcr.io"
@@ -14,18 +13,15 @@ image:
   tag: ""  # Use chart's default version
   pullPolicy: "IfNotPresent"
 
-# Application configuration
 config:
   inCluster: true
   baseURL: ""
   pluginsDir: "/headlamp/plugins"
 
-# Service configuration
 service:
   type: ClusterIP
   port: 80
 
-# Resources
 resources:
   limits:
     memory: 128Mi
@@ -33,6 +29,5 @@ resources:
     cpu: 50m
     memory: 64Mi
 
-# You can enable ingress if needed
 ingress:
   enabled: false

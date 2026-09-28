@@ -25,8 +25,7 @@ helmCharts:
         enabled: true
         existingSecret: redis-auth
         existingSecretPasswordKey: redis-password
-      # Disposable cache, not a system of record. Keep modules but never persist AOF:
-      # a corrupt appendonly.aof tail wedged redis-master-0 and blocked Paperless startup.
+      # Disposable cache, not a system of record: keep modules but never persist AOF (a corrupt AOF tail wedges startup).
       commonConfiguration: |-
         loadmodule /opt/bitnami/redis/lib/redis/modules/redisearch.so
         loadmodule /opt/bitnami/redis/lib/redis/modules/rejson.so

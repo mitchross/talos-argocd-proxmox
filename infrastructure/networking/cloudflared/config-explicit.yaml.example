@@ -14,7 +14,7 @@ protocol: http2
 credentials-file: /etc/cloudflared/credentials/credentials.json
 metrics: 0.0.0.0:2000
 no-autoupdate: true
-loglevel: info # Reduced from debug for production
+loglevel: info
 transport-loglevel: info
 
 ingress:

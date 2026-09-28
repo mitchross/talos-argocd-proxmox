@@ -1,4 +1,4 @@
-"""Check the wiring that previously allowed healthy pods with missing telemetry."""
+"""Check the wiring that keeps healthy pods from running with missing telemetry."""
 import contextlib
 import importlib.util
 import io
@@ -259,9 +259,8 @@ class AllLLMClientsTests(unittest.TestCase):
         subprocess.run(['python3', str(ROOT / 'scripts/validate-llm-gateway.py')], check=True)
 
     def test_deal_scout_authenticates_without_a_source_overlay(self):
-        # Auth used to be an init container that rewrote app.py against a pinned
-        # source hash. The image reads the key itself since v0.13.0; reinstating
-        # the overlay would fail that hash check and never start the pod.
+        # The image reads the key itself; an init-container app.py overlay would fail its
+        # pinned source-hash check and never start the pod.
         pod = read('my-apps/personal-projects/deal-scout/deployment.yaml')['spec']['template']['spec']
         app = next(c for c in pod['containers'] if c['name'] == 'deal-scout')
         self.assertEqual(pod.get('initContainers', []), [])

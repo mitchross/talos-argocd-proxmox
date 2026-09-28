@@ -1,11 +1,9 @@
-# File: nginx/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: nginx-example
   labels:
-    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    # Drives the ClusterExternalSecret cred fanout and ClusterRepository tenancy (allowedNamespaces selector).
     kopiur.home-operations.com/repo: cluster-kopia
   annotations:
     # root-uid mover gate — required because this app's kopiur stub runs the

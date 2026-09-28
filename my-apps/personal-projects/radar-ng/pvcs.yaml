@@ -66,8 +66,7 @@ spec:
   storageClassName: longhorn-flash
   resources:
     requests:
-      # ~15Gi once radar-ng#59 syncs the raw GFS/HRRR fields (weather codes,
-      # wind, feels-like); headroom for chunk turnover. Longhorn expands online.
+      # Raw GFS/HRRR fields are ~15Gi; the rest is headroom for chunk turnover. Longhorn expands online.
       storage: 60Gi
 ---
 apiVersion: v1

@@ -19,10 +19,8 @@ metadata:
 spec:
   matchlabels: []
   autoprovision:
-    # WARNING: provider ID "proxmox" is NOT registered on Omni (was the retired
-    # dl360g9 host). This class cannot provision until repointed to
-    # proxmox-dell or proxmox-threadripper. Only the threadripper-*/dell-worker
-    # classes are usable as of 2026-08-13.
+    # WARNING: provider ID "proxmox" is not registered on Omni (its host was retired), so this class
+    # can't provision until repointed to a live provider (proxmox-dell, proxmox-hp-*, proxmox-threadripper).
     providerid: proxmox
     kernelargs: []
     metavalues: []

@@ -20,10 +20,8 @@ metadata:
 spec:
   matchlabels: []
   autoprovision:
-    # WARNING: provider ID "proxmox" is NOT registered on Omni (was the retired
-    # dl360g9 host). This class cannot provision until repointed to
-    # proxmox-dell or proxmox-threadripper. Only the threadripper-*/dell-worker
-    # classes are usable as of 2026-08-13.
+    # WARNING: provider ID "proxmox" is not registered on Omni (its host was retired), so this class
+    # can't provision until repointed to a live provider (proxmox-dell, proxmox-hp-*, proxmox-threadripper).
     providerid: proxmox
     kernelargs: []
     metavalues: []
@@ -71,11 +69,3 @@ spec:
           pcie: true
       # Single fiber uplink on the DL360 Gen9 host — LAN + storage traffic
       # (NFS/RustFS at 192.168.10.133) share it; no dedicated storage NIC/link.
-
-# GPU Passthrough Setup:
-# With enhanced provider, VM is pre-configured for GPU. Just:
-# 1. Shut down the VM in Proxmox
-# 2. Add GPU via Proxmox UI: Hardware → Add → PCI Device
-# 3. Select your NVIDIA GPU (All Functions + PCI-Express)
-# 4. Start the VM
-# 5. GPU extensions are configured in the cluster template patches

@@ -8,8 +8,7 @@ resources:
   - externalsecret.yaml
   - namespace-init-job.yaml
   - prometheusrule.yaml
-  # In-app Postgres (plain postgres + kopiur, replacing the CNPG
-  # temporal-database cluster — greenfield cutover 2026-08-13, no data carried)
+  # In-app Postgres (plain postgres + kopiur)
   - postgres/deployment.yaml
   - postgres/service.yaml
   - postgres/pvc.yaml

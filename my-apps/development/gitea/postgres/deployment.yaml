@@ -47,7 +47,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: gitea-db-secret # same 1Password item CNPG used
+                  name: gitea-db-secret
                   key: password
             - name: POSTGRES_INITDB_ARGS
               value: "--data-checksums"

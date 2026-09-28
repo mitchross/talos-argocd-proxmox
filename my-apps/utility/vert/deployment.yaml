@@ -29,9 +29,7 @@ spec:
               value: "production"
             - name: PUB_HOSTNAME
               value: "vert.vanillax.me"
-            # Optional: Configure vertd URL for video conversion
-            # - name: PUB_VERTD_URL
-            #   value: "http://vertd.development.svc.cluster.local:24153"
+            # Video conversion: set PUB_VERTD_URL to http://vertd.vert.svc.cluster.local:24153 to point at vertd.
           resources:
             requests:
               cpu: 50m

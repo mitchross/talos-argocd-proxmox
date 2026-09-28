@@ -12,7 +12,7 @@ spec:
       endpoint: 192.168.10.133:30292
       region: us-east-1
       tls:
-        disableTls: true # RustFS is plain HTTP — confirmed vs s3-minio-http.yaml
+        disableTls: true # RustFS is plain HTTP
       auth:
         secretRef:
           name: kopiur-rustfs

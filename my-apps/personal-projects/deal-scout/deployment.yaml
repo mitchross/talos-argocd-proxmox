@@ -84,7 +84,7 @@ spec:
             requests:
               cpu: 25m
               memory: 96Mi
-            # VPA only moves requests; its ~420Mi recommendation was capped here and the pod OOM-looped.
+            # VPA only moves requests, so keep this limit above its recommendation (~420Mi) or the pod OOM-loops.
             limits:
               memory: 768Mi
           volumeMounts:

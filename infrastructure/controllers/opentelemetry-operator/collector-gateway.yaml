@@ -80,8 +80,7 @@ spec:
           - k8s.daemonset.name
           - k8s.replicaset.name
           labels:
-          # Distinct tag names — both previously mapped to `app`, so the
-          # app.kubernetes.io/name value silently overwrote the app label.
+          # Distinct tag names: mapping both to `app` lets app.kubernetes.io/name silently overwrite the app label.
           - tag_name: app
             key: app
             from: pod
@@ -98,7 +97,7 @@ spec:
           - from: resource_attribute
             name: k8s.namespace.name
 
-      # Set service.name from app label if not already set
+      # Set service.name from the app label (upsert overwrites any existing value)
       resource:
         attributes:
         - key: service.name
