@@ -99,7 +99,7 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
 6. **Retire the CNPG cluster** — delete
    `infrastructure/database/cloudnative-pg/gitea/` and its entry anywhere it's
    referenced; add its `serverName` lineages to the rustfs lifecycle
-   expiration ConfigMap (`infrastructure/storage/rustfs-lifecycle/`) as an
+   expiration ConfigMap (`infrastructure/backup/rustfs-lifecycle/`) as an
    abandoned lineage.
 
 ## Full-retirement checklist (after the last DB migrates)

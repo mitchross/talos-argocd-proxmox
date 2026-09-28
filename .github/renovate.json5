@@ -370,7 +370,7 @@
     // ("Schema error: Invalid YAML"). Harmless — extraction continues —
     // but spams the debug log. Image refs in this file are managed by the
     // gpu-operator chart, not by us, so nothing to extract anyway.
-    'infrastructure/controllers/nvidia-gpu-operator/cluster-policy.yaml',
+    'infrastructure/gpu/nvidia-gpu-operator/cluster-policy.yaml',
   ],
   // NOTE: the registry.vanillax.me custom datasource + custom manager that
   // used to live here moved to the self-hosted in-cluster Renovate's global

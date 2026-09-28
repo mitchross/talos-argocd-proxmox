@@ -350,7 +350,7 @@ components:
 | **PVC with automatic backup** | `my-apps/ai/open-webui/pvc.yaml` + `kopiur/` stub |
 | **Archived app** | `my-apps/games/_archive/project-zomboid/` — not deployed, backups kept; see `docs/domains/argocd/entrypoints.md` § Archived apps |
 | **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
-| **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
+| **Helm + Kustomize** | `infrastructure/secrets/1passwordconnect/` |
 | **Secret management** | Any app with `externalsecret.yaml` |
 | **Job with ArgoCD hooks** | `my-apps/development-infra/posthog/core/jobs.yaml` |
 | **Helm Job patch** | `my-apps/development-infra/temporal/kustomization.yaml` |

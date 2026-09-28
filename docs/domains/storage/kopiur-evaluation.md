@@ -44,7 +44,7 @@ irreplaceable, no login, and the fresh-world backup overwrites the real one.
 ## Verified kopiur facts (as of `0.5.x`, 2026-07)
 
 - **OCI chart** at `oci://ghcr.io/home-operations/charts/kopiur`, rendered locally
-  via Kustomize `helmCharts:` (`infrastructure/controllers/kopiur-operator/`).
+  via Kustomize `helmCharts:` (`infrastructure/backup/kopiur-operator/`).
   Chart version == app version (e.g. `0.5.1`), tags carry no `v` prefix. Manifests
   come from our own git source, so no AppProject `sourceRepos` exception is needed.
 - **CRDs (`v1alpha1`):** `Repository`, `ClusterRepository`, `SnapshotPolicy`,

@@ -58,7 +58,7 @@ drive both the scheduled backup and restore-before-bind paths.*
 
 **Cluster-wide — set up once**
 
-- `infrastructure/controllers/kopiur/` defines the `cluster-kopia` repository,
+- `infrastructure/backup/kopiur/` defines the `cluster-kopia` repository,
   the `kopiur-rustfs` credential fanout, and `longhorn-snapclass`.
 - The operator in `kopiur-system` watches kopiur resources and runs snapshot and
   restore Jobs.
@@ -387,7 +387,7 @@ What changed upstream in 0.5.0–0.8.0 and how it lands here:
   `kubectl krew install kopiur`, then `kubectl kopiur --help`.
 - **`credentialProjection` is heading for removal** (maintainer is migrating
   off it upstream). We never used it — the ESO `ClusterExternalSecret` fanout
-  in `infrastructure/controllers/kopiur/externalsecret.yaml` is exactly the
+  in `infrastructure/backup/kopiur/externalsecret.yaml` is exactly the
   replacement pattern upstream recommends — so the eventual removal is a
   no-op here.
 - **Known upstream race (#194):** in a namespace with the `privileged-movers`

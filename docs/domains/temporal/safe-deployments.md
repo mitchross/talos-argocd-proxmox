@@ -181,7 +181,7 @@ Concepts and the pattern this page follows:
 
 What this cluster actually runs:
 
-- [Controller chart values](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/values.yaml) and [CRD chart pins](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/temporal-worker-controller/kustomization.yaml)
+- [Controller chart values](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/platform/temporal-worker-controller/values.yaml) and [CRD chart pins](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/platform/temporal-worker-controller/kustomization.yaml)
 - [Argo CD health rule for WorkerDeployment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/argocd/values.yaml)
 - [News Reader worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/news-reader/temporal-workers/temporal-worker-deployment.yaml)
 - [Deal Scout worker](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/deal-scout/temporal-workers/temporal-worker-deployment.yaml)

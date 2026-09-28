@@ -14,7 +14,7 @@ CNPG (CloudNativePG) was **fully retired 2026-08-13** — operator, Barman
 plugin, recovery script, and the AppSet manual-sync gates were all deleted
 (history: [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)).
 Do not resurrect it. The old Barman buckets age out via
-`infrastructure/storage/rustfs-lifecycle/`.
+`infrastructure/backup/rustfs-lifecycle/`.
 
 ## What IS here
 
