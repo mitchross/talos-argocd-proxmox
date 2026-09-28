@@ -24,6 +24,10 @@ spec:
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
+  # No resources-finalizer on generated apps: if a path drops out of the generator (move race,
+  # typo) only the Application is removed and re-adopted; workloads and PVCs keep running.
+  syncPolicy:
+    preserveResourcesOnDeletion: true
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
