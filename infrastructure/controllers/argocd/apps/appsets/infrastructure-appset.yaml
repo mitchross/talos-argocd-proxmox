@@ -24,6 +24,10 @@ spec:
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
+  # No resources-finalizer on generated apps: if a path drops out of the generator (move race,
+  # typo) only the Application is removed and re-adopted; workloads and PVCs keep running.
+  syncPolicy:
+    preserveResourcesOnDeletion: true
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
@@ -67,6 +71,17 @@ spec:
       # snapshot-controller-app.yaml) so storage is healthy before the
       # kopiur operator (Wave 2).
       - path: infrastructure/storage/rustfs-lifecycle
+      # Regroup target paths, listed BEFORE the folders move: a move in the same commit as a
+      # generator change cascade-deletes apps (monitoring, 2026-09-28). Old paths drop after the move.
+      - path: infrastructure/networking/external-dns
+      - path: infrastructure/gpu/gpu-priority-classes
+      - path: infrastructure/scheduling/node-feature-discovery
+      - path: infrastructure/gpu/nvidia-gpu-operator
+      - path: infrastructure/gpu/intel-gpu-plugin
+      - path: infrastructure/scheduling/metrics-server
+      - path: infrastructure/scheduling/descheduler
+      - path: infrastructure/platform/container-registry
+      - path: infrastructure/backup/rustfs-lifecycle
   template:
     metadata:
       name: 'infrastructure-{{ .path.basename }}'
