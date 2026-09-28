@@ -97,7 +97,7 @@ Two sources of Kubernetes metrics — they are NOT interchangeable:
 |---|---|---|
 | **What it stores** | Historical time-series (15-day retention) | Last ~30 seconds only, in-memory |
 | **Consumers** | Grafana, Alertmanager | HPA, `kubectl top` |
-| **Installed via** | `monitoring/metrics/prometheus-stack/` (Wave 5) | `infrastructure/controllers/metrics-server/` (Wave 4) |
+| **Installed via** | `monitoring/metrics/prometheus-stack/` (Wave 5) | `infrastructure/scheduling/metrics-server/` (Wave 4) |
 
 If `kubectl top` works but Grafana dashboards are empty, metrics-server is
 fine and Prometheus is the problem. If HPA is stuck at "unknown" but

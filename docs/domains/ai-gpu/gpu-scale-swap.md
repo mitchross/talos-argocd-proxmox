@@ -70,7 +70,7 @@ alongside vLLM. Un-archived GPU jobs such as llmfit need the two-card server par
 - Don't switch a GPU Deployment to `RollingUpdate`. `Recreate` releases the
   whole card cleanly and avoids RWO Multi-Attach.
 - Don't raise the **220 W** cap to chase throughput. `POWER_LIMIT_WATTS` lives
-  in `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`;
+  in `infrastructure/gpu/nvidia-gpu-operator/powerlimit-daemonset.yaml`;
   changing it is an electrical decision.
 
 Related: [model catalog](model-catalog.md) ·

@@ -4,7 +4,7 @@ Self-hosted Temporal server for the cluster. This directory deploys the
 **server**; application workers (e.g. `news-reader-temporal-worker`,
 `radar-ng`'s temporal worker) live in their own sibling dirs and connect
 in via `Connection` CRs from the
-[Temporal Worker Controller](../../../infrastructure/controllers/temporal-worker-controller/).
+[Temporal Worker Controller](../../../infrastructure/platform/temporal-worker-controller/).
 
 Read this *with* `news-reader/temporal/README.md` (in the news-reader
 repo) — together they cover server side + app side of the same system.
@@ -216,7 +216,7 @@ Important distinction (this confuses everyone the first time):
 | Thing | Where | What it manages |
 |---|---|---|
 | **Temporal server** | `my-apps/development-infra/temporal/` (this dir) | The server itself — frontend, history, matching, web, server-worker. Deployed via the official Helm chart. |
-| **Temporal Worker Controller** | `infrastructure/controllers/temporal-worker-controller/` | A *Kubernetes controller* (CRD-based). Watches your `WorkerDeployment` CRs and turns each into a versioned `apps/v1 Deployment`. Handles Worker Versioning rollouts. |
+| **Temporal Worker Controller** | `infrastructure/platform/temporal-worker-controller/` | A *Kubernetes controller* (CRD-based). Watches your `WorkerDeployment` CRs and turns each into a versioned `apps/v1 Deployment`. Handles Worker Versioning rollouts. |
 
 You can run the server without the worker controller — workers would
 just be plain Deployments and you'd lose progressive rollouts. We use

@@ -9,7 +9,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "4"
-    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/vpa-system-policies
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/scheduling/vpa-system-policies
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -18,7 +18,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: infrastructure/controllers/vpa-system-policies
+    path: infrastructure/scheduling/vpa-system-policies
   destination:
     server: https://kubernetes.default.svc
     namespace: vertical-pod-autoscaler

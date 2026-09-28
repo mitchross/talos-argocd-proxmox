@@ -2,7 +2,7 @@
 
 **Purpose:** explain what the descheduler does in this cluster, why it exists, and
 how to tell whether it is working.
-**Status:** running. Config: `infrastructure/controllers/descheduler/values.yaml`.
+**Status:** running. Config: `infrastructure/scheduling/descheduler/values.yaml`.
 
 ## The problem it solves
 
@@ -72,6 +72,6 @@ node selectors.
 
 ## Pausing it
 
-Set `suspend: true` in `infrastructure/controllers/descheduler/values.yaml` and let
+Set `suspend: true` in `infrastructure/scheduling/descheduler/values.yaml` and let
 ArgoCD sync. Pause it during maintenance where you drain nodes on purpose, so it
 doesn't start moving pods back before you're done.

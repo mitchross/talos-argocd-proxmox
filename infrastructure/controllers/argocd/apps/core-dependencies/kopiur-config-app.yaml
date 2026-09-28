@@ -9,7 +9,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "3"
-    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/kopiur
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/backup/kopiur
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -17,7 +17,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main # deploys once merged — Argo GitOps, no manual apply
-    path: infrastructure/controllers/kopiur
+    path: infrastructure/backup/kopiur
   destination:
     server: https://kubernetes.default.svc
     namespace: kopiur-system
