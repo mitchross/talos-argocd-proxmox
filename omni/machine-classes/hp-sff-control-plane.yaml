@@ -20,10 +20,8 @@ spec:
       # 40 GiB that leaves ~10 GiB of the host's 62 GiB for Proxmox and qemu.
       memory: 12288
       disk_size: 100
-      # A dedicated second SSD, thick LVM. Keeping etcd off hp-prodesk-vmstore
-      # is the point: that disk also carries Proxmox root and ~27 Longhorn
-      # replicas, and etcd is fsync-latency-bound. Never lvmthin here -- thin
-      # metadata commits collapse fsync, which is the one thing etcd needs.
+      # Keep etcd on its dedicated SSD, away from Proxmox and Longhorn writes.
+      # Use thick LVM; thin metadata commits reduce fsync performance.
       storage_selector: name == "hp-sff-cp-vmstore"
       network_bridge: vmbr0
       disk_ssd: true

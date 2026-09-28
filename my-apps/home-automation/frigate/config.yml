@@ -62,10 +62,8 @@ model:
   labelmap_path: /labelmap.txt
 ffmpeg:
   input_args: preset-rtsp-generic
-  # Intel GPU passthrough is not configured; video decoding uses the HP CPU.
-  # Nest streams carry Opus audio; MP4 recordings need AAC. This preset
-  # transcodes audio to AAC for the record role (without it, recordings are
-  # silent or fail to mux the Opus track).
+  # Decode on CPU; Intel GPU passthrough is not configured.
+  # Transcode Nest Opus audio to AAC so MP4 recordings retain sound.
   output_args:
     record: preset-record-generic-audio-aac
 # go2rtc with Nest cameras via direct SDM API
@@ -164,7 +162,7 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
-      # This Nest feed took 40 seconds to decode after attachment; avoid restart churn.
+      # Allow slow Nest stream initialization before restarting FFmpeg.
       retry_interval: 90
       input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
@@ -211,7 +209,7 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
-      # A separate reader decoded successfully after 68 seconds during recovery.
+      # Allow slow Nest stream recovery before restarting FFmpeg.
       retry_interval: 90
       input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:

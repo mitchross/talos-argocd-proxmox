@@ -4,32 +4,15 @@ metadata:
   name: root
   namespace: argocd
   annotations:
-    # Manifest-generate-paths cache hint: only invalidate root's manifest cache
-    # when files under apps/ change. Without this, any commit anywhere in the
-    # repo forces the repo-server to re-render the root app-of-apps tree.
+    # Only apps/ changes invalidate the root manifest cache.
     argocd.argoproj.io/manifest-generate-paths: .
-    # Force CLIENT-side diff for the app-of-apps. The global
-    # controller.diff.server.side: "true" (argocd-cmd-params-cm) does a dry-run
-    # server-side apply of every managed resource against the API server. For
-    # the child Application/ApplicationSet objects root manages, the apiserver
-    # validates them against the Application CRD's structural schema and rejects
-    # the dry-run with `status.operationState.startedAt: Required value` /
-    # `syncResult.revision: Required value` — wedging root in ComparisonError
-    # (broke 2026-06-18 after the argo-cd v9.5.21 bump tightened SSA dry-run
-    # validation on Application resources). ignoreDifferences on /status does NOT
-    # help: it filters the computed diff, not the dry-run round-trip. Server-side
-    # diff only buys operator-defaulted-field drift suppression, which
-    # Applications/ApplicationSets don't have — so client-side diff is correct
-    # here while the global flag stays on for everything else (CNPG, KEDA, …).
+    # Use client-side diff: SSA dry-runs of child Applications can fail CRD status validation.
+    # Ignoring /status does not bypass that API validation.
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
-  # project MUST stay `default` (which always exists). The named AppProjects
-  # (infrastructure/my-apps/monitoring) are created BY this app via
-  # projects.yaml — pointing root at one of them would deadlock a fresh
-  # bootstrap: root can't sync until the project exists, and the project
-  # only exists once root syncs.
+  # Root must use the built-in default project: it creates the named projects itself.
   project: default
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git

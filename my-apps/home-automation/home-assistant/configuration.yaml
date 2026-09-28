@@ -340,10 +340,8 @@ input_number:
     icon: mdi:home-minus
     initial: 15
 
-# Cost integrates a live USD/h cost-rate (power * current TOU rate), not a fixed tariff.
-# Every integral starts at 0 when first created; totals only fill in as data accumulates.
-# Each `name:` slug MUST equal the entity prefix: HA derives the entity_id from `name`, and a
-# mismatch makes every template/dashboard reference silently read nothing.
+# Integrate live power × TOU rate; new integral sensors start at zero.
+# Keep each name slug equal to the referenced entity prefix or dashboard/templates read nothing.
 sensor:
   # --- energy (kWh): one integral per plug, one per group ---
   - platform: integration
@@ -1271,9 +1269,8 @@ template:
             - states('input_number.ac_house_baseline_kwh') | float(15)) %}
           {{ (resid / h * 1000) | round(0) if resid > 0 else 0 }}
 
-      # now()-based templates re-render every minute; float(<bill default>) keeps this right
-      # before the input_number sliders are first touched.
-      # Summer is June-August: September bills at the non-summer rate.
+      # now() refreshes this every minute; float defaults apply before sliders are initialized.
+      # Summer rates apply June–August only.
       - name: "Current Electricity Rate"
         unique_id: current_electricity_rate
         unit_of_measurement: "USD/kWh"

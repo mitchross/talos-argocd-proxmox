@@ -1,16 +1,5 @@
-// Regenerate the static MapLibre styles served at maps.vanillax.me/styles/ and
-// the in-cluster copies the raster renderer uses (../../raster/styles/).
-//
-// The VersaTiles frontend builds its styles client-side and ships no static
-// style.json, but native MapLibre clients (Radar NG) need a style *URL*. Keep
-// @versatiles/style at the version the running VersaTiles server bundles, or
-// sprite/icon names drift from what the server serves (that happened once:
-// v4.6 → v4.14 moved sprites from /assets/sprites/basics to /assets/sprites/base).
-//
-// Run (from this directory):
-//   bun add @versatiles/style@6.0.1
-//   node generate.mjs
-//   # then commit the regenerated JSON files
+// Keep @versatiles/style aligned with the server or sprite paths drift; native MapLibre needs static style URLs.
+// Regenerate here: bun add @versatiles/style@6.0.1 && node generate.mjs; commit both output directories.
 import { writeFileSync } from 'node:fs';
 import { osm } from '@versatiles/style';
 

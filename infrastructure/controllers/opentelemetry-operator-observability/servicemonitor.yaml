@@ -1,5 +1,5 @@
-# Split out of the OTel operator core app (wave 6): a chart-rendered ServiceMonitor races the CRD install (both wave 5).
-# Spec mirrors the chart output; `release: kube-prometheus-stack` matches the serviceMonitorSelector.
+# Kept outside the operator app so missing monitoring CRDs cannot block it.
+# The release label matches Prometheus serviceMonitorSelector.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

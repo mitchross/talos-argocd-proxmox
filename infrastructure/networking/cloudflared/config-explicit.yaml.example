@@ -1,13 +1,4 @@
-# OPTIONAL: Explicit Cloudflare Tunnel Config
-# This is a more explicit version that lists each external service individually
-# instead of using a wildcard. Use this if you want to be extra cautious.
-#
-# To use this:
-# 1. Rename this file to config.yaml
-# 2. Update kustomization.yaml to use this file instead
-#
-# NOTE: The wildcard approach in the default config.yaml is equally secure
-# because DNS records control what reaches the tunnel. This is just more explicit.
+# Optional explicit-service tunnel config; rename to config.yaml and update kustomization.yaml to use it.
 
 tunnel: threadripper
 protocol: http2

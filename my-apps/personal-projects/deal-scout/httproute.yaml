@@ -32,10 +32,8 @@ spec:
           port: 8000
           weight: 1
 ---
-# Public read-only: GET/HEAD only. PUT /api/config, DELETE /api/learned/*,
-# POST /api/{scan-request,digest/generate,feedback} are unauthenticated, so the
-# internet gets the dashboard and none of the writes. Ingest/scan-job POSTs are
-# token-gated but stay internal too; workers use the in-cluster Service.
+# Expose GET/HEAD only: config, delete, scan, and feedback writes lack public authentication.
+# Workers reach ingest/scan POSTs through the in-cluster Service.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

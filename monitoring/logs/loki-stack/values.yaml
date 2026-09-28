@@ -117,8 +117,7 @@ gateway:
     type: Recreate
   service:
     type: LoadBalancer
-    # Pin the LB IP: unpinned services race pinned ones for specific IPs on
-    # rebuild (this one squatted wyze-bridge's .46 after the 06-28 rebuild).
+    # Pin the LoadBalancer IP so rebuilds cannot claim another service's reserved address.
     annotations:
       lbipam.cilium.io/ips: "192.168.10.48"
   resources:

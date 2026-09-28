@@ -1,8 +1,5 @@
-# One WorkerDeployment per Temporal task queue (plan Phase 1). Every pool polls only its own queue;
-# Release settings are embedded in each pod template by release-env-patch.yaml.
-# Exactly one pool seeds Schedules: aux carries SEED_SCHEDULES=1, every other pool keeps SKIP_SCHEDULE_SEED=1.
-# All pools share the RWO tiles/grids/state volumes, so they must land on tile-server's node (podAffinity).
-# Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID — do not set them via env.
+# One pool per queue; only aux seeds Schedules. Shared RWO volumes require tile-server co-location.
+# Controller injects TEMPORAL_ADDRESS/NAMESPACE/DEPLOYMENT_NAME/WORKER_BUILD_ID; release-env-patch.yaml sets releases.
 ---
 apiVersion: temporal.io/v1alpha1
 kind: WorkerDeployment

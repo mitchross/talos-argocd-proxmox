@@ -21,9 +21,6 @@ const EXCLUDED_HOSTS = new Set([
   "redlib.vanillax.me",
 ]);
 
-/**
- * Build the PostHog snippet to inject.
- */
 function buildSnippet(apiKey) {
   return `
 <!-- PostHog Analytics (injected by Cloudflare Worker) -->
@@ -41,9 +38,6 @@ function buildSnippet(apiKey) {
 `;
 }
 
-/**
- * HTMLRewriter handler that injects the snippet before </head>.
- */
 class HeadInjector {
   constructor(snippet) {
     this.snippet = snippet;

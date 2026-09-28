@@ -1,5 +1,3 @@
-# Cilium Helm Values for the Talos Threadripper GPU + workers production cluster
-# ArgoCD Sync Wave: 0 (Foundation - must deploy before everything else)
 annotations:
   argocd.argoproj.io/sync-wave: "0"
 
@@ -13,7 +11,6 @@ cluster:
 k8sServiceHost: localhost
 k8sServicePort: "7445"
 
-# Kube-proxy Replacement
 kubeProxyReplacement: true
 
 # Talos-specific Security Context (required for init containers)
@@ -47,21 +44,17 @@ cgroup:
 routingMode: tunnel
 tunnelProtocol: vxlan
 
-# IPAM Configuration
 ipam:
   mode: kubernetes
 
-# Enable Socket-level Load Balancing (critical for pod-to-service connectivity)
 socketLB:
   enabled: true
   hostNamespaceOnly: false
 
-# Enable Bandwidth Manager for better TCP performance
 bandwidthManager:
   enabled: true
   bbr: true # Enable BBR congestion control
 
-# BPF Host Routing
 bpf:
   masquerade: true
   ctTcpTimeout: 21600
@@ -79,7 +72,6 @@ updateStrategy:
   rollingUpdate:
     maxUnavailable: 1
 
-# L2 Announcements for LoadBalancer Services
 l2announcements:
   enabled: true
   # Increase lease duration to reduce API calls
@@ -112,18 +104,11 @@ envoy:
       memory: 1Gi
   xdsMode: split
 
-# Gateway API Support
 gatewayAPI:
   enabled: true
-  # Must stay Cluster (also Cilium's default). With Local, Cilium >=1.20.2's l2announcer
-  # drops any service whose backends are not node-local, and the generated Gateway
-  # services use the nodeless 192.192.192.192 placeholder backend — so no node ever takes
-  # the lease, no node answers ARP for the VIP, and every LAN client times out on
-  # .49/.50/.52 while the ClusterIP tunnel path keeps working.
-  # Source IP is preserved either way: Cilium's per-node Envoy keeps the visible source
-  # address for both Cluster and Local (see docs/audits/2026-09-05-architecture-audit.md).
+  # Gateway placeholder backends are not node-local: Local prevents L2 VIP announcements.
+  # Keep Cluster; Cilium Envoy still preserves the visible source address.
   externalTrafficPolicy: Cluster
-  # Enable session affinity for consistent routing
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
@@ -141,7 +126,6 @@ prometheus:
   serviceMonitor:
     enabled: false
 
-# Hubble (Observability)
 hubble:
   enabled: true 
   # Performance: increase event queue to prevent drops under load
@@ -151,7 +135,6 @@ hubble:
   ui:
     enabled: true
 
-# Operator Configuration
 operator:
   # ConfigMap checksum restarts operators so startup-only settings reach generated Services.
   rollOutPods: true

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Merge all open PRs in the repo with squash merge + auto-delete branch.
-# Safe to re-run: already-merged PRs are skipped by `--state open`.
-# PRs with failing CI checks will fail individually — the script continues.
+# Merge open PRs; individual CI failures do not stop the remaining merges.
 set -euo pipefail
 
 REPO="mitchross/talos-argocd-proxmox"

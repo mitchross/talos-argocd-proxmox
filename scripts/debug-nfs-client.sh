@@ -1,13 +1,6 @@
 #!/bin/bash
-# NFS Client Debug for Talos/Proxmox setup
-#
-# Network path: TrueNAS 10G NIC → switch → Proxmox 10G NIC → vmbr → Talos VM
-#
-# Run this on the PROXMOX HOST (not inside Talos - it's immutable)
-# This checks both the physical NIC layer AND queries Talos via talosctl
-#
-# Usage: bash debug-nfs-client.sh [talos-node-ip]
-# Example: bash debug-nfs-client.sh 192.168.10.142
+# Run on the Proxmox host: checks the TrueNAS → switch → bridge → Talos network path.
+# Usage: bash debug-nfs-client.sh [talos-node-ip] (queries Talos via talosctl).
 
 TRUENAS_IP="192.168.10.133"
 TALOS_NODE="${1:-}"
@@ -16,9 +9,7 @@ echo "=========================================================="
 echo " NFS Client 10G Debug (Proxmox + Talos)"
 echo "=========================================================="
 
-# =========================================================
 # PART 1: PROXMOX HOST (physical layer)
-# =========================================================
 echo ""
 echo "========== PART 1: PROXMOX HOST =========="
 echo ""
@@ -122,9 +113,7 @@ for VMID in $(qm list 2>/dev/null | awk 'NR>1{print $1}'); do
 done
 echo ""
 
-# =========================================================
 # PART 2: TALOS NODE (via talosctl)
-# =========================================================
 if [ -z "$TALOS_NODE" ]; then
   echo "========== PART 2: TALOS NODE (skipped - no node IP given) =========="
   echo "  Re-run with: bash $0 <talos-node-ip>"

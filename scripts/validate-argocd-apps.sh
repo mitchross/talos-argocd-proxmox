@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# validate-argocd-apps.sh — Catches duplicate Application names,
-# sync wave gaps, and AppSet/standalone path overlaps.
-#
-# Run from repo root: ./scripts/validate-argocd-apps.sh
+# Run from the repo root to validate Application identities, sync waves, discovery paths, and rendering boundaries.
 
 set -euo pipefail
 
@@ -26,10 +23,7 @@ appset_files() {
 echo "=== ArgoCD Application Validation ==="
 echo ""
 
-# ─────────────────────────────────────────────
-# 1. Check for duplicate Application names
-#    (standalone apps vs AppSet-generated apps)
-# ─────────────────────────────────────────────
+# 1. Check for duplicate Application names (standalone apps vs AppSet-generated apps)
 echo "--- Check 1: Duplicate Application Names ---"
 
 # Extract standalone Application names
@@ -53,9 +47,7 @@ while IFS= read -r appset; do
     appset_path=$(echo "$appset_path" | sed 's/.*path: //' | tr -d "'\"" | xargs)
     [ -z "$appset_path" ] && continue
 
-    # Render the AppSet's metadata.name template for this generator path.
-    # Every generated Application must carry a domain prefix; assuming a bare
-    # basename here allowed ambiguous identities such as database `temporal`.
+    # Render the actual metadata.name template; assuming a bare basename misses domain-prefixed identities.
     name_template=$(grep "name:.*path.basename" "$appset" | head -1 | sed 's/.*name: *//' | tr -d "'\"" | xargs || true)
     generated_name=$(printf '%s\n' "$name_template" | sed "s/{{ \\.path\\.basename }}/$(basename "$appset_path")/")
 
@@ -76,10 +68,7 @@ done < <(appset_files)
 [ $ERRORS -eq 0 ] && echo "  OK: No duplicate Application names found"
 echo ""
 
-# ─────────────────────────────────────────────
-# 2. Check sync wave continuity
-#    (no unexpected gaps in the wave sequence)
-# ─────────────────────────────────────────────
+# 2. Check sync wave continuity (no unexpected gaps in the wave sequence)
 echo "--- Check 2: Sync Wave Continuity ---"
 
 waves=()
@@ -111,9 +100,7 @@ for w in "${sorted_waves[@]}"; do
 done
 echo ""
 
-# ─────────────────────────────────────────────
 # 3. Check kustomization.yaml lists all files
-# ─────────────────────────────────────────────
 echo "--- Check 3: All YAML files listed in kustomization.yaml ---"
 
 kustomization="$APPS_DIR/kustomization.yaml"
@@ -133,10 +120,7 @@ if [ -f "$kustomization" ]; then
 fi
 echo ""
 
-# ─────────────────────────────────────────────
-# 4. Check internal resource waves don't
-#    contradict their Application wave
-# ─────────────────────────────────────────────
+# 4. Check internal resource waves don't contradict their Application wave
 echo "--- Check 4: Internal sync-wave consistency ---"
 
 while IFS= read -r f; do
@@ -159,9 +143,7 @@ while IFS= read -r f; do
 done < <(application_files)
 echo ""
 
-# ─────────────────────────────────────────────
 # 5. Check bootstrap Argo CD chart matches self-managed chart
-# ─────────────────────────────────────────────
 echo "--- Check 5: ArgoCD chart version consistency ---"
 
 bootstrap_script="scripts/bootstrap-argocd.sh"
@@ -187,9 +169,7 @@ if [ -f "$bootstrap_script" ] && [ -f "$argocd_kustomization" ]; then
 fi
 echo ""
 
-# ─────────────────────────────────────────────
 # 6. Check AppSet exclude patterns do not miss the parent app
-# ─────────────────────────────────────────────
 echo "--- Check 6: ApplicationSet exclude patterns ---"
 
 while IFS= read -r appset; do
@@ -213,9 +193,7 @@ done < <(appset_files)
 [ $ERRORS -eq 0 ] && echo "  OK: AppSet exclude patterns do not miss parent app directories"
 echo ""
 
-# ─────────────────────────────────────────────
 # 7. Check Project Nomad remains a single bundled app
-# ─────────────────────────────────────────────
 echo "--- Check 7: Project Nomad AppSet ownership ---"
 
 my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
@@ -241,11 +219,7 @@ if [ -f "$my_apps_appset" ] && [ -f "$project_nomad_path/kustomization.yaml" ]; 
 fi
 echo ""
 
-# ─────────────────────────────────────────────
-# 8. Check Kustomize Component dirs are excluded from AppSet discovery
-#    A `kind: Component` kustomization builds as an EMPTY render, so a
-#    discovered Component dir becomes a phantom zero-resource Application.
-# ─────────────────────────────────────────────
+# Exclude Components from AppSet discovery: alone they render empty, producing phantom Healthy apps.
 echo "--- Check 8: Component dirs excluded from my-apps AppSet ---"
 
 my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
@@ -266,9 +240,7 @@ while IFS= read -r comp_kust; do
 done < <(grep -rl "^kind: Component$" my-apps --include=kustomization.yaml 2>/dev/null | sort)
 echo ""
 
-# ─────────────────────────────────────────────
 # 9. Enforce domain-prefixed generated identities
-# ─────────────────────────────────────────────
 echo "--- Check 9: ApplicationSet name prefixes ---"
 
 while IFS='|' read -r appset_file expected_template; do
@@ -287,9 +259,7 @@ infrastructure/controllers/argocd/apps/appsets/my-apps-appset.yaml|my-apps-{{ .p
 EOF
 echo ""
 
-# ─────────────────────────────────────────────
 # Summary
-# ─────────────────────────────────────────────
 echo "=== Summary ==="
 if [ $ERRORS -gt 0 ]; then
   echo "  FAILED: $ERRORS error(s) found"

@@ -1,8 +1,5 @@
-# Shared GPU worker Talos configuration. The worker set owns its DHCP/static
-# address policy; this patch only constrains kubelet address selection and
-# loads the NVIDIA modules required by GPU worker VMs.
-# Do not pin DHCP to a PCI-derived interface name: passthrough hardware can
-# reorder the virtual NIC. nodeIP.validSubnets is stable across that reshuffle.
+# Worker sets own DHCP/static addressing; this patch selects kubelet addresses and loads NVIDIA modules.
+# Do not pin DHCP to PCI-derived NIC names, which can change after passthrough hardware moves.
 machine:
   kubelet:
     nodeIP:

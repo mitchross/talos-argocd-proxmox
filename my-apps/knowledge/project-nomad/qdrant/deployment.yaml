@@ -26,8 +26,7 @@ spec:
             - containerPort: 6334
               name: grpc
           env:
-            # NOMAD is offline-first; match upstream's posture (service_seeder
-            # in v1.31.0 disables Qdrant's telemetry → telemetry.qdrant.io).
+            # Disable outbound telemetry for this offline-first stack.
             - name: QDRANT__TELEMETRY_DISABLED
               value: "true"
           resources:

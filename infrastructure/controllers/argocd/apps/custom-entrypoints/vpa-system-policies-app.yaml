@@ -1,10 +1,8 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  # Keep the historical Application identity and reconcile it before the
-  # monitoring (wave 5) and user-app (wave 6) owners. This makes the one-PR
-  # handoff deterministic: the old owner prunes before new owners adopt.
-  # PostHog policies remain here while that Application is sync-blocked.
+  # Reconcile this owner before waves 5/6 so it prunes transferred VPAs before their new owners adopt them.
+  # PostHog policies stay here while that Application is sync-blocked.
   name: vpa-recommendations
   namespace: argocd
   annotations:

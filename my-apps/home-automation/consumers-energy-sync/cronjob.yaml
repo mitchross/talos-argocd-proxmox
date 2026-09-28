@@ -4,7 +4,7 @@ metadata:
   name: consumers-energy-sync
   namespace: consumers-energy-sync
 spec:
-  # CE posts the previous day late morning; a 06:17 run got stale data. 13:17 has margin.
+  # Run after late-morning publication so the import includes the previous day.
   schedule: "17 13 * * *"
   timeZone: America/New_York
   concurrencyPolicy: Forbid

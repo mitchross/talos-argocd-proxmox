@@ -34,8 +34,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    # MUST be the fully-qualified key — bare `backup-exempt-reason` is silently
-    # ignored and the PVC is denied on CREATE (CI guard `backup-exempt-contract`).
+    # Use storage.vanillax.dev/backup-exempt-reason; CI warns on the unqualified key.
     storage.vanillax.dev/backup-exempt-reason: "NFS-backed vLLM model cache (AWQ/compressed-tensors safetensors); non-snapshottable, rebuildable via `hf download`"
 spec:
   accessModes:
@@ -56,8 +55,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    # MUST be the fully-qualified key — bare `backup-exempt-reason` is silently
-    # ignored and the PVC is denied on CREATE (CI guard `backup-exempt-contract`).
+    # Use storage.vanillax.dev/backup-exempt-reason; CI warns on the unqualified key.
     storage.vanillax.dev/backup-exempt-reason: "Regenerable torch.compile/Triton kernel cache; rebuilt automatically on first boot after loss"
 spec:
   accessModes:

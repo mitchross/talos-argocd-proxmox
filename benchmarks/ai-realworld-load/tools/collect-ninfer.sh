@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
-# Candidate collector — NInfer run capture, structurally parallel to collect.sh
-# (which remains the untouched vLLM control collector).
-#
-# NInfer has NO Prometheus endpoint. The authoritative per-request source is the
-# schema-v8 request-log JSONL the server writes to /logs (emptyDir). Streams:
-#   1. request-log JSONL  (tail -n0 -F: only events inside the run window)
-#   2. per-GPU telemetry  (nvidia-smi loop in the powerlimit DaemonSet)
-#   3. server stderr log  (throughput lines + errors)
-#   4. pod state          (phase/ready/restarts, 10s)
-# stop additionally copies the FULL JSONL (server_start KV ledger + history).
+# NInfer has no Prometheus endpoint; collect schema-v8 request JSONL, GPU telemetry, server logs, and pod state.
+# Tail only the run window; stop also copies the full log for its startup KV ledger.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

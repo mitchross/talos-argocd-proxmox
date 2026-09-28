@@ -18,10 +18,8 @@ spec:
       labels:
         app.kubernetes.io/name: photon
     spec:
-      # Run as the image's own photon user (9011). As root, the entrypoint
-      # re-owns the whole ~150Gi index (find -exec chgrp/chown, chown -R) on
-      # every start, which took well over 10 minutes after a node reboot.
-      # Non-root skips that entirely; OnRootMismatch re-groups the volume once.
+      # Run as Photon uid 9011 to skip a recursive chown of the full index on every start.
+      # OnRootMismatch changes the volume group only when needed.
       securityContext:
         runAsUser: 9011
         runAsGroup: 9011

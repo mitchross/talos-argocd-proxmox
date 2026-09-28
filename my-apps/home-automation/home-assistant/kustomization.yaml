@@ -2,13 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: home-assistant
 
-# Metadata for better organization
 metadata:
   name: home-assistant
   annotations:
     config.kubernetes.io/local-config: "true"
 
-# Resource ordering for proper deployment
+# Kustomize includes these resources; Argo sync waves control deployment order.
 resources:
 - vpa.yaml
 - namespace.yaml

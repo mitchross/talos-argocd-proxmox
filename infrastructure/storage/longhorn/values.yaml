@@ -1,7 +1,5 @@
-# UI-applied settings are overwritten on Helm upgrade — manage every setting here.
-# V1 data engine only (V2 retired, see docs/disaster-recovery.md); engines can't be flipped on a live cluster.
-# Shed node is tainted node.vanillax.dev/link=wifi:NoSchedule; Longhorn must still run there
-# (manager, CSI, instance-manager) so the node and its disk register.
+# Manage settings here; UI edits are overwritten by Helm upgrades.
+# Keep the V1 engine; see docs/disaster-recovery.md before considering V2.
 global:
   tolerations:
     - key: node.vanillax.dev/link
@@ -34,7 +32,6 @@ defaultSettings:
   # Each failed kopiur backup burns a snapshot slot; a full volume can never back up again without a manual purge.
   snapshotMaxCount: "30"
   autoCleanupSystemGeneratedSnapshot: "true"
-  # Allow Longhorn to auto-upgrade volume engines after manager upgrades
   concurrentAutomaticEngineUpgradePerNodeLimit: "3"
   # Detached multi-replica volumes still rebuild; otherwise a clone waits for an attach that never comes.
   offlineReplicaRebuilding: "true"

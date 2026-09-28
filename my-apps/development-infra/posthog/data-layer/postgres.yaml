@@ -146,7 +146,7 @@ spec:
   storageClassName: longhorn-flash
   resources:
     requests:
-      # 8Gi ran out and Postgres PANICs on ENOSPC; grow in place (PVCs cannot shrink).
+      # Leave room for database growth; a full PVC causes Postgres PANIC, and PVCs cannot shrink.
       storage: 16Gi
   # Restore-before-bind from the latest kopiur snapshot — the identity layer (API keys, users, dashboards) survives rebuild.
   dataSourceRef:

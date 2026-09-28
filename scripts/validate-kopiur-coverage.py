@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 """Validate kopiur backup coverage against a RENDERED manifest stream.
 
-Replaces the retired pvc-plumber `validate-restore-contract.sh` and folds in the
-now-dead `backup-exempt-contract` job. kopiur has no `/audit` ledger, so this is
-the CI guard that catches the silent gaps that ledger used to surface.
-
 Runs on the rendered kustomize stream (so Helm-rendered PVCs — gitea, tubesync —
 are covered, which a static grep of *.yaml cannot do).
 
@@ -15,7 +11,6 @@ HARD FAILS (exit 1):
             spec.dataSourceRef does NOT point at a kopiur Restore → it recreates
             EMPTY in DR. Operator-owned PVCs are also valid when a matching
             Restore.target.pvc creates that exact claim from the same policy.
-            The single most dangerous silent gap.
   [nslabel] A namespace containing a SnapshotPolicy that lacks the
             `kopiur.home-operations.com/repo: cluster-kopia` label → the
             ClusterExternalSecret won't fan the repo creds in; the mover can't auth.
@@ -26,7 +21,7 @@ WARNINGS (printed, exit 0):
             (the #1 kopiur gotcha — see docs/domains/storage/kopiur-mover-permissions.md).
   [gap]     Any non-system PVC neither backed up nor backup-exempt → review.
   [exempt]  A backup-exempt PVC missing the fully-qualified reason annotation
-            (kept for grep-ability now that pvc-plumber no longer enforces it).
+            (storage.vanillax.dev/backup-exempt-reason).
 """
 import sys
 
@@ -41,15 +36,8 @@ REPO_LABEL = "kopiur.home-operations.com/repo"
 REPO_LABEL_VAL = "cluster-kopia"
 EXEMPT_LABEL = "backup-exempt"
 EXEMPT_REASON = "storage.vanillax.dev/backup-exempt-reason"
-# Deliberate opt-out from restore-before-bind, for a PVC an OPERATOR creates.
-# Strimzi builds data-0-dev-kafka-dual-role-0 from the Kafka CR's storage block,
-# so it is never rendered and cannot carry a dataSourceRef; the kafka bundle
-# also declines a Restore CR on purpose (its 1001:0 mover can read the tree for
-# backup but not recreate it, which wedged the old restore gate). Backups still
-# run; DR for that volume is a documented manual step.
-#
-# Annotated, not silent: the [dsr] rule stays a hard failure for anyone who has
-# not written down the decision, exactly like backup-exempt.
+# Operator-owned PVCs may explicitly opt out of restore-before-bind with a documented recovery procedure.
+# Without that annotation, the dataSourceRef check remains a hard failure.
 OPERATOR_PVC_ANN = "storage.vanillax.dev/operator-owned-pvc"
 OPERATOR_PVC_REASON = "storage.vanillax.dev/no-restore-before-bind-reason"
 SYSTEM_NS = {
@@ -104,9 +92,7 @@ def main():
         sys.stderr.write("usage: validate-kopiur-coverage.py <rendered-manifests.yaml>\n")
         return 2
 
-    # kube-prometheus-stack CRDs contain a bare `=` enum value (AlertManager
-    # matchType), which PyYAML maps to the special value-tag and otherwise fails
-    # to construct. Treat it as a literal scalar so the rendered stream parses.
+    # PyYAML treats the CRD enum value = as a special tag; construct it as a literal scalar.
     yaml.SafeLoader.add_constructor(
         "tag:yaml.org,2002:value", lambda loader, node: loader.construct_scalar(node)
     )
@@ -127,11 +113,8 @@ def main():
         elif group == KOPIUR_GROUP and kind == "Restore":
             restores.append(d)
 
-    # Some operators own their PVC manifests. kopiur's direct target.pvc mode
-    # safely creates/restores the deterministic claim first, after which the
-    # workload operator adopts it (Kafka/Strimzi). Index only restores whose
-    # source policy matches the PVC's SnapshotPolicy; a same-name target alone
-    # must not accidentally satisfy the DR contract.
+    # Direct target.pvc restores create deterministic claims before an operator adopts them.
+    # Require the matching SnapshotPolicy too; a matching claim name alone does not prove backup coverage.
     restores_by_name = {(meta(r, "namespace"), meta(r, "name")): r for r in restores}
     direct_restore_pvcs = {}
     for r in restores:

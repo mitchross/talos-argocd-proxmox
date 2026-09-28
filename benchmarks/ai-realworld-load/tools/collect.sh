@@ -1,20 +1,6 @@
 #!/usr/bin/env bash
-# Baseline A collector — real-world three-way load on the dual-3090 vLLM endpoint.
-#
-# NOT ArgoCD-managed. benchmarks/ is outside every AppSet glob (my-apps/*/*,
-# infrastructure explicit list, monitoring/*, infrastructure/database/*/*).
-# Nothing here deploys; it only reads.
-#
-# Design note: samples via THREE long-lived streams rather than per-tick
-# `kubectl exec`. A 2s exec loop costs ~0.5-1s of kubectl overhead per tick and
-# would jitter the sample interval badly. nvidia-smi has a native `-l` loop and
-# the metrics/log streams run their loop inside the pod, so the only per-sample
-# cost is network read.
-#
-# Usage:
-#   collect.sh start [label]   -> begins capture, prints RUN dir
-#   collect.sh stop            -> stops capture, finalizes
-#   collect.sh status          -> is it running?
+# Usage: collect.sh start [label] | stop | status; benchmarks are outside Argo discovery.
+# Long-lived in-pod streams avoid per-sample kubectl exec overhead and timing jitter.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -75,10 +61,7 @@ cmd_start() {
   kubectl -n "$NS" exec "$pod" -- curl -s "http://localhost:$PORT/metrics" 2>/dev/null \
     | grep 'cache_config_info' > "$run/cache-config.txt"
 
-  # ---- Stream 1: vLLM metrics, 2s, filtered inside the pod ------------------
-  # Full /metrics is ~40KB; grepping pod-side keeps this to a few hundred bytes
-  # per tick. Histogram *buckets* are kept in full: when a request finishes,
-  # exactly one bucket increments, which is how per-request sizes get attributed.
+  # Filter metrics in-pod to reduce traffic; retain all histogram buckets for request-size attribution.
   # shellcheck disable=SC2016
   nohup kubectl -n "$NS" exec "$pod" -- sh -c '
     while true; do
@@ -88,9 +71,7 @@ cmd_start() {
     done' > "$run/metrics.stream" 2>"$run/metrics.err" &
   echo $! > "$run/.pid.metrics"
 
-  # ---- Stream 2: per-GPU telemetry via nvidia-smi native loop ---------------
-  # Runs in the powerlimit DaemonSet, NOT the inference pod, so sampling never
-  # competes with the workload under test.
+  # Sample GPUs from the powerlimit DaemonSet to avoid competing inside the inference pod.
   local dspod
   dspod="$(kubectl -n gpu-operator get pod -l app=nvidia-powerlimit -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)"
   [ -n "$dspod" ] || dspod="$(kubectl -n gpu-operator get pods -o name 2>/dev/null | grep powerlimit | head -1 | cut -d/ -f2)"
@@ -112,9 +93,7 @@ cmd_start() {
     echo "gpu_source=vllm-pod-fallback" >> "$run/context.env"
   fi
 
-  # ---- Stream 3: full vLLM log for the window ------------------------------
-  # Carries the periodic engine line (Running/Waiting/KV%/prefix-hit-rate) and
-  # any preemption / cache-allocation / context-length errors.
+  # Capture server throughput, cache, and error logs alongside metrics.
   nohup kubectl -n "$NS" logs -f "$pod" --since=10s \
     > "$run/vllm.log" 2>"$run/vllm-log.err" &
   echo $! > "$run/.pid.logs"

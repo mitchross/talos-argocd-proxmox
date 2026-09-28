@@ -1,16 +1,6 @@
 #!/usr/bin/env bash
-# First controlled A/B: ~6K-token fixed prompt (workloads/ab-6k-prompt.txt,
-# 6,055 tokens by the live Qwen tokenizer), ~550-600 generated tokens, C1,
-# both engines on THE SAME single 3090 (sequential swap windows), vision
-# LOADED on both servers (the request itself is text).
-#
-# Per engine, two passes with the byte-identical prompt:
-#   cold  — unique run-id first line => prefix reuse CANNOT hit
-#   warm  — the cold prompt repeated verbatim => prefix reuse SHOULD hit
-#
-# Client-side numbers (ttft/decode_tps/e2e) come from the same probe code for
-# both engines. Engine-side numbers come from each engine's own run collector
-# (collect.sh for vLLM, collect-ninfer.sh for NInfer) started around this script.
+# Compare cold and warm runs with the same prompt on the same GPU; measure both engines with openai_probe.py.
+# Use each engine's collector separately for server-side metrics.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
@@ -22,10 +12,7 @@ CONTROL_MODEL="${CONTROL_MODEL:-qwen3.8-27b}"
 CANDIDATE_URL="${CANDIDATE_URL:-https://ninfer.vanillax.me/v1}"
 CANDIDATE_MODEL="${CANDIDATE_MODEL:-qwen3.8-ninfer}"
 
-# Single-card cluster: the engines are swapped, never co-resident, so run this
-# once per engine window: `ab-smallload.sh control` while vLLM holds the card,
-# `ab-smallload.sh candidate` while NInfer does. Pass an existing RUN dir as
-# AB_RUN=... for the second window so both engines land in one run dir.
+# Run control and candidate in separate GPU windows; set AB_RUN to reuse the same results directory.
 ENGINES="${1:-control candidate}"
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"

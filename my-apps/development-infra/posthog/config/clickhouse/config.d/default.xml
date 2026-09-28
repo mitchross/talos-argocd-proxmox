@@ -42,18 +42,7 @@
                 </replica>
             </shard>
         </posthog_primary_replica>
-        <!--
-          ai_events — newer PostHog (image sha 9b518de) expects this cluster
-          when running `migrate_clickhouse`. It's used by the AI/LLM event
-          ingestion path which assumes a separate "satellite" ClickHouse
-          cluster. On single-node installs we point it at a headless Service
-          so ClickHouse resolves the pod IP and marks the replica local.
-          Without this cluster, every
-          migrate_clickhouse run fails with:
-            DB::Exception: Requested cluster 'ai_events' not found (code 701)
-          which cascades into the entire posthog-migrate PostSync hook
-          hitting backoffLimit and Argo wedging the app sync.
-        -->
+        <!-- All satellite cluster names must resolve locally; point ai_events at the headless Service for single-node installs. -->
         <ai_events>
             <shard>
                 <replica>
@@ -62,16 +51,7 @@
                 </replica>
             </shard>
         </ai_events>
-        <!--
-          Satellite clusters — PostHog's `CLICKHOUSE_SATELLITE_CLUSTERS`
-          defaults to `"ai_events,aux,ops,sessions"` (see
-          posthog/settings/data_stores.py). All four must exist or
-          `migrate_clickhouse` fails with
-          `DB::Exception: Requested cluster '<name>' not found (code 701)`
-          and cascades into the PostSync hook wedging Argo. On a single-
-          node install we point every satellite at the same headless Service;
-          queries resolve transparently.
-        -->
+        <!-- PostHog migrations require ai_events, aux, ops, and sessions; each resolves to this single node. -->
         <aux>
             <shard>
                 <replica>
@@ -98,13 +78,8 @@
         </sessions>
     </remote_servers>
 
-    <!--
-      named_collections — MUST mirror upstream
-      PostHog/posthog:docker/clickhouse/config.d/default.xml (all alias
-      $KAFKA_HOSTS; Kafka-engine DDL in migrations references them by name).
-      A collection missing here hard-fails migrate_clickhouse — diff upstream
-      before every monolith bump (UPGRADE.md step 1).
-    -->
+    <!-- Keep named_collections aligned with upstream docker/clickhouse/config.d/default.xml; migrations reference these aliases.
+      Check UPGRADE.md before changing the monolith image. -->
     <named_collections>
         <msk_cluster>
             <kafka_broker_list from_env="KAFKA_HOSTS"/>

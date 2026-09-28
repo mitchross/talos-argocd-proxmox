@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
-# NInfer compatibility smoke tests — prove correctness BEFORE benchmarking.
-# Each test prints the probe's JSON; judge the content, not just HTTP 200.
-#
-# Usage:
-#   smoke-ninfer.sh all <image-file>
-#   smoke-ninfer.sh text|vision|thinking|tools|context [args]
-#
-# Point at another engine with: BASE_URL=... MODEL=... smoke-ninfer.sh ...
+# Usage: smoke-ninfer.sh all <image> or text|vision|thinking|tools|context [args]; BASE_URL/MODEL override the engine.
+# Inspect probe content before benchmarking; HTTP 200 alone does not prove correctness.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_URL="${BASE_URL:-https://ninfer.vanillax.me/v1}"

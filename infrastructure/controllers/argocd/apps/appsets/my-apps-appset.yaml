@@ -8,24 +8,12 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "6"
 spec:
-  # Render each generated Application with Go templates. In an expression such
-  # as `{{ .path.basename }}`, the leading `.` means "the current generator
-  # result" (the template context). The Git generator supplies its matched
-  # directory as the `path` object: `.path.basename` is the final directory
-  # name, while `.path.path` is the complete repository-relative path.
-  # Example: `my-apps/knowledge/karakeep` produces `.path.basename = karakeep` and
-  # `.path.path = my-apps/knowledge/karakeep`, so Argo creates Application
-  # `my-apps-karakeep` in namespace `karakeep` and renders that exact folder.
-  # `missingkey=error` stops generation when a field is absent instead of
-  # silently creating an Application with an empty name, path, or namespace.
+  # The Git generator supplies .path.basename for the app name and .path.path for its manifest directory.
+  # missingkey=error rejects incomplete generator results instead of creating malformed Applications.
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
-  # Immutable-dataSourceRef escape hatch: preserve per-Application
-  # compare-options annotations while any Bound PVC still carries an older
-  # immutable dataSourceRef than Git (live converges only on PVC recreate,
-  # e.g. a DR drill). VolSync-era in origin; still needed for kopiur
-  # dataSourceRef repoints, which hit the same immutable-field behavior.
+  # Preserve per-app diff overrides while bound PVCs retain immutable dataSourceRef values that differ from Git.
   ignoreApplicationDifferences:
   - jsonPointers:
     - /metadata/annotations/argocd.argoproj.io~1compare-options
@@ -37,12 +25,7 @@ spec:
       # project-nomad is intentionally one bundled app at my-apps/knowledge/project-nomad.
       # Its child folders are resources, not generated apps.
       - path: my-apps/*/*
-      # my-apps/common/* holds shared Kustomize Components (kind: Component),
-      # consumed via `components:` from app kustomizations — they are not apps.
-      # kustomize (5.4+) builds a Component directory as an EMPTY render, so
-      # without this exclude the generator creates a phantom zero-resource
-      # Application (e.g. my-apps-kopiur-backup, Synced/Healthy, manages
-      # nothing). Guarded by validate-argocd-apps.sh Check 8.
+      # Components render empty alone; exclude them to avoid phantom Synced/Healthy Applications.
       - path: my-apps/common/*
         exclude: true
       # `_archive/` parks retired apps: excluded, so Argo prunes them; kopiur keeps their backups (repo onNamespaceDelete: Orphan).
@@ -60,18 +43,8 @@ spec:
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "6"
-        # Immutable-dataSourceRef compare mode: disables server-side diff
-        # for every my-apps-* Application while any backed-up PVC's live
-        # immutable spec.dataSourceRef differs from Git (live converges
-        # only on PVC recreate). Argo's uncached compare path runs an SSA
-        # dry-run that the API server rejects ("spec is immutable"),
-        # producing a ComparisonError. App-level compare-options is
-        # evaluated before any per-resource SSA dry-run dispatch, so
-        # this fully bypasses the failing path. Client-side diff still
-        # runs, and existing ignoreDifferences on PVC dataSourceRef/
-        # dataSource/volumeName continue to mask the legitimate
-        # immutable-spec drift. pvc-plumber-era in origin; retained
-        # because kopiur dataSourceRef repoints hit the same behavior.
+        # Use client-side diff: SSA dry-runs reject immutable dataSourceRef changes on bound PVCs.
+        # The PVC ignore rules below mask this drift until claims are recreated.
         argocd.argoproj.io/compare-options: ServerSideDiff=false
     spec:
       project: my-apps
@@ -95,20 +68,14 @@ spec:
         - RespectIgnoreDifferences=true
         - FailOnSharedResource=true
         retry:
-          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
-          # PreSync hook can wedge the entire app-of-apps behind a stale
-          # manifest snapshot (incidents 2026-04-20, 2026-05-01). selfHeal: true
-          # kicks a fresh sync against current git on the next reconcile.
+          # Bound retries so stuck hooks cannot hold the app tree on stale manifests indefinitely.
           limit: 10
           backoff:
             duration: 10s
             factor: 2
             maxDuration: 10m
       ignoreDifferences:
-      # HTTPRoute, ExternalSecret, and PVC restore diff noise is ignored globally.
-      # App-level PVC ignores are still required because
-      # RespectIgnoreDifferences=true only strips app ignore rules during sync;
-      # otherwise immutable restore fields keep retrying forever on Bound PVCs.
+      # App-level PVC ignores are required by RespectIgnoreDifferences during sync; global diff ignores alone are insufficient.
       - group: ""
         kind: PersistentVolumeClaim
         jsonPointers:

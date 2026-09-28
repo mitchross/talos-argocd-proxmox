@@ -36,12 +36,7 @@ install_node "https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git"
 # Provides EsesImageCompare used by the Flux2 Klein 9B Ultimate v2.1 workflow.
 install_node "https://github.com/quasiblob/ComfyUI-EsesImageCompare.git"
 
-# ── Python Dependencies ────────────────────────────────────
-# Install base deps into py3.13 explicitly (same as nunchaku / frontend_package / custom-node deps below).
-# Default `uv pip install --system` targets py3.12 which ComfyUI doesn't use,
-# so colorama/watchdog etc. would be invisible to the custom-node imports.
-# This is why ComfyUI-Prompt-Manager ("No module named 'colorama'") and
-# ComfyUI-Gallery ("No module named 'watchdog'") were failing to import.
+# Install into ComfyUI's Python 3.13; uv --system otherwise targets Python 3.12 and imports fail.
 PY313=/usr/bin/python3.13
 echo "[INFO] Installing Python dependencies into py3.13..."
 $PY313 -m pip install --no-cache-dir --root-user-action=ignore \
@@ -72,21 +67,11 @@ for d in Comfy-Canvas ComfyUI-nunchaku ComfyUI_IPAdapter_plus ComfyUI-TeaCache C
   fi
 done
 
-# Pin comfyui_frontend_package to the backend's recommended patch (1.42.11).
-# The megapak image ships 1.42.10, which produces a "Failed to load subgraph
-# blueprints" error on newer WanVideoWrapper example workflows. Upgrading
-# past the backend's supported line (e.g. 1.43.x) breaks Vue bootstrap
-# entirely ("Loading Error — A required resource failed to load") because
-# ComfyUI backend 0.19.x isn't on that major yet — so we pin exactly.
-# Bump this when the backend (via megapak image) moves forward.
+# Keep comfyui_frontend_package on the backend-supported patch; newer frontend lines can break startup.
 echo "[INFO] Pinning comfyui_frontend_package==1.42.11 in py3.13..."
 $PY313 -m pip install --no-cache-dir --root-user-action=ignore "comfyui_frontend_package==1.42.11" 2>&1 | tail -2 || true
 
-# ── Opinionated UI defaults (GitOps-reproducible) ──────────
-# Merges specific keys into /root/ComfyUI/user/default/comfy.settings.json
-# without touching any other keys you've set via the UI. Runs every boot,
-# so changes here take effect on pod restart. Remove a key from the merge
-# block to let the UI fully own it again.
+# Merge these UI defaults on every boot, preserving other keys; remove a key here to let the UI own it.
 SETTINGS=/root/ComfyUI/user/default/comfy.settings.json
 mkdir -p "$(dirname $SETTINGS)"
 [ -f "$SETTINGS" ] || echo "{}" > "$SETTINGS"

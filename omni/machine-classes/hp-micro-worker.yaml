@@ -13,9 +13,7 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      # i5-8500T, 6 physical cores / 16 GiB on the host. 4 cores + 12 GiB keeps
-      # two cores and ~4 GiB for Proxmox, the provider agent, and qemu overhead
-      # so a 16 GiB box never reaches for swap.
+      # Reserve two cores and about 4 GiB for Proxmox, the provider agent, and QEMU.
       cores: 4
       sockets: 1
       memory: 12288
@@ -29,10 +27,8 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # Dedicated Longhorn disk on the 931 GiB PNY CS900 SSD (/dev/sda),
-      # exposed as the thick-LVM Proxmox storage `hp-ssd-vmstore`. 850 GiB
-      # leaves ~81 GiB of device headroom. Do not use LVM-thin: this repo has
-      # measured its metadata commits collapsing fsync performance.
+      # Dedicated Longhorn disk on hp-ssd-vmstore leaves device headroom.
+      # Keep thick LVM: thin metadata commits reduce fsync performance.
       additional_disks:
         - storage_selector: name == "hp-ssd-vmstore"
           disk_size: 850

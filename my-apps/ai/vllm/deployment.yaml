@@ -109,17 +109,13 @@ spec:
             - --prefix-match-unit
             - "16"
             - --enable-chunked-prefill
-            # Aggregate scheduling budget: 8192 tokens across up to two requests.
-            # The 4096 threshold below caps each request's prefill chunk; it is
-            # active even with max-num-seqs=2. Benchmark latency and KV headroom.
+            # 8192 tokens is the total scheduling budget; 4096 caps each request's prefill chunk.
             - --max-num-batched-tokens
             - "8192"
             - --long-prefill-token-threshold
             - "4096"
-            # Speculation stays off until the GDN long-session faults are fixed.
-            # Local thinking policy: community-reported mitigation candidate,
-            # not an upstream default or proven fix (QwenLM/Qwen3.8#216).
-            # Keep WebUI/Pi thinking=1.05 and off=1.0 in sync with this default.
+            # Keep speculation off pending GDN long-session fixes; thinking mitigation is unproven (QwenLM/Qwen3.8#216).
+            # Keep WebUI/Pi penalties aligned: thinking=1.05, off=1.0.
             - --override-generation-config
             - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.05}'
             - --enable-force-include-usage

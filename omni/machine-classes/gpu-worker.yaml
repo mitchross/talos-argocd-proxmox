@@ -20,10 +20,7 @@ metadata:
 spec:
   matchlabels: []
   autoprovision:
-    # WARNING: provider ID "proxmox" is NOT registered on Omni (was the retired
-    # dl360g9 host). This class cannot provision until repointed to
-    # proxmox-dell or proxmox-threadripper. Only the threadripper-*/dell-worker
-    # classes are usable as of 2026-08-13.
+    # The retired provider ID proxmox cannot provision; select a registered provider before using this class.
     providerid: proxmox
     kernelargs: []
     metavalues: []
@@ -32,19 +29,9 @@ spec:
       # heavy work on the GPU; VM CPU only serves OS, containerd, NFS copies.
       cores: 16
       sockets: 1
-      # Phase 1 right-size: 192G -> 128G. Capacity baseline 2026-05-04
-      # showed GPU worker observed ~26.7 GiB of 188.2 GiB allocatable
-      # while running llama-cpp + ComfyUI + nvidia operator stack. 128 GiB
-      # leaves >4x headroom over current peak for model loads. CPU and
-      # GPU passthrough configuration unchanged in Phase 1.
       memory: 131072
-      # Single 800G disk — V1 layout restored 2026-06-12 (see worker.yaml for the
-      # full story: V2/SPDK failed under full-DR load, returned to V1 engine).
-      # Longhorn V1 data lives as files on the EPHEMERAL partition alongside
-      # Talos system + images + pod ephemeral. Generous sizing matters here:
-      # llama-cpp may legally use 50Gi ephemeral + 8Gi emptyDir (deployment
-      # limits), vLLM adds a 16Gi emptyDir, CUDA images run 5-20G each, and
-      # Longhorn replicas share the same partition. Models live on NFS.
+      # This V1 layout shares the disk between Talos, images, ephemeral pod data, and Longhorn replicas.
+      # Model weights live on NFS; size the local disk for all other consumers.
       disk_size: 800
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"
@@ -57,9 +44,7 @@ spec:
       # GPU passthrough optimizations
       cpu_type: host
       machine_type: q35
-      # numa=true is a HOST-side hint even with sockets:1 in the guest — keeps
-      # the VM's memory on the same NUMA node as its vCPUs and (ideally) as
-      # the PCIe lanes owning the GPUs. Matters on the 2-socket Xeon host.
+      # NUMA placement keeps VM memory near its vCPUs and GPU PCIe lanes on multi-socket hosts.
       numa: true
       # hugepages: 1GB  # Requires host config: echo 256 > /proc/sys/vm/nr_hugepages
       balloon: false

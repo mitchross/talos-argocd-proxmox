@@ -1,4 +1,3 @@
-# ComfyUI specific storage class
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -26,7 +25,6 @@ reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
 ---
-# frigate specific storage class
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -54,7 +52,6 @@ reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
 ---
-# tubearchivist specific storage class
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -82,7 +79,6 @@ reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
 ---
-# kiwix specific storage class
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:

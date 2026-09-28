@@ -128,10 +128,7 @@ def main():
     # ---------------- headline numbers -------------------------------------
     section("THE FOUR NUMBERS")
 
-    # NB: every metric key carries Prometheus labels
-    # (vllm:num_requests_running{engine="0",model_name="..."}), so these MUST go
-    # through the prefix helper. Exact-key lookups silently return 0 and make a
-    # loaded run look idle.
+    # Metric keys include Prometheus labels; use prefix lookup or exact-key misses silently report zero.
     resident = [(t, (g(s, "vllm:kv_cache_usage_perc") or 0.0) * cap) for t, s in ticks]
     peak_res = max((r for _, r in resident), default=0)
     peak_t = max(resident, key=lambda x: x[1])[0] if resident else None
