@@ -2,7 +2,7 @@
 
 Use `docs/domains/power/metering.md` for entity ownership and accounting.
 The maintained analyzer is
-`my-apps/home/home-assistant/scripts/power-analysis/analysis.py`; HA installs it
+`my-apps/home-automation/home-assistant/scripts/power-analysis/analysis.py`; HA installs it
 at `/config/custom_components/power_analysis/analysis.py`.
 
 ## Obtain evidence

@@ -55,6 +55,8 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 
 ## Components
 
+Apps live at `monitoring/<type>/<app>` (`metrics/`, `logs/`, `tracing/`, `ai-ops/`). The Argo CD Application is still `monitoring-<app>`; `_archive/` folders are not deployed.
+
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | **OTEL Operator** | `infrastructure/controllers/opentelemetry-operator/` | Manages the two Collectors |
@@ -63,7 +65,8 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 | **Prometheus** | `monitoring/metrics/prometheus-stack/` | Metrics storage, alerting, Grafana |
 | **Loki** | `monitoring/logs/loki-stack/` | Log storage (S3 on RustFS) |
 | **Tempo** | `monitoring/tracing/tempo/` | Trace storage (S3 on RustFS) |
-| **HolmesGPT** | `monitoring/ai-ops/_archive/holmesgpt/` | AI cluster diagnostics via vLLM (`qwen3.8-27b`) |
+| **Dozzle** | `monitoring/logs/dozzle/` | Live container log viewer |
+| **HolmesGPT** | `monitoring/ai-ops/_archive/holmesgpt/` | Archived, not deployed (AI cluster diagnostics) |
 | **pod-cleanup** | `my-apps/system/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
 
 ## Telemetry scope

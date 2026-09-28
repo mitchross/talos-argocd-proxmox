@@ -17,7 +17,7 @@ External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
 - **Prometheus + Grafana** (`monitoring/metrics/prometheus-stack/`) — metrics storage, dashboards, alerting
 - **Loki** (`monitoring/logs/loki-stack/`) — log storage (S3 backend on RustFS)
 - **Tempo** (`monitoring/tracing/tempo/`) — trace storage (S3 backend on RustFS)
-- **HolmesGPT** (`monitoring/ai-ops/_archive/holmesgpt/`) — AI cluster diagnostics through LiteLLM → vLLM (`qwen3.8-27b`)
+- **HolmesGPT** (`monitoring/ai-ops/_archive/holmesgpt/`) — **archived, not deployed**; AI cluster diagnostics through LiteLLM → vLLM
 - **pod-cleanup** (`my-apps/system/pod-cleanup/`) — 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide
 
 ## Telemetry boundary

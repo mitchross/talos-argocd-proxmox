@@ -40,9 +40,9 @@ Manual Bootstrap → ArgoCD → Root App → ApplicationSets → Auto-discovered
 
 **Critical Understanding**: Directory = Application
 ```
-my-apps/ai/comfyui/             → ArgoCD Application "my-apps-comfyui"
-infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/metrics/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
+my-apps/ai/comfyui/                  → ArgoCD Application "my-apps-comfyui"
+infrastructure/storage/longhorn/     → ArgoCD Application "longhorn"
+monitoring/metrics/prometheus-stack/ → ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 ## Sync Wave Architecture
@@ -57,7 +57,7 @@ Applications deploy in strict order to prevent race conditions:
 | **3** | kopiur config | kopiur `ClusterRepository cluster-kopia` + `ClusterExternalSecret` cred fanout + `VolumeSnapshotClass longhorn-snapclass` |
 | **4** | Infrastructure AppSet + custom entrypoints | Explicit path list plus KEDA and Temporal Worker Controller standalone Apps |
 | **4** | Database AppSet | Auto-syncs `infrastructure/database/*/*` (Redis + shared DB support); fully automated since the CNPG retirement (2026-08-13) |
-| **5** | Monitoring AppSet | Discovers `monitoring/*`; generated apps reconcile independently |
+| **5** | Monitoring AppSet | Discovers `monitoring/*/*` (`metrics/`, `logs/`, `tracing/`); generated apps reconcile independently |
 | **6** | OTEL + observability overlays + My-Apps AppSet | Optional telemetry alongside `my-apps/*/*`; no telemetry health gate before workload discovery |
 
 **Backend-down safety** (kopiur, replacing the retired `wait-for-rustfs` MAP): a backup against an unreachable repo errors — the Snapshot Job fails and retries, nothing garbage is written. A **restore against an unreachable repo leaves the PVC `Pending`**: kopiur raises the backend error *before* the `onMissingSnapshot` decision, so an outage can never bind an empty volume. This preserves the exact guarantee the MAP gave VolSync, with no admission policy. (Source-verified: `crates/controller/src/restore/mod.rs` `resolve_snapshot`; a brand-new PVC with a *reachable* repo but no snapshot still binds empty and backs up forward — `onMissingSnapshot: Continue` = deploy-or-restore.)
@@ -219,7 +219,8 @@ Codex uses the same procedures through `.agents/skills/` (see `AGENTS.md`).
 | **kopiur backup component (shared)** | `my-apps/common/kopiur-backup/` |
 | **kopiur repo + cred fanout + snapclass** | `infrastructure/controllers/kopiur/` |
 | **Daemon-drop mover uid (999:568)** | `my-apps/knowledge/project-nomad/mysql/kopiur-backup.yaml` |
-| **Multi-PVC + backup-exempt mix** | `my-apps/games/_archive/project-zomboid/` (backs up `zomboid-data`, exempts `zomboid-server-files`) |
+| **Multi-PVC + backup-exempt mix** | `my-apps/home-automation/frigate/` (backs up `frigate-config`, exempts `frigate-media`) |
+| **Archive a retired app** | `my-apps/<category>/_archive/<app>/` — see `docs/domains/argocd/entrypoints.md` § Archived apps |
 | **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
