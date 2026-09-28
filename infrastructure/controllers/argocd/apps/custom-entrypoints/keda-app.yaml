@@ -13,7 +13,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "4"
-    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/keda
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/scheduling/keda
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -22,7 +22,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: infrastructure/controllers/keda
+    path: infrastructure/scheduling/keda
   destination:
     server: https://kubernetes.default.svc
     namespace: keda

@@ -98,7 +98,7 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 | `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
 | `kopiur/kopiur-rustfs` (ClusterExternalSecret → every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
 
-Per-PVC backup credentials are delivered by the single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/controllers/kopiur/externalsecret.yaml`), which fans the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`.
+Per-PVC backup credentials are delivered by the single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/backup/kopiur/externalsecret.yaml`), which fans the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`.
 
 Force ESO refresh after changing 1Password:
 

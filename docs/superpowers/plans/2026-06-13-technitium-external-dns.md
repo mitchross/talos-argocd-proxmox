@@ -20,14 +20,14 @@
 ### Task 1: Add The Technitium ExternalDNS Release
 
 **Files:**
-- Create: `infrastructure/controllers/external-dns/technitium-external-secret.yaml`
-- Create: `infrastructure/controllers/external-dns/values-technitium.yaml`
-- Modify: `infrastructure/controllers/external-dns/kustomization.yaml`
+- Create: `infrastructure/networking/external-dns/technitium-external-secret.yaml`
+- Create: `infrastructure/networking/external-dns/values-technitium.yaml`
+- Modify: `infrastructure/networking/external-dns/kustomization.yaml`
 
 - [x] Add an ExternalSecret mapping `external-dns-technitium/tsig-secret` to the namespaced Kubernetes Secret.
 - [x] Add Helm values for RFC2136, Gateway HTTPRoute discovery, domain filtering, TXT ownership, and safe upsert-only policy.
 - [x] Add the resource and second Helm release to the existing Kustomization.
-- [x] Render with `kubectl kustomize infrastructure/controllers/external-dns --enable-helm`.
+- [x] Render with `kubectl kustomize infrastructure/networking/external-dns --enable-helm`.
 
 ### Task 2: Add The Isolated Gateway
 
@@ -43,7 +43,7 @@
 ### Task 3: Document Operation And IP Ownership
 
 **Files:**
-- Create: `infrastructure/controllers/external-dns/README.md`
+- Create: `infrastructure/networking/external-dns/README.md`
 - Modify: `infrastructure/networking/cilium/ip-pool.yaml`
 - Modify: `infrastructure/networking/README.md`
 
