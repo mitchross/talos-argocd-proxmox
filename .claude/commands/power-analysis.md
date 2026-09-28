@@ -45,9 +45,17 @@ excluded here can still appear in HA's raw historical charts.
 - Read Mink hardware notes when comparing machines. The 2950X host has BOTH
   RTX 3090s; the spare DL360 GPU arrangement uses an external PSU and risers.
   Preserve the GPUs and workload in comparisons and include every power feed.
-- The historical spare-host inventory lists 2× E5-2680 v4 and ~768 GB RAM;
-  reverify installed CPUs/DIMMs today. The NAS is a separate one-Xeon DL360
+- The historical spare-host inventory lists 2× E5-2680 v4; RAM records
+  conflict (736 GB, 724 GiB OS-visible, and ~768 GB claims), so do not infer
+  a verified DIMM count. Reverify installed CPUs/DIMMs today. The NAS is a separate one-Xeon DL360
   with 384 GB RAM. Its outlet excludes the separately metered drive PSU.
+- Owner-supplied historical June plug readings: old DL360 259 W plus GPU
+  supply 66 W, versus Threadripper with both GPUs 246 W (~79 W lower).
+  Different periods/workloads; evidence for the old migration, not a benchmark
+  of a new single-Xeon setup. The May 484 W whole-rack figure includes NAS,
+  network gear and fan; its component split was an allocation, not measurements.
+  Do not treat the claimed 15% iLO scaling as a universal calibration. Older
+  "Threadripper retired"/"DL360 current" summaries are superseded by live evidence.
 - Sample GPU board telemetry and wall power over matching windows. Aggregate
   Prometheus sum/count across pod labels after restarts; do not average unequal
   segment averages. Board power excludes PSU losses and isn't wall power.
