@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
-# PreToolUse guard for Bash git commands (global rule, 2026-07-04):
-#   - NEVER commit or push while on main/master, and never push TO main/master
-#     explicitly (e.g. `git push origin main`, `... HEAD:main`).
-#   - On any other branch, commit/push are auto-allowed (no permission prompt) --
-#     PR-branch workflow is the paved road.
-# Emits a PreToolUse permissionDecision; emits nothing (normal permission flow)
-# for commands it has no opinion on (non-commit/push git, detached HEAD).
+# Guard commits and pushes on main/master, including explicit push targets.
+# Emit a PreToolUse decision; unrelated commands and detached HEAD use normal permissions.
 set -euo pipefail
 
 input=$(cat)
@@ -26,16 +21,12 @@ if ! printf '%s' "$cmd" | grep -Eq '(^|[;&|[:space:]])git([[:space:]]+-C[[:space
   exit 0
 fi
 
-# Explicit push target main/master anywhere in the command -- deny regardless
-# of the current branch (covers `git push origin main`, `-u origin master`,
-# `HEAD:main`, `refs/heads/main`).
+# Reject explicit main/master push targets regardless of the current branch.
 if printf '%s' "$cmd" | grep -Eq '(^|[;&|[:space:]])git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+push[^;&|]*([[:space:]]|:|refs/heads/)(main|master)([[:space:]]|$)'; then
   deny "Global rule: never push to main/master. Push to a feature/PR branch and open a PR instead."
 fi
 
-# Branch the command will run on. `git -C <path>` retargets another checkout, so
-# honour it — otherwise every worktree commit is judged against the session
-# cwd's branch and denied even when the worktree is on a feature branch.
+# Honor git -C so worktree commands are checked against their target checkout.
 target=$(printf '%s' "$cmd" | sed -nE 's|.*[[:space:]]-C[[:space:]]+([^[:space:]]+).*|\1|p' | head -1)
 [ -n "$target" ] || target="$cwd"
 branch=$(git -C "$target" symbolic-ref --short -q HEAD 2>/dev/null || true)

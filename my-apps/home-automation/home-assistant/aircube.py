@@ -53,9 +53,7 @@ class AirQualityCluster(CustomCluster):
 ANALOG_OUTPUT_CLUSTER_ID = 0x000D
 
 
-# ---------------------------------------------------------------------------
-# Detect whether this HA/zigpy version supports the quirks v2 API.
-# ---------------------------------------------------------------------------
+# Detect quirks v2 support before registering the device.
 try:
     from zigpy.quirks.v2 import QuirkBuilder
     from zigpy.quirks.v2.homeassistant import EntityType
@@ -77,9 +75,7 @@ except ImportError:
 
 
 if _HAS_QUIRKS_V2:
-    # -----------------------------------------------------------------------
-    # Modern HA: full quirks v2 definition.
-    # -----------------------------------------------------------------------
+    # Register entities through the modern quirks v2 API.
     (
         QuirkBuilder("StuckAtPrototype", "AirCube")
         .replaces(AirQualityCluster, endpoint_id=10)
@@ -124,15 +120,8 @@ if _HAS_QUIRKS_V2:
         .add_to_registry()
     )
 else:
-    # -----------------------------------------------------------------------
-    # Old HA (no quirks v2): classic v1 fallback.
-    #
-    # This keeps the module importable (stops the ImportError crash) and names
-    # the device. Temperature, humidity and brightness are exposed by ZHA's
-    # standard discovery. The eCO2/tVOC/AQI values on cluster 0xFC01 cannot be
-    # surfaced as entities on this ZHA version -- update HA, or read them over
-    # BLE (BTHome), for those.
-    # -----------------------------------------------------------------------
+    # Legacy ZHA discovers temperature/humidity/brightness, but cannot expose the custom eCO2/tVOC/AQI cluster.
+    # Keep the v1 fallback importable; upgrade HA or use BTHome for those extra sensors.
     from zigpy.quirks import CustomDevice
     from zigpy.profiles import zha
     from zigpy.zcl.clusters.general import AnalogOutput, Basic, Identify
@@ -155,9 +144,6 @@ else:
         signature = {
             MODELS_INFO: [("StuckAtPrototype", "AirCube")],
             ENDPOINTS: {
-                # <SimpleDescriptor endpoint=10 profile=260 device_type=770
-                #  input_clusters=[0, 3, 13, 1026, 1029, 64513]
-                #  output_clusters=[]>
                 10: {
                     PROFILE_ID: zha.PROFILE_ID,
                     DEVICE_TYPE: zha.DeviceType.TEMPERATURE_SENSOR,

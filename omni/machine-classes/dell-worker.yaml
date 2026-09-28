@@ -14,9 +14,7 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      # i5-8500, 6 physical cores / 39 GiB usable after 16 GiB of its RAM moved
-      # to the HP SFF. 30 GiB leaves ~9 GiB for Proxmox, the provider agent, and
-      # qemu overhead.
+      # Leave host RAM and CPU headroom for Proxmox, the provider agent, and QEMU.
       cores: 6
       sockets: 1
       memory: 30720
@@ -30,11 +28,8 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # Longhorn disk on the Samsung 500 GB SSD (/dev/sda), a different spindle
-      # from the boot pool: replica writes never contend with image pulls. Needs
-      # a thick-LVM Proxmox storage `dell-ssd-vmstore`; 400 GiB of 465 leaves
-      # ~65 GiB headroom. Do not use LVM-thin: this repo has measured its
-      # metadata commits collapsing fsync performance.
+      # Place Longhorn on dell-ssd-vmstore, separate from the boot disk, with capacity headroom.
+      # Keep thick LVM: thin metadata commits reduce fsync performance.
       additional_disks:
         - storage_selector: name == "dell-ssd-vmstore"
           disk_size: 400

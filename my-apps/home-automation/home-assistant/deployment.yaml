@@ -23,11 +23,9 @@ spec:
         app.kubernetes.io/part-of: smart-home
         app.kubernetes.io/version: stable
     spec:
-      # Pod-level security context
       securityContext:
         fsGroup: 0
         fsGroupChangePolicy: "OnRootMismatch"
-      # Add restart policy for better reliability
       restartPolicy: Always
       # Follow the Zigbee dongle: NFD labels whichever node it is USB-passed to
       # (zigbee-dongle-rule). A hardcoded node class breaks when the dongle moves VMs.
@@ -85,7 +83,7 @@ spec:
               mountPath: /config
       containers:
         - name: home-assistant
-          image: "ghcr.io/home-assistant/home-assistant:2026.9.4" # pinned (was :stable — floating tag defeats Renovate + makes rollback/diff impossible)
+          image: "ghcr.io/home-assistant/home-assistant:2026.9.4"
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false
@@ -99,7 +97,6 @@ spec:
             - containerPort: 8123
               name: http
               protocol: TCP
-          # Health checks for better reliability
           livenessProbe:
             httpGet:
               path: /

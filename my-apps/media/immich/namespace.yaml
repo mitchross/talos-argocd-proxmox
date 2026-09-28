@@ -4,6 +4,5 @@ metadata:
   name: immich
   labels:
     app.kubernetes.io/name: immich
-    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    # The namespace label enables kopiur repository access and ExternalSecret credential fanout.
     kopiur.home-operations.com/repo: cluster-kopia

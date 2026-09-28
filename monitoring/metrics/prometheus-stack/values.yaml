@@ -1,11 +1,7 @@
-# Enhanced kube-prometheus-stack configuration
-# Optimized for production workloads with security and performance considerations
 
-# Global settings
 global:
   imageRegistry: ""
   imagePullSecrets: []
-# CRD Configuration - Essential for proper functioning
 crds:
   enabled: true
 defaultRules:
@@ -13,17 +9,13 @@ defaultRules:
     # Single-worker cluster: these demand N-1 failover headroom that cannot exist here.
     KubeCPUOvercommit: true
     KubeMemoryOvercommit: true
-# Prometheus Configuration
 prometheus:
   enabled: true
   prometheusSpec:
-    # Data retention and storage
     retention: 15d
-    # PVC below is 50Gi; leave headroom for WAL/compaction but don't strand
-    # ~35Gi (was 15GB).
+    # Leave PVC headroom beyond retentionSize for WAL and compaction.
     retentionSize: 40GB
     walCompression: true
-    # Storage configuration with Longhorn
     storageSpec:
       volumeClaimTemplate:
         metadata:
@@ -46,16 +38,13 @@ prometheus:
       # Head series fill ~5 GiB; at a 6Gi cap no page cache was left and queries re-read ~11 TB/day of TSDB.
       limits:
         memory: 10Gi
-    # Security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 65534
       fsGroup: 65534
-    # Scrape configuration
     scrapeInterval: 30s
     evaluationInterval: 30s
     scrapeTimeout: 10s
-    # Enable service discovery for dynamic targets
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -172,8 +161,7 @@ prometheus:
             replacement: "${1}"
           - action: labeldrop
             regex: "serial|serial_number|wwn"
-      # rpi4 in the shed: the epsolar service (github.com/mitchross/epsolar) serves both the
-      # legacy epever_* and the epsolar_*/solar_buffer_* metrics on 8080. 9812 is retired.
+      # The rpi4 epsolar service exports epever_*, epsolar_*, and solar_buffer_* metrics on port 8080.
       - job_name: 'epever-solar'
         metrics_path: /metrics
         scheme: http
@@ -229,21 +217,17 @@ prometheus:
             replacement: ${1}:10259
           - source_labels: [__meta_kubernetes_node_name]
             target_label: instance
-    # Remote write configuration (for external storage if needed)
     remoteWrite: []
-    # Alerting configuration
     alerting:
       alertmanagers:
         - namespace: prometheus-stack
           name: kube-prometheus-stack-alertmanager
           port: 9093
-# Alertmanager Configuration
 alertmanager:
   enabled: true
   alertmanagerSpec:
     strategy:
       type: Recreate
-    # Storage for alertmanager
     storage:
       volumeClaimTemplate:
         metadata:
@@ -259,19 +243,16 @@ alertmanager:
           resources:
             requests:
               storage: 5Gi
-    # Resource allocation
     resources:
       requests:
         cpu: 100m
         memory: 128Mi
       limits:
         memory: 512Mi
-    # Security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 65534
       fsGroup: 65534
-    # Retention
     retention: 72h
     configSecret: ""
   # No push receiver yet: alerts are viewed in Alertmanager/Grafana. Watchdog and InfoInhibitor route to null.
@@ -293,7 +274,6 @@ alertmanager:
     receivers:
       # This receivers list REPLACES the chart's — omitting "null" fails operator validation and the old config silently stays live.
       - name: "null"
-# Grafana Configuration
 grafana:
   enabled: true
   deploymentStrategy:
@@ -302,7 +282,6 @@ grafana:
     existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
-  # Persistence
   persistence:
     enabled: true
     storageClassName: longhorn-flash
@@ -315,19 +294,16 @@ grafana:
       backup-exempt: "true"
     annotations:
       storage.vanillax.dev/backup-exempt-reason: "Dashboards/datasources are GitOps-managed; only user prefs in PVC"
-  # Resource allocation
   resources:
     requests:
       cpu: 100m
       memory: 1Gi
     limits:
       memory: 2Gi
-  # Security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 472
     fsGroup: 472
-  # Enable plugins
   plugins: []
   # Sidecar discovers every grafana_dashboard=1 ConfigMap cluster-wide; the grafana_folder annotation picks its folder.
   sidecar:
@@ -342,7 +318,6 @@ grafana:
   # Stock dashboard bundle disabled: two dozen overlapping boards made triage a search problem.
   defaultDashboardsEnabled: false
   defaultDashboardsTimezone: UTC
-  # Additional data sources configuration
   additionalDataSources:
     # Pinned UIDs: dashboards, derived fields and trace links reference these.
     - name: Loki
@@ -377,7 +352,6 @@ grafana:
           datasourceUid: loki
         nodeGraph:
           enabled: true
-  # Grafana configuration
   grafana.ini:
     server:
       root_url: https://grafana.vanillax.me
@@ -395,15 +369,13 @@ grafana:
       external_enabled: false
     explore:
       enabled: true
-# Node Exporter Configuration
-# Enable for comprehensive node-level metrics (VPA-optimized 2026-02-28)
+# Node Exporter provides host-level metrics.
 nodeExporter:
   enabled: true
 prometheus-node-exporter:
   hostRootFsMount:
     enabled: true
     mountPropagation: HostToContainer
-  # Resource allocation
   resources:
     requests:
       cpu: 50m
@@ -574,25 +546,21 @@ kube-state-metrics:
                   type: Gauge
                   gauge:
                     path: [spec, numberOfReplicas]
-# Prometheus Operator Configuration
 prometheusOperator:
   enabled: true
   # cert-manager for webhook certs: the chart's Helm hook Jobs lose their SA under ArgoCD and wedge the sync permanently.
   admissionWebhooks:
     certManager:
       enabled: true
-  # Resource allocation
   resources:
     requests:
       cpu: 100m
       memory: 128Mi
     limits:
       memory: 512Mi
-  # Security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
-# Additional monitoring components
 kubelet:
   enabled: true
   serviceMonitor:

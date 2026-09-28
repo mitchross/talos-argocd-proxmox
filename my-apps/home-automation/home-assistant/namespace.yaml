@@ -8,8 +8,7 @@ metadata:
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: baseline
     pod-security.kubernetes.io/warn: baseline
-    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    # The namespace label enables kopiur repository access and ExternalSecret credential fanout.
     kopiur.home-operations.com/repo: cluster-kopia
   annotations:
     # root-uid mover gate — required because this app's kopiur stub runs the

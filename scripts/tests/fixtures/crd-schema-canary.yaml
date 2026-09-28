@@ -1,8 +1,5 @@
-# Deliberately invalid. CI asserts kubeconform REJECTS this, proving the generated
-# CRD schemas are wired in and actually pruning; without it a broken generator
-# yields zero schemas and the whole check passes silently.
-# `timeout` belongs inside workloadExec — this is the real langfuse-postgres-data
-# defect that wedged the app in wave 0 (PR #2281).
+# Intentionally invalid: CI must reject timeout outside workloadExec.
+# This proves generated CRD schemas are loaded rather than silently skipped.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:

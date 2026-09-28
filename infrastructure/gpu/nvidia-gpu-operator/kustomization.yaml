@@ -25,8 +25,6 @@ helmCharts:
   includeCRDs: true
   valuesInline:
     operator:
-      # `operator.defaultRuntime` was deprecated in gpu-operator v26.3 —
-      # containerd is the only supported runtime anyway, so we don't set it.
       runtimeClass: nvidia
     # Talos system extensions own the driver + toolkit on the node.
     driver:

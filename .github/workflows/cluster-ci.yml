@@ -30,9 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Match the binaries bundled in Argo CD v3.5.2. A render that only passes
-  # with newer or older tools is not proof that repo-server can deploy it.
-  # v3.5.0 dropped Helm 3 entirely — repo-server renders with Helm 4.
+  # Match the Helm and Kustomize binaries bundled in Argo CD v3.5.2.
   KUSTOMIZE_VERSION: 5.8.1
   HELM_VERSION: 4.2.1
   KUBECONFORM_VERSION: v0.7.0
@@ -134,10 +132,7 @@ jobs:
             rendered="$(mktemp)"
             kustomize build "${dir}" --enable-helm > "${rendered}"
 
-            # Components intentionally build to an empty stream when rendered
-            # alone. Every other kustomization is an app, base, or overlay and
-            # must produce at least one Kubernetes object. This catches phantom
-            # Synced/Healthy Applications such as the former empty Kafka app.
+            # Only Components may render empty; empty apps otherwise appear Synced/Healthy while managing nothing.
             if ! grep -q '^kind:' "${rendered}"; then
               if grep -q '^kind: Component$' "${dir}/kustomization.yaml"; then
                 echo "Expected empty Component render: ${dir}"
@@ -153,10 +148,7 @@ jobs:
           done
 
       - name: Generate CRD schemas
-        # Without these, every CR whose CRD the datree catalog does not carry is
-        # silently skipped by -ignore-missing-schemas below (kopiur, longhorn,
-        # temporal, holmesgpt...). Schemas come from the same rendered
-        # stream, so they track the chart versions in git automatically.
+        # Generate schemas from deployed CRDs so -ignore-missing-schemas cannot silently skip their custom resources.
         run: |
           set -euo pipefail
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
@@ -166,9 +158,7 @@ jobs:
       - name: Validate Kubernetes schemas
         run: |
           set -euo pipefail
-          # Filter a known kubeconform false positive:
-          # - Gitea Helm-rendered Service gitea-http: targetPort triggers a
-          #   oneOf ambiguity in the Kubernetes Service schema.
+          # Gitea targetPort triggers a known oneOf ambiguity in the Service schema.
           csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null
           : > /tmp/filtered-manifests.yaml
           for f in /tmp/doc-*; do
@@ -214,13 +204,7 @@ jobs:
           ' /tmp/crd-canary.json
 
       - name: Validate kopiur backup coverage
-        # Replaces the retired pvc-plumber validate-restore-contract.sh and the
-        # backup-exempt-contract job. Runs on the RENDERED stream so Helm-rendered
-        # PVCs (gitea, tubesync) are covered. Hard-fails when a backed-up PVC is
-        # missing its dataSourceRef (recreates EMPTY in DR) or a backed-up namespace
-        # lacks the kopiur.home-operations.com/repo label (repo creds won't fan in);
-        # warns on missing mover securityContext, uncovered+unexempt PVCs, and
-        # backup-exempt PVCs missing the qualified reason annotation.
+        # Validate rendered PVCs, including Helm output, for restore-before-bind and backup credential coverage.
         run: |
           set -euo pipefail
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
@@ -250,19 +234,10 @@ jobs:
           python3 scripts/validate-monitoring-contract.py /tmp/all-manifests.yaml \
             --argocd-capabilities /tmp/argocd-with-monitoring.yaml
 
-  # backup-exempt-contract job RETIRED 2026-06-27 (pvc-plumber removed). It
-  # hard-failed on the bare `backup-exempt-reason` key because pvc-plumber denied
-  # such PVCs on CREATE; with pvc-plumber gone, nothing enforces the key, so the
-  # check is folded into validate-kopiur-coverage.py as a WARNING (grep-consistency
-  # only). The coverage check runs as a step in the render-and-schema job above.
 
   otel-collector-validate:
     name: OpenTelemetry Collector Config Validation
-    # Catches the class of bug that caused the 2026-04-20 9-hour
-    # root-sync jam: a pipeline referencing a receiver that was removed.
-    # Runs `otelcol validate` on each OpenTelemetryCollector's rendered
-    # config so pipeline-receiver-exporter mismatches are rejected at
-    # PR time instead of crashlooping in-cluster.
+    # Validate rendered Collector pipelines before a missing receiver can crash-loop the workload.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -283,11 +258,7 @@ jobs:
 
   renovate-config-validate:
     name: Renovate Config Validation
-    # Catches the class of bug that opened issue #1284 on 2026-05-10:
-    # `packageRules` cannot combine `matchUpdateTypes` and `versioning`,
-    # but the validator only flags it at runtime — Renovate stops opening
-    # PRs cluster-wide until fixed. Run validator on every PR that touches
-    # .github/renovate.json5 so the bad rule never reaches main.
+    # Invalid Renovate rules stop dependency PRs repository-wide.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -296,18 +267,13 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          # Renovate >=41 requires Node >=22 and dropped Node 20. On Node 20,
-          # `npx renovate` silently resolves to an old renovate major that
-          # still uses `fileMatch`, so it rejects this repo's modern
-          # `managerFilePatterns` config and fails EVERY renovate PR.
+          # Node 20 resolves an older Renovate that rejects managerFilePatterns; use Node 22 or newer.
           node-version: '22'
 
       - name: Validate Renovate config
         run: |
           set -euo pipefail
-          # The validator looks at the filename to decide global vs repo
-          # config; .github/renovate.json5 is treated as global, which
-          # surfaces the same packageRules / managers errors we care about.
+          # The validator treats this filename as global config; it still validates the repository rules.
           npx --yes --package=renovate renovate-config-validator --strict .github/renovate.json5
 
   shellcheck:

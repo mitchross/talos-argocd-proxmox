@@ -1,7 +1,4 @@
-# YAML-mode dashboard, wired via lovelace.dashboards.homelab-power in configuration.yaml.
-# Cost = the all-in TOU rate from sensor.current_electricity_rate; long-term trends come from HA LTS.
-# Layout: `sections` views, one question per section, most important top-left. The built-in
-# Energy dashboard is the per-day ledger; this page is "what is it costing me, live".
+# YAML dashboard registered in configuration.yaml; uses current_electricity_rate and HA long-term statistics.
 title: Homelab Power
 views:
   # ───────────────────────── Overview: the money question ─────────────────────────

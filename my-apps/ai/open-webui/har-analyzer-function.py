@@ -86,7 +86,6 @@ class Filter:
         har_data = None
         har_filename = ""
 
-        # Check attached files for .har
         for f in files:
             name = f.get("name", "") or f.get("filename", "")
             if name.lower().endswith(".har"):
@@ -99,7 +98,6 @@ class Filter:
                     except json.JSONDecodeError:
                         pass
 
-        # Check if message content itself is pasted HAR JSON
         if not har_data and content.strip().startswith('{"log"'):
             try:
                 har_data = json.loads(content)
@@ -117,10 +115,8 @@ class Filter:
         if not entries:
             return body
 
-        # Build the forensic report
         report = self._build_report(entries)
 
-        # User's question (or default)
         user_question = content.strip() if content.strip() and har_filename != "pasted-har" else ""
         if not user_question:
             user_question = "Perform a thorough forensic analysis of this HAR traffic capture."
@@ -142,7 +138,6 @@ class Filter:
             ]
         else:
             last_message["content"] = new_content
-        # Remove HAR from file list (already processed)
         last_message["files"] = [
             f for f in files
             if not (f.get("name", "") or f.get("filename", "")).lower().endswith(".har")
@@ -150,9 +145,7 @@ class Filter:
 
         return body
 
-    # =========================================================================
     # Report Builder
-    # =========================================================================
 
     def _build_report(self, entries: list) -> str:
         first_domain = urlparse(entries[0].get("request", {}).get("url", "")).netloc if entries else ""
@@ -178,9 +171,7 @@ class Filter:
 
         return report
 
-    # =========================================================================
     # Section: Overview
-    # =========================================================================
 
     def _overview(self, entries: list, first_domain: str) -> str:
         status_counts = Counter()
@@ -239,9 +230,7 @@ class Filter:
 
         return "\n".join(lines)
 
-    # =========================================================================
     # Section: Domain Table
-    # =========================================================================
 
     def _domain_table(self, entries: list, first_domain: str) -> str:
         domains = defaultdict(lambda: {"count": 0, "size": 0, "time": 0, "errors": 0})
@@ -273,9 +262,7 @@ class Filter:
             )
         return "\n".join(lines)
 
-    # =========================================================================
     # Section: Cookie & Session
-    # =========================================================================
 
     def _cookie_analysis(self, entries: list) -> str:
         sent = defaultdict(lambda: {"domains": set(), "values": set(), "count": 0})
@@ -325,9 +312,7 @@ class Filter:
 
         return "\n".join(lines)
 
-    # =========================================================================
     # Section: Security
-    # =========================================================================
 
     def _security_findings(self, entries: list) -> str:
         lines = ["## Security Findings"]
@@ -379,9 +364,7 @@ class Filter:
         lines.extend(findings[:60] if findings else ["No significant security issues detected."])
         return "\n".join(lines)
 
-    # =========================================================================
     # Section: Performance
-    # =========================================================================
 
     def _performance(self, entries: list) -> str:
         lines = ["## Performance"]
@@ -420,9 +403,7 @@ class Filter:
 
         return "\n".join(lines)
 
-    # =========================================================================
     # Section: API Surface
-    # =========================================================================
 
     def _api_surface(self, entries: list) -> str:
         endpoints = defaultdict(lambda: {"methods": set(), "statuses": set(), "count": 0})
@@ -449,9 +430,7 @@ class Filter:
             lines.append(f"- [{m}] {ep} — {info['count']}x (statuses: {s})")
         return "\n".join(lines)
 
-    # =========================================================================
     # Section: Redirects
-    # =========================================================================
 
     def _redirects(self, entries: list) -> str:
         redir = []
@@ -468,9 +447,7 @@ class Filter:
         lines.extend(redir[:25])
         return "\n".join(lines)
 
-    # =========================================================================
     # Section: Detailed Entries
-    # =========================================================================
 
     def _detailed_entries(self, entries: list, first_domain: str, priority: set) -> str:
         """Full entry data with headers, cookies, bodies. Priority-sorted."""
@@ -563,9 +540,7 @@ class Filter:
 
         return "\n".join(lines)
 
-    # =========================================================================
     # Helpers
-    # =========================================================================
 
     def _categorize(self, domain: str) -> str:
         d = domain.lower()

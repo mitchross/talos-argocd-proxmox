@@ -46,9 +46,7 @@ class Filter:
         if not usage:
             return event
 
-        # vLLM --enable-force-include-usage puts RUNNING usage on every delta
-        # chunk; Open WebUI's merge_usage sums those. Keep only the final
-        # usage-only chunk (empty choices) and drop the rest.
+        # vLLM emits cumulative usage on each delta, but WebUI sums it; keep only the final usage-only chunk.
         if event.get("choices"):
             event.pop("usage", None)
             return event

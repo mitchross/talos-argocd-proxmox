@@ -10,13 +10,11 @@ metadata:
   annotations:
     # Prometheus monitoring
     prometheus.io/scrape: "false"
-    # Session affinity for better UX
     service.kubernetes.io/topology-mode: Auto
 spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: home-assistant
-  # Session affinity for consistent user experience
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:

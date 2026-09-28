@@ -113,7 +113,6 @@ async def load_function(admin_id, spec):
 
 
 async def main():
-    # Find first admin user
     users_data = await _maybe_await(Users.get_users())
     admin_id = None
     for u in _extract_users_list(users_data):

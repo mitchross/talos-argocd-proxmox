@@ -5,8 +5,7 @@ namespace: keda
 resources:
   - namespace.yaml
 
-# KEDA v2.19.0 (Feb 2026). Ships with the Temporal external scaler out of
-# the box — no addon needed. Chart repo is the kedacore github.io index.
+# KEDA includes the Temporal external scaler; no separate addon is needed.
 helmCharts:
   - name: keda
     repo: https://kedacore.github.io/charts

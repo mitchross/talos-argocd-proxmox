@@ -25,10 +25,7 @@ link_token = false
 
 [botdetection.ip_lists]
 
-# In the limiter, the ip_lists method has priority over all other methods -> if
-# an IP is in the pass_ip list, it has unrestricted access and it is also not
-# checked if e.g. the "user agent" suggests a bot (e.g. curl).
-#TEST
+# pass_ip bypasses all limiter checks, including bot user-agent checks.
 
 block_ip = [
 ]

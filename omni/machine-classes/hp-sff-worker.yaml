@@ -27,10 +27,8 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # Single 931 GiB PNY CS900 SSD shared with Proxmox (root 96 + swap 8 GiB).
-      # The stock local-lvm thin pool was removed and the VG exposed as thick-LVM
-      # storage `hp-prodesk-vmstore`; 128 + 690 leaves ~8 GiB of VG headroom.
-      # Do not use LVM-thin: thin metadata commits collapse fsync performance.
+      # hp-prodesk-vmstore shares the SSD with Proxmox; leave VG headroom after allocating both VM disks.
+      # Keep thick LVM: thin metadata commits reduce fsync performance.
       additional_disks:
         - storage_selector: name == "hp-prodesk-vmstore"
           disk_size: 690

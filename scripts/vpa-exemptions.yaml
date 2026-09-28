@@ -1,6 +1,4 @@
-# Machine-readable exceptions consumed by validate-vpa-policies.py.
-# An exception is a reviewed decision, not a way to silence a warning: every
-# entry requires a reason and stale exact-name entries fail validation.
+# Reviewed VPA exceptions require a reason; stale exact-name entries fail validation.
 coverageExemptions:
   - apiVersion: apps/v1
     kind: Deployment

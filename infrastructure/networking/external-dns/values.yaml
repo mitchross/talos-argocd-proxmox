@@ -1,20 +1,15 @@
 # ExternalDNS Helm Values for Cloudflare Integration
 # Automatically manages DNS records for HTTPRoutes with external-dns annotations
 
-# Provider Configuration
 provider:
   name: cloudflare
 
-# Cloudflare-specific settings
 cloudflare:
   proxied: true # Enable Cloudflare proxy for all records
-  # API token will be provided via secret
 
-# Source Configuration - Watch Gateway API HTTPRoutes
 sources:
   - gateway-httproute # Watch HTTPRoute resources
 
-# Domain filter - only manage vanillax.me domain
 domainFilters:
   - vanillax.me
 
@@ -35,11 +30,9 @@ extraArgs:
   - --gateway-label-filter=external-dns-gateway=gateway-external
   - --cloudflare-proxied  # Enable Cloudflare proxy for all records
 
-# Logging
 logLevel: info
 logFormat: text
 
-# Resource Management (VPA-optimized 2026-02-28)
 resources:
   requests:
     cpu: 128m
@@ -47,7 +40,6 @@ resources:
   limits:
     memory: 384Mi
 
-# Security Context
 securityContext:
   runAsNonRoot: true
   runAsUser: 65534
@@ -58,7 +50,6 @@ securityContext:
   seccompProfile:
     type: RuntimeDefault
 
-# Pod Security Context
 podSecurityContext:
   fsGroup: 65534
   runAsNonRoot: true
@@ -66,7 +57,6 @@ podSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
-# Environment variables for Cloudflare API token
 env:
   - name: CF_API_TOKEN
     valueFrom:
@@ -74,10 +64,8 @@ env:
         name: cloudflare-api-token
         key: api-token
 
-# Sync interval - how often to check for changes
 interval: 1m
 
-# Trigger loop on create - faster propagation for new records
 triggerLoopOnEvent: true
 
 image:

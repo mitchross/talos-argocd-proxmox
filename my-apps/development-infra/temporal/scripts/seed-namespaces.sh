@@ -1,9 +1,5 @@
 #!/bin/sh
-# Seeds Temporal user namespaces. Run as a PostSync Job after the
-# Temporal frontend Deployment is ready. Idempotent — safe to re-run on
-# every deploy; existing namespaces are skipped.
-#
-# Add more namespaces to the loop below as the app fleet grows.
+# PostSync seeds missing Temporal namespaces after the frontend is ready; safe to rerun.
 set -eu
 
 FRONTEND="${FRONTEND:-temporal-frontend:7233}"
@@ -15,9 +11,7 @@ temporal_rpc() {
   timeout "$SEED_RPC_TIMEOUT_SECONDS" temporal --address "$FRONTEND" "$@"
 }
 
-# Wait for the frontend to accept RPCs. After a cluster nuke or fresh
-# CNPG bootstrap this can take a minute (Temporal has to finish SQL
-# schema bootstrap before it starts serving). 20 retries × 10s = 200s.
+# Wait for schema initialization before sending namespace RPCs.
 echo "[seed] waiting for frontend at $FRONTEND..."
 frontend_ready=0
 for i in $(seq 1 "$SEED_RETRIES"); do
@@ -35,10 +29,7 @@ if [ "$frontend_ready" != 1 ]; then
   exit 1
 fi
 
-# Namespaces to ensure exist. Listed here instead of parameterized via
-# env var so a grep in the repo finds every namespace we use.
-# `radar-ng` is isolated from unrelated application histories and task queues;
-# `default` remains for workloads that have not migrated yet.
+# Keep radar-ng histories and task queues isolated; default serves workloads not yet migrated.
 for NS in default radar-ng; do
   echo "[seed] ensuring namespace: $NS"
   if temporal_rpc operator namespace describe -n "$NS" >/dev/null 2>&1; then

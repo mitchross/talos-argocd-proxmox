@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
-# Live view for the active Baseline A run. Reads ONLY the collector's files —
-# it opens no extra connections to vLLM or the GPUs, so watching the run costs
-# the run nothing.
-#
-#   TIME | RUNNING | WAITING | KV% | RESIDENT | GPU0/1 VRAM | GPU0/1 UTIL | GPU0/1 W | PREEMPT
-#
-# RESIDENT = kv_cache_usage_perc x kv_cache_size_tokens, i.e. how much real
-# context is resident across all active requests. This is the number the whole
-# single-vs-dual decision turns on, so it is on screen the entire run.
+# Read the collector's files only; watching adds no GPU/server probes.
+# Resident tokens = KV usage fraction × cache capacity across active requests.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,9 +25,7 @@ while true; do
   KV=$(echo "$TICK"   | awk -F' ' '/^vllm:kv_cache_usage_perc/{print $2}' | head -1)
   PRE=$(echo "$TICK"  | awk -F' ' '/^vllm:num_preemptions_total/{print $2}' | head -1)
 
-  # Latest line per GPU index. Must match FIELD 2 exactly: a substring grep for
-  # ", 0," also hits the utilization/temperature columns, which silently made
-  # both columns show the same card.
+  # Match GPU index in field 2; substring matches can mistake utilization or temperature for the card index.
   G0=$(awk -F', *' '$2=="0"' "$RUN/gpu.csv" 2>/dev/null | tail -1)
   G1=$(awk -F', *' '$2=="1"' "$RUN/gpu.csv" 2>/dev/null | tail -1)
   g0m=$(echo "$G0" | awk -F', ' '{print $3}'); g0u=$(echo "$G0" | awk -F', ' '{print $5}'); g0w=$(echo "$G0" | awk -F', ' '{print $7}')

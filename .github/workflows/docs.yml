@@ -73,10 +73,7 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Build site
-        # --strict since 2026-07-01: the cross-repo links that used to warn
-        # were converted to absolute GitHub URLs, so any new warning is a
-        # real regression (broken link/nav/anchor — see mkdocs.yml
-        # `validation:`) and should block the deploy.
+        # Treat broken documentation links and navigation as build failures.
         run: mkdocs build --strict
 
       - name: Upload Pages artifact

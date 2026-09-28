@@ -1,4 +1,3 @@
-# PV definition removed
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

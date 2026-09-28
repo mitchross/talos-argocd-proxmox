@@ -30,11 +30,7 @@ if [ "$DOMAIN" != "$DOMAIN_NAME" ]; then
     exit 0
 fi
 
-# --env-file is required: docker-compose.yml interpolates ${VARS} from omni.env.
-# Without it Compose substitutes empty strings and fails ("invalid spec: :/_out/etcd").
-#
-# Use `up -d --force-recreate` rather than `restart`: the renewed cert is a new
-# inode behind the live/ symlink, and a plain restart may keep the stale one.
+# --env-file supplies Compose variables; force-recreate follows the renewed certificate inode behind the symlink.
 /usr/bin/docker compose \
     -f "$COMPOSE_DIR/docker-compose.yml" \
     --project-directory "$COMPOSE_DIR" \

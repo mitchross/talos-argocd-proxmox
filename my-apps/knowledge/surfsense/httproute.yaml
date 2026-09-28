@@ -24,9 +24,7 @@ spec:
         - name: frontend
           port: 3000
 
-    # FastAPI owns auth, user profile, REST API, and the Zero auth-context
-    # endpoint. /users/me and /zero/context are required by the dashboard after
-    # login; sending either to Next.js/zero-cache produces the observed 404s.
+    # Route /users/me and /zero/context to FastAPI; sending them to Next.js or zero-cache breaks dashboard login.
     - matches:
         - path: {type: PathPrefix, value: /auth}
         - path: {type: PathPrefix, value: /users}

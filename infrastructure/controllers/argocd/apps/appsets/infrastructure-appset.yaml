@@ -8,19 +8,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
-  # Render each generated Application with Go templates. In an expression such
-  # as `{{ .path.basename }}`, the leading `.` means "the current generator
-  # result" (the template context). The Git generator supplies its matched
-  # directory as the `path` object: `.path.basename` is the final directory
-  # name, while `.path.path` is the complete repository-relative path.
-  # Example: `infrastructure/networking/gateway` produces
-  # `.path.basename = gateway` and `.path.path = infrastructure/networking/gateway`,
-  # so Argo creates the `infrastructure-gateway` Application, targets namespace
-  # `gateway`, and renders that folder. Generated Application names are always
-  # domain-prefixed so the Argo UI never relies on project/path inspection to
-  # distinguish similarly named components.
-  # `missingkey=error` stops generation when a field is absent instead of
-  # silently creating an Application with an empty name, path, or namespace.
+  # The Git generator supplies .path.basename for the app name and .path.path for its manifest directory.
+  # Domain prefixes distinguish app names; missingkey=error rejects incomplete generator results.
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
@@ -33,30 +22,19 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      # cert-manager moved to a standalone Wave-1 core-dependency app
-      # (core-dependencies/cert-manager-app.yaml) — the Wave-4 appset placement
-      # caused a circular deadlock with a Wave-3 webhook-cert consumer (the
-      # since-retired cnpg-barman-plugin). Do NOT re-add it here or it will
-      # be double-managed.
+      # cert-manager has a wave-1 Application; listing it here would double-manage it.
       - path: infrastructure/networking/external-dns
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/gateway
       - path: infrastructure/gpu/gpu-priority-classes
-      # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
-      # (in nvidia-gpu-operator) now owns the device plugin on top of the
-      # CDI-based driver/toolkit shipped by Talos system extensions.
+      # The gpu-operator chart owns the device plugin; Talos extensions supply the CDI driver/toolkit.
       - path: infrastructure/gpu/nvidia-gpu-operator
       - path: infrastructure/gpu/intel-gpu-plugin
       - path: infrastructure/scheduling/node-feature-discovery
       - path: infrastructure/scheduling/metrics-server
       - path: infrastructure/scheduling/descheduler
-      # NOTE: keda and temporal-worker-controller are NOT listed here.
-      # They have dedicated standalone Applications at Wave 4
-      # (keda-app.yaml, temporal-worker-controller-app.yaml) because
-      # adding them via this AppSet hit a repo-server render-cache loop
-      # where Argo kept reverting the new generator paths (see git log
-      # around 2026-04-20). Standalone Applications dodge that entirely.
-      # OTEL has a standalone wave-6 Application so its health cannot gate workload discovery.
+      # KEDA and Temporal use standalone wave-4 apps to avoid an AppSet render-cache loop.
+      # OTEL has a wave-6 app so Collector health cannot gate workload discovery.
       - path: infrastructure/platform/container-registry
       - path: infrastructure/storage/csi-driver-nfs
       - path: infrastructure/storage/csi-driver-smb
@@ -66,10 +44,7 @@ spec:
       - path: infrastructure/storage/local-storage
       - path: infrastructure/storage/talos-fstrim
       - path: infrastructure/storage/longhorn-selinux
-      # NOTE: longhorn and snapshot-controller are NOT listed here.
-      # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
-      # snapshot-controller-app.yaml) so storage is healthy before the
-      # kopiur operator (Wave 2).
+      # Longhorn and snapshot-controller have wave-1 apps so storage precedes the wave-2 kopiur operator.
       - path: infrastructure/backup/rustfs-lifecycle
   template:
     metadata:
@@ -100,10 +75,7 @@ spec:
         - RespectIgnoreDifferences=true
         - FailOnSharedResource=true
         retry:
-          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
-          # PreSync hook can wedge the entire app-of-apps behind a stale
-          # manifest snapshot (incidents 2026-04-20, 2026-05-01). selfHeal: true
-          # kicks a fresh sync against current git on the next reconcile.
+          # Bound retries so stuck hooks cannot hold the app tree on stale manifests indefinitely.
           limit: 10
           backoff:
             duration: 10s

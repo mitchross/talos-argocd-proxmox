@@ -6,6 +6,5 @@ metadata:
     # The seed writes root-owned config.json with mode 0600.
     kopiur.home-operations.com/privileged-movers: "true"
   labels:
-    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    # The namespace label enables kopiur repository access and ExternalSecret credential fanout.
     kopiur.home-operations.com/repo: cluster-kopia

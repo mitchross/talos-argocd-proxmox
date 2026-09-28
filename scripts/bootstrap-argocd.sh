@@ -1,16 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bootstrap ArgoCD Script
-# This script works around kustomize --enable-helm compatibility issues
-# by using Helm directly, then letting ArgoCD self-manage
-#
-# Prerequisites:
-#   1. Gateway API CRDs must be applied
-#   2. Cilium must be installed (provides CNI networking)
-#   3. 1Password secrets must be pre-seeded
-#
-# See README.md for the full bootstrap sequence.
+# Bootstrap with Helm, then hand ownership to Argo CD.
+# Requires Gateway API CRDs, Cilium, and seeded 1Password secrets; see README.md for ordering.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
@@ -78,12 +70,7 @@ echo ""
 echo "📦 Creating argocd namespace..."
 kubectl apply -f "$ROOT_DIR/infrastructure/controllers/argocd/ns.yaml"
 
-# Step 1.5: Ensure the argocd-redis auth secret exists.
-# values.yaml disables the chart's redis-secret-init hook (it assumes the
-# Secret already exists from a prior install). On a FRESH cluster that Secret
-# is absent, so redis crashes with `secret "argocd-redis" not found` and the
-# whole install wedges. Create it idempotently here so a destroy/recreate
-# bootstrap runs unattended. (Bit us on the 2026-06-01 nuke/recreate.)
+# Seed argocd-redis on fresh clusters because values.yaml disables the chart's secret-init hook.
 echo ""
 echo "🔑 Ensuring argocd-redis auth secret exists..."
 if ! kubectl get secret argocd-redis -n argocd > /dev/null 2>&1; then
@@ -106,11 +93,8 @@ if ! helm upgrade --install argocd argo-cd \
   --wait \
   --timeout 10m \
   --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'; then
-  # On a RE-RUN over an already-running ArgoCD, helm can fail with a
-  # server-side-apply conflict on argocd-secret (.data.admin.passwordMtime is
-  # owned by argocd-server once the admin password is used). That's benign:
-  # ArgoCD self-management (root.yaml below) owns argocd-secret via
-  # ServerSideApply=true. Only abort if ArgoCD isn't actually running.
+  # A rerun may hit SSA conflicts on argocd-secret after Argo takes ownership.
+  # Continue only if Argo is already running; self-management will reconcile the Secret.
   if kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=10s > /dev/null 2>&1; then
     echo "⚠️  Helm reported a conflict, but argocd-server is already Available."
     echo "    This is expected on a re-run — continuing to self-management (root.yaml)."

@@ -25,9 +25,7 @@ spec:
       containers:
         - name: mcp-grafana
           image: grafana/mcp-grafana:1.6.0@sha256:c668a6cc87e7b2b69a0e414bc2c5cf12b37dcca02809df500842b690d592e91f
-          # The image bakes `--transport sse --address 0.0.0.0:8000` into its
-          # ENTRYPOINT, so `args` alone would append a second conflicting
-          # --transport. Override command to own the whole argv.
+          # Override command: the image ENTRYPOINT already sets --transport sse, so args alone adds conflicting flags.
           command: ["/app/mcp-grafana"]
           args:
             - --transport=streamable-http

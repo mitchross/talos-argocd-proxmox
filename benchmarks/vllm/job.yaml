@@ -1,17 +1,5 @@
-# vLLM throughput benchmark — MANUAL apply only.
-#
-# This lives under repo-root benchmarks/ on purpose: it is OUTSIDE every ArgoCD
-# ApplicationSet scan path (the my-apps/*/* AppSet only discovers my-apps/<cat>/<app>/).
-# ArgoCD will never see or reconcile it, so there are intentionally NO
-# `argocd.argoproj.io/hook` annotations here (those only matter for ArgoCD-managed Jobs).
-#
-# It runs `vllm bench serve` against the in-cluster vLLM OpenAI server at several
-# concurrency levels, writes one JSON per level to /results, and prints a
-# consolidated summary table to the Job logs.
-#
-# Apply:   kubectl apply -k benchmarks/vllm
-# Logs:    kubectl logs -n vllm job/vllm-benchmark -f
-# Delete:  kubectl delete -k benchmarks/vllm
+# Manual benchmark outside Argo discovery: kubectl apply -k benchmarks/vllm; clean up with kubectl delete -k benchmarks/vllm.
+# Results go to /results; follow progress with kubectl logs -n vllm job/vllm-benchmark -f.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -79,9 +67,7 @@ spec:
               value: "/tmp"
             - name: HF_HOME
               value: "/tmp/hf"
-            # runAsUser 1000 has no /etc/passwd entry in the image; torch._dynamo calls
-            # getpass.getuser() at import. Python checks USER/LOGNAME env BEFORE the passwd
-            # DB, so setting these avoids `KeyError: getpwuid(): uid not found: 1000`.
+            # UID 1000 has no passwd entry; USER/LOGNAME let torch getpass.getuser() resolve it.
             - name: USER
               value: "bench"
             - name: LOGNAME
@@ -106,9 +92,7 @@ spec:
               for C in ${CONCURRENCIES}; do
                 echo
                 echo "########## max-concurrency = ${C} ##########"
-                # request-rate inf + max-concurrency = closed-loop: fire the next request
-                # the instant a slot frees, capped at C in flight. --ignore-eos forces the
-                # full OUTPUT_LEN tokens so token/sec is measured on a fixed work amount.
+                # Infinite request rate fills each available concurrency slot; ignore-eos keeps output work fixed.
                 vllm bench serve \
                   --backend openai-chat \
                   --base-url "${VLLM_BASE_URL}" \

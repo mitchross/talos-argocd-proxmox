@@ -19,43 +19,17 @@ metadata:
 spec:
   matchlabels: []
   autoprovision:
-    # WARNING: provider ID "proxmox" is NOT registered on Omni (was the retired
-    # dl360g9 host). This class cannot provision until repointed to
-    # proxmox-dell or proxmox-threadripper. Only the threadripper-*/dell-worker
-    # classes are usable as of 2026-08-13.
+    # The retired provider ID proxmox cannot provision; select a registered provider before using this class.
     providerid: proxmox
     kernelargs: []
     metavalues: []
     providerdata: |
       cores: 32
       sockets: 1
-      # Phase 2 capacity bump 2026-05-10: cores 16 -> 32. Cluster CPU
-      # requests sat at 91-97% per worker (actual usage 27-39%) — request-
-      # bound, not capacity-bound. radar-ng worker rollout (3 replicas at
-      # 2 CPU each, on top of f547 sunset replicas at 1.5 CPU each) had no
-      # room. Doubling vCPUs gives ~32 cores headroom cluster-wide and
-      # restores 1.5-2x overcommit margin without provisioning a new node.
-      # NOTE: existing VMs are NOT auto-resized by the Proxmox provider.
-      # Cold-resize each worker in Proxmox (qm shutdown + qm set --cores
-      # 32 + qm start) one at a time after omnictl apply.
-      #
-      # Phase 1 right-size attempt (96G -> 64G) was REVERTED on 2026-05-10:
-      # observed Proxmox-level memory at ~96% on worker-48ddwn (mostly
-      # evictable page cache, not pressure) but k8s-tracked working set
-      # already sits at 47% (~45 GiB) on the same node. Dropping VM
-      # allocation to 64 GiB would leave ~19 GiB for cache + buffers, too
-      # tight given current pod spread. Holding at 96 GiB matches what
-      # existing VMs already have provisioned — no risky downsize during
-      # the cores-bump.
+      # Provider changes do not resize existing VMs; resize those separately in Proxmox.
       memory: 98304
-      # Single 800G disk — V1 (pre-V2-experiment) layout restored 2026-06-12.
-      # The V2 rebuild split this into 96G OS + 704G raw block device for SPDK;
-      # the V2 engine failed under full-DR load (open Longhorn bugs #13315/
-      # #13314: interrupted rebuilds poison replica metadata) and the cluster
-      # returned to the V1 engine, which stores data as files on the Talos
-      # EPHEMERAL partition (/var/local/longhorn bind-mounted to
-      # /var/lib/longhorn by the cluster template). One disk = Talos system +
-      # images + pod ephemeral + Longhorn data, exactly as it ran pre-V2.
+      # V1 shares one disk for Talos, images, ephemeral pod data, and Longhorn replicas.
+      # The cluster template binds /var/local/longhorn to /var/lib/longhorn.
       disk_size: 800
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"

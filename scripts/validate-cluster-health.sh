@@ -54,9 +54,7 @@ run() { # run "label" -- cmd args...
 
 count_lines() { awk 'NR>0{c++} END{print c+0}'; }
 
-# ─────────────────────────────────────────────
 # Smoke summary (top of report)
-# ─────────────────────────────────────────────
 hdr "SMOKE SUMMARY"
 
 NOT_READY=$(kubectl get nodes --no-headers 2>/dev/null \
@@ -103,9 +101,7 @@ if kubectl get volumes.longhorn.io -n longhorn-system >/dev/null 2>&1; then
   fi
 fi
 
-# ─────────────────────────────────────────────
 # Node detail
-# ─────────────────────────────────────────────
 run "Nodes (wide)" -- kubectl get nodes -o wide
 
 run "Allocatable per node" -- bash -c '
@@ -116,9 +112,7 @@ run "Allocatable per node" -- bash -c '
 
 run "kubectl top nodes" -- kubectl top nodes --use-protocol-buffers=false
 
-# ─────────────────────────────────────────────
 # Top consumers
-# ─────────────────────────────────────────────
 run "Top 30 pods by memory (cluster-wide)" -- bash -c '
   kubectl top pods -A --use-protocol-buffers=false --sort-by=memory 2>/dev/null \
     | head -31
@@ -134,9 +128,7 @@ if [[ -n "$NODE_FILTER" ]]; then
     --field-selector spec.nodeName="$NODE_FILTER" -o wide
 fi
 
-# ─────────────────────────────────────────────
 # Storage / replication
-# ─────────────────────────────────────────────
 run "Longhorn volume summary (state x robustness)" -- bash -c '
   kubectl get volumes.longhorn.io -n longhorn-system -o json 2>/dev/null \
     | jq -r ".items[] | [.status.state, .status.robustness] | @tsv" \
@@ -153,9 +145,7 @@ run "kopiur snapshots (latest per source)" -- bash -c '
     || echo "(kopiur CRDs not available)"
 '
 
-# ─────────────────────────────────────────────
 # GPU
-# ─────────────────────────────────────────────
 GPU_NODE=$(kubectl get nodes -l gpu-worker=true -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
 if [[ -n "$GPU_NODE" ]]; then
   run "GPU node ($GPU_NODE) describe — Allocated resources" -- bash -c "
@@ -180,9 +170,7 @@ if [[ -n "$GPU_NODE" ]]; then
   '
 fi
 
-# ─────────────────────────────────────────────
 # Recent warning events
-# ─────────────────────────────────────────────
 run "Recent Warning events (last 60)" -- bash -c '
   kubectl get events -A --sort-by=.lastTimestamp \
     --field-selector type=Warning 2>/dev/null \
