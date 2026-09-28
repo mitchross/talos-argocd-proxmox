@@ -46,7 +46,7 @@ namespace copies. [Open the full-size credential-flow diagram](assets/secret-fan
 One credential, stored once, materialized automatically into every namespace
 that opts in. Apps never carry S3 config.
 
-## The pieces (all in `infrastructure/controllers/kopiur/`)
+## The pieces (all in `infrastructure/backup/kopiur/`)
 
 | File | Resource | What it sets up |
 |---|---|---|
@@ -99,7 +99,7 @@ admin-only root keys: [credential runbook](domains/rustfs/credential-runbook.md)
 
 ### 3. The repository CR (in Git, already done)
 
-`infrastructure/controllers/kopiur/clusterrepository.yaml` declares the repo as a
+`infrastructure/backup/kopiur/clusterrepository.yaml` declares the repo as a
 first-class CR. The shape that matters:
 
 ```yaml
@@ -140,7 +140,7 @@ Notes that bite if you get them wrong:
 
 ### 4. The credential fan-out (in Git, already done)
 
-`infrastructure/controllers/kopiur/externalsecret.yaml` is ONE
+`infrastructure/backup/kopiur/externalsecret.yaml` is ONE
 `ClusterExternalSecret kopiur-rustfs` that materializes the `kopiur-rustfs`
 Secret into every namespace labeled `kopiur.home-operations.com/repo:
 cluster-kopia` (the consumer namespaces **and** `kopiur-system` itself, which
@@ -167,7 +167,7 @@ Label the namespace, get the Secret. No per-app credential plumbing, ever.
 
 ### 5. The snapshot class
 
-`infrastructure/controllers/kopiur/volumesnapshotclass.yaml` ships
+`infrastructure/backup/kopiur/volumesnapshotclass.yaml` ships
 `VolumeSnapshotClass longhorn-snapclass` (driver `driver.longhorn.io`, the
 cluster-default snapshot class). kopiur's `copyMethod: Snapshot` references it by
 name, so every backup depends on it.

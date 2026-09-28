@@ -86,11 +86,16 @@ or external automation to write application manifests.
 ## Directory Structure
 
 ```
-infrastructure/          # Core cluster components (Wave 4)
-├── controllers/        # Operators and system controllers
-├── database/          # Database operators and instances
-├── networking/        # Cilium, Gateway API, DNS
-└── storage/           # Longhorn, NFS, SMB, Local storage
+infrastructure/          # Core cluster components (waves 0-4)
+├── controllers/       # ArgoCD (self-managed) + OpenTelemetry operator
+├── secrets/           # 1Password Connect, External Secrets
+├── networking/        # Cilium, Gateway API, cert-manager, external-dns, cloudflared
+├── storage/           # Longhorn, NFS/SMB/TrueNAS CSI, local storage, snapshots
+├── backup/            # kopiur operator + repo config, RustFS lifecycle
+├── gpu/               # NVIDIA GPU operator, Intel GPU plugin, GPU priority classes
+├── scheduling/        # KEDA, VPA, descheduler, metrics-server, node-feature-discovery
+├── platform/          # Temporal Worker Controller, container registry
+└── database/          # Redis + shared DB support (Database AppSet)
 
 monitoring/             # Observability stack (Wave 5): metrics/, logs/, tracing/
 my-apps/                # User applications (Wave 6)
@@ -140,6 +145,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Size PVCs to actual use plus headroom — Longhorn books the full request, and oversized volumes filled the backup-clone disk and hung backups
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
+- Move app folders and change the ApplicationSet paths that match them in **separate PRs** (add new paths → move → drop old paths). One commit doing both let the monitoring AppSet delete its apps with their PVCs (2026-09-28). See `docs/domains/argocd/entrypoints.md`
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
 - Use **vLLM** (`qwen3.8-27b`) as the only GPU inference backend — **never ollama**
 - Use sync waves when adding infrastructure components
@@ -147,7 +153,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
 - After adding a backed-up PVC, verify the in-namespace `kopiur-rustfs` Secret (fanned in by the ClusterExternalSecret) and the kopiur CRs: `kubectl -n <ns> get secret kopiur-rustfs; kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (the `Snapshot` should reach `Succeeded` with non-zero files)
 - The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`.
-- Keep the FULL bucket lifecycle policy in `infrastructure/storage/rustfs-lifecycle/lifecycle.json` when editing it — PUT replaces the whole RustFS lifecycle config. (The retired CNPG Barman lineages are all listed there and aging out.)
+- Keep the FULL bucket lifecycle policy in `infrastructure/backup/rustfs-lifecycle/lifecycle.json` when editing it — PUT replaces the whole RustFS lifecycle config. (The retired CNPG Barman lineages are all listed there and aging out.)
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 - Add an app-owned `vpa.yaml` for new long-running workloads, using
   `InPlaceOrRecreate`, `minReplicas: 1`, and `RequestsOnly`; record intentional
@@ -217,12 +223,12 @@ Codex uses the same procedures through `.agents/skills/` (see `AGENTS.md`).
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup (kopiur)** | `my-apps/ai/open-webui/` (component + `kopiur/storage.yaml` stub + PVC `dataSourceRef`) |
 | **kopiur backup component (shared)** | `my-apps/common/kopiur-backup/` |
-| **kopiur repo + cred fanout + snapclass** | `infrastructure/controllers/kopiur/` |
+| **kopiur repo + cred fanout + snapclass** | `infrastructure/backup/kopiur/` |
 | **Daemon-drop mover uid (999:568)** | `my-apps/knowledge/project-nomad/mysql/kopiur-backup.yaml` |
 | **Multi-PVC + backup-exempt mix** | `my-apps/home-automation/frigate/` (backs up `frigate-config`, exempts `frigate-media`) |
 | **Archive a retired app** | `my-apps/<category>/_archive/<app>/` — see `docs/domains/argocd/entrypoints.md` § Archived apps |
-| **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
-| **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
+| **RustFS lifecycle policy** | `infrastructure/backup/rustfs-lifecycle/` |
+| **Helm + Kustomize** | `infrastructure/secrets/1passwordconnect/` |
 | **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
 | **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development-infra/temporal/postgres/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |

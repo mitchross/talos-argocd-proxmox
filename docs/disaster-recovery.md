@@ -149,9 +149,9 @@ half-converged cluster.
 - Observability is **not** a core dependency — core apps must bootstrap
   without Prometheus; `kube-prometheus-stack` is the sole owner of
   `monitoring.coreos.com` CRDs.
-- The **kopiur operator** lands at **Wave 2** (`infrastructure/controllers/kopiur-operator/`
+- The **kopiur operator** lands at **Wave 2** (`infrastructure/backup/kopiur-operator/`
   — installs the CRDs + operator + webhook); **kopiur-config** at **Wave 3**
-  (`infrastructure/controllers/kopiur/` — namespace, the `ClusterRepository
+  (`infrastructure/backup/kopiur/` — namespace, the `ClusterRepository
   cluster-kopia` → RustFS `s3://kopiur`, and the `ClusterExternalSecret`
   credential fan-out). Databases (Wave 4) and app backups (Wave 6) follow. The
   per-PVC kopiur CRs (`SnapshotPolicy`/`SnapshotSchedule`/`Restore`) and the

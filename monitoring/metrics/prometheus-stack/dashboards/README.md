@@ -51,7 +51,7 @@ page.
 
 A Helm chart that ships its own dashboard only needs the same label and
 annotation. See `monitoring.dashboards` in
-`infrastructure/controllers/kopiur-operator/values.yaml`.
+`infrastructure/backup/kopiur-operator/values.yaml`.
 
 ## Query gotchas
 

@@ -173,7 +173,7 @@ The whole behaviour as a flat lookup table:
 ## Architecture at a glance
 
 ```text
-  Secrets (infrastructure/controllers/kopiur)
+  Secrets (infrastructure/backup/kopiur)
     1Password vault -> ClusterSecretStore -> ClusterExternalSecret
                                              (kopiur-rustfs -> every
                                               labeled namespace)
@@ -204,7 +204,7 @@ The whole behaviour as a flat lookup table:
 |---|---|---|
 | `ClusterRepository cluster-kopia` | cluster | the Kopia repo definition → RustFS `s3://kopiur` (dedicated bucket). `allowedNamespaces` selector grants any namespace labeled `kopiur.home-operations.com/repo=cluster-kopia`. |
 | `ClusterExternalSecret kopiur-rustfs` | cluster | fans the repo creds (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`KOPIA_PASSWORD`) into every labeled namespace, so the in-namespace mover can reach the repo. |
-| `VolumeSnapshotClass longhorn-snapclass` | cluster | how CSI snapshots are taken (Longhorn); `copyMethod: Snapshot` references it. Lives in `infrastructure/controllers/kopiur/`. |
+| `VolumeSnapshotClass longhorn-snapclass` | cluster | how CSI snapshots are taken (Longhorn); `copyMethod: Snapshot` references it. Lives in `infrastructure/backup/kopiur/`. |
 | kopiur operator | cluster | reconciles the per-PVC CRs; launches Snapshot + Restore mover Jobs. |
 | `common/kopiur-backup` component | shared | injects the uniform fields by `kind` (repository, copyMethod, snapclass, schedule defaults, populator + `onMissingSnapshot: Continue`). |
 | per-PVC stub | per-PVC | the varying bits: name, identity, retention, cron, and the **mover UID:GID** (= data owner). |
@@ -580,7 +580,7 @@ warning — Git review and the worked examples remain the guardrail for the
 negative space.
 
 **Pre-1.0 engine.** Kopiur CRD fields can change between releases. The chart
-pin lives in `infrastructure/controllers/kopiur-operator/kustomization.yaml`.
+pin lives in `infrastructure/backup/kopiur-operator/kustomization.yaml`.
 Review the versioned CRDs and recovery behavior when upgrading it.
 
 **Recoverable data age is the age of the latest successful snapshot.** A
@@ -602,8 +602,8 @@ file and database restore points. See [post-restore acceptance](disaster-recover
 
 | Concern | Path |
 |---|---|
-| kopiur operator (Helm chart Application) | `infrastructure/controllers/argocd/apps/core-dependencies/kopiur-operator-app.yaml` → `infrastructure/controllers/kopiur-operator/` |
-| kopiur config (ClusterRepository, creds ClusterES, snapclass) | `infrastructure/controllers/kopiur/` + `…/core-dependencies/kopiur-config-app.yaml` |
+| kopiur operator (Helm chart Application) | `infrastructure/controllers/argocd/apps/core-dependencies/kopiur-operator-app.yaml` → `infrastructure/backup/kopiur-operator/` |
+| kopiur config (ClusterRepository, creds ClusterES, snapclass) | `infrastructure/backup/kopiur/` + `…/core-dependencies/kopiur-config-app.yaml` |
 | Shared backup component (uniform fields) | `my-apps/common/kopiur-backup/` |
 | Longhorn + rebuild throttle | `infrastructure/storage/longhorn/` (`node-failure-settings.yaml`) |
 | App PVCs + per-PVC stubs | `my-apps/<category>/<app>/pvc.yaml` + `…/kopiur/<pvc>.yaml` |

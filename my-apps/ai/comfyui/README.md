@@ -133,7 +133,7 @@ kubectl apply -k my-apps/ai/comfyui/
 ```
 
 The GPU-node prereqs (extensions, device plugin, runtime class) are
-managed by `infrastructure/controllers/nvidia-gpu-operator/` — don't
+managed by `infrastructure/gpu/nvidia-gpu-operator/` — don't
 re-apply them from here.
 
 ## Interactions with other apps

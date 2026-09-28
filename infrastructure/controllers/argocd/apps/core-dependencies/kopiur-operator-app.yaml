@@ -3,7 +3,7 @@
 #
 # kopiur publishes its chart as an OCI artifact (oci://ghcr.io/home-operations/
 # charts/kopiur, chart version == app version). We render it locally via
-# Kustomize helmCharts (infrastructure/controllers/kopiur-operator) like every
+# Kustomize helmCharts (infrastructure/backup/kopiur-operator) like every
 # other chart in this repo, so manifests are served from our own git source and
 # no AppProject sourceRepos exception is needed (cf. temporal-worker-controller).
 # Installs the 8 CRDs + operator + webhook. Chart version pinned in that dir's
@@ -27,7 +27,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/kopiur-operator
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/backup/kopiur-operator
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -35,7 +35,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: infrastructure/controllers/kopiur-operator
+    path: infrastructure/backup/kopiur-operator
   destination:
     server: https://kubernetes.default.svc
     namespace: kopiur-system

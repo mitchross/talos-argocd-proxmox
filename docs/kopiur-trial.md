@@ -18,14 +18,14 @@ The DR-doc worked example — two RWO PVCs (`data-pvc` = SQLite bookmarks + asse
 | Area | old (pvc-plumber) | kopiur |
 |---|---|---|
 | Per-PVC config | 3 labels + `dataSourceRef → ReplicationDestination` | explicit `SnapshotPolicy` + `SnapshotSchedule` + `Restore`, `dataSourceRef → Restore` |
-| Operator | `infrastructure/controllers/pvc-plumber/` (Wave 2) | `infrastructure/controllers/kopiur-operator/` Kustomize `helmCharts:` (OCI chart, Wave 2) |
-| Repo config | `volsync-kopia-repository` ClusterES | `infrastructure/controllers/kopiur/` (ns + ESO + `ClusterRepository`, Wave 3) |
+| Operator | `infrastructure/controllers/pvc-plumber/` (Wave 2) | `infrastructure/backup/kopiur-operator/` Kustomize `helmCharts:` (OCI chart, Wave 2) |
+| Repo config | `volsync-kopia-repository` ClusterES | `infrastructure/backup/kopiur/` (ns + ESO + `ClusterRepository`, Wave 3) |
 | kopia repo | `s3://volsync-kopia/cluster` | `s3://kopiur/` (dedicated, isolated bucket) |
 | Namespace gate | `pvc-plumber.io/managed-namespace` | `allowedNamespaces` on the ClusterRepository |
 
 Deploy is pure GitOps (merge to `main`, ArgoCD reconciles — no `kubectl apply`):
 - **Wave 2** `kopiur-operator` — renders the OCI chart `oci://ghcr.io/home-operations/charts/kopiur`
-  (version pinned in `infrastructure/controllers/kopiur-operator/kustomization.yaml`),
+  (version pinned in `infrastructure/backup/kopiur-operator/kustomization.yaml`),
   installs the CRDs + operator + webhook.
   `ServerSideApply=true` avoids the 256KB last-applied-config limit on CRDs.
 - **Wave 3** `kopiur-config` — namespace + ESO + `ClusterRepository`.

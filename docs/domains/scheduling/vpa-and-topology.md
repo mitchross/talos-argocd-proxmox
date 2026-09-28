@@ -20,7 +20,7 @@ VPA is three separate runtime actions:
 Stopping only the updater is therefore **not** a cluster-wide off switch. New
 pods can still be changed by admission. To stop all actuation while preserving
 learning, disable both `updater.enabled` and `admissionController.enabled` in
-`infrastructure/controllers/vertical-pod-autoscaler/values.yaml`; leave the
+`infrastructure/scheduling/vertical-pod-autoscaler/values.yaml`; leave the
 recommender enabled.
 
 VPA changes requests, not placement. The scheduler evaluates topology spread
@@ -33,9 +33,9 @@ the pod. A balanced workload can therefore become imbalanced as requests grow.
 |---|---|---|
 | User application | `my-apps/<category>/<app>/vpa.yaml` | App deletion prunes its policy; target and sizing review happen together |
 | Monitoring application | `monitoring/<app>/vpa.yaml` | Same ownership rule, including Helm-rendered and operator CR targets |
-| Bootstrap/system workload | `infrastructure/controllers/vpa-system-policies/` | Explicit exception for workloads whose owner reconciles at the VPA CRD wave or otherwise cannot safely own the policy after CRD bootstrap |
-| VPA controller | `infrastructure/controllers/vertical-pod-autoscaler/` | Recommender, updater, admission controller, and CRDs at wave 4 |
-| VPA monitoring | `infrastructure/controllers/vertical-pod-autoscaler-observability/` | Optional PodMonitor and alerts at wave 6, after Prometheus CRDs |
+| Bootstrap/system workload | `infrastructure/scheduling/vpa-system-policies/` | Explicit exception for workloads whose owner reconciles at the VPA CRD wave or otherwise cannot safely own the policy after CRD bootstrap |
+| VPA controller | `infrastructure/scheduling/vertical-pod-autoscaler/` | Recommender, updater, admission controller, and CRDs at wave 4 |
+| VPA monitoring | `infrastructure/scheduling/vertical-pod-autoscaler-observability/` | Optional PodMonitor and alerts at wave 6, after Prometheus CRDs |
 
 The policy object identity is its namespace and name. Keep both unchanged when
 moving a policy between Argo applications. The recommender's checkpoints and
@@ -182,9 +182,9 @@ new taints and placement migrations in that review are not deployed configuratio
 Run from the repository root:
 
 ```bash
-kustomize build infrastructure/controllers/vertical-pod-autoscaler --enable-helm
-kustomize build infrastructure/controllers/vpa-system-policies
-kustomize build infrastructure/controllers/vertical-pod-autoscaler-observability
+kustomize build infrastructure/scheduling/vertical-pod-autoscaler --enable-helm
+kustomize build infrastructure/scheduling/vpa-system-policies
+kustomize build infrastructure/scheduling/vertical-pod-autoscaler-observability
 python3 scripts/validate-vpa-policies.py /tmp/all-manifests.yaml
 ```
 
@@ -222,7 +222,7 @@ Talos node by itself.
   namespace/name. Do not delete checkpoints manually.
 
 Sources of truth are the controller
-[`values.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/controllers/vertical-pod-autoscaler/values.yaml),
+[`values.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/scheduling/vertical-pod-autoscaler/values.yaml),
 the rendered-policy validator
 [`validate-vpa-policies.py`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/validate-vpa-policies.py),
 and the node labels in
