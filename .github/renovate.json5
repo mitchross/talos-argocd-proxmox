@@ -149,7 +149,7 @@
         'ghcr.io/open-meteo/open-meteo',
       ],
       matchFileNames: [
-        'my-apps/development/radar-ng/deployment-open-meteo.yaml',
+        'my-apps/personal-projects/radar-ng/deployment-open-meteo.yaml',
       ],
       allowedVersions: '<1.5.3 || >=1.5.4',
       automerge: false,
@@ -160,7 +160,7 @@
         'ghcr.io/mitchross/radar-ng-open-meteo-worker',
       ],
       matchFileNames: [
-        'my-apps/development/radar-ng/deployment-open-meteo.yaml',
+        'my-apps/personal-projects/radar-ng/deployment-open-meteo.yaml',
       ],
       groupName: 'radar open-meteo image',
       automerge: false,
@@ -218,7 +218,7 @@
         'ghcr.io/posthog/posthog/cyclotron-janitor',
         'ghcr.io/posthog/posthog/cymbal',
       ],
-      matchFileNames: ['my-apps/development/posthog/**'],
+      matchFileNames: ['my-apps/development-infra/posthog/**'],
       versioning: 'loose',
     },
     {
@@ -235,14 +235,14 @@
         'ghcr.io/posthog/posthog/cyclotron-janitor',
         'ghcr.io/posthog/posthog/cymbal',
       ],
-      matchFileNames: ['my-apps/development/posthog/**'],
+      matchFileNames: ['my-apps/development-infra/posthog/**'],
       groupName: 'posthog images',
       matchUpdateTypes: ['digest', 'patch', 'minor'],
       automerge: false,
       schedule: ['every weekend'],
     },
     {
-      description: 'PostHog MONOLITH (posthog/posthog): ride the same "posthog images" group PR as the sidecars — one PR per version roll, digests moving in lockstep with posthog-node (the migrate hook image must match web/worker). NEVER automerge: before merging, run the my-apps/development/posthog/UPGRADE.md checklist (upstream named_collections/remote_servers diff, new sharded_* tables vs clickhouse-init, newly-required env, server entrypoint) — both prior posthog outages (2026-04-19, 2026-05-09) were config drift surfaced by an unreviewed image bump.',
+      description: 'PostHog MONOLITH (posthog/posthog): ride the same "posthog images" group PR as the sidecars — one PR per version roll, digests moving in lockstep with posthog-node (the migrate hook image must match web/worker). NEVER automerge: before merging, run the my-apps/development-infra/posthog/UPGRADE.md checklist (upstream named_collections/remote_servers diff, new sharded_* tables vs clickhouse-init, newly-required env, server entrypoint) — both prior posthog outages (2026-04-19, 2026-05-09) were config drift surfaced by an unreviewed image bump.',
       // Pulled from Docker Hub — match all registry forms (a ghcr-only
       // entry here was once dead and let a ~5wk master jump slip through).
       matchPackageNames: [
@@ -250,7 +250,7 @@
         'docker.io/posthog/posthog',
         'ghcr.io/posthog/posthog',
       ],
-      matchFileNames: ['my-apps/development/posthog/**'],
+      matchFileNames: ['my-apps/development-infra/posthog/**'],
       matchUpdateTypes: ['digest'],
       groupName: 'posthog images',
       automerge: false,
@@ -269,7 +269,7 @@
         'clickhouse/clickhouse-server',
         'docker.redpanda.com/redpandadata/redpanda',
       ],
-      matchFileNames: ['my-apps/development/posthog/**'],
+      matchFileNames: ['my-apps/development-infra/posthog/**'],
       enabled: false,
     },
     {
@@ -293,13 +293,13 @@
     {
       description: 'temporal Postgres: hold at 17.x — Temporal upstream has not declared PG18 support; lifting the hold means a deliberate dump/restore migration (runbook 2026-07-18)',
       matchPackageNames: ['postgres'],
-      matchFileNames: ['my-apps/development/temporal/postgres/deployment.yaml'],
+      matchFileNames: ['my-apps/development-infra/temporal/postgres/deployment.yaml'],
       allowedVersions: '<18',
     },
     {
       description: 'Pin project-nomad MySQL to 8.x (AdonisJS/Lucid not tested with MySQL 9)',
       matchPackageNames: ['mysql'],
-      matchFileNames: ['my-apps/home/project-nomad/**'],
+      matchFileNames: ['my-apps/knowledge/project-nomad/**'],
       allowedVersions: '<9.0.0',
     },
     {

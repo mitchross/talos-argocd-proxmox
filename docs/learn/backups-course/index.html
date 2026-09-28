@@ -179,7 +179,7 @@
     `<div class="code"><div class="cbar"><span class="d"></span><span class="fname">${file}</span><span class="tag">${tag}</span></div><pre>${body}</pre></div>`;
   const cap = (html) => `<div class="cap">${html}</div>`;
 
-  const NS = code("my-apps/media/karakeep/namespace.yaml","real file",
+  const NS = code("my-apps/knowledge/karakeep/namespace.yaml","real file",
 `<span class="k">apiVersion:</span> v1
 <span class="k">kind:</span> Namespace
 <span class="k">metadata:</span>
@@ -187,7 +187,7 @@
 <span class="hl">  <span class="k">labels:</span>
     <span class="k">kopiur.home-operations.com/repo:</span> <span class="s">cluster-kopia</span>   <span class="c"># “back this app up”</span></span>`);
 
-  const PVC = code("my-apps/media/karakeep/karakeep/pvc-data.yaml","real file",
+  const PVC = code("my-apps/knowledge/karakeep/karakeep/pvc-data.yaml","real file",
 `<span class="k">apiVersion:</span> v1
 <span class="k">kind:</span> PersistentVolumeClaim
 <span class="k">metadata:</span>
@@ -199,7 +199,7 @@
   <span class="k">resources:</span>
     <span class="k">requests:</span> { <span class="k">storage:</span> <span class="s">10Gi</span> }`);
 
-  const PVC_HL = code("my-apps/media/karakeep/karakeep/pvc-data.yaml","real file",
+  const PVC_HL = code("my-apps/knowledge/karakeep/karakeep/pvc-data.yaml","real file",
 `<span class="k">kind:</span> PersistentVolumeClaim
 <span class="k">metadata:</span>
   <span class="k">name:</span> <span class="s">data-pvc</span>
@@ -212,14 +212,14 @@
     <span class="k">kind:</span> <span class="s">Restore</span>
     <span class="k">name:</span> <span class="s">data-pvc-restore</span></span>`);
 
-  const KUST = code("my-apps/media/karakeep/kustomization.yaml","real file · trimmed",
+  const KUST = code("my-apps/knowledge/karakeep/kustomization.yaml","real file · trimmed",
 `<span class="k">resources:</span>
   <span class="k">-</span> <span class="s">karakeep/pvc-data.yaml</span>
   <span class="k">-</span> <span class="s">kopiur/data-pvc.yaml</span>
 <span class="hl"><span class="k">components:</span>                       <span class="c"># ← turns backups ON</span>
   <span class="k">-</span> <span class="s">../../common/kopiur-backup</span></span>`);
 
-  const STUB = code("my-apps/media/karakeep/kopiur/data-pvc.yaml","real file · trimmed",
+  const STUB = code("my-apps/knowledge/karakeep/kopiur/data-pvc.yaml","real file · trimmed",
 `<span class="k">kind:</span> SnapshotSchedule
 <span class="k">metadata:</span> { <span class="k">name:</span> <span class="s">data-pvc-hourly</span> }
 <span class="k">spec:</span>
@@ -270,7 +270,7 @@
       show:FIG_PETS },
 
     { n:"Lesson 2 of 9", title:"Everything is just text in Git",
-      learn:`<p>There's no dashboard where you click “deploy”. Karakeep is defined entirely by text files in <code>my-apps/media/karakeep/</code>. Here's the file that creates its private space on the cluster — a <strong>namespace</strong>.</p>
+      learn:`<p>There's no dashboard where you click “deploy”. Karakeep is defined entirely by text files in <code>my-apps/knowledge/karakeep/</code>. Here's the file that creates its private space on the cluster — a <strong>namespace</strong>.</p>
       <p>The highlighted label is how the app <em>opts in</em> to backups. That single line tells the backup system: “watch this whole namespace.” →</p>
       <div class="goal"><span class="g-ic">✓</span><span>You learned: a <strong>namespace</strong> is an app's private area, and one label switches on its backups.</span></div>`,
       show:NS + cap("The <b>real</b> namespace file for Karakeep.") },

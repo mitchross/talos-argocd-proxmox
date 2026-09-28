@@ -3779,7 +3779,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "**Cost basis:** the all-in marginal rate, (energy + delivery riders) x (1 + tax), stepping between summer on-peak, summer off-peak and non-summer. Rates are `input_number` helpers in `my-apps/home/home-assistant/configuration.yaml`; git is the source of truth.\n\n**Groups:** *Homelab* = Threadripper, TrueNAS, NAS Drive PSU, HP SFF + Optiplex, HP Elite (locked on). *Office* = Gaming PC + MacBook. **HP SFF + Optiplex share one plug**, so their draw cannot be split. **Shed** runs on solar: kWh only, no cost, in no group.\n\n**House** numbers come from the Consumers Energy portal once a day, a day late; *No CE data* means that sync is not delivering. Long-range per-day and per-month history lives in Home Assistant's statistics; Prometheus keeps 15 days."
+        "content": "**Cost basis:** the all-in marginal rate, (energy + delivery riders) x (1 + tax), stepping between summer on-peak, summer off-peak and non-summer. Rates are `input_number` helpers in `my-apps/home-automation/home-assistant/configuration.yaml`; git is the source of truth.\n\n**Groups:** *Homelab* = Threadripper, TrueNAS, NAS Drive PSU, HP SFF + Optiplex, HP Elite (locked on). *Office* = Gaming PC + MacBook. **HP SFF + Optiplex share one plug**, so their draw cannot be split. **Shed** runs on solar: kWh only, no cost, in no group.\n\n**House** numbers come from the Consumers Energy portal once a day, a day late; *No CE data* means that sync is not delivering. Long-range per-day and per-month history lives in Home Assistant's statistics; Prometheus keeps 15 days."
       }
     },
     {

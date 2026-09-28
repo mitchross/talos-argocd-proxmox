@@ -80,7 +80,7 @@ patches:
           # can scrape without certificate juggling. Listener is bound to
           # the host network on CP nodes only — not reachable from worker
           # pods directly, so node-discovery scraping (see
-          # monitoring/prometheus-stack/values.yaml additionalScrapeConfigs)
+          # monitoring/metrics/prometheus-stack/values.yaml additionalScrapeConfigs)
           # is the way in. Path B (mTLS on 2379) requires extracting
           # /system/secrets/etcd/* into a K8s Secret on every cert rotation;
           # not worth it for a single-operator homelab.

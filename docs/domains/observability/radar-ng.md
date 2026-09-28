@@ -11,7 +11,7 @@ storage backends) live in
 |---|---|---|
 | `radar-ng-mobile` (Expo app) | Tempo + Loki | OTel SDK in `src/lib/telemetry.ts` → OTLP/HTTP → `otel.vanillax.me` (gateway) |
 | `tile-server` API logs | Loki | stdout JSON → otel-agent (DaemonSet) → gateway → Loki |
-| `tile-server` `/api/metrics` | Prometheus | ServiceMonitor at `my-apps/development/radar-ng/servicemonitor.yaml` |
+| `tile-server` `/api/metrics` | Prometheus | ServiceMonitor at `my-apps/personal-projects/radar-ng/servicemonitor.yaml` |
 | `ingest-mrms` / `ingest-hrrr` / `ingest-lightning` / `ingest-tropical` / `nowcast` / `basemap` / `open-meteo` logs | Loki | same pipeline as tile-server |
 | Pod CPU / memory / OOM | Prometheus | kube-state-metrics + cadvisor |
 
@@ -21,7 +21,7 @@ OTel-semconv labels in Loki: `k8s_namespace_name`, `k8s_pod_name`,
 
 ## Grafana — the radar-ng dashboard
 
-Auto-imported from [`monitoring/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/dashboards/apps/radar-ng.json).
+Auto-imported from [`monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json).
 Labelled `grafana_dashboard: "1"` so the sidecar picks it up. Open in
 Grafana → Dashboards → search "radar-ng".
 
@@ -147,7 +147,7 @@ in `tile-server` doesn't auto-propagate — instrumentation TODO.
 ## Prometheus — radar-ng metric reference
 
 Exposed at `tile-server.radar-ng.svc/api/metrics`. ServiceMonitor at
-`my-apps/development/radar-ng/servicemonitor.yaml` picks them up.
+`my-apps/personal-projects/radar-ng/servicemonitor.yaml` picks them up.
 
 | metric | type | what it is |
 |---|---|---|
@@ -199,7 +199,7 @@ Suggested PrometheusRule entries to add when you want pager-grade alerts:
     summary: "radar-ng: Open-Meteo upstream errors"
 ```
 
-Drop these into `monitoring/prometheus-stack/` as a `PrometheusRule`.
+Drop these into `monitoring/metrics/prometheus-stack/` as a `PrometheusRule`.
 
 ## Troubleshooting flow
 
@@ -231,7 +231,7 @@ check Grafana radar-ng dashboard
 
 - [`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md) — platform observability layout
 - [`monitoring/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/CLAUDE.md) — design rationale + pitfalls
-- [`monitoring/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/dashboards/apps/radar-ng.json) — the dashboard JSON
-- [`my-apps/development/radar-ng/servicemonitor.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/servicemonitor.yaml) — Prometheus scrape config
+- [`monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json) — the dashboard JSON
+- [`my-apps/personal-projects/radar-ng/servicemonitor.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/radar-ng/servicemonitor.yaml) — Prometheus scrape config
 - radar-ng repo: `src/lib/telemetry.ts` — mobile OTel wiring
 - radar-ng repo: `services/shared/logger.py` — backend JSON logger

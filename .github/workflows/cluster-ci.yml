@@ -120,7 +120,8 @@ jobs:
       - name: Render all kustomizations
         run: |
           set -euo pipefail
-          mapfile -t dirs < <(find infrastructure monitoring my-apps -type f -name kustomization.yaml -exec dirname {} \; | sort -u)
+          # _archive/ apps are not deployed and sit one level deeper, so their ../ links do not resolve.
+          mapfile -t dirs < <(find infrastructure monitoring my-apps -type f -name kustomization.yaml -not -path '*/_archive/*' -exec dirname {} \; | sort -u)
 
           if [ "${#dirs[@]}" -eq 0 ]; then
             echo "No kustomization directories found."
@@ -239,9 +240,9 @@ jobs:
           python3 -m unittest discover -s scripts/tests -p test_ai_observability.py -v
           python3 -m unittest discover -s my-apps/ai/presenton/scripts -p 'test_*.py' -v
           python3 -m unittest discover -s my-apps/ai/comfyui/scripts -p 'test_*.py' -v
-          python3 -m unittest discover -s my-apps/development/news-reader/tests -v
-          python3 -m unittest discover -s monitoring/holmesgpt/tests -v
-          python3 -m unittest discover -s my-apps/development/posthog/tests -v
+          python3 -m unittest discover -s my-apps/personal-projects/news-reader/tests -v
+          python3 -m unittest discover -s monitoring/ai-ops/_archive/holmesgpt/tests -v
+          python3 -m unittest discover -s my-apps/development-infra/posthog/tests -v
           python3 -m unittest discover -s scripts/tests -p test_qwen_reasoning.py -v
           kustomize build infrastructure/controllers/argocd --enable-helm \
             --helm-kube-version "${KUBERNETES_VERSION}" \

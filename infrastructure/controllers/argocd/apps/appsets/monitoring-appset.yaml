@@ -13,8 +13,8 @@ spec:
   # result" (the template context). The Git generator supplies its matched
   # directory as the `path` object: `.path.basename` is the final directory
   # name, while `.path.path` is the complete repository-relative path.
-  # Example: `monitoring/prometheus-stack` produces
-  # `.path.basename = prometheus-stack` and `.path.path = monitoring/prometheus-stack`,
+  # Example: `monitoring/metrics/prometheus-stack` produces
+  # `.path.basename = prometheus-stack` and `.path.path = monitoring/metrics/prometheus-stack`,
   # so Argo creates `monitoring-prometheus-stack` in namespace `prometheus-stack`.
   # `missingkey=error` stops generation when a field is absent instead of
   # silently creating an Application with an empty name, path, or namespace.
@@ -26,7 +26,10 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      - path: monitoring/*
+      # monitoring/<type>/<app> (metrics, logs, tracing); the app name uses only the last folder.
+      - path: monitoring/*/*
+      - path: monitoring/*/_archive
+        exclude: true
   template:
     metadata:
       name: 'monitoring-{{ .path.basename }}'

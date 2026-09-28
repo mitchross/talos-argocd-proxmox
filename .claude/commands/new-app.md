@@ -11,10 +11,18 @@ Create a new application at `$ARGUMENTS` following the project's GitOps patterns
    - Database (plain Postgres + kopiur — see /project:new-database)?
 
 2. Create the directory structure under the appropriate category:
-   - `my-apps/ai/` - GPU/AI workloads
-   - `my-apps/development/` - Dev tools
-   - `my-apps/home/` - Home automation
+   - `my-apps/ai/` - GPU/LLM serving and AI apps
+   - `my-apps/knowledge/` - Search, reading, notes, documents, AI memory
+   - `my-apps/home-automation/` - Home Assistant, cameras, energy
    - `my-apps/media/` - Media services
+   - `my-apps/utility/` - Small browser tools and dashboards
+   - `my-apps/storage-utility/` - File sharing and transfer
+   - `my-apps/development/` - Dev tools (git, CI, Renovate)
+   - `my-apps/development-infra/` - Services other apps run on (Temporal, PostHog, map tiles)
+   - `my-apps/personal-projects/` - Apps built from your own images
+   - `my-apps/demo/` - Toys and learning experiments
+   - `my-apps/system/` - Cluster-side helpers (restore canary, Headlamp)
+   - `my-apps/<category>/_archive/` - Retired apps: not deployed, backups kept
 
 3. Required files for every app:
    - `namespace.yaml`

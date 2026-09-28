@@ -58,4 +58,4 @@ explicitly rather than resurrecting the old manifests.
 - **Plain Postgres reference:** `my-apps/development/gitea/postgres/`
 - **Migration/pattern doc:** [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)
 - **Operator guide (plain English):** [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
-- Two-database example (initdb script + schema-hook sync waves): `my-apps/development/temporal/postgres/`
+- Two-database example (initdb script + schema-hook sync waves): `my-apps/development-infra/temporal/postgres/`

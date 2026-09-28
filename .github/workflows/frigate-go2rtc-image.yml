@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - '.github/workflows/frigate-go2rtc-image.yml'
-      - 'my-apps/home/frigate/go2rtc-image/**'
-      - 'my-apps/home/frigate/deployment.yaml'
+      - 'my-apps/home-automation/frigate/go2rtc-image/**'
+      - 'my-apps/home-automation/frigate/deployment.yaml'
   push:
     branches: [main]
     paths:
       - '.github/workflows/frigate-go2rtc-image.yml'
-      - 'my-apps/home/frigate/go2rtc-image/**'
+      - 'my-apps/home-automation/frigate/go2rtc-image/**'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,7 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/mitchross/frigate-go2rtc
-  CONTEXT: my-apps/home/frigate/go2rtc-image
+  CONTEXT: my-apps/home-automation/frigate/go2rtc-image
 
 jobs:
   build:
@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           tag="$(cat "$CONTEXT/VERSION")"
           [[ "$tag" =~ ^b101-[a-f0-9]{7}-v[0-9]+$ ]]
-          grep -Fq "image: $IMAGE:$tag" my-apps/home/frigate/deployment.yaml
+          grep -Fq "image: $IMAGE:$tag" my-apps/home-automation/frigate/deployment.yaml
           if [[ -n "$BASE_SHA" ]] && git cat-file -e "$BASE_SHA:$CONTEXT/VERSION" 2>/dev/null; then
             old_tag="$(git show "$BASE_SHA:$CONTEXT/VERSION")"
             if ! git diff --quiet "$BASE_SHA" HEAD -- "$CONTEXT/Dockerfile"; then
