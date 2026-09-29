@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: registry
-  namespace: kube-system
+  namespace: container-registry
 spec:
   selector:
     app: registry

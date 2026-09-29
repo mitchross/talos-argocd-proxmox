@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
-  namespace: kube-system
+  namespace: container-registry
 spec:
   strategy:
     type: Recreate
