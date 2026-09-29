@@ -292,6 +292,58 @@ The model's response format follows the
 Rollback uses a revert PR and the same ConfigMap-driven rollout described
 above; no meter data or statistics need to be changed.
 
+## Retired completed-period statistics
+
+The September 27 dashboard change removed `state_class: total` from 33
+`*_yesterday` and `*_last_month` template sensors. These show completed-period
+snapshots, not accumulating meters. Their old recorder statistics metadata
+caused 33 **"no longer has a state class"** repair warnings.
+
+The `retire-period-statistics` init container runs after configuration copying
+and the September 24 continuity repair, before Home Assistant starts. Its
+source is `my-apps/home-automation/home-assistant/scripts/retire-period-statistics.py`.
+It checks the exact 33 templates still lack a state class, archives their
+statistics metadata plus long- and short-term statistics, then removes only
+those retired series in one SQLite transaction. The archive must be durable
+before any deletion can commit. A missing database or previously completed
+cleanup is a no-op; unexpected configuration, source, or archive content stops
+the init container without deleting data.
+
+Raw recorder states, active power/energy/cost meters, Consumers Energy
+statistics, and current template values are unchanged. Historical statistics
+for these 33 display sensors move out of the recorder into
+`/config/statistics-repairs/retired-period-summaries-2026-09-29.json`, on the
+kopiur-backed config PVC. The September 29 read-only export contained 8,877
+long-term and 76,791 short-term rows; the archive was about 9 MB.
+
+**Rollout:** merge the PR and let ArgoCD reconcile the hashed scripts ConfigMap.
+The existing `Recreate` strategy briefly stops HA while the init container
+archives the retired statistics. No live SQL or manual repair dismissal is
+needed. Before merging, verify the config PVC has a successful recent kopiur
+snapshot. After rollout, check:
+
+```bash
+kubectl -n home-assistant logs deployment/home-assistant -c retire-period-statistics
+kubectl -n home-assistant rollout status deployment/home-assistant
+```
+
+The first run reports 33 metadata entries and the archived row counts;
+subsequent starts report zero. After HA's statistics validation runs, the 33
+state-class warnings should disappear. Verify the Homelab Power dashboard
+still displays current and completed-period values. If initialization fails,
+inspect its error and preserve the archive; do not overwrite it to force a run.
+
+**Rollback:** reverting the deployment change stops future cleanup but does not
+restore archived statistics. To restore them, use a separate GitOps PR changing
+this init container's command to
+`["python", "/opt/repo-scripts/retire-period-statistics.py", "--apply", "--restore"]`.
+On the next Recreate rollout it restores the archive with HA stopped, assigning
+new row IDs where necessary. It is idempotent and refuses schema changes or
+conflicting existing statistics. Verify its success log, then remove the
+retirement init container in Git. The original warnings return unless the
+sensor configuration is also intentionally changed. Never run either apply
+mode inside the running HA container.
+
 ## September 24 statistics repair
 
 The recorder contains a verified discontinuity: hourly power statistics stop

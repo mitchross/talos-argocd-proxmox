@@ -22,5 +22,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install aiohttp
+      - run: python -m pip install aiohttp PyYAML
       - run: python -m unittest discover -s my-apps/home-automation/home-assistant/tests -v
