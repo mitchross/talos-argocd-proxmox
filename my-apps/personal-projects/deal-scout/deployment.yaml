@@ -39,6 +39,9 @@ spec:
                   key: LITELLM_API_KEY
             - name: DATA_DIR
               value: /data
+            # eBay Partner Network campaign; public in every affiliate link, so not a secret.
+            - name: EPN_CAMPAIGN_ID
+              value: "5339215873"
             # A request with no X-Deal-Scout-Mode header (neither gateway route) is a visitor.
             - name: DEAL_SCOUT_DEFAULT_MODE
               value: public
