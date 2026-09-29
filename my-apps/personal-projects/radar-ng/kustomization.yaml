@@ -8,6 +8,7 @@ resources:
   - services.yaml
   - httproute.yaml
   - deployment-tile-server.yaml
+  - externalsecret-llm.yaml
   - hpa-tile-server.yaml
   - pdb-tile-server.yaml
   - deployment-basemap.yaml
