@@ -216,18 +216,24 @@ half-converged cluster.
 
 ## In-cluster registry and Gitea Actions
 
-`registry.vanillax.me` is an in-cluster registry backed by cluster storage.
-After a full nuke, the registry pod, Service, and HTTPRoute can all be healthy
-while the registry catalog is still empty. Any workload pinned to
-`registry.vanillax.me/...` will then fail with `ImagePullBackOff` until those
-images are rebuilt or repushed.
+`registry.vanillax.me` is an in-cluster registry in namespace
+`container-registry`. Its `registry` PVC is kopiur-backed (daily, 03:41), so a
+rebuild restores the images through restore-before-bind like any other app.
+Images pushed after the last daily snapshot are missing until rebuilt.
 
 Check the catalog from inside the registry pod:
 
 ```bash
-kubectl exec -n kube-system deploy/registry -- \
+kubectl exec -n container-registry deploy/registry -- \
   wget -qO- http://127.0.0.1:5000/v2/_catalog
 ```
+
+Expected result: the repositories that `image: registry.vanillax.me/...`
+references in git. If the catalog is empty (no snapshot yet, or the restore
+bound empty), those workloads hit `ImagePullBackOff` until the images are
+rebuilt: dispatch the image's Gitea Actions workflow once the runner is back.
+With an empty registry the workflow restarts at its version floor, so check the
+tag it pushes matches the one pinned in git.
 
 Restore Gitea first, then get the Gitea Actions runner online. The runner
 needs `Secret/gitea-actions/act-runner-token`; Git declares that as an

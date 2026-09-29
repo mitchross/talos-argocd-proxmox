@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: container-registry
+  labels:
+    # Drives the ClusterExternalSecret cred fanout and ClusterRepository tenancy (allowedNamespaces selector).
+    kopiur.home-operations.com/repo: cluster-kopia
+  annotations:
+    # Registry data is root-owned, so the kopiur stub runs its mover as uid 0.
+    kopiur.home-operations.com/privileged-movers: "true"
