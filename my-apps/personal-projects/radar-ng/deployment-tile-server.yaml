@@ -94,6 +94,17 @@ spec:
             # Photon's first query after idle can take 4-7 s; at the 6 s default the API returned 502.
             - name: PLACES_UPSTREAM_TIMEOUT_S
               value: "12"
+            # Optional AI narration; a missing key or a down LLM only hides the briefing card.
+            - name: LLM_BASE_URL
+              value: http://litellm-service.litellm.svc.cluster.local:4000/v1
+            - name: LLM_MODEL
+              value: qwen3.8-27b
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: radar-ng-llm
+                  key: LLM_API_KEY
+                  optional: true
             # Push/watch routes stay closed until the mobile identity provider
             # can issue the per-user HMAC session tokens the API now requires.
             - name: DISABLE_WORKFLOW_ROUTES
