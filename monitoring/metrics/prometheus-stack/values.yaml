@@ -398,8 +398,7 @@ kube-state-metrics:
     limits:
       memory: 512Mi
   metricLabelsAllowlist:
-    # kube-state-metrics sanitizes cnpg.io/cluster to label_cnpg_io_cluster.
-    - persistentvolumeclaims=[backup-exempt,cnpg.io/cluster]
+    - persistentvolumeclaims=[backup-exempt]
   rbac:
     extraRules:
       - apiGroups: ["apiextensions.k8s.io"]

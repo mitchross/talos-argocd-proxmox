@@ -1,5 +1,4 @@
-# Parked here while the PostHog Application is blocked on its migration hook; move back beside PostHog once sync-healthy.
-# Preserve every VPA namespace/name when moving.
+# PostHog's VPAs live here, not beside PostHog. Preserve every VPA namespace/name if they move back.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:

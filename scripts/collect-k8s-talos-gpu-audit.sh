@@ -89,10 +89,6 @@ echo
 kubectl get pvc -A -o wide --show-labels
 '
 
-run "21-volsync" '
-kubectl get replicationsource,replicationdestination -A -o wide 2>/dev/null || true
-'
-
 run "22-longhorn" '
 kubectl -n longhorn-system get pods -o wide 2>/dev/null || true
 echo

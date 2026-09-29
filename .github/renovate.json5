@@ -326,10 +326,10 @@
       description: 'Omni cluster template - Talos version',
       customType: 'regex',
       managerFilePatterns: [
-        '/^omni/cluster-template/cluster-template\\.yaml$/',
+        '/^omni/cluster-template/cluster-template-prod-v2\\.yaml$/',
       ],
       matchStrings: [
-        'talos:\\s*\\n\\s+version:\\s*(?<currentValue>v[0-9.]+)',
+        'talos:\\s*\\n(?:\\s*#[^\\n]*\\n)*\\s+version:\\s*(?<currentValue>v[0-9.]+)',
       ],
       depNameTemplate: 'ghcr.io/siderolabs/installer',
       datasourceTemplate: 'docker',
@@ -338,10 +338,10 @@
       description: 'Omni cluster template - Kubernetes version',
       customType: 'regex',
       managerFilePatterns: [
-        '/^omni/cluster-template/cluster-template\\.yaml$/',
+        '/^omni/cluster-template/cluster-template-prod-v2\\.yaml$/',
       ],
       matchStrings: [
-        'kubernetes:\\s*\\n\\s+version:\\s*(?<currentValue>v[0-9.]+)',
+        'kubernetes:\\s*\\n(?:\\s*#[^\\n]*\\n)*\\s+version:\\s*(?<currentValue>v[0-9.]+)',
       ],
       depNameTemplate: 'ghcr.io/siderolabs/kubelet',
       datasourceTemplate: 'docker',
