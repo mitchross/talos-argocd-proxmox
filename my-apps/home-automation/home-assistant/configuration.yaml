@@ -53,6 +53,7 @@ recorder:
     entities:
       - sensor.combined_total_power
       - sensor.power_spending_analysis
+      - sensor.power_ai_summary
 
 # Only the metered plugs and the derived totals are exported. Household plugs stay out.
 prometheus:

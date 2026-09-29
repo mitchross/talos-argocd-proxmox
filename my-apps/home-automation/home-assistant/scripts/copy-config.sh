@@ -23,6 +23,6 @@ mkdir -p /config/custom_components/power_analysis
 cp /opt/repo-scripts/power-analysis-init.py /config/custom_components/power_analysis/__init__.py
 cp /opt/repo-scripts/power-analysis-sensor.py /config/custom_components/power_analysis/sensor.py
 cp /opt/repo-scripts/power-analysis.py /config/custom_components/power_analysis/analysis.py
+cp /opt/repo-scripts/power-summary.py /config/custom_components/power_analysis/summary.py
 cp /opt/repo-scripts/power-analysis-manifest.json /config/custom_components/power_analysis/manifest.json
 echo "Config files copied to PVC"
-

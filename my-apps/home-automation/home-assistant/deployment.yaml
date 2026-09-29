@@ -116,6 +116,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: power-summary-key
+              mountPath: /var/run/secrets/power-summary
+              readOnly: true
             # SONOFF Zigbee coordinator passed through to ZHA.
             - name: zigbee-dongle
               mountPath: /dev/ttyUSB0
@@ -126,6 +129,10 @@ spec:
             limits:
               memory: 4Gi
       volumes:
+        - name: power-summary-key
+          secret:
+            secretName: home-assistant-litellm
+            optional: true
         - name: repo-scripts
           configMap:
             name: home-assistant-scripts

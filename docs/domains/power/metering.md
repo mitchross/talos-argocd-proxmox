@@ -256,6 +256,42 @@ days at the configured current rate. These are what-if calculations, not bill
 forecasts or newly verified utility tariffs. Fixed monthly fees are excluded.
 The three rate windows and permanent GitOps rate settings remain unchanged.
 
+## Local AI power brief
+
+The Overview includes hourly AI summaries for today so far, yesterday, month
+to date, and recent completed days. `sensor.power_ai_summary` sends only
+allowlisted power meters and the read-only completed-day analysis to
+`qwen3.8-27b` on vLLM through authenticated LiteLLM. These are generated
+interpretations; the measured tiles and deterministic Findings remain the
+source of truth. No HA actions or equipment controls are exposed to the model.
+
+The owning implementation is `scripts/power-analysis/summary.py` plus
+`sensor.py` in the Home Assistant app. Daily meter values require a local
+`last_reset` of today; yesterday comes from that meter's `last_period`.
+Month meters must belong to the current month. Missing data stays null.
+Consumers Energy yesterday values are withheld unless the reading date
+matches yesterday; month figures retain their separate reporting cutoff.
+
+The existing 1Password `litellm/master_key` is projected by
+`litellm-externalsecret.yaml` into an optional, read-only Secret volume.
+The integration rereads the file each hour, allowing late secret creation or
+rotation without restarting HA. Missing credentials produce `not_configured`;
+timeouts, HTTP failures, or invalid model output produce `error` and clear the
+old text. Requests time out after 60 seconds and retry at the next hourly
+poll. The dashboard hides summaries from a different local date or more than
+two hours old. Summary text is excluded from recorder history.
+
+After merging and the normal GitOps rollout, verify the ExternalSecret is
+Ready and `sensor.power_ai_summary` becomes `ready`, with `today`, `yesterday`,
+`month`, `trends`, `as_of`, and `generated_at` attributes. An unavailable
+recorder report should affect only the trend evidence; live meter summaries
+can still generate. For `not_configured`, inspect ExternalSecret status; for
+`error`, check HA and LiteLLM logs and backend health. Never print the Secret.
+The model's response format follows the
+[vLLM chat-completion API](https://docs.vllm.ai/en/latest/api/vllm/entrypoints/openai/chat_completion/protocol/).
+Rollback uses a revert PR and the same ConfigMap-driven rollout described
+above; no meter data or statistics need to be changed.
+
 ## September 24 statistics repair
 
 The recorder contains a verified discontinuity: hourly power statistics stop
