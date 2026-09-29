@@ -34,7 +34,7 @@ spec:
               app: radar-ng-web
       containers:
         - name: web
-          image: ghcr.io/mitchross/radar-ng-web:v0.1.0@sha256:03bdaf3b82094d74c526fc3d5ae2effcb5b9c7db70d8d85a51886aeb70cf1d4f
+          image: ghcr.io/mitchross/radar-ng-web:v0.1.1@sha256:77a2c0c4395bb97d4e95154d7b611606dea94a8aeb3d6df61b477db599c3bea5
           ports:
             - containerPort: 8080
               name: http
