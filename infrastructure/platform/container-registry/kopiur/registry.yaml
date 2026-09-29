@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# Uniform fields come from my-apps/common/kopiur-backup; the mover securityContext is per-PVC and stays here.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: registry
+  namespace: container-registry
+spec:
+  sources:
+    - pvc:
+        name: registry
+  identity:
+    username: registry
+    hostname: container-registry
+  retention:
+    keepDaily: 7
+    keepWeekly: 4
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: registry-daily
+  namespace: container-registry
+spec:
+  policyRef:
+    name: registry
+  schedule:
+    cron: "41 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: registry-restore
+  namespace: container-registry
+spec:
+  source:
+    fromPolicy:
+      name: registry
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false

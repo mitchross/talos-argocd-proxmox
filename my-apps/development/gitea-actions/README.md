@@ -47,12 +47,14 @@ If `act-runner-token` is missing and `act-runner` is stuck in
 
 ## Registry refill after a nuke
 
-The in-cluster registry (`registry.vanillax.me`) uses a cluster PVC. After a
-full nuke it can come back empty even though the registry pod and HTTPRoute are
+The in-cluster registry (`registry.vanillax.me`) keeps images on a
+kopiur-backed PVC in namespace `container-registry`, so a rebuild normally
+restores them. It can still come back empty (no snapshot yet, or pushes newer
+than the last daily snapshot) even though the registry pod and HTTPRoute are
 healthy:
 
 ```bash
-kubectl exec -n kube-system deploy/registry -- \
+kubectl exec -n container-registry deploy/registry -- \
   wget -qO- http://127.0.0.1:5000/v2/_catalog
 ```
 
