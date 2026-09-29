@@ -1,16 +1,21 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# INTENTIONAL OUTLIER in kube-system: moving it means recreating the registry PVC (kube-system PVCs have
-# no kopiur restore path) and repointing every image reference. Revisit only if the registry is rebuilt.
-namespace: kube-system
+namespace: container-registry
 
 resources:
+  - namespace.yaml
+  - kopiur/registry.yaml
   - deployment.yaml
   - service.yaml
   - pvc.yaml
   - httproute.yaml
   - gc-cronjob.yaml
+  - vpa.yaml
+
+# Uniform kopiur backup fields for the stub in kopiur/ (same component my-apps uses).
+components:
+  - ../../../my-apps/common/kopiur-backup
 
 configMapGenerator:
   - name: registry-config
