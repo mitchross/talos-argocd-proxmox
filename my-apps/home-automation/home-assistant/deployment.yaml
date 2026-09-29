@@ -66,6 +66,18 @@ spec:
               readOnly: true
             - name: config
               mountPath: /config
+        - name: retire-period-statistics
+          image: "ghcr.io/home-assistant/home-assistant:2026.9.4"
+          command: ["python", "/opt/repo-scripts/retire-period-statistics.py", "--apply"]
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+            - name: config
+              mountPath: /config
         - name: install-hacs
           image: alpine:latest@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
           imagePullPolicy: IfNotPresent
