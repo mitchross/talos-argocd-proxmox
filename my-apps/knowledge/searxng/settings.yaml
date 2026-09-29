@@ -5,8 +5,8 @@ server:
     bind_address: "0.0.0.0"
     port: 8080  # Match with deployment port
     public_instance: true
-    limiter: true  # Enable limiter
-    method: "GET"  # Allow both GET and POST
+    limiter: true  # rate-limits non-LAN clients; see limiter.toml
+    method: "GET"  # the search form submits via GET
     http_protocol_version: "1.0"
     default_http_headers:
         X-Content-Type-Options: nosniff
@@ -93,8 +93,6 @@ engines:
       disabled: false
     - name: github
       disabled: false
-    # Kiwix engine removed - not available in SearXNG 2025.10.17
-    # Re-add when upgrading SearXNG to a version with kiwix engine support
 
 outgoing:
     # 6s: Vane/Perplexica fires 3 parallel queries; at 3s brave/startpage/qwant got suspended as "too slow".

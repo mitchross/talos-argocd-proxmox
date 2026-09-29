@@ -56,7 +56,7 @@ spec:
       containers:
         - name: intercept
           # Upstream's amd64 acarsdec is built with -march=native and crashes
-          # on this worker; the derivative only replaces that binary (#246).
+          # on this worker; the derivative only replaces that binary.
           image: ghcr.io/mitchross/intercept:acarsdec-portable-0f59c326-339f63eb@sha256:fdbe22567f5c5e016952ff0609847f9ce3e3a1dd71ed4ebf2bad51bb6b08f9af
           imagePullPolicy: IfNotPresent
           securityContext:

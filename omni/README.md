@@ -43,10 +43,10 @@ A complete, production-ready starter kit for deploying self-hosted Sidero Omni w
 2. **Deploy Omni** - Follow [omni/README.md](omni/README.md)
 3. **Setup Providers** - Follow [proxmox-providers/](proxmox-providers/)
 4. **Apply Machine Classes** - `omnictl apply -f omni/machine-classes/`
-5. **Validate Template** - `omnictl cluster template validate -f omni/cluster-template/cluster-template.yaml`
-6. **Preview Provisioning** - `omnictl cluster template sync -f omni/cluster-template/cluster-template.yaml --dry-run`
-7. **Provision Cluster** - `omnictl cluster template sync -f omni/cluster-template/cluster-template.yaml`
-8. **Watch Provisioning** - `omnictl cluster template status -f omni/cluster-template/cluster-template.yaml --wait 30m`
+5. **Validate Template** - `omnictl cluster template validate -f omni/cluster-template/cluster-template-prod-v2.yaml`
+6. **Preview Provisioning** - `omnictl cluster template sync -f omni/cluster-template/cluster-template-prod-v2.yaml --dry-run`
+7. **Provision Cluster** - `omnictl cluster template sync -f omni/cluster-template/cluster-template-prod-v2.yaml`
+8. **Watch Provisioning** - `omnictl cluster template status -f omni/cluster-template/cluster-template-prod-v2.yaml --wait 30m`
 
 Run steps 4-8 from the repository root. Template sync creates the control
 plane and worker MachineSets; do not create MachineSets separately.
