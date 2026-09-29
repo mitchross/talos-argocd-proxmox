@@ -4,7 +4,7 @@ metadata:
   name: redlib-route
   namespace: redlib
   labels:
-    external-dns: "true"  # Enable ExternalDNS for this route
+    external-dns: "true"
   annotations:
     # ExternalDNS will create a CNAME record pointing to vanillax.me
     # which then points to the Cloudflare Tunnel

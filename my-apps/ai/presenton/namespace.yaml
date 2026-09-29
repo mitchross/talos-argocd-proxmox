@@ -3,10 +3,8 @@ kind: Namespace
 metadata:
   name: presenton
   labels:
-    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector).
+    # Drives the ClusterExternalSecret cred fanout and ClusterRepository tenancy (allowedNamespaces selector).
     kopiur.home-operations.com/repo: cluster-kopia
-    # Presenton container runs as root; app_data is root-owned.
-    # Mover needs privilegedMode to read root-owned data.
   annotations:
+    # Presenton runs as root and app_data is root-owned, so the mover needs privilegedMode.
     kopiur.home-operations.com/privileged-movers: "true"

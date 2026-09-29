@@ -3,6 +3,6 @@ kind: Namespace
 metadata:
   name: longhorn-system
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"  # PSS privileged label must land before the driver workloads (was a positive wave — applied AFTER pods on fresh bootstrap)
+    argocd.argoproj.io/sync-wave: "-1"  # PSS privileged label must land before the driver workloads
   labels:
     pod-security.kubernetes.io/enforce: privileged

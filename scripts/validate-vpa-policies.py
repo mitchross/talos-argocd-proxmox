@@ -58,9 +58,8 @@ def matches_exception(
     if (
         entry.get("apiVersion") != api
         or entry.get("kind") != kind
-        # Some Helm charts rely on the Argo destination namespace and omit it
-        # from rendered workload metadata. In that case name/kind/API remain
-        # unique and the reviewed exception still applies.
+        # Some Helm charts omit the namespace from rendered metadata (Argo's destination supplies it);
+        # name/kind/API stay unique, so the exception still applies.
         or (namespace and entry.get("namespace", "") != namespace)
     ):
         return False
@@ -75,9 +74,8 @@ def target_exists(
 ) -> bool:
     if key in objects:
         return True
-    # A few Helm charts genuinely omit metadata.namespace and rely on the Argo
-    # destination namespace. Accept only that exact namespace-less render key;
-    # never accept a same-named workload rendered in a different namespace.
+    # Accept only the exact namespace-less key for charts that omit metadata.namespace,
+    # never a same-named workload rendered in a different namespace.
     api, kind, _namespace, name = key
     return (api, kind, "", name) in objects
 

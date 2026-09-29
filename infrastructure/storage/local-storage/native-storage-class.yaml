@@ -2,6 +2,6 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: local-storage
-provisioner: kubernetes.io/no-provisioner # Important for local PVs
-volumeBindingMode: WaitForFirstConsumer # Recommended for local PVs
-reclaimPolicy: Retain # Match with existing PVs
+provisioner: kubernetes.io/no-provisioner # PVs are created by hand
+volumeBindingMode: WaitForFirstConsumer # defer binding until a consuming Pod lets the scheduler pick a compatible PV/node
+reclaimPolicy: Retain # keep data when the PVC is deleted

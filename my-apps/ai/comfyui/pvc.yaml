@@ -17,8 +17,7 @@ spec:
     - uid=0
     - gid=0
     - vers=3.1.1
-    # SMB multichannel (enabled server-side on TrueNAS 2026-07): 4 channels
-    # over the 10G link. Requires vers>=3.0 and the server toggle.
+    # SMB multichannel: 4 channels over the 10G link. Needs vers>=3.0 and the TrueNAS server-side toggle.
     - max_channels=4
     - noserverino
     - cache=loose
@@ -39,7 +38,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  # PVC volumeName is immutable: renamed on the NFS->SMB move so ArgoCD could create/prune instead of wedging.
+  # volumeName is immutable: to swap the backing PV, give it a new name so ArgoCD can create/prune instead of wedging.
   name: comfyui-storage-smb
   namespace: comfyui
   labels:

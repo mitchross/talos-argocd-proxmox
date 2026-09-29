@@ -6,14 +6,12 @@ global:
 crds:
   enabled: true
   keep: true
-# Use the modern, structured configuration for controller settings
 config:
   apiVersion: controller.config.cert-manager.io/v1alpha1
   kind: ControllerConfiguration
   enableGatewayAPI: true
 # extraArgs can still be used for flags not available in the structured config
 extraArgs:
-  # "--enable-gateway-api" has been moved to the 'config' block above
   - "--dns01-recursive-nameservers-only"
   # Firewalla intercepts plain DNS, including queries sent to public resolver
   # IPs. DoH keeps split-horizon DNS from hiding public ACME TXT records.
@@ -31,13 +29,11 @@ tolerations:
     operator: Exists
     effect: NoSchedule
 
-# Security context for improved container security - This section is well-configured
 securityContext:
   runAsNonRoot: true
   runAsUser: 65534
   seccompProfile:
     type: RuntimeDefault
-# Resource limits for production workloads - This section is well-configured
 resources:
   limits:
     memory: 256Mi
@@ -67,7 +63,7 @@ webhook:
       memory: 128Mi
 cainjector:
   # cainjector populates the webhook's caBundle; a split placement would make
-  # webhook readiness depend on a cross-node call again.
+  # webhook readiness depend on a cross-node call.
   nodeSelector:
     kubernetes.io/os: linux
     node-role.kubernetes.io/control-plane: ""

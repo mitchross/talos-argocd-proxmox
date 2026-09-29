@@ -4,8 +4,7 @@
 // The VersaTiles frontend builds its styles client-side and ships no static
 // style.json, but native MapLibre clients (Radar NG) need a style *URL*. Keep
 // @versatiles/style at the version the running VersaTiles server bundles, or
-// sprite/icon names drift from what the server serves (that happened once:
-// v4.6 → v4.14 moved sprites from /assets/sprites/basics to /assets/sprites/base).
+// sprite/icon names drift from what the server serves.
 //
 // Run (from this directory):
 //   bun add @versatiles/style@6.0.1

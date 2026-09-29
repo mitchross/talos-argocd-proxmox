@@ -53,9 +53,7 @@ while IFS= read -r appset; do
     appset_path=$(echo "$appset_path" | sed 's/.*path: //' | tr -d "'\"" | xargs)
     [ -z "$appset_path" ] && continue
 
-    # Render the AppSet's metadata.name template for this generator path.
-    # Every generated Application must carry a domain prefix; assuming a bare
-    # basename here allowed ambiguous identities such as database `temporal`.
+    # Render the AppSet's metadata.name template (generated names carry a domain prefix, not a bare basename).
     name_template=$(grep "name:.*path.basename" "$appset" | head -1 | sed 's/.*name: *//' | tr -d "'\"" | xargs || true)
     generated_name=$(printf '%s\n' "$name_template" | sed "s/{{ \\.path\\.basename }}/$(basename "$appset_path")/")
 

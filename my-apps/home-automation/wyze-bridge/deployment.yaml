@@ -4,7 +4,7 @@ metadata:
   name: wyze-bridge
   namespace: wyze-bridge
 spec:
-  # Parked at 0 — crashlooping (263 restarts). Diagnose before restoring to 1.
+  # Parked at 0 (crashloops); diagnose before restoring to 1.
   replicas: 0
   strategy:
     type: Recreate
