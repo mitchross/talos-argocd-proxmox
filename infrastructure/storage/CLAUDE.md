@@ -17,33 +17,8 @@ client to root (`mapall`), so any pod UID can read and write; do not set `fsGrou
 on pods or kopiur movers using it, or the node re-chowns every file on each mount.
 Which physical disk holds what, and where new data goes: `docs/domains/storage/disk-map.md`.
 
-**Do not add a network-attached block tier for databases.** This was built and
-measured on 2026-07-13 (a `flashpool` of 3x enterprise SATA SSD on the NAS, exported
-over NVMe-oF/TCP) and **abandoned**. The driver worked, but sync writes do not survive
-the network hop: the same zvol did **2,510 fsync IOPS locally on the NAS and 437 over
-the wire** — only 1.7x better than Longhorn's 259, nowhere near the ~11x the local
-numbers implied. It is not the wire (RTT is 0.147ms); it is that every fsync becomes
-ext4-journal -> NVMe-oF FLUSH -> nvmet -> ZFS ZIL commit, each a round trip. A real SAN
-array hides this behind battery-backed NVRAM; a NAS running honest ZFS cannot.
-Databases fsync on every commit, so they are the **worst** workload to put behind a
-network. Put database flash **local to the node that runs them** instead.
-
-## Longhorn PVC Template
-
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: app-data
-  namespace: app-name
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: longhorn  # Cluster default (V1 data engine), can be omitted
-```
+**Do not add a network-attached block tier for databases.** The NVMe/TCP flash-pool experiment was not adopted
+(`docs/domains/storage/storage-tiers.md` § Historical experiment); keep database flash **local to the node**.
 
 ## NFS Static PVs (CRITICAL: Use CSI, NOT legacy nfs:)
 
@@ -105,13 +80,7 @@ Linux kernel (5.4+) defaults NFS `read_ahead_kb` to **128 KB**, limiting sequent
 
 ## Proxmox Storage Configuration
 
-| Storage Pool | Physical Backing | Purpose | Type / Provisioning |
-|--------------|------------------|---------|---------------------|
-| `nvme0-vmstore` | `/dev/nvme0n1` (EDILOCA EN605 512GB NVMe) | Worker VM Disk 1 (`scsi0`) / Control Plane | LVM-Thin |
-| `nvme1-vmstore` | `/dev/nvme1n1` (EDILOCA EN605 512GB NVMe) | Worker VM Disk 2 (`scsi1`) | LVM-Thin |
-| `ssd-ent` | `/dev/md0` = mdadm RAID1 of 2× HPE MK000480GWCEV enterprise SATA SSD (PLP) | Worker VM Disk 3 → Longhorn `flash` disk (`longhorn-flash` StorageClass) | **thick LVM** (NOT thin) |
-| `local-lvm` | `/dev/sdb` (SanDisk SD7TB3Q 256GB SATA SSD) | Proxmox Boot & Host Storage | LVM-Thin |
-| `dell-ssd-vmstore` (Dell host) | `/dev/sda`, Samsung SSD 850 EVO 500GB, serial `S3PTNF0J801121E` | Dell VM `scsi1` → `/var/mnt/longhorn-dell-ssd` | **thick LVM**; 400 GiB virtual disk |
+Pools, physical disks and what each backs: `docs/domains/storage/disk-map.md`.
 
 **LVM-Thin** on the NVMe/boot pools gives thin provisioning. **`ssd-ent` is deliberately
 THICK LVM** — an lvmthin pool collapses fsync to ~170 IOPS (metadata commit per fsync,

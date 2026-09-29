@@ -8,14 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a production-grade GitOps Kubernetes cluster running on **Talos OS** with **self-managing ArgoCD**. The key differentiator is that ArgoCD manages its own configuration and automatically discovers applications through directory structure - no manual Application manifests needed.
 
-**Tech Stack**: Talos OS + ArgoCD + Cilium (Gateway API) + Longhorn + 1Password + GPU support
-
 **AI/LLM Backend**: **vLLM** is the only GPU inference backend; never Ollama.
 
-- **vLLM**: official `Qwen/Qwen3.8-27B-FP8`, TP=2 on both RTX 3090s, FP8 KV,
-  native vision, 262,144-token server ceiling, explicit xhigh reasoning default, and
-  **no MTP/speculative decoding**. Historical capacity and current client guidance are in
-  `docs/domains/ai-gpu/3090-llm-optimization.md`; reverify after runtime changes.
 - Stable API model: `qwen3.8-27b`. Apps use authenticated LiteLLM at
   `http://litellm-service.litellm.svc.cluster.local:4000/v1` for Langfuse telemetry. Direct diagnostic / gateway upstream service:
   `http://vllm-service.vllm.svc.cluster.local:8080/v1`. Both
@@ -23,8 +17,7 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 Both cards use whole-card allocations (`Recreate`, time-slicing disabled),
 with the existing 220 W per-card limit. Image generation must remain parked
-while vLLM requests both cards. The AutoRound INT4 checkpoint is
-retained only for a later speed A/B. Canonical runtime/staging/rollback:
+while vLLM requests both cards. Runtime, flags, staging and rollback:
 `my-apps/ai/vllm/README.md`; app wiring: `docs/domains/ai-gpu/model-catalog.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
@@ -45,6 +38,8 @@ infrastructure/storage/longhorn/     → ArgoCD Application "longhorn"
 monitoring/metrics/prometheus-stack/ → ArgoCD Application "monitoring-prometheus-stack"
 ```
 
+Directories named `_archive/` are excluded from discovery — retired apps, kopiur backups kept.
+
 ## Sync Wave Architecture
 
 Applications deploy in strict order to prevent race conditions:
@@ -64,11 +59,8 @@ Applications deploy in strict order to prevent race conditions:
 
 **Databases** are plain Postgres Deployments inside the owning app's directory
 (reference: `my-apps/development/gitea/postgres/`), backed up by kopiur on the
-daily tier (6h for data you can't re-create) with restore-before-bind — no operator, no recovery script, no
-manual sync gates. CNPG was fully retired 2026-08-13 (paperless and temporal
-were cut over as fresh empty databases by explicit decision). A separate
-Database AppSet still discovers `infrastructure/database/*/*` (Redis + shared
-DB support), fully automated.
+daily tier (6h for data you can't re-create) with restore-before-bind — no operator or manual sync gates.
+CNPG is retired (see Agent guardrails); the Database AppSet row above covers `infrastructure/database/*/*`.
 
 **AppProjects** are intentionally permissive for this single-operator homelab.
 They provide UI grouping and policy intent, not multi-tenant security. Tighten
@@ -82,41 +74,6 @@ or external automation to write application manifests.
 ```
 
 **Never commit secrets to Git**. Always use ExternalSecret resources pointing to 1Password.
-
-## Directory Structure
-
-```
-infrastructure/          # Core cluster components (waves 0-4)
-├── controllers/       # ArgoCD (self-managed) + OpenTelemetry operator
-├── secrets/           # 1Password Connect, External Secrets
-├── networking/        # Cilium, Gateway API, cert-manager, external-dns, cloudflared
-├── storage/           # Longhorn, NFS/SMB/TrueNAS CSI, local storage, snapshots
-├── backup/            # kopiur operator + repo config, RustFS lifecycle
-├── gpu/               # NVIDIA GPU operator, Intel GPU plugin, GPU priority classes
-├── scheduling/        # KEDA, VPA, descheduler, metrics-server, node-feature-discovery
-├── platform/          # Temporal Worker Controller, container registry
-└── database/          # Redis + shared DB support (Database AppSet)
-
-monitoring/             # Observability stack (Wave 5): metrics/, logs/, tracing/
-my-apps/                # User applications (Wave 6)
-├── ai/                # GPU/LLM serving and AI apps
-├── knowledge/         # Search, reading, notes, documents, AI memory
-├── home-automation/   # Home Assistant, cameras, energy
-├── media/             # Media services
-├── utility/           # Small browser tools and dashboards
-├── storage-utility/   # File sharing and transfer
-├── development/       # Dev tools (git, CI, Renovate, Strimzi files)
-├── development-infra/ # Services other apps run on (Temporal, PostHog, map tiles)
-├── personal-projects/ # Apps built from your own images
-├── demo/              # Toys and learning experiments
-├── system/            # Cluster-side helpers
-├── common/            # Shared Kustomize components
-└── */_archive/        # Retired apps: excluded from ArgoCD, kopiur backups kept
-
-scripts/                # Automation tools
-omni/                   # Omni (Sidero) deployment configs
-docs/                   # Documentation
-```
 
 ## Comment Style
 
@@ -187,31 +144,9 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Auto-merge major Helm chart version bumps for critical infrastructure (kube-prometheus-stack, longhorn, cilium) — **a kube-prometheus-stack v82→v83 auto-merge caused a full cluster outage on 2026-04-08 via Kyverno webhook deadlock**. Pin Renovate to minor/patch only for these charts.
 - Run a kopiur mover as plain `root` to "fix" a permission error. Under baseline Pod Security the mover has no read capabilities, so root can't read non-root data — set the mover `securityContext` to the **data owner uid:gid** instead (`docs/domains/storage/kopiur-mover-permissions.md`). Only use `runAsUser: 0` + the `privileged-movers` namespace annotation when the data is genuinely root-owned.
 
-## Nested CLAUDE.md Files
-
-Detailed instructions load automatically when working in these directories:
-
-| Directory | Contains |
-|-----------|----------|
-| `infrastructure/` | Essential commands, AppSet rules, ArgoCD/secret debugging |
-| `infrastructure/storage/` | Storage classes, NFS CSI patterns, 10G performance tuning |
-| `infrastructure/database/` | Database AppSet scope (Redis + shared support); plain-Postgres pointer |
-| `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
-| `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
-| `my-apps/ai/` | GPU workload patterns, dual-card vLLM backend |
-| `my-apps/development-infra/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
-| `monitoring/` | Monitoring pitfalls (S3 creds, ServiceMonitor selectors) |
-
 ## Custom Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/project:new-app <category/name>` | Guided workflow for adding a new application |
-| `/project:add-backup <app-path>` | Add automatic backup to PVC(s) |
-| `/project:new-database <app-name>` | Create a database (plain Postgres + kopiur — the only pattern) |
-| `/project:place-storage <app or pvc>` | Pick a PVC's storage class and size (disk map: `docs/domains/storage/disk-map.md`) |
-
-Codex uses the same procedures through `.agents/skills/` (see `AGENTS.md`).
+Project procedures live in `.claude/commands/` (also listed as skills); Codex uses the same ones through `.agents/skills/` (see `AGENTS.md`).
 
 ## Reference Examples
 
@@ -227,6 +162,7 @@ Codex uses the same procedures through `.agents/skills/` (see `AGENTS.md`).
 | **Daemon-drop mover uid (999:568)** | `my-apps/knowledge/project-nomad/mysql/kopiur-backup.yaml` |
 | **Multi-PVC + backup-exempt mix** | `my-apps/home-automation/frigate/` (backs up `frigate-config`, exempts `frigate-media`) |
 | **Archive a retired app** | `my-apps/<category>/_archive/<app>/` — see `docs/domains/argocd/entrypoints.md` § Archived apps |
+| **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
 | **RustFS lifecycle policy** | `infrastructure/backup/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/secrets/1passwordconnect/` |
 | **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |

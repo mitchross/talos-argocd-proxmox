@@ -7,48 +7,10 @@
 ## Gateway API Routing
 
 This cluster uses **Gateway API exclusively** (not Ingress). Never create Ingress resources.
+Gateways are defined once in `infrastructure/networking/gateway/`. HTTPRoute templates (internal and
+external, with the three required external-dns pieces) are in `my-apps/CLAUDE.md` § "Application with Web Access".
 
-```yaml
-# Gateway defined once in infrastructure/networking/gateway/
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: gateway-external
-spec:
-  gatewayClassName: cilium
-  listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-
-# Applications reference the Gateway via HTTPRoute
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: HTTPRoute
-metadata:
-  name: app-route
-  namespace: app-name
-spec:
-  parentRefs:
-  - kind: Gateway
-    name: gateway-external
-    namespace: gateway
-  hostnames:
-  - app.vanillax.me
-  rules:
-  - backendRefs:
-    - name: app-service
-      port: 8080
-```
-
-**CRITICAL**: Services MUST have named ports for HTTPRoute to work — fails silently without this:
-
-```yaml
-spec:
-  ports:
-    - name: http        # REQUIRED - HTTPRoute fails silently without this
-      port: 8080
-      targetPort: 8080
-```
+**CRITICAL**: Services MUST have named ports (`name: http`) for HTTPRoute to work — it fails silently without this.
 
 ## Debugging Networking
 
