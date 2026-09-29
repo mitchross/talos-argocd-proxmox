@@ -1,7 +1,6 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  # Changing an HTTPRoute's parentRefs in place silently no-ops; a new name forces create+prune.
   name: cobalt-api
   namespace: cobalt
   labels:

@@ -29,7 +29,8 @@ spec:
               value: "production"
             - name: PUB_HOSTNAME
               value: "vert.vanillax.me"
-            # Video conversion: set PUB_VERTD_URL to http://vertd.vert.svc.cluster.local:24153 to point at vertd.
+            # PUB_* values are baked into the prebuilt image, so env here can't change them; PUB_VERTD_URL needs a
+            # browser-reachable HTTPS endpoint set at image build time.
           resources:
             requests:
               cpu: 50m
