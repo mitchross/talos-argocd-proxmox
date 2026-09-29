@@ -19,6 +19,8 @@ const EXCLUDED_HOSTS = new Set([
   "ingest-posthog.vanillax.me",
   "posthog.vanillax.me",
   "redlib.vanillax.me",
+  // Initialises PostHog itself (radar-ng web/src/analytics.ts); injecting would double-record.
+  "radar.vanillax.me",
 ]);
 
 /**

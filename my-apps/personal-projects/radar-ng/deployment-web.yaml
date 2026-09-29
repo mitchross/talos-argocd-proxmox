@@ -1,0 +1,111 @@
+# The web radar (radar.vanillax.me): static files from ghcr.io/mitchross/radar-ng-web
+# on unprivileged nginx. The HTTPRoute sends /api, /tiles and /basemap to the
+# tile-server, so the page and its data share an origin (the API has no CORS,
+# and Cloudflare hotlink protection 403s tiles requested from other sites).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radar-ng-web
+  namespace: radar-ng
+  labels:
+    app: radar-ng-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: radar-ng-web
+  template:
+    metadata:
+      labels:
+        app: radar-ng-web
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: radar-ng-web
+      containers:
+        - name: web
+          image: ghcr.io/mitchross/radar-ng-web:v0.1.0@sha256:03bdaf3b82094d74c526fc3d5ae2effcb5b9c7db70d8d85a51886aeb70cf1d4f
+          ports:
+            - containerPort: 8080
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 24Mi
+            limits:
+              memory: 96Mi
+          volumeMounts:
+            # nginx's pid and temp files; the image root stays read-only.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radar-ng-web
+  namespace: radar-ng
+  labels:
+    app: radar-ng-web
+spec:
+  selector:
+    app: radar-ng-web
+  ports:
+    - { port: 8080, targetPort: 8080, name: http }
+  type: ClusterIP
+---
+# Public via gateway-external (Cloudflare tunnel + external-dns).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radar-ng-web
+  namespace: radar-ng
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "radar.vanillax.me"
+  rules:
+    # Data paths go to the tile-server on the same host.
+    - matches:
+        - path: { type: PathPrefix, value: /api }
+        - path: { type: PathPrefix, value: /tiles }
+        - path: { type: PathPrefix, value: /basemap }
+      backendRefs:
+        - { group: "", kind: Service, name: tile-server, port: 8080, weight: 1 }
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      backendRefs:
+        - { group: "", kind: Service, name: radar-ng-web, port: 8080, weight: 1 }
