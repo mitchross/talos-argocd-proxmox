@@ -6,7 +6,7 @@ while true; do
     sleep 2
   done
   echo "[prune] starting cycle at $(date -u)"
-  docker buildx prune -af --keep-storage 20GB --filter until=24h 2>&1 || true
+  docker buildx prune -af --keep-storage 6GB --filter until=24h 2>&1 || true
   docker system prune -af --filter "until=72h" 2>&1 || true
   df -h /var/lib/docker 2>/dev/null || true
   sleep 21600

@@ -6,8 +6,8 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - configmap.yaml
-  - pvc.yaml
-  - deployment.yaml
+  - service.yaml
+  - statefulset.yaml
 
 configMapGenerator:
   - name: gitea-actions-scripts

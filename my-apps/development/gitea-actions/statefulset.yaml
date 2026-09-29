@@ -1,16 +1,17 @@
 # Runner + separate dind sidecar over a shared /var/run socket. Do not switch to the
 # gitea/act_runner:*-dind image: s6 readiness race, forced --gpus=all, broken TLS key usage.
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: act-runner
   namespace: gitea-actions
   labels:
     app: act-runner
 spec:
-  replicas: 1
-  strategy:
-    type: Recreate          # only one runner identity, never two at once
+  # Two runners, each with its own dind + layer cache: capacity>1 on one dind serializes on its lock.
+  replicas: 2
+  serviceName: act-runner
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app: act-runner
@@ -19,6 +20,15 @@ spec:
       labels:
         app: act-runner
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: act-runner
       containers:
         - name: runner
           # Keep off Gitea's own registry: a fresh Gitea rebuild must still be able to start CI.
@@ -34,8 +44,11 @@ spec:
                 secretKeyRef:
                   name: act-runner-token
                   key: token
+            # act-runner-0 / act-runner-1: one Gitea runner identity per pod.
             - name: GITEA_RUNNER_NAME
-              value: cluster-runner-1
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: GITEA_RUNNER_LABELS
               value: ubuntu-latest:docker://catthehacker/ubuntu:act-latest
             - name: CONFIG_FILE
@@ -111,10 +124,20 @@ spec:
             defaultMode: 0555
         - { name: var-run, emptyDir: {} }
         - { name: data,    emptyDir: {} }
-        # PVC, not emptyDir: keeps the 3 GB catthehacker image + base layers warm across restarts (pvc.yaml).
-        - name: docker-storage
-          persistentVolumeClaim:
-            claimName: act-runner-docker
         - name: config
           configMap:
             name: act-runner-config
+  # Per-runner layer cache, not emptyDir: keeps the 3 GB catthehacker image + base layers warm across restarts.
+  volumeClaimTemplates:
+    - metadata:
+        name: docker-storage
+        labels:
+          backup-exempt: "true"
+        annotations:
+          storage.vanillax.dev/backup-exempt-reason: "Docker layer cache for the act-runner DinD sidecar; rebuilds from registries on next CI run"
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 10Gi
