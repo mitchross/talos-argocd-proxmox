@@ -179,134 +179,21 @@ Full reasoning + measured numbers: **`docs/domains/storage/storage-tiers.md`**.
 
 Size PVCs to real use plus headroom: Longhorn books the full request, and oversized volumes block backup clones. Never put Docker/overlay storage or embedded search engines on NFS. Full map of disks: `docs/domains/storage/disk-map.md`.
 
-**Do NOT put databases on network-attached block storage.** A `flashpool`-over-NVMe-oF tier was
-built and measured on 2026-07-13 and **abandoned**: the same zvol did **2,510 fsync IOPS locally
-on the NAS but only 437 over the wire** — a mere 1.7x over Longhorn's 259. Sync writes do not
-survive the network hop (every fsync becomes ext4-journal -> FLUSH -> nvmet -> ZFS ZIL commit,
-each a round trip). Databases fsync on **every commit**, making them the worst possible workload
-to put behind a network. Database flash belongs **local to the node**.
+**Do NOT put databases on network-attached block storage.** The NVMe/TCP flash-pool experiment was not adopted
+(`docs/domains/storage/storage-tiers.md` § Historical experiment); database flash belongs **local to the node**.
 
 ### Application with Persistent Storage + Backups
 
-Backups are **kopiur** (home-operations' Kopia-native operator). It replaced
-pvc-plumber + VolSync (retired 2026-06-27). You declare per-PVC backup intent
-with a small Kustomize stub + the shared `kopiur-backup` component; kopiur owns
-the `SnapshotPolicy` / `SnapshotSchedule` / `Restore` reconcile and the
-`Snapshot` Jobs; kopia moves bytes to the dedicated RustFS bucket
-(`s3://kopiur`). Full workflow: `.claude/commands/add-backup.md`.
-**Reference app: `my-apps/ai/open-webui/`** (component + `kopiur/storage.yaml`).
+Backups are **kopiur**: a per-PVC stub (`SnapshotPolicy` + `SnapshotSchedule` + `Restore` in
+`kopiur/<pvc>.yaml`), the shared `../../common/kopiur-backup` component, the namespace label
+`kopiur.home-operations.com/repo: cluster-kopia`, and the PVC `dataSourceRef` pointing at
+`<pvc>-restore`. Steps and YAML: `/add-backup` (`.claude/commands/add-backup.md`). Reference app: `my-apps/ai/open-webui/`.
 
-**Four pieces per backed-up app:**
-
-**1. Namespace** — one label (drives the ESO credential fan-out AND
-ClusterRepository tenancy). Add the privileged-movers annotation ONLY if the
-PVC's data is root-owned (its mover then runs as uid 0):
-```yaml
-# namespace.yaml
-metadata:
-  name: app-name
-  labels:
-    kopiur.home-operations.com/repo: cluster-kopia      # REQUIRED — creds + repo tenancy
-  # annotations:                                         # ONLY for root-owned data
-  #   kopiur.home-operations.com/privileged-movers: "true"
-```
-
-**2. Kustomization** — pull in the component + the per-PVC stub:
-```yaml
-resources:
-  - kopiur/app-data.yaml
-components:
-  - ../../common/kopiur-backup   # injects repository, copyMethod, populator, schedule defaults
-```
-
-**3. Per-PVC stub** (`kopiur/app-data.yaml`) — only the VARYING bits. The
-**mover MUST run as the DATA OWNER uid:gid**: under baseline Pod Security the
-mover runs `capabilities: drop:[ALL]` and kopiur's `privilegedMode` adds none,
-so a root mover **cannot** read non-root / mode-600/700 data. Find the owner:
-`kubectl -n <ns> exec <pod> -- stat -c '%u:%g' <data-mountpath>`.
-(Full plain-English + technical why: `docs/domains/storage/kopiur-mover-permissions.md`.)
-```yaml
----
-apiVersion: kopiur.home-operations.com/v1alpha1
-kind: SnapshotPolicy
-metadata: { name: app-data, namespace: app-name }
-spec:
-  sources: [{ pvc: { name: app-data } }]
-  identity: { username: app-data, hostname: app-name }
-  retention: { keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }   # 6h tier (can't re-create): keepHourly:8,keepDaily:7,keepWeekly:4
-  mover:                          # <-- run as the DATA owner (example uid 1000)
-    securityContext: { runAsUser: 1000, runAsGroup: 1000, runAsNonRoot: true }
-    podSecurityContext: { fsGroup: 1000, supplementalGroups: [1000] }
----
-apiVersion: kopiur.home-operations.com/v1alpha1
-kind: SnapshotSchedule
-metadata: { name: app-data-daily, namespace: app-name }
-spec: { policyRef: { name: app-data }, schedule: { cron: "MM 3 * * *" } }   # daily default (each run clones the whole volume); distinct minute vs ALL schedules, incl. 6h "MM */6 * * *" (collides with 00/06/12/18:MM)
----
-apiVersion: kopiur.home-operations.com/v1alpha1
-kind: Restore
-metadata: { name: app-data-restore, namespace: app-name }
-spec:
-  source: { fromPolicy: { name: app-data, offset: 0 } }
-  mover:                          # same data-owner uid (no consumer pod during a cold restore)
-    securityContext: { runAsUser: 1000, runAsGroup: 1000, runAsNonRoot: true }
-    podSecurityContext: { fsGroup: 1000, supplementalGroups: [1000] }
-```
-For **root-owned** data use `securityContext: { runAsUser: 0, runAsNonRoot: false }`
-(no podSecurityContext needed) AND add the namespace privileged-movers annotation.
-The component injects `repository: cluster-kopia`, `copyMethod: Snapshot`,
-`volumeSnapshotClassName: longhorn-snapclass`, `deletion.onPolicyDelete: Retain`,
-`target.populator: {}`, `policy.onMissingSnapshot: Continue`,
-`concurrencyPolicy: Forbid`, `runOnCreate: false` — do NOT duplicate those in the stub.
-
-**4. The PVC** — point `dataSourceRef` at the Restore (restore-before-bind) and
-keep the immutable-dataSourceRef masking annotations:
-```yaml
-metadata:
-  annotations:
-    # immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff;
-    # the AppSet ignoreDifferences handles the live compare.
-    argocd.argoproj.io/compare-options: ServerSideDiff=false
-    argocd.argoproj.io/sync-options: ServerSideApply=false
-spec:
-  storageClassName: longhorn      # needs CSI VolumeSnapshot
-  dataSourceRef:
-    apiGroup: kopiur.home-operations.com
-    kind: Restore
-    name: app-data-restore
-```
-
-**Restore-before-bind semantics:** on recreate the PVC sits `Pending` while the
-`Restore` populator hydrates it from the latest snapshot, then binds WITH data.
-A brand-new PVC with no snapshot yet binds **empty** and backs up forward
-(`onMissingSnapshot: Continue` = deploy-or-restore) — so ensure a `Snapshot`
-exists (`kubectl -n <ns> get snapshot`) before relying on restore. If the **repo
-is unreachable**, the restore errors and the PVC stays `Pending` — it never binds
-empty (source-verified; kopiur propagates the backend error before the
-onMissingSnapshot decision, preserving the old `wait-for-rustfs` MAP's guarantee).
-
-Verify after applying:
-```
-kubectl -n app-name get snapshotpolicy,snapshotschedule,restore
-kubectl -n app-name get secret kopiur-rustfs     # fanned in by the ClusterExternalSecret
-kubectl -n app-name get snapshot                 # Completed with non-zero files after first run
-```
-
-**When NOT to back up a PVC** — label `backup-exempt: "true"` + annotation
-`storage.vanillax.dev/backup-exempt-reason: "<reason>"` (the **fully-qualified**
-key — bare `backup-exempt-reason` is silently ignored by the CI guard):
-temporary/cache data, externally-synced data, frequently-recreated PVCs,
-PostHog ClickHouse/Kafka/Redis (disposable — but PostHog **Postgres** is kopiur-backed: it holds the API keys).
-
-**Multi-PVC apps**: each PVC gets its own stub + `dataSourceRef`; the mover uid
-is per-PVC (e.g. `my-apps/knowledge/project-nomad/` runs `1000` / `999:568` / `568`
-in one namespace). Mix backed-up and `backup-exempt` freely — e.g.
-`my-apps/home-automation/frigate/` backs up `frigate-config`, exempts `frigate-media`.
-
-**Helm-rendered PVCs**: the chart owns the PVC manifest — inject the
-`dataSourceRef` + masking annotations via a Kustomize `patches:` block targeting
-the chart PVC; the per-PVC stub + the component go in the app kustomization (see
-`my-apps/development/gitea/`). Do NOT add backup objects as `extraDeploy:` chart values.
+- The mover MUST run as the **data owner uid:gid**: under baseline Pod Security a root mover cannot read non-root data. Root-owned data only: `runAsUser: 0` + the `privileged-movers` namespace annotation (`docs/domains/storage/kopiur-mover-permissions.md`).
+- Restore-before-bind: on recreate the PVC stays `Pending` while the populator hydrates it. A new PVC with no snapshot binds **empty** and backs up forward (`onMissingSnapshot: Continue`), so confirm `kubectl -n <ns> get snapshot` shows one before relying on restore.
+- Multi-PVC apps: one stub + `dataSourceRef` per PVC, mover uid per PVC (`my-apps/knowledge/project-nomad/`); backed-up and `backup-exempt` PVCs mix freely (`my-apps/home-automation/frigate/`).
+- Helm-rendered PVCs: inject `dataSourceRef` + the masking annotations with a Kustomize `patches:` block (`my-apps/development/gitea/`); never put backup objects in chart `extraDeploy:`.
+- `backup-exempt: "true"` (temporary/cache, externally-synced or frequently-recreated data) needs the fully-qualified `storage.vanillax.dev/backup-exempt-reason` annotation; the bare key is silently ignored. PostHog ClickHouse/Kafka/Redis are exempt; PostHog **Postgres** is backed up (it holds the API keys).
 
 ## Configuration Patterns
 
@@ -338,19 +225,3 @@ resources:
 components:
 - ../../common/deployment-defaults  # Applies revisionHistoryLimit: 2 to all Deployments
 ```
-
-## Reference Examples
-
-| Pattern | Location |
-|---------|----------|
-| **Minimal app** | template in `my-apps/CLAUDE.md` § "Minimal Application" (no live example is truly minimal) |
-| **Backup with root-uid mover** | `my-apps/demo/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
-| **GPU workload** | `my-apps/ai/comfyui/` |
-| **Complex app with storage** | `my-apps/media/immich/` |
-| **PVC with automatic backup** | `my-apps/ai/open-webui/pvc.yaml` + `kopiur/` stub |
-| **Archived app** | `my-apps/games/_archive/project-zomboid/` — not deployed, backups kept; see `docs/domains/argocd/entrypoints.md` § Archived apps |
-| **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
-| **Helm + Kustomize** | `infrastructure/secrets/1passwordconnect/` |
-| **Secret management** | Any app with `externalsecret.yaml` |
-| **Job with ArgoCD hooks** | `my-apps/development-infra/posthog/core/jobs.yaml` |
-| **Helm Job patch** | `my-apps/development-infra/temporal/kustomization.yaml` |
