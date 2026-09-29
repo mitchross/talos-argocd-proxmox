@@ -12,13 +12,11 @@
 
 set -euo pipefail
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLOUDFLARE_CREDS_FILE="${HOME}/omni/cloudflare.ini"
 
@@ -54,7 +52,6 @@ echo "  Omni SSL Certificate Setup"
 echo "===================================="
 echo ""
 
-# Check if running as root for certbot
 if [[ $EUID -ne 0 ]]; then
    print_warn "This script should be run as root (or with sudo) for Certbot operations"
    print_info "Re-running with sudo..."
@@ -62,7 +59,6 @@ if [[ $EUID -ne 0 ]]; then
    exit $?
 fi
 
-# Check prerequisites
 print_info "Checking prerequisites..."
 
 if ! check_command "certbot"; then
@@ -71,14 +67,12 @@ if ! check_command "certbot"; then
     ln -s /snap/bin/certbot /usr/bin/certbot
 fi
 
-# Check for Cloudflare plugin
 if ! snap list | grep -q "certbot-dns-cloudflare"; then
     print_info "Installing Cloudflare DNS plugin..."
     snap set certbot trust-plugin-with-root=ok
     snap install certbot-dns-cloudflare
 fi
 
-# Get domain name
 read -p "Enter your Omni domain name (e.g., omni.example.com): " DOMAIN_NAME
 
 if [[ -z "$DOMAIN_NAME" ]]; then
@@ -88,7 +82,6 @@ fi
 
 print_info "Domain: $DOMAIN_NAME"
 
-# Get Cloudflare API token
 read -sp "Enter your Cloudflare API token: " CF_API_TOKEN
 echo ""
 
@@ -97,7 +90,6 @@ if [[ -z "$CF_API_TOKEN" ]]; then
     exit 1
 fi
 
-# Create credentials file
 print_info "Creating Cloudflare credentials file..."
 mkdir -p "$(dirname "$CLOUDFLARE_CREDS_FILE")"
 cat > "$CLOUDFLARE_CREDS_FILE" <<EOF
@@ -108,7 +100,6 @@ EOF
 chmod 600 "$CLOUDFLARE_CREDS_FILE"
 print_info "Credentials saved to: $CLOUDFLARE_CREDS_FILE"
 
-# Generate certificate
 print_info "Requesting SSL certificate from Let's Encrypt..."
 certbot certonly \
     --dns-cloudflare \
@@ -133,7 +124,6 @@ else
     exit 1
 fi
 
-# Setup auto-renewal
 print_info "Setting up automatic certificate renewal..."
 systemctl enable certbot.timer
 systemctl start certbot.timer

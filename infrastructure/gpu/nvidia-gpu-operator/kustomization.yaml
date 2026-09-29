@@ -5,7 +5,7 @@ resources:
 - namespace.yaml
 - external-secret.yaml
 - time-slicing-config.yaml
-- powerlimit-daemonset.yaml    # Caps each GPU at 290W and reapplies after driver reloads
+- powerlimit-daemonset.yaml    # Caps each GPU (POWER_LIMIT_WATTS) and reapplies after driver reloads
 
 configMapGenerator:
 - name: nvidia-powerlimit-scripts
@@ -25,8 +25,7 @@ helmCharts:
   includeCRDs: true
   valuesInline:
     operator:
-      # `operator.defaultRuntime` was deprecated in gpu-operator v26.3 —
-      # containerd is the only supported runtime anyway, so we don't set it.
+      # operator.defaultRuntime is deprecated (containerd is the only supported runtime); leave it unset.
       runtimeClass: nvidia
     # Talos system extensions own the driver + toolkit on the node.
     driver:

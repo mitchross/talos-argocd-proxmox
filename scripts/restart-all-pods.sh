@@ -183,7 +183,6 @@ for kind in "${WORKLOAD_KINDS[@]}"; do
 done | while IFS=$'\t' read -r kind namespace name argo_instance; do
   [[ -n "$kind" && -n "$namespace" && -n "$name" ]] || continue
 
-  # Exclude namespace regex
   if [[ -n "$EXCLUDE_NAMESPACE_REGEX" && "$namespace" =~ $EXCLUDE_NAMESPACE_REGEX ]]; then
     continue
   fi
@@ -265,7 +264,6 @@ START_TIME=$(date +%s)
 echo
 echo "Restarting selected workload controllers..."
 
-# Function to restart a single workload and record result
 restart_one() {
   local kind="$1" namespace="$2" name="$3"
   local api_kind
@@ -314,14 +312,13 @@ if [[ "$WAIT" == true ]]; then
   DONE=0
   WAIT_OK=0
   WAIT_FAIL=0
-  : > "$TMP_WAIT_FAIL"  # truncate
+  : > "$TMP_WAIT_FAIL"
 
   while IFS=$'\t' read -r status kind namespace name; do
     [[ "$status" == "OK" ]] || continue
     DONE=$((DONE + 1))
     api_kind="$(tr '[:upper:]' '[:lower:]' <<< "$kind")"
 
-    # Progress indicator on a single line
     printf "\r  [%d/%d] waiting %s/%s -n %s" "$DONE" "$TOTAL" "$api_kind" "$name" "$namespace"
 
     if kubectl -n "$namespace" rollout status "${api_kind}/${name}" --timeout="$TIMEOUT" >/dev/null 2>&1; then
@@ -333,7 +330,7 @@ if [[ "$WAIT" == true ]]; then
     fi
   done < "$TMP_RESULTS"
 
-  echo  # newline after progress
+  echo
   WAIT_TIME=$(date +%s)
 fi
 
@@ -343,7 +340,6 @@ END_TIME=$(date +%s)
 RESTART_ELAPSED=$((RESTART_TIME - START_TIME))
 TOTAL_ELAPSED=$((END_TIME - START_TIME))
 
-# Count results
 OK_COUNT=$(grep -c '^OK' "$TMP_RESULTS" || true)
 FAIL_COUNT=$(grep -c '^FAIL' "$TMP_RESULTS" || true)
 OK_COUNT=${OK_COUNT:-0}
@@ -367,7 +363,6 @@ echo "  Restart time:       ${RESTART_ELAPSED}s"
 echo "  Total time:         ${TOTAL_ELAPSED}s"
 echo "═══════════════════════════════════════════════════════════"
 
-# Print failures if any
 if [[ "$FAIL_COUNT" -gt 0 ]]; then
   echo
   echo "Failed restarts:"

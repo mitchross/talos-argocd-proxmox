@@ -25,8 +25,7 @@ spec:
             - name: http
               containerPort: 24153
           env:
-            # - name: VERTD_FORCE_GPU
-            #   value: nvidia # or amd, intel
+            # Set VERTD_FORCE_GPU (nvidia | amd | intel) to override GPU autodetection.
           resources:
             requests:
               cpu: 100m
@@ -42,10 +41,3 @@ spec:
           hostPath:
             path: /dev/dri
             type: DirectoryOrCreate
-      # runtimeClassName: nvidia
-      # tolerations:
-      #   - key: nvidia.com/gpu
-      #     operator: Exists
-      #     effect: NoSchedule
-      # nodeSelector:
-      #   feature.node.kubernetes.io/pci-0300_10de.present: "true"

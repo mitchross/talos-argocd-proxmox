@@ -12,7 +12,7 @@ parameters:
   compression: "LZ4"
   sync: "STANDARD"
   nfs.networks: "192.168.10.0/24"
-  # TrueNAS CSI v1.0.4 supports map-all, not Democratic CSI's map-root.
+  # TrueNAS CSI v1.0.4 supports map-all, not map-root.
   # Keep this explicit so ownership semantics cannot change on driver upgrade.
   nfs.mapAllUser: "root"
   nfs.mapAllGroup: "wheel"

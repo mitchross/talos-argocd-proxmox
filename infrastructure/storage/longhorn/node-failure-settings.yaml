@@ -20,7 +20,7 @@ metadata:
 value: "replica-data;instance"
 
 ---
-# Evict a last replica to another node, then let the drain proceed; single-replica volumes no longer wedge Talos upgrades.
+# Evict a last replica to another node, then let the drain proceed (single-replica volumes would otherwise wedge Talos upgrades).
 # Volumes pinned by diskSelector (longhorn-flash) still block on their node — nowhere to evict to.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
@@ -48,8 +48,7 @@ metadata:
 value: "true"
 
 ---
-# Auto-delete pods when volumes are detached unexpectedly
-# Helps recover from node failures more quickly
+# Auto-delete pods when their volume detaches unexpectedly, so node failures recover faster.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:

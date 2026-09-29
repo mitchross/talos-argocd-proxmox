@@ -30,9 +30,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Match the binaries bundled in Argo CD v3.5.2. A render that only passes
-  # with newer or older tools is not proof that repo-server can deploy it.
-  # v3.5.0 dropped Helm 3 entirely — repo-server renders with Helm 4.
+  # Match the binaries bundled in Argo CD v3.5.2: a render that only passes with other versions proves nothing.
+  # Argo CD 3.5+ renders with Helm 4 only.
   KUSTOMIZE_VERSION: 5.8.1
   HELM_VERSION: 4.2.1
   KUBECONFORM_VERSION: v0.7.0
@@ -153,10 +152,8 @@ jobs:
           done
 
       - name: Generate CRD schemas
-        # Without these, every CR whose CRD the datree catalog does not carry is
-        # silently skipped by -ignore-missing-schemas below (kopiur, longhorn,
-        # temporal, holmesgpt...). Schemas come from the same rendered
-        # stream, so they track the chart versions in git automatically.
+        # Without these, -ignore-missing-schemas silently skips every CR whose CRD the datree catalog lacks (kopiur, longhorn, temporal...).
+        # Schemas come from the rendered stream, so they track chart versions in git.
         run: |
           set -euo pipefail
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
@@ -214,13 +211,8 @@ jobs:
           ' /tmp/crd-canary.json
 
       - name: Validate kopiur backup coverage
-        # Replaces the retired pvc-plumber validate-restore-contract.sh and the
-        # backup-exempt-contract job. Runs on the RENDERED stream so Helm-rendered
-        # PVCs (gitea, tubesync) are covered. Hard-fails when a backed-up PVC is
-        # missing its dataSourceRef (recreates EMPTY in DR) or a backed-up namespace
-        # lacks the kopiur.home-operations.com/repo label (repo creds won't fan in);
-        # warns on missing mover securityContext, uncovered+unexempt PVCs, and
-        # backup-exempt PVCs missing the qualified reason annotation.
+        # Runs on the RENDERED stream (covers Helm PVCs). Fails on a backed-up PVC without dataSourceRef (recreates EMPTY in DR)
+        # or a namespace without the kopiur repo label; only warns on mover securityContext and backup-exempt annotation gaps.
         run: |
           set -euo pipefail
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
@@ -250,19 +242,9 @@ jobs:
           python3 scripts/validate-monitoring-contract.py /tmp/all-manifests.yaml \
             --argocd-capabilities /tmp/argocd-with-monitoring.yaml
 
-  # backup-exempt-contract job RETIRED 2026-06-27 (pvc-plumber removed). It
-  # hard-failed on the bare `backup-exempt-reason` key because pvc-plumber denied
-  # such PVCs on CREATE; with pvc-plumber gone, nothing enforces the key, so the
-  # check is folded into validate-kopiur-coverage.py as a WARNING (grep-consistency
-  # only). The coverage check runs as a step in the render-and-schema job above.
-
   otel-collector-validate:
     name: OpenTelemetry Collector Config Validation
-    # Catches the class of bug that caused the 2026-04-20 9-hour
-    # root-sync jam: a pipeline referencing a receiver that was removed.
-    # Runs `otelcol validate` on each OpenTelemetryCollector's rendered
-    # config so pipeline-receiver-exporter mismatches are rejected at
-    # PR time instead of crashlooping in-cluster.
+    # `otelcol validate` on each rendered collector config rejects pipelines that reference a removed receiver at PR time.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -283,11 +265,7 @@ jobs:
 
   renovate-config-validate:
     name: Renovate Config Validation
-    # Catches the class of bug that opened issue #1284 on 2026-05-10:
-    # `packageRules` cannot combine `matchUpdateTypes` and `versioning`,
-    # but the validator only flags it at runtime — Renovate stops opening
-    # PRs cluster-wide until fixed. Run validator on every PR that touches
-    # .github/renovate.json5 so the bad rule never reaches main.
+    # An invalid rule (e.g. matchUpdateTypes combined with versioning) stops Renovate opening PRs repo-wide; catch it before merge.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -296,10 +274,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          # Renovate >=41 requires Node >=22 and dropped Node 20. On Node 20,
-          # `npx renovate` silently resolves to an old renovate major that
-          # still uses `fileMatch`, so it rejects this repo's modern
-          # `managerFilePatterns` config and fails EVERY renovate PR.
+          # Node 20 silently resolves an old Renovate that rejects `managerFilePatterns`; Renovate >=41 needs Node 22+.
           node-version: '22'
 
       - name: Validate Renovate config

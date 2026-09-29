@@ -85,7 +85,6 @@ spec:
   storageClassName: longhorn-flash
   resources:
     requests:
-      # Shrunk 10Gi -> 4Gi for the single-node rebuild (2026-06-19). Valkey cache
-      # (allkeys-lru, no RDB/AOF) — nothing persisted, 4Gi is plenty. Backup-exempt.
+      # Valkey cache (allkeys-lru, no RDB/AOF): nothing persisted, so 4Gi is plenty.
       storage: 4Gi
   # Intentionally NO dataSourceRef — backup-exempt LRU cache; do not re-add backup CRs.

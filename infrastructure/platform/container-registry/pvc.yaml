@@ -16,6 +16,4 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      # Bumped 10Gi -> 50Gi 2026-05-04 after registry filled. Longhorn
-      # online-expanded the PV; kustomize manifest now matches live.
       storage: 50Gi

@@ -9,8 +9,7 @@ metadata:
     app.kubernetes.io/name: talos-fstrim
     app.kubernetes.io/component: node-maintenance
 spec:
-  # The initial reclaim saturated host I/O while releasing hundreds of GiB.
-  # Run future, incremental passes in a quiet local-time maintenance window.
+  # Quiet local-time maintenance window: a large reclaim saturates host I/O.
   schedule: "30 4 * * 0"
   timeZone: America/Detroit
   concurrencyPolicy: Forbid

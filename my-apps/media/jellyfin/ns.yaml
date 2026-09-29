@@ -3,6 +3,5 @@ kind: Namespace
 metadata:
   name: jellyfin
   labels:
-    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    # Drives the ClusterExternalSecret cred fanout and ClusterRepository tenancy (allowedNamespaces selector).
     kopiur.home-operations.com/repo: cluster-kopia

@@ -1,9 +1,7 @@
 # vLLM throughput benchmark — MANUAL apply only.
 #
-# This lives under repo-root benchmarks/ on purpose: it is OUTSIDE every ArgoCD
-# ApplicationSet scan path (the my-apps/*/* AppSet only discovers my-apps/<cat>/<app>/).
-# ArgoCD will never see or reconcile it, so there are intentionally NO
-# `argocd.argoproj.io/hook` annotations here (those only matter for ArgoCD-managed Jobs).
+# This lives under repo-root benchmarks/ on purpose: outside every ArgoCD ApplicationSet scan path,
+# so ArgoCD never reconciles it and it intentionally has no `argocd.argoproj.io/hook` annotations.
 #
 # It runs `vllm bench serve` against the in-cluster vLLM OpenAI server at several
 # concurrency levels, writes one JSON per level to /results, and prints a

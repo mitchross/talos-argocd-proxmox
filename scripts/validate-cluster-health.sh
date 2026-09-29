@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # validate-cluster-health.sh — Read-only post-rollout health snapshot.
 #
-# Designed to be run after each node's `qm set` resize during the Phase 1
-# memory right-sizing rollout. Prints a one-screen summary plus full
-# detail sections so you can confirm the cluster is healthy before
-# advancing to the next node.
+# Prints a one-screen summary plus full detail sections, so you can confirm the
+# cluster is healthy after a node change (resize, reboot, upgrade) before moving on.
 #
 # Read-only: no kubectl drain/uncordon/edit, no qm calls. Uses metrics-server
 # (kubectl top) where available; sections gracefully degrade if a CRD or

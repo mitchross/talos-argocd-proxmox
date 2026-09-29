@@ -4,5 +4,5 @@ metadata:
   name: project-nomad
   labels:
     # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
-    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    # tenancy (allowedNamespaces selector).
     kopiur.home-operations.com/repo: cluster-kopia

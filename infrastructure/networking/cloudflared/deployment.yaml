@@ -81,10 +81,10 @@ spec:
               memory: 1Gi
           securityContext:
             runAsNonRoot: true
-            runAsUser: 65534 # Explicitly set UID for nonroot user
+            runAsUser: 65534
             allowPrivilegeEscalation: false
-            seccompProfile: # Add seccompProfile
-              type: RuntimeDefault # Use the default runtime profile
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop: ["ALL"]
           volumeMounts:

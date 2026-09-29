@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse guard for Bash git commands (global rule, 2026-07-04):
+# PreToolUse guard for Bash git commands (global rule):
 #   - NEVER commit or push while on main/master, and never push TO main/master
 #     explicitly (e.g. `git push origin main`, `... HEAD:main`).
 #   - On any other branch, commit/push are auto-allowed (no permission prompt) --
