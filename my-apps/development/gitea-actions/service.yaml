@@ -1,0 +1,10 @@
+# Headless governing Service required by the StatefulSet; runners only dial out to Gitea.
+apiVersion: v1
+kind: Service
+metadata:
+  name: act-runner
+  namespace: gitea-actions
+spec:
+  clusterIP: None
+  selector:
+    app: act-runner

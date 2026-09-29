@@ -258,14 +258,15 @@ kubectl create secret generic act-runner-token \
   -n gitea-actions \
   --from-literal=token="$TOKEN" \
   --dry-run=client -o yaml | kubectl apply -f -
-kubectl rollout restart -n gitea-actions deploy/act-runner
-kubectl logs -n gitea-actions deploy/act-runner -c runner --tail=50
+kubectl rollout restart -n gitea-actions statefulset/act-runner
+kubectl logs -n gitea-actions act-runner-0 -c runner --tail=50
+kubectl logs -n gitea-actions act-runner-1 -c runner --tail=50
 ```
 
-Expected runner log:
+Expected log from each of the two runners (`act-runner-0`, `act-runner-1`):
 
 ```text
-runner: cluster-runner-1 ... declare successfully
+runner: act-runner-0 ... declare successfully
 ```
 
 For radar-ng, the recovery images are pinned in
