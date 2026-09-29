@@ -26,6 +26,74 @@ views:
             grid_options:
               columns: full
       - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: AI power brief
+            icon: mdi:creation
+            heading_style: title
+          - type: markdown
+            grid_options:
+              columns: full
+            content: |
+              {% set ai = 'sensor.power_ai_summary' %}
+              {% set generated = as_timestamp(state_attr(ai, 'generated_at'), 0) %}
+              {% if is_state(ai, 'ready') and state_attr(ai, 'source_date') == now().date() | string and as_timestamp(now()) - generated < 7200 %}
+              Local AI · updated {{ as_local(as_datetime(state_attr(ai, 'as_of'))).strftime('%b %d, %H:%M') }} · refreshes hourly. Summaries may make mistakes; measured totals below are the source of truth.
+              {% elif is_state(ai, 'not_configured') %}
+              AI summaries are waiting for the local AI connection. Power measurements are still available below.
+              {% else %}
+              AI summaries are waiting for a fresh update. Power measurements are still available below.
+              {% endif %}
+          - type: markdown
+            title: Today so far
+            grid_options:
+              columns: 12
+            content: |
+              {% set ai = 'sensor.power_ai_summary' %}
+              {% set generated = as_timestamp(state_attr(ai, 'generated_at'), 0) %}
+              {% if is_state(ai, 'ready') and state_attr(ai, 'source_date') == now().date() | string and as_timestamp(now()) - generated < 7200 %}
+              {{ state_attr(ai, 'today') }}
+              {% else %}
+              Awaiting a fresh summary.
+              {% endif %}
+          - type: markdown
+            title: Yesterday · completed day
+            grid_options:
+              columns: 12
+            content: |
+              {% set ai = 'sensor.power_ai_summary' %}
+              {% set generated = as_timestamp(state_attr(ai, 'generated_at'), 0) %}
+              {% if is_state(ai, 'ready') and state_attr(ai, 'source_date') == now().date() | string and as_timestamp(now()) - generated < 7200 %}
+              {{ state_attr(ai, 'yesterday') }}
+              {% else %}
+              Awaiting a fresh summary.
+              {% endif %}
+          - type: markdown
+            title: Month to date
+            grid_options:
+              columns: 12
+            content: |
+              {% set ai = 'sensor.power_ai_summary' %}
+              {% set generated = as_timestamp(state_attr(ai, 'generated_at'), 0) %}
+              {% if is_state(ai, 'ready') and state_attr(ai, 'source_date') == now().date() | string and as_timestamp(now()) - generated < 7200 %}
+              {{ state_attr(ai, 'month') }}
+              {% else %}
+              Awaiting a fresh summary.
+              {% endif %}
+          - type: markdown
+            title: Recent complete days
+            grid_options:
+              columns: 12
+            content: |
+              {% set ai = 'sensor.power_ai_summary' %}
+              {% set generated = as_timestamp(state_attr(ai, 'generated_at'), 0) %}
+              {% if is_state(ai, 'ready') and state_attr(ai, 'source_date') == now().date() | string and as_timestamp(now()) - generated < 7200 %}
+              {{ state_attr(ai, 'trends') }}
+              {% else %}
+              Awaiting a fresh summary.
+              {% endif %}
+      - type: grid
         cards:
           - type: heading
             heading: Today so far
