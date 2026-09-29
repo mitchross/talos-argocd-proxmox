@@ -1,5 +1,10 @@
 # Gitea Actions runner recovery
 
+Two runners (`act-runner-0`, `act-runner-1`) run as a StatefulSet. Each has its
+own Docker-in-Docker sidecar and a 10 Gi `docker-storage` layer cache, so two
+jobs build in parallel. Each runner keeps `capacity: 1`: two jobs on one dind
+serialize on its content-store lock and multiply peak RAM.
+
 `act-runner` needs a Gitea runner registration token in the Kubernetes Secret
 `gitea-actions/act-runner-token`. The token is secret material, so Git only
 declares the `ExternalSecret`; 1Password stores the value.
@@ -39,7 +44,7 @@ the manual Secret patch below during rebuilds.
 ```bash
 kubectl get externalsecret -n gitea-actions act-runner-token
 kubectl get secret -n gitea-actions act-runner-token
-kubectl rollout status -n gitea-actions deploy/act-runner
+kubectl rollout status -n gitea-actions statefulset/act-runner
 ```
 
 If `act-runner-token` is missing and `act-runner` is stuck in
