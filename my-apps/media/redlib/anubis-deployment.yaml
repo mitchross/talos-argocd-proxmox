@@ -39,6 +39,9 @@ spec:
               value: "CF-Connecting-IP"
             - name: OG_PASSTHROUGH
               value: "true"
+            # Without this Anubis will bounce a solved challenge to any host (open redirect).
+            - name: REDIRECT_DOMAINS
+              value: "redlib.vanillax.me"
             # Signing key is generated per pod: a rollout re-challenges everyone once (cookie lasts 7 d).
           ports:
             - name: http
