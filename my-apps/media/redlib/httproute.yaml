@@ -26,8 +26,9 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: redlib
-          port: 8080
+          # Anubis fronts redlib (proof-of-work for browsers, verified crawlers pass); redlib:8080 is its TARGET.
+          name: anubis
+          port: 8923
           weight: 1
 ---
 apiVersion: gateway.networking.k8s.io/v1
