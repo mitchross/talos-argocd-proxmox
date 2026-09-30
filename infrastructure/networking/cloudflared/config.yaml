@@ -8,16 +8,52 @@ transport-loglevel: warn
 ingress:
   - hostname: hello.vanillax.me
     service: hello_world
+  # Ingest/API/proxy hosts go straight to the Gateway; everything else passes through the
+  # in-cluster PostHog injector (infrastructure/networking/posthog-injector) on its way there.
+  - hostname: ingest-posthog.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: ingest-posthog.vanillax.me
+  - hostname: posthog.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: posthog.vanillax.me
+  - hostname: redlib.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: redlib.vanillax.me
+  - hostname: libreddit.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: libreddit.vanillax.me
+  - hostname: otel.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: otel.vanillax.me
+  - hostname: radar-ng-api.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: radar-ng-api.vanillax.me
+  - hostname: argocd-webhook.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: argocd-webhook.vanillax.me
+  - hostname: radar.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: radar.vanillax.me
   # Wildcard is intentional: only ExternalDNS-published hostnames reach the tunnel, internal
   # services have no Cloudflare DNS, and HTTPRoutes enforce hostnames (explicit alt: config-explicit.yaml.example).
   - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
-    originRequest:
-      noTLSVerify: true
-      originServerName: "*.vanillax.me"
+    service: http://posthog-injector.posthog-injector.svc.cluster.local:8080
   - hostname: vanillax.me
-    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
-    originRequest:
-      noTLSVerify: true
-      originServerName: vanillax.me
+    service: http://posthog-injector.posthog-injector.svc.cluster.local:8080
   - service: http_status:404
