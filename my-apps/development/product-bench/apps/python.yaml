@@ -1,0 +1,76 @@
+# Python: the bake-off storefront API on Postgres, embedding typed searches live.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-python
+  labels:
+    app: api-python
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-python
+  template:
+    metadata:
+      labels:
+        app: api-python
+    spec:
+      containers:
+        - name: api
+          image: registry.vanillax.me/product-api/python:b81829a@sha256:3ce47856e58bf1fa100e1fa085ac8d366fdb5a126c18cbec0ae4c994206af753
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DB
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: product-bench-db
+                  key: password
+            - name: DATABASE_URL
+              value: postgres://catalog:$(DB_PASSWORD)@postgres:5432/catalog
+            - name: DB_POOL_SIZE
+              value: "16"
+            - name: EMBEDDINGS
+              value: live
+            - name: TEI_URL
+              value: http://tei
+            - name: WEB_CONCURRENCY
+              value: "2"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 90
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-python
+  labels:
+    app: api-python
+spec:
+  selector:
+    app: api-python
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

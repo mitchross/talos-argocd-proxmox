@@ -1,0 +1,85 @@
+# The benchmark catalog (Postgres 18 + pgvector + pg_textsearch), restored from a pg_dump of the desktop database.
+# Config is the bake-off's tuned file with memory and workers lowered for a shared node.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  strategy:
+    type: Recreate # RWO PVC
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        gpu-worker: "true" # the Threadripper: memory headroom and the longhorn-flash disks
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: registry.vanillax.me/product-api/postgres:18-b81829a@sha256:0cc09212ee06a1cd299afc07a55ec76ff6bdb996eb8e7b8d1e2ef13dc1e9bb16
+          args: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "shared_buffers=4GB", "-c", "effective_cache_size=12GB", "-c", "max_connections=300", "-c", "max_worker_processes=8", "-c", "max_parallel_workers=8", "-c", "max_parallel_maintenance_workers=4", "-c", "maintenance_work_mem=1GB"]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: catalog
+            - name: POSTGRES_USER
+              value: catalog
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: product-bench-db
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "catalog", "-d", "catalog"]
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "catalog", "-d", "catalog"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "catalog", "-d", "catalog"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: "1"
+              memory: 6Gi
+            limits:
+              memory: 12Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: dshm # parallel queries need more than the 64 MB default
+              mountPath: /dev/shm
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-data
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
