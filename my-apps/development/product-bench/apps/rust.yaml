@@ -15,6 +15,7 @@ spec:
       labels:
         app: api-rust
     spec:
+      enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: api
           image: registry.vanillax.me/product-api/rust:b81829a@sha256:6845269cdf086d8f98840259adb01cf5b6c3829a969eea4182839ef62aa1d2b8
