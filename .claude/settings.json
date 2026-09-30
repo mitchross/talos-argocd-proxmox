@@ -105,7 +105,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "mink session-stop"
+            "command": "mink session-stop",
+            "async": true
           }
         ]
       }
