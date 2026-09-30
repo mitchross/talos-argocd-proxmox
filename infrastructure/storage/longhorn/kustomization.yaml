@@ -20,8 +20,10 @@ resources:
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io
-    version: 1.12.1
+    version: 1.13.0
     releaseName: longhorn
     namespace: longhorn-system
     valuesFile: values.yaml
     includeCRDs: true
+    # The chart requires Kubernetes >=1.34; Helm's default render capabilities are older.
+    kubeVersion: "1.37.0"
