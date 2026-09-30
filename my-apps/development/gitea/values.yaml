@@ -33,6 +33,8 @@ gitea:
       ROOT_URL: https://gitea.vanillax.me/
       DOMAIN: gitea.vanillax.me
       SSH_DOMAIN: gitea.vanillax.me
+    service:
+      DISABLE_REGISTRATION: true
     database:
       DB_TYPE: postgres
       HOST: gitea-postgres.gitea.svc.cluster.local:5432
