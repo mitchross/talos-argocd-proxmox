@@ -55,7 +55,7 @@ spec:
       containers:
         - name: tile-server
           # The image must ship caddy without file capabilities: they exec-fail under drop-ALL.
-          image: ghcr.io/mitchross/radar-ng-tile-server:v1.1.25@sha256:1be3faaace6b70a4f5d4620bec281506988e1ec4216d0ac52fc19fb5b0fab6c7
+          image: ghcr.io/mitchross/radar-ng-tile-server:v1.1.26@sha256:8184a67367bcea8d44dd428285d6c5f15c4bb65e5c240f597a6924671c69fd43
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
