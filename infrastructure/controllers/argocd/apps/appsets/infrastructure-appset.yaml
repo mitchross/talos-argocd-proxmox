@@ -40,6 +40,7 @@ spec:
       # be double-managed.
       - path: infrastructure/networking/external-dns
       - path: infrastructure/networking/cloudflared
+      - path: infrastructure/networking/posthog-injector
       - path: infrastructure/networking/gateway
       - path: infrastructure/gpu/gpu-priority-classes
       # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
