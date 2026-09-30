@@ -2,6 +2,8 @@ serviceMonitor:
   enabled: true
   interval: 30s
 tempo:
+  # Firewalla blocks stats.grafana.org; with reporting on Tempo retried ~79k DNS lookups/day.
+  reportingEnabled: false
   receivers:
     otlp:
       protocols:
