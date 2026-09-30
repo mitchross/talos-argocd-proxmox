@@ -101,6 +101,13 @@
       automerge: false,
     },
     {
+      description: 'Longhorn upgrades require review of storage recovery and chart changes.',
+      matchPackageNames: [
+        'longhorn',
+      ],
+      automerge: false,
+    },
+    {
       description: 'Enable container digest updates',
       matchDatasources: [
         'docker',

@@ -6,8 +6,6 @@ kind: Kustomization
 resources:
   # kopiur has no mover node affinity; restrict staged-PVC movers to workers that actually have Longhorn disks.
   - mover-storage-node-policy.yaml
-  # Longhorn's CSI attacher Deployment is created dynamically, so its pods are patched at admission.
-  - longhorn-csi-attacher-retry-policy.yaml
 
 # OCI chart rendered locally like every other chart here — no AppProject sourceRepos exception needed.
 helmCharts:

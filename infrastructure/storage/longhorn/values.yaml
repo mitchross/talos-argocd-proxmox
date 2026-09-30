@@ -8,6 +8,15 @@ global:
       operator: Equal
       value: wifi
       effect: NoSchedule
+networkPolicies:
+  metricsScrapeSources:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: prometheus-stack
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+          prometheus: kube-prometheus-stack-prometheus
 defaultSettings:
   taintToleration: "node.vanillax.dev/link=wifi:NoSchedule"
   defaultDataPath: "/var/lib/longhorn"
