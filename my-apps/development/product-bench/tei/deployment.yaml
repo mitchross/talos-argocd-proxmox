@@ -17,6 +17,7 @@ spec:
       labels:
         app: tei
     spec:
+      enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: tei
           image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c

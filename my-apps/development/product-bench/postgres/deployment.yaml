@@ -18,6 +18,7 @@ spec:
       labels:
         app: postgres
     spec:
+      enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       terminationGracePeriodSeconds: 60
       nodeSelector:
         gpu-worker: "true" # the Threadripper: memory headroom and the longhorn-flash disks

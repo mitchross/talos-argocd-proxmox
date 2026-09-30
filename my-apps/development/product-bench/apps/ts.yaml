@@ -15,6 +15,7 @@ spec:
       labels:
         app: api-ts
     spec:
+      enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: api
           image: registry.vanillax.me/product-api/ts:1b0e0c2@sha256:cd82cd7161eab83d3c5e438442ce0a95e70618cd2bcafa99c0b53c57f1e8e22f
