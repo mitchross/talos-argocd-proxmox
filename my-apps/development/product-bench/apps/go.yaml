@@ -1,0 +1,74 @@
+# Go: the bake-off storefront API on Postgres, embedding typed searches live.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-go
+  labels:
+    app: api-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-go
+  template:
+    metadata:
+      labels:
+        app: api-go
+    spec:
+      containers:
+        - name: api
+          image: registry.vanillax.me/product-api/go:b81829a@sha256:6df04545f45b27d3aded14cd5bfe403dd679ee266c2ef9fd1befd52bb0b7ce26
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DB
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: product-bench-db
+                  key: password
+            - name: DATABASE_URL
+              value: postgres://catalog:$(DB_PASSWORD)@postgres:5432/catalog
+            - name: DB_POOL_SIZE
+              value: "16"
+            - name: EMBEDDINGS
+              value: live
+            - name: TEI_URL
+              value: http://tei
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 90
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-go
+  labels:
+    app: api-go
+spec:
+  selector:
+    app: api-go
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

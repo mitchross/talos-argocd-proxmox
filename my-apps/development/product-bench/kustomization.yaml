@@ -1,0 +1,28 @@
+# Product API bake-off (product-api-experiments on Gitea): Postgres catalog, query embeddings, the six
+# language apps and the workbench at bench.vanillax.me. Load tests still run from the desktop lab (phase 1).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: product-bench
+
+resources:
+  - apps/dotnet.yaml
+  - apps/go.yaml
+  - apps/java.yaml
+  - apps/python.yaml
+  - apps/rust.yaml
+  - apps/ts.yaml
+  - apps/vpa.yaml
+  - externalsecret.yaml
+  - lab/deployment.yaml
+  - lab/httproute.yaml
+  - lab/service.yaml
+  - lab/vpa.yaml
+  - ns.yaml
+  - postgres/deployment.yaml
+  - postgres/pvc.yaml
+  - postgres/service.yaml
+  - postgres/vpa.yaml
+  - tei/deployment.yaml
+  - tei/service.yaml
+  - tei/vpa.yaml

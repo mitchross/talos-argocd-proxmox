@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab
+  labels:
+    app: lab
+spec:
+  selector:
+    app: lab
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

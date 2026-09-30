@@ -1,0 +1,74 @@
+# Java: the bake-off storefront API on Postgres, embedding typed searches live.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-java
+  labels:
+    app: api-java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-java
+  template:
+    metadata:
+      labels:
+        app: api-java
+    spec:
+      containers:
+        - name: api
+          image: registry.vanillax.me/product-api/java:b81829a@sha256:a676bf390a2cc6fdca1855fc0f446d47569e9caba3885c781f9818aa0387cbf1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DB
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: product-bench-db
+                  key: password
+            - name: DATABASE_URL
+              value: postgres://catalog:$(DB_PASSWORD)@postgres:5432/catalog
+            - name: DB_POOL_SIZE
+              value: "16"
+            - name: EMBEDDINGS
+              value: live
+            - name: TEI_URL
+              value: http://tei
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 90
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-java
+  labels:
+    app: api-java
+spec:
+  selector:
+    app: api-java
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

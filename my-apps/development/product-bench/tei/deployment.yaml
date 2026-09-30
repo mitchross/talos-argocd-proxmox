@@ -1,0 +1,50 @@
+# Query embeddings for semantic search: the same model and prompt as the desktop bake-off (bge-base-en-v1.5).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tei
+  labels:
+    app: tei
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tei
+  template:
+    metadata:
+      labels:
+        app: tei
+    spec:
+      containers:
+        - name: tei
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c
+          args: ["--model-id", "BAAI/bge-base-en-v1.5", "--port", "8080", "--max-client-batch-size", "256"]
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          resources:
+            requests:
+              cpu: "2"
+              memory: 1Gi
+            limits:
+              memory: 3Gi
+          volumeMounts:
+            - name: model-cache
+              mountPath: /data
+      volumes:
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 2Gi

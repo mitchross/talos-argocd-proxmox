@@ -1,0 +1,45 @@
+# Bench Workbench in cluster mode: REST/GraphQL client, cross-language compare and search against the apps above.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab
+  labels:
+    app: lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab
+  template:
+    metadata:
+      labels:
+        app: lab
+    spec:
+      containers:
+        - name: lab
+          image: registry.vanillax.me/product-api/lab:b81829a@sha256:bbb945fb322252c10db2a5ebee8529d12884337d9828821f81197cd5a750740c
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: LAB_TARGETS
+              value: '{"rust/postgres": "http://api-rust:8080", "go/postgres": "http://api-go:8080", "dotnet/postgres": "http://api-dotnet:8080", "java/postgres": "http://api-java:8080", "ts/postgres": "http://api-ts:8080", "python/postgres": "http://api-python:8080"}'
+            - name: LAB_SERVICES
+              value: '{"postgres": "postgres:5432", "tei": "http://tei/health"}'
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
