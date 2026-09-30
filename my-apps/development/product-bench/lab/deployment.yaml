@@ -18,7 +18,7 @@ spec:
       enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: lab
-          image: registry.vanillax.me/product-api/lab:79a5306@sha256:56091ec28f03fef54ce9d74772292549d1de3d737baadb4ec570fb7ab64dbcf4
+          image: registry.vanillax.me/product-api/lab:8c187e1@sha256:e0a5c82ad5c097190ca9f226c40f3650d68d01be3d7842eb4eb1b9a4f4e84d0b
           securityContext:
             runAsNonRoot: true
             runAsUser: 65534
@@ -30,7 +30,7 @@ spec:
               name: http
           env:
             - name: LAB_TARGETS
-              value: '{"rust/postgres": "http://api-rust:8080", "go/postgres": "http://api-go:8080", "dotnet/postgres": "http://api-dotnet:8080", "java/postgres": "http://api-java:8080", "ts/postgres": "http://api-ts:8080", "python/postgres": "http://api-python:8080"}'
+              value: '{"rust/postgres": "http://api-rust:8080", "go/postgres": "http://api-go:8080", "dotnet/postgres": "http://api-dotnet:8080", "java/postgres": "http://api-java:8080", "ts/postgres": "http://api-ts:8080", "python/postgres": "http://api-python:8080", "bun/postgres": "http://api-bun:8080", "deno/postgres": "http://api-deno:8080", "express/postgres": "http://api-express:8080", "nest/postgres": "http://api-nest:8080"}'
             - name: LAB_SERVICES
               value: '{"postgres": "postgres:5432", "tei": "http://tei/health"}'
           readinessProbe:

@@ -1,24 +1,24 @@
-# TypeScript: the bake-off storefront API on Postgres, embedding typed searches live.
+# TypeScript on Deno: the bake-off storefront API on Postgres, embedding typed searches live.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-ts
+  name: api-deno
   labels:
-    app: api-ts
+    app: api-deno
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api-ts
+      app: api-deno
   template:
     metadata:
       labels:
-        app: api-ts
+        app: api-deno
     spec:
       enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: api
-          image: registry.vanillax.me/product-api/ts:8c187e1@sha256:18169ce7ffc90e5bcaed075c61796571815f94382550c8cc7d61ff4614340973
+          image: registry.vanillax.me/product-api/deno:8c187e1@sha256:ccd59cf6442c1a36efda70edea4c0254facaea48fee65ff62eaa21e0010e5b51
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -65,12 +65,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-ts
+  name: api-deno
   labels:
-    app: api-ts
+    app: api-deno
 spec:
   selector:
-    app: api-ts
+    app: api-deno
   ports:
     - name: http
       port: 8080
