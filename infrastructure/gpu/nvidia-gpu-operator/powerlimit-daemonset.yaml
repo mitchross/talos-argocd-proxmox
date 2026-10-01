@@ -61,7 +61,7 @@ spec:
             # 220W is the current HOUSE-CIRCUIT constraint, not an efficiency choice.
             # Do not raise toward the ~290W efficiency knee without confirming the circuit.
             - name: POWER_LIMIT_WATTS
-              value: "220"
+              value: "200"
             - name: REAPPLY_SECONDS
               value: "300"
           resources:
