@@ -44,7 +44,8 @@ Directories named `_archive/` are excluded from discovery — retired apps, kopi
 
 ## Sync Wave Architecture
 
-Applications deploy in strict order to prevent race conditions:
+Root sync waves order entrypoints; ApplicationSet children reconcile independently.
+See `docs/domains/argocd/argocd.md` for the dependency boundary:
 
 | Wave | Component | Purpose |
 |------|-----------|---------|
@@ -100,7 +101,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Store secrets in 1Password, reference via ExternalSecret
 - Add backups to a normal application PVC with **kopiur**: label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy`+`SnapshotSchedule`+`Restore` in `kopiur/<pvc>.yaml`) with the **mover `securityContext` set to the data owner uid:gid**, pull in the `../../common/kopiur-backup` component, and point the PVC `dataSourceRef` at `<pvc>-restore`. See `.claude/commands/add-backup.md` and `docs/domains/storage/kopiur-backup-architecture.md`.
 - When marking a PVC `backup-exempt: "true"`, pair it with the fully-qualified reason annotation `storage.vanillax.dev/backup-exempt-reason`. There is **no runtime admission gate anymore** (pvc-plumber is gone) — the bare `backup-exempt-reason` key simply fails to record the reason; the kopiur backup-coverage CI check warns on missing/unqualified keys (it does not block)
-- Use `storageClassName: longhorn` for PVCs that need backups (volumesnapshot required); bulk read-mostly data goes on `truenas-nfs` with a kopiur `copyMethod: Direct` policy instead. Which disk holds what: `docs/domains/storage/disk-map.md`
+- Use a supported `longhorn*` StorageClass for CSI snapshot backups; bulk read-mostly data goes on `truenas-nfs` with a kopiur `copyMethod: Direct` policy instead. Which disk holds what: `docs/domains/storage/disk-map.md`
 - Size PVCs to actual use plus headroom — Longhorn books the full request, and oversized volumes filled the backup-clone disk and hung backups
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
@@ -199,7 +200,7 @@ of duplicating procedures.
 > - **Do NOT set Longhorn `dataLocality: best-effort` on general StorageClasses** — every pod move then copies the whole volume (a reboot re-copied 77 of 123 replicas). Disk-write rules: `docs/domains/storage/disk-writes.md`.
 > - **Do NOT re-add Coroot, Trivy Operator or Keep** — removed as duplicate telemetry / disk churn; the Prometheus + Loki + Tempo + Grafana stack is the one observability stack.
 > - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open Longhorn bugs #13315/#13314: interrupted rebuilds corrupt replica metadata). Forensics in git history; the DR doc carries the short version.
-> - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/research/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files.
+> - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files. Current research is indexed in `docs/research/index.md`.
 
 - **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture details
 - **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies

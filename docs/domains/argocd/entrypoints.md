@@ -139,9 +139,12 @@ is deployed.
 1. Confirm the latest backup succeeded: `kubectl -n <ns> get snapshot`.
 2. `git mv my-apps/<category>/<app> my-apps/<category>/_archive/<app>` and merge.
 
-Expected result: Argo CD deletes the Application, its namespace and its PVCs.
-The Kopia snapshots stay in the repository because `cluster-kopia` sets
-`onNamespaceDelete: Orphan`; do not change that setting, or archiving an app
+Expected result for my-apps: Argo CD deletes the Application, its namespace and
+its PVCs through the resources finalizer. Monitoring Applications are removed
+but their resources remain because that ApplicationSet enables preservation;
+manual cleanup requires explicit destructive authorization. Kopia snapshots stay
+in the repository with `onNamespaceDelete: Orphan` (the current ClusterRepository
+CRD default); do not change that setting, or archiving an app
 deletes its backup history.
 
 **Bring an app back (rollback)**

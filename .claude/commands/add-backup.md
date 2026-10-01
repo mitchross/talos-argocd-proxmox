@@ -12,8 +12,10 @@ are gone.
 
 ## Steps
 
-1. Identify the normal application PVCs that need protection. Confirm each uses
-   `storageClassName: longhorn` (needs CSI VolumeSnapshot).
+1. Identify the normal application PVCs that need protection. Choose the copy method for the actual StorageClass: `longhorn*` uses CSI
+   `VolumeSnapshot`; `truenas-nfs` uses `copyMethod: Direct` without a snapshot
+   clone (reference: `my-apps/media/immich/kopiur/library.yaml`). Confirm the
+   data owner and application-consistent quiesce requirements for either method.
 
 2. **Find the data owner uid:gid** — the mover MUST run as it (under baseline Pod
    Security a root mover can't read non-root/600/700 files):
@@ -72,6 +74,13 @@ are gone.
    `onMissingSnapshot: Continue`, schedule
    `concurrencyPolicy: Forbid`/`runOnCreate: false`) — do not duplicate them.
 
+   For NFS Direct, add an app-level `patches:` entry targeting this
+   SnapshotPolicy **after** component injection: replace `/spec/copyMethod`
+   with `Direct`, remove `/spec/volumeSnapshotClassName`, and remove
+   `/spec/staging`. Copy the exact patch in `my-apps/media/immich/kustomization.yaml`;
+   setting Direct only in the stub is overwritten by the component.
+
+
 5. **Kustomization** — add the stub + the component:
 
    ```yaml
@@ -121,7 +130,7 @@ Do not back up:
 - PostHog ClickHouse/Kafka/Redis PVCs — backup-exempt, disposable. Postgres is
   kopiur-backed because it holds identity and configuration; do not exempt it.
 - System-namespace PVCs.
-- Non-Longhorn PVCs that can't use the CSI snapshot path.
+- PVCs without a supported CSI snapshot or Direct copy path; NFS Direct is supported.
 
 For intentionally disposable PVCs, label `backup-exempt: "true"` + the
 fully-qualified annotation `storage.vanillax.dev/backup-exempt-reason: "<reason>"`.

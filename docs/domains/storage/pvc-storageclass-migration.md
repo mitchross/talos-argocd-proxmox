@@ -150,7 +150,7 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
 7. **Release the writers.**
 
    ```sh
-   kubectl -n <ns> delete networkpolicy cutover-quiesce
+   kubectl -n <ns> delete ciliumnetworkpolicy cutover-quiesce
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal operator cluster health   # SERVING
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule list --namespace default
    kubectl -n <ns> exec deploy/temporal-admintools -- tdbg dlq list                     # count unchanged
