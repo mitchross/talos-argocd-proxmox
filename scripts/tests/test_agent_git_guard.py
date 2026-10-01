@@ -24,10 +24,12 @@ class BranchGuardTests(unittest.TestCase):
         return subprocess.run(['git', '-C', str(self.repo), *args], check=True,
                               capture_output=True, text=True)
 
-    def decisions(self, command, cwd=None, codex=False):
+    def decisions(self, command, cwd=None, codex=False, workdir=None):
         payload = {'cwd': str(cwd or self.repo), 'tool_input':
                    {('cmd' if codex else 'command'): command}, 'tool_name':
                    ('exec_command' if codex else 'Bash')}
+        if workdir:
+            payload['tool_input']['workdir'] = str(workdir)
         values = []
         for client in ['.claude', '.codex']:
             result = subprocess.run(['bash', str(ROOT / client / 'hooks/git-branch-guard.sh')],
@@ -62,6 +64,8 @@ class BranchGuardTests(unittest.TestCase):
         self.assertEqual('deny', self.decisions(f'git -C {feature} commit && git -C {main} commit'))
         self.assertEqual('deny', self.decisions(f'git -C {main} commit', self.feature))
         self.assertIsNone(self.decisions('git commit -m test', self.feature, codex=True))
+        self.assertIsNone(self.decisions('git commit -m test', codex=True, workdir=self.feature))
+        self.assertEqual('deny', self.decisions('git commit -m test', self.feature, codex=True, workdir=self.repo))
 
     def test_configured_default_push(self):
         subprocess.run(['git', '-C', str(self.feature), 'config', 'branch.feature/test.merge',

@@ -101,7 +101,10 @@ def main():
     try:
         payload = json.load(sys.stdin)
         inputs = payload.get('tool_input', {})
-        message = reason(inputs.get('command', inputs.get('cmd', '')), payload.get('cwd', os.getcwd()))
+        session_dir = Path(payload.get('cwd', os.getcwd()))
+        command_dir = inputs.get('workdir') or inputs.get('cwd') or str(session_dir)
+        command_dir = (session_dir / command_dir).resolve()
+        message = reason(inputs.get('command', inputs.get('cmd', '')), command_dir)
     except (ValueError, OSError, subprocess.TimeoutExpired) as exc:
         message = f'Branch check failed ({type(exc).__name__}); retry with a simple git command.'
     if message:
