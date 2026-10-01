@@ -208,13 +208,18 @@ def inspect(oldroot, newroot, changed):
             for obj in render(root, path):
                 if obj.get('kind') in ('PersistentVolumeClaim', 'StatefulSet'):
                     obj.setdefault('metadata', {}).setdefault('namespace', app['object']['spec'].get('destination', {}).get('namespace', ''))
+                if not obj.get('metadata', {}).get('name'):
+                    raise ValueError(f'{name}: rendered object lacks a comparable metadata.name')
+                key = resource_key(obj)
                 if obj.get('kind') in PERSISTENT or obj.get('metadata', {}).get('finalizers'):
-                    key = resource_key(obj)
                     if key in rendered[index] and rendered[index][key][0] != name:
                         finding('BLOCK', 'shared-resource', key, rendered[index][key][0], name, 'Multiple Applications claim this persistent resource.')
-                    rendered[index][key] = (name, obj)
+                rendered[index][key] = (name, obj)
     for key, (owner, obj) in rendered[0].items():
         next_resource = rendered[1].get(key)
+        if obj['kind'] not in PERSISTENT and not obj.get('metadata', {}).get('finalizers') and not (
+                next_resource and next_resource[1].get('metadata', {}).get('finalizers')):
+            continue
         if next_resource is None:
             finding('BLOCK', 'persistent-resource-disappears', key, {'owner': owner, 'spec': obj.get('spec')}, None,
                     'Persistent object disappears or is renamed; pruning/recreation may destroy data.')

@@ -98,6 +98,16 @@ class TransitionTests(unittest.TestCase):
         self.write(self.new / risk.ENTRY / 'appset.yaml', updated)
         self.assertTrue(any(f['code'] == 'application-ownership' for f in self.check([risk.ENTRY + '/appset.yaml'])))
 
+    def test_nonpersistent_finalizer_removed_is_not_resource_disappearance(self):
+        old = self.objects + [{'apiVersion': 'batch/v1', 'kind': 'Job', 'metadata': {
+            'name': 'cleanup', 'namespace': 'prometheus-stack', 'finalizers': ['example.org/retain']}}]
+        new = copy.deepcopy(old); del new[-1]['metadata']['finalizers']
+        self.write_app(self.old, self.appdir, old)
+        self.write_app(self.new, self.appdir, new)
+        findings = self.check([self.appdir + '/objects.yaml'])
+        self.assertTrue(any(f['code'] == 'resource-finalizers' and 'cleanup' in f['target'] for f in findings))
+        self.assertFalse(any(f['code'] == 'persistent-resource-disappears' and 'cleanup' in f['target'] for f in findings))
+
     def test_no_change_and_unsupported_generator(self):
         self.assertEqual([], self.check([]))
         updated = copy.deepcopy(self.appset); updated['spec']['generators'] = [{'matrix': {}}]
