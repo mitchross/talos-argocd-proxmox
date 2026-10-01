@@ -102,6 +102,7 @@ nav:
       - GitOps & ArgoCD:
           - ArgoCD architecture: domains/argocd/argocd.md
           - Root entrypoints & sync waves: domains/argocd/entrypoints.md
+          - Static transition risk check: domains/argocd/gitops-risk-check.md
           - Temporal safe worker deployments: domains/temporal/safe-deployments.md
       - Storage:
           - Storage architecture (source of truth): storage-architecture.md
