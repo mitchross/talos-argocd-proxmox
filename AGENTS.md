@@ -16,9 +16,11 @@ This rule takes precedence over direct-push examples in `CLAUDE.md` files.
 - State a root cause only when evidence distinguishes it from plausible alternatives; otherwise label it a hypothesis.
 - Preserve the user's requested objective, approach, and scope. Explain any necessary change of approach before substituting a solution.
 - An implementation request authorizes scoped investigation, edits, validation, feature-branch commit/push, PR creation, and CI review without repeated approval. Honor narrower requests, including analysis-only work.
+- Keep routine work fast: scoped discovery → change → targeted local checks → PR → CI review. Complete required repository checks, let CI run broad suites, and repeat validation only for new changes, failures or unresolved risks. Keep plans and reports brief; scale risk review to the actual impact.
 - Start from a refreshed, intended base in an isolated worktree; preserve others' changes and stage only task-owned files.
 - Destructive live or storage operations require explicit authorization and verified prerequisites.
 - Do not advance a dependent GitOps phase merely because its prerequisite PR merged; verify the required prerequisite state live first.
+- After merge, verify the affected runtime when applicable. Documentation/instruction-only changes do not need a cluster health gate.
 
 ## Repo rules live in CLAUDE.md
 
