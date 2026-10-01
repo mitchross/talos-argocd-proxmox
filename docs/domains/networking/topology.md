@@ -27,6 +27,15 @@ Wall-plug draw and cost per host are metered separately — see
 
 Verify live node addresses with `kubectl get nodes -o wide`.
 
+### Expected shed-node downtime
+
+The solar/battery-powered shed HP micro Kubernetes worker intentionally becomes
+unavailable during its power/sleep cycle; power-related NotReady periods or
+missing host metrics alone are expected, not an incident, and must not trigger
+remediation solely to bring it online. Check the current power state and affected
+workloads before diagnosing a fault; unexpected network/power symptoms and
+failures of dependent workloads still require normal investigation.
+
 Cross-node pod traffic rides a **Cilium VXLAN tunnel between node IPs**
 (`routingMode: tunnel`) — **no pod routes exist anywhere** (not on Firewalla,
 not in machine config, not on any host), and no device between nodes ever

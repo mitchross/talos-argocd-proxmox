@@ -68,8 +68,9 @@ ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/playbook.yaml
 ```
 
 The Pi needs the `smartmontools` package; it was absent at inspection. The
-Proxmox hosts already have it. Leave Shed unavailable until its host/network
-problem is resolved, then apply with `--limit shed`. Missing metrics must show
+Proxmox hosts already have it. Interpret Shed availability using its
+[expected power/sleep behavior](../docs/domains/networking/topology.md#expected-shed-node-downtime);
+apply with `--limit shed` when it is powered and reachable. Missing metrics must show
 unknown/unreachable rather than an old healthy value.
 
 In TrueNAS **Apps → Discover Apps → Install via YAML**, create a Custom App
