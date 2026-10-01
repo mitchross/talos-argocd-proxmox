@@ -11,6 +11,7 @@ resources:
 - anubis-deployment.yaml
 - anubis-service.yaml
 - anubis-vpa.yaml
+- anubis-podmonitor.yaml
 
 configMapGenerator:
   - name: redlib-env

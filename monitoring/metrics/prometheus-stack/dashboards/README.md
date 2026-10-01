@@ -20,7 +20,7 @@ JSON file into a ConfigMap and stamps two things on it:
 | `start-here/` | Start Here | Cockpit (Grafana home page), Why Is This App Slow, Capacity |
 | `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear (+ kopiur from its chart) |
 | `ai/` | AI | GPU, vLLM, AI gateway (LiteLLM), Pi auto-routing |
-| `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate |
+| `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate, Public Edge (Cloudflare tunnel, Anubis, redlib, per-site hits) |
 | `logs/` | Logs | Logs Explorer, node crash logs |
 | `home-energy/` | Home & Energy | Power & cost, solar, gaming PC, cooling, AirCube |
 
@@ -101,5 +101,9 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
 - **Solar:** per-day bars read HA's `solar_*_today` counters with
   `max_over_time`. Never take `max - min` of `solar_*_total`: HA exports 0 on
   startup, so the whole lifetime total lands on one day.
+- **Public Edge:** Envoy has no hostname label; per-site hits are per backend
+  (`<namespace>_<service>_<port>` from `envoy_cluster_name`). cloudflared counters
+  have no host label either. Don't aggregate Anubis logs per client IP: at
+  redlib's volume that exceeds Loki's 500-series query limit.
 - **Logs:** Loki labels are OTEL-style (`k8s_namespace_name`, `service_name`,
   `detected_level`), not Promtail's `namespace`/`job`.

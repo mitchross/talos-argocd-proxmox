@@ -19,3 +19,6 @@ configMapGenerator:
   - name: radar-ng-dashboard
     files:
       - radar-ng.json
+  - name: public-edge-dashboard
+    files:
+      - public-edge.json
