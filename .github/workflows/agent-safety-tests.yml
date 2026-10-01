@@ -1,0 +1,29 @@
+name: Agent safety tests
+on:
+  pull_request:
+    paths:
+      - .claude/**
+      - .codex/**
+      - scripts/agent-git-guard.py
+      - scripts/tests/test_agent_git_guard.py
+      - .github/workflows/agent-safety-tests.yml
+  push:
+    branches: [main]
+    paths:
+      - .claude/**
+      - .codex/**
+      - scripts/agent-git-guard.py
+      - scripts/tests/test_agent_git_guard.py
+      - .github/workflows/agent-safety-tests.yml
+permissions:
+  contents: read
+jobs:
+  branch-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python3 -m unittest discover -s scripts/tests -p test_agent_git_guard.py -v
+      - run: shellcheck .claude/hooks/git-branch-guard.sh .codex/hooks/git-branch-guard.sh
