@@ -1380,7 +1380,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Cloudflare counts every request and every distinct IP, bots included.\n\nPostHog only sees a redlib visitor who:\n1. passes the Cloudflare challenge **and** the Anubis proof-of-work,\n2. runs JavaScript (scrapers don't),\n3. falls in the 10% sample (`POSTHOG_SAMPLE_RATE=0.1` in `redlib-env.env`).\n\nThe Anubis panels above show how much traffic is filtered before redlib."
+        "content": "Cloudflare counts every request and every distinct IP, bots included.\n\nPostHog only sees a redlib visitor who:\n1. passes the Cloudflare challenge **and** the Anubis proof-of-work,\n2. runs JavaScript (scrapers don't),\n3. is in the event sample (`POSTHOG_SAMPLE_RATE` in `my-apps/media/redlib/redlib-env.env`; 1 = everyone).\n\nThe Anubis panels above show how much traffic is filtered before redlib."
       }
     },
     {
