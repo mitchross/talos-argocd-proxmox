@@ -1,0 +1,7 @@
+services:
+  frontend:
+    image: ghcr.io/adminsyspro/proxcenter-frontend:1.4.10-arm64-20261001
+    # Upstream publishes amd64 only; this tag is built locally on the Pi.
+    pull_policy: never
+  postgres:
+    image: postgres:16.15-alpine3.24@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea

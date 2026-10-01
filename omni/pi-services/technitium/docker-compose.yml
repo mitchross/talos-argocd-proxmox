@@ -1,0 +1,31 @@
+services:
+  technitium-dns:
+    image: docker.io/technitium/dns-server:15.5.1@sha256:b8efe03a5e3bdc6e9d2baff3f6e70c382c7f98afa2a7ca66f318d4b58a8d5944
+    container_name: technitium-dns
+    hostname: technitium-dns
+    restart: unless-stopped
+    ports:
+      - ${HOST_LAN_IP}:5380:5380/tcp
+      - ${HOST_LAN_IP}:53:53/udp
+      - ${HOST_LAN_IP}:53:53/tcp
+    environment:
+      - DNS_SERVER_DOMAIN=technitium-dns
+      - DNS_SERVER_ADMIN_PASSWORD_FILE=/run/secrets/technitium_admin_password
+      - DNS_SERVER_WEB_SERVICE_HTTP_PORT=5380
+      - DNS_SERVER_WEB_SERVICE_ENABLE_HTTPS=false
+      - DNS_SERVER_RECURSION=Deny
+      - DNS_SERVER_PREFER_IPV6=false
+      - DNS_SERVER_LOG_USING_LOCAL_TIME=true
+      - DNS_SERVER_LOG_FOLDER_PATH=/var/log/technitium/dns
+      - DNS_SERVER_LOG_MAX_LOG_FILE_DAYS=30
+      - DNS_SERVER_STATS_MAX_STAT_FILE_DAYS=30
+    volumes:
+      - ./config:/etc/dns
+      - ./logs:/var/log/technitium/dns
+    secrets:
+      - technitium_admin_password
+    sysctls:
+      - net.ipv4.ip_local_port_range=1024 65535
+secrets:
+  technitium_admin_password:
+    file: ./secrets/admin_password.txt

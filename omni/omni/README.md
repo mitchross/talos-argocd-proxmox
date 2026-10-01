@@ -54,7 +54,7 @@ out before you start — it is the step most likely to block you.
 
 ### Version
 
-Pinned in `omni.env` via `OMNI_IMG_TAG` (currently `v1.12.2`). Always read the
+Pinned in `omni.env` via `OMNI_IMG_TAG` (currently `v1.12.3`). Always read the
 [release notes](https://github.com/siderolabs/omni/releases) before upgrading —
 Omni moves fast and deprecates flags between minors.
 
@@ -292,12 +292,17 @@ restart handling.)
 
 ## Updating Omni
 
+For the Pi alongside Technitium and the native ARM64 ProxCenter build, use
+[Pi service maintenance](../pi-services/README.md). These Docker services run
+outside Talos and are deployed from merged Git configuration over SSH.
+
 1. **Read the release notes.** Flags get deprecated between minors.
 2. Back up first — downgrading is **not supported**, because Omni migrates its
    etcd schema on first start of a new version:
    ```bash
    docker compose stop
-   sudo tar czf ~/etcd-backup-$(date +%F).tgz -C /etc etcd
+   sudo tar czf ~/omni-state-backup-$(date +%F).tgz -C /etc etcd omni/sqlite
+   # Keep omni.asc and omni.env in the protected backup as well.
    ```
 3. Bump `OMNI_IMG_TAG` in `omni.env`, then:
    ```bash
