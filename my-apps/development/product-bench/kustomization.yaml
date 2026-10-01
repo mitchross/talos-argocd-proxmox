@@ -6,9 +6,13 @@ kind: Kustomization
 namespace: product-bench
 
 resources:
+  - apps/bun.yaml
+  - apps/deno.yaml
   - apps/dotnet.yaml
+  - apps/express.yaml
   - apps/go.yaml
   - apps/java.yaml
+  - apps/nest.yaml
   - apps/python.yaml
   - apps/rust.yaml
   - apps/ts.yaml
