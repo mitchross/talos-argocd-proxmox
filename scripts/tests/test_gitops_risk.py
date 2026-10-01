@@ -50,6 +50,9 @@ class TransitionTests(unittest.TestCase):
     def check(self, changed):
         return risk.inspect(self.old, self.new, changed)[0]
 
+    def test_bare_equals_enum_from_crds_loads_as_string(self):
+        self.assertEqual(yaml.load("enum:\n- '!='\n- =\n", Loader=risk.ManifestLoader), {'enum': ['!=', '=']})
+
     def test_september_depth_move_final_identity_stable_but_intermediate_disappears(self):
         shutil.move(self.new / self.appdir, self.new / 'prometheus-stack')
         (self.new / 'monitoring/metrics').mkdir()
