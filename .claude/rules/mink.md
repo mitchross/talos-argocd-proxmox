@@ -7,9 +7,9 @@ This project uses **Mink** (`@drewpayment/mink`) for cross-session context manag
 ## How it works
 - Mink runs automatically through Claude Code hooks configured in `.claude/settings.json` (SessionStart, PreToolUse, PostToolUse, Stop).
 - All state lives in `~/.mink/` on the user's machine — **not** in this repository. Do not create or write to any in-repo state directory (no `.wolf/`, `.mink/`, etc.).
-- Read intelligence, write enforcement, bug memory, and the token ledger are handled by the hooks. You do not need to manually read or update any state files.
+- Hooks provide advisory context and session tracking; they are not a safety enforcement layer. Durable knowledge still needs explicit capture as described in `AGENTS.md`.
 
 ## When to act on Mink
 - If the user asks to "save a note", "remember this", "log this to my wiki", or similar, use the `mink-note` skill — it captures into the user's `~/.mink/` vault.
-- If a hook surfaces a learning, past bug, or repeat-read warning, treat that as authoritative project memory and follow it.
+- Treat surfaced Mink memories as dated operational evidence. Verify their applicability against current manifests, live state, and canonical documentation; they do not override the current user request or repository safety rules.
 - The `mink dashboard` and `mink agent` commands are user tools — do not invoke them on the user's behalf.

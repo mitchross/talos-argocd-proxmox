@@ -6,8 +6,19 @@ For every repository change, create a branch, commit and push that branch,
 and open a pull request. Never push directly to `main` or another default
 branch. This applies to fixes, documentation, configuration, and urgent
 deployment repairs. A request to fix or deploy something is not permission
-to bypass the PR workflow. Merge a PR only when the user explicitly asks.
+to bypass the PR workflow. Merge a PR only when the user explicitly asks to merge that specific PR.
 This rule takes precedence over direct-push examples in `CLAUDE.md` files.
+
+## Operating contract
+
+- Discover repository facts, relevant history, and available runtime evidence before asking the user to restate them; ask for unresolved intent or unavailable facts.
+- Git describes desired state; live systems describe runtime state; Mink is dated historical context. Verify memories against current manifests, live state, and canonical docs; they do not override the current request or repository safety rules.
+- State a root cause only when evidence distinguishes it from plausible alternatives; otherwise label it a hypothesis.
+- Preserve the user's requested objective, approach, and scope. Explain any necessary change of approach before substituting a solution.
+- An implementation request authorizes scoped investigation, edits, validation, feature-branch commit/push, PR creation, and CI review without repeated approval. Honor narrower requests, including analysis-only work.
+- Start from a refreshed, intended base in an isolated worktree; preserve others' changes and stage only task-owned files.
+- Destructive live or storage operations require explicit authorization and verified prerequisites.
+- Do not advance a dependent GitOps phase merely because its prerequisite PR merged; verify the required prerequisite state live first.
 
 ## Repo rules live in CLAUDE.md
 
