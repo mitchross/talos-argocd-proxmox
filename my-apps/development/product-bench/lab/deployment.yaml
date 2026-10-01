@@ -15,10 +15,11 @@ spec:
       labels:
         app: lab
     spec:
+      serviceAccountName: lab # the bake-off runner (lab/rbac.yaml)
       enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: lab
-          image: registry.vanillax.me/product-api/lab:8c187e1@sha256:e0a5c82ad5c097190ca9f226c40f3650d68d01be3d7842eb4eb1b9a4f4e84d0b
+          image: registry.vanillax.me/product-api/lab:267741d@sha256:49eae7daeb3266e97f5deb5b3318a26ec6085ca226176c2543626a689a3d15eb
           securityContext:
             runAsNonRoot: true
             runAsUser: 65534
@@ -31,6 +32,18 @@ spec:
           env:
             - name: LAB_TARGETS
               value: '{"rust/postgres": "http://api-rust:8080", "go/postgres": "http://api-go:8080", "dotnet/postgres": "http://api-dotnet:8080", "java/postgres": "http://api-java:8080", "ts/postgres": "http://api-ts:8080", "python/postgres": "http://api-python:8080", "bun/postgres": "http://api-bun:8080", "deno/postgres": "http://api-deno:8080", "express/postgres": "http://api-express:8080", "nest/postgres": "http://api-nest:8080"}'
+            - name: LAB_RUNNER
+              value: kubernetes
+            - name: LAB_IMAGES # contenders run exactly the images deployed above
+              value: '{"bun": "registry.vanillax.me/product-api/bun:8c187e1@sha256:fe85b7ade9450299a4e75649b78aa716a37f6f935e8debd414baac1a7b9d5212", "deno": "registry.vanillax.me/product-api/deno:8c187e1@sha256:ccd59cf6442c1a36efda70edea4c0254facaea48fee65ff62eaa21e0010e5b51", "dotnet": "registry.vanillax.me/product-api/dotnet:b81829a@sha256:bf263d68999e243318addf8f12fbaa2682505ca98177267e15cb2bdf6b8a8b24", "express": "registry.vanillax.me/product-api/express:8c187e1@sha256:c525d75f0d088b9ebb55d72964cec89581712ea2f295503b1c9ca177cf472b50", "go": "registry.vanillax.me/product-api/go:b81829a@sha256:6df04545f45b27d3aded14cd5bfe403dd679ee266c2ef9fd1befd52bb0b7ce26", "java": "registry.vanillax.me/product-api/java:b81829a@sha256:a676bf390a2cc6fdca1855fc0f446d47569e9caba3885c781f9818aa0387cbf1", "nest": "registry.vanillax.me/product-api/nest:8c187e1@sha256:9d789d2b970754ee42a112fcc4565fc2d2330f37b2acbf9edb12ab635d1c96a3", "python": "registry.vanillax.me/product-api/python:b81829a@sha256:3ce47856e58bf1fa100e1fa085ac8d366fdb5a126c18cbec0ae4c994206af753", "rust": "registry.vanillax.me/product-api/rust:b81829a@sha256:6845269cdf086d8f98840259adb01cf5b6c3829a969eea4182839ef62aa1d2b8", "ts": "registry.vanillax.me/product-api/ts:8c187e1@sha256:18169ce7ffc90e5bcaed075c61796571815f94382550c8cc7d61ff4614340973"}'
+            - name: LAB_K6_IMAGE
+              value: registry.vanillax.me/product-api/k6:8cb7b9c@sha256:a729fbe8474f04b159ae03c085ff234d30cc214906f630e80d3533733126a5c1
+            - name: LAB_RUNS_DIR
+              value: /runs
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: LAB_SERVICES
               value: '{"postgres": "postgres:5432", "tei": "http://tei/health"}'
           readinessProbe:
@@ -40,7 +53,14 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 100m
+              memory: 192Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
+          volumeMounts:
+            - name: runs
+              mountPath: /runs
+      volumes:
+        - name: runs # run history; lost on restart, which is fine for now
+          emptyDir:
+            sizeLimit: 256Mi

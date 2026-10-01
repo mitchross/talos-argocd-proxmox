@@ -20,6 +20,7 @@ resources:
   - externalsecret.yaml
   - lab/deployment.yaml
   - lab/httproute.yaml
+  - lab/rbac.yaml
   - lab/service.yaml
   - lab/vpa.yaml
   - ns.yaml
