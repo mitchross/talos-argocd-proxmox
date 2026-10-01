@@ -8,10 +8,17 @@ resources:
 - service.yaml
 - httproute.yaml
 - ns.yaml
+- anubis-deployment.yaml
+- anubis-service.yaml
+- anubis-vpa.yaml
 
 configMapGenerator:
   - name: redlib-env
     envs:
       - redlib-env.env
+  # Hash suffix rolls Anubis when the policy changes.
+  - name: anubis-policy
+    files:
+      - botPolicy.yaml=anubis-policy.yaml
 
 namespace: redlib

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anubis
+  namespace: redlib
+  labels:
+    app.kubernetes.io/name: anubis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: anubis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: anubis
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: anubis
+          image: ghcr.io/techarohq/anubis:v1.27.0@sha256:8828275668b7bc675679f100970f9714f731388fbbf66ae94de8aca952e3fc4a
+          env:
+            - name: BIND
+              value: ":8923"
+            - name: METRICS_BIND
+              value: ":9090"
+            - name: TARGET
+              value: "http://redlib:8080"
+            - name: POLICY_FNAME
+              value: "/data/cfg/botPolicy.yaml"
+            # cloudflared sets CF-Connecting-IP; without this every visitor shares the gateway's pod IP.
+            - name: CUSTOM_REAL_IP_HEADER
+              value: "CF-Connecting-IP"
+            - name: OG_PASSTHROUGH
+              value: "true"
+            # Without this Anubis will bounce a solved challenge to any host (open redirect).
+            - name: REDIRECT_DOMAINS
+              value: "redlib.vanillax.me"
+            # Signing key is generated per pod: a rollout re-challenges everyone once (cookie lasts 7 d).
+          ports:
+            - name: http
+              containerPort: 8923
+            - name: metrics
+              containerPort: 9090
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          readinessProbe:
+            exec:
+              command: ["/ko-app/anubis", "--healthcheck"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["/ko-app/anubis", "--healthcheck"]
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: bot-policy
+              mountPath: /data/cfg
+              readOnly: true
+      volumes:
+        - name: bot-policy
+          configMap:
+            name: anubis-policy
