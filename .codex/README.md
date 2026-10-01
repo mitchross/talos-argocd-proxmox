@@ -15,7 +15,7 @@ The guard checks literal git commit/push commands, quoted `-C` paths, global
 `-c` options, obvious default-branch refspecs and compound invocations. It emits
 only a denial or no decision; feature commands retain normal permissions. It
 is not a shell interpreter: aliases, scripts, variable expansion, dynamic
-branch switching and GitHub API writes require normal agent policy and
+branch switching, unsupported shell/heredoc syntax and GitHub API writes require normal agent policy and
 server-side branch protection. No permission to merge comes from this hook.
 
 Run `python3 -m unittest discover -s scripts/tests -p test_agent_git_guard.py -v`

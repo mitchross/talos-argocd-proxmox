@@ -73,6 +73,9 @@ class BranchGuardTests(unittest.TestCase):
         self.assertEqual('deny', self.decisions('git push', self.feature))
         self.assertIsNone(self.decisions('git push origin HEAD:feature/test', self.feature))
 
+    def test_unrelated_heredoc_falls_through(self):
+        self.assertIsNone(self.decisions("cat <<'EOF'\nDon't interpret this document as shell\nEOF"))
+
     def test_wiring(self):
         for client, config in [('.claude', 'settings.json'), ('.codex', 'hooks.json')]:
             data = json.loads((ROOT / client / config).read_text())

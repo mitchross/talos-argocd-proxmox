@@ -34,7 +34,12 @@ def unsafe_ref(ref, names):
 def reason(command, cwd):
     lexer = shlex.shlex(command.replace('\n', ';'), posix=True, punctuation_chars=';&|()')
     lexer.whitespace_split = True
-    tokens = list(lexer)
+    try:
+        tokens = list(lexer)
+    except ValueError:
+        # Heredoc bodies are not shell token streams. No broad decision for
+        # unsupported syntax; normal permissions and server rules still apply.
+        return None
     segments, part = [], []
     for token in tokens + [';']:
         if token and all(c in ';&|()' for c in token):
