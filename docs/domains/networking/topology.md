@@ -9,7 +9,7 @@ media bridge. Every node address is on the same `192.168.10.0/24`:
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
   10G switch.
 - **Control-plane VM** — DHCP on the wired LAN, on the HP SFF host.
-- **GPU worker VM** — DHCP on the wired LAN; one RTX 3090 passed through from
+- **GPU worker VM** — DHCP on the wired LAN; two RTX 3090s passed through from
   the bare-metal X399/2950X Threadripper host.
 - **HP SFF worker VM** — DHCP on the wired LAN; carries the `wired-storage`
   Longhorn tag.
@@ -43,7 +43,7 @@ instance-manager or replica flows, uses VXLAN.
 | --- | --- | --- |
 | HP SFF `.21` | One control plane and one worker | Wired; both VMs fail with the same chassis |
 | HP Elite `.22` | One worker | Wired |
-| Threadripper `.14` | One GPU worker, one RTX 3090 | Wired |
+| Threadripper `.14` | One GPU worker, two RTX 3090s | Wired |
 | Dell `.16` | One temporary worker | Wired; improvised hardware, not long-term quorum capacity |
 | Shed HP `.20` | One worker with USB radios | Ethernet to ASUS RT-AX86U, then Wi-Fi media bridge |
 | Pi 5 `.15` | Omni and Technitium, outside Kubernetes | Separate management/DNS host |
