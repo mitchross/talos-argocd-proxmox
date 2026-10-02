@@ -48,7 +48,8 @@ Upgrade procedure: `UPGRADE.md` (this directory).
 8. **Replay retention compatibility**: `scripts/patch-replay-retention.py`
    permits only a missing-entitlement, self-hosted `30d` API update. Its method
    hash guards source drift before migration; follow `UPGRADE.md` on changes.
-   `SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS` declares projects reconciled to 30d.
+   `SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS` declares projects reconciled to 30d;
+   `SELF_HOSTED_REPLAY_MIN_DURATION_MS` on the migrate Job sets their replay minimum.
 9. **PersonHog is required by Django person/group lookups**, including the replay
    list. Deploy its replica and router at wave 1 before migrations and app rollout.
    The replica uses `posthog-db-url` and the existing `posthog` database; do not
