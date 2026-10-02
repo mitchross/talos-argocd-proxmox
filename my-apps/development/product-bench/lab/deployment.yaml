@@ -19,7 +19,7 @@ spec:
       enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: lab
-          image: registry.vanillax.me/product-api/lab:ec8f25c@sha256:2ce2d76c784ec0b9f7935814d9026cbfa3a39106eb8f057c2dad2aadbc242998
+          image: registry.vanillax.me/product-api/lab:c291b52@sha256:b2f0b97e82a7256719117fdb241a17d743ab86c5f2d1b013316a5ad020a2e8ce
           securityContext:
             runAsNonRoot: true
             runAsUser: 65534
@@ -44,6 +44,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: LAB_EXTERNAL_AUTH # visitors through Cloudflare need the password; none set = turned away
+              value: required
+            - name: LAB_PASSWORD_FILE # re-read every 30 s: a password added or changed later works without a restart
+              value: /secrets/lab/password
             - name: LAB_SERVICES
               value: '{"postgres": "postgres:5432", "tei": "http://tei/health"}'
           readinessProbe:
@@ -60,7 +64,14 @@ spec:
           volumeMounts:
             - name: runs
               mountPath: /runs
+            - name: lab-password
+              mountPath: /secrets/lab
+              readOnly: true
       volumes:
+        - name: lab-password # optional: the lab runs (at home) before the 1Password field exists
+          secret:
+            secretName: product-bench-lab
+            optional: true
         - name: runs # run history; lost on restart, which is fine for now
           emptyDir:
             sizeLimit: 256Mi

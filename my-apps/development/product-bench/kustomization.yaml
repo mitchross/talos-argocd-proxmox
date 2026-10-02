@@ -19,6 +19,8 @@ resources:
   - apps/vpa.yaml
   - externalsecret.yaml
   - lab/deployment.yaml
+  - lab/externalsecret.yaml
+  - lab/httproute-external.yaml
   - lab/httproute.yaml
   - lab/rbac.yaml
   - lab/service.yaml
