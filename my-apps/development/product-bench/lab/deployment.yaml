@@ -19,7 +19,7 @@ spec:
       enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: lab
-          image: registry.vanillax.me/product-api/lab:267741d@sha256:49eae7daeb3266e97f5deb5b3318a26ec6085ca226176c2543626a689a3d15eb
+          image: registry.vanillax.me/product-api/lab:14cc92a@sha256:b618dedad19c0b1fd6bb475e4e1c4f759fb7db9710f6120279c67732c7d7d71b
           securityContext:
             runAsNonRoot: true
             runAsUser: 65534
@@ -35,9 +35,9 @@ spec:
             - name: LAB_RUNNER
               value: kubernetes
             - name: LAB_IMAGES # contenders run exactly the images deployed above
-              value: '{"bun": "registry.vanillax.me/product-api/bun:8c187e1@sha256:fe85b7ade9450299a4e75649b78aa716a37f6f935e8debd414baac1a7b9d5212", "deno": "registry.vanillax.me/product-api/deno:8c187e1@sha256:ccd59cf6442c1a36efda70edea4c0254facaea48fee65ff62eaa21e0010e5b51", "dotnet": "registry.vanillax.me/product-api/dotnet:b81829a@sha256:bf263d68999e243318addf8f12fbaa2682505ca98177267e15cb2bdf6b8a8b24", "express": "registry.vanillax.me/product-api/express:8c187e1@sha256:c525d75f0d088b9ebb55d72964cec89581712ea2f295503b1c9ca177cf472b50", "go": "registry.vanillax.me/product-api/go:b81829a@sha256:6df04545f45b27d3aded14cd5bfe403dd679ee266c2ef9fd1befd52bb0b7ce26", "java": "registry.vanillax.me/product-api/java:b81829a@sha256:a676bf390a2cc6fdca1855fc0f446d47569e9caba3885c781f9818aa0387cbf1", "nest": "registry.vanillax.me/product-api/nest:8c187e1@sha256:9d789d2b970754ee42a112fcc4565fc2d2330f37b2acbf9edb12ab635d1c96a3", "python": "registry.vanillax.me/product-api/python:b81829a@sha256:3ce47856e58bf1fa100e1fa085ac8d366fdb5a126c18cbec0ae4c994206af753", "rust": "registry.vanillax.me/product-api/rust:b81829a@sha256:6845269cdf086d8f98840259adb01cf5b6c3829a969eea4182839ef62aa1d2b8", "ts": "registry.vanillax.me/product-api/ts:8c187e1@sha256:18169ce7ffc90e5bcaed075c61796571815f94382550c8cc7d61ff4614340973"}'
+              value: '{"bun": "registry.vanillax.me/product-api/bun:14cc92a@sha256:f052162112a9f095f890352f4190a2b7f07f70370465a910159dcda54cb39827", "deno": "registry.vanillax.me/product-api/deno:14cc92a@sha256:bb4c5dc0c4f8a4320aa56c09aeef9d9a6046e13471f3c783f2e99ffd6abf8b25", "dotnet": "registry.vanillax.me/product-api/dotnet:14cc92a@sha256:92b969142688c3abdfed7d658c87dab64f851f9428633538300ee018dfb25297", "express": "registry.vanillax.me/product-api/express:14cc92a@sha256:a38412c8d130785af5da7e77100c9c8421ac24b32a81bf7e93250e6d13403faf", "go": "registry.vanillax.me/product-api/go:14cc92a@sha256:0565441223e6d8b7d471b0c28ca2d526e0c5c6b99475fe46b4a9053d3424c625", "java": "registry.vanillax.me/product-api/java:14cc92a@sha256:7e66acd351d5c1d702954c45eb72663ce06e5a651b89558db3c0a4a7631510d5", "nest": "registry.vanillax.me/product-api/nest:14cc92a@sha256:ef8f50fa18675a8a79e7b5c05398aa1e546fc10a9b3f11c517d1bbe87c453e0b", "python": "registry.vanillax.me/product-api/python:14cc92a@sha256:a762e3931e33aa849135830d19a1d61417c3f8007d9dc8130df6083d3d96cf00", "rust": "registry.vanillax.me/product-api/rust:14cc92a@sha256:eab16ff7753e54c8935f79af98e39d036a3de7ea41f58114fe93a1649908c6bd", "ts": "registry.vanillax.me/product-api/ts:14cc92a@sha256:76de4cdb2df7e091b50bfa15b14052087263a5b409bfe280e3ee9dcf9f68f3df"}'
             - name: LAB_K6_IMAGE
-              value: registry.vanillax.me/product-api/k6:8cb7b9c@sha256:a729fbe8474f04b159ae03c085ff234d30cc214906f630e80d3533733126a5c1
+              value: registry.vanillax.me/product-api/k6:14cc92a@sha256:0f2ea1d144989d1fc4332ad9dca9d58439f338f6a15df0192e8dc92a0cb626be
             - name: LAB_RUNS_DIR
               value: /runs
             - name: POD_NAMESPACE
