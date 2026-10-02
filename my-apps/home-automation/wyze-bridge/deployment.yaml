@@ -22,25 +22,48 @@ spec:
         envFrom:
         - configMapRef:
             name: wyze-bridge-config
-        - secretRef:
-            name: wyze-bridge-secrets
-        # Require the renamed keys before starting with the refreshed Secret.
+        # Keep Secret keys stable; translate upstream environment names here.
         env:
+        - name: WYZE_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: WYZE_EMAIL
+        - name: WYZE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: WYZE_PASSWORD
+        - name: WYZE_API_ID
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: API_ID
+        - name: WYZE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: API_KEY
+        - name: WYZE_TOTP_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: WYZE_TOTP_KEY
         - name: BRIDGE_USERNAME
           valueFrom:
             secretKeyRef:
               name: wyze-bridge-secrets
-              key: BRIDGE_USERNAME
+              key: WB_USERNAME
         - name: BRIDGE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: wyze-bridge-secrets
-              key: BRIDGE_PASSWORD
+              key: WB_PASSWORD
         - name: BRIDGE_API_TOKEN
           valueFrom:
             secretKeyRef:
               name: wyze-bridge-secrets
-              key: BRIDGE_API_TOKEN
+              key: WB_API
         ports:
         - containerPort: 8554
           name: rtsp
