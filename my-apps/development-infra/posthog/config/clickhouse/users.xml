@@ -33,6 +33,11 @@
             <insert_distributed_sync>1</insert_distributed_sync>
             <throw_on_max_partitions_per_insert_block>false</throw_on_max_partitions_per_insert_block>
             <number_of_mutations_to_throw>1</number_of_mutations_to_throw>
+            <!-- Mirrors upstream: native events_json writes (incl. mutations/backfills) rely on these. -->
+            <input_format_try_infer_dates>0</input_format_try_infer_dates>
+            <input_format_try_infer_datetimes>0</input_format_try_infer_datetimes>
+            <type_json_skip_duplicated_paths>1</type_json_skip_duplicated_paths>
+            <json_type_escape_dots_in_keys>1</json_type_escape_dots_in_keys>
 
         </default>
 
