@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-rust
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-rust

@@ -1,0 +1,232 @@
+# Sleep when idle: Postgres, the embedder and the apps run only while someone uses the bench.
+# The lab (always on, ~0.2 GB) reports bench_lab_wanted = 1 for 30 minutes after any real use (page loads,
+# requests, bake-offs; not probes or the workbench's background polling) and while a bake-off runs. KEDA
+# scales each backend 0 <-> 1 on it; waking takes a minute or two (the workbench says so). Postgres keeps its
+# data on its PVC. The Deployments set no replicas field, so ArgoCD leaves the count to KEDA.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: postgres
+spec:
+  scaleTargetRef:
+    name: postgres
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: tei
+spec:
+  scaleTargetRef:
+    name: tei
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-rust
+spec:
+  scaleTargetRef:
+    name: api-rust
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-go
+spec:
+  scaleTargetRef:
+    name: api-go
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-dotnet
+spec:
+  scaleTargetRef:
+    name: api-dotnet
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-java
+spec:
+  scaleTargetRef:
+    name: api-java
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-ts
+spec:
+  scaleTargetRef:
+    name: api-ts
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-python
+spec:
+  scaleTargetRef:
+    name: api-python
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-bun
+spec:
+  scaleTargetRef:
+    name: api-bun
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-deno
+spec:
+  scaleTargetRef:
+    name: api-deno
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-express
+spec:
+  scaleTargetRef:
+    name: api-express
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-nest
+spec:
+  scaleTargetRef:
+    name: api-nest
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 15
+  cooldownPeriod: 120 # the lab already waits 30 idle minutes before reporting 0
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090
+        query: max(bench_lab_wanted{namespace="product-bench"}) or vector(0)
+        threshold: "1"
+        activationThreshold: "0.5"

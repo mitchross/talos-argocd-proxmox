@@ -1,0 +1,14 @@
+# The lab's bench_lab_wanted metric: 1 while the bench is in use, which KEDA turns into replicas (sleep/).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: lab
+spec:
+  selector:
+    matchLabels:
+      app: lab
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 5s

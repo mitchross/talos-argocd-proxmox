@@ -9,7 +9,6 @@ metadata:
 spec:
   strategy:
     type: Recreate # RWO PVC
-  replicas: 1
   selector:
     matchLabels:
       app: postgres

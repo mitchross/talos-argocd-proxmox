@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-ts
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-ts

@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-deno
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-deno

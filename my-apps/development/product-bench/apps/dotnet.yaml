@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-dotnet
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-dotnet

@@ -1,5 +1,5 @@
 # Product API bake-off (product-api-experiments on Gitea): Postgres catalog, query embeddings, the six
-# language apps and the workbench at bench.vanillax.me. Load tests still run from the desktop lab (phase 1).
+# language apps and the workbench at bench.vanillax.me. Everything but the lab sleeps when idle (sleep/).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -23,6 +23,7 @@ resources:
   - lab/httproute-external.yaml
   - lab/httproute.yaml
   - lab/rbac.yaml
+  - lab/servicemonitor.yaml
   - lab/service.yaml
   - lab/vpa.yaml
   - ns.yaml
@@ -30,6 +31,7 @@ resources:
   - postgres/pvc.yaml
   - postgres/service.yaml
   - postgres/vpa.yaml
+  - sleep/scaledobjects.yaml
   - tei/deployment.yaml
   - tei/service.yaml
   - tei/vpa.yaml
