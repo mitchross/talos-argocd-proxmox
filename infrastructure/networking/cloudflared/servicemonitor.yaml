@@ -1,5 +1,5 @@
 apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
+kind: ServiceMonitor
 metadata:
   name: cloudflared
   namespace: cloudflared
@@ -7,7 +7,6 @@ spec:
   selector:
     matchLabels:
       app: cloudflared
-  podMetricsEndpoints:
-    # The metrics listener (config.yaml `metrics:`) has no named containerPort.
-    - portNumber: 2000
+  endpoints:
+    - port: metrics
       interval: 30s

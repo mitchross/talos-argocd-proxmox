@@ -13,4 +13,5 @@ resources:
   - deployment.yaml
   - pdb.yaml
   - restart-cronjob.yaml
-  - podmonitor.yaml
+  - metrics-service.yaml
+  - servicemonitor.yaml
