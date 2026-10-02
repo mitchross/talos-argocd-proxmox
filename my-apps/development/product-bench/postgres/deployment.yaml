@@ -9,6 +9,7 @@ metadata:
 spec:
   strategy:
     type: Recreate # RWO PVC
+  replicas: 1 # always on (sleep/scaledobjects.yaml)
   selector:
     matchLabels:
       app: postgres

@@ -6,6 +6,7 @@ metadata:
   labels:
     app: api-rust
 spec:
+  replicas: 1 # always on (sleep/scaledobjects.yaml)
   selector:
     matchLabels:
       app: api-rust
