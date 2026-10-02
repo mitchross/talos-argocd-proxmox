@@ -127,16 +127,31 @@ class ProxyTest(unittest.TestCase):
         cls.addClassCleanup(docker, "rm", "-f", cls.nginx)
         cls.port = int(docker("port", cls.nginx, "8080/tcp").rsplit(":", 1)[1])
         cls.health = int(docker("port", cls.nginx, "8081/tcp").rsplit(":", 1)[1])
-        deadline = time.monotonic() + 15
+        # A bare TCP connect isn't enough: docker-proxy accepts before nginx listens, then resets.
+        deadline = time.monotonic() + 30
         while True:
             try:
-                with socket.create_connection(("127.0.0.1", cls.port), timeout=1):
+                if cls.ready():
                     break
-            except OSError:
-                if time.monotonic() >= deadline:
-                    raise RuntimeError(docker("logs", cls.nginx))
-                time.sleep(0.1)
+            except (OSError, http.client.HTTPException):
+                pass
+            if time.monotonic() >= deadline:
+                raise RuntimeError(docker("logs", cls.nginx))
+            time.sleep(0.2)
         docker("exec", cls.nginx, "nginx", "-t")
+
+    @classmethod
+    def ready(cls):
+        for port, host in ((cls.health, "localhost"), (cls.port, "deals.vanillax.me")):
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+            try:
+                path = "/healthz" if port == cls.health else "/"
+                conn.request("GET", path, headers={"Host": host})
+                if conn.getresponse().status >= 500:
+                    return False
+            finally:
+                conn.close()
+        return True
 
     def request(self, path="/", host="deals.vanillax.me", method="GET", headers=None, port=None):
         conn = http.client.HTTPConnection("127.0.0.1", port or self.port, timeout=5)
