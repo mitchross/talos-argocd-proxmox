@@ -10,13 +10,14 @@ done
 echo "Postgres ready"
 echo "Waiting for ClickHouse..."
 ELAPSED=0
-until wget -q --spider --timeout=2 http://clickhouse:8123/ping 2>/dev/null; do
+# The posthog/posthog image has no wget (dropped in a 2026-10 digest); a wget check here times out every run.
+until python -c "import urllib.request; urllib.request.urlopen('http://clickhouse:8123/ping', timeout=2)" 2>/dev/null; do
   sleep 2; ELAPSED=$((ELAPSED + 2))
   [ $ELAPSED -ge $TIMEOUT ] && echo "ClickHouse timeout" && exit 1
 done
 echo "ClickHouse ready"
 echo "Flushing ClickHouse system logs..."
-wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
+python -c "import urllib.request; urllib.request.urlopen('http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS', timeout=30)" 2>/dev/null || true
 echo "Running Django migrations..."
 python manage.py migrate --noinput
 echo "Reconciling self-hosted replay retention..."
