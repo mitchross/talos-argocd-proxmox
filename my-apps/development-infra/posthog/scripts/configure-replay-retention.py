@@ -1,8 +1,20 @@
-"""Reconcile the declared replay retention through PostHog's Team model."""
+"""Reconcile the declared replay settings (retention, minimum duration) through PostHog's Team model."""
 
 import argparse
 import os
 import sys
+
+
+def desired_settings():
+    settings = {"session_recording_retention_period": "30d"}
+    min_duration = os.environ.get("SELF_HOSTED_REPLAY_MIN_DURATION_MS", "").strip()
+    if min_duration:
+        value = int(min_duration)
+        if value < 0:
+            raise ValueError("SELF_HOSTED_REPLAY_MIN_DURATION_MS must be >= 0")
+        # PostHog stores "no minimum" as NULL, not 0.
+        settings["session_recording_minimum_duration_milliseconds"] = value or None
+    return settings
 
 
 def configure_retention(*, dry_run=False):
@@ -21,22 +33,26 @@ def configure_retention(*, dry_run=False):
     if is_cloud():
         raise RuntimeError("Replay retention reconciliation is for self-hosted PostHog only")
 
+    settings = desired_settings()
     team_ids = [int(value) for value in os.environ["SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS"].split(",")]
     with transaction.atomic():
         for team_id in team_ids:
             team = Team.objects.select_for_update().filter(pk=team_id).first()
             if team is None:
-                print(f"Project {team_id}: not created yet; retention will reconcile on the next sync")
+                print(f"Project {team_id}: not created yet; replay settings will reconcile on the next sync")
                 continue
-            if team.session_recording_retention_period != "30d":
-                if dry_run:
-                    print(f"Project {team_id}: would set replay retention to 30d")
-                    continue
-                team.session_recording_retention_period = "30d"
-                team.save(update_fields=["session_recording_retention_period"])
-                print(f"Project {team_id}: replay retention set to 30d")
-            else:
-                print(f"Project {team_id}: replay retention already 30d")
+            changed = [field for field, value in settings.items() if getattr(team, field) != value]
+            if not changed:
+                print(f"Project {team_id}: replay settings already reconciled")
+                continue
+            summary = ", ".join(f"{field}={settings[field]!r}" for field in changed)
+            if dry_run:
+                print(f"Project {team_id}: would set {summary}")
+                continue
+            for field in changed:
+                setattr(team, field, settings[field])
+            team.save(update_fields=changed)
+            print(f"Project {team_id}: set {summary}")
 
 
 if __name__ == "__main__":

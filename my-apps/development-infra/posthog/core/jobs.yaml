@@ -83,6 +83,9 @@ spec:
         - configMapRef:
             name: posthog-env
         env:
+        # Here, not posthog-env.env: only this Job reads it, and that ConfigMap rolls every pod.
+        - name: SELF_HOSTED_REPLAY_MIN_DURATION_MS
+          value: "2000"
         - name: INTERNAL_API_SECRET
           valueFrom:
             secretKeyRef:
