@@ -6,6 +6,7 @@ metadata:
   labels:
     app: api-dotnet
 spec:
+  replicas: 1 # always on (sleep/scaledobjects.yaml)
   selector:
     matchLabels:
       app: api-dotnet

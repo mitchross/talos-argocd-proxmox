@@ -19,7 +19,7 @@ spec:
       enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       containers:
         - name: lab
-          image: registry.vanillax.me/product-api/lab:139bbc0@sha256:4f68b73a7a48817b5ce9a975a7bcae3627f0a9c6bd86d542a71c2577f799a0fc
+          image: registry.vanillax.me/product-api/lab:9d08ad8@sha256:869d269b1350b6723db9690ccd717f0af0a4bb4996763086a64b4700c2ab5cb2
           securityContext:
             runAsNonRoot: true
             runAsUser: 65534
