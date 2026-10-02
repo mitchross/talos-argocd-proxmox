@@ -76,6 +76,8 @@ go2rtc:
     # At 5 FPS, the default GOP of 50 makes new consumers wait up to ten seconds.
     h264: "-c:v libx264 -threads 2 -g 5 -keyint_min 5 -sc_threshold 0 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p"
   streams:
+    shed:
+    - "rtsp://wyze-bridge.wyze-bridge.svc.cluster.local:8554/shed4k"
     # Each raw Nest WebRTC stream feeds a buffered H264 re-encode for live/detect/record.
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
@@ -98,22 +100,24 @@ go2rtc:
     kitchen-sub:
     - "ffmpeg:kitchen-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
 cameras:
-  # Wyze camera via wyze-bridge (disabled - Wyze API auth broken)
-  # shed:
-  #   enabled: true
-  #   ffmpeg:
-  #     inputs:
-  #     - path: rtsp://192.168.10.46:8554/shed
-  #       roles:
-  #       - detect
-  #       - record
-  #   detect:
-  #     enabled: true
-  #     width: 1280
-  #     height: 720
-  #     fps: 5
-  #   live:
-  #     height: 1080
+  shed:
+    # Enable after the bridge produces decoded frames in the cluster.
+    enabled: false
+    ffmpeg:
+      inputs:
+      - path: rtsp://127.0.0.1:8554/shed
+        roles:
+        - detect
+        - record
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 5
+    live:
+      streams:
+        Camera: shed
+      height: 1080
   # Add Nest cameras via go2rtc restream
   backyard:
     enabled: true

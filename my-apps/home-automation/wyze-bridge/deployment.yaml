@@ -4,8 +4,7 @@ metadata:
   name: wyze-bridge
   namespace: wyze-bridge
 spec:
-  # Parked at 0 (crashloops); diagnose before restoring to 1.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -18,13 +17,30 @@ spec:
     spec:
       containers:
       - name: wyze-bridge
-        image: ghcr.io/thatdaveguy1/docker-wyze-bridge:latest@sha256:eed5f5f82c04b79a75b6d6a2921d8ae96d9821756d7463a0a406ab39dbf11dd3
+        image: ghcr.io/idisposable/docker-wyze-bridge:sha-c4991b1e6980b94d9ee2636533c97b0d72f73000@sha256:a03a9651d398f3ea93717718d32c8587310548ed24502ebe6173b6789cbd6e1b
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
             name: wyze-bridge-config
         - secretRef:
             name: wyze-bridge-secrets
+        # Require the renamed keys before starting with the refreshed Secret.
+        env:
+        - name: BRIDGE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: BRIDGE_USERNAME
+        - name: BRIDGE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: BRIDGE_PASSWORD
+        - name: BRIDGE_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: wyze-bridge-secrets
+              key: BRIDGE_API_TOKEN
         ports:
         - containerPort: 8554
           name: rtsp
@@ -35,8 +51,8 @@ spec:
         - containerPort: 8189
           name: webrtc-ice
           protocol: UDP
-        - containerPort: 5000
-          name: web-ui
+        - containerPort: 5080
+          name: http
         resources:
           requests:
             cpu: 100m
@@ -45,16 +61,15 @@ spec:
             memory: 1Gi
         livenessProbe:
           httpGet:
-            path: /
-            port: 5000
+            path: /api/health
+            port: http
           initialDelaySeconds: 30
           periodSeconds: 60
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /
-            port: 5000
+          tcpSocket:
+            port: rtsp
           initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5

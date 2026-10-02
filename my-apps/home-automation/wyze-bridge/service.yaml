@@ -22,8 +22,8 @@ spec:
       port: 8189
       protocol: UDP
       targetPort: 8189
-    - name: web-ui
+    - name: http
       port: 5000
-      targetPort: 5000
+      targetPort: http
   type: LoadBalancer
   loadBalancerClass: io.cilium/l2-announcer
