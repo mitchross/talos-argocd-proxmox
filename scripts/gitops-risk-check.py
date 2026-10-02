@@ -23,6 +23,14 @@ SEED = 'infrastructure/controllers/argocd/root.yaml'
 PERSISTENT = {'PersistentVolumeClaim', 'PersistentVolume', 'StatefulSet', 'Namespace'}
 
 
+class ManifestLoader(yaml.SafeLoader):
+    pass
+
+
+# Prometheus Operator CRDs list a bare `=` in an enum; SafeLoader reads it as YAML 1.1's value tag and fails.
+ManifestLoader.add_constructor('tag:yaml.org,2002:value', yaml.SafeLoader.construct_yaml_str)
+
+
 def run(*args, cwd=None):
     result = subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=180)
     if result.returncode:
@@ -31,8 +39,8 @@ def run(*args, cwd=None):
 
 
 def render(root, path):
-    return [obj for obj in yaml.safe_load_all(run('kustomize', 'build', '--enable-helm',
-            str(root / path))) if isinstance(obj, dict)]
+    return [obj for obj in yaml.load_all(run('kustomize', 'build', '--enable-helm',
+            str(root / path)), Loader=ManifestLoader) if isinstance(obj, dict)]
 
 
 def controllers(root):
