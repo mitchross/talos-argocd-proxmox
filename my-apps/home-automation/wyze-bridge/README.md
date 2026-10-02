@@ -12,11 +12,14 @@ reported firmware `4.70.7.4397` during the October 2 account discovery.
 ## Configuration
 
 - `ExternalSecret` reads the existing `wyze-bridge` and
-  `wyze-bridge-local-auth` 1Password items. Existing item fields stay the same;
-  Secret keys use the new `WYZE_API_*` and `BRIDGE_*` names.
-- Web authentication uses `BRIDGE_AUTH=true`. The Deployment explicitly
-  requires the renamed authentication keys before starting, so an old Secret
-  cannot start the new image with missing local credentials.
+  `wyze-bridge-local-auth` 1Password items. Item fields and Kubernetes Secret
+  keys retain their existing names. The Deployment maps `API_ID`/`API_KEY`
+  to `WYZE_API_ID`/`WYZE_API_KEY`, and `WB_USERNAME`/`WB_PASSWORD`/`WB_API`
+  to `BRIDGE_USERNAME`/`BRIDGE_PASSWORD`/`BRIDGE_API_TOKEN`.
+- Web authentication uses `BRIDGE_AUTH=true`. Explicit required Secret refs
+  prevent startup with missing credentials. Keep this translation in the
+  Deployment: a prior rollout was blocked on `BRIDGE_USERNAME` because the
+  live ExternalSecret retained its old mappings despite successful Argo syncs.
 - The container web port is `5080`; the Service retains port `5000` and the
   internal route `https://wyze-bridge.vanillax.me`.
 - RTSP: `rtsp://wyze-bridge.wyze-bridge.svc.cluster.local:8554/shed4k`
