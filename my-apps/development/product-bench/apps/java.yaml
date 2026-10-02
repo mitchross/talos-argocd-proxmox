@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-java
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-java

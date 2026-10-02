@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-bun
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-bun

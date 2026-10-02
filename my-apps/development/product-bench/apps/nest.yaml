@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-nest
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-nest
