@@ -18,4 +18,4 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: 500m
-          memory: 256Mi
+          memory: 512Mi
