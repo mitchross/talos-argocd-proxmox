@@ -1,0 +1,15 @@
+[Unit]
+Description=Stream kernel messages to the netconsole receiver
+Documentation=https://docs.kernel.org/networking/netconsole.html
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# netpoll refuses vmbr0 while a VM NIC has firewall=1 (fwpr veth); dmesg says "Netpoll setup failed".
+ExecStart=/sbin/modprobe netconsole
+ExecStop=/sbin/modprobe -r netconsole
+
+[Install]
+WantedBy=multi-user.target

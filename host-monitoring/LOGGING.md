@@ -71,3 +71,41 @@ Sources: [Talos logging](https://docs.siderolabs.com/talos/v1.10/configure-your-
 [Talos 1.14 kernel-log configuration](https://github.com/siderolabs/talos/blob/v1.14.0/website/content/v1.14/reference/configuration/runtime/kmsglogconfig.md),
 [OTEL journal receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.158.0/receiver/journaldreceiver),
 [persistent export queues](https://github.com/open-telemetry/opentelemetry-collector/blob/v0.158.0/exporter/exporterhelper/README.md).
+
+## Crash capture for hard locks
+
+The journal cannot record a freeze that also stops the disk and the
+Collector. [crash-capture-playbook.yaml](crash-capture-playbook.yaml) adds
+three paths that work without them:
+
+| Layer | What it does | Where to read it |
+| --- | --- | --- |
+| Lockup → panic | `softlockup_panic`, `hardlockup_panic`, `panic_on_oops`, `panic=10`: a silent freeze becomes a panic and reboots after 10 s | — |
+| EFI pstore | On panic the kernel saves its last messages in UEFI variables; `systemd-pstore` copies them to `/var/lib/systemd/pstore/` and the journal on the next boot | Grafana **Nodes / Crash logs**, search `pstore` |
+| netconsole | Each kernel line leaves the NIC immediately as UDP | Pi `192.168.10.15:/var/log/netconsole/<host-ip>.log` |
+| Hardware watchdog | `iTCO_wdt` + systemd `RuntimeWatchdogSec=60s` resets a host whose kernel stops running | — |
+
+Run it on one host at a time:
+
+```sh
+ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/crash-capture-playbook.yaml --limit shed
+```
+
+Expected: `sysctl kernel.panic` prints `10`, `/dev/watchdog0` exists, and
+`systemctl status netconsole` is active. The playbook refuses a host where
+Proxmox HA's `watchdog-mux` is running, because both need `/dev/watchdog`.
+
+netconsole only attaches when every port of `vmbr0` supports netpoll. A VM NIC
+with `firewall=1` adds an `fwpr` veth that does not, and `dmesg` reports
+`Netpoll setup failed`. The Proxmox firewall is disabled here, so set
+`network_firewall: false` in the machine class and untick **Firewall** on
+existing VM NICs.
+
+How to read the next crash: panic text in pstore or netconsole points to
+software (a kernel, driver or USB fault). A reset with nothing in either points
+to hardware (RAM, board or power supply).
+
+Rollback: delete `/etc/sysctl.d/60-crash-capture.conf`,
+`/etc/modules-load.d/crash-capture.conf`,
+`/etc/systemd/system.conf.d/60-watchdog.conf`, `/etc/modprobe.d/netconsole.conf`
+and `netconsole.service`, then reboot the host.
