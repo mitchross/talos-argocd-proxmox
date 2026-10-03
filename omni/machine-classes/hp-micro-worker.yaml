@@ -24,6 +24,8 @@ spec:
       disk_size: 128
       storage_selector: name == "local-lvm"
       network_bridge: vmbr0
+      # PVE firewall is off cluster-wide; firewall=1 only adds the fwpr veth that blocks netconsole.
+      network_firewall: false
       disk_ssd: true
       disk_discard: true
       disk_iothread: true

@@ -1,0 +1,91 @@
+- name: Capture the last kernel messages of a hard-locked Proxmox host
+  hosts: proxmox
+  become: true
+  serial: 1
+  vars:
+    netconsole_target_ip: 192.168.10.15
+    netconsole_target_mac: "04:42:1a:41:f2:84"
+  tasks:
+    - name: Refuse hosts where Proxmox HA owns the watchdog
+      ansible.builtin.command:
+        argv: [systemctl, is-active, --quiet, watchdog-mux]
+      register: watchdog_mux
+      changed_when: false
+      failed_when: watchdog_mux.rc == 0
+
+    - name: Turn lockups into panics that reboot and land in pstore
+      ansible.builtin.copy:
+        src: files/crash-capture-sysctl.conf
+        dest: /etc/sysctl.d/60-crash-capture.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Apply crash sysctls
+
+    - name: Load the chipset watchdog that Proxmox blacklists
+      ansible.builtin.copy:
+        content: "iTCO_wdt\n"
+        dest: /etc/modules-load.d/crash-capture.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Load watchdog module
+
+    - name: Create the systemd manager drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/system.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Let systemd pet the hardware watchdog
+      ansible.builtin.copy:
+        src: files/crash-capture-watchdog.conf
+        dest: /etc/systemd/system.conf.d/60-watchdog.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reexec systemd
+
+    - name: Point netconsole at the Pi receiver
+      ansible.builtin.copy:
+        content: "options netconsole netconsole=6665@{{ ansible_host }}/vmbr0,6666@{{ netconsole_target_ip }}/{{ netconsole_target_mac }}\n"
+        dest: /etc/modprobe.d/netconsole.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install the netconsole loader unit
+      ansible.builtin.copy:
+        src: files/netconsole.service
+        dest: /etc/systemd/system/netconsole.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart netconsole
+
+    - name: Enable netconsole at boot
+      ansible.builtin.systemd_service:
+        name: netconsole
+        enabled: true
+        daemon_reload: true
+
+  handlers:
+    - name: Apply crash sysctls
+      ansible.builtin.command:
+        argv: [sysctl, -p, /etc/sysctl.d/60-crash-capture.conf]
+
+    - name: Load watchdog module
+      ansible.builtin.command:
+        argv: [modprobe, iTCO_wdt]
+
+    - name: Reexec systemd
+      ansible.builtin.systemd_service:
+        daemon_reexec: true
+
+    - name: Restart netconsole
+      ansible.builtin.systemd_service:
+        name: netconsole
+        state: restarted
+        daemon_reload: true
