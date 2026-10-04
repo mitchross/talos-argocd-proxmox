@@ -1,7 +1,7 @@
 # Paseo: agent map
 
 Read this before you change Paseo, its image, or any Pi/LiteLLM wiring it uses.
-Human steps live in [README.md](README.md); concepts in [docs/domains/ai-gpu/paseo.md](../../../docs/domains/ai-gpu/paseo.md).
+Human steps and concepts live in [docs/domains/ai-gpu/paseo.md](../../../docs/domains/ai-gpu/paseo.md).
 
 ## Which repo owns which change
 
