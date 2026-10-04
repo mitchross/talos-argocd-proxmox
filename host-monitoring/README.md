@@ -1,12 +1,20 @@
-# Physical host metrics
+# Physical host configuration
 
-For persistent host journals, Talos kernel/service logs, and the Grafana
-**Nodes / Crash logs** dashboard, see [LOGGING.md](LOGGING.md).
+The Proxmox hosts and the Pi are configured with Ansible from this directory.
+ArgoCD does not apply it; nothing changes on a host until a playbook is run.
+Prerequisites and the safe-run steps:
+[Physical hosts with Ansible](../docs/domains/hosts/physical-hosts-ansible.md).
+
+| Playbook | Purpose | Guide |
+| --- | --- | --- |
+| [playbook.yaml](playbook.yaml) | Host metrics: node_exporter and smartctl_exporter | This page |
+| [logging-playbook.yaml](logging-playbook.yaml) | Persistent journals shipped to Loki | [LOGGING.md](LOGGING.md) |
+| [crash-capture-playbook.yaml](crash-capture-playbook.yaml) | Panic-on-lockup, pstore, hardware watchdog, netconsole | [LOGGING.md](LOGGING.md#crash-capture-for-hard-locks) |
+
+## Host metrics
 
 This configuration supplies continuous physical disk, CPU, memory and I/O
-metrics to the existing Prometheus/Grafana stack. It is a proposed deployment
-until the PR is merged and the steps below are completed. These hosts are
-outside Talos; ArgoCD does not apply this directory.
+metrics to the existing Prometheus/Grafana stack.
 
 [inventory.yaml](inventory.yaml) identifies the five Proxmox hosts, Pi and
 TrueNAS. [playbook.yaml](playbook.yaml) uses the upstream Prometheus Ansible
@@ -36,7 +44,7 @@ The pinned images successfully read the NAS host identity, RAM, disks and ARC
 through these mounts. Verify budgets and collector success after deployment;
 temporary containers do not validate the TrueNAS app manager or persistence.
 
-## Deploy after PR merge
+## Deploy
 
 Prerequisites: an Ansible control machine, existing SSH access, sudo access on
 the Pi, TrueNAS Apps administration, and the existing Prometheus stack.
@@ -67,8 +75,7 @@ collector success and the Grafana host row before proceeding:
 ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/playbook.yaml --limit dell,sff,elite,pi
 ```
 
-The Pi needs the `smartmontools` package; it was absent at inspection. The
-Proxmox hosts already have it. Interpret Shed availability using its
+The Pi needs the `smartmontools` package; the Proxmox hosts already have it. Interpret Shed availability using its
 [expected power/sleep behavior](../docs/domains/networking/topology.md#expected-shed-node-downtime);
 apply with `--limit shed` when it is powered and reachable. Missing metrics must show
 unknown/unreachable rather than an old healthy value.
