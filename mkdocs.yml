@@ -140,6 +140,7 @@ nav:
           - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
           - AI gateway and analytics: domains/ai-gpu/ai-observability.md
           - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
+          - Paseo — coding agents in the cluster: domains/ai-gpu/paseo.md
       - Reference & ops:
           - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
           - Descheduler — why pods get moved: domains/scheduling/descheduler.md
