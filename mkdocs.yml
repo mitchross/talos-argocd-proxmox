@@ -97,6 +97,7 @@ nav:
       - Home — the big picture: index.md
       - Getting started — the easy guide: easy-guide.md
       - Documentation reader contract: documentation-standard.md
+      - Glossary: glossary.md
   - Operations:
       - operations/index.md
       - GitOps & ArgoCD:

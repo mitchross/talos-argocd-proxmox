@@ -32,6 +32,11 @@ rules. Before editing a file, read each applicable `CLAUDE.md` along its
 path from the repo root to the file, in parent-to-child order. Load these
 files yourself; do not wait for the user to mention or attach them.
 
+## Terms
+
+`docs/glossary.md` gives restore, snapshot, repository, sync, and policy one
+meaning each. Use those meanings in docs, PR text, and replies.
+
 ## Skills and commands (Claude Code and Codex)
 
 Repo procedures live once, in `.claude/commands/*.md`. Claude Code runs them as

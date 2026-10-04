@@ -22,6 +22,16 @@ or repository-specific history. Define a term when misunderstanding it could
 cause a bad change. Explain why a non-obvious setting exists next to the setting
 itself, while keeping long background material in one canonical document.
 
+## Write plain technical English
+
+Write about 80% of the way to ASD-STE100 Simplified Technical English:
+
+- One instruction per sentence, in the imperative. Keep it to 20 words or fewer.
+- Keep descriptive sentences to 25 words or fewer. Use active voice.
+- Use one word for one meaning. The [glossary](glossary.md) fixes the meaning
+  of overloaded words such as restore, snapshot, repository, and sync.
+- Simplify words, not facts. Keep gotchas, conditions, limits, and numbers.
+
 ## Choose the right document shape
 
 | Reader need | Shape | Required evidence |
