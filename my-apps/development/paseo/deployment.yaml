@@ -45,6 +45,11 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: PASEO_PASSWORD
+            - name: LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: LITELLM_API_KEY
             - name: PASEO_RELAY_ENABLED
               value: "false"
             - name: PASEO_SERVICE_PROXY_ENABLED
