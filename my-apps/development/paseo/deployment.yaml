@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: paseo
-          image: ghcr.io/mitchross/paseo-dev:local-2c37451cd71b6b4454a81d54154b890188117ff2-20261004190935@sha256:8a9dbbbbbdc7e98f79b17f03d2a079a4f48532625c10a504665a656118e480c1
+          image: ghcr.io/mitchross/paseo-dev:main@sha256:3953e022ae234399e34ad11f15e2d8efa8f3dfed289fe84e69e16bc0ef1d0f0a
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -50,6 +50,9 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: LITELLM_API_KEY
+            # Paseo terminals use $SHELL or fall back to /bin/sh, which skips the bash Pi aliases.
+            - name: SHELL
+              value: /bin/bash
             - name: PASEO_RELAY_ENABLED
               value: "false"
             - name: PASEO_SERVICE_PROXY_ENABLED
