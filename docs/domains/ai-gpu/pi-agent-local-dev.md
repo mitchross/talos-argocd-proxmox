@@ -22,6 +22,8 @@ flowchart LR
 | Config file | `~/.pi/agent/models.json` from `mitchross/dotfiles` | [`my-apps/development/paseo/config/pi-models.json`](../../../my-apps/development/paseo/config/pi-models.json), mounted read-only |
 | `baseUrl` | `https://litellm.vanillax.me/v1` | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
 | Key | LiteLLM master key, read by `!cat <file>` or `$LITELLM_API_KEY` | `$LITELLM_API_KEY` from 1Password `litellm/master_key` via ESO |
+| Sampler hook | `~/.pi/agent/extensions/qwen-sampling.ts` | [`config/qwen-sampling.ts`](../../../my-apps/development/paseo/config/qwen-sampling.ts), a CI-checked copy of [`scripts/pi/qwen-sampling.ts`](../../../scripts/pi/qwen-sampling.ts) |
+| Launchers | zsh aliases in `~/.zshrc` | bash aliases from the `paseo-dev` image; no `pi-direct-openrouter` |
 | Change it | dotfiles PR + `chezmoi apply` | PR to the Paseo app; ArgoCD rolls the pod |
 
 `apiKey` takes a literal, `$NAME`/`${NAME}` for an environment variable, or `!command`.
@@ -29,6 +31,8 @@ A bare `LITELLM_API_KEY` is a literal: LiteLLM sees an unknown key, looks for a 
 database it does not have, and returns `400 No connected db`.
 
 The OpenRouter credential lives only inside LiteLLM. Neither copy of Pi holds it.
+
+For the whole Paseo setup, see [Paseo and the AI stack](paseo.md).
 
 ## Default reasoning and rollout
 

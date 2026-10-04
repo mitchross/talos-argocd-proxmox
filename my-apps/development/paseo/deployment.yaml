@@ -50,16 +50,13 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: LITELLM_API_KEY
-            - name: CLAUDE_CODE_OAUTH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: paseo-agent-auth
-                  key: CLAUDE_CODE_OAUTH_TOKEN
-                  optional: true
             - name: PASEO_RELAY_ENABLED
               value: "false"
             - name: PASEO_SERVICE_PROXY_ENABLED
               value: "false"
+            # TLS ends at the gateway; trust its X-Forwarded-Proto so the web UI auto-connects over wss.
+            - name: PASEO_TRUSTED_PROXIES
+              value: loopback,uniquelocal
           resources:
             requests:
               cpu: "1"
@@ -94,6 +91,10 @@ spec:
             - name: pi-config
               mountPath: /home/paseo/.pi/agent/models.json
               subPath: models.json
+              readOnly: true
+            - name: pi-config
+              mountPath: /home/paseo/.pi/agent/extensions/qwen-sampling.ts
+              subPath: qwen-sampling.ts
               readOnly: true
       volumes:
         - name: home
