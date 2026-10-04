@@ -8,13 +8,21 @@ metadata:
     external-dns.alpha.kubernetes.io/target: vanillax.me
 spec:
   parentRefs:
-    - kind: Gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
       name: gateway-external
       namespace: gateway
       sectionName: https
   hostnames:
     - paseo.vanillax.me
   rules:
-    - backendRefs:
-        - name: paseo
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: paseo
           port: 6767
+          weight: 1
