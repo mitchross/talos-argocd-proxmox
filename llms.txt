@@ -43,9 +43,9 @@ instructions. Check the owning manifests and canonical runbook before acting.
 - [docs/domains/ai-gpu/paseo.md](docs/domains/ai-gpu/paseo.md) — Paseo hosting: build, connect, one-time logins, Pi, verify, troubleshoot.
 - [my-apps/development/paseo/CLAUDE.md](my-apps/development/paseo/CLAUDE.md) — which repo owns each Paseo change, runtime permissions, invariants.
 
-To run Paseo on another cluster, use the generic manifests in
-[homelab-images/llms.txt](https://raw.githubusercontent.com/mitchross/homelab-images/main/llms.txt),
-not this cluster's GitOps directory.
+- [docs/domains/ai-gpu/paseo-other-clusters.md](docs/domains/ai-gpu/paseo-other-clusters.md) — run Paseo on another cluster: Compose, plain manifests, own-LLM Pi.
+  Use it instead of this cluster's GitOps directory. The image is built in
+  [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/paseo-dev).
 
 ## Self-hosted PostHog
 

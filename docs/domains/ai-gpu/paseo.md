@@ -168,24 +168,8 @@ Never delete the app directory as a rollback: Argo CD can prune the volumes.
 
 ## Run Paseo on another cluster
 
-Send these guides to anyone who wants Paseo in their own homelab. Neither needs this cluster's secrets.
-
-| Guide | Use it to |
-|---|---|
-| [Run Paseo on your Kubernetes cluster](https://github.com/mitchross/homelab-images/blob/main/deploy/kubernetes/paseo/README.md) | Deploy with plain manifests: password Secret, two volumes, Gateway API or Ingress, own-LLM Pi |
-| [paseo-dev image guide](https://github.com/mitchross/homelab-images/blob/main/images/paseo-dev/README.md) | Run with Docker Compose, connect, log in once, configure Pi |
-
-The image is public at `ghcr.io/mitchross/paseo-dev`. Pin a digest; the `main` tag moves with each build.
-
-**With a coding agent:** paste this prompt into Claude Code, Codex, or Pi in your own cluster repo.
-[`llms.txt`](https://raw.githubusercontent.com/mitchross/homelab-images/main/llms.txt) lists raw links to every guide and manifest.
-
-```text
-Read https://raw.githubusercontent.com/mitchross/homelab-images/main/llms.txt and every link in it.
-Deploy Paseo to my Kubernetes cluster from deploy/kubernetes/paseo.
-Before you change anything, ask me for: hostname, Gateway API or Ingress, StorageClass, and my LLM server URL.
-Keep secrets out of Git. Create the password Secret with kubectl and show me the command first.
-```
+[Run Paseo on another cluster](paseo-other-clusters.md) has Docker Compose and plain Kubernetes manifests, plus a prompt for a coding agent.
+The image itself is built in [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/paseo-dev).
 
 ## Known limits
 
