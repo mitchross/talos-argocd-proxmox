@@ -71,6 +71,21 @@
         enabled: true
         daemon_reload: true
 
+    - name: Keep NVMe out of deep power states after reboots
+      ansible.builtin.copy:
+        content: 'GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT nvme_core.default_ps_max_latency_us=0"'
+        dest: /etc/default/grub.d/60-nvme-apst.cfg
+        owner: root
+        group: root
+        mode: "0644"
+      when: nvme_apst_disabled | default(false)
+      notify: Update grub
+
+    - name: Disable NVMe deep power states now
+      ansible.builtin.shell: for f in /sys/class/nvme/nvme*/power/pm_qos_latency_tolerance_us; do echo 0 > "$f"; done
+      changed_when: false
+      when: nvme_apst_disabled | default(false)
+
   handlers:
     - name: Apply crash sysctls
       ansible.builtin.command:
@@ -89,3 +104,7 @@
         name: netconsole
         state: restarted
         daemon_reload: true
+
+    - name: Update grub
+      ansible.builtin.command:
+        argv: [update-grub]

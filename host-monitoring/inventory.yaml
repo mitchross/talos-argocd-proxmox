@@ -23,6 +23,8 @@ all:
             shed:
               ansible_host: 192.168.10.20
               physical_host: hp-shed
+              # SK hynix BC501 boot NVMe; suspected platform freezes when waking from deep power states.
+              nvme_apst_disabled: true
         management:
           hosts:
             pi:

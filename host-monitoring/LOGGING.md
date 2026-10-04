@@ -101,11 +101,18 @@ with `firewall=1` adds an `fwpr` veth that does not, and `dmesg` reports
 `network_firewall: false` in the machine class and untick **Firewall** on
 existing VM NICs.
 
+Hosts with `nvme_apst_disabled: true` in the inventory also get
+`nvme_core.default_ps_max_latency_us=0`, which keeps the NVMe out of its deep
+power states (APST). It applies immediately through sysfs and on every boot
+through `/etc/default/grub.d/60-nvme-apst.cfg`. Check with
+`cat /sys/class/nvme/nvme0/power/pm_qos_latency_tolerance_us` (expected `0`).
+
 How to read the next crash: panic text in pstore or netconsole points to
 software (a kernel, driver or USB fault). A reset with nothing in either points
 to hardware (RAM, board or power supply).
 
 Rollback: delete `/etc/sysctl.d/60-crash-capture.conf`,
 `/etc/modules-load.d/crash-capture.conf`,
-`/etc/systemd/system.conf.d/60-watchdog.conf`, `/etc/modprobe.d/netconsole.conf`
-and `netconsole.service`, then reboot the host.
+`/etc/systemd/system.conf.d/60-watchdog.conf`, `/etc/modprobe.d/netconsole.conf`,
+`netconsole.service` and `/etc/default/grub.d/60-nvme-apst.cfg`, run
+`update-grub`, then reboot the host.
