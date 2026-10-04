@@ -10,7 +10,7 @@ data:
     {
       "platform": "github",
       "endpoint": "https://api.github.com/",
-      "repositories": ["mitchross/talos-argocd-proxmox"],
+      "repositories": ["mitchross/talos-argocd-proxmox", "mitchross/homelab-images"],
       "onboarding": false,
       "requireConfig": "required",
       "gitAuthor": "Renovate Bot <renovate@vanillax.me>",
