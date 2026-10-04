@@ -19,10 +19,10 @@ flowchart LR
 
 | | Your PC | Paseo (cluster) |
 |---|---|---|
-| Config file | `~/.pi/agent/models.json` from `mitchross/dotfiles` | [`my-apps/development/paseo/config/pi-models.json`](../../../my-apps/development/paseo/config/pi-models.json), mounted read-only |
+| Config file | `~/.pi/agent/models.json` from `mitchross/dotfiles` | [`my-apps/development/paseo/config/pi-models.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/pi-models.json), mounted read-only |
 | `baseUrl` | `https://litellm.vanillax.me/v1` | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
 | Key | LiteLLM master key, read by `!cat <file>` or `$LITELLM_API_KEY` | `$LITELLM_API_KEY` from 1Password `litellm/master_key` via ESO |
-| Sampler hook | `~/.pi/agent/extensions/qwen-sampling.ts` | [`config/qwen-sampling.ts`](../../../my-apps/development/paseo/config/qwen-sampling.ts), a CI-checked copy of [`scripts/pi/qwen-sampling.ts`](../../../scripts/pi/qwen-sampling.ts) |
+| Sampler hook | `~/.pi/agent/extensions/qwen-sampling.ts` | [`config/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/qwen-sampling.ts), a CI-checked copy of [`scripts/pi/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/qwen-sampling.ts) |
 | Launchers | zsh aliases in `~/.zshrc` | bash aliases from the `paseo-dev` image; no `pi-direct-openrouter` |
 | Change it | dotfiles PR + `chezmoi apply` | PR to the Paseo app; ArgoCD rolls the pod |
 

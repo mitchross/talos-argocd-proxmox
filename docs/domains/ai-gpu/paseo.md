@@ -2,8 +2,8 @@
 
 **Purpose:** explain how Paseo's coding agents reach their models, and where each setting lives.
 **Status:** current state.
-**Steps:** [Paseo README](../../../my-apps/development/paseo/README.md) (connect, log in, verify).
-**Agent map:** [Paseo CLAUDE.md](../../../my-apps/development/paseo/CLAUDE.md).
+**Steps:** [Paseo README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/README.md) (connect, log in, verify).
+**Agent map:** [Paseo CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/CLAUDE.md).
 
 ## What Paseo is
 
