@@ -39,6 +39,13 @@ instructions. Check the owning manifests and canonical runbook before acting.
 - [my-apps/ai/CLAUDE.md](my-apps/ai/CLAUDE.md) — GPU allocation rules and backend guidance.
 - [docs/domains/ai-gpu/model-catalog.md](docs/domains/ai-gpu/model-catalog.md) — app-to-backend wiring.
 - [docs/domains/ai-gpu/gpu-scale-swap.md](docs/domains/ai-gpu/gpu-scale-swap.md) — replica overrides and the single-card swap procedure.
+- [docs/domains/ai-gpu/pi-agent-local-dev.md](docs/domains/ai-gpu/pi-agent-local-dev.md) — Pi agent providers, routing, PC vs cluster config.
+- [docs/domains/ai-gpu/paseo.md](docs/domains/ai-gpu/paseo.md) — Paseo hosting: build, connect, one-time logins, Pi, verify, troubleshoot.
+- [my-apps/development/paseo/CLAUDE.md](my-apps/development/paseo/CLAUDE.md) — which repo owns each Paseo change, runtime permissions, invariants.
+
+To run Paseo on another cluster, use the generic manifests in
+[homelab-images/llms.txt](https://raw.githubusercontent.com/mitchross/homelab-images/main/llms.txt),
+not this cluster's GitOps directory.
 
 ## Self-hosted PostHog
 
