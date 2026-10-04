@@ -166,6 +166,22 @@ See the [kopiur backup architecture](../storage/kopiur-backup-architecture.md).
 Roll back an image by reverting its digest through a PR. Keep the PVCs.
 Never delete the app directory as a rollback: Argo CD can prune the volumes.
 
+## Skills, settings, and plugins
+
+Keep personal skills and rules in a private repository. Restore them into `/home/paseo`.
+Rewrite workstation paths for `/home/paseo` and `/workspace`. Project instructions arrive with each checkout.
+Review hooks and MCP definitions before you enable them, and supply their credentials at runtime.
+
+The image enables no third-party Paseo plugins. Review these before you opt in:
+
+| Plugin | Use |
+|---|---|
+| [Shared Browser](https://github.com/omercnet/paseo-plugins/tree/main/paseo-shared-browser) | Share a workspace browser between agents and your phone. Needs Node 24 and a prepared Chromium runtime. |
+| [PR Radar](https://github.com/omercnet/paseo-plugins/tree/main/pr-radar) | Track workspace PRs and checks. Needs an authenticated `gh`. |
+| [Agent Monitor](https://github.com/omercnet/paseo-plugins/tree/main/agent-monitor) | Triage agents across workspaces. |
+
+Plugins run with the daemon user's credentials and network access. Pin and test the versions you choose.
+
 ## Run Paseo on another cluster
 
 [Run Paseo on another cluster](paseo-other-clusters.md) has Docker Compose and plain Kubernetes manifests, plus a prompt for a coding agent.
