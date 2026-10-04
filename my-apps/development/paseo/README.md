@@ -20,7 +20,7 @@ flowchart LR
 ## Prerequisites
 
 - The tested image digest in `deployment.yaml` must be available in GHCR.
-- Vault `homelab-prod` must contain `paseo/password` and `litellm/master_key`.
+- Vault `homelab-prod` must contain `paseo/password`.
 - The `1password` ClusterSecretStore, Longhorn, Kopiur, and external gateway must be ready.
 - Merge approval is required. Do not apply these manifests directly.
 
@@ -80,13 +80,14 @@ separately configured Git identity and credentials.
 
 ## Follow-up configuration
 
-ESO supplies `PASEO_PASSWORD` from `paseo/password` and `LITELLM_API_KEY` from
-`litellm/master_key`. This matches Radar NG and DealScout. The LiteLLM key grants
-administrative gateway access; a restricted per-app key can replace it later.
+ESO supplies the Paseo login password. Pi's LiteLLM credential is withheld until
+a restricted key is ready. Do not give the pod LiteLLM's master key.
 
-Pi's seeded models use this key for local Qwen, hosted DeepSeek through OpenRouter,
-and the `pi-auto` route. OpenRouter's upstream credential stays in LiteLLM.
-The separate direct-OpenRouter profile needs its own credential and is not configured here.
+The agreed budget is $25 monthly. LiteLLM requires PostgreSQL for virtual keys
+and persistent budget tracking; the current gateway has no database configured.
+Add that prerequisite through GitOps before creating the key. Verify model routing
+and budget enforcement, then store the key in `litellm/paseo_key` in 1Password.
+A follow-up PR will supply that field as `LITELLM_API_KEY`.
 
 The pod has no mounted Kubernetes service-account token or RBAC grants. Prepare
 scoped access for Kubernetes, Omni/Talos, and Proxmox separately. A Kubernetes
