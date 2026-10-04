@@ -191,6 +191,12 @@ class DeclaredPolicyTests(unittest.TestCase):
         # A bare variable name is sent literally; LiteLLM then fails with "No connected db".
         self.assertTrue(all(p['apiKey'] == '$LITELLM_API_KEY' for p in paseo['providers'].values()))
 
+    def test_paseo_qwen_sampling_extension_matches_workstation_copy(self):
+        # Kustomize cannot read files outside the app directory, so Paseo keeps a copy.
+        source = (ROOT / 'scripts/pi/qwen-sampling.ts').read_text()
+        paseo = (ROOT / 'my-apps/development/paseo/config/qwen-sampling.ts').read_text()
+        self.assertEqual(paseo, source)
+
     def test_classifier_stays_off_and_cloud_efforts_do_not_follow_qwen(self):
         config = yaml.safe_load((ROOT / 'my-apps/ai/litellm/config.yaml').read_text())
         routes = {route['model_name']: route['litellm_params'] for route in config['model_list']}

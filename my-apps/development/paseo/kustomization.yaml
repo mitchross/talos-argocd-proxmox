@@ -4,7 +4,6 @@ namespace: paseo
 resources:
   - namespace.yaml
   - externalsecret.yaml
-  - externalsecret-agent-auth.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml
@@ -16,5 +15,6 @@ configMapGenerator:
   - name: pi-config
     files:
       - models.json=config/pi-models.json
+      - qwen-sampling.ts=config/qwen-sampling.ts
 components:
   - ../../common/kopiur-backup

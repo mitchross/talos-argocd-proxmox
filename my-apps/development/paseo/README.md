@@ -1,138 +1,172 @@
 # Paseo in Kubernetes
 
-Status: deployment definition prepared for review. Verify live readiness after merge.
-This app runs a persistent development workstation at `https://paseo.vanillax.me`.
-Argo CD discovers this directory as `my-apps-paseo` after it reaches `main`.
+**Purpose:** run Paseo, a browser workspace for coding agents, at `https://paseo.vanillax.me`.
+**Status:** current deployment. Argo CD syncs this directory as `my-apps-paseo`.
+**Concept guide:** [Paseo and the AI stack](../../../docs/domains/ai-gpu/paseo.md).
+**Agent map:** [CLAUDE.md](CLAUDE.md) lists which repo owns which change.
+**Image and a friend-friendly setup guide:** [homelab-images/paseo-dev](https://github.com/mitchross/homelab-images/tree/main/images/paseo-dev).
 
 ```mermaid
 flowchart LR
-    Client[Browser or Paseo app] --> CF[Cloudflare]
-    CF --> Gateway[gateway-external HTTPS]
-    Gateway --> Paseo[Paseo :6767]
-    Vault[1Password paseo/password] --> ESO[External Secrets]
-    ESO --> Paseo
-    Paseo --> Home[10 GiB home volume]
-    Paseo --> Workspace[50 GiB workspace volume]
-    Home --> Backup[Kopiur → RustFS]
-    Workspace --> Backup
+    Browser --> CF[Cloudflare Tunnel] --> GW[gateway-external HTTPS] --> Paseo[Paseo :6767]
+    Vault[1Password] --> ESO[External Secrets] --> Paseo
+    Git[This directory] --> Argo[Argo CD] --> Paseo
+    Paseo --> Claude[Claude Code: your subscription]
+    Paseo --> Codex[Codex: your ChatGPT plan]
+    Paseo --> Pi[Pi] --> LiteLLM --> vLLM[vLLM on 2x3090]
+    LiteLLM --> OR[OpenRouter, paid]
+    Paseo --> Home[(home 10 GiB)]
+    Paseo --> Work[(workspace 50 GiB)]
+    Home --> Kopiur[Kopiur daily backup]
+    Work --> Kopiur
 ```
 
-## Prerequisites
+## What comes from where
 
-- The tested image digest in `deployment.yaml` must be available in GHCR.
-- Vault `homelab-prod` must contain `paseo/password` and `litellm/master_key`.
-  `paseo/claude_oauth_token` is optional; see [Agent logins and models](#agent-logins-and-models).
-- The `1password` ClusterSecretStore, Longhorn, Kopiur, and external gateway must be ready.
-- Merge approval is required. Do not apply these manifests directly.
+| Item | Source | Changes how |
+|---|---|---|
+| Paseo password | 1Password `paseo/password` → Secret `paseo-secrets` | Edit 1Password, then restart the pod |
+| Pi's LiteLLM key | 1Password `litellm/master_key` → `paseo-secrets` | Edit 1Password, then restart the pod |
+| Pi model list | [`config/pi-models.json`](config/pi-models.json) → ConfigMap `pi-config` | PR; the ConfigMap hash rolls the pod |
+| Qwen sampler hook | [`config/qwen-sampling.ts`](config/qwen-sampling.ts) → ConfigMap `pi-config` | PR to `scripts/pi/qwen-sampling.ts` and this copy |
+| Claude, Codex, GitHub logins | One-time login, stored in `/home/paseo` | Log in again from the Paseo terminal |
+| Tools, agents, Pi aliases | Image digest in [`deployment.yaml`](deployment.yaml) | homelab-images PR, then a digest PR here |
 
-The image build and tool versions live in
-[homelab-images](https://github.com/mitchross/homelab-images/tree/feat/paseo-dev/images/paseo-dev).
-This deployment pins the locally tested image published from commit `2c37451`.
-Switch to the CI-produced `main` tag plus digest after the image PR merges, so
-Renovate can propose later digest updates. The current candidate tag is immutable.
+CI fails when `config/pi-models.json` or `config/qwen-sampling.ts` drift from their
+workstation references. Kustomize cannot read files outside this directory, so the copies exist.
+
+## 1. Connect from a browser
+
+1. Open `https://paseo.vanillax.me`.
+2. Click **Block** if the browser asks to "access other apps and services on this device".
+3. Click **Direct connection** if Paseo does not connect by itself.
+4. Enter host `paseo.vanillax.me`, port `443`, and turn on **Use SSL**.
+5. Enter the password from 1Password `homelab-prod` → `paseo`.
+
+Ignore **Paste pairing link**. It needs Paseo's relay, and this deployment turns the relay off.
+The page itself loads without a password. All control requests need it.
+
+## 2. Open a terminal
+
+1. Click **Add project** → **Search for directory**.
+2. Type `/workspace` and press Enter.
+3. In the new workspace, change **Chat ⌄** to **Terminal**.
+4. Leave the command box empty and press Enter.
+
+The terminal runs inside the pod as user `paseo` (uid 1000).
+
+## 3. Log in once
+
+Each login stays in `/home/paseo`. Restarts and image updates keep it.
+
+**GitHub:**
+
+```bash
+gh auth login --hostname github.com --git-protocol https --web
+git config --global user.name "Mitch Ross"
+git config --global user.email "mitchross@users.noreply.github.com"
+```
+
+1. Ignore the "failed to open browser" lines. The command keeps waiting.
+2. Open `https://github.com/login/device` on your PC.
+3. Enter the code that the terminal shows.
+
+Expect `✓ Logged in as mitchross`. Answer **Yes** to "Authenticate Git", so `git push` works.
+
+**Claude Code** (uses your Claude subscription, not API credit):
+
+1. Run `claude`.
+2. Type `/login` and choose the subscription account.
+3. Open the link on your PC, approve, and paste the code back.
+4. Type `/exit`.
+
+**Codex** (uses your ChatGPT plan):
+
+1. Turn on **device code sign-in** in chatgpt.com → Settings → Security and login.
+2. Run `codex login --device-auth`.
+3. Open the link on your PC and enter the code.
+
+**Check all three:**
+
+```bash
+gh auth status; claude --version; codex login status
+```
+
+Expect a GitHub account, a Claude Code version, and `Logged in using ChatGPT`.
+
+## 4. Use Pi with your own GPUs
+
+Pi needs no login. It reads `LITELLM_API_KEY` from the pod environment.
+
+```bash
+pi -p "Reply with exactly: PASEO OK"
+```
+
+Expect `PASEO OK` from local Qwen. In the chat UI, choose **Select model** → **Pi**:
+
+| Model | Runs on | Cost |
+|---|---|---|
+| `vanillax-vllm/qwen3.8-27b` | vLLM on the two RTX 3090s | free |
+| `vanillax-auto/pi-auto` | LiteLLM picks Qwen or DeepSeek per request | sometimes paid |
+| `vanillax-openrouter/deepseek-flash` | OpenRouter | paid |
+
+Images built after the homelab-images onboarding PR add the bash aliases
+`pi-qwen-only`, `pi-withflash`, and `pi-flash`. `pi-direct-openrouter` does not exist here:
+only LiteLLM holds the OpenRouter key. See [Pi agent](../../../docs/domains/ai-gpu/pi-agent-local-dev.md)
+for the routing rules.
+
+## Verify after a change
+
+```bash
+kubectl -n argocd get application my-apps-paseo
+kubectl -n paseo get pod,pvc,externalsecret,httproute
+curl -s -o /dev/null -w '%{http_code}\n' https://paseo.vanillax.me/api/status
+curl -s https://paseo.vanillax.me/ | grep -o '__PASEO_INITIAL_DAEMON_CONNECTION__=[^<]*'
+```
+
+Expect `Synced` and `Healthy`, one ready pod, both PVCs `Bound`, and `401` without a password.
+The last command must show `"useTls":true`. `false` means the browser cannot auto-connect;
+check `PASEO_TRUSTED_PROXIES`.
 
 ## Storage and resources
 
-The pod runs as `1000:1000`. `/home/paseo` holds settings, provider logins, and
-sessions. `/workspace` holds project checkouts and uncommitted work. Both volumes
-use Longhorn with restore-before-bind and daily Kopiur backups. Backup movers use
-`1000:1000` so they can read private agent files. Push important work to Git too.
+The pod runs as `1000:1000`. `/home/paseo` holds settings, sessions, and logins.
+`/workspace` holds checkouts and uncommitted work. Both volumes use Longhorn with
+restore-before-bind and daily Kopiur snapshots. The movers run as `1000:1000`.
+Push important work to Git too.
 
-Initial requests are 1 CPU and 2 GiB RAM. The memory limit is 12 GiB; VPA can adjust
-requests up to 4 CPUs and 8 GiB RAM. Size the limits from observed builds. VPA may
-recreate the single pod, which interrupts active processes. Image rollouts use
-`Recreate` to avoid an RWO volume attachment deadlock.
+Requests start at 1 CPU and 2 GiB. The memory limit is 12 GiB. VPA can raise
+requests to 4 CPUs and 8 GiB. A VPA resize can recreate the pod and stop active agents.
+`Recreate` rollouts prevent an RWO volume attach deadlock.
 
-No liveness probe is configured: a busy build should not cause a health-probe
-restart that kills its agents. Startup and readiness use the health endpoint.
-Kubelet restarts a crashed process. Chromium gets a 1 GiB shared-memory mount.
+No liveness probe exists, so a busy build cannot trigger a restart. Chromium gets 1 GiB of `/dev/shm`.
 
-## First login
+## Known limits
 
-After merge, verify the resources:
-
-```sh
-kubectl -n paseo get externalsecret,pvc,pod,httproute
-kubectl -n paseo rollout status deployment/paseo --timeout=5m
-kubectl -n paseo get httproute paseo -o yaml
-curl -fsS https://paseo.vanillax.me/api/health
-curl -s -o /dev/null -w '%{http_code}\n' https://paseo.vanillax.me/api/status
-```
-
-Expect the ExternalSecret to be ready, both PVCs bound, one ready pod, and route
-conditions `Accepted=True` and `ResolvedRefs=True`. Health returns success;
-unauthenticated `/api/status` returns `401`. The web page itself can load without
-a password; control requests require the password.
-
-Open the website and add a direct daemon connection using the password from
-1Password. Verify terminal and agent communication over WebSocket before granting
-infrastructure credentials. Relay access and workspace service publishing are disabled.
-
-## Agent logins and models
-
-Everything the agents need comes from Git and 1Password. Nothing is typed into the pod.
-
-| What | Where it comes from | You do once |
-|---|---|---|
-| Paseo password | `paseo/password` → `paseo-secrets` | already set |
-| LiteLLM key for Pi | `litellm/master_key` → `paseo-secrets` | already set |
-| Pi model list | `config/pi-models.json` → ConfigMap `pi-config` | nothing |
-| Claude Code login | `paseo/claude_oauth_token` → `paseo-agent-auth` | see below |
-
-**Claude Code.** On your PC run `claude setup-token`, sign in, and paste the printed
-token into a new field `claude_oauth_token` on the 1Password item `paseo`. ESO syncs it
-within the hour; the next pod rollout passes it to Claude as `CLAUDE_CODE_OAUTH_TOKEN`.
-Until the field exists, the `paseo-agent-auth` ExternalSecret reports an error and
-Paseo still starts.
-
-**Pi.** Pi reads `~/.pi/agent/models.json`, which is mounted read-only from
-`config/pi-models.json`. Edit that file in Git; the ConfigMap hash change rolls the pod.
-It is the cluster copy of the reference in
-[pi-agent-local-dev.md](../../../docs/domains/ai-gpu/pi-agent-local-dev.md): the
-same providers, with LiteLLM's in-cluster URL. `apiKey` must be `"$LITELLM_API_KEY"`.
-Without the `$`, Pi sends the variable's name as the key and LiteLLM answers
-`400 No connected db`.
-
-**Codex** has no static token for ChatGPT plans. Either add an `OPENAI_API_KEY`
-(pay per use) the same way as Claude's token, or sign in once from Paseo's own
-terminal; that login stays on the home volume.
-
-Clone project repositories under `/workspace`. Private repositories need a
-separately configured Git identity and credentials.
-
-## Follow-up configuration
-
-The pod has no mounted Kubernetes service-account token or RBAC grants. Prepare
-scoped access for Kubernetes, Omni/Talos, and Proxmox separately. A Kubernetes
-service account does not authenticate to Omni or Proxmox. LAN endpoints may also
-need app-specific Cilium egress rules; see the [network policy guide](../../../../docs/domains/networking/policy.md).
-The cluster's current global allow rules mean this namespace is not an isolated sandbox.
-
-Restore reviewed personal skills and settings through a private configuration
-bundle. Rewrite workstation paths for `/home/paseo` and `/workspace`. Review Mink's
-storage and hooks before migration. Do not copy credentials or desktop integrations
-into the public image. Paseo plugins remain opt-in.
+- One password is the only gate on a public URL. Paseo has no login rate limit.
+- `gh auth login` gives the pod access to every repo of the account.
+- The shared Cilium policy lets the pod reach other cluster services. See the [network policy guide](../../../docs/domains/networking/policy.md).
+- Pi uses LiteLLM's master key. An agent can spend OpenRouter credit through it.
+- The pod has no Kubernetes service-account token and no RBAC grants.
 
 ## Backups, failures, and rollback
 
-```sh
-kubectl -n paseo get secret kopiur-rustfs
+```bash
 kubectl -n paseo get snapshotpolicy,snapshotschedule,restore,snapshot
 ```
 
-The first scheduled snapshots must reach `Succeeded` with nonzero files before
-relying on recovery. New volumes bind empty when the backup repository is reachable
-but no snapshot exists. A repository outage leaves restore-backed PVCs pending.
-See the [backup guide](../../../../docs/domains/storage/kopiur-backup-architecture.md).
+Snapshots must reach `Succeeded` with nonzero files before you rely on a restore.
+A new PVC binds empty when the repository has no snapshot. A repository outage keeps the PVC `Pending`.
+See the [backup guide](../../../docs/domains/storage/kopiur-backup-architecture.md).
 
-For `CreateContainerConfigError`, inspect the ExternalSecret status without
-printing Secret values. For `403 Host not allowed`, check `PASEO_HOSTNAMES`.
-For a pending PVC, inspect Restore and storage events; do not delete the PVC.
+| Symptom | Check |
+|---|---|
+| `CreateContainerConfigError` | `kubectl -n paseo describe externalsecret paseo-secrets` |
+| `403 Host not allowed` | `PASEO_HOSTNAMES` in `deployment.yaml` |
+| Pi returns `400 No connected db` | `apiKey` in `config/pi-models.json` must start with `$` |
+| A PVC stays `Pending` | Restore status and storage events. Never delete the PVC. |
 
-Password rotation reaches Kubernetes through ESO, but the process reads it at
-startup. Arrange a restart when no agent work is active. Existing connections
-should be explicitly closed and new-password authentication checked.
+Paseo reads the password only at startup. Restart the pod when no agent work runs.
 
-To roll back an image upgrade, revert its digest in Git through a PR. Keep the
-PVCs. Restore backup data only if an incompatible data change requires it. Do not
-remove this app directory as a rollback: Argo CD can prune its persistent volumes.
+Roll back an image by reverting its digest through a PR. Keep the PVCs.
+Never delete this directory as a rollback: Argo CD can prune the volumes.
