@@ -1,0 +1,23 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: paseo
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: paseo
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: paseo
+        controlledResources: [cpu, memory]
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 500m
+          memory: 1Gi
+        maxAllowed:
+          cpu: "4"
+          memory: 8Gi

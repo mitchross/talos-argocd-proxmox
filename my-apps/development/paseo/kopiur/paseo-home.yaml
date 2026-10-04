@@ -1,0 +1,51 @@
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: paseo-home
+spec:
+  sources:
+    - pvc:
+        name: paseo-home
+  identity:
+    username: paseo-home
+    hostname: paseo
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1000
+      supplementalGroups: [1000]
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: paseo-home-daily
+spec:
+  policyRef:
+    name: paseo-home
+  schedule:
+    cron: "17 4 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: paseo-home-restore
+spec:
+  source:
+    fromPolicy:
+      name: paseo-home
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1000
+      supplementalGroups: [1000]
