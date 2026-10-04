@@ -50,6 +50,12 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: LITELLM_API_KEY
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-agent-auth
+                  key: CLAUDE_CODE_OAUTH_TOKEN
+                  optional: true
             - name: PASEO_RELAY_ENABLED
               value: "false"
             - name: PASEO_SERVICE_PROXY_ENABLED
@@ -84,6 +90,11 @@ spec:
               mountPath: /workspace
             - name: shm
               mountPath: /dev/shm
+            # Git owns Pi's model list; a file on the home volume would drift.
+            - name: pi-config
+              mountPath: /home/paseo/.pi/agent/models.json
+              subPath: models.json
+              readOnly: true
       volumes:
         - name: home
           persistentVolumeClaim:
@@ -91,6 +102,9 @@ spec:
         - name: workspace
           persistentVolumeClaim:
             claimName: paseo-workspace
+        - name: pi-config
+          configMap:
+            name: pi-config
         - name: shm
           emptyDir:
             medium: Memory

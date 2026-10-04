@@ -180,6 +180,17 @@ class DeclaredPolicyTests(unittest.TestCase):
         self.assertIn('alias pi-qwen-only="pi --model $QWEN --thinking xhigh --models $QWEN"', doc)
         self.assertIn('alias pi-withflash="pi --model $AUTO --thinking medium --models $AUTO"', doc)
 
+    def test_paseo_pi_models_match_reference_except_cluster_url(self):
+        doc = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
+        configs = [json.loads(block) for block in re.findall(r'```json\n(.*?)\n```', doc, re.S)]
+        expected = copy.deepcopy(next(c for c in configs if 'providers' in c))
+        for provider in expected['providers'].values():
+            provider['baseUrl'] = 'http://litellm-service.litellm.svc.cluster.local:4000/v1'
+        paseo = json.loads((ROOT / 'my-apps/development/paseo/config/pi-models.json').read_text())
+        self.assertEqual(paseo, expected)
+        # A bare variable name is sent literally; LiteLLM then fails with "No connected db".
+        self.assertTrue(all(p['apiKey'] == '$LITELLM_API_KEY' for p in paseo['providers'].values()))
+
     def test_classifier_stays_off_and_cloud_efforts_do_not_follow_qwen(self):
         config = yaml.safe_load((ROOT / 'my-apps/ai/litellm/config.yaml').read_text())
         routes = {route['model_name']: route['litellm_params'] for route in config['model_list']}

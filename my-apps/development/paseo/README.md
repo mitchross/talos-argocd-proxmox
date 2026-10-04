@@ -21,6 +21,7 @@ flowchart LR
 
 - The tested image digest in `deployment.yaml` must be available in GHCR.
 - Vault `homelab-prod` must contain `paseo/password` and `litellm/master_key`.
+  `paseo/claude_oauth_token` is optional; see [Agent logins and models](#agent-logins-and-models).
 - The `1password` ClusterSecretStore, Longhorn, Kopiur, and external gateway must be ready.
 - Merge approval is required. Do not apply these manifests directly.
 
@@ -67,26 +68,39 @@ Open the website and add a direct daemon connection using the password from
 1Password. Verify terminal and agent communication over WebSocket before granting
 infrastructure credentials. Relay access and workspace service publishing are disabled.
 
-Authenticate providers in the pod terminal, for example:
+## Agent logins and models
 
-```sh
-kubectl -n paseo exec -it deploy/paseo -- claude
-kubectl -n paseo exec -it deploy/paseo -- codex login --device-auth
-```
+Everything the agents need comes from Git and 1Password. Nothing is typed into the pod.
 
-Complete each provider's login flow. Login data persists in the home volume.
+| What | Where it comes from | You do once |
+|---|---|---|
+| Paseo password | `paseo/password` → `paseo-secrets` | already set |
+| LiteLLM key for Pi | `litellm/master_key` → `paseo-secrets` | already set |
+| Pi model list | `config/pi-models.json` → ConfigMap `pi-config` | nothing |
+| Claude Code login | `paseo/claude_oauth_token` → `paseo-agent-auth` | see below |
+
+**Claude Code.** On your PC run `claude setup-token`, sign in, and paste the printed
+token into a new field `claude_oauth_token` on the 1Password item `paseo`. ESO syncs it
+within the hour; the next pod rollout passes it to Claude as `CLAUDE_CODE_OAUTH_TOKEN`.
+Until the field exists, the `paseo-agent-auth` ExternalSecret reports an error and
+Paseo still starts.
+
+**Pi.** Pi reads `~/.pi/agent/models.json`, which is mounted read-only from
+`config/pi-models.json`. Edit that file in Git; the ConfigMap hash change rolls the pod.
+It is the cluster copy of the reference in
+[pi-agent-local-dev.md](../../../docs/domains/ai-gpu/pi-agent-local-dev.md): the
+same providers, with LiteLLM's in-cluster URL. `apiKey` must be `"$LITELLM_API_KEY"`.
+Without the `$`, Pi sends the variable's name as the key and LiteLLM answers
+`400 No connected db`.
+
+**Codex** has no static token for ChatGPT plans. Either add an `OPENAI_API_KEY`
+(pay per use) the same way as Claude's token, or sign in once from Paseo's own
+terminal; that login stays on the home volume.
+
 Clone project repositories under `/workspace`. Private repositories need a
 separately configured Git identity and credentials.
 
 ## Follow-up configuration
-
-ESO supplies `PASEO_PASSWORD` from `paseo/password` and `LITELLM_API_KEY` from
-`litellm/master_key`. This matches Radar NG and DealScout. The LiteLLM key grants
-administrative gateway access; a restricted per-app key can replace it later.
-
-Pi's seeded models use this key for local Qwen, hosted DeepSeek through OpenRouter,
-and the `pi-auto` route. OpenRouter's upstream credential stays in LiteLLM.
-The separate direct-OpenRouter profile needs its own credential and is not configured here.
 
 The pod has no mounted Kubernetes service-account token or RBAC grants. Prepare
 scoped access for Kubernetes, Omni/Talos, and Proxmox separately. A Kubernetes
