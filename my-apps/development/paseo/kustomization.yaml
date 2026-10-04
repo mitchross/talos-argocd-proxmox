@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: paseo
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - vpa.yaml
+  - kopiur/paseo-home.yaml
+  - kopiur/paseo-workspace.yaml
+components:
+  - ../../common/kopiur-backup
