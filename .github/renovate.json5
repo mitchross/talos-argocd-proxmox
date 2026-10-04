@@ -308,6 +308,8 @@
     },
   ],
   ignorePaths: [
+    // Archived applications are excluded from Argo CD discovery.
+    'my-apps/**/_archive/**',
     '**/charts/**',
     // ClusterPolicy fails Renovate's YAML parse, and its images are owned by the gpu-operator chart anyway.
     'infrastructure/gpu/nvidia-gpu-operator/cluster-policy.yaml',
