@@ -20,7 +20,7 @@ flowchart LR
 ## Prerequisites
 
 - The tested image digest in `deployment.yaml` must be available in GHCR.
-- Vault `homelab-prod` must contain `paseo/password` and `litellm/master_key`.
+- Vault `homelab-prod` must contain `paseo/password` and `litellm/paseo_key`.
 - The `1password` ClusterSecretStore, Longhorn, Kopiur, and external gateway must be ready.
 - Merge approval is required. Do not apply these manifests directly.
 
@@ -81,8 +81,10 @@ separately configured Git identity and credentials.
 ## Follow-up configuration
 
 ESO supplies `PASEO_PASSWORD` from `paseo/password` and `LITELLM_API_KEY` from
-`litellm/master_key`. This matches Radar NG and DealScout. The LiteLLM key grants
-administrative gateway access; a restricted per-app key can replace it later.
+`litellm/paseo_key`. Create this restricted key only after LiteLLM has a persistent
+database. Allow the Pi model routes and set the agreed $25 monthly budget.
+Verify routing and budget enforcement before merging this deployment change.
+The field does not exist yet. Do not substitute the LiteLLM master key.
 
 Pi's seeded models use this key for local Qwen, hosted DeepSeek through OpenRouter,
 and the `pi-auto` route. OpenRouter's upstream credential stays in LiteLLM.
