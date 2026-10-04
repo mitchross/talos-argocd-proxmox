@@ -45,10 +45,17 @@ LiteLLM records every call in Langfuse and holds the OpenRouter key.
 The [Pi agent guide](pi-agent-local-dev.md#where-pi-runs-your-pc-or-the-cluster) compares both setups.
 The cluster copy differs only in the LiteLLM URL. CI keeps the two equal.
 
-## Image and other homelabs
+## Run Paseo on another cluster
 
-The image lives in [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/paseo-dev).
-Its README is a standalone setup guide for another homelab, without this cluster's secrets.
+Send these two guides to anyone who wants Paseo in their own homelab. Neither needs this cluster's secrets.
+
+| Guide | Use it to |
+|---|---|
+| [Run Paseo on your Kubernetes cluster](https://github.com/mitchross/homelab-images/blob/main/deploy/kubernetes/paseo/README.md) | Deploy with plain manifests: password Secret, two volumes, Gateway API or Ingress, own-LLM Pi |
+| [paseo-dev image guide](https://github.com/mitchross/homelab-images/blob/main/images/paseo-dev/README.md) | Run with Docker Compose, connect, log in once, configure Pi |
+
+The image is public at `ghcr.io/mitchross/paseo-dev`. Pin a digest; the `main` tag moves with each build.
+This cluster's own manifests stay in [`my-apps/development/paseo`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/paseo).
 
 ## Known limits
 
