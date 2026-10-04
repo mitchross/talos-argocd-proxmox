@@ -5,6 +5,31 @@
 Pi is the coding agent from [pi.dev](https://pi.dev), not Raspberry Pi. This page
 configures a workstation; cluster changes go through Git and ArgoCD.
 
+## Where Pi runs: your PC or the cluster
+
+The same three providers work in both places. Only the URL and the key's source change.
+
+```mermaid
+flowchart LR
+    PC[Pi on your PC] -->|https://litellm.vanillax.me| LiteLLM
+    Paseo[Pi in Paseo pod] -->|litellm-service.litellm:4000| LiteLLM
+    LiteLLM -->|qwen3.8-27b| vLLM[vLLM on 2x3090, free]
+    LiteLLM -->|deepseek-flash| OR[OpenRouter, paid]
+```
+
+| | Your PC | Paseo (cluster) |
+|---|---|---|
+| Config file | `~/.pi/agent/models.json` from `mitchross/dotfiles` | [`my-apps/development/paseo/config/pi-models.json`](../../../my-apps/development/paseo/config/pi-models.json), mounted read-only |
+| `baseUrl` | `https://litellm.vanillax.me/v1` | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
+| Key | LiteLLM master key, read by `!cat <file>` or `$LITELLM_API_KEY` | `$LITELLM_API_KEY` from 1Password `litellm/master_key` via ESO |
+| Change it | dotfiles PR + `chezmoi apply` | PR to the Paseo app; ArgoCD rolls the pod |
+
+`apiKey` takes a literal, `$NAME`/`${NAME}` for an environment variable, or `!command`.
+A bare `LITELLM_API_KEY` is a literal: LiteLLM sees an unknown key, looks for a key
+database it does not have, and returns `400 No connected db`.
+
+The OpenRouter credential lives only inside LiteLLM. Neither copy of Pi holds it.
+
 ## Default reasoning and rollout
 
 Local Qwen defaults to **xhigh** with preserved reasoning. This is an
@@ -256,7 +281,7 @@ a PR to `my-apps/ai/litellm/config.yaml`.
 
 Three providers, all pointing at the authenticated gateway. The workstation copy
 is tracked in `mitchross/dotfiles`; this block is the repo's copy and CI checks
-it against `litellm/config.yaml`, so keep the two in step.
+it against `litellm/config.yaml` and Paseo's cluster copy, so keep them in step.
 
 ```json
 {
