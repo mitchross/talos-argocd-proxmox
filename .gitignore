@@ -143,3 +143,6 @@ __pycache__/
 # Local Python tool caches
 .pytest_cache/
 .ruff_cache/
+
+# Local tool cache written to the repo root
+agora_cache.db
