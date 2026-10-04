@@ -131,6 +131,8 @@ nav:
           - Dell Proxmox Talos worker: domains/networking/dell-proxmox-talos-worker.md
           - Cilium policies: domains/networking/policy.md
           - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
+      - Physical hosts:
+          - Ansible host management: domains/hosts/physical-hosts-ansible.md
       - AI / GPU:
           - Model catalog: domains/ai-gpu/model-catalog.md
           - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md

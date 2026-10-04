@@ -205,7 +205,6 @@ Fixed to use standard Let's Encrypt path.
 
 ### Future Considerations
 - Terraform modules for infrastructure
-- Ansible playbooks for host setup
 - CI/CD pipeline examples
 - Cost optimization guides
 - Security hardening guides
