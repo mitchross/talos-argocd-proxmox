@@ -1,0 +1,12 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: anubis
+  namespace: searxng
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: anubis
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 30s

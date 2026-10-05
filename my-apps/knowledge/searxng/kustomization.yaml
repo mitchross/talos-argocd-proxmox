@@ -8,6 +8,10 @@ resources:
   - httproute.yaml
   - externalsecret.yaml
   - redis.yaml
+  - anubis-deployment.yaml
+  - anubis-service.yaml
+  - anubis-vpa.yaml
+  - anubis-podmonitor.yaml
 configMapGenerator:
   - name: searxng-scripts
     files:
@@ -21,4 +25,8 @@ configMapGenerator:
   - name: searxng
     envs:
       - searxng.env
+  # Hash suffix rolls Anubis when the policy changes.
+  - name: anubis-policy
+    files:
+      - botPolicy.yaml=anubis-policy.yaml
 namespace: searxng

@@ -1,0 +1,85 @@
+# Anubis bot policy for SearXNG (copied from redlib's). Nobody is denied by geography: humans pay a one-time proof-of-work
+# (7-day cookie), verified search crawlers pass, AI scrapers are denied. Upstream data sets by (data)/.
+bots:
+  # Search/AI crawlers not covered by the upstream lists (seen 2026-10-05).
+  - name: deny-exa-crawler
+    user_agent_regex: >-
+      ExaSearchBot|crawler\.exa\.ai
+    action: DENY
+  # Browsers fetch these without the Anubis cookie (adding the search engine, tab icons).
+  - name: searxng-opensearch
+    path_regex: ^/(opensearch\.xml|favicon\.ico|static/themes/.*/img/favicon\..*)$
+    action: ALLOW
+  - import: (data)/bots/_deny-pathological.yaml
+  - import: (data)/bots/aggressive-brazilian-scrapers.yaml
+  - import: (data)/meta/ai-block-aggressive.yaml
+  - import: (data)/crawlers/_allow-good.yaml
+  - import: (data)/common/keep-internet-working.yaml
+  # Weight 20 = the difficulty-4 proof-of-work tier. On 2026-10-04 a rotating-IP
+  # scraper (~4,000 IPs per 8 min, Chrome UA) solved the difficulty-2 tier ~2/s
+  # and crawled Reddit through redlib's token. 4 is ~16x the work per solve;
+  # humans pay it once per device per 7 days.
+  - name: generic-browser
+    user_agent_regex: >-
+      Mozilla|Opera
+    action: WEIGH
+    weight:
+      adjust: 20
+
+dnsbl: false
+
+honeypot:
+  enabled: true
+  implementation: naive
+
+# Off: passthrough fetched pages from redlib for bots that never solved a challenge.
+openGraph:
+  enabled: false
+  considerHost: false
+  ttl: 24h
+
+status_codes:
+  CHALLENGE: 200
+  DENY: 200
+
+store:
+  backend: memory
+  parameters: {}
+
+thresholds:
+  - name: minimal-suspicion
+    expression: weight <= 0
+    action: ALLOW
+  - name: mild-suspicion
+    expression:
+      all:
+        - weight > 0
+        - weight < 10
+    action: CHALLENGE
+    challenge:
+      algorithm: metarefresh
+      difficulty: 1
+  - name: moderate-suspicion
+    expression:
+      all:
+        - weight >= 10
+        - weight < 20
+    action: CHALLENGE
+    challenge:
+      algorithm: fast
+      difficulty: 2
+  - name: mild-proof-of-work
+    expression:
+      all:
+        - weight >= 20
+        - weight < 30
+    action: CHALLENGE
+    challenge:
+      algorithm: fast
+      difficulty: 4
+  - name: extreme-suspicion
+    expression: weight >= 30
+    action: CHALLENGE
+    challenge:
+      algorithm: fast
+      difficulty: 6
