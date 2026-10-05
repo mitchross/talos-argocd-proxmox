@@ -37,8 +37,10 @@ spec:
             # cloudflared sets CF-Connecting-IP; without this every visitor shares the gateway's pod IP.
             - name: CUSTOM_REAL_IP_HEADER
               value: "CF-Connecting-IP"
+            # Off: with it on, every challenged request (including bots that never
+            # solve) made Anubis fetch the page from redlib, i.e. a Reddit API call.
             - name: OG_PASSTHROUGH
-              value: "true"
+              value: "false"
             # Without this Anubis will bounce a solved challenge to any host (open redirect).
             - name: REDIRECT_DOMAINS
               value: "redlib.vanillax.me"
