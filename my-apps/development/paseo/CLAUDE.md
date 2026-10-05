@@ -39,6 +39,8 @@ Claude Code auto mode on the PC blocks commands that write inside pods. Ask the 
 - Keep `PASEO_HOSTNAMES` equal to the route hostname, or requests fail with `403 Host not allowed`.
 - Keep `PASEO_TRUSTED_PROXIES`; without it the web UI gets `useTls:false` and cannot auto-connect.
 - The relay is off. Do not suggest QR or pairing-link setup.
+- In the pod, never run `mink init` or `mink refresh-hooks`; restore any change they make to `.claude/` or `.pi/` files.
+- Keep the image's `MINK_VERSION` equal to the workstations' Mink version.
 
 ## Open risks (deferred by the user)
 

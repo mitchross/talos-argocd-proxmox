@@ -104,6 +104,24 @@ gh auth status; claude --version; codex login status
 
 Expect a GitHub account, a Claude Code version, and `Logged in using ChatGPT`.
 
+**Memory and agent rules** (needs an image with Mink and chezmoi):
+
+```bash
+mink sync init https://github.com/mitchross/mink-data.git
+mink sync pull
+chezmoi init https://github.com/mitchross/dotfiles.git
+chezmoi apply --exclude=scripts ~/.claude/CLAUDE.md ~/.codex/AGENTS.md ~/.pi/agent/AGENTS.md
+```
+
+1. Both repos are private. The `gh` login above gives `git` access over HTTPS.
+2. `mink sync status` shows `Remote URL` and `Pending changes: 0` when the vault is in sync.
+3. `chezmoi apply` writes only the three rule files. It renders the shared rules template in the dotfiles repo.
+
+Clone project repos under `/workspace`, not in `/home/paseo`. The home volume is small and holds logins.
+
+Never run `mink init` or `mink refresh-hooks` in the pod. They rewrite the repo's `.claude/` and `.pi/` hook files.
+If `git status` shows those files changed, run `git restore` on them and do not commit them.
+
 ## 4. Use Pi with the cluster GPUs
 
 Pi needs no login. It reads `LITELLM_API_KEY` from the pod environment.
@@ -193,3 +211,4 @@ The image itself is built in [homelab-images](https://github.com/mitchross/homel
 - The pod's GitHub login can reach every repo of the account.
 - The shared Cilium policy lets the pod reach other cluster services. See [network policy](../networking/policy.md).
 - Pi uses LiteLLM's master key, so an agent can spend OpenRouter credit.
+- After the memory step, the pod can read the private Mink vault and dotfiles.
