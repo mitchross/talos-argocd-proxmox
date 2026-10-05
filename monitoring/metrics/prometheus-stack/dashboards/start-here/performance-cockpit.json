@@ -928,8 +928,8 @@
     {
       "id": 15,
       "type": "bargauge",
-      "title": "Namespaces producing error-like logs — last 5 minutes",
-      "description": "A high count points to the app or dependency to inspect. This is a broad text match, so read the logs before concluding.",
+      "title": "Namespaces logging errors — last 5 minutes (click a bar to read them)",
+      "description": "Error-level log lines per namespace (Loki detected_level error/fatal/critical). Click a bar to open Logs Explorer filtered to that namespace and level=error.",
       "gridPos": {
         "x": 12,
         "y": 33,
@@ -942,7 +942,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by(k8s_namespace_name) (count_over_time({k8s_namespace_name=~\".+\"} |~ \"(?i)error|exception|traceback|failed\" [5m])))",
+          "expr": "topk(10, sum by(k8s_namespace_name) (count_over_time({k8s_namespace_name=~\".+\"} | detected_level=~\"error|fatal|critical\" [5m])))",
           "legendFormat": "{{k8s_namespace_name}}",
           "refId": "A"
         }
@@ -966,7 +966,13 @@
                 "value": 100
               }
             ]
-          }
+          },
+          "links": [
+            {
+              "title": "Read these error logs",
+              "url": "/d/loki-logs-otel?var-namespace=${__field.labels.k8s_namespace_name}&var-level=error&from=now-15m&to=now"
+            }
+          ]
         },
         "overrides": []
       },
@@ -1136,5 +1142,8 @@
   "title": "START HERE — Cluster Performance",
   "uid": "performance-cockpit",
   "version": 1,
-  "id": null
+  "id": null,
+  "timepicker": {
+    "hidden": true
+  }
 }

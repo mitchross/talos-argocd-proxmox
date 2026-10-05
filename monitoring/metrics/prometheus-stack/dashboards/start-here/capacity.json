@@ -1598,5 +1598,8 @@
         ]
       }
     }
-  ]
+  ],
+  "timepicker": {
+    "hidden": true
+  }
 }
