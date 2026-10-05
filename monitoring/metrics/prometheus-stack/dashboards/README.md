@@ -57,6 +57,13 @@ annotation. See `monitoring.dashboards` in
 
 JSON can't hold comments, so the traps a future editor will hit are listed here.
 
+- **Snapshot dashboards:** Cockpit and Capacity hide the time picker on
+  purpose; their tiles are "right now" values. Capacity's window is its
+  `Peak window` variable. Dashboards with graphs keep the picker, and their
+  count tiles use `[$__range]` so the picker applies to them too.
+- **Error-log counts** use Loki's `detected_level` (error/fatal/critical), not
+  a text match on "error", and link to Logs Explorer (`/d/loki-logs-otel`)
+  with the same namespace and level.
 - **Capacity:** 7d/15d peaks read the `workload:*:pod_max` recording rules in
   `../capacity-rules.yaml`. Raw per-pod `*_over_time` queries time out on
   short-lived pod churn (versioned radar workers, backup jobs).

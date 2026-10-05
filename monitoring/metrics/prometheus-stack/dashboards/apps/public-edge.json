@@ -115,7 +115,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Tunnel 5xx share (1h)",
+      "title": "Tunnel 5xx share (selected range)",
       "description": "Share of tunnel requests the cluster answered with a 5xx. Edge-only errors (530 = tunnel unreachable) are not counted here.",
       "datasource": {
         "type": "prometheus",
@@ -129,7 +129,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(cloudflared_tunnel_response_by_code{status_code=~\"5..\"}[1h])) / sum(increase(cloudflared_tunnel_total_requests[1h]))",
+          "expr": "sum(increase(cloudflared_tunnel_response_by_code{status_code=~\"5..\"}[$__range])) / sum(increase(cloudflared_tunnel_total_requests[$__range]))",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -180,7 +180,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Restarts in redlib ns (24h)",
+      "title": "Restarts in redlib ns (selected range)",
       "description": "Container restarts for redlib + Anubis.",
       "datasource": {
         "type": "prometheus",
@@ -194,7 +194,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"redlib\"}[24h]))",
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"redlib\"}[$__range]))",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -241,7 +241,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Failed health checks (1h)",
+      "title": "Failed health checks (selected range)",
       "description": "Kubelet liveness/readiness failures. Redlib's crash loop started as /settings probe timeouts.",
       "datasource": {
         "type": "prometheus",
@@ -255,7 +255,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(prober_probe_total{namespace=\"redlib\",result=\"failed\"}[1h])) or vector(0)",
+          "expr": "sum(increase(prober_probe_total{namespace=\"redlib\",result=\"failed\"}[$__range])) or vector(0)",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -306,7 +306,7 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "Challenge solve rate (1h)",
+      "title": "Challenge solve rate (selected range)",
       "description": "Solved / issued Anubis challenges. Low = most challenged clients are bots that never run the JS.",
       "datasource": {
         "type": "prometheus",
@@ -320,7 +320,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(anubis_challenges_validated[1h])) / sum(increase(anubis_challenges_issued[1h]))",
+          "expr": "sum(increase(anubis_challenges_validated[$__range])) / sum(increase(anubis_challenges_issued[$__range]))",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
