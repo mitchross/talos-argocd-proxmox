@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: registry.vanillax.me/geocoder/geocoder:4daa0f0
+          image: registry.vanillax.me/geocoder/geocoder:v0.1.0
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
