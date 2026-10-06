@@ -86,6 +86,22 @@
       changed_when: false
       when: nvme_apst_disabled | default(false)
 
+    - name: Limit CPU idle depth after reboots
+      ansible.builtin.copy:
+        content: 'GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT intel_idle.max_cstate={{ cpu_max_cstate }}"'
+        dest: /etc/default/grub.d/60-cpu-cstate.cfg
+        owner: root
+        group: root
+        mode: "0644"
+      when: cpu_max_cstate is defined
+      notify: Update grub
+
+    # sysfs state0 is POLL and state1 is C1, so disabling state numbers above the limit matches max_cstate.
+    - name: Limit CPU idle depth now
+      ansible.builtin.shell: for d in /sys/devices/system/cpu/cpu*/cpuidle/state*; do [ "${d##*state}" -gt {{ cpu_max_cstate }} ] && echo 1 > "$d/disable"; done; true
+      changed_when: false
+      when: cpu_max_cstate is defined
+
   handlers:
     - name: Apply crash sysctls
       ansible.builtin.command:

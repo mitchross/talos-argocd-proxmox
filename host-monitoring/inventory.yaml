@@ -25,6 +25,8 @@ all:
               physical_host: hp-shed
               # SK hynix BC501 boot NVMe; suspected platform freezes when waking from deep power states.
               nvme_apst_disabled: true
+              # Silent idle-power freezes, mostly overnight; test whether deep package C-states cause them.
+              cpu_max_cstate: 1
         management:
           hosts:
             pi:

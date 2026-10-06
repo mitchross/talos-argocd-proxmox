@@ -107,6 +107,14 @@ power states (APST). It applies immediately through sysfs and on every boot
 through `/etc/default/grub.d/60-nvme-apst.cfg`. Check with
 `cat /sys/class/nvme/nvme0/power/pm_qos_latency_tolerance_us` (expected `0`).
 
+Hosts with `cpu_max_cstate` set get `intel_idle.max_cstate=<n>`, which stops
+the CPU from entering idle states deeper than the first `<n>` (1 = C1 only).
+Deep package states can freeze some Intel platforms silently at idle power.
+It applies immediately through each state's sysfs `disable` file and on every
+boot through `/etc/default/grub.d/60-cpu-cstate.cfg`; it raises idle power.
+Check with `grep . /sys/devices/system/cpu/cpu0/cpuidle/state*/disable`
+(expected `0` for POLL and C1, `1` for the rest).
+
 How to read the next crash: panic text in pstore or netconsole points to
 software (a kernel, driver or USB fault). A reset with nothing in either points
 to hardware (RAM, board or power supply).
@@ -114,5 +122,6 @@ to hardware (RAM, board or power supply).
 Rollback: delete `/etc/sysctl.d/60-crash-capture.conf`,
 `/etc/modules-load.d/crash-capture.conf`,
 `/etc/systemd/system.conf.d/60-watchdog.conf`, `/etc/modprobe.d/netconsole.conf`,
-`netconsole.service` and `/etc/default/grub.d/60-nvme-apst.cfg`, run
+`netconsole.service`, `/etc/default/grub.d/60-nvme-apst.cfg` and
+`/etc/default/grub.d/60-cpu-cstate.cfg`, run
 `update-grub`, then reboot the host.
