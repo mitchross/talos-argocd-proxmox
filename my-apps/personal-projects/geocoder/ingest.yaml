@@ -1,0 +1,77 @@
+# Monthly reload of ZCTA + NAD. First load: kubectl -n geocoder create job --from=cronjob/geocoder-ingest geocoder-ingest-initial
+# The load builds a new table and swaps it in, so the API keeps serving. Measured: 16 min for 18.5M rows plus the 8.5 GB download.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: geocoder-ingest
+spec:
+  schedule: "40 5 2 * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 14400
+      template:
+        spec:
+          restartPolicy: Never
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: ingest
+              image: registry.vanillax.me/geocoder/geocoder:v0.1.0
+              command: ["sh", "-c", "python -m geocoder.ingest zcta && python -m geocoder.ingest nad --refresh"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: geocoder
+                      key: db_password
+                - name: DATABASE_URL
+                  value: postgresql://geocoder:$(DB_PASSWORD)@geocoder-postgres:5432/geocoder
+                - name: STATES
+                  value: MI,OH,IN,KY,WI,IL
+                - name: DATA_DIR
+                  value: /data
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              resources:
+                requests:
+                  cpu: "1"
+                  memory: 512Mi
+                limits:
+                  memory: 2Gi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: geocoder-downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: geocoder-downloads
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Download cache of public Census and USDOT NAD zips; re-downloaded on every run"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 12Gi

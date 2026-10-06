@@ -1,0 +1,25 @@
+# Self-hosted geocoder from public data (Census ZCTA + USDOT NAD). Source: gitea.vanillax.me geocoder repo.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: geocoder
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - postgres/pvc.yaml
+  - postgres/service.yaml
+  - postgres/deployment.yaml
+  - postgres/vpa.yaml
+  - api.yaml
+  - ingest.yaml
+  - anubis-deployment.yaml
+  - anubis-service.yaml
+  - anubis-vpa.yaml
+  - anubis-podmonitor.yaml
+  - httproute.yaml
+
+configMapGenerator:
+  # Hash suffix rolls Anubis when the policy changes.
+  - name: anubis-policy
+    files:
+      - botPolicy.yaml=anubis-policy.yaml

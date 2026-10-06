@@ -1,0 +1,85 @@
+# PostGIS for the geocoder. Data is reloadable from public sources, so the PVC is backup-exempt.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geocoder-postgres
+  labels:
+    app: geocoder-postgres
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geocoder-postgres
+  template:
+    metadata:
+      labels:
+        app: geocoder-postgres
+    spec:
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the postgis image
+      containers:
+        - name: postgres
+          # Majors need a dump/restore (or a reload from public data); never auto-merge one.
+          image: postgis/postgis:18-3.6
+          args: ["postgres", "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB", "-c", "maintenance_work_mem=1GB", "-c", "max_wal_size=8GB"]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: geocoder
+            - name: POSTGRES_USER
+              value: geocoder
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: geocoder
+                  key: db_password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "geocoder", "-d", "geocoder"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "geocoder", "-d", "geocoder"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "geocoder", "-d", "geocoder"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1536Mi
+            limits:
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: dshm # index builds use parallel workers; 64 MB default /dev/shm is too small
+              mountPath: /dev/shm
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: geocoder-postgres-data
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
