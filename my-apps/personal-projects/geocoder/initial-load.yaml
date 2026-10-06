@@ -1,0 +1,59 @@
+# First data load without kubectl: runs after each Argo sync, but --if-empty makes it a no-op once data exists.
+# Monthly refreshes stay with the geocoder-ingest CronJob.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: geocoder-initial-load
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 14400
+  template:
+    spec:
+      restartPolicy: Never
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ingest
+          image: registry.vanillax.me/geocoder/geocoder:v0.1.1
+          command: ["sh", "-c", "python -m geocoder.ingest --if-empty zcta && python -m geocoder.ingest --if-empty nad"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: geocoder
+                  key: db_password
+            - name: DATABASE_URL
+              value: postgresql://geocoder:$(DB_PASSWORD)@geocoder-postgres:5432/geocoder
+            - name: STATES
+              value: MI,OH,IN,KY,WI,IL
+            - name: DATA_DIR
+              value: /data
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              cpu: "1"
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: geocoder-downloads
