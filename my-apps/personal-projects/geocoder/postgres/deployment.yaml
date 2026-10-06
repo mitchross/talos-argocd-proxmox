@@ -25,7 +25,9 @@ spec:
         - name: postgres
           # Majors need a dump/restore (or a reload from public data); never auto-merge one.
           image: postgis/postgis:18-3.6
-          args: ["postgres", "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB", "-c", "maintenance_work_mem=1GB", "-c", "max_wal_size=8GB"]
+          # wal_level=minimal: the loader creates and fills address_load in one transaction, so COPY and index
+          # builds skip WAL. Safe here: no replicas, no PITR, and the PVC is backup-exempt.
+          args: ["postgres", "-c", "shared_buffers=2GB", "-c", "effective_cache_size=6GB", "-c", "maintenance_work_mem=1GB", "-c", "max_wal_size=8GB", "-c", "wal_level=minimal", "-c", "max_wal_senders=0", "-c", "max_parallel_maintenance_workers=4"]
           securityContext:
             runAsUser: 999
             runAsGroup: 999
@@ -66,10 +68,10 @@ spec:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 250m
-              memory: 1536Mi
+              cpu: 500m
+              memory: 3Gi
             limits:
-              memory: 4Gi
+              memory: 8Gi
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
@@ -82,4 +84,4 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
-            sizeLimit: 1Gi
+            sizeLimit: 2Gi
