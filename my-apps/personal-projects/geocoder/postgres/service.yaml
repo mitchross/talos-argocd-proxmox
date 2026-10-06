@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: geocoder-postgres
+  labels:
+    app: geocoder-postgres
+spec:
+  selector:
+    app: geocoder-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

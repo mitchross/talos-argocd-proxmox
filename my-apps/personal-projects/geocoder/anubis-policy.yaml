@@ -1,0 +1,81 @@
+# Anubis bot policy for geocoder: copied from redlib. Browsers pay a one-time proof-of-work, AI scrapers are denied.
+# X-API-Key requests skip the challenge; the app answers 401 to any key not in API_KEYS, so a fake key gains nothing.
+bots:
+  - name: api-key
+    headers_regex:
+      X-Api-Key: .+
+    action: ALLOW
+  # Search/AI crawlers not covered by the upstream lists (seen 2026-10-05).
+  - name: deny-exa-crawler
+    user_agent_regex: >-
+      ExaSearchBot|crawler\.exa\.ai
+    action: DENY
+  - import: (data)/bots/_deny-pathological.yaml
+  - import: (data)/bots/aggressive-brazilian-scrapers.yaml
+  - import: (data)/meta/ai-block-aggressive.yaml
+  - import: (data)/crawlers/_allow-good.yaml
+  - import: (data)/common/keep-internet-working.yaml
+  # Weight 20 = the difficulty-4 proof-of-work tier (redlib's tuning); humans pay it once per device per 7 days.
+  - name: generic-browser
+    user_agent_regex: >-
+      Mozilla|Opera
+    action: WEIGH
+    weight:
+      adjust: 20
+
+dnsbl: false
+
+honeypot:
+  enabled: true
+  implementation: naive
+
+openGraph:
+  enabled: false
+  considerHost: false
+  ttl: 24h
+
+status_codes:
+  CHALLENGE: 200
+  DENY: 200
+
+store:
+  backend: memory
+  parameters: {}
+
+thresholds:
+  - name: minimal-suspicion
+    expression: weight <= 0
+    action: ALLOW
+  - name: mild-suspicion
+    expression:
+      all:
+        - weight > 0
+        - weight < 10
+    action: CHALLENGE
+    challenge:
+      algorithm: metarefresh
+      difficulty: 1
+  - name: moderate-suspicion
+    expression:
+      all:
+        - weight >= 10
+        - weight < 20
+    action: CHALLENGE
+    challenge:
+      algorithm: fast
+      difficulty: 2
+  - name: mild-proof-of-work
+    expression:
+      all:
+        - weight >= 20
+        - weight < 30
+    action: CHALLENGE
+    challenge:
+      algorithm: fast
+      difficulty: 4
+  - name: extreme-suspicion
+    expression: weight >= 30
+    action: CHALLENGE
+    challenge:
+      algorithm: fast
+      difficulty: 6
