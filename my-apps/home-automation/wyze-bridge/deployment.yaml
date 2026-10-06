@@ -15,6 +15,68 @@ spec:
       labels:
         app: wyze-bridge
     spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+      - name: wyze-lake
+        restartPolicy: Always
+        image: ghcr.io/mitchross/wyze-lake:sha-6d28c13eb9a66e68c6dd36f703db6f7eb81277ce-37264926298-1@sha256:5e5ec2740d98e3cc720bb9e88f56fd403920b665dc865cde1184fcd172f90d37
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: WYZE_AUTH_STATE
+          value: /auth/wyze-bridge.state.json
+        - name: WYZE_CAMERA_NAME
+          value: shed4k
+        # A separate name prevents bridge discovery from replacing the native producer.
+        - name: WYZE_STREAM_NAME
+          value: shed
+        ports:
+        - containerPort: 8554
+          name: rtsp
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+        # Gate on the server, not video: the bridge must start before it can write login state.
+        startupProbe:
+          exec:
+            command: [python3, -c, "import socket; socket.create_connection(('127.0.0.1', 1984), timeout=2).close()"]
+          periodSeconds: 2
+          timeoutSeconds: 3
+          failureThreshold: 30
+        readinessProbe:
+          exec:
+            command: [python3, /opt/wyze-lake/receiver.py, --health]
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command: [python3, /opt/wyze-lake/receiver.py, --health]
+          initialDelaySeconds: 120
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 4
+        volumeMounts:
+        - name: wyze-config
+          mountPath: /auth
+          readOnly: true
+        - name: wyze-lake-tmp
+          mountPath: /tmp
+        - name: wyze-lake-home
+          mountPath: /home/wyze
       containers:
       - name: wyze-bridge
         image: ghcr.io/idisposable/docker-wyze-bridge:sha-c4991b1e6980b94d9ee2636533c97b0d72f73000@sha256:a03a9651d398f3ea93717718d32c8587310548ed24502ebe6173b6789cbd6e1b
@@ -65,15 +127,6 @@ spec:
               name: wyze-bridge-secrets
               key: WB_API
         ports:
-        - containerPort: 8554
-          name: rtsp
-        - containerPort: 8888
-          name: hls
-        - containerPort: 8889
-          name: webrtc
-        - containerPort: 8189
-          name: webrtc-ice
-          protocol: UDP
         - containerPort: 5080
           name: http
         resources:
@@ -92,7 +145,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           tcpSocket:
-            port: rtsp
+            port: 8554
           initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5
@@ -103,3 +156,9 @@ spec:
       volumes:
       - name: wyze-config
         emptyDir: {}
+      - name: wyze-lake-tmp
+        emptyDir:
+          sizeLimit: 128Mi
+      - name: wyze-lake-home
+        emptyDir:
+          sizeLimit: 64Mi
