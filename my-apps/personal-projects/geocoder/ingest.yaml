@@ -1,4 +1,4 @@
-# Monthly reload of ZCTA + NAD. First load: kubectl -n geocoder create job --from=cronjob/geocoder-ingest geocoder-ingest-initial
+# Monthly reload of ZCTA + NAD. The first load is initial-load.yaml (Argo PostSync hook).
 # The load builds a new table and swaps it in, so the API keeps serving. Measured: 16 min for 18.5M rows plus the 8.5 GB download.
 apiVersion: batch/v1
 kind: CronJob
@@ -26,7 +26,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: ingest
-              image: registry.vanillax.me/geocoder/geocoder:v0.1.0
+              image: registry.vanillax.me/geocoder/geocoder:v0.1.1
               command: ["sh", "-c", "python -m geocoder.ingest zcta && python -m geocoder.ingest nad --refresh"]
               securityContext:
                 allowPrivilegeEscalation: false
