@@ -8,9 +8,9 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Rebuilt from public Census and USDOT NAD downloads by the geocoder-ingest CronJob"
 spec:
-  # Six states measured 4.9 GB; a reload holds the old and new table at once, plus WAL (max_wal_size 8GB).
+  # All states measured 26 GB (17 GB table + 9.6 GB indexes); a reload holds the old and new table at once.
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 30Gi
+      storage: 100Gi

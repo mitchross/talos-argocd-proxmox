@@ -26,7 +26,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: ingest
-              image: registry.vanillax.me/geocoder/geocoder:v0.1.3
+              image: registry.vanillax.me/geocoder/geocoder:v0.1.4
               # Each step probes the source size and skips when it matches the last load.
               command: ["sh", "-c", "python -m geocoder.ingest zcta && python -m geocoder.ingest nad"]
               securityContext:
@@ -43,17 +43,19 @@ spec:
                 - name: DATABASE_URL
                   value: postgresql://geocoder:$(DB_PASSWORD)@geocoder-postgres:5432/geocoder
                 - name: STATES
-                  value: MI,OH,IN,KY,WI,IL
+                  value: ALL
+                - name: INGEST_WORKERS
+                  value: "4"
                 - name: DATA_DIR
                   value: /data
                 - name: PYTHONUNBUFFERED
                   value: "1"
               resources:
                 requests:
-                  cpu: "1"
-                  memory: 512Mi
-                limits:
+                  cpu: "4" # INGEST_WORKERS parse in parallel
                   memory: 2Gi
+                limits:
+                  memory: 4Gi
               volumeMounts:
                 - name: data
                   mountPath: /data
@@ -75,4 +77,4 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 12Gi
+      storage: 20Gi
