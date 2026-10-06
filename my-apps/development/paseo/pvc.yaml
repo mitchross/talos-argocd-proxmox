@@ -10,7 +10,7 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 10Gi
+      storage: 20Gi
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
