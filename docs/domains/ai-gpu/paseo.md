@@ -20,7 +20,7 @@ flowchart LR
     Paseo --> Pi[Pi] --> LiteLLM
     LiteLLM -->|qwen3.8-27b| vLLM[vLLM on 2x RTX 3090]
     LiteLLM -->|deepseek-flash| OR[OpenRouter]
-    Paseo --> Vols[(home 10Gi + workspace 50Gi)] --> Kopiur[Kopiur daily backup]
+    Paseo --> Vols[(home 20Gi + workspace 50Gi)] --> Kopiur[Kopiur daily backup]
 ```
 
 ## How it is built
