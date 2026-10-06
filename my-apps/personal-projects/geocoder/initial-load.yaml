@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ingest
-          image: registry.vanillax.me/geocoder/geocoder:v0.1.1
+          image: registry.vanillax.me/geocoder/geocoder:v0.1.2
           command: ["sh", "-c", "python -m geocoder.ingest --if-empty zcta && python -m geocoder.ingest --if-empty nad"]
           securityContext:
             allowPrivilegeEscalation: false
