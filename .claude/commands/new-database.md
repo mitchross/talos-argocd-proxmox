@@ -13,6 +13,9 @@ rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
 1. Copy `my-apps/development/gitea/postgres/` (deployment/service/pvc) into
    `my-apps/<category>/<app>/postgres/` and rename `gitea` → `<app>`
    throughout.
+   Keep its pod hardening: `seccompProfile: RuntimeDefault`,
+   `fsGroupChangePolicy: OnRootMismatch` and
+   `automountServiceAccountToken: false`.
 2. Copy the kopiur stub to `kopiur/<app>-postgres-data.yaml`: mover stays
    `999:999` (official postgres image uid), retention is the **daily
    tier** (every run clones the whole volume; use 6h only for data you can't re-create), and the cron minute must be **distinct across ALL schedules**

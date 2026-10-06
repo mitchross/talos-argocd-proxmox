@@ -18,10 +18,14 @@ spec:
       labels:
         app: paperless-postgres
     spec:
+      automountServiceAccountToken: false
       # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before the kubelet SIGKILLs.
       terminationGracePeriodSeconds: 60
       securityContext:
         fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           # Pin MAJOR.MINOR — a major upgrade needs a manual dump/restore (majors gated in renovate.json5).
