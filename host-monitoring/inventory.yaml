@@ -27,6 +27,8 @@ all:
               nvme_apst_disabled: true
               # Silent idle-power freezes, mostly overnight; test whether deep package C-states cause them.
               cpu_max_cstate: 1
+              # Known HP G4 mini silent-reset fix: keep the iGPU out of display power states.
+              i915_dc_disabled: true
         management:
           hosts:
             pi:

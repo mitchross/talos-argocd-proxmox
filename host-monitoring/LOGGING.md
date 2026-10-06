@@ -115,6 +115,12 @@ boot through `/etc/default/grub.d/60-cpu-cstate.cfg`; it raises idle power.
 Check with `grep . /sys/devices/system/cpu/cpu0/cpuidle/state*/disable`
 (expected `0` for POLL and C1, `1` for the rest).
 
+Hosts with `i915_dc_disabled: true` get `i915.enable_dc=0`, which keeps the
+Intel integrated GPU out of its display power states. It is the most common
+fix for silent resets on HP EliteDesk/ProDesk G4 minis under Proxmox. It is a
+driver load option, so it takes effect at the next boot. Check with
+`cat /sys/module/i915/parameters/enable_dc` (expected `0`).
+
 How to read the next crash: panic text in pstore or netconsole points to
 software (a kernel, driver or USB fault). A reset with nothing in either points
 to hardware (RAM, board or power supply).
@@ -123,5 +129,5 @@ Rollback: delete `/etc/sysctl.d/60-crash-capture.conf`,
 `/etc/modules-load.d/crash-capture.conf`,
 `/etc/systemd/system.conf.d/60-watchdog.conf`, `/etc/modprobe.d/netconsole.conf`,
 `netconsole.service`, `/etc/default/grub.d/60-nvme-apst.cfg` and
-`/etc/default/grub.d/60-cpu-cstate.cfg`, run
+`/etc/default/grub.d/60-cpu-cstate.cfg` and `/etc/default/grub.d/60-i915-dc.cfg`, run
 `update-grub`, then reboot the host.
