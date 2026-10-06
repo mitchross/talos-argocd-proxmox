@@ -77,7 +77,7 @@ go2rtc:
     h264: "-c:v libx264 -threads 2 -g 5 -keyint_min 5 -sc_threshold 0 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p"
   streams:
     shed:
-    - "rtsp://wyze-bridge.wyze-bridge.svc.cluster.local:8554/shed4k"
+    - "rtsp://wyze-bridge.wyze-bridge.svc.cluster.local:8554/shed"
     # Each raw Nest WebRTC stream feeds a buffered H264 re-encode for live/detect/record.
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
