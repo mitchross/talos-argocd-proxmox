@@ -24,6 +24,6 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: searxng
-          port: 8080
+          name: anubis
+          port: 8923
           weight: 1

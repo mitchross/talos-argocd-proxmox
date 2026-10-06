@@ -4,8 +4,12 @@ server:
     base_url: 'https://search.vanillax.me'  # Remove trailing slash
     bind_address: "0.0.0.0"
     port: 8080  # Match with deployment port
-    public_instance: true
-    limiter: true  # rate-limits non-LAN clients; see limiter.toml
+    # Anubis (anubis-*.yaml) guards the public route now. The limiter answered
+    # "Too Many Requests" to every browser search through the Cloudflare tunnel
+    # (2026-10-05), and public_instance forces the limiter on. In-cluster apps
+    # use the service directly and were never limited (pass_ip).
+    public_instance: false
+    limiter: false
     method: "GET"  # the search form submits via GET
     http_protocol_version: "1.0"
     default_http_headers:

@@ -20,6 +20,9 @@ spec:
       namespace: searxng
       labels:
         app.kubernetes.io/name: searxng
+      annotations:
+        # searxng-config-settings has no hash suffix, so bump this to roll the pod on config changes.
+        vanillax.me/config-rev: "2026-10-05-anubis"
     spec:
       restartPolicy: Always
       initContainers:
