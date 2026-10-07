@@ -4,6 +4,8 @@ namespace: argocd
 resources:
   - ns.yaml
   - externalsecret-webhook.yaml
+  # Helm chart 10.9.6 carries v3.5.3 CRDs; pin the CRDs to the RC runtime.
+  - https://github.com/argoproj/argo-cd/manifests/crds?ref=v3.6.0-rc1
   # NOTE: http-route.yaml moved to infrastructure/networking/gateway/ so it deploys
   # at wave 4 with the Gateway. Including it here (wave 0) causes a bootstrap deadlock:
   # HTTPRoute stays Progressing with no Gateway, blocking all subsequent sync waves.
