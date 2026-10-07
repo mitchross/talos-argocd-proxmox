@@ -25,5 +25,7 @@ for topic in events_plugin_ingestion exceptions_ingestion clickhouse_events_json
         fi
     fi
 done
+# Replay snapshots can be several MB (see configure-batch-max in jobs.yaml).
+rpk topic alter-config session_recording_snapshot_item_events --set max.message.bytes=20971520 --brokers kafka:9092 || exit 1
 echo "Topics ready"
 
