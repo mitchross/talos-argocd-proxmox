@@ -27,7 +27,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: ingest
-              image: registry.vanillax.me/geocoder/geocoder:v0.1.5@sha256:4b7ef5ee347f9671e59e4f2020cdbcb0dfd7e7d434da3aa987d284a100554a8a
+              image: registry.vanillax.me/geocoder/geocoder:v0.1.6@sha256:f5926f0ae03ce5edf50ee251421175fee53ad96cac65f7088c4fb9d4c1b43624
               # Each step probes the source size and skips when it matches the last load.
               command: ["sh", "-c", "python -m geocoder.ingest zcta && python -m geocoder.ingest nad"]
               securityContext:
