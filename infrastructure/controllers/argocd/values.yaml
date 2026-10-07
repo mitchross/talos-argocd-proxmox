@@ -7,6 +7,12 @@ global:
   image:
     tag: "v3.6.0-rc1"
 
+# Chart 10.9.6 packages v3.5.3 CRDs. RC1 changed the Application,
+# ApplicationSet, and AppProject schemas, so manage CRDs separately from the
+# matching v3.6.0-rc1 upstream tag (see kustomization.yaml/bootstrap script).
+crds:
+  install: false
+
 # ConfigMaps and feature flags
 configs:
   params:
