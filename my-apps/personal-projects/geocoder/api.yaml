@@ -1,0 +1,114 @@
+# Web UI + JSON API (FastAPI). Anubis fronts it; see anubis-policy.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geocoder-api
+  labels:
+    app: geocoder-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geocoder-api
+  template:
+    metadata:
+      labels:
+        app: geocoder-api
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: registry.vanillax.me/geocoder/geocoder:v0.1.6@sha256:f5926f0ae03ce5edf50ee251421175fee53ad96cac65f7088c4fb9d4c1b43624
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: geocoder
+                  key: db_password
+            - name: DATABASE_URL
+              value: postgresql://geocoder:$(DB_PASSWORD)@geocoder-postgres:5432/geocoder
+            - name: API_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: geocoder
+                  key: api_keys
+            # Limit is per uvicorn worker (2), so one client gets about 120 requests/min.
+            - name: RATE_LIMIT_PER_MIN
+              value: "60"
+            # Batch addresses per UTC day shared by everyone using the UI's rotating demo key; 0 turns it off.
+            - name: DEMO_KEY_ADDRESSES
+              value: "500"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          # Serves a static page, so a database outage does not restart the API.
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 60
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geocoder-api
+  labels:
+    app: geocoder-api
+spec:
+  selector:
+    app: geocoder-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: geocoder-api
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: geocoder-api
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 768Mi

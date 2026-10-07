@@ -107,17 +107,21 @@ Expect a GitHub account, a Claude Code version, and `Logged in using ChatGPT`.
 **Memory and agent rules** (needs an image with Mink and chezmoi):
 
 ```bash
-mink sync init https://github.com/mitchross/mink-data.git
-mink sync pull
+git config --global url."https://github.com/".insteadOf "git@github.com:"
+git clone https://github.com/mitchross/mink-data.git ~/.mink
+mink device rename paseo
+mink sync pull && mink sync push && mink sync status
 chezmoi init https://github.com/mitchross/dotfiles.git
 chezmoi apply --exclude=scripts ~/.claude/CLAUDE.md ~/.codex/AGENTS.md ~/.pi/agent/AGENTS.md
 ```
 
 1. Both repos are private. The `gh` login above gives `git` access over HTTPS.
-2. `mink sync status` shows `Remote URL` and `Pending changes: 0` when the vault is in sync.
-3. `chezmoi apply` writes only the three rule files. It renders the shared rules template in the dotfiles repo.
+2. The vault's synced config keeps the workstations' SSH remote. The `insteadOf` rule sends it over HTTPS in the pod only.
+3. Do not run `mink sync init` on a fresh home: it fails without `~/.mink`, and the clone already enables sync.
+4. Expect `Last pull` and `Last push` timestamps, and `Pending changes: 0`.
+5. `chezmoi apply` writes only the three rule files. It renders the shared rules template in the dotfiles repo.
 
-Clone project repos under `/workspace`, not in `/home/paseo`. The home volume is small and holds logins.
+Clone project repos under `/workspace`, not in `/home/paseo`. The home volume holds logins, caches, and the Mink vault.
 
 Never run `mink init` or `mink refresh-hooks` in the pod. They rewrite the repo's `.claude/` and `.pi/` hook files.
 If `git status` shows those files changed, run `git restore` on them and do not commit them.

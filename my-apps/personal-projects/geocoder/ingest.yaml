@@ -1,0 +1,81 @@
+# Monthly reload of ZCTA + NAD. The first load is initial-load.yaml (Argo PostSync hook).
+# The load builds a new table and swaps it in, so the API keeps serving. Measured: 16 min for 18.5M rows plus ~10 min download.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: geocoder-ingest
+spec:
+  schedule: "40 5 2 * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 14400
+      template:
+        spec:
+          restartPolicy: Never
+          enableServiceLinks: false
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: ingest
+              image: registry.vanillax.me/geocoder/geocoder:v0.1.6@sha256:f5926f0ae03ce5edf50ee251421175fee53ad96cac65f7088c4fb9d4c1b43624
+              # Each step probes the source size and skips when it matches the last load.
+              command: ["sh", "-c", "python -m geocoder.ingest zcta && python -m geocoder.ingest nad"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: geocoder
+                      key: db_password
+                - name: DATABASE_URL
+                  value: postgresql://geocoder:$(DB_PASSWORD)@geocoder-postgres:5432/geocoder
+                - name: STATES
+                  value: ALL
+                - name: INGEST_WORKERS
+                  value: "4"
+                - name: DATA_DIR
+                  value: /data
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              resources:
+                requests:
+                  cpu: "4" # INGEST_WORKERS parse in parallel
+                  memory: 2Gi
+                limits:
+                  memory: 4Gi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: geocoder-downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: geocoder-downloads
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Download cache of public Census and USDOT NAD zips; re-downloaded on every run"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

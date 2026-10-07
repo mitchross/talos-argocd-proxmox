@@ -1,24 +1,23 @@
-# VPA policy is owned with this application so Argo prunes it with the target.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: wyze-bridge
-  namespace: wyze-bridge
+  name: geocoder-postgres
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: wyze-bridge
+    name: geocoder-postgres
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: wyze-bridge
+      - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
+        # Floor = shared_buffers 2GB + maintenance_work_mem 1GB; idle usage would size the request below what Postgres maps.
+        minAllowed:
+          memory: 3Gi
         maxAllowed:
-          cpu: "2"
-          memory: 2Gi
-      - containerName: wyze-lake
-        mode: "Off"
+          cpu: "4"
+          memory: 8Gi

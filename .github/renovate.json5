@@ -248,8 +248,8 @@
     },
     {
       description: 'plain-Postgres images (all apps): MAJOR bumps require dependency-dashboard approval — PG data dirs are not major-version compatible; manual dump/restore needed (2026-07-17 incident PR #1621; repeated 2026-08-14 on temporal, PR #1979)',
-      matchPackageNames: ['postgres', 'docker.io/library/postgres'],
-      matchFileNames: ['**/postgres/deployment.yaml'],
+      matchPackageNames: ['postgres', 'docker.io/library/postgres', 'postgis/postgis', 'docker.io/postgis/postgis', 'ghcr.io/immich-app/postgres'],
+      matchFileNames: ['**/postgres/deployment.yaml', 'my-apps/ai/langfuse/postgres.yaml'],
       matchUpdateTypes: ['major'],
       dependencyDashboardApproval: true,
       automerge: false,

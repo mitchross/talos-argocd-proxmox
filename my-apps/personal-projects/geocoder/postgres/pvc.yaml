@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: geocoder-postgres-data
+  labels:
+    app: geocoder-postgres
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Rebuilt from public Census and USDOT NAD downloads by the geocoder-ingest CronJob"
+spec:
+  # All states measured 26 GB (17 GB table + 9.6 GB indexes); a reload holds the old and new table at once.
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi

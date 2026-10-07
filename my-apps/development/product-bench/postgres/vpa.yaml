@@ -15,6 +15,9 @@ spec:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
+        # Floor = shared_buffers 4GB + maintenance_work_mem 1GB; idle usage would size the request below what Postgres maps.
+        minAllowed:
+          memory: 6Gi
         maxAllowed:
           cpu: "8"
           memory: 12Gi

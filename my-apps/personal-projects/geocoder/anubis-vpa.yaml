@@ -1,24 +1,21 @@
-# VPA policy is owned with this application so Argo prunes it with the target.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: wyze-bridge
-  namespace: wyze-bridge
+  name: anubis
+  namespace: geocoder
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: wyze-bridge
+    name: anubis
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: wyze-bridge
+      - containerName: anubis
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "2"
-          memory: 2Gi
-      - containerName: wyze-lake
-        mode: "Off"
+          cpu: 500m
+          memory: 512Mi
