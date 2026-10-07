@@ -1,3 +1,12 @@
+# Argo CD v3.6 release-candidate evaluation.
+# Keep the Helm chart pin independent; this override moves every Argo CD
+# component to RC1 while retaining the currently tested chart templates.
+# RC1 has an open Server-Side Diff/SSA false-negative report (#29921), so keep
+# the existing hard-refresh/cache safeguards in this file while evaluating it.
+global:
+  image:
+    tag: "v3.6.0-rc1"
+
 # ConfigMaps and feature flags
 configs:
   params:
@@ -113,7 +122,7 @@ configs:
     # change", and skipped the Deployment apply — selfHeal can't help because the
     # controller perceives no drift. A manual hard refresh fixed it instantly.
     # "0" (disabled) let that stale state persist indefinitely (cluster cache is
-    # watch-based; v3.5.2 still exposes no --cluster-cache-resync-duration, so
+    # watch-based; Argo CD still exposes no --cluster-cache-resync-duration, so
     # --app-hard-resync is the only lever). 1h proved far too wide: 2026-09-03
     # the same masquerade hit four times in one session (open-meteo, llama-cpp,
     # gpu-priority-classes, radar-ng), each needing a manual hard refresh, and
