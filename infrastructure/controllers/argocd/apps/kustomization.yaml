@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - projects.yaml
   # Bootstrap entrypoints: Argo CD itself plus cluster services required by later waves.
-  - bootstrap/argocd-crds.yaml  # Wave -1 — adopt RC CRDs seeded by bootstrap before Argo self-upgrades
   - bootstrap/argocd.yaml
   - bootstrap/cilium-app.yaml
   - bootstrap/1passwordconnect.yaml
