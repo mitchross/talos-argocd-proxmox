@@ -1,5 +1,5 @@
 # Anubis bot policy for geocoder: copied from redlib. Browsers pay a one-time proof-of-work, AI scrapers are denied.
-# X-API-Key requests skip the challenge; the app answers 401 to any key not in API_KEYS, so a fake key gains nothing.
+# X-API-Key requests skip the challenge; the app 401s keys outside API_KEYS and caps the public daily demo key.
 bots:
   - name: api-key
     headers_regex:

@@ -25,7 +25,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: registry.vanillax.me/geocoder/geocoder:v0.1.4@sha256:1b1436507a0177b2e4b2016595c7b9ac446efb13e548b1c5902f5c17872757b8
+          image: registry.vanillax.me/geocoder/geocoder:v0.1.5@sha256:4b7ef5ee347f9671e59e4f2020cdbcb0dfd7e7d434da3aa987d284a100554a8a
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -50,6 +50,9 @@ spec:
             # Limit is per uvicorn worker (2), so one client gets about 120 requests/min.
             - name: RATE_LIMIT_PER_MIN
               value: "60"
+            # Batch addresses per UTC day shared by everyone using the UI's rotating demo key; 0 turns it off.
+            - name: DEMO_KEY_ADDRESSES
+              value: "500"
           readinessProbe:
             httpGet:
               path: /healthz
