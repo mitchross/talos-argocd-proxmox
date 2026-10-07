@@ -1,11 +1,11 @@
-# Monthly reload of ZCTA + NAD. The first load is initial-load.yaml (Argo PostSync hook).
-# The load builds a new table and swaps it in, so the API keeps serving. Measured: 16 min for 18.5M rows plus ~10 min download.
+# Hourly: each run skips in seconds unless the source changed or nothing is loaded, so a new cluster loads within the hour.
+# Not an Argo hook: a full load (~30 min, 99M rows) outlives Argo's 30-min sync timeout, which kills the hook Job.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: geocoder-ingest
 spec:
-  schedule: "40 5 2 * *"
+  schedule: "17 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2

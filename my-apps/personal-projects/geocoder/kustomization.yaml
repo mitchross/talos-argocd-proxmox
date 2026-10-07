@@ -12,7 +12,6 @@ resources:
   - postgres/vpa.yaml
   - api.yaml
   - ingest.yaml
-  - initial-load.yaml
   - anubis-deployment.yaml
   - anubis-service.yaml
   - anubis-vpa.yaml
