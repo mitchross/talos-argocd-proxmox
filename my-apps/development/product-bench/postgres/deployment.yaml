@@ -18,12 +18,16 @@ spec:
       labels:
         app: postgres
     spec:
+      automountServiceAccountToken: false
       enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
       terminationGracePeriodSeconds: 60
       nodeSelector:
         gpu-worker: "true" # the Threadripper: memory headroom and the longhorn-flash disks
       securityContext:
         fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: registry.vanillax.me/product-api/postgres:18-b81829a@sha256:0cc09212ee06a1cd299afc07a55ec76ff6bdb996eb8e7b8d1e2ef13dc1e9bb16

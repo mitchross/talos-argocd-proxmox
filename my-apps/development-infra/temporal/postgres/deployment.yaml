@@ -21,6 +21,7 @@ spec:
       labels:
         app: temporal-postgres
     spec:
+      automountServiceAccountToken: false
       # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
       terminationGracePeriodSeconds: 60
       # Replicas live on wired-storage nodes; keep the engine there too so a wifi/house node never fronts the DB.
@@ -34,6 +35,9 @@ spec:
                     values: ["wired"]
       securityContext:
         fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           # Pin MAJOR.MINOR; majors need a manual dump/restore (gated in renovate.json5).
