@@ -8,7 +8,7 @@ See [entrypoints and preservation behavior](entrypoints.md).
 
 ## Run before opening a PR
 
-Use Python 3.12+, PyYAML, Kustomize 5.8.1 and Helm 4.2.1 (the Cluster CI/Argo
+Use Python 3.12+, PyYAML, Kustomize 5.8.1 and Helm 4.3.0 (the Cluster CI/Argo
 versions). Commit the scoped changes on a feature branch first; the checker
 reads committed Git trees and ignores working-tree edits.
 
