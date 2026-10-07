@@ -8,8 +8,8 @@ global:
     tag: "v3.6.0-rc1"
 
 # Chart 10.9.6 packages v3.5.3 CRDs. RC1 changed the Application,
-# ApplicationSet, and AppProject schemas, so manage CRDs separately from the
-# matching v3.6.0-rc1 upstream tag (see kustomization.yaml/bootstrap script).
+# ApplicationSet, and AppProject schemas, so the matching v3.6.0-rc1 CRDs are
+# vendored under ./crds and rendered by Kustomize. Bootstrap uses the same files.
 crds:
   install: false
 
