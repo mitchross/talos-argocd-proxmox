@@ -20,7 +20,7 @@ jobs:
           kustomize-version: '5.8.1'
       - uses: azure/setup-helm@v4.3.1
         with:
-          version: 'v4.2.1'
+          version: 'v4.3.0'
       - run: python3 -m pip install pyyaml
       - name: Test transition detection
         run: python3 -m unittest discover -s scripts/tests -p test_gitops_risk.py -v
