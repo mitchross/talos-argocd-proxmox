@@ -10,6 +10,12 @@ metadata:
     argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
+  # Replace, don't surge: VPA sizes the request to the 8Gi limit and its node can't fit two.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
