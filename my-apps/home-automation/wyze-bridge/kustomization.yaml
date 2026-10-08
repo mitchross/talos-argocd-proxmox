@@ -9,6 +9,12 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - web-session-secret.yaml
+  - web-session-pvc.yaml
+  - kopiur/wyze-web-session.yaml
+
+components:
+  - ../../common/kopiur-backup
 
 configMapGenerator:
   - name: wyze-bridge-config
