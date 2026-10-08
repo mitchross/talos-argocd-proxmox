@@ -44,7 +44,7 @@ Claude Code auto mode on the PC blocks commands that write inside pods. Ask the 
 
 ## Open risks (deferred by the user)
 
-- One password guards a public URL, and Paseo has no login rate limit.
+- One password guards the LAN and tailnet login, and Paseo has no login rate limit.
 - The pod's `gh` login can push to every repo, and talos `main` has no branch protection.
 - The shared Cilium policy does not isolate this namespace.
 
