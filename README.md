@@ -81,7 +81,7 @@ wait for all the Applications it generates; those reconcile independently. See
 | Kubernetes | `v1.37.0` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.1` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
-| ArgoCD Helm chart | `10.9.6` + Argo CD `v3.6.0-rc1` image/CRDs | `infrastructure/controllers/argocd/` |
+| ArgoCD Helm chart | `10.10.0` + Argo CD `v3.6.0-rc1` image/CRDs | `infrastructure/controllers/argocd/` |
 | Proxmox provider | `v0.3.0@sha256:ff59ae…` | `omni/proxmox-providers/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
