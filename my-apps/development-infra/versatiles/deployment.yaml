@@ -47,7 +47,7 @@ spec:
               readOnly: true
       containers:
         - name: versatiles
-          image: versatiles/versatiles-frontend:v5.0.0@sha256:de1f9acadcd6080e128ca5b2a4d15516f8297591038c4c8d7b00900b56ce4b2a
+          image: versatiles/versatiles-frontend:v5.0.0@sha256:a612455eef577d8c17ac1ef55b5c134c334fd872a354aee3b613cef67eb8b32c
           imagePullPolicy: IfNotPresent
           args:
             - "-c"
