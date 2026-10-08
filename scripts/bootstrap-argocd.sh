@@ -78,6 +78,18 @@ echo ""
 echo "📦 Creating argocd namespace..."
 kubectl apply -f "$ROOT_DIR/infrastructure/controllers/argocd/ns.yaml"
 
+# Step 1.25: Install the CRDs from the same Argo CD RC tag as the runtime.
+# Chart 10.9.6 bundles v3.5.3 CRDs; values.yaml disables those so bootstrap
+# and GitOps both use the vendored v3.6.0-rc1 schemas from this repo.
+echo ""
+echo "🧩 Installing ArgoCD v3.6.0-rc1 CRDs..."
+kubectl apply --server-side --force-conflicts \
+  -k "$ROOT_DIR/infrastructure/controllers/argocd/crds"
+kubectl wait --for=condition=established --timeout=60s \
+  crd/applications.argoproj.io \
+  crd/applicationsets.argoproj.io \
+  crd/appprojects.argoproj.io
+
 # Step 1.5: Ensure the argocd-redis auth secret exists.
 # values.yaml disables the chart's redis-secret-init hook, so on a fresh cluster redis
 # crashes on the missing Secret and the install wedges; create it idempotently here.

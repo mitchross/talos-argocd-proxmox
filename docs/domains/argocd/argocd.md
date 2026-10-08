@@ -229,12 +229,12 @@ the root `CLAUDE.md` rule on Job hook annotations.)
 ## Renderer version contract
 
 CI must render with the same major/minor tool behavior as the Argo CD
-repo-server. With Argo CD `v3.5.2`, Cluster CI currently pins:
+repo-server. With Argo CD `v3.6.0-rc1`, Cluster CI currently pins:
 
 | Tool | Version |
 |---|---|
 | Kustomize | `5.8.1` |
-| Helm | `4.2.1` |
+| Helm | `4.3.0` |
 | Kubeconform | `0.7.0` |
 | Kubernetes schema | `1.37.0` |
 
@@ -255,7 +255,7 @@ kustomize build infrastructure/controllers/argocd --enable-helm \
 
 Expect four ServiceMonitors in `argocd`. Argo owns them after monitoring CRDs
 are available; core Argo installation still works before those CRDs exist.
-The [versioned renderer implementation](https://github.com/argoproj/argo-cd/blob/v3.5.2/util/kustomize/kustomize.go)
+The [versioned renderer implementation](https://github.com/argoproj/argo-cd/blob/v3.6.0-rc1/util/kustomize/kustomize.go)
 passes both Kubernetes and API capabilities to Helm through Kustomize.
 
 ## Future multi-cluster path
