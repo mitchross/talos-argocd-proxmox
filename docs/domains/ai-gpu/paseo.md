@@ -12,7 +12,7 @@ The pod keeps running when you close the browser, so long tasks continue.
 
 ```mermaid
 flowchart LR
-    Browser --> CF[Cloudflare Tunnel] --> GW[gateway-external HTTPS] --> Paseo[Paseo pod :6767]
+    Client[Browser, desktop or phone app] --> TS[Tailscale via TrueNAS subnet router] --> GW[gateway-internal-technitium HTTPS] --> Paseo[Paseo pod :6767]
     Vault[1Password] --> ESO[External Secrets] --> Paseo
     Git[my-apps/development/paseo] --> Argo[Argo CD] --> Paseo
     Paseo --> Claude[Claude Code] --> Anthropic[Claude subscription]
@@ -29,7 +29,7 @@ flowchart LR
 |---|---|---|
 | Image | `ghcr.io/mitchross/paseo-dev`, built in [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/paseo-dev) | Paseo, Claude Code, Codex, Pi, compilers, cluster CLIs. Pinned by digest in `deployment.yaml`. |
 | Pod | [`deployment.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/deployment.yaml) | 1 replica, `Recreate`, uid/gid 1000, no service-account token, no liveness probe |
-| Route | [`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/httproute.yaml) | `gateway-external`, so it is public through Cloudflare |
+| Route | [`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/httproute.yaml) | `gateway-internal-technitium` only. Remote clients use Tailscale; there is no public DNS record. |
 | Password | 1Password `paseo/password` → Secret `paseo-secrets` | Read at pod start |
 | Pi's LiteLLM key | 1Password `litellm/master_key` → `paseo-secrets` | Same key as the other AI apps |
 | Pi model list | [`config/pi-models.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/pi-models.json) → ConfigMap `pi-config` | Mounted read-only at `~/.pi/agent/models.json` |
@@ -49,6 +49,17 @@ CI fails when `config/pi-models.json` or `config/qwen-sampling.ts` drift from th
 copies in the [Pi agent guide](pi-agent-local-dev.md) and `scripts/pi/`.
 
 ## 1. Connect from a browser
+
+Away from home, turn on Tailscale first. Paseo has no public address.
+The Tailscale app on TrueNAS (`192.168.10.133`) must provide two things:
+
+| Tailscale setting | Value | Without it |
+|---|---|---|
+| Approved subnet route | `192.168.10.0/24` | The client cannot reach `192.168.10.52` |
+| Split DNS for `vanillax.me` | `192.168.10.15` (Technitium) | `paseo.vanillax.me` does not resolve |
+
+Check from a remote device: `nslookup paseo.vanillax.me` returns `192.168.10.52`.
+The desktop and phone apps use the same host, port and password as the browser.
 
 1. Open `https://paseo.vanillax.me`.
 2. Click **Block** if the browser asks to "access other apps and services on this device".
@@ -211,7 +222,7 @@ The image itself is built in [homelab-images](https://github.com/mitchross/homel
 
 ## Known limits
 
-- One password guards the public URL. Paseo has no login rate limit.
+- Every device on the home LAN or the tailnet can reach the login. Paseo has no login rate limit.
 - The pod's GitHub login can reach every repo of the account.
 - The shared Cilium policy lets the pod reach other cluster services. See [network policy](../networking/policy.md).
 - Pi uses LiteLLM's master key, so an agent can spend OpenRouter credit.
