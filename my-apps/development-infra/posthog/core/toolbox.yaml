@@ -26,7 +26,7 @@ spec:
       containers:
         - name: toolbox
           # Keep this aligned with the posthog-migrate hook in jobs.yaml.
-          image: posthog/posthog:latest@sha256:b3d6eeab5b7e028463e6e349c4417d14cc8490c63f2a731d0ea8a24521416685
+          image: posthog/posthog:latest@sha256:bfb934bd9d416e941ffde95c7b1cd68385bc86ad90b994d5058f7fbaa09033e0
           command:
             - /bin/sh
             - -c
