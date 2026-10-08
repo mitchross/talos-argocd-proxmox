@@ -29,6 +29,12 @@ spec:
       - name: configure-disk-headroom
         image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
         command: ["rpk", "cluster", "config", "set", "storage_min_free_bytes=1073741824", "--no-confirm", "-X", "admin.hosts=kafka:9644"]
+      # Session replay: a full snapshot of a big page (long redlib threads, a feed with
+      # hundreds of subscriptions) is one message and is often over the 1 MiB default.
+      # replay-capture answered those with 413 and the whole recording was lost.
+      - name: configure-batch-max
+        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
+        command: ["rpk", "cluster", "config", "set", "kafka_batch_max_bytes=20971520", "--no-confirm", "-X", "admin.hosts=kafka:9644"]
       containers:
       - name: kafka-init
         image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31

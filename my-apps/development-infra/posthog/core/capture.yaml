@@ -101,6 +101,10 @@ spec:
               value: "redis://redis7:6379/"
             - name: CAPTURE_MODE
               value: "recordings"
+            # Default ~1 MB: snapshots above it got 413 event_too_big and the recording
+            # was lost. Matches the topic/broker limit set by kafka-init (20 MiB).
+            - name: KAFKA_INGESTION_PRODUCER_MESSAGE_MAX_BYTES
+              value: "20971520"
             - name: RUST_LOG
               value: "info,rdkafka=warn"
             - name: OBJECT_STORAGE_ACCESS_KEY_ID
