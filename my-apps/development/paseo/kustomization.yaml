@@ -4,6 +4,7 @@ namespace: paseo
 resources:
   - namespace.yaml
   - externalsecret.yaml
+  - rbac.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml

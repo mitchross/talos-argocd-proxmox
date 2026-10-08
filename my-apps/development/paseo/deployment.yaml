@@ -15,7 +15,8 @@ spec:
       labels:
         app.kubernetes.io/name: paseo
     spec:
-      automountServiceAccountToken: false
+      serviceAccountName: paseo
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 60
       nodeSelector:
         kubernetes.io/arch: amd64
