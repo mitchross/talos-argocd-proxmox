@@ -61,6 +61,19 @@ spec:
             # TLS ends at the gateway; trust its X-Forwarded-Proto so the web UI auto-connects over wss.
             - name: PASEO_TRUSTED_PROXIES
               value: loopback,uniquelocal
+            # Explicit kubeconfig: any kubectl flag (e.g. --request-timeout) disables the in-cluster fallback.
+            - name: KUBECONFIG
+              value: /etc/paseo/cluster/kubeconfig
+            - name: TALOSCONFIG
+              value: /etc/paseo/cluster/talosconfig
+            # omnictl and talosctl both sign Omni requests with this key; the endpoint must carry :443.
+            - name: OMNI_ENDPOINT
+              value: https://omni.vanillax.me:443
+            - name: OMNI_SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: OMNI_SERVICE_ACCOUNT_KEY
           resources:
             requests:
               cpu: "1"
@@ -91,6 +104,9 @@ spec:
               mountPath: /workspace
             - name: shm
               mountPath: /dev/shm
+            - name: cluster-config
+              mountPath: /etc/paseo/cluster
+              readOnly: true
             # Git owns Pi's model list; a file on the home volume would drift.
             - name: pi-config
               mountPath: /home/paseo/.pi/agent/models.json
@@ -110,6 +126,9 @@ spec:
         - name: pi-config
           configMap:
             name: pi-config
+        - name: cluster-config
+          configMap:
+            name: cluster-config
         - name: shm
           emptyDir:
             medium: Memory

@@ -14,7 +14,7 @@ Human steps and concepts live in [docs/domains/ai-gpu/paseo.md](../../../docs/do
 | Image: tools, agent CLI versions, bash aliases, first-boot seeds | `mitchross/homelab-images` | `images/paseo-dev/` |
 | Image digest that the cluster runs | talos | `deployment.yaml` `image:` |
 | Pi on the user's PC, zsh launchers, global agent rules | `mitchross/dotfiles` (chezmoi) | `~/.pi/agent/`, `~/.zshrc` |
-| Secret values | 1Password vault `homelab-prod` | items `paseo`, `litellm` |
+| Secret values | 1Password vault `homelab-prod` | items `paseo`, `litellm`, `paseo-omni-sa` |
 | Upstream Paseo behavior | `getpaseo/paseo` | read the tagged source; do not fork |
 
 `scripts/tests/test_qwen_reasoning.py` fails when either talos copy drifts. Update both sides in one PR.
@@ -25,7 +25,7 @@ An image change needs two PRs: homelab-images first, then a digest bump here.
 | Runtime | Can | Cannot |
 |---|---|---|
 | User's PC (CachyOS) | `kubectl`, `talosctl`, `omnictl`, `gh`, `op`; reach `litellm.vanillax.me` | — |
-| Paseo pod (`paseo` ns, uid 1000) | `gh` and `git push` as the user's account; Claude, Codex, Pi; LiteLLM via `litellm-service.litellm:4000`; reach most cluster services | Kubernetes API (no service-account token), Talos, Omni, Proxmox |
+| Paseo pod (`paseo` ns, uid 1000) | `gh` and `git push` as the user's account; Claude, Codex, Pi; LiteLLM via `litellm-service.litellm:4000`; `kubectl` as `paseo-operator` (`rbac.yaml`); `omnictl` and `talosctl` as Omni service account `paseo` (Operator) | Cluster-admin writes, Omni user and service-account admin, Proxmox |
 | Argo CD | apply `main` of the talos repo | — |
 
 Claude Code auto mode on the PC blocks commands that write inside pods. Ask the user, or change Git.
