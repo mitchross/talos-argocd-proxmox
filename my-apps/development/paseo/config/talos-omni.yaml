@@ -1,0 +1,9 @@
+context: talos-prod-cluster-v2
+contexts:
+  talos-prod-cluster-v2:
+    endpoints:
+      - https://omni.vanillax.me
+    auth:
+      siderov1:
+        identity: paseo@serviceaccount.omni.sidero.dev
+    cluster: talos-prod-cluster-v2

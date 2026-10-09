@@ -9,6 +9,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - omni-egress.yaml
   - vpa.yaml
   - kopiur/paseo-home.yaml
   - kopiur/paseo-workspace.yaml
@@ -17,5 +18,9 @@ configMapGenerator:
     files:
       - models.json=config/pi-models.json
       - qwen-sampling.ts=config/qwen-sampling.ts
+  - name: cluster-config
+    files:
+      - kubeconfig=config/kube-in-cluster.yaml
+      - talosconfig=config/talos-omni.yaml
 components:
   - ../../common/kopiur-backup

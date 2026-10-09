@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Config
+clusters:
+  - name: in-cluster
+    cluster:
+      server: https://kubernetes.default.svc
+      certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+users:
+  - name: paseo
+    user:
+      tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+contexts:
+  - name: talos-prod-cluster-v2
+    context:
+      cluster: in-cluster
+      user: paseo
+current-context: talos-prod-cluster-v2

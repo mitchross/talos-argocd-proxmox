@@ -28,13 +28,15 @@ flowchart LR
 | Piece | Where | Notes |
 |---|---|---|
 | Image | `ghcr.io/mitchross/paseo-dev`, built in [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/paseo-dev) | Paseo, Claude Code, Codex, Pi, compilers, cluster CLIs. Pinned by digest in `deployment.yaml`. |
-| Pod | [`deployment.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/deployment.yaml) | 1 replica, `Recreate`, uid/gid 1000, no service-account token, no liveness probe |
+| Pod | [`deployment.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/deployment.yaml) | 1 replica, `Recreate`, uid/gid 1000, service account `paseo`, no liveness probe |
 | Route | [`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/httproute.yaml) | `gateway-internal-technitium` only. Remote clients use Tailscale; there is no public DNS record. |
 | Password | 1Password `paseo/password` → Secret `paseo-secrets` | Read at pod start |
 | Pi's LiteLLM key | 1Password `litellm/master_key` → `paseo-secrets` | Same key as the other AI apps |
 | Pi model list | [`config/pi-models.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/pi-models.json) → ConfigMap `pi-config` | Mounted read-only at `~/.pi/agent/models.json` |
 | Qwen sampler hook | [`config/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/qwen-sampling.ts) → `pi-config` | Mounted in `~/.pi/agent/extensions/` |
 | Volumes | [`pvc.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/pvc.yaml) | `paseo-home` (logins, settings) and `paseo-workspace` (code), Longhorn, restore-before-bind |
+| Cluster access | [`rbac.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/rbac.yaml), `config/kube-in-cluster.yaml`, `config/talos-omni.yaml` → ConfigMap `cluster-config` | `kubectl` uses the pod token as `paseo-operator`. `omnictl` and `talosctl` use Omni service account `paseo` (Operator), key from 1Password `paseo-omni-sa`. |
+| Omni egress | [`omni-egress.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/omni-egress.yaml) | Lets only this pod reach `192.168.10.15:443` |
 | Backups | [`kopiur/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/paseo/kopiur) | Daily snapshots, movers run as 1000:1000 |
 
 Three settings in `deployment.yaml` matter:
@@ -173,6 +175,7 @@ Expect `Synced` and `Healthy`, one ready pod, both PVCs `Bound`, `401`, and `"us
 | Pi models or sampler | PR to the reference and the Paseo copy together. CI checks both. |
 | Tools or agent versions | PR to homelab-images, wait for the CI image, then a digest PR here. |
 | Password or LiteLLM key | Edit 1Password. Restart the pod when no agent work runs. |
+| Omni key (expires after 1 year) | Run `omnictl serviceaccount renew paseo` as an Omni admin. Save the new key in `paseo-omni-sa`. Restart the pod. |
 
 Never edit files in the pod or on its volumes to change configuration. Git is the source of truth.
 
@@ -224,6 +227,7 @@ The image itself is built in [homelab-images](https://github.com/mitchross/homel
 
 - Every device on the home LAN or the tailnet can reach the login. Paseo has no login rate limit.
 - The pod's GitHub login can reach every repo of the account.
+- Agents can read every Secret, exec into pods, and reboot or upgrade Talos nodes through Omni.
 - The shared Cilium policy lets the pod reach other cluster services. See [network policy](../networking/policy.md).
 - Pi uses LiteLLM's master key, so an agent can spend OpenRouter credit.
 - After the memory step, the pod can read the private Mink vault and dotfiles.

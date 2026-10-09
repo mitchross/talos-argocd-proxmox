@@ -1,0 +1,16 @@
+# The shared default-deny-lan-egress policy has no grant for the rpi5; omnictl and talosctl reach Omni here.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-omni
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: paseo
+  egress:
+    - toCIDR:
+        - 192.168.10.15/32
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
