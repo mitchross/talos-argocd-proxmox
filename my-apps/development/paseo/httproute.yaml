@@ -1,10 +1,10 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: paseo
+  name: paseo-internal
 spec:
   parentRefs:
-    # Internal only: remote clients reach it through the TrueNAS Tailscale subnet router.
+    # Internal only (Tailscale via TrueNAS). Re-parent by renaming: Argo drops in-place parentRefs edits.
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: gateway-internal-technitium
