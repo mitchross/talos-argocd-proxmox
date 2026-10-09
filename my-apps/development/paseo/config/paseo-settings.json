@@ -1,0 +1,32 @@
+{
+  "daemon": {
+    "mcp": { "injectIntoAgents": true },
+    "browserTools": { "enabled": true },
+    "agentProfiles": [
+      {
+        "id": "planning",
+        "name": "Planning",
+        "provider": "claude",
+        "model": "claude-opus-5-5",
+        "thinkingOptionId": "high",
+        "notes": "Use for architecture, root-cause investigation, comparing approaches, and writing plans. Do not use for bulk implementation."
+      },
+      {
+        "id": "implementation",
+        "name": "Implementation",
+        "provider": "codex",
+        "model": "gpt-6.1-sol",
+        "thinkingOptionId": "high",
+        "notes": "Use for implementing a clear, scoped change in its own worktree and running the focused tests."
+      },
+      {
+        "id": "review",
+        "name": "Review",
+        "provider": "claude",
+        "model": "claude-opus-5-5",
+        "thinkingOptionId": "high",
+        "notes": "Use for independent review of a diff: correctness, missing tests, unnecessary complexity. Read-only; do not edit files."
+      }
+    ]
+  }
+}

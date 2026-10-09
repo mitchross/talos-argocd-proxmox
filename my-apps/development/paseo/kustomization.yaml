@@ -22,5 +22,8 @@ configMapGenerator:
     files:
       - kubeconfig=config/kube-in-cluster.yaml
       - talosconfig=config/talos-omni.yaml
+  - name: paseo-settings
+    files:
+      - config.json=config/paseo-settings.json
 components:
   - ../../common/kopiur-backup

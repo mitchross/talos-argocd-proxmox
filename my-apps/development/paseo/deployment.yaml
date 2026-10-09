@@ -74,6 +74,16 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: OMNI_SERVICE_ACCOUNT_KEY
+            # Git reads these as config; tea answers for Gitea from the mounted paseo-tea Secret.
+            - name: GIT_CONFIG_COUNT
+              value: "1"
+            - name: GIT_CONFIG_KEY_0
+              value: credential.https://gitea.vanillax.me.helper
+            - name: GIT_CONFIG_VALUE_0
+              value: "!tea login helper"
+            # Each daemon key in this file replaces the UI value at start; null deletes it.
+            - name: PASEO_MANAGED_CONFIG
+              value: /etc/paseo/settings/config.json
           resources:
             requests:
               cpu: "1"
@@ -107,6 +117,13 @@ spec:
             - name: cluster-config
               mountPath: /etc/paseo/cluster
               readOnly: true
+            - name: paseo-settings
+              mountPath: /etc/paseo/settings
+              readOnly: true
+            # No subPath: kubelet then updates the file when the Secret changes.
+            - name: paseo-tea
+              mountPath: /home/paseo/.config/tea
+              readOnly: true
             # Git owns Pi's model list; a file on the home volume would drift.
             - name: pi-config
               mountPath: /home/paseo/.pi/agent/models.json
@@ -129,6 +146,13 @@ spec:
         - name: cluster-config
           configMap:
             name: cluster-config
+        - name: paseo-settings
+          configMap:
+            name: paseo-settings
+        - name: paseo-tea
+          secret:
+            secretName: paseo-tea
+            defaultMode: 0440
         - name: shm
           emptyDir:
             medium: Memory

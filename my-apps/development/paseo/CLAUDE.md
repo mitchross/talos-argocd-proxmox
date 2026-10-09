@@ -8,13 +8,14 @@ Human steps and concepts live in [docs/domains/ai-gpu/paseo.md](../../../docs/do
 | Change | Owner | Path |
 |---|---|---|
 | Deployment, env, volumes, route, backups | `mitchross/talos-argocd-proxmox` | `my-apps/development/paseo/` |
+| Paseo daemon settings (agent profiles, MCP, browser tools) | talos | `config/paseo-settings.json` |
 | Pi model list inside the pod | talos | `config/pi-models.json` (copy of the JSON in `docs/domains/ai-gpu/pi-agent-local-dev.md`, with the in-cluster URL) |
 | Qwen sampler hook inside the pod | talos | `config/qwen-sampling.ts` (copy of `scripts/pi/qwen-sampling.ts`) |
 | LiteLLM routes and model names | talos | `my-apps/ai/litellm/config.yaml` |
 | Image: tools, agent CLI versions, bash aliases, first-boot seeds | `mitchross/homelab-images` | `images/paseo-dev/` |
 | Image digest that the cluster runs | talos | `deployment.yaml` `image:` |
 | Pi on the user's PC, zsh launchers, global agent rules | `mitchross/dotfiles` (chezmoi) | `~/.pi/agent/`, `~/.zshrc` |
-| Secret values | 1Password vault `homelab-prod` | items `paseo`, `litellm`, `paseo-omni-sa` |
+| Secret values | 1Password vault `homelab-prod` | items `paseo`, `litellm`, `paseo-omni-sa`, `gitea` (`git_token`) |
 | Upstream Paseo behavior | `getpaseo/paseo` | read the tagged source; do not fork |
 
 `scripts/tests/test_qwen_reasoning.py` fails when either talos copy drifts. Update both sides in one PR.
@@ -35,6 +36,8 @@ Claude Code auto mode on the PC blocks commands that write inside pods. Ask the 
 - Change Paseo through Git. Never edit files in the pod or on its volumes to fix configuration.
 - Keep secrets out of the image and Git. Add them to 1Password and an `ExternalSecret`.
 - Leave logins as runtime state: `gh`, `claude`, and `codex` logins live in `/home/paseo`.
+- Keep everything else in Git. The `paseo-tea` Secret owns `~/.config/tea/`, and the entrypoint applies `config/paseo-settings.json` to `~/.paseo/config.json` on every start. Do not set either with `kubectl exec`.
+- To remove a key that `config/paseo-settings.json` owns, set it to `null`. Deleting the line leaves the old value in the pod.
 - Write Pi `apiKey` as `"$LITELLM_API_KEY"`. A bare name is sent literally; LiteLLM answers `400 No connected db`.
 - Keep `PASEO_HOSTNAMES` equal to the route hostname, or requests fail with `403 Host not allowed`.
 - Keep `PASEO_TRUSTED_PROXIES`; without it the web UI gets `useTls:false` and cannot auto-connect.
