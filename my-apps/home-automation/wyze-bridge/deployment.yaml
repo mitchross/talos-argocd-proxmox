@@ -25,11 +25,15 @@ spec:
       initContainers:
       - name: wyze-lake
         restartPolicy: Always
-        image: ghcr.io/mitchross/wyze-lake:sha-6d28c13eb9a66e68c6dd36f703db6f7eb81277ce-37264926298-1@sha256:5e5ec2740d98e3cc720bb9e88f56fd403920b665dc865cde1184fcd172f90d37
+        image: ghcr.io/mitchross/wyze-lake:sha-f495d0504be6babb3b3acc0d5abc8f89056df1e8-37805630219-1@sha256:f294080d64371b1bd882f24eacb5dce70f7a854c718dbb53cea71a68933ae958
         imagePullPolicy: IfNotPresent
         env:
         - name: WYZE_AUTH_STATE
           value: /auth/wyze-bridge.state.json
+        - name: WYZE_WEB_SESSION_FILE
+          value: /web-seed/session
+        - name: WYZE_WEB_STATE
+          value: /session/web/state.json
         - name: WYZE_CAMERA_NAME
           value: shed4k
         # A separate name prevents bridge discovery from replacing the native producer.
@@ -49,7 +53,7 @@ spec:
             memory: 256Mi
           limits:
             memory: 512Mi
-        # Gate on the server, not video: the bridge must start before it can write login state.
+        # Gate startup on the shared server; readiness checks encoded video separately.
         startupProbe:
           exec:
             command: [python3, -c, "import socket; socket.create_connection(('127.0.0.1', 1984), timeout=2).close()"]
@@ -73,6 +77,11 @@ spec:
         - name: wyze-config
           mountPath: /auth
           readOnly: true
+        - name: wyze-web-seed
+          mountPath: /web-seed
+          readOnly: true
+        - name: wyze-web-session
+          mountPath: /session
         - name: wyze-lake-tmp
           mountPath: /tmp
         - name: wyze-lake-home
@@ -156,6 +165,16 @@ spec:
       volumes:
       - name: wyze-config
         emptyDir: {}
+      - name: wyze-web-seed
+        secret:
+          secretName: wyze-web-session-seed
+          defaultMode: 0440
+          items:
+          - key: WEB_SESSION
+            path: session
+      - name: wyze-web-session
+        persistentVolumeClaim:
+          claimName: wyze-web-session
       - name: wyze-lake-tmp
         emptyDir:
           sizeLimit: 128Mi

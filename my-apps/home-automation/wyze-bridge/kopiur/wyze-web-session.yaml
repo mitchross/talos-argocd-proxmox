@@ -1,0 +1,57 @@
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: wyze-web-session
+  namespace: wyze-bridge
+spec:
+  sources:
+    - pvc:
+        name: wyze-web-session
+  identity:
+    username: wyze-web-session
+    hostname: wyze-bridge
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1000
+      supplementalGroups:
+        - 1000
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: wyze-web-session-daily
+  namespace: wyze-bridge
+spec:
+  policyRef:
+    name: wyze-web-session
+  schedule:
+    cron: "2 3 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: wyze-web-session-restore
+  namespace: wyze-bridge
+spec:
+  source:
+    fromPolicy:
+      name: wyze-web-session
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1000
+      supplementalGroups:
+        - 1000
