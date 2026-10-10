@@ -36,6 +36,8 @@ flowchart LR
 | Qwen sampler hook | [`config/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/qwen-sampling.ts) → `pi-config` | Mounted in `~/.pi/agent/extensions/` |
 | Volumes | [`pvc.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/pvc.yaml) | `paseo-home` (logins, settings) and `paseo-workspace` (code), Longhorn, restore-before-bind |
 | Cluster access | [`rbac.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/rbac.yaml), `config/kube-in-cluster.yaml`, `config/talos-omni.yaml` → ConfigMap `cluster-config` | `kubectl` uses the pod token as `paseo-operator`. `omnictl` and `talosctl` use Omni service account `paseo` (Operator), key from 1Password `paseo-omni-sa`. |
+| Gitea login | 1Password `gitea/git_token` → ExternalSecret `paseo-tea` → `~/.config/tea/config.yml` | Read-only mount. A rotated token reaches the pod within about 1 hour, without a restart. `GIT_CONFIG_*` env makes `tea` the Git credential helper for Gitea. |
+| Paseo settings | [`config/paseo-settings.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/paseo-settings.json) → ConfigMap `paseo-settings` | Applied to `~/.paseo/config.json` on every start: agent profiles, MCP injection, browser tools. Each `daemon` key in Git replaces the UI value whole; `null` deletes it. |
 | Omni egress | [`omni-egress.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/omni-egress.yaml) | Lets only this pod reach `192.168.10.15:443` |
 | Backups | [`kopiur/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/paseo/kopiur) | Daily snapshots, movers run as 1000:1000 |
 
@@ -83,6 +85,7 @@ The terminal runs inside the pod as user `paseo`.
 ## 3. Log in once
 
 Each login stays in `/home/paseo`. Restarts and image updates keep it.
+Gitea needs no login step; Git and 1Password provide it.
 
 **GitHub:**
 
