@@ -25,7 +25,7 @@ kubectl -n temporal exec deploy/temporal-admintools -- \
   temporal worker deployment manager-identity unset \
   --deployment-name radar-ng/radar-ng-worker \
   --address temporal-frontend.temporal.svc.cluster.local:7233 \
-  --namespace default \
+  --namespace radar-ng \
   --identity '<old status.managerIdentity>' \
   --yes
 ```
@@ -49,13 +49,13 @@ Check all running executions and inspect their `BuildId`:
 kubectl -n temporal exec deploy/temporal-admintools -- \
   temporal workflow list \
   --address temporal-frontend.temporal.svc.cluster.local:7233 \
-  --namespace default \
+  --namespace radar-ng \
   --query 'ExecutionStatus="Running"'
 
 kubectl -n temporal exec deploy/temporal-admintools -- \
   temporal workflow describe \
   --address temporal-frontend.temporal.svc.cluster.local:7233 \
-  --namespace default \
+  --namespace radar-ng \
   --workflow-id '<workflow-id>'
 ```
 

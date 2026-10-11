@@ -118,7 +118,7 @@ spec:
             - name: TEMPORAL_ADDRESS
               value: temporal-frontend.temporal.svc.cluster.local:7233
             - name: TEMPORAL_NAMESPACE
-              value: default
+              value: radar-ng
             - name: TEMPORAL_ALERTS_TASK_QUEUE
               value: radar-ng-alerts
           # /api/livez, never /api/health (degrades on stale NOAA data). ~60 s of failures before restart:
