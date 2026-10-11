@@ -10,6 +10,12 @@ health and repair evidence. For speed verdicts and upgrade priorities, open
 The [disk map](../domains/storage/disk-map.md) is the current, maintained answer
 to "which physical disk holds this data, and where should new data go?".
 
+## etcd and Dell boot disks — October 11, 2026
+
+| Open | What it answers |
+| --- | --- |
+| [etcd and Dell boot disks](2026-10-11-etcd-and-dell-boot-disks.md) | How much faster is etcd on the Intel S3610? How does the Dell's new boot drive compare with the Apple drive? |
+
 ## radar-ng stress test — September 26, 2026
 
 | Open | What it answers |
