@@ -89,6 +89,10 @@ spec:
             # /api/alerts and /api/geocode fetch upstream data server-side so the app only ever talks to this cluster.
             - name: NWS_USER_AGENT
               value: "(radar-ng, mitch@vanillax.me)"
+            # Our geocoder (GeoNames places) answers /api/geocode and /api/reverse-geocode; Photon is the fallback
+            # only while GEOCODER_URL is unset. Needs geocoder image >= v0.1.7 (adds /v1/places).
+            - name: GEOCODER_URL
+              value: http://geocoder-api.geocoder.svc.cluster.local:8000
             - name: PHOTON_URL
               value: http://photon.photon.svc.cluster.local:2322
             # Photon's first query after idle can take 4-7 s; at the 6 s default the API returned 502.
