@@ -37,9 +37,9 @@ fi
 
 # Namespaces to ensure exist. Listed here instead of parameterized via
 # env var so a grep in the repo finds every namespace we use.
-# `radar-ng` is isolated from unrelated application histories and task queues;
-# `default` remains for workloads that have not migrated yet.
-for NS in default radar-ng; do
+# One namespace per app keeps histories, schedules and task queues apart.
+# `default` stays so nothing breaks before an app has moved.
+for NS in default radar-ng deal-scout news-reader; do
   echo "[seed] ensuring namespace: $NS"
   if temporal_rpc operator namespace describe -n "$NS" >/dev/null 2>&1; then
     echo "[seed]   already exists"
