@@ -9,7 +9,7 @@ spec:
   workerOptions:
     connectionRef:
       name: cluster-temporal
-    temporalNamespace: default
+    temporalNamespace: deal-scout
   rollout:
     strategy: Progressive
     gate:
@@ -42,6 +42,10 @@ spec:
           env:
             - name: DEAL_SCOUT_API
               value: "http://deal-scout:8000"
+            # Code default. Also the pod-template change the namespace move needs: the controller's
+            # build id hashes only the pod template and the connection, so temporalNamespace alone rolls nothing.
+            - name: SCAN_TIMEZONE
+              value: "America/Detroit"
             - name: CLUSTER_SOURCES
               value: "ebay,slickdeals,msu,comprenew,lowcostminipcs"
             - name: DEAL_SCOUT_TOKEN
