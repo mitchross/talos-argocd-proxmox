@@ -2,6 +2,7 @@
 
 import ast
 import hashlib
+import sys
 from pathlib import Path
 
 # Migration from PostHog 5943705e66c26e44fd4da095e3710b20d12f4cfe; review on upgrades.
@@ -36,7 +37,9 @@ def patch_source(source):
     original = source
     if source.endswith(DEFAULT_OPERATIONS):
         original = source[:-len(DEFAULT_OPERATIONS)].replace(SPLIT_SUFFIX, ORIGINAL_SUFFIX, 1)
-    tree = ast.dump(ast.parse(original), include_attributes=False)
+    # Python 3.13+ omits empty lists by default; retain the reviewed 3.12 fingerprint.
+    options = {"show_empty": True} if sys.version_info >= (3, 13) else {}
+    tree = ast.dump(ast.parse(original), include_attributes=False, **options)
     if hashlib.sha256(tree.encode()).hexdigest() != UPSTREAM_AST_SHA256:
         raise RuntimeError("PostHog migration 0353 changed; review compatibility patch")
     if original.count(ORIGINAL_SUFFIX) != 1:
