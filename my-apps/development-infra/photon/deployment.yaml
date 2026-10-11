@@ -52,16 +52,19 @@ spec:
               port: http
             periodSeconds: 30
             failureThreshold: 480  # up to 4 h for the first download + unpack
+          # 6 GiB JVM: a GC pause beats the default 1 s probe timeout and drops the endpoint (geocode 502).
           readinessProbe:
             httpGet:
               path: /status
               port: http
             periodSeconds: 15
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /status
               port: http
             periodSeconds: 60
+            timeoutSeconds: 5
             failureThreshold: 5
           resources:
             requests:
