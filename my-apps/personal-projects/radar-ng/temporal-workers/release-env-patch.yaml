@@ -1,4 +1,11 @@
 # Kustomize copies these values into every worker pod template, so config changes create a version.
+# The build id hashes only the pod template and the connection, not workerOptions: a temporalNamespace
+# change alone rolls nothing. LOG_LEVEL (code default INFO) is the template change that carried the move.
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: LOG_LEVEL
+    value: INFO
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
