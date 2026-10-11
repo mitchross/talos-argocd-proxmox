@@ -95,7 +95,7 @@ spec:
             - name: TEMPORAL_ADDRESS
               value: temporal-frontend.temporal.svc.cluster.local:7233
             - name: TEMPORAL_NAMESPACE
-              value: default
+              value: radar-ng
             - name: TEMPORAL_TASK_QUEUE
               value: radar-ng-open-meteo
             - name: OPENMETEO_BIN

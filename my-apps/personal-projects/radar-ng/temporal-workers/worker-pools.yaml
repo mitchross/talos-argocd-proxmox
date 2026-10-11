@@ -19,7 +19,7 @@ spec:
   workerOptions:
     connectionRef:
       name: cluster-temporal
-    temporalNamespace: default
+    temporalNamespace: radar-ng
   rollout:
     strategy: AllAtOnce
     gate:
@@ -121,7 +121,7 @@ spec:
   workerOptions:
     connectionRef:
       name: cluster-temporal
-    temporalNamespace: default
+    temporalNamespace: radar-ng
   rollout:
     strategy: AllAtOnce
     gate:
@@ -223,7 +223,7 @@ spec:
   workerOptions:
     connectionRef:
       name: cluster-temporal
-    temporalNamespace: default
+    temporalNamespace: radar-ng
   rollout:
     strategy: AllAtOnce
     gate:
@@ -325,7 +325,7 @@ spec:
   workerOptions:
     connectionRef:
       name: cluster-temporal
-    temporalNamespace: default
+    temporalNamespace: radar-ng
   rollout:
     strategy: AllAtOnce
     gate:
@@ -428,7 +428,7 @@ spec:
   workerOptions:
     connectionRef:
       name: cluster-temporal
-    temporalNamespace: default
+    temporalNamespace: radar-ng
   rollout:
     strategy: AllAtOnce
     gate:
