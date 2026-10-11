@@ -923,110 +923,81 @@
   ],
   "disks": [
     {
-      "id": "sff-sda",
+      "id": "sff-s3610",
       "host": "sff",
-      "device": "sda",
-      "model": "PNY CS900 1TB SSD",
-      "bytes": 1000204886016,
-      "role": "Control-plane storage",
-      "path": "PNY \u2192 hp-sff-cp \u2192 VM101 scsi0 100GiB \u2192 Talos .79 sda6 \u2192 etcd",
-      "mappingCheckedAt": "2026-09-08T23:53:00Z",
-      "baselineSmart": {
-        "passed": true,
-        "tempC": 33,
-        "hours": 24594,
-        "enduranceUsedPct": null,
-        "sparePct": null,
-        "mediaErrors": null,
-        "unsafeShutdowns": null,
-        "errorLogEntries": null,
-        "reallocated": null,
-        "crcErrors": null,
-        "grownDefects": null,
-        "uncorrected": {}
-      },
-      "checkedAt": "2026-09-09T22:01:42.472617+00:00",
+      "device": "sdb",
+      "model": "INTEL SSDSC2BX400G4R",
+      "bytes": 400088457216,
+      "role": "Control-plane storage (etcd)",
+      "path": "Intel S3610 \u2192 hp-sff-cp \u2192 VM101 scsi0 100GiB \u2192 Talos ETCD (/var/lib/etcd)",
+      "mappingCheckedAt": "2026-10-11T18:30:00Z",
+      "checkedAt": "2026-10-11T18:26:47.273631+00:00",
       "smart": {
         "passed": true,
         "criticalWarning": null,
-        "tempC": 33,
-        "hours": 24616,
+        "tempC": 36,
+        "hours": 43209,
         "enduranceUsedPct": null,
         "sparePct": null,
         "mediaErrors": null,
         "unsafeShutdowns": null,
         "errorLogEntries": null,
-        "reallocated": null,
+        "reallocated": 0,
         "pendingSectors": null,
-        "offlineUncorrectable": null,
-        "crcErrors": null,
+        "offlineUncorrectable": 0,
+        "crcErrors": 0,
         "grownDefects": null,
         "uncorrected": {},
         "dataUnitsWritten": null,
         "healthSource": "smartctl -x -j"
       },
       "sample": {
-        "readIops": 0.21817883407483687,
-        "writeIops": 88.7987854684586,
-        "readMiBs": 0.02727235425935461,
-        "writeMiBs": 0.760962603416289,
-        "readMs": 3.5833333333333335,
-        "writeMs": 2.024774774774775,
-        "busyPct": 10.783488874148812,
-        "queue": 0.25657830887200817
+        "readIops": 0.19999829134811403,
+        "writeIops": 118.76565201222171,
+        "readMiBs": 0.024999786418514254,
+        "writeMiBs": 0.3959438829447892,
+        "readMs": 0.5,
+        "writeMs": 0.0822340724108897,
+        "busyPct": 0.6733275808719839,
+        "queue": 0.012933222840511373
       },
-      "sampleSeconds": 55.000752253923565,
-      "sampleStartedAt": "2026-09-09T22:01:42.589452+00:00",
-      "sampleEndedAt": "2026-09-09T22:02:37.590207+00:00",
-      "identityMatch": "serial hash matched",
+      "sampleSeconds": 30.000256299972534,
+      "sampleStartedAt": "2026-10-11T18:26:47.273631+00:00",
+      "sampleEndedAt": "2026-10-11T18:27:17.274185+00:00",
+      "identityMatch": "serial matched (by-id)",
       "observationStatus": "fresh",
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep the control-plane SSD",
-        "reason": "Saving cluster state is much faster after the reboot. Matched disk and CPU measurements do not justify replacing this SSD now.",
+        "verdict": "Keep: dedicated etcd disk",
+        "checkedAt": "2026-10-11T18:30:00Z",
+        "priorityLabel": "Keep and monitor",
+        "reason": "Enterprise SATA SSD with power-loss protection. etcd saves finished 2-5x faster after the move from the PNY.",
         "evidence": [
-          "Original check: the slowest 1% cutoff for the cluster database (etcd) was 43.8 ms; the worst sampled cutoff was 59.9 ms over 24 hours. Competing demands for the physical machine\u2019s CPU could also cause delays.",
-          "September 9 at 22:00 UTC: 99% of etcd disk saves finished within 42.26 ms and 99% of database updates within 60.52 ms. Compare these delays with the physical disk and CPU measurements before blaming a component.",
-          "Fresh hardware check 2026-09-09T22:01:42.472617+00:00: built-in health check passed; temperature 33\u00b0C; power-on hours 24,616 h.",
-          "Disk activity watched for 55 seconds: reads 0.027 MiB/s, writes 0.761 MiB/s, average unfinished requests 0.257; this reflects the apps running then, not the disk\u2019s maximum speed.",
-          "September 10, 22:24\u201322:26 UTC: 4,353 WAL saves, p99 7.86 ms; backend commits p99 12.01 ms. The previous-day median five-minute WAL p99 was 53.2 ms.",
-          "The dedicated physical SSD completed 8,796 flushes at 0.916 ms mean, queue 0.165 and 7.24% busy; QEMU flush mean was 1.094 ms. Physical means and etcd p99 measure different operations.",
-          "Kernel 7.0.14-16-pve applies the PNY NOLPM power-management workaround. No memory pressure, thermal throttling, failed writes or flushes were observed in the matched check. CPU steal was 5.87%."
+          "etcd WAL fsync, 6-hour windows: p50 1.66 ms \u2192 0.56 ms, p99 about 7.0 ms \u2192 3.9 ms (Prometheus, 2026-10-01 to 10-11).",
+          "etcd backend commit: p50 3.05 ms \u2192 0.61 ms, p99 about 7.6 ms \u2192 3.8-5.1 ms.",
+          "30-second sample: mean write wait 0.082 ms (the PNY measured 2.02 ms on 2026-09-09).",
+          "SMART passed; 43,209 power-on hours; 0 reallocated sectors; 0 CRC errors."
         ],
-        "impact": "Slow saves can make Kubernetes take longer to accept changes or restart and move apps. If this database becomes unavailable, cluster management can stop working.",
+        "impact": "Holds the only etcd member. If this disk fails, Kubernetes cluster management stops until etcd is restored.",
         "options": [
-          "Keep the updated kernel and the dedicated control-plane disk. A matched busy-period recheck is more useful than an immediate SSD purchase.",
-          "Consider separately reviewed control-plane CPU priority 200 versus worker 100, then verify latency and worker impact. This is not applied."
+          "Keep. Defragment etcd (412 MB file, about 15% live data) in a quiet window."
         ],
         "constraints": [
-          "The cluster-management VM has a 100 GiB disk. Confirm how its data is laid out and how to recover it before moving it.",
-          "Do not take one drive from a working duplicate-data pair just to obtain a replacement."
+          "Never place Longhorn on this disk.",
+          "Keep an off-host etcd snapshot before any change to VM 101."
         ],
         "verify": [
-          "Retain WAL p99 below 10 ms and backend commit p99 below 25 ms under comparable activity; watch CPU scheduling delay separately.",
-          "Investigate new media/link errors or sustained latency regression before selecting a replacement. Preserve an off-host etcd backup."
+          "WAL p99 below 10 ms and backend commit p99 below 25 ms."
         ],
-        "confidence": "Verified current improvement. The new kernel workaround is a plausible contributor, not a proven sole cause.",
-        "checkedAt": "2026-09-10T22:25:59Z",
-        "priorityLabel": "Keep and monitor"
+        "confidence": "Measured before and after the same workload; the disk swap is the only change in that window."
       },
-      "action": "Keep the control-plane SSD",
-      "note": "Saving cluster state is much faster after the reboot. Matched disk and CPU measurements do not justify replacing this SSD now.",
-      "baselineSample": {
-        "readIops": 0.2,
-        "writeIops": 78.889,
-        "readMs": 11.583,
-        "writeMs": 3.782,
-        "busyPct": 15.649,
-        "queue": 0.378,
-        "writeMiBs": 0.462
-      },
-      "baselineSampleSeconds": 120,
+      "action": "Keep: dedicated etcd disk",
+      "note": "Enterprise SATA SSD with power-loss protection. etcd saves finished 2-5x faster after the move from the PNY.",
       "latestCheck": {
-        "checkedAt": "2026-09-10T22:29:19.108847+00:00",
+        "checkedAt": "2026-10-11T18:26:47.273631+00:00",
         "passed": true,
-        "source": "Permanent smartctl exporter; other detailed values retain their own dates"
+        "source": "smartctl -x -j on the host"
       }
     },
     {
@@ -2052,39 +2023,25 @@
       "id": "dell-sdb",
       "host": "dell",
       "device": "sdb",
-      "model": "APPLE SSD SM0256G",
-      "bytes": 251000193024,
+      "model": "R9M2SH6Q240GQF72C",
+      "bytes": 240057409536,
       "role": "Proxmox + Dell boot",
-      "path": "Apple \u2192 pve \u2192 VM100 scsi0 128GiB \u2192 Talos .177 sda6",
-      "mappingCheckedAt": "2026-09-08T23:53:00Z",
-      "baselineSmart": {
-        "passed": true,
-        "tempC": 34,
-        "hours": 34865,
-        "enduranceUsedPct": null,
-        "sparePct": null,
-        "mediaErrors": null,
-        "unsafeShutdowns": null,
-        "errorLogEntries": null,
-        "reallocated": 0,
-        "crcErrors": 0,
-        "grownDefects": null,
-        "uncorrected": {}
-      },
-      "checkedAt": "2026-09-09T22:01:42.650870+00:00",
+      "path": "Cisco SSD-240G \u2192 pve \u2192 VM100 scsi0 128GiB \u2192 Talos /var",
+      "mappingCheckedAt": "2026-10-11T18:30:00Z",
+      "checkedAt": "2026-10-11T18:26:47.454871+00:00",
       "smart": {
         "passed": true,
         "criticalWarning": null,
-        "tempC": 32,
-        "hours": 34887,
+        "tempC": 44,
+        "hours": 24,
         "enduranceUsedPct": null,
         "sparePct": null,
         "mediaErrors": null,
         "unsafeShutdowns": null,
         "errorLogEntries": null,
         "reallocated": 0,
-        "pendingSectors": 0,
-        "offlineUncorrectable": null,
+        "pendingSectors": null,
+        "offlineUncorrectable": 0,
         "crcErrors": 0,
         "grownDefects": null,
         "uncorrected": {},
@@ -2092,63 +2049,50 @@
         "healthSource": "smartctl -x -j"
       },
       "sample": {
-        "readIops": 0.5636315989822058,
-        "writeIops": 6.981759161586034,
-        "readMiBs": 0.06825226393925149,
-        "writeMiBs": 0.24468898266046432,
-        "readMs": 0.45161290322580644,
-        "writeMs": 3.0807291666666665,
-        "busyPct": 0.23636163828286053,
-        "queue": 0.02347252884793638
+        "readIops": 0.3999863374926365,
+        "writeIops": 17.599398849676007,
+        "readMiBs": 0.049998292186579564,
+        "writeMiBs": 0.11086860884602212,
+        "readMs": 1.1666666666666667,
+        "writeMs": 2.1515151515151514,
+        "busyPct": 2.8765684104678773,
+        "queue": 0.06486445106338921
       },
-      "sampleSeconds": 55.000464941957034,
-      "sampleStartedAt": "2026-09-09T22:01:42.669918+00:00",
-      "sampleEndedAt": "2026-09-09T22:02:37.670387+00:00",
-      "identityMatch": "serial hash matched",
+      "sampleSeconds": 30.00102472305298,
+      "sampleStartedAt": "2026-10-11T18:26:47.454871+00:00",
+      "sampleEndedAt": "2026-10-11T18:27:17.456121+00:00",
+      "identityMatch": "serial matched (by-id)",
       "observationStatus": "fresh",
       "changes": {},
       "assessment": {
         "priority": "P3",
-        "verdict": "Keep; check adapter if trouble returns",
-        "reason": "The adapter is a concern you raised. The readings do not show a current cable or drive fault; check it if disconnects or new errors appear.",
+        "verdict": "Keep: Dell boot drive",
+        "checkedAt": "2026-10-11T18:30:00Z",
+        "priorityLabel": "Keep and monitor",
+        "reason": "New-old-stock M.2 SATA SSD on the onboard SATA port. Replaced the Apple SM0256G on a PCIe adapter. Slower than the Apple drive, but on a standard SATA port.",
         "evidence": [
-          "Baseline 34,865 hours, zero bad sectors replaced, pending sectors and connection errors (CRC).",
-          "Fresh hardware check 2026-09-09T22:01:42.650870+00:00: built-in health check passed; temperature 32\u00b0C; power-on hours 34,887 h; lifetime connection-error total 0; bad sectors replaced 0.",
-          "Disk activity watched for 55 seconds: reads 0.068 MiB/s, writes 0.245 MiB/s, average unfinished requests 0.023; this reflects the apps running then, not the disk\u2019s maximum speed."
+          "Host-root benchmark: sequential write 146 MB/s (Apple 636), sequential read 416 MB/s (Apple 1,926), 8 KiB write+fsync p50 9.2 ms / p99 13.1 ms (Apple 7.2 / 10.8).",
+          "SMART passed; 24 power-on hours; 0 reallocated; SATA 6.0 Gb/s link.",
+          "No power-loss protection reported; consumer-class fsync latency."
         ],
-        "impact": "The Apple SSD carries host and Dell worker boot; data survives separately only if its data drive and copies remain healthy.",
+        "impact": "Proxmox root, swap and the Dell worker Talos system disk (thin pool `data`, 140 GiB).",
         "options": [
-          "Keep the boot role while checking physical connector security at maintenance.",
-          "Replace the adapter or boot device only if disconnects or fresh link errors identify it."
+          "Keep. Move the Talos system disk to faster storage only if Dell image pulls become slow."
         ],
         "constraints": [
-          "Preserve the Proxmox host layout and 128 GiB guest boot allocation.",
-          "Check adapter protocol and physical fit before choosing a replacement."
+          "VG `pve` fills this disk; only about 4 GiB is free."
         ],
         "verify": [
-          "Check this same drive again for new errors or wear, while the apps are doing similar work.",
-          "Before moving or replacing it, confirm usable backups and working data copies on other physical machines."
+          "Talos weekly trim keeps the thin pool below about 60%."
         ],
-        "confidence": "The drive identity was checked. The advice separates measured problems from preventive maintenance.",
-        "checkedAt": "2026-09-09T22:01:42.650870+00:00",
-        "priorityLabel": "Keep and monitor"
+        "confidence": "One benchmark run against the 2026-09-20 run on the Apple drive."
       },
-      "action": "Keep; check adapter if trouble returns",
-      "note": "The adapter is an owner concern. Collected counters did not establish a current cable or fault in the drive\u2019s stored data.",
-      "baselineSample": {
-        "readIops": 0.767,
-        "writeIops": 3.283,
-        "readMs": 0.38,
-        "writeMs": 2.218,
-        "busyPct": 0.166,
-        "queue": 0.009,
-        "writeMiBs": 0.045
-      },
-      "baselineSampleSeconds": 120,
+      "action": "Keep: Dell boot drive",
+      "note": "New-old-stock M.2 SATA SSD on the onboard SATA port. Replaced the Apple SM0256G on a PCIe adapter. Slower than the Apple drive, but on a standard SATA port.",
       "latestCheck": {
-        "checkedAt": "2026-09-10T22:29:19.108847+00:00",
+        "checkedAt": "2026-10-11T18:26:47.454871+00:00",
         "passed": true,
-        "source": "Permanent smartctl exporter; other detailed values retain their own dates"
+        "source": "smartctl -x -j on the host"
       }
     },
     {
@@ -3497,6 +3441,81 @@
         "checkedAt": "2026-09-10T22:29:19.108847+00:00",
         "passed": true,
         "source": "Permanent smartctl exporter; other detailed values retain their own dates"
+      }
+    },
+    {
+      "id": "sff-spare-pny",
+      "host": "sff",
+      "device": "sda",
+      "model": "PNY CS900 1TB SSD",
+      "bytes": 1000204886016,
+      "role": "Spare (not in use)",
+      "path": "PNY \u202601C5 \u2192 orphan PV, no VG",
+      "mappingCheckedAt": "2026-10-11T18:30:00Z",
+      "checkedAt": "2026-10-11T18:26:47.273631+00:00",
+      "smart": {
+        "passed": true,
+        "criticalWarning": null,
+        "tempC": 33,
+        "hours": 25380,
+        "enduranceUsedPct": null,
+        "sparePct": null,
+        "mediaErrors": null,
+        "unsafeShutdowns": null,
+        "errorLogEntries": null,
+        "reallocated": null,
+        "pendingSectors": null,
+        "offlineUncorrectable": null,
+        "crcErrors": null,
+        "grownDefects": null,
+        "uncorrected": {},
+        "dataUnitsWritten": null,
+        "healthSource": "smartctl -x -j"
+      },
+      "sample": {
+        "readIops": 0.09999914567405702,
+        "writeIops": 0.0,
+        "readMiBs": 0.012499893209257127,
+        "writeMiBs": 0.0,
+        "readMs": 0.6666666666666666,
+        "writeMs": 0,
+        "busyPct": 0.009999914567405701,
+        "queue": 6.6666097116038e-05
+      },
+      "sampleSeconds": 30.000256299972534,
+      "sampleStartedAt": "2026-10-11T18:26:47.273631+00:00",
+      "sampleEndedAt": "2026-10-11T18:27:17.274185+00:00",
+      "identityMatch": "serial matched (by-id)",
+      "observationStatus": "fresh",
+      "changes": {},
+      "assessment": {
+        "priority": "P3",
+        "verdict": "Spare: not in use",
+        "checkedAt": "2026-10-11T18:30:00Z",
+        "priorityLabel": "Keep and monitor",
+        "reason": "Former etcd disk. An orphan LVM PV in no VG, not wiped. Nothing reads or writes it.",
+        "evidence": [
+          "SMART passed; 25,380 power-on hours.",
+          "30-second sample: no reads or writes."
+        ],
+        "impact": "None. No VM or volume uses it.",
+        "options": [
+          "Reuse as a Longhorn disk or remove it. Wipe it only after deciding."
+        ],
+        "constraints": [
+          "Identify it by serial (\u202601C5); sdX letters moved when the S3610 was added."
+        ],
+        "verify": [
+          "Confirm `pvs` shows it in no VG before any reuse."
+        ],
+        "confidence": "Verified live layout."
+      },
+      "action": "Spare: not in use",
+      "note": "Former etcd disk. An orphan LVM PV in no VG, not wiped. Nothing reads or writes it.",
+      "latestCheck": {
+        "checkedAt": "2026-10-11T18:26:47.273631+00:00",
+        "passed": true,
+        "source": "smartctl -x -j on the host"
       }
     }
   ],

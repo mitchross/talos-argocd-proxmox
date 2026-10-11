@@ -24,7 +24,7 @@ persistent storage. Each rule below closes one of those.
 | Duplicate telemetry | One observability stack: Prometheus, Loki, Tempo, Grafana. Don't add tools that keep their own copy of metrics/logs (e.g. an eBPF APM with its own ClickHouse) or in-cluster scanners that spawn a pod per image. | `monitoring/` |
 | Bulk files | Bulk, read-mostly data (photo libraries, downloads) lives on the NAS (`truenas-nfs`), and its kopiur policy uses `copyMethod: Direct`, so no Longhorn clone is made. | [disk map](disk-map.md#where-should-new-data-go) |
 | Right-sized volumes | Request what the app uses plus headroom. Longhorn books the full request, so oversized volumes fill the clone disk on paper and block backups. | [disk map](disk-map.md#where-should-new-data-go) |
-| GPU-node trim | The weekly `talos-fstrim` job trims each GPU-node data mount by path; a missing path stops the job before the rest are trimmed. | `infrastructure/storage/talos-fstrim/scripts/trim-node-filesystems.sh` |
+| Node volume trim | Talos trims every `EPHEMERAL`, `STATE`, `ETCD` and user volume once a week by itself, so freed blocks reach the SSD and the Proxmox thin pools. A new user volume is included automatically. Check with `talosctl -n <node> get volumetrimschedules`. | Talos 1.14 default `FilesystemTrimConfig` (168h) |
 | Rebalancing | The descheduler never evicts pods with PVCs; moving one would copy its Longhorn replica. | [descheduler](../scheduling/descheduler.md) |
 
 When adding an app, ask the same questions: does it log about itself to disk,
