@@ -214,7 +214,7 @@ removing it destroys cluster state. Instead:
 
 Talos and Kubernetes are coupled: Omni validates the pair and refuses the sync
 outright with `invalid kubernetes version "X": is not compatible with talos
-version "Y"`. Talos 1.14 caps Kubernetes at 1.37.0, which is where this
+version "Y"`. Talos 1.14 caps Kubernetes at 1.37.1, which is where this
 cluster sits — no headroom until the next Talos minor. Check what a Talos
 release actually allows before planning a bump:
 

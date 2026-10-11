@@ -7,7 +7,7 @@ labels:
 kubernetes:
   version: v1.37.1
 talos:
-  version: v1.14.1
+  version: v1.14.2
 patches:
 # KubeletConfig cannot express extraMounts; keep the supported legacy kubelet for Longhorn.
 - name: legacy-kubelet-mounts
