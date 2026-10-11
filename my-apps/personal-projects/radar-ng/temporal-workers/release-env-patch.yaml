@@ -17,11 +17,6 @@
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
-    name: MRMS_RENDER_WORKERS
-    value: '3'
-- op: add
-  path: /spec/template/spec/containers/0/env/-
-  value:
     name: MRMS_PREFIX
     value: CONUS/MergedBaseReflectivityQC_00.50
 - op: add

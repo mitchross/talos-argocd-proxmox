@@ -58,6 +58,8 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      # Lets in-flight activities finish on rollout; TEMPORAL_GRACEFUL_SHUTDOWN_S stays 5 s under it.
+      terminationGracePeriodSeconds: 60
       containers:
         - name: worker
           image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.48@sha256:59cc6bed875f7fd7965454b05a90179aaa95441b87733575181bb646f6d9b9cb
@@ -69,8 +71,9 @@ spec:
             - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: mrms }
+            - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "55" }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
-            # MRMS_RENDER_WORKERS=3 spawns one process per palette; slots cover 2 frames x 2 layers plus list/mark.
+            # Slots cover 2 frames x 2 layers plus list/mark.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "6" }
             - { name: TILE_DIR, value: /data/tiles }
             - { name: GRID_DIR, value: /data/grids }
@@ -157,6 +160,8 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      # Lets in-flight activities finish on rollout; TEMPORAL_GRACEFUL_SHUTDOWN_S stays 5 s under it.
+      terminationGracePeriodSeconds: 180
       containers:
         - name: worker
           image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.48@sha256:59cc6bed875f7fd7965454b05a90179aaa95441b87733575181bb646f6d9b9cb
@@ -168,6 +173,7 @@ spec:
             - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: nowcast }
+            - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "175" }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
             # One pysteps run at a time; a second would double the ~7 GiB peak and starve the first.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "1" }
@@ -256,6 +262,8 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      # Lets in-flight activities finish on rollout; TEMPORAL_GRACEFUL_SHUTDOWN_S stays 5 s under it.
+      terminationGracePeriodSeconds: 180
       containers:
         - name: worker
           image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.48@sha256:59cc6bed875f7fd7965454b05a90179aaa95441b87733575181bb646f6d9b9cb
@@ -267,6 +275,7 @@ spec:
             - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: hrrr }
+            - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "175" }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
             # Fan-out is 4 hours at a time (FORECAST_CONCURRENCY), so 4 slots is the whole budget.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "4" }
@@ -355,6 +364,8 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      # Lets in-flight activities finish on rollout; TEMPORAL_GRACEFUL_SHUTDOWN_S stays 5 s under it.
+      terminationGracePeriodSeconds: 90
       containers:
         - name: worker
           image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.48@sha256:59cc6bed875f7fd7965454b05a90179aaa95441b87733575181bb646f6d9b9cb
@@ -366,6 +377,7 @@ spec:
             - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: aux }
+            - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "85" }
             # Sole Schedule seeder + stall observer; never set this on a second pool.
             - { name: SEED_SCHEDULES, value: "1" }
             # Lightning holds one slot ~50 min/h; air quality chunks, tropical and cleanup share the rest.
@@ -455,6 +467,8 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      # Lets in-flight activities finish on rollout; TEMPORAL_GRACEFUL_SHUTDOWN_S stays 5 s under it.
+      terminationGracePeriodSeconds: 30
       containers:
         - name: worker
           image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.48@sha256:59cc6bed875f7fd7965454b05a90179aaa95441b87733575181bb646f6d9b9cb
@@ -466,6 +480,7 @@ spec:
             - { containerPort: 9464, name: metrics, protocol: TCP }
           env:
             - { name: WORKER_ROLE, value: alerts }
+            - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "25" }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
             # Small HTTP/JSON activities only; storm watches read grids, never write tiles.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "8" }
