@@ -36,7 +36,7 @@ spec:
             - name: TEMPORAL_ADDRESS
               value: "temporal-frontend.temporal.svc.cluster.local:7233"
             - name: TEMPORAL_NAMESPACE
-              value: "default"
+              value: "news-reader"
           ports:
             - containerPort: 3000
               name: http

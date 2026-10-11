@@ -10,7 +10,7 @@ spec:
   workerOptions:
     connectionRef:
       name: cluster-temporal                  # → temporal-connection.yaml
-    temporalNamespace: default                # Temporal-server namespace (not k8s ns)
+    temporalNamespace: news-reader            # Temporal-server namespace (not k8s ns)
   rollout:
     # Ramp only controls where NEW workflows start; AUTO_UPGRADE in-flight workflows migrate on their own.
     strategy: Progressive
@@ -58,6 +58,10 @@ spec:
               value: "qwen3.8-27b"
             - name: REDDIT_FRONTEND
               value: "https://redlib.vanillax.me"
+            # Flush logs per line. Also the pod-template change the namespace move needs: the controller's
+            # build id hashes only the pod template and the connection, so temporalNamespace alone rolls nothing.
+            - name: PYTHONUNBUFFERED
+              value: "1"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
