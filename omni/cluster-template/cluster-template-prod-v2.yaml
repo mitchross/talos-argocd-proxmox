@@ -423,7 +423,7 @@ patches:
     annotations:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
-        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]}]
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]},{"name":"dell-apple","path":"/var/mnt/longhorn-dell-apple","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-apple"]}]
 - name: dell-longhorn-disks-machine
   inline:
     machine:
@@ -445,6 +445,16 @@ patches:
       diskSelector:
         match: "!system_disk && disk.size >= 350u * GB"
       minSize: 350GB
+      grow: true
+- name: dell-longhorn-apple-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-dell-apple
+    provisioning:
+      diskSelector:
+        match: '!system_disk && disk.size == 220u * GiB'
+      minSize: 200GiB
       grow: true
 ---
 kind: Workers
