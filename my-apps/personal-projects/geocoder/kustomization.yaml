@@ -1,4 +1,4 @@
-# Self-hosted geocoder from public data (Census ZCTA + USDOT NAD). Source: gitea.vanillax.me geocoder repo.
+# Self-hosted geocoder from public data (Census ZCTA + USDOT NAD + GeoNames places). Source: gitea.vanillax.me geocoder repo.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: geocoder
