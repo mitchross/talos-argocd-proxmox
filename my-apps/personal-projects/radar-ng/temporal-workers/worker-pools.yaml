@@ -72,6 +72,10 @@ spec:
           env:
             - { name: WORKER_ROLE, value: mrms }
             - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "55" }
+            # Indexed-PNG renderer canary, single role per docs/reliability-and-scale-plan.md: both keys
+            # on every pod that polls this queue, and only this pool polls radar-ng-mrms.
+            - { name: TILE_RENDERER, value: indexed }
+            - { name: TILE_RENDERER_CANARY_ROLE, value: mrms }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
             # Slots cover 2 frames x 2 layers plus list/mark.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "6" }
