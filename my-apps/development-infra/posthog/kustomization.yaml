@@ -43,6 +43,7 @@ configMapGenerator:
       - scripts/init-kafka.sh
       - scripts/migrate.sh
       - scripts/personhog-schema.sql
+      - scripts/patch-flag-evaluations-migration.py
       - scripts/patch-replay-retention.py
       - scripts/start-kafka.sh
       - scripts/start-web.sh

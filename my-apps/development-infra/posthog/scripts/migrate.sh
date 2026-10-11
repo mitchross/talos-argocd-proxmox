@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 python /opt/repo-scripts/patch-replay-retention.py
+python /opt/repo-scripts/patch-flag-evaluations-migration.py
 echo "Waiting for Postgres..."
 TIMEOUT=120; ELAPSED=0
 until python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('db', 5432))" 2>/dev/null; do
