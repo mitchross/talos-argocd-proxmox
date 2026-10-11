@@ -1,0 +1,108 @@
+{
+  "collectedAt": "2026-10-11T18:28:10Z",
+  "method": "smartctl -x -j plus a 30-second /proc/diskstats sample on the Proxmox host",
+  "drives": {
+    "ata-INTEL_SSDSC2BX400G4R_BTHC650308T8400VGN": {
+      "device": "sdb",
+      "model": "INTEL SSDSC2BX400G4R",
+      "serial": "BTHC650308T8400VGN",
+      "bytes": 400088457216,
+      "smart": {
+        "passed": true,
+        "tempC": 36,
+        "hours": 43209,
+        "reallocated": 0,
+        "pendingSectors": null,
+        "offlineUncorrectable": 0,
+        "crcErrors": 0,
+        "attr233": 191759,
+        "attr241": null,
+        "attr177": null,
+        "attr232": null,
+        "healthSource": "smartctl -x -j"
+      },
+      "sample": {
+        "readIops": 0.19999829134811403,
+        "writeIops": 118.76565201222171,
+        "readMiBs": 0.024999786418514254,
+        "writeMiBs": 0.3959438829447892,
+        "readMs": 0.5,
+        "writeMs": 0.0822340724108897,
+        "busyPct": 0.6733275808719839,
+        "queue": 0.012933222840511373
+      },
+      "sampleSeconds": 30.000256299972534,
+      "sampleStartedAt": "2026-10-11T18:26:47.273631+00:00",
+      "sampleEndedAt": "2026-10-11T18:27:17.274185+00:00",
+      "checkedAt": "2026-10-11T18:26:47.273631+00:00"
+    },
+    "ata-PNY_CS900_1TB_SSD_PNY232323060701001C5": {
+      "device": "sda",
+      "model": "PNY CS900 1TB SSD",
+      "serial": "PNY232323060701001C5",
+      "bytes": 1000204886016,
+      "smart": {
+        "passed": true,
+        "tempC": 33,
+        "hours": 25380,
+        "reallocated": null,
+        "pendingSectors": null,
+        "offlineUncorrectable": null,
+        "crcErrors": null,
+        "attr233": null,
+        "attr241": 46593,
+        "attr177": null,
+        "attr232": null,
+        "healthSource": "smartctl -x -j"
+      },
+      "sample": {
+        "readIops": 0.09999914567405702,
+        "writeIops": 0.0,
+        "readMiBs": 0.012499893209257127,
+        "writeMiBs": 0.0,
+        "readMs": 0.6666666666666666,
+        "writeMs": 0,
+        "busyPct": 0.009999914567405701,
+        "queue": 0.000066666097116038
+      },
+      "sampleSeconds": 30.000256299972534,
+      "sampleStartedAt": "2026-10-11T18:26:47.273631+00:00",
+      "sampleEndedAt": "2026-10-11T18:27:17.274185+00:00",
+      "checkedAt": "2026-10-11T18:26:47.273631+00:00"
+    },
+    "ata-R9M2SH6Q240GQF72C_STP27120U9C": {
+      "device": "sdb",
+      "model": "R9M2SH6Q240GQF72C",
+      "serial": "STP27120U9C",
+      "bytes": 240057409536,
+      "smart": {
+        "passed": true,
+        "tempC": 44,
+        "hours": 24,
+        "reallocated": 0,
+        "pendingSectors": null,
+        "offlineUncorrectable": 0,
+        "crcErrors": 0,
+        "attr233": null,
+        "attr241": 501575638,
+        "attr177": null,
+        "attr232": 0,
+        "healthSource": "smartctl -x -j"
+      },
+      "sample": {
+        "readIops": 0.3999863374926365,
+        "writeIops": 17.599398849676007,
+        "readMiBs": 0.049998292186579564,
+        "writeMiBs": 0.11086860884602212,
+        "readMs": 1.1666666666666667,
+        "writeMs": 2.1515151515151514,
+        "busyPct": 2.8765684104678773,
+        "queue": 0.06486445106338921
+      },
+      "sampleSeconds": 30.00102472305298,
+      "sampleStartedAt": "2026-10-11T18:26:47.454871+00:00",
+      "sampleEndedAt": "2026-10-11T18:27:17.456121+00:00",
+      "checkedAt": "2026-10-11T18:26:47.454871+00:00"
+    }
+  }
+}

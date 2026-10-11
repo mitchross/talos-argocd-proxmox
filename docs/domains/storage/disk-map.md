@@ -63,8 +63,12 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
-| Apple SM0256G (`sdb`) | consumer SATA | host root + `local-lvm` | 128 GiB | `/var` | — | Talos system |
+| Cisco SSD-240G, M.2 SATA on the onboard port (serial `STP27120U9C`) | consumer SATA | host root + `local-lvm` (thin pool `data`, 140 GiB) | 128 GiB | `/var` | — | Talos system |
 | Samsung 850 EVO 500 GB (`sda`) | consumer SATA | `dell-ssd-vmstore` | 400 GiB | `/var/mnt/longhorn-dell-ssd` | `dell-ssd` (`wired-storage`) | ordinary volumes, second copies |
+| Apple SM0256G (serial `S2PANYAH502828`), PCIe adapter | consumer AHCI | — | — | — | — | not in use: an orphan LVM PV in no VG; remove it |
+
+The Cisco drive is about 10 GiB smaller than VG `pve` was on the Apple drive, so
+the thin pool is 140 GiB. VG `pve` has about 4 GiB free. UEFI boots `proxmox-cisco`.
 
 ### HP Micro `.20` — shed worker (Wi-Fi link)
 
@@ -139,8 +143,8 @@ exist with that exact name. Check each host with `pvesm status`.
    ```bash
    kubectl -n longhorn-system edit nodes.longhorn.io <node>   # add it under spec.disks
    ```
-5. If the disk is on the GPU node, add its mount to
-   `infrastructure/storage/talos-fstrim/scripts/trim-node-filesystems.sh`.
+5. Talos trims the new volume weekly without extra configuration. Confirm it is
+   listed: `talosctl -n <node> get volumetrimschedules`.
 
 ## Moving a volume to another disk on the same node
 
