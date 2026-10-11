@@ -445,10 +445,13 @@ patches:
       node.longhorn.io/default-disks-config: >-
         [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"ssd-flash","path":"/var/mnt/longhorn-ssd-flash","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash","clone-ok"]},{"name":"gpu-bulk","path":"/var/mnt/longhorn-gpu-bulk","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["gpu-bulk"]}]
 - file: patches/threadripper-gpu-workers.yaml
+# Omni patches this machine's previous config, which has no KubeletConfig: keep the image
+# aligned with kubernetes.version.
 - name: kubelet-performance
   inline:
     apiVersion: v1alpha1
     kind: KubeletConfig
+    image: ghcr.io/siderolabs/kubelet:v1.37.1
     config:
       serializeImagePulls: false
       maxPods: 250
@@ -484,7 +487,7 @@ patches:
         match: '!system_disk && disk.size == 434u * GiB'
       minSize: 400GiB
       grow: true
-# Keep last: patch IDs are positional. Consumer PNY for ordinary app volumes; clones stay on clone-ok flash.
+# Append new patches below: patch IDs are positional. Consumer PNY for ordinary app volumes; clones stay on clone-ok flash.
 - name: longhorn-gpu-bulk-volume
   inline:
     apiVersion: v1alpha1
@@ -495,3 +498,9 @@ patches:
         match: '!system_disk && disk.size == 800u * GiB'
       minSize: 700GiB
       grow: true
+# The previous config still carries .machine.kubelet, which Talos 1.14 rejects next to KubeletConfig.
+- name: drop-legacy-kubelet
+  inline:
+    machine:
+      kubelet:
+        $patch: delete
