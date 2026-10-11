@@ -55,7 +55,7 @@ spec:
             - name: config-files
               mountPath: /config-source
         - name: repair-power-statistics
-          image: "ghcr.io/home-assistant/home-assistant:2026.10.0"
+          image: "ghcr.io/home-assistant/home-assistant:2026.10.1"
           command: ["python", "/opt/repo-scripts/repair-power-statistics.py", "--apply"]
           securityContext:
             runAsNonRoot: false
@@ -67,7 +67,7 @@ spec:
             - name: config
               mountPath: /config
         - name: retire-period-statistics
-          image: "ghcr.io/home-assistant/home-assistant:2026.10.0"
+          image: "ghcr.io/home-assistant/home-assistant:2026.10.1"
           command: ["python", "/opt/repo-scripts/retire-period-statistics.py", "--apply"]
           securityContext:
             runAsNonRoot: false
@@ -95,7 +95,7 @@ spec:
               mountPath: /config
       containers:
         - name: home-assistant
-          image: "ghcr.io/home-assistant/home-assistant:2026.10.0" # pinned: a floating tag defeats Renovate and rollback
+          image: "ghcr.io/home-assistant/home-assistant:2026.10.1" # pinned: a floating tag defeats Renovate and rollback
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false
