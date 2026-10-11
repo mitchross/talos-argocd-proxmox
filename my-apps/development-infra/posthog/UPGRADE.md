@@ -24,6 +24,12 @@ digests, check all five:
    reviewed fixture/hash and run
    `python3 -m unittest discover -s my-apps/development-infra/posthog/tests -v`
    from the repository root. Preserve cloud and existing entitlement checks.
+6. **Migration 0353 compatibility** — review
+   `0353_flag_evaluations_person_columns.py` against
+   `scripts/patch-flag-evaluations-migration.py`. Its AST hash guards upstream changes.
+   The patch separates ADD and MODIFY statements because the legacy analyzer
+   rejects both operations on a new column. Preserve table placement and Kafka/MV
+   recreation order. Run the PostHog tests above after updating the fixture/hash.
 
 Rules: bump `posthog/posthog` and `posthog/posthog-node` digests **in lockstep**
 (migrate job must match web/worker). Data-layer images (postgres, valkey,
