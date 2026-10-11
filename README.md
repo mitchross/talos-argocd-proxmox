@@ -414,7 +414,9 @@ it during either stage.
 
 Keep both cluster templates, the kopiur chart's `kubeVersion`, and Cluster CI's
 `KUBERNETES_VERSION` aligned with the intended Kubernetes target. Configure the
-kubelet through `machine.kubelet.extraConfig`; Kubernetes 1.37 rejects removed
+kubelet only through `KubeletConfig` documents (`config:`), never `.machine.kubelet`.
+Omni's Kubernetes upgrade adds a `KubeletConfig`, and Talos 1.14 rejects both together.
+The kubelet image follows `kubernetes.version`; Kubernetes 1.37 rejects removed
 cAdvisor command-line flags.
 
 ### A stalled upgrade is not a reason to delete the control plane

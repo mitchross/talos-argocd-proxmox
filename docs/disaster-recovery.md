@@ -70,11 +70,12 @@ Block the nuke until every box checks — **you restore *from* these**:
 
 ## Talos 1.14 rebuild
 
-The template uses 1.14 Kubernetes documents for node settings and control-plane
-components. It retains legacy kubelet fields for Longhorn's shared bind mount:
-[`KubeletConfig` has no `extraMounts` equivalent](https://github.com/siderolabs/talos/blob/v1.14.0/pkg/machinery/config/types/k8s/kubelet.go#L189).
-The existing cluster's 1.13.9 generation contract is different; use this template
-after deleting that cluster.
+The template uses 1.14 Kubernetes documents for node settings, the kubelet and
+control-plane components. It sets no `.machine.kubelet`: Talos 1.14
+[rejects it next to a `KubeletConfig`](https://github.com/siderolabs/talos/blob/v1.14.1/pkg/machinery/config/types/k8s/kubelet.go#L163),
+which Omni adds on every Kubernetes upgrade. Longhorn needs no kubelet bind
+mount; Talos's own Longhorn CI runs without one. Its data disks are user volumes
+under `/var/mnt`, which Talos already exposes to the kubelet.
 
 The control plane reserves **32 GiB ETCD + 64 GiB EPHEMERAL** within its existing
 100 GiB disk. The GPU uses **16 GiB boot + 434 GiB EPHEMERAL** on NVMe0 so Omni

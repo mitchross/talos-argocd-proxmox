@@ -9,12 +9,16 @@ kubernetes:
 talos:
   version: v1.14.2
 patches:
-# KubeletConfig cannot express extraMounts; keep the supported legacy kubelet for Longhorn.
-- name: legacy-kubelet-mounts
+# Never set .machine.kubelet: Talos 1.14 rejects it next to this document, and Omni's
+# Kubernetes upgrade patch always adds a KubeletConfig. The image follows kubernetes.version.
+- name: kubelet
   inline:
     apiVersion: v1alpha1
     kind: KubeletConfig
-    $patch: delete
+    defaultRuntimeSeccompProfileEnabled: true
+    config:
+      imageGCHighThresholdPercent: 70
+      imageGCLowThresholdPercent: 55
 - name: dns-resolver
   inline:
     apiVersion: v1alpha1
@@ -56,17 +60,6 @@ patches:
       udev:
         rules:
         - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="131072"
-- name: image-gc-thresholds
-  inline:
-    machine:
-      kubelet:
-        # Keep aligned with kubernetes.version.
-        image: ghcr.io/siderolabs/kubelet:v1.37.0
-        defaultRuntimeSeccompProfileEnabled: true
-        disableManifestsDirectory: true
-        extraConfig:
-          imageGCHighThresholdPercent: 70
-          imageGCLowThresholdPercent: 55
 - name: node-service-logs
   inline:
     machine:
@@ -211,9 +204,6 @@ patches:
 - name: hp-micro-worker-machine
   inline:
     machine:
-      kubelet:
-        extraConfig:
-          serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
 # This annotation replaces the full Longhorn disk list; include the disabled default disk.
@@ -226,18 +216,12 @@ patches:
     annotations:
       node.longhorn.io/default-disks-config: >-
         [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-micro-ssd","path":"/var/mnt/longhorn-hp-micro-ssd","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":["hp-micro-ssd"]}]
-- name: hp-micro-longhorn-disks-machine
+- name: hp-micro-kubelet
   inline:
-    machine:
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
 - name: hp-micro-longhorn-ssd-volume
   inline:
     apiVersion: v1alpha1
@@ -277,9 +261,6 @@ patches:
 - name: hp-sff-worker-machine
   inline:
     machine:
-      kubelet:
-        extraConfig:
-          serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
 - name: hp-sff-longhorn-disks
@@ -292,18 +273,12 @@ patches:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
         [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]}]
-- name: hp-sff-longhorn-disks-machine
+- name: hp-sff-kubelet
   inline:
-    machine:
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
 - name: hp-sff-longhorn-ssd-volume
   inline:
     apiVersion: v1alpha1
@@ -343,9 +318,6 @@ patches:
 - name: hp-elite-worker-machine
   inline:
     machine:
-      kubelet:
-        extraConfig:
-          serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
 - name: hp-elite-longhorn-disks
@@ -358,18 +330,12 @@ patches:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
         [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-elite-nvme","path":"/var/mnt/longhorn-hp-elite-nvme","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-elite-nvme"]}]
-- name: hp-elite-longhorn-disks-machine
+- name: hp-elite-kubelet
   inline:
-    machine:
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
 - name: hp-elite-longhorn-nvme-volume
   inline:
     apiVersion: v1alpha1
@@ -409,9 +375,6 @@ patches:
 - name: dell-worker-machine
   inline:
     machine:
-      kubelet:
-        extraConfig:
-          serializeImagePulls: false
       sysctls:
         net.core.bpf_jit_harden: 1
 - name: dell-longhorn-disks
@@ -424,18 +387,12 @@ patches:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
         [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]},{"name":"dell-apple","path":"/var/mnt/longhorn-dell-apple","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-apple"]}]
-- name: dell-longhorn-disks-machine
+- name: dell-kubelet
   inline:
-    machine:
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
 - name: dell-longhorn-ssd-volume
   inline:
     apiVersion: v1alpha1
@@ -490,23 +447,11 @@ patches:
 - file: patches/threadripper-gpu-workers.yaml
 - name: kubelet-performance
   inline:
-    machine:
-      kubelet:
-        extraConfig:
-          serializeImagePulls: false
-          maxPods: 250
-- name: longhorn-storage
-  inline:
-    machine:
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
+      maxPods: 250
 # Exact GiB sizes keep the 434 GiB EPHEMERAL, 450 GiB model, 440 GiB flash and 800 GiB bulk selectors disjoint.
 - name: ai-model-cache-volume
   inline:
