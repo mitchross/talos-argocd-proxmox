@@ -90,8 +90,9 @@ spec:
             name: posthog-env
         env:
         # Here, not posthog-env.env: only this Job reads it, and that ConfigMap rolls every pod.
+        # No minimum: recorder timestamps can remain near page load during passive visits.
         - name: SELF_HOSTED_REPLAY_MIN_DURATION_MS
-          value: "2000"
+          value: "0"
         - name: INTERNAL_API_SECRET
           valueFrom:
             secretKeyRef:
