@@ -133,3 +133,44 @@ If machines are not appearing in Proxmox:
 - **hp-sff's second SSD belongs to etcd.** It holds only the control-plane VM
   (`hp-sff-cp-vmstore`); keep Longhorn disks off it
   ([why](threadripper-gpu-cluster.md#sizing)).
+
+### A drain is stuck on a Longhorn volume
+
+Longhorn's `node-drain-policy` is `block-for-eviction-if-contains-last-replica`.
+Before a node can drain, Longhorn moves each single-replica volume to another disk
+that matches the volume's disk tags. The GPU node's `ssd-flash` disk is the only
+disk with the `flash` and `clone-ok` tags, and its `gpu-bulk` disk is the only one
+with the `gpu-bulk` tag. Volumes with those tags have no other disk, so the drain
+waits forever.
+
+**Symptom.** The upgrade stops on the GPU node. `omnictl get clustermachinestatus <id> -o yaml`
+shows `lastconfigerror: ... cordon/drain before reboot failed ... evicting pods/"instance-manager-..."`.
+Replicas on the node show `evictionRequested: true`, and the new replicas never get a node:
+
+```bash
+kubectl -n longhorn-system get replicas.longhorn.io -o json \
+  | jq -r '.items[] | select(.spec.nodeID=="") | .spec.volumeName'
+# each volume's Scheduled condition says "tags not fulfilled"
+```
+
+**Fix.** Give the stuck tags a temporary second disk on a wired node, then remove them.
+
+1. Add the tags to `hp-sff-ssd`. It is wired and has the most free space:
+   ```bash
+   kubectl -n longhorn-system patch nodes.longhorn.io talos-prod-cluster-v2-hp-sff-workers-h76ncc --type=json \
+     -p='[{"op":"add","path":"/spec/disks/hp-sff-ssd/tags/-","value":"flash"},
+          {"op":"add","path":"/spec/disks/hp-sff-ssd/tags/-","value":"gpu-bulk"}]'
+   ```
+2. Wait until no replica on the GPU node has `evictionRequested: true`. Longhorn also
+   attaches detached volumes to move them, so expect about 200 GiB and 45 minutes.
+   Omni retries the drain by itself.
+3. When the GPU node is `Ready` and uncordoned, restore the original tags:
+   ```bash
+   kubectl -n longhorn-system patch nodes.longhorn.io talos-prod-cluster-v2-hp-sff-workers-h76ncc --type=merge \
+     -p='{"spec":{"disks":{"hp-sff-ssd":{"tags":["hp-sff-ssd"]}}}}'
+   ```
+
+Expected result: `longhorn-flash` volumes move back to `ssd-flash` through
+best-effort data locality, and the rest move back when hp-sff drains.
+Do not leave the tags in place: `hp-sff-ssd` is a consumer drive, and the
+`flash` class holds the heavy writers.

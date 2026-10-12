@@ -21,7 +21,7 @@ value: "replica-data;instance"
 
 ---
 # Evict a last replica to another node, then let the drain proceed (single-replica volumes would otherwise wedge Talos upgrades).
-# Volumes pinned by diskSelector (longhorn-flash) still block on their node — nowhere to evict to.
+# Volumes pinned to GPU-only disk tags (flash, gpu-bulk) still block: omni/docs/OPERATIONS.md § A drain is stuck.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:

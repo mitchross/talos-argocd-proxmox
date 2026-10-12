@@ -158,7 +158,7 @@ half-converged cluster.
   per-PVC kopiur CRs (`SnapshotPolicy`/`SnapshotSchedule`/`Restore`) and the
   `kopiur.home-operations.com/repo: cluster-kopia` namespace label render with
   each app at Wave 6.
-- Replica rebuilds stay throttled to **1/node**
+- Replica rebuilds stay throttled to **2/node**
   (`infrastructure/storage/longhorn/node-failure-settings.yaml`) — a mass
   restore saturates any engine on shared homelab hardware; do not raise it
   mid-bootstrap.
