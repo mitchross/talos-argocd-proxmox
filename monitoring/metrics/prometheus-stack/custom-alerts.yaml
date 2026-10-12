@@ -23,6 +23,15 @@ spec:
           annotations:
             summary: "Kubernetes node {{ $labels.node }} is not ready"
             description: "Node {{ $labels.node }} has been not ready for more than 5 minutes."
+        # A healthy drain finishes well inside an hour; a longer cordon is usually a Longhorn last-replica PDB.
+        - alert: KubernetesNodeCordonedTooLong
+          expr: kube_node_spec_unschedulable == 1
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kubernetes node {{ $labels.node }} has been cordoned for over 1 hour"
+            description: "Node {{ $labels.node }} is still cordoned. If a Talos upgrade drain is stuck, check `omnictl get clustermachinestatus` lastconfigerror and follow omni/docs/OPERATIONS.md § A drain is stuck on a Longhorn volume."
         - alert: KubernetesPodCrashLooping
           expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 15 > 3
           for: 5m
