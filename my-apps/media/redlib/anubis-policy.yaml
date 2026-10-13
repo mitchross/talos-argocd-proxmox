@@ -1,6 +1,10 @@
 # Anubis bot policy for redlib. Nobody is denied by geography: humans pay a one-time proof-of-work
 # (7-day cookie), verified search crawlers pass, AI scrapers are denied. Upstream data sets by (data)/.
 bots:
+  - name: allow-home-wan
+    remote_addresses:
+      - 46.110.11.137/32
+    action: ALLOW
   # Search/AI crawlers not covered by the upstream lists (seen 2026-10-05).
   - name: deny-exa-crawler
     user_agent_regex: >-
