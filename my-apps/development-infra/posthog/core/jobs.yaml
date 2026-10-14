@@ -93,6 +93,9 @@ spec:
         # No minimum: recorder timestamps can remain near page load during passive visits.
         - name: SELF_HOSTED_REPLAY_MIN_DURATION_MS
           value: "0"
+        # Added to project 1's authorized URLs, never removed; the injector puts the snippet on these hosts.
+        - name: SELF_HOSTED_APP_URLS
+          value: "https://vanillax.me,https://*.vanillax.me"
         - name: INTERNAL_API_SECRET
           valueFrom:
             secretKeyRef:

@@ -50,6 +50,7 @@ Upgrade procedure: `UPGRADE.md` (this directory).
    hash guards source drift before migration; follow `UPGRADE.md` on changes.
    `SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS` declares projects reconciled to 30d;
    `SELF_HOSTED_REPLAY_MIN_DURATION_MS` on the migrate Job sets their replay minimum.
+   `SELF_HOSTED_APP_URLS` on the migrate Job adds authorized URLs to them; it never removes UI entries.
 9. **PersonHog is required by Django person/group lookups**, including the replay
    list. Deploy its replica and router at wave 1 before migrations and app rollout.
    The replica uses `posthog-db-url` and the existing `posthog` database; do not

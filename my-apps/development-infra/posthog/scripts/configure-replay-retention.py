@@ -1,4 +1,4 @@
-"""Reconcile the declared replay settings (retention, minimum duration) through PostHog's Team model."""
+"""Reconcile the declared replay settings and authorized URLs through PostHog's Team model."""
 
 import argparse
 import os
@@ -17,6 +17,16 @@ def desired_settings():
     return settings
 
 
+def declared_app_urls():
+    return [url.strip() for url in os.environ.get("SELF_HOSTED_APP_URLS", "").split(",") if url.strip()]
+
+
+def merged_app_urls(current, declared):
+    # Additive: URLs added in the UI stay; only missing declared URLs are appended.
+    existing = [url for url in (current or []) if url]
+    return existing + [url for url in declared if url not in existing]
+
+
 def configure_retention(*, dry_run=False):
     # ConfigMap scripts live outside the image's /code Python package root.
     sys.path.insert(0, "/code")
@@ -33,7 +43,8 @@ def configure_retention(*, dry_run=False):
     if is_cloud():
         raise RuntimeError("Replay retention reconciliation is for self-hosted PostHog only")
 
-    settings = desired_settings()
+    base_settings = desired_settings()
+    app_urls = declared_app_urls()
     team_ids = [int(value) for value in os.environ["SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS"].split(",")]
     with transaction.atomic():
         for team_id in team_ids:
@@ -41,9 +52,12 @@ def configure_retention(*, dry_run=False):
             if team is None:
                 print(f"Project {team_id}: not created yet; replay settings will reconcile on the next sync")
                 continue
+            settings = dict(base_settings)
+            if app_urls:
+                settings["app_urls"] = merged_app_urls(team.app_urls, app_urls)
             changed = [field for field, value in settings.items() if getattr(team, field) != value]
             if not changed:
-                print(f"Project {team_id}: replay settings already reconciled")
+                print(f"Project {team_id}: settings already reconciled")
                 continue
             summary = ", ".join(f"{field}={settings[field]!r}" for field in changed)
             if dry_run:

@@ -17,9 +17,10 @@ spec.loader.exec_module(module)
 
 
 class Team:
-    def __init__(self, retention, min_duration=None):
+    def __init__(self, retention, min_duration=None, app_urls=None):
         self.session_recording_retention_period = retention
         self.session_recording_minimum_duration_milliseconds = min_duration
+        self.app_urls = app_urls
         self.saved_fields = []
 
     def save(self, *, update_fields):
@@ -38,7 +39,7 @@ class Manager:
 
 
 class ConfigureReplayRetentionTests(unittest.TestCase):
-    def reconcile(self, teams, *, cloud=False, dry_run=False, ids="1", min_duration=None):
+    def reconcile(self, teams, *, cloud=False, dry_run=False, ids="1", min_duration=None, app_urls=""):
         modules = {
             "django": types.SimpleNamespace(setup=lambda: None),
             "django.db": types.SimpleNamespace(transaction=types.SimpleNamespace(atomic=contextlib.nullcontext)),
@@ -48,7 +49,8 @@ class ConfigureReplayRetentionTests(unittest.TestCase):
         with (
             patch.dict(sys.modules, modules),
             patch.dict(os.environ, {"SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS": ids,
-                                    "SELF_HOSTED_REPLAY_MIN_DURATION_MS": min_duration or ""}),
+                                    "SELF_HOSTED_REPLAY_MIN_DURATION_MS": min_duration or "",
+                                    "SELF_HOSTED_APP_URLS": app_urls}),
             patch.object(sys, "path", list(sys.path)),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -110,6 +112,28 @@ class ConfigureReplayRetentionTests(unittest.TestCase):
         teams = {1: Team("5y")}
         with self.assertRaisesRegex(ValueError, ">= 0"):
             self.reconcile(teams, min_duration="-1")
+        self.assertEqual(teams[1].saved_fields, [])
+
+    def test_app_urls_are_left_alone_when_undeclared(self):
+        teams = {1: Team("30d", app_urls=["https://ui.example"])}
+        self.reconcile(teams)
+        self.assertEqual(teams[1].app_urls, ["https://ui.example"])
+        self.assertEqual(teams[1].saved_fields, [])
+
+    def test_declared_app_urls_are_added_to_empty_project(self):
+        teams = {1: Team("30d", app_urls=[None])}
+        self.reconcile(teams, app_urls="https://a.example, https://*.a.example")
+        self.assertEqual(teams[1].app_urls, ["https://a.example", "https://*.a.example"])
+        self.assertEqual(teams[1].saved_fields, [["app_urls"]])
+
+    def test_app_urls_keep_ui_entries_and_skip_duplicates(self):
+        teams = {1: Team("30d", app_urls=["https://ui.example", "https://a.example"])}
+        self.reconcile(teams, app_urls="https://a.example,https://*.a.example")
+        self.assertEqual(teams[1].app_urls, ["https://ui.example", "https://a.example", "https://*.a.example"])
+
+    def test_present_app_urls_are_not_saved_again(self):
+        teams = {1: Team("30d", app_urls=["https://*.a.example", "https://a.example"])}
+        self.reconcile(teams, app_urls="https://a.example,https://*.a.example")
         self.assertEqual(teams[1].saved_fields, [])
 
 
