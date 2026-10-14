@@ -76,5 +76,5 @@ spec:
               readOnly: true
       volumes:
         - name: bot-policy
-          configMap:
-            name: anubis-policy
+          secret:
+            secretName: anubis-policy

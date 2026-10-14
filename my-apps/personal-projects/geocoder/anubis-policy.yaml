@@ -1,6 +1,11 @@
 # Anubis bot policy for geocoder: copied from redlib. Browsers pay a one-time proof-of-work, AI scrapers are denied.
 # X-API-Key requests skip the challenge; the app 401s keys outside API_KEYS and caps the public daily demo key.
+# Rendered by ESO (anubis-policy-externalsecret.yaml): .wanCidr comes from 1Password; add no other Go-template braces.
 bots:
+  - name: allow-home-wan
+    remote_addresses:
+      - {{ .wanCidr | quote }}
+    action: ALLOW
   - name: api-key
     headers_regex:
       X-Api-Key: .+
