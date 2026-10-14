@@ -9,6 +9,7 @@ resources:
   - externalsecret.yaml
   - redis.yaml
   - anubis-deployment.yaml
+  - anubis-policy-externalsecret.yaml
   - anubis-service.yaml
   - anubis-vpa.yaml
   - anubis-podmonitor.yaml
@@ -25,8 +26,27 @@ configMapGenerator:
   - name: searxng
     envs:
       - searxng.env
-  # Hash suffix rolls Anubis when the policy changes.
-  - name: anubis-policy
+  # ESO renders this template into the anubis-policy Secret; the hash suffix rolls Anubis.
+  - name: anubis-policy-template
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-1"
     files:
       - botPolicy.yaml=anubis-policy.yaml
 namespace: searxng
+
+configurations:
+  - kustomizeconfig.yaml
+replacements:
+  - source:
+      kind: ConfigMap
+      name: anubis-policy-template
+      fieldPath: metadata.name
+    targets:
+      - select:
+          kind: Deployment
+          name: anubis
+        fieldPaths:
+          - spec.template.metadata.annotations.anubis-policy-revision
+        options:
+          create: true
