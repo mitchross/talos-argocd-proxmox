@@ -1,6 +1,11 @@
 # Anubis bot policy for redlib. Nobody is denied by geography: humans pay a one-time proof-of-work
 # (7-day cookie), verified search crawlers pass, AI scrapers are denied. Upstream data sets by (data)/.
+# Rendered by ESO (anubis-policy-externalsecret.yaml): .wanCidr comes from 1Password; add no other Go-template braces.
 bots:
+  - name: allow-home-wan
+    remote_addresses:
+      - {{ .wanCidr | quote }}
+    action: ALLOW
   # Search/AI crawlers not covered by the upstream lists (seen 2026-10-05).
   - name: deny-exa-crawler
     user_agent_regex: >-
