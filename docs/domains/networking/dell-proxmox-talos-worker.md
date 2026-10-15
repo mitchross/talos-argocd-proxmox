@@ -21,7 +21,7 @@ extensions.
 | VM | 6 vCPU, 46 GiB RAM, 128 GiB boot + 400 GiB data disk | `omni/machine-classes/dell-worker.yaml` |
 | Talos worker | DHCP on `vmbr0`, zone `dell`, link `wired` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Node class | `node.vanillax.dev/class=dell-worker` | same cluster template |
-| Longhorn | Unschedulable boot disk + schedulable T-FORCE SSD | same cluster template |
+| Longhorn | Unschedulable boot disk + schedulable Apple SSD (`dell-apple`); `dell-ssd` out of service | same cluster template |
 
 ## Networking
 
@@ -37,18 +37,19 @@ traffic. Never pin a NIC name in the machine config either.
 
 ## Storage
 
-The host boots Proxmox from a 251 GB SSD (`/dev/sdb`, LVM-thin `local-lvm`,
-151 GiB pool) and carries a separate T-FORCE 512 GB SSD (serial `TPBF2303010020100129`). That
-second device is exposed as the **thick**-LVM Proxmox storage
-`dell-ssd-vmstore` — do not use LVM-Thin for it; this repo has measured thin
-metadata commits collapsing fsync performance.
+The host boots Proxmox from a Cisco 240 GB M.2 SATA SSD (LVM-thin `local-lvm`,
+140 GiB pool). Longhorn data sits on an Apple SM0256G on a PCIe adapter, exposed
+as the **thick**-LVM storage `dell-apple-vmstore`. Do not use LVM-Thin for data
+disks; this repo has measured thin metadata commits collapsing fsync performance.
+The 400 GiB `dell-ssd-vmstore` data disk is out of service: drives on the onboard
+SATA data ports keep dropping off (see the [disk map](../storage/disk-map.md)).
 
-The machine class puts the 128 GiB boot disk on `local-lvm` and a 400 GiB data
-disk on `dell-ssd-vmstore`, so Longhorn replica writes and container image
+The machine class puts the 128 GiB boot disk on `local-lvm` and a 220 GiB data
+disk on `dell-apple-vmstore`, so Longhorn replica writes and container image
 pulls land on different physical devices. Talos formats the data disk as
-`longhorn-dell-ssd`, mounts it at `/var/mnt/longhorn-dell-ssd`, and registers
-it as a schedulable Longhorn disk tagged `dell-ssd`. The boot disk registers
-unschedulable.
+`longhorn-dell-apple`, mounts it at `/var/mnt/longhorn-dell-apple`, and
+registers it as a schedulable Longhorn disk tagged `dell-apple`. The boot disk
+registers unschedulable.
 
 That adds capacity, not redundancy: a single-replica volume placed here is
 unavailable whenever this host is down. Raise replica counts if a workload
@@ -92,8 +93,8 @@ replacement; do not combine it into a blind template sync.
    its 400 GiB provider-owned disk.
 
 2. In **Node → Disks → LVM**, confirm the thick volume group/storage
-   `dell-ssd-vmstore` (VG `dell-ssd-vg`) exists on the T-FORCE SSD with **Add Storage**
-   enabled. Stop if `pvs` shows `dell-ssd-vg` on any other drive.
+   `dell-ssd-vmstore` (VG `dell-ssd-vg`) exists and is active. While it is out of
+   service, remove its disk from the machine class first, or the VM create fails.
 
 3. Apply the machine class, validate the template, and inspect the dry run:
 

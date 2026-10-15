@@ -30,8 +30,8 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # Longhorn disk on the T-FORCE 512 GB SSD, a different spindle
-      # from the boot pool: replica writes never contend with image pulls. Needs
+      # Out of service: drives on the onboard SATA data ports drop off; Longhorn
+      # scheduling on dell-ssd is off. Separate spindle from the boot pool. Needs
       # a thick-LVM Proxmox storage `dell-ssd-vmstore`; 400 GiB of 477 leaves
       # ~77 GiB headroom. Do not use LVM-thin: this repo has measured its
       # metadata commits collapsing fsync performance.
