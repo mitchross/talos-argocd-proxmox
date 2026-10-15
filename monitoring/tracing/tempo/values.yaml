@@ -4,14 +4,16 @@ serviceMonitor:
 tempo:
   # Firewalla blocks stats.grafana.org; with reporting on Tempo retried ~79k DNS lookups/day.
   reportingEnabled: false
-  # TraceQL metrics queries ("| rate()" etc., e.g. Grafana trace drilldown) execute
-  # in the metrics-generator; the chart ships it off, leaving the generator ring empty.
-  # local_blocks only; the default remote_write URL is unused without a span_metrics processor.
+  # TraceQL metrics (Grafana drilldown) need the generator AND the local-blocks override.
   metricsGenerator:
     enabled: true
     processor:
       local_blocks:
         flush_to_storage: true
+  overrides:
+    defaults:
+      metrics_generator:
+        processors: [local-blocks]
   receivers:
     otlp:
       protocols:
