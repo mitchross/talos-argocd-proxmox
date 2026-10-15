@@ -1,5 +1,4 @@
-# Rebalances stateless pods only (docs/domains/scheduling/descheduler.md). PodsWithPVC stays protected:
-# moving one means volume downtime, and a full Longhorn copy on the flash/wired-ha classes.
+# Rebalances on memory *requests* (what blocks scheduling), not live use. Guards: docs/domains/scheduling/descheduler.md.
 kind: CronJob
 schedule: "*/30 * * * *"
 successfulJobsHistoryLimit: 1
@@ -24,20 +23,25 @@ deschedulerPolicy:
           args:
             nodeFit: true
             podProtections:
+              # emptyDir is scratch space; pods using it may move.
+              defaultDisabled:
+                - PodsWithLocalStorage
               extraEnabled:
                 - PodsWithPVC
+              config:
+                PodsWithPVC:
+                  # best-effort data locality: a move = full Longhorn volume copy (disk-writes.md). Plain `longhorn` reattaches over the network.
+                  protectedStorageClasses:
+                    - name: longhorn-flash
+                    - name: longhorn-wired-ha
         - name: RemoveDuplicates
-        # Requests-based: under 25% is a donor target, over 60% sheds pods.
+        # Memory only (cpu/pods omitted = 100% = ignored): under 55% receives, over 70% sheds. 15-pt gap stops ping-pong.
         - name: LowNodeUtilization
           args:
             thresholds:
-              cpu: 25
-              memory: 25
-              pods: 25
+              memory: 55
             targetThresholds:
-              cpu: 60
-              memory: 60
-              pods: 60
+              memory: 70
       plugins:
         balance:
           enabled:

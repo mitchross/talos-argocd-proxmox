@@ -27,22 +27,24 @@ It runs as a CronJob with two rules:
 
 - **RemoveDuplicates:** if two replicas of the same app ended up on one node, move
   one, so losing that node doesn't take out every copy.
-- **LowNodeUtilization:** if some nodes are busy (above 60% of CPU, memory or pod
-  count) **and** some are quiet (below 25%), move pods from busy to quiet. It uses
-  the pods' *requests* (what they reserve), not live usage.
+- **LowNodeUtilization:** if some nodes are busy (above 70% of memory requests)
+  **and** some are quiet (below 55%), move pods from busy to quiet until the busy
+  node drops under 70% or the quiet one passes 55%. Memory only: CPU and pod count
+  are never tight here. It uses the pods' *requests* (what they reserve), not live
+  usage, because requests are what stop new pods from scheduling.
 
 ## The guards, and why each exists
 
 | Guard | Why |
 |---|---|
-| **Pods with a PVC are never moved** | A pod with a `ReadWriteOnce` volume goes down while the volume detaches and re-attaches on the new node. For the `longhorn-flash` and `longhorn-wired-ha` classes, which keep Longhorn data locality on, the move also makes Longhorn copy the whole volume to the new node: exactly the kind of write storm the [disk-write rules](../storage/disk-writes.md) exist to stop. |
+| **Pods on `longhorn-flash` or `longhorn-wired-ha` are never moved** | Those classes keep Longhorn data locality on, so a move makes Longhorn copy the whole volume to the new node: exactly the write storm the [disk-write rules](../storage/disk-writes.md) exist to stop. Pods on the plain `longhorn` class (locality off, 1 replica) **may** move: the volume re-attaches over the network and the pod is down for about a minute. Pods with only an `emptyDir` may move too; that is scratch space. |
 | `nodeFit` | Only evict a pod if another node can actually run it; otherwise it would bounce back or sit `Pending`. |
 | At most 3 evictions per node per run | Rebalancing happens gradually, never as a flood of restarts. |
 | PodDisruptionBudgets are respected | An app that declares "keep at least one running" is never taken to zero. |
 
-Because of the first guard, databases and other stateful apps stay where they are.
-If one of those nodes is badly overloaded, move a stateful app by hand during a
-quiet moment.
+Because of the first guard, the Loki and Grafana stack (`longhorn-flash`) and the
+`longhorn-wired-ha` databases stay where they are. Everything else, including
+databases on the plain `longhorn` class, can be moved a few at a time.
 
 ## Reading a run
 
@@ -59,11 +61,11 @@ Example output, and what it means:
 "Number of evictions/requests"  totalEvicted=0
 ```
 
-Three nodes are above 60% and none is below 25%, so there is nowhere better to put
+Three nodes are above 70% and none is below 55%, so there is nowhere better to put
 anything, and it correctly moves nothing. That signals the cluster is **full on
 requests**, not unbalanced. The fix for that is lowering requests (the
-[VPA](vpa-and-topology.md) does this over time) or adding capacity, not tuning
-the descheduler.
+[VPA](vpa-and-topology.md) does this over time; check its `minAllowed` floors) or
+adding capacity, not tuning the descheduler.
 
 `totalEvicted` above zero, with the named pods landing on quieter nodes, is the
 descheduler doing its job. Seeing the same pods evicted every run means the
