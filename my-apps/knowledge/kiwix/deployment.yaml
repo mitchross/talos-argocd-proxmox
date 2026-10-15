@@ -25,14 +25,22 @@ spec:
         - name: kiwix
           image: ghcr.io/kiwix/kiwix-serve:latest@sha256:2ebf0615402bd6ad803ab39f738246cd10619b280d34621dea646112c53194bf
           imagePullPolicy: IfNotPresent
+          command: ["kiwix-serve"]
           args:
-            - "*.zim"
+            - --port=8080
+            - --library
+            - --monitorLibrary
+            - /library/library.xml
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
             - name: data
               mountPath: /data
+              readOnly: true
+            - name: library
+              mountPath: /library
+              readOnly: true
           resources:
             requests:
               cpu: 100m
@@ -51,7 +59,50 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
+        - name: library-indexer
+          image: ghcr.io/kiwix/kiwix-serve:latest@sha256:2ebf0615402bd6ad803ab39f738246cd10619b280d34621dea646112c53194bf
+          command: ["sh", "/opt/library/index-library.sh"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              readOnly: true
+            - name: library
+              mountPath: /library
+            - name: library-scripts
+              mountPath: /opt/library
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: kiwix-data
+        - name: library
+          emptyDir: {}
+        - name: library-scripts
+          configMap:
+            name: kiwix-library-scripts
+      initContainers:
+        - name: initialize-library
+          image: ghcr.io/kiwix/kiwix-serve:latest@sha256:2ebf0615402bd6ad803ab39f738246cd10619b280d34621dea646112c53194bf
+          command: ["sh", "/opt/library/index-library.sh"]
+          args: ["--once"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              readOnly: true
+            - name: library
+              mountPath: /library
+            - name: library-scripts
+              mountPath: /opt/library
+              readOnly: true

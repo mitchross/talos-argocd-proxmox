@@ -5,47 +5,38 @@ radios over a Wi-Fi bridge. TrueNAS holds the big files and backups, and a Pi
 runs Omni and DNS. Click a machine to see what is inside it, or explore the
 private, public and shed network paths below.
 
-**Start with the [September 20 capacity verdicts](inventory/2026-09-20-capacity-and-benchmarks.md)**
-for current Proxmox disk speeds, Kubernetes storage paths, RAM headroom and
-consolidation limits. Select a machine below for its dated inventory and latest
-measurement summary. The [NAS reference](nas-performance.md) separates physical
-disk reads, RAM cache and flushed writes.
+**[October 15 full inventory](inventory/2026-10-15-full-inventory.md)** covers all
+seven hosts, VM allocations, physical disks, Talos mounts and storage accounting.
+The explorer below uses that refreshed snapshot. Performance measurements retain
+their September 20 and October 11 dates.
 
 <div id="lab-explorer">
-  <p>The interactive inventory is loading. The <a href="../audits/2026-09-05-inventory/">full written inventory</a> is also available.</p>
+  <p>The interactive inventory is loading. The <a href="../inventory/2026-10-15-full-inventory/">full written inventory</a> is also available.</p>
 </div>
 
-## Current priorities — September 20
+## Findings — October 15
 
-1. **Protect data before removing a host.** 84 of 89 Longhorn volumes have one
-   replica; the GPU host holds 44 sole copies. SFF still hosts the only control plane.
-2. **Investigate SFF contention before choosing a replacement.** Its root/worker
-   disk had slow bulk writes, and both guests showed CPU steal. The control-plane
-   disk is separate; its etcd history is the relevant evidence for that path.
-3. **Plan Dell retirement as a migration, not a power-off.** Its applications are
-   the best consolidation candidate, but data, replica protection and placement
-   constraints must be resolved first. Keep device-bound Elite and Shed roles distinct.
-4. **Keep NAS RAM and check cooling.** The cache is useful; smaller replacement
-   capacities remain unvalidated. BigTank HDDs at 54–58°C justify airflow checks.
+- Dell’s `dell-ssd-vmstore` was inactive and its physical T-FORCE drive was absent.
+  Talos still reported the mount. These observations do not establish successful disk I/O.
+- SFF’s control plane uses the Intel S3610. Its spare PNY SSD has no volume group.
+- The GPU host has two RTX 3090s and separate system, model-cache, enterprise and bulk-storage paths.
+- All four NAS pools reported ONLINE. The local replication task still had no schedule and a May 2025 completion.
 
-These recommendations replace the September 5 purchase ordering. The
-[latest report](audits/2026-09-20-homelab-report.html) explains the priorities;
-the [fleet assessment](inventory/2026-09-20-capacity-and-benchmarks.md) owns current
-host and guest benchmarks. The [recovery guide](disaster-recovery.md) owns
-operational recovery procedures.
+The [full inventory](inventory/2026-10-15-full-inventory.md) records the evidence
+and limits. Historical performance results remain in the
+[fleet assessment](inventory/2026-09-20-capacity-and-benchmarks.md) and
+[October disk measurements](inventory/2026-10-11-etcd-and-dell-boot-disks.md).
 
 ## What this page knows
 
-The hardware inventory is the **September 5, 2026 audit snapshot**, with a
-separately dated **September 20 NAS, Proxmox and Kubernetes performance updates**. This
-is not a live monitoring screen.
-Host hardware and disks came from read-only SSH inspection. Node IPs and software
-versions were checked again at **2026-09-06 01:48 UTC** after the
-[Talos and Kubernetes upgrade](audits/2026-09-05-upgrade-and-disks.md).
-Pod placement and claims still use the earlier audit snapshot, which includes
-applications subsequently retired. The
-"what if" view explains dependencies; it does not switch machines off or prove
-a measured recovery time.
+The hardware, VM, node, pod placement and claim inventory was collected on
+**October 15, 2026**, through read-only SSH, Kubernetes and Talos APIs.
+This is not a live monitoring screen. Queries ran separately, so the data is
+not an atomic snapshot. Network diagrams retain their documented design;
+router, bridge, DNS and HTTP paths were not tested.
+
+The “what if” view explains dependencies. It does not switch machines off
+or prove recovery time. Historical benchmarks retain their own dates and paths.
 
 Physical-drive sizes use decimal GB/TB. VM disks and RAM use GiB/MiB. Disk bars
 compare capacity within a host; they do not claim to show used space. NAS pool

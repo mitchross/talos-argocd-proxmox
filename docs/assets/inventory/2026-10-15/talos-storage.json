@@ -1,0 +1,3975 @@
+[
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 4096,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 135168,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 20480,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 1290240,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 598016,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 93835264,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 107374182400,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "disks",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 135168,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 20480,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 1290240,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 598016,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 93835264,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 107374182400,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda1",
+    "dev_path": "/dev/sda1",
+    "size": 104857600,
+    "type": "partition",
+    "name": "vfat",
+    "partition_label": "EFI"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda2",
+    "dev_path": "/dev/sda2",
+    "size": 1048576,
+    "type": "partition",
+    "name": "",
+    "partition_label": "BIOS"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda3",
+    "dev_path": "/dev/sda3",
+    "size": 2097152000,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "BOOT"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda4",
+    "dev_path": "/dev/sda4",
+    "size": 1048576,
+    "type": "partition",
+    "name": "talosmeta",
+    "partition_label": "META"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda5",
+    "dev_path": "/dev/sda5",
+    "size": 104857600,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "STATE"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda6",
+    "dev_path": "/dev/sda6",
+    "size": 34359738368,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "ETCD"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sda7",
+    "dev_path": "/dev/sda7",
+    "size": 68719476736,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "EPHEMERAL"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "discoveredvolumes",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/opt",
+    "source": "",
+    "target": "/opt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/lib",
+    "source": "",
+    "target": "/var/lib",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/lib/cni",
+    "source": "",
+    "target": "/var/lib/cni",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp/profiles",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp/profiles",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/log/audit",
+    "source": "",
+    "target": "/var/log/audit",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/log/audit/kube",
+    "source": "",
+    "target": "/var/log/audit/kube",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/log/containers",
+    "source": "",
+    "target": "/var/log/containers",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/log/pods",
+    "source": "",
+    "target": "/var/log/pods",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/mnt",
+    "source": "",
+    "target": "/var/mnt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/run",
+    "source": "",
+    "target": "/var/run",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "/var/run/lock",
+    "source": "",
+    "target": "/var/run/lock",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "CRI",
+    "source": "",
+    "target": "/var/lib/containerd",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "EPHEMERAL",
+    "source": "/dev/sda7",
+    "target": "/var",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "ETCD",
+    "source": "/dev/sda6",
+    "target": "/var/lib/etcd",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "KUBELET",
+    "source": "",
+    "target": "/var/lib/kubelet",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-control-planes-7mxjxv",
+    "resource": "mountstatus",
+    "id": "LOG",
+    "source": "",
+    "target": "/var/log",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 4096,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 819200,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 20480,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 1290240,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 598016,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop7",
+    "dev_path": "/dev/loop7",
+    "size": 2211840,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "loop8",
+    "dev_path": "/dev/loop8",
+    "size": 93835264,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 429496729600,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 236223201280,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "disks",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 819200,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 20480,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 1290240,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 598016,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop7",
+    "dev_path": "/dev/loop7",
+    "size": 2211840,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "loop8",
+    "dev_path": "/dev/loop8",
+    "size": 93835264,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sda1",
+    "dev_path": "/dev/sda1",
+    "size": 104857600,
+    "type": "partition",
+    "name": "vfat",
+    "partition_label": "EFI"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sda2",
+    "dev_path": "/dev/sda2",
+    "size": 1048576,
+    "type": "partition",
+    "name": "",
+    "partition_label": "BIOS"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sda3",
+    "dev_path": "/dev/sda3",
+    "size": 2097152000,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "BOOT"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sda4",
+    "dev_path": "/dev/sda4",
+    "size": 1048576,
+    "type": "partition",
+    "name": "talosmeta",
+    "partition_label": "META"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sda5",
+    "dev_path": "/dev/sda5",
+    "size": 104857600,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "STATE"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sda6",
+    "dev_path": "/dev/sda6",
+    "size": 135127891968,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "EPHEMERAL"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 429496729600,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sdb1",
+    "dev_path": "/dev/sdb1",
+    "size": 429494632448,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-longhorn-dell-ssd"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 236223201280,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sdc1",
+    "dev_path": "/dev/sdc1",
+    "size": 236221104128,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-longhorn-dell-apple"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "discoveredvolumes",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/opt",
+    "source": "",
+    "target": "/opt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/lib",
+    "source": "",
+    "target": "/var/lib",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/lib/cni",
+    "source": "",
+    "target": "/var/lib/cni",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp/profiles",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp/profiles",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/log/audit",
+    "source": "",
+    "target": "/var/log/audit",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/log/audit/kube",
+    "source": "",
+    "target": "/var/log/audit/kube",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/log/containers",
+    "source": "",
+    "target": "/var/log/containers",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/log/pods",
+    "source": "",
+    "target": "/var/log/pods",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/mnt",
+    "source": "",
+    "target": "/var/mnt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/run",
+    "source": "",
+    "target": "/var/run",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "/var/run/lock",
+    "source": "",
+    "target": "/var/run/lock",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "CRI",
+    "source": "",
+    "target": "/var/lib/containerd",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "EPHEMERAL",
+    "source": "/dev/sda6",
+    "target": "/var",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "KUBELET",
+    "source": "",
+    "target": "/var/lib/kubelet",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "LOG",
+    "source": "",
+    "target": "/var/log",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "u-longhorn-dell-apple",
+    "source": "/dev/sdc1",
+    "target": "/var/mnt/longhorn-dell-apple",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "resource": "mountstatus",
+    "id": "u-longhorn-dell-ssd",
+    "source": "/dev/sdb1",
+    "target": "/var/mnt/longhorn-dell-ssd",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 4096,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 309866496,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 87179264,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 598016,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 93835264,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 17179869184,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdaa",
+    "dev_path": "/dev/sdaa",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdab",
+    "dev_path": "/dev/sdab",
+    "size": 8589934592,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdac",
+    "dev_path": "/dev/sdac",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdae",
+    "dev_path": "/dev/sdae",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdaf",
+    "dev_path": "/dev/sdaf",
+    "size": 2147483648,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdag",
+    "dev_path": "/dev/sdag",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdah",
+    "dev_path": "/dev/sdah",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdaj",
+    "dev_path": "/dev/sdaj",
+    "size": 1073741824,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdak",
+    "dev_path": "/dev/sdak",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdam",
+    "dev_path": "/dev/sdam",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdan",
+    "dev_path": "/dev/sdan",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdao",
+    "dev_path": "/dev/sdao",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdap",
+    "dev_path": "/dev/sdap",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 466003951616,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 483183820800,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdd",
+    "dev_path": "/dev/sdd",
+    "size": 472446402560,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 858993459200,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdf",
+    "dev_path": "/dev/sdf",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdg",
+    "dev_path": "/dev/sdg",
+    "size": 17179869184,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdh",
+    "dev_path": "/dev/sdh",
+    "size": 4294967296,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdi",
+    "dev_path": "/dev/sdi",
+    "size": 1073741824,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdj",
+    "dev_path": "/dev/sdj",
+    "size": 42949672960,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdk",
+    "dev_path": "/dev/sdk",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdm",
+    "dev_path": "/dev/sdm",
+    "size": 34359738368,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdn",
+    "dev_path": "/dev/sdn",
+    "size": 64424509440,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdo",
+    "dev_path": "/dev/sdo",
+    "size": 53687091200,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdp",
+    "dev_path": "/dev/sdp",
+    "size": 64424509440,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdq",
+    "dev_path": "/dev/sdq",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdr",
+    "dev_path": "/dev/sdr",
+    "size": 107374182400,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sds",
+    "dev_path": "/dev/sds",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdt",
+    "dev_path": "/dev/sdt",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdu",
+    "dev_path": "/dev/sdu",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdv",
+    "dev_path": "/dev/sdv",
+    "size": 2147483648,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdw",
+    "dev_path": "/dev/sdw",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdx",
+    "dev_path": "/dev/sdx",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdy",
+    "dev_path": "/dev/sdy",
+    "size": 1073741824,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sdz",
+    "dev_path": "/dev/sdz",
+    "size": 1073741824,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "disks",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 309866496,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 87179264,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 598016,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 93835264,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 17179869184,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sda1",
+    "dev_path": "/dev/sda1",
+    "size": 2203058176,
+    "type": "partition",
+    "name": "vfat",
+    "partition_label": "EFI"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sda2",
+    "dev_path": "/dev/sda2",
+    "size": 1048576,
+    "type": "partition",
+    "name": "talosmeta",
+    "partition_label": "META"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sda3",
+    "dev_path": "/dev/sda3",
+    "size": 104857600,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "STATE"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdaa",
+    "dev_path": "/dev/sdaa",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdab",
+    "dev_path": "/dev/sdab",
+    "size": 8589934592,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdac",
+    "dev_path": "/dev/sdac",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdae",
+    "dev_path": "/dev/sdae",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdaf",
+    "dev_path": "/dev/sdaf",
+    "size": 2147483648,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdag",
+    "dev_path": "/dev/sdag",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdah",
+    "dev_path": "/dev/sdah",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdaj",
+    "dev_path": "/dev/sdaj",
+    "size": 1073741824,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdak",
+    "dev_path": "/dev/sdak",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdam",
+    "dev_path": "/dev/sdam",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdan",
+    "dev_path": "/dev/sdan",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdao",
+    "dev_path": "/dev/sdao",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdap",
+    "dev_path": "/dev/sdap",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 466003951616,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdb1",
+    "dev_path": "/dev/sdb1",
+    "size": 466001854464,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "EPHEMERAL"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 483183820800,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdc1",
+    "dev_path": "/dev/sdc1",
+    "size": 483181723648,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-ai-model-cache"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdd",
+    "dev_path": "/dev/sdd",
+    "size": 472446402560,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdd1",
+    "dev_path": "/dev/sdd1",
+    "size": 472444305408,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-longhorn-ssd-flash"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 858993459200,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sde1",
+    "dev_path": "/dev/sde1",
+    "size": 858991362048,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-longhorn-gpu-bulk"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdf",
+    "dev_path": "/dev/sdf",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdg",
+    "dev_path": "/dev/sdg",
+    "size": 17179869184,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdh",
+    "dev_path": "/dev/sdh",
+    "size": 4294967296,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdi",
+    "dev_path": "/dev/sdi",
+    "size": 1073741824,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdj",
+    "dev_path": "/dev/sdj",
+    "size": 42949672960,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdk",
+    "dev_path": "/dev/sdk",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdm",
+    "dev_path": "/dev/sdm",
+    "size": 34359738368,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdn",
+    "dev_path": "/dev/sdn",
+    "size": 64424509440,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdo",
+    "dev_path": "/dev/sdo",
+    "size": 53687091200,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdp",
+    "dev_path": "/dev/sdp",
+    "size": 64424509440,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdq",
+    "dev_path": "/dev/sdq",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdr",
+    "dev_path": "/dev/sdr",
+    "size": 107374182400,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sds",
+    "dev_path": "/dev/sds",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdt",
+    "dev_path": "/dev/sdt",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdu",
+    "dev_path": "/dev/sdu",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdv",
+    "dev_path": "/dev/sdv",
+    "size": 2147483648,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdw",
+    "dev_path": "/dev/sdw",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdx",
+    "dev_path": "/dev/sdx",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdy",
+    "dev_path": "/dev/sdy",
+    "size": 1073741824,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sdz",
+    "dev_path": "/dev/sdz",
+    "size": 1073741824,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "discoveredvolumes",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/opt",
+    "source": "",
+    "target": "/opt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/lib",
+    "source": "",
+    "target": "/var/lib",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/lib/cni",
+    "source": "",
+    "target": "/var/lib/cni",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp/profiles",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp/profiles",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/log/audit",
+    "source": "",
+    "target": "/var/log/audit",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/log/audit/kube",
+    "source": "",
+    "target": "/var/log/audit/kube",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/log/containers",
+    "source": "",
+    "target": "/var/log/containers",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/log/pods",
+    "source": "",
+    "target": "/var/log/pods",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/mnt",
+    "source": "",
+    "target": "/var/mnt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/run",
+    "source": "",
+    "target": "/var/run",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "/var/run/lock",
+    "source": "",
+    "target": "/var/run/lock",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "CRI",
+    "source": "",
+    "target": "/var/lib/containerd",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "EPHEMERAL",
+    "source": "/dev/sdb1",
+    "target": "/var",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "KUBELET",
+    "source": "",
+    "target": "/var/lib/kubelet",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "LOG",
+    "source": "",
+    "target": "/var/log",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "u-ai-model-cache",
+    "source": "/dev/sdc1",
+    "target": "/var/mnt/ai-model-cache",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "u-longhorn-gpu-bulk",
+    "source": "/dev/sde1",
+    "target": "/var/mnt/longhorn-gpu-bulk",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "resource": "mountstatus",
+    "id": "u-longhorn-ssd-flash",
+    "source": "/dev/sdd1",
+    "target": "/var/mnt/longhorn-ssd-flash",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 4096,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 819200,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 20480,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 1290240,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 598016,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop7",
+    "dev_path": "/dev/loop7",
+    "size": 2211840,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "loop8",
+    "dev_path": "/dev/loop8",
+    "size": 93835264,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 472446402560,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdd",
+    "dev_path": "/dev/sdd",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdf",
+    "dev_path": "/dev/sdf",
+    "size": 53687091200,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdh",
+    "dev_path": "/dev/sdh",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdi",
+    "dev_path": "/dev/sdi",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdj",
+    "dev_path": "/dev/sdj",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdk",
+    "dev_path": "/dev/sdk",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sdl",
+    "dev_path": "/dev/sdl",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "disks",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 819200,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 20480,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 1290240,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 598016,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop7",
+    "dev_path": "/dev/loop7",
+    "size": 2211840,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "loop8",
+    "dev_path": "/dev/loop8",
+    "size": 93835264,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sda1",
+    "dev_path": "/dev/sda1",
+    "size": 104857600,
+    "type": "partition",
+    "name": "vfat",
+    "partition_label": "EFI"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sda2",
+    "dev_path": "/dev/sda2",
+    "size": 1048576,
+    "type": "partition",
+    "name": "",
+    "partition_label": "BIOS"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sda3",
+    "dev_path": "/dev/sda3",
+    "size": 2097152000,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "BOOT"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sda4",
+    "dev_path": "/dev/sda4",
+    "size": 1048576,
+    "type": "partition",
+    "name": "talosmeta",
+    "partition_label": "META"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sda5",
+    "dev_path": "/dev/sda5",
+    "size": 104857600,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "STATE"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sda6",
+    "dev_path": "/dev/sda6",
+    "size": 135127891968,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "EPHEMERAL"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 472446402560,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdb1",
+    "dev_path": "/dev/sdb1",
+    "size": 472444305408,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-longhorn-hp-elite-nvme"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdd",
+    "dev_path": "/dev/sdd",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdf",
+    "dev_path": "/dev/sdf",
+    "size": 53687091200,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdh",
+    "dev_path": "/dev/sdh",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdi",
+    "dev_path": "/dev/sdi",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdj",
+    "dev_path": "/dev/sdj",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdk",
+    "dev_path": "/dev/sdk",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sdl",
+    "dev_path": "/dev/sdl",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "discoveredvolumes",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/opt",
+    "source": "",
+    "target": "/opt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/lib",
+    "source": "",
+    "target": "/var/lib",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/lib/cni",
+    "source": "",
+    "target": "/var/lib/cni",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp/profiles",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp/profiles",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/log/audit",
+    "source": "",
+    "target": "/var/log/audit",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/log/audit/kube",
+    "source": "",
+    "target": "/var/log/audit/kube",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/log/containers",
+    "source": "",
+    "target": "/var/log/containers",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/log/pods",
+    "source": "",
+    "target": "/var/log/pods",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/mnt",
+    "source": "",
+    "target": "/var/mnt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/run",
+    "source": "",
+    "target": "/var/run",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "/var/run/lock",
+    "source": "",
+    "target": "/var/run/lock",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "CRI",
+    "source": "",
+    "target": "/var/lib/containerd",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "EPHEMERAL",
+    "source": "/dev/sda6",
+    "target": "/var",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "KUBELET",
+    "source": "",
+    "target": "/var/lib/kubelet",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "LOG",
+    "source": "",
+    "target": "/var/log",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "resource": "mountstatus",
+    "id": "u-longhorn-hp-elite-nvme",
+    "source": "/dev/sdb1",
+    "target": "/var/mnt/longhorn-hp-elite-nvme",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 4096,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 135168,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 819200,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 20480,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 1290240,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 598016,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 93835264,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 912680550400,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "disks",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 135168,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 819200,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 20480,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 1290240,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 598016,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 93835264,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sda1",
+    "dev_path": "/dev/sda1",
+    "size": 104857600,
+    "type": "partition",
+    "name": "vfat",
+    "partition_label": "EFI"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sda2",
+    "dev_path": "/dev/sda2",
+    "size": 1048576,
+    "type": "partition",
+    "name": "",
+    "partition_label": "BIOS"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sda3",
+    "dev_path": "/dev/sda3",
+    "size": 2097152000,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "BOOT"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sda4",
+    "dev_path": "/dev/sda4",
+    "size": 1048576,
+    "type": "partition",
+    "name": "talosmeta",
+    "partition_label": "META"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sda5",
+    "dev_path": "/dev/sda5",
+    "size": 104857600,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "STATE"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sda6",
+    "dev_path": "/dev/sda6",
+    "size": 135127891968,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "EPHEMERAL"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 912680550400,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sdb1",
+    "dev_path": "/dev/sdb1",
+    "size": 912678453248,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-longhorn-hp-micro-ssd"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "discoveredvolumes",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/opt",
+    "source": "",
+    "target": "/opt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/lib",
+    "source": "",
+    "target": "/var/lib",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/lib/cni",
+    "source": "",
+    "target": "/var/lib/cni",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp/profiles",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp/profiles",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/log/audit",
+    "source": "",
+    "target": "/var/log/audit",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/log/audit/kube",
+    "source": "",
+    "target": "/var/log/audit/kube",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/log/containers",
+    "source": "",
+    "target": "/var/log/containers",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/log/pods",
+    "source": "",
+    "target": "/var/log/pods",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/mnt",
+    "source": "",
+    "target": "/var/mnt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/run",
+    "source": "",
+    "target": "/var/run",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "/var/run/lock",
+    "source": "",
+    "target": "/var/run/lock",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "CRI",
+    "source": "",
+    "target": "/var/lib/containerd",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "EPHEMERAL",
+    "source": "/dev/sda6",
+    "target": "/var",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "KUBELET",
+    "source": "",
+    "target": "/var/lib/kubelet",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "LOG",
+    "source": "",
+    "target": "/var/log",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "resource": "mountstatus",
+    "id": "u-longhorn-hp-micro-ssd",
+    "source": "/dev/sdb1",
+    "target": "/var/mnt/longhorn-hp-micro-ssd",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop1",
+    "dev_path": "/dev/loop1",
+    "size": 4096,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 819200,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 20480,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 1290240,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 598016,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop7",
+    "dev_path": "/dev/loop7",
+    "size": 2211840,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "loop8",
+    "dev_path": "/dev/loop8",
+    "size": 93835264,
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 740881858560,
+    "model": "QEMU HARDDISK",
+    "transport": "virtio",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdd",
+    "dev_path": "/dev/sdd",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdf",
+    "dev_path": "/dev/sdf",
+    "size": 53687091200,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdg",
+    "dev_path": "/dev/sdg",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdh",
+    "dev_path": "/dev/sdh",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdi",
+    "dev_path": "/dev/sdi",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdj",
+    "dev_path": "/dev/sdj",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdk",
+    "dev_path": "/dev/sdk",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdl",
+    "dev_path": "/dev/sdl",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdm",
+    "dev_path": "/dev/sdm",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdn",
+    "dev_path": "/dev/sdn",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdo",
+    "dev_path": "/dev/sdo",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdp",
+    "dev_path": "/dev/sdp",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdq",
+    "dev_path": "/dev/sdq",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdr",
+    "dev_path": "/dev/sdr",
+    "size": 107374182400,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sds",
+    "dev_path": "/dev/sds",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdt",
+    "dev_path": "/dev/sdt",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdu",
+    "dev_path": "/dev/sdu",
+    "size": 21474836480,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdv",
+    "dev_path": "/dev/sdv",
+    "size": 53687091200,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdw",
+    "dev_path": "/dev/sdw",
+    "size": 5368709120,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sdy",
+    "dev_path": "/dev/sdy",
+    "size": 10737418240,
+    "model": "VIRTUAL-DISK",
+    "transport": "iscsi",
+    "cdrom": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "disks",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "model": "QEMU DVD-ROM",
+    "transport": "sata",
+    "cdrom": true
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop0",
+    "dev_path": "/dev/loop0",
+    "size": 196608,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop2",
+    "dev_path": "/dev/loop2",
+    "size": 135168,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop3",
+    "dev_path": "/dev/loop3",
+    "size": 819200,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop4",
+    "dev_path": "/dev/loop4",
+    "size": 20480,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop5",
+    "dev_path": "/dev/loop5",
+    "size": 1290240,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop6",
+    "dev_path": "/dev/loop6",
+    "size": 598016,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop7",
+    "dev_path": "/dev/loop7",
+    "size": 2211840,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "loop8",
+    "dev_path": "/dev/loop8",
+    "size": 93835264,
+    "type": "disk",
+    "name": "squashfs"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sda",
+    "dev_path": "/dev/sda",
+    "size": 137438953472,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sda1",
+    "dev_path": "/dev/sda1",
+    "size": 104857600,
+    "type": "partition",
+    "name": "vfat",
+    "partition_label": "EFI"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sda2",
+    "dev_path": "/dev/sda2",
+    "size": 1048576,
+    "type": "partition",
+    "name": "",
+    "partition_label": "BIOS"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sda3",
+    "dev_path": "/dev/sda3",
+    "size": 2097152000,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "BOOT"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sda4",
+    "dev_path": "/dev/sda4",
+    "size": 1048576,
+    "type": "partition",
+    "name": "talosmeta",
+    "partition_label": "META"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sda5",
+    "dev_path": "/dev/sda5",
+    "size": 104857600,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "STATE"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sda6",
+    "dev_path": "/dev/sda6",
+    "size": 135127891968,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "EPHEMERAL"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdb",
+    "dev_path": "/dev/sdb",
+    "size": 740881858560,
+    "type": "disk",
+    "name": "gpt"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdb1",
+    "dev_path": "/dev/sdb1",
+    "size": 740879761408,
+    "type": "partition",
+    "name": "xfs",
+    "partition_label": "u-longhorn-hp-sff-ssd"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdc",
+    "dev_path": "/dev/sdc",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdd",
+    "dev_path": "/dev/sdd",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sde",
+    "dev_path": "/dev/sde",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdf",
+    "dev_path": "/dev/sdf",
+    "size": 53687091200,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdg",
+    "dev_path": "/dev/sdg",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdh",
+    "dev_path": "/dev/sdh",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdi",
+    "dev_path": "/dev/sdi",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdj",
+    "dev_path": "/dev/sdj",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdk",
+    "dev_path": "/dev/sdk",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdl",
+    "dev_path": "/dev/sdl",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdm",
+    "dev_path": "/dev/sdm",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdn",
+    "dev_path": "/dev/sdn",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdo",
+    "dev_path": "/dev/sdo",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdp",
+    "dev_path": "/dev/sdp",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdq",
+    "dev_path": "/dev/sdq",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdr",
+    "dev_path": "/dev/sdr",
+    "size": 107374182400,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sds",
+    "dev_path": "/dev/sds",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdt",
+    "dev_path": "/dev/sdt",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdu",
+    "dev_path": "/dev/sdu",
+    "size": 21474836480,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdv",
+    "dev_path": "/dev/sdv",
+    "size": 53687091200,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdw",
+    "dev_path": "/dev/sdw",
+    "size": 5368709120,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sdy",
+    "dev_path": "/dev/sdy",
+    "size": 10737418240,
+    "type": "disk",
+    "name": "ext4"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sr0",
+    "dev_path": "/dev/sr0",
+    "size": 57344,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "discoveredvolumes",
+    "id": "sr1",
+    "dev_path": "/dev/sr1",
+    "size": 366292992,
+    "type": "disk",
+    "name": "iso9660"
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/opt",
+    "source": "",
+    "target": "/opt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/lib",
+    "source": "",
+    "target": "/var/lib",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/lib/cni",
+    "source": "",
+    "target": "/var/lib/cni",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/lib/kubelet/seccomp/profiles",
+    "source": "",
+    "target": "/var/lib/kubelet/seccomp/profiles",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/log/audit",
+    "source": "",
+    "target": "/var/log/audit",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/log/audit/kube",
+    "source": "",
+    "target": "/var/log/audit/kube",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/log/containers",
+    "source": "",
+    "target": "/var/log/containers",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/log/pods",
+    "source": "",
+    "target": "/var/log/pods",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/mnt",
+    "source": "",
+    "target": "/var/mnt",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/run",
+    "source": "",
+    "target": "/var/run",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "/var/run/lock",
+    "source": "",
+    "target": "/var/run/lock",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "CRI",
+    "source": "",
+    "target": "/var/lib/containerd",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "EPHEMERAL",
+    "source": "/dev/sda6",
+    "target": "/var",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "KUBELET",
+    "source": "",
+    "target": "/var/lib/kubelet",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "LOG",
+    "source": "",
+    "target": "/var/log",
+    "filesystem": "none",
+    "readOnly": false,
+    "detached": false
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "resource": "mountstatus",
+    "id": "u-longhorn-hp-sff-ssd",
+    "source": "/dev/sdb1",
+    "target": "/var/mnt/longhorn-hp-sff-ssd",
+    "filesystem": "xfs",
+    "readOnly": false,
+    "detached": false
+  }
+]

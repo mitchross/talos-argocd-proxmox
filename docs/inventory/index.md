@@ -5,6 +5,15 @@ workload placement. Use [hardware diagnostics](../diagnostics.md) for disk
 health and repair evidence. For speed verdicts and upgrade priorities, open
 [Audits](../audits/index.md) in the sidebar.
 
+## Full inventory — October 15, 2026
+
+[Open the refreshed inventory](2026-10-15-full-inventory.md) for hosts, VMs, disks,
+Talos mounts, Proxmox storage, Longhorn capacity and management services.
+The explorer uses this snapshot. Older benchmarks retain their original dates.
+
+**Open finding:** Dell’s `dell-ssd-vmstore` was inactive during collection, despite
+its reported guest mount. See the inventory for the separate host and guest observations.
+
 ## Where every disk is
 
 The [disk map](../domains/storage/disk-map.md) is the current, maintained answer

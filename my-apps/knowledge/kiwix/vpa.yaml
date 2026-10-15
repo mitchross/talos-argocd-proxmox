@@ -14,9 +14,11 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: kiwix
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "1"
           memory: 2Gi
+      - containerName: library-indexer
+        mode: "Off"
