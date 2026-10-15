@@ -4,7 +4,7 @@ Status: desired configuration; verify the rollout gates before retiring NOMAD.
 
 Prerequisites: the existing SMB PVC, Argo CD access, and read access through `kubectl`.
 
-Source of truth: [collections](collections.tsv), [download Job](job-library-download.yaml), and [Deployment](deployment.yaml).
+Source of truth: [collections](collections.tsv), [download CronJob](cronjob-library-download.yaml), and [Deployment](deployment.yaml).
 
 Kiwix serves the existing Wikipedia archive and NOMAD's English ZIM collections at `https://kiwix.vanillax.me`.
 Maps remain at `https://maps.vanillax.me` through the separate VersaTiles Application.
@@ -24,9 +24,11 @@ This is a pinned library, not an automatic upstream update subscription.
 ## Download and serving
 
 `collections.tsv` pins each archive URL, byte count, and SHA-256 checksum.
-The Sync hook downloads into `.downloads/` on the existing `kiwix-data` SMB PVC.
+The CronJob checks for missing archives every 15 minutes and downloads into `.downloads/` on the existing `kiwix-data` SMB PVC.
+`concurrencyPolicy: Forbid` prevents overlapping runs. Each run can last up to 48 hours.
+Kubernetes creates the download Jobs independently of Argo CD’s 30-minute sync timeout.
 Interrupted downloads resume. Only verified archives move into the top-level library directory.
-Existing archives are never overwritten or deleted. Completed archives are skipped on later syncs.
+Existing archives are never overwritten or deleted. Completed archives are skipped on later runs.
 The existing incomplete Wikipedia `.part` file is ignored and preserved.
 
 The indexer scans completed archives every 60 seconds and atomically updates an XML catalog in a shared `emptyDir`.
@@ -34,7 +36,8 @@ Kiwix monitors this catalog and loads new archives without restarting for each d
 The server and indexer mount the archives read-only. Only the download Job writes archive data.
 A failed index update preserves the previous catalog. A failed download leaves other completed archives available.
 
-The initial download can take hours. Argo CD waits for the hook to finish; the existing library remains available during downloads.
+The first run starts at the next quarter-hour after sync. The initial download can take hours.
+Argo CD completes sync without waiting for downloads. The existing library remains available while downloads run.
 The Deployment uses `Recreate`, so applying its configuration causes a short restart.
 A full download is not required for the existing Wikipedia archive to become ready.
 
@@ -49,20 +52,25 @@ A full download is not required for the existing Wikipedia archive to become rea
 7. Verify that Maps still serves its viewer and tiles.
 8. Only then approve the separate NOMAD retirement PR.
 
-Inspect download progress with `kubectl -n kiwix logs job/kiwix-library-download`.
+List download Jobs with `kubectl -n kiwix get jobs --sort-by=.metadata.creationTimestamp`.
+Inspect the newest Job with `kubectl -n kiwix logs job/<job-name>`.
+Expect a successful Job and 60 catalog entries: 59 pinned archives plus the existing Wikipedia archive.
+If a run fails, inspect its logs. The next scheduled run resumes partial downloads and skips verified archives.
 Inspect catalog updates with `kubectl -n kiwix logs deployment/kiwix -c library-indexer`.
-Check status with `kubectl -n kiwix get pods,jobs,pvc`.
+Check status with `kubectl -n kiwix get cronjobs,jobs,pods,pvc`.
 
 ## Updates and rollback
 
 Update the pinned URLs, byte counts, and published checksums in `collections.tsv` through a PR.
-The ConfigMap hash changes and Argo CD runs the hook on sync.
+The ConfigMap hash changes. New scheduled Jobs use the updated collection list after sync.
+An active Job continues with its mounted configuration; the following run checks the updated list.
 Old archives remain; removal requires an explicit decision.
 The SMB library is backup-exempt and can be downloaded again from these pinned sources while they remain available.
 
 Revert the Kiwix runtime changes through a PR to return to serving top-level ZIM files directly.
 Keep NOMAD's duplicate Kiwix route removed; restoring it reintroduces the failing backend.
 Downloaded archives remain on SMB through a runtime rollback.
+Do not restore the Sync hook: Argo CD terminates long downloads at its 30-minute operation timeout.
 
 ## Pinned archives
 

@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kiwix-library-download
+  namespace: kiwix
+spec:
+  schedule: '*/15 * * * *'
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 172800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: kiwix-library-download
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          containers:
+          - name: download
+            image: ghcr.io/kiwix/kiwix-serve:latest@sha256:2ebf0615402bd6ad803ab39f738246cd10619b280d34621dea646112c53194bf
+            command:
+            - sh
+            - /opt/library/download-library.sh
+            resources:
+              requests:
+                cpu: 100m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: library-scripts
+              mountPath: /opt/library
+              readOnly: true
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: kiwix-data
+          - name: library-scripts
+            configMap:
+              name: kiwix-library-scripts
