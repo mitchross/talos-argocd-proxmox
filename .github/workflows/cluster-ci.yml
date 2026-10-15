@@ -71,6 +71,9 @@ jobs:
       - name: Reject inline executable YAML bodies
         run: bash ./scripts/validate-no-inline-scripts.sh
 
+      - name: Test Kiwix library downloads
+        run: python3 -m unittest discover -s scripts/tests -p test_kiwix_library.py -v
+
       - name: Test scoped Longhorn PV mount-option migration
         run: python3 -m unittest discover -s scripts/tests -p test_longhorn_mount_options.py -v
 
