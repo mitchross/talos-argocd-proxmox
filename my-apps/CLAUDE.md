@@ -191,7 +191,7 @@ Backups are **kopiur**: a per-PVC stub (`SnapshotPolicy` + `SnapshotSchedule` + 
 
 - The mover MUST run as the **data owner uid:gid**: under baseline Pod Security a root mover cannot read non-root data. Root-owned data only: `runAsUser: 0` + the `privileged-movers` namespace annotation (`docs/domains/storage/kopiur-mover-permissions.md`).
 - Restore-before-bind: on recreate the PVC stays `Pending` while the populator hydrates it. A new PVC with no snapshot binds **empty** and backs up forward (`onMissingSnapshot: Continue`), so confirm `kubectl -n <ns> get snapshot` shows one before relying on restore.
-- Multi-PVC apps: one stub + `dataSourceRef` per PVC, mover uid per PVC (`my-apps/knowledge/project-nomad/`); backed-up and `backup-exempt` PVCs mix freely (`my-apps/home-automation/frigate/`).
+- Multi-PVC apps: one stub + `dataSourceRef` per PVC, mover uid per PVC (`my-apps/knowledge/_archive/project-nomad/`); backed-up and `backup-exempt` PVCs mix freely (`my-apps/home-automation/frigate/`).
 - Helm-rendered PVCs: inject `dataSourceRef` + the masking annotations with a Kustomize `patches:` block (`my-apps/development/gitea/`); never put backup objects in chart `extraDeploy:`.
 - `backup-exempt: "true"` (temporary/cache, externally-synced or frequently-recreated data) needs the fully-qualified `storage.vanillax.dev/backup-exempt-reason` annotation; the bare key is silently ignored. PostHog ClickHouse/Kafka/Redis are exempt; PostHog **Postgres** is backed up (it holds the API keys).
 

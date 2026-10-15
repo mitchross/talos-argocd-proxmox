@@ -3,35 +3,23 @@
         icon: mdi-newspaper-variant-outline
         href: https://news.vanillax.me
         description: RSS / News Reader
-    - Kolibri:
-        icon: mdi-school-outline
-        href: https://kolibri.vanillax.me
-        description: Offline Learning Library
     - Kiwix:
         icon: kiwix.png
         href: https://kiwix.vanillax.me
         description: Offline Encyclopedia
-    - Project Nomad:
-        icon: mdi-bag-personal-outline
-        href: https://nomad.vanillax.me
-        description: Offline Knowledge Portal
     - Karakeep:
         icon: mdi-bookmark-multiple-outline
         href: https://karakeep.vanillax.me
         description: Bookmark & Read-Later
-    - FlatNotes:
-        icon: mdi-note-text-outline
-        href: https://flatnotes.vanillax.me
-        description: Plain-Text Notes
 - Public · Tools:
+    - Maps:
+        icon: mdi-map-outline
+        href: https://maps.vanillax.me
+        description: Worldwide Map
     - IT-Tools:
         icon: it-tools.png
         href: https://it-tools.vanillax.me
         description: IT Utility Tools Collection
-    - CyberChef:
-        icon: cyberchef.png
-        href: https://cyberchef.vanillax.me
-        description: Data Transformation Toolkit
     - Excalidraw:
         icon: excalidraw.png
         href: https://excalidraw.vanillax.me

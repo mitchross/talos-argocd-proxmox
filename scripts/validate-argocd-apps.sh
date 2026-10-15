@@ -211,33 +211,7 @@ done < <(appset_files)
 [ $ERRORS -eq 0 ] && echo "  OK: AppSet exclude patterns do not miss parent app directories"
 echo ""
 
-# ─────────────────────────────────────────────
-# 7. Check Project Nomad remains a single bundled app
-# ─────────────────────────────────────────────
-echo "--- Check 7: Project Nomad AppSet ownership ---"
-
 my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
-project_nomad_path="my-apps/knowledge/project-nomad"
-if [ -f "$my_apps_appset" ] && [ -f "$project_nomad_path/kustomization.yaml" ]; then
-  nested_nomad_kustomizations=$(find "$project_nomad_path" -mindepth 2 -name kustomization.yaml -print | wc -l | xargs)
-
-  if ! grep -q "path: my-apps/\*/\*" "$my_apps_appset"; then
-    echo "  ERROR: my-apps AppSet no longer discovers my-apps/*/*"
-    echo "         Project Nomad will not be generated unless it has a dedicated entrypoint."
-    ERRORS=$((ERRORS + 1))
-  elif grep -B1 "exclude: true" "$my_apps_appset" | grep -q "$project_nomad_path"; then
-    echo "  ERROR: Project Nomad is excluded from the my-apps AppSet"
-    echo "         It is intended to be one bundled app at $project_nomad_path."
-    ERRORS=$((ERRORS + 1))
-  elif [ "$nested_nomad_kustomizations" -gt 0 ]; then
-    echo "  ERROR: Project Nomad has nested kustomization.yaml files"
-    echo "         The my-apps/*/* generator treats $project_nomad_path as the app boundary."
-    ERRORS=$((ERRORS + 1))
-  else
-    echo "  OK: Project Nomad is managed as one bundled my-apps Application"
-  fi
-fi
-echo ""
 
 # ─────────────────────────────────────────────
 # 8. Check Kustomize Component dirs are excluded from AppSet discovery

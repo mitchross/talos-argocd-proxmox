@@ -34,8 +34,6 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      # project-nomad is intentionally one bundled app at my-apps/knowledge/project-nomad.
-      # Its child folders are resources, not generated apps.
       - path: my-apps/*/*
       # my-apps/common/* holds shared Kustomize Components (kind: Component),
       # consumed via `components:` from app kustomizations — they are not apps.

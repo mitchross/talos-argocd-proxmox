@@ -162,7 +162,7 @@ Project procedures live in `.claude/commands/` (also listed as skills); Codex us
 | **PVC with automatic backup (kopiur)** | `my-apps/ai/open-webui/` (component + `kopiur/storage.yaml` stub + PVC `dataSourceRef`) |
 | **kopiur backup component (shared)** | `my-apps/common/kopiur-backup/` |
 | **kopiur repo + cred fanout + snapclass** | `infrastructure/backup/kopiur/` |
-| **Daemon-drop mover uid (999:568)** | `my-apps/knowledge/project-nomad/mysql/kopiur-backup.yaml` |
+| **Daemon-drop mover uid (999:568)** | `my-apps/knowledge/_archive/project-nomad/mysql/kopiur-backup.yaml` |
 | **Multi-PVC + backup-exempt mix** | `my-apps/home-automation/frigate/` (backs up `frigate-config`, exempts `frigate-media`) |
 | **Archive a retired app** | `my-apps/<category>/_archive/<app>/` — see `docs/domains/argocd/entrypoints.md` § Archived apps |
 | **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
