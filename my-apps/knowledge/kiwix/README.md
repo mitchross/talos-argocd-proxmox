@@ -1,0 +1,129 @@
+# Offline knowledge library
+
+Status: desired configuration; verify the rollout gates before retiring NOMAD.
+
+Prerequisites: the existing SMB PVC, Argo CD access, and read access through `kubectl`.
+
+Source of truth: [collections](collections.tsv), [download Job](job-library-download.yaml), and [Deployment](deployment.yaml).
+
+Kiwix serves the existing Wikipedia archive and NOMAD's English ZIM collections at `https://kiwix.vanillax.me`.
+Maps remain at `https://maps.vanillax.me` through the separate VersaTiles Application.
+
+## Content
+
+The [NOMAD knowledge catalog](https://github.com/Crosstalk-Solutions/project-nomad/blob/54ee30a44902e5c252b477f8685c26ec3064ab72/collections/kiwix-categories.json) supplies the selection.
+This configuration includes all six categories and all three tiers, with 59 unique archives totaling 79.94 GiB.
+The full Wikibooks archive replaces the duplicate no-picture edition. Existing Wikipedia stays unchanged.
+Wikipedia Medicine and Bash use October 2026 releases because NOMAD's pinned URLs returned 404.
+All archive URLs, sizes, and published SHA-256 checksums were verified on October 15, 2026 UTC.
+
+The FDA drug dataset is not a ZIM archive. It requires a separate reader and is excluded.
+NOMAD creator packs and its specialized remedies/conditions interfaces are not Kiwix libraries and are excluded.
+This is a pinned library, not an automatic upstream update subscription.
+
+## Download and serving
+
+`collections.tsv` pins each archive URL, byte count, and SHA-256 checksum.
+The Sync hook downloads into `.downloads/` on the existing `kiwix-data` SMB PVC.
+Interrupted downloads resume. Only verified archives move into the top-level library directory.
+Existing archives are never overwritten or deleted. Completed archives are skipped on later syncs.
+The existing incomplete Wikipedia `.part` file is ignored and preserved.
+
+The indexer scans completed archives every 60 seconds and atomically updates an XML catalog in a shared `emptyDir`.
+Kiwix monitors this catalog and loads new archives without restarting for each download.
+The server and indexer mount the archives read-only. Only the download Job writes archive data.
+A failed index update preserves the previous catalog. A failed download leaves other completed archives available.
+
+The initial download can take hours. Argo CD waits for the hook to finish; the existing library remains available during downloads.
+The Deployment uses `Recreate`, so applying its configuration causes a short restart.
+A full download is not required for the existing Wikipedia archive to become ready.
+
+## Rollout gate before NOMAD retirement
+
+1. Merge the Kiwix library PR only after review.
+2. Verify that the duplicate NOMAD Kiwix HTTPRoute is gone.
+3. Verify that repeated requests to the public Kiwix URL succeed.
+4. Verify that the download Job completes successfully.
+5. Verify that the catalog includes the existing Wikipedia archive and all 59 added archives.
+6. Open representative medical, book, and reference articles through the public URL.
+7. Verify that Maps still serves its viewer and tiles.
+8. Only then approve the separate NOMAD retirement PR.
+
+Inspect download progress with `kubectl -n kiwix logs job/kiwix-library-download`.
+Inspect catalog updates with `kubectl -n kiwix logs deployment/kiwix -c library-indexer`.
+Check status with `kubectl -n kiwix get pods,jobs,pvc`.
+
+## Updates and rollback
+
+Update the pinned URLs, byte counts, and published checksums in `collections.tsv` through a PR.
+The ConfigMap hash changes and Argo CD runs the hook on sync.
+Old archives remain; removal requires an explicit decision.
+The SMB library is backup-exempt and can be downloaded again from these pinned sources while they remain available.
+
+Revert the Kiwix runtime changes through a PR to return to serving top-level ZIM files directly.
+Keep NOMAD's duplicate Kiwix route removed; restoring it reintroduces the failing backend.
+Downloaded archives remain on SMB through a runtime rollback.
+
+## Pinned archives
+
+| Archive | GiB |
+|---|---:|
+| Medical Library | 0.065 |
+| NHS Medicines A to Z | 0.016 |
+| Military Medicine | 0.076 |
+| CDC Health Information | 0.166 |
+| MedlinePlus | 1.811 |
+| Wikipedia Medicine | 1.736 |
+| LibreTexts Medicine | 1.111 |
+| LibrePathology | 0.089 |
+| Water Treatment Library | 0.019 |
+| Food for Preppers | 0.091 |
+| A Library of Knots | 0.026 |
+| Canadian Prepper: Winter Prepping | 1.249 |
+| Canadian Prepper: Bug Out Roll | 0.819 |
+| Ready.gov | 2.263 |
+| The Great Outdoors Q&A | 0.133 |
+| Amateur Radio Q&A | 0.070 |
+| Canadian Prepper: Bug Out Concepts | 2.688 |
+| Urban Prepper | 2.091 |
+| Canadian Prepper: Prepping Food | 2.012 |
+| Post Disaster Resource Library | 0.600 |
+| Hundred Rabbits | 0.161 |
+| Project Gutenberg: Military Science | 1.200 |
+| CD3WD: Appropriate Technology Library | 0.541 |
+| TED-Ed | 5.943 |
+| Wikiversity | 2.225 |
+| LibreTexts Mathematics | 0.774 |
+| LibreTexts Physics | 0.521 |
+| LibreTexts Chemistry | 2.033 |
+| LibreTexts Biology | 2.087 |
+| Wikibooks (With Images) | 5.076 |
+| TED Conference | 16.890 |
+| LibreTexts Humanities | 3.471 |
+| LibreTexts Geosciences | 1.107 |
+| LibreTexts Engineering | 0.632 |
+| LibreTexts Business | 0.782 |
+| Woodworking Q&A | 0.098 |
+| Motor Vehicle Maintenance Q&A | 0.316 |
+| DIY & Home Improvement Q&A | 1.910 |
+| iFixit Repair Guides | 3.325 |
+| FOSS Cooking | 0.022 |
+| Based.Cooking | 0.015 |
+| Gardening Q&A | 0.862 |
+| Cooking Q&A | 0.221 |
+| Learning Self-Reliance: Homesteading | 3.701 |
+| Project Gutenberg: Agriculture | 4.221 |
+| freeCodeCamp | 0.007 |
+| Python Documentation | 0.004 |
+| JavaScript Documentation | 0.003 |
+| HTML Documentation | 0.002 |
+| CSS Documentation | 0.005 |
+| Arduino Q&A | 0.241 |
+| Raspberry Pi Q&A | 0.278 |
+| Node.js Documentation | 0.001 |
+| React Documentation | 0.003 |
+| Git Documentation | 0.001 |
+| Electronics Q&A | 3.895 |
+| Robotics Q&A | 0.228 |
+| Docker Documentation | 0.002 |
+| Linux Documentation | 0.001 |
