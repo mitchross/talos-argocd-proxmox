@@ -100,7 +100,7 @@ spec:
             - { name: grids, mountPath: /data/grids }
             - { name: state, mountPath: /data/state }
           resources:
-            requests: { cpu: "1", memory: "3Gi" }
+            requests: { cpu: "500m", memory: "1Gi" }
             limits:   { cpu: "6", memory: "6Gi" }
       volumes:
         - name: tiles
@@ -202,7 +202,7 @@ spec:
             - { name: grids, mountPath: /data/grids }
             - { name: state, mountPath: /data/state }
           resources:
-            requests: { cpu: "1500m", memory: "8Gi" }
+            requests: { cpu: "500m", memory: "2.5Gi" }
             limits:   { cpu: "8", memory: "12Gi" }
       volumes:
         - name: tiles
@@ -304,7 +304,7 @@ spec:
             - { name: grids, mountPath: /data/grids }
             - { name: state, mountPath: /data/state }
           resources:
-            requests: { cpu: "1", memory: "2Gi" }
+            requests: { cpu: "500m", memory: "1Gi" }
             limits:   { cpu: "4", memory: "6Gi" }
       volumes:
         - name: tiles
@@ -407,7 +407,7 @@ spec:
             - { name: grids, mountPath: /data/grids }
             - { name: state, mountPath: /data/state }
           resources:
-            requests: { cpu: "1", memory: "1.5Gi" }
+            requests: { cpu: "250m", memory: "768Mi" }
             limits:   { cpu: "2", memory: "4Gi" }
       volumes:
         - name: tiles
