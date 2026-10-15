@@ -4,6 +4,16 @@ serviceMonitor:
 tempo:
   # Firewalla blocks stats.grafana.org; with reporting on Tempo retried ~79k DNS lookups/day.
   reportingEnabled: false
+  # TraceQL metrics (Grafana drilldown) need the generator AND the local-blocks override.
+  metricsGenerator:
+    enabled: true
+    processor:
+      local_blocks:
+        flush_to_storage: true
+  overrides:
+    defaults:
+      metrics_generator:
+        processors: [local-blocks]
   receivers:
     otlp:
       protocols:
