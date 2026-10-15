@@ -179,7 +179,7 @@ spec:
             - { name: WORKER_ROLE, value: nowcast }
             - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "175" }
             - { name: SKIP_SCHEDULE_SEED, value: "1" }
-            # One pysteps run at a time; a second would double the ~7 GiB peak and starve the first.
+            # One nowcast run at a time; a second doubles the peak memory and starves the first.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "1" }
             - { name: TILE_DIR, value: /data/tiles }
             - { name: GRID_DIR, value: /data/grids }

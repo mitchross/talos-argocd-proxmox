@@ -17,7 +17,7 @@ resources:
   - servicemonitor.yaml
   - prometheusrule.yaml
   # The open-meteo sync worker is NOT here — it's a sidecar in deployment-open-meteo.yaml (shares that RWO volume).
-  # Schedules are seeded once via `python -m temporal.schedules.seed` after rollout.
+  # The aux worker pool seeds the Temporal Schedules on start (SEED_SCHEDULES=1).
   - temporal-workers/configmap-temporal-config.yaml
   - temporal-workers/temporal-connection.yaml
   - temporal-workers/worker-pools.yaml

@@ -1,4 +1,4 @@
-# Caddy + FastAPI: /tiles/* from the PVC, /basemap/* proxied to basemap, /api/* FastAPI.
+# Rust `radar api` (one process): /tiles from the PVC, /basemap styles + tiles (proxied to basemap), /api, /v1.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -54,7 +54,6 @@ spec:
           type: RuntimeDefault
       containers:
         - name: tile-server
-          # The image must ship caddy without file capabilities: they exec-fail under drop-ALL.
           image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.1@sha256:3793a2d3fcf6b64215f5ce05be1ae7384036873c194c3a8fe6730de3cbab23d0
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -119,7 +118,7 @@ spec:
             - name: TEMPORAL_ALERTS_TASK_QUEUE
               value: radar-ng-alerts
           # /api/livez, never /api/health (degrades on stale NOAA data). ~60 s of failures before restart:
-          # a busy API is not a dead one, and a restart also takes Caddy's tiles down.
+          # a busy API is not a dead one, and a restart also takes the tiles down.
           livenessProbe:
             httpGet:
               path: /api/livez
@@ -128,7 +127,7 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 4
-          # Caddy only: an API readiness check empties this single-replica Service whenever the API is slow.
+          # TCP only: an HTTP readiness check empties this single-replica Service whenever the API is slow.
           readinessProbe:
             tcpSocket:
               port: 8080
@@ -149,7 +148,7 @@ spec:
               # Burst path OOMKilled at a 1Gi limit; keep request >=512Mi with the 2Gi limit.
               memory: 512Mi
             limits:
-              # Caddy and the single uvicorn process each need ~1 core; 2 throttled under load.
+              # Sized for the former Python api; the Rust api uses far less (see radar-ng benchmark-results.md).
               cpu: "3"
               memory: 2Gi
       volumes:

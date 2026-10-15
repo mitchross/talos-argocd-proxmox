@@ -135,10 +135,10 @@ Versioning does not make breaking code changes safe. If you reorder or add
 activities inside a loop, a workflow still fails when it replays across that
 change. Continue-as-new is the boundary where such changes become safe.
 
-## Roll back
+## Fix a bad release (forward-only)
 
-1. Revert the image PR. That is the whole rollback for **new** work: the
-   previous template is the current version again.
+1. Publish a fixed image and open a new image PR. Do not revert to an older
+   image; the new version supersedes the bad one for **new** work.
 2. Workflows already pinned to the bad version stay there. Leave that version
    running until they finish or you recover them. Do not scale it down by
    hand and do not change routing with the CLI; the controller owns both.
@@ -147,7 +147,7 @@ change. Continue-as-new is the boundary where such changes become safe.
    procedure for that one execution. Check its state afterwards and clear
    the override once the repaired version has processed it.
 
-Expected after step 1: the reverted Build ID appears as `Current`, the bad one
+Expected after step 1: the fixed Build ID appears as `Current`, the bad one
 as `Draining`, and no new workflow starts on it.
 
 ## Gotchas

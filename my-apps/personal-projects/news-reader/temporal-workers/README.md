@@ -58,7 +58,7 @@ kubectl -n news-reader logs -l app=news-reader-temporal-worker --tail=100
 
 Expect current-generation status, a completed gate and `Ready=True` after the
 ramp. Old versioned Deployments can remain present while their workflows finish.
-If promotion fails, follow the [central recovery procedure](../../../../docs/domains/temporal/safe-deployments.md#rollback-and-existing-pinned-runs);
+If promotion fails, follow the [central recovery procedure](../../../../docs/domains/temporal/safe-deployments.md#fix-a-bad-release-forward-only);
 reverting traffic does not rescue workflows already pinned to a faulty build.
 
 Per-version autoscaling is deferred until this single-user workload needs it.
