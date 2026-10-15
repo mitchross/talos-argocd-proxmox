@@ -31,7 +31,7 @@ spec:
       containers:
         - name: postgres
           image: registry.vanillax.me/product-api/postgres:18-b81829a@sha256:0cc09212ee06a1cd299afc07a55ec76ff6bdb996eb8e7b8d1e2ef13dc1e9bb16
-          args: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "shared_buffers=4GB", "-c", "effective_cache_size=12GB", "-c", "max_connections=300", "-c", "max_worker_processes=8", "-c", "max_parallel_workers=8", "-c", "max_parallel_maintenance_workers=4", "-c", "maintenance_work_mem=1GB"]
+          args: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB", "-c", "max_connections=300", "-c", "max_worker_processes=8", "-c", "max_parallel_workers=8", "-c", "max_parallel_maintenance_workers=4", "-c", "maintenance_work_mem=1GB"]
           securityContext:
             runAsUser: 999
             runAsGroup: 999
@@ -71,10 +71,10 @@ spec:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: "1"
-              memory: 6Gi
+              cpu: 250m
+              memory: 1Gi
             limits:
-              memory: 12Gi
+              memory: 4Gi
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
