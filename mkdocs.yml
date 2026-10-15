@@ -151,6 +151,7 @@ nav:
           - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
   - Inventory:
       - inventory/index.md
+      - Full inventory — 15 October: inventory/2026-10-15-full-inventory.md
       - Explore the lab: lab.md
       - Hardware diagnostics: diagnostics.md
       - etcd and Dell boot disks — 11 October: inventory/2026-10-11-etcd-and-dell-boot-disks.md

@@ -383,23 +383,23 @@ window.HOMELAB_INVENTORY = {
       }
     ]
   },
-  "date": "2026-09-05",
-  "assembledAt": "2026-09-05T21:34:13.664744+00:00",
-  "sourceCommit": "cbda78a0",
-  "runtimeVersionsCheckedAt": "2026-09-06T01:48:49.025993+00:00",
+  "date": "2026-10-15",
+  "assembledAt": "2026-10-15T04:08:38.371121+00:00",
+  "sourceCommit": "57233c8bc",
+  "runtimeVersionsCheckedAt": "2026-10-15T04:08:38.371121+00:00",
   "hosts": [
     {
       "id": "sff",
       "name": "HP SFF",
       "model": "ProDesk 600 G4 SFF",
-      "cpu": "Intel i5-8500 \u00b7 6 cores",
+      "cpu": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz \u00b7 6 threads",
       "ram": "64 GB",
       "zone": "hp-sff",
       "link": "Wired \u00b7 2.5 GbE",
       "role": "Control plane + everyday apps",
       "suggested": "Everyday apps + protected state",
-      "summary": "The machine keeping Kubernetes in charge. Its two VMs still share one power button.",
-      "advice": "Improve the control-plane disk first. Keep noisy writes on the other disk.",
+      "summary": "One control plane and one worker share this host. The third disk is an unassigned PNY SSD.",
+      "advice": "The control plane now uses the Intel S3610. Preserve its separate storage and account for the shared host.",
       "loss": "The Kubernetes API and scheduling stop. Existing pods on other hosts may keep serving, but the cluster cannot arrange new failover.",
       "power": null,
       "ip": "192.168.10.21",
@@ -410,28 +410,100 @@ window.HOMELAB_INVENTORY = {
           "model": "PNY CS900 1TB SSD",
           "bytes": 1000204886016,
           "interface": "sata",
-          "role": "Control-plane disk",
-          "path": "hp-sff-cp \u2192 VM 101 scsi0, 100 GiB",
-          "note": "Etcd WAL fsync p99 ~49 ms; ~831 GiB VG free. The whole I/O path needs qualification."
+          "role": "Spare; orphan LVM PV",
+          "path": "No volume group",
+          "note": "SMART overall passed; 33 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 33,
+            "powerOnHours": 25462,
+            "ataCounters": [
+              {
+                "id": 231,
+                "name": "SSD_Life_Left",
+                "raw": 93,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "sdb",
+          "model": "INTEL SSDSC2BX400G4R",
+          "bytes": 400088457216,
+          "interface": "sata",
+          "role": "Control plane / etcd",
+          "path": "hp-sff-cp \u2192 VM 101 scsi0 (100 GiB)",
+          "note": "SMART overall passed; 30 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 30,
+            "powerOnHours": 43291,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 198,
+                "name": "Offline_Uncorrectable",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 199,
+                "name": "CRC_Error_Count",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 202,
+                "name": "Unknown_SSD_Attribute",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 233,
+                "name": "Media_Wearout_Indicator",
+                "raw": 195899,
+                "normalized": 100
+              }
+            ]
+          }
+        },
+        {
+          "device": "sdc",
           "model": "PNY CS900 1TB SSD",
           "bytes": 1000204886016,
           "interface": "sata",
-          "role": "Proxmox + worker disks",
-          "path": "pve \u2192 VM 100: 128 GiB boot + 690 GiB data",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Proxmox + worker",
+          "path": "pve / hp-prodesk-vmstore \u2192 VM 100 scsi0 + scsi1",
+          "note": "SMART overall passed; 33 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 33,
+            "powerOnHours": 25637,
+            "ataCounters": [
+              {
+                "id": 231,
+                "name": "SSD_Life_Left",
+                "raw": 92,
+                "normalized": 100
+              }
+            ]
+          }
         }
       ],
       "vms": [
         {
           "id": "100",
-          "name": "talos-prod-cluster-v2-hp-sff-workers-rldgrj",
+          "name": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
           "ramMiB": 40960,
           "vcpus": 6,
           "state": "running",
-          "ip": "192.168.10.150",
+          "ip": "192.168.10.173",
           "disks": [
             {
               "slot": "scsi0",
@@ -444,24 +516,18 @@ window.HOMELAB_INVENTORY = {
               "size": "690 GiB"
             }
           ],
-          "talos": "Talos (v1.14.0)",
-          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "1passwordconnect",
               "pods": 1
             },
             {
-              "name": "argocd",
+              "name": "cobalt",
               "pods": 2
             },
             {
-              "name": "cloudflared",
+              "name": "container-registry",
               "pods": 1
-            },
-            {
-              "name": "coroot",
-              "pods": 8
             },
             {
               "name": "csi-driver-nfs",
@@ -472,15 +538,47 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "echo-server",
+              "name": "external-dns",
+              "pods": 2
+            },
+            {
+              "name": "external-secrets",
               "pods": 1
             },
             {
-              "name": "fizzy",
+              "name": "geocoder",
+              "pods": 2
+            },
+            {
+              "name": "gitea",
               "pods": 1
             },
             {
-              "name": "kafka",
+              "name": "gitea-actions",
+              "pods": 1
+            },
+            {
+              "name": "hindsight",
+              "pods": 1
+            },
+            {
+              "name": "homepage-dashboard",
+              "pods": 1
+            },
+            {
+              "name": "imagery",
+              "pods": 1
+            },
+            {
+              "name": "immich",
+              "pods": 1
+            },
+            {
+              "name": "intel-gpu-plugin",
+              "pods": 1
+            },
+            {
+              "name": "jellyfin",
               "pods": 1
             },
             {
@@ -488,7 +586,7 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "kiwix",
+              "name": "kopiur-system",
               "pods": 1
             },
             {
@@ -496,59 +594,75 @@ window.HOMELAB_INVENTORY = {
               "pods": 3
             },
             {
+              "name": "langfuse",
+              "pods": 2
+            },
+            {
               "name": "litellm",
               "pods": 1
             },
             {
               "name": "loki-stack",
-              "pods": 2
+              "pods": 4
             },
             {
               "name": "longhorn-system",
-              "pods": 6
-            },
-            {
-              "name": "n8n",
-              "pods": 1
-            },
-            {
-              "name": "news-reader",
-              "pods": 1
+              "pods": 10
             },
             {
               "name": "node-feature-discovery",
-              "pods": 1
-            },
-            {
-              "name": "open-webui",
               "pods": 2
             },
             {
               "name": "opentelemetry",
-              "pods": 1
+              "pods": 3
             },
             {
               "name": "paperless-ngx",
+              "pods": 3
+            },
+            {
+              "name": "paseo",
+              "pods": 1
+            },
+            {
+              "name": "posthog-injector",
+              "pods": 1
+            },
+            {
+              "name": "product-bench",
               "pods": 2
             },
             {
               "name": "project-nomad",
-              "pods": 3
+              "pods": 7
             },
             {
               "name": "prometheus-stack",
               "pods": 3
             },
             {
-              "name": "restore-canary",
+              "name": "redis-instance",
+              "pods": 1
+            },
+            {
+              "name": "redlib",
+              "pods": 2
+            },
+            {
+              "name": "snapshot-controller",
+              "pods": 1
+            },
+            {
+              "name": "surfsense",
               "pods": 1
             },
             {
               "name": "temporal",
-              "pods": 1
+              "pods": 3
             },
             {
-              "name": "trivy-operator",
+              "name": "temporal-worker-controller",
               "pods": 1
             },
             {
@@ -560,22 +674,31 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "vertical-pod-autoscaler",
+              "name": "vert",
               "pods": 1
+            },
+            {
+              "name": "vertical-pod-autoscaler",
+              "pods": 2
             },
             {
               "name": "worldmonitor",
               "pods": 2
             }
-          ]
+          ],
+          "passthrough": {
+            "hostpci0": "mapping=intel-igpu,pcie=1"
+          },
+          "talos": "Talos (v1.14.2)",
+          "kubernetes": "v1.37.1"
         },
         {
           "id": "101",
-          "name": "talos-prod-cluster-v2-control-planes-djzhc6",
+          "name": "talos-prod-cluster-v2-control-planes-7mxjxv",
           "ramMiB": 12288,
           "vcpus": 4,
           "state": "running",
-          "ip": "192.168.10.79",
+          "ip": "192.168.10.94",
           "disks": [
             {
               "slot": "scsi0",
@@ -583,8 +706,6 @@ window.HOMELAB_INVENTORY = {
               "size": "100 GiB"
             }
           ],
-          "talos": "Talos (v1.14.0)",
-          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "cert-manager",
@@ -604,7 +725,7 @@ window.HOMELAB_INVENTORY = {
             },
             {
               "name": "kube-system",
-              "pods": 7
+              "pods": 6
             },
             {
               "name": "node-feature-discovery",
@@ -626,16 +747,74 @@ window.HOMELAB_INVENTORY = {
               "name": "vertical-pod-autoscaler",
               "pods": 1
             }
-          ]
+          ],
+          "passthrough": {},
+          "talos": "Talos (v1.14.2)",
+          "kubernetes": "v1.37.1"
         }
       ],
-      "ramBytes": 67223908352
+      "ramBytes": 67223859200,
+      "memoryAvailableBytes": 10764496896,
+      "software": "pve-manager/9.2.21/4f6e0ac86f9e8c7f (running kernel: 7.0.14-20-pve)",
+      "storages": [
+        {
+          "name": "hp-prodesk-vmstore",
+          "type": "lvm",
+          "status": "active",
+          "totalKiB": "975171584",
+          "usedKiB": "966787072",
+          "availableKiB": "8384512",
+          "percent": "99.14%"
+        },
+        {
+          "name": "hp-sff-cp-vmstore",
+          "type": "lvm",
+          "status": "active",
+          "totalKiB": "390709248",
+          "usedKiB": "104857600",
+          "availableKiB": "285851648",
+          "percent": "26.84%"
+        },
+        {
+          "name": "local",
+          "type": "dir",
+          "status": "active",
+          "totalKiB": "98497780",
+          "usedKiB": "13746504",
+          "availableKiB": "79701728",
+          "percent": "13.96%"
+        }
+      ],
+      "pciDevices": [
+        "00:00.0 Host bridge: Intel Corporation 8th Gen Core Processor Host Bridge/DRAM Registers (rev 07)",
+        "00:02.0 VGA compatible controller: Intel Corporation CoffeeLake-S GT2 [UHD Graphics 630]",
+        "00:12.0 Signal processing controller: Intel Corporation Cannon Lake PCH Thermal Controller (rev 10)",
+        "00:14.0 USB controller: Intel Corporation Cannon Lake PCH USB 3.1 xHCI Host Controller (rev 10)",
+        "00:14.2 RAM memory: Intel Corporation Cannon Lake PCH Shared SRAM (rev 10)",
+        "00:16.0 Communication controller: Intel Corporation Cannon Lake PCH HECI Controller (rev 10)",
+        "00:16.3 Serial controller: Intel Corporation Cannon Lake PCH Active Management Technology - SOL (rev 10)",
+        "00:17.0 SATA controller: Intel Corporation Cannon Lake PCH SATA AHCI Controller (rev 10)",
+        "00:1d.0 PCI bridge: Intel Corporation Cannon Lake PCH PCI Express Root Port #9 (rev f0)",
+        "00:1f.0 ISA bridge: Intel Corporation Q370 Chipset LPC/eSPI Controller (rev 10)",
+        "00:1f.4 SMBus: Intel Corporation Cannon Lake PCH SMBus Controller (rev 10)",
+        "00:1f.5 Serial bus controller: Intel Corporation Cannon Lake PCH SPI Controller (rev 10)",
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (7) I219-LM (rev 10)",
+        "01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8125 2.5GbE Controller (rev 04)"
+      ],
+      "usbDevices": [
+        "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub"
+      ],
+      "networkAdapters": [
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (7) I219-LM (rev 10)",
+        "01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8125 2.5GbE Controller (rev 04)"
+      ]
     },
     {
       "id": "elite",
       "name": "HP Elite Mini",
       "model": "Elite Mini 600 G9",
-      "cpu": "Intel i5-13500T \u00b7 20 threads",
+      "cpu": "13th Gen Intel(R) Core(TM) i5-13500T \u00b7 20 threads",
       "ram": "32 GB",
       "zone": "hp-elite",
       "link": "Wired",
@@ -644,37 +823,57 @@ window.HOMELAB_INVENTORY = {
       "summary": "The other sensible home for everyday services. The Zigbee coordinator lives here too.",
       "advice": "Plan the data SSD replacement. Check the SATA carrier/cable before buying a 2.5-inch drive.",
       "loss": "Pods here stop, along with the attached Zigbee coordinator. Single-copy volumes on this host have no surviving live copy.",
-      "power": 33,
+      "power": null,
       "ip": "192.168.10.22",
       "kind": "Proxmox",
       "disks": [
         {
-          "device": "nvme1n1",
+          "device": "nvme0n1",
           "model": "INTEL SSDPEKNW512G8",
           "bytes": 512110190592,
           "interface": "nvme",
           "role": "Longhorn data",
-          "path": "hp-elite-vmstore \u2192 VM 100 scsi1, 440 GiB",
-          "note": "74% endurance used; 56,418 hours; 539 unsafe shutdowns; 0 media errors."
+          "path": "hp-elite-vmstore \u2192 VM 100 scsi1 (440 GiB)",
+          "note": "SMART overall passed; 35 \u00b0C at collection. NVMe endurance used: 76%; media errors: 0.",
+          "health": {
+            "passed": true,
+            "temperatureC": 35,
+            "powerOnHours": 57362,
+            "percentage_used": 76,
+            "media_errors": 0,
+            "critical_warning": 0,
+            "data_units_written": 420700210,
+            "ataCounters": []
+          }
         },
         {
-          "device": "nvme0n1",
+          "device": "nvme1n1",
           "model": "WDC PC SN530 SDBPMPZ-256G-1101",
           "bytes": 256060514304,
           "interface": "nvme",
-          "role": "Proxmox + Talos boot",
-          "path": "local-lvm \u2192 VM 100 scsi0, 128 GiB",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Proxmox + Talos system",
+          "path": "pve / local-lvm \u2192 VM 100 scsi0 (128 GiB)",
+          "note": "SMART overall passed; 44 \u00b0C at collection. NVMe endurance used: 3%; media errors: 0.",
+          "health": {
+            "passed": true,
+            "temperatureC": 44,
+            "powerOnHours": 12778,
+            "percentage_used": 3,
+            "media_errors": 0,
+            "critical_warning": 0,
+            "data_units_written": 26596213,
+            "ataCounters": []
+          }
         }
       ],
       "vms": [
         {
           "id": "100",
-          "name": "talos-prod-cluster-v2-hp-elite-workers-rgkw5s",
-          "ramMiB": 24576,
+          "name": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+          "ramMiB": 26624,
           "vcpus": 16,
           "state": "running",
-          "ip": "192.168.10.172",
+          "ip": "192.168.10.129",
           "disks": [
             {
               "slot": "scsi0",
@@ -687,11 +886,17 @@ window.HOMELAB_INVENTORY = {
               "size": "440 GiB"
             }
           ],
-          "talos": "Talos (v1.14.0)",
-          "kubernetes": "v1.37.0",
           "namespaces": [
             {
+              "name": "1passwordconnect",
+              "pods": 1
+            },
+            {
               "name": "cloudflared",
+              "pods": 1
+            },
+            {
+              "name": "convertx",
               "pods": 1
             },
             {
@@ -703,36 +908,60 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "deal-scout",
+              "name": "echo-server",
               "pods": 1
             },
             {
-              "name": "dozzle",
+              "name": "excalidraw",
+              "pods": 1
+            },
+            {
+              "name": "frigate",
               "pods": 1
             },
             {
               "name": "gitea",
-              "pods": 2
+              "pods": 1
+            },
+            {
+              "name": "gitea-actions",
+              "pods": 1
             },
             {
               "name": "home-assistant",
               "pods": 1
             },
             {
-              "name": "homepage-dashboard",
+              "name": "immich",
+              "pods": 2
+            },
+            {
+              "name": "intel-gpu-plugin",
               "pods": 1
             },
             {
-              "name": "intercept",
+              "name": "kafka",
               "pods": 1
             },
             {
-              "name": "keep",
+              "name": "karakeep",
+              "pods": 1
+            },
+            {
+              "name": "keda",
+              "pods": 1
+            },
+            {
+              "name": "kiwix",
               "pods": 1
             },
             {
               "name": "kube-system",
-              "pods": 2
+              "pods": 5
+            },
+            {
+              "name": "langfuse",
+              "pods": 1
             },
             {
               "name": "loki-stack",
@@ -743,11 +972,43 @@ window.HOMELAB_INVENTORY = {
               "pods": 9
             },
             {
+              "name": "map-raster",
+              "pods": 1
+            },
+            {
+              "name": "mcp-grafana",
+              "pods": 1
+            },
+            {
+              "name": "metrics-server",
+              "pods": 1
+            },
+            {
+              "name": "nginx-example",
+              "pods": 1
+            },
+            {
               "name": "node-feature-discovery",
               "pods": 1
             },
             {
+              "name": "open-webui",
+              "pods": 3
+            },
+            {
               "name": "opentelemetry",
+              "pods": 2
+            },
+            {
+              "name": "posthog-injector",
+              "pods": 1
+            },
+            {
+              "name": "product-bench",
+              "pods": 1
+            },
+            {
+              "name": "project-nomad",
               "pods": 1
             },
             {
@@ -755,32 +1016,133 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "temporal",
+              "name": "radar-ng",
+              "pods": 2
+            },
+            {
+              "name": "redis",
               "pods": 1
+            },
+            {
+              "name": "searxng",
+              "pods": 1
+            },
+            {
+              "name": "snapshot-controller",
+              "pods": 1
+            },
+            {
+              "name": "surfsense",
+              "pods": 4
+            },
+            {
+              "name": "temporal",
+              "pods": 2
             },
             {
               "name": "truenas-csi",
               "pods": 1
+            },
+            {
+              "name": "versatiles",
+              "pods": 1
+            },
+            {
+              "name": "vert",
+              "pods": 1
+            },
+            {
+              "name": "worldmonitor",
+              "pods": 1
             }
-          ]
+          ],
+          "passthrough": {
+            "hostpci0": "mapping=intel-igpu,pcie=1",
+            "usb0": "mapping=zigbee,usb3=1",
+            "usb1": "host=2-3,usb3=1"
+          },
+          "talos": "Talos (v1.14.2)",
+          "kubernetes": "v1.37.1"
         }
       ],
-      "ramBytes": 32843362304
+      "ramBytes": 32843304960,
+      "memoryAvailableBytes": 2105970688,
+      "software": "pve-manager/9.2.21/4f6e0ac86f9e8c7f (running kernel: 7.0.14-20-pve)",
+      "storages": [
+        {
+          "name": "hp-elite-vmstore",
+          "type": "lvm",
+          "status": "active",
+          "totalKiB": "500105216",
+          "usedKiB": "471859200",
+          "availableKiB": "28246016",
+          "percent": "94.35%"
+        },
+        {
+          "name": "local",
+          "type": "dir",
+          "status": "active",
+          "totalKiB": "71017632",
+          "usedKiB": "13327660",
+          "availableKiB": "54036752",
+          "percent": "18.77%"
+        },
+        {
+          "name": "local-lvm",
+          "type": "lvmthin",
+          "status": "active",
+          "totalKiB": "148086784",
+          "usedKiB": "62551857",
+          "availableKiB": "85534926",
+          "percent": "42.24%"
+        }
+      ],
+      "pciDevices": [
+        "00:00.0 Host bridge: Intel Corporation Device 4640 (rev 02)",
+        "00:02.0 VGA compatible controller: Intel Corporation AlderLake-S GT1 (rev 0c)",
+        "00:14.0 USB controller: Intel Corporation Alder Lake-S PCH USB 3.2 Gen 2x2 XHCI Controller (rev 11)",
+        "00:14.2 RAM memory: Intel Corporation Alder Lake-S PCH Shared SRAM (rev 11)",
+        "00:14.3 Network controller: Intel Corporation Alder Lake-S PCH CNVi WiFi (rev 11)",
+        "00:16.0 Communication controller: Intel Corporation Alder Lake-S PCH HECI Controller #1 (rev 11)",
+        "00:16.3 Serial controller: Intel Corporation Alder Lake-S Keyboard and Text (KT) Redirection (rev 11)",
+        "00:17.0 SATA controller: Intel Corporation Alder Lake-S PCH SATA Controller [AHCI Mode] (rev 11)",
+        "00:1a.0 PCI bridge: Intel Corporation Alder Lake-S PCH PCI Express Root Port #25 (rev 11)",
+        "00:1b.0 PCI bridge: Intel Corporation Alder Lake-S PCH PCI Express Root Port #21 (rev 11)",
+        "00:1f.0 ISA bridge: Intel Corporation Q670 Chipset LPC/eSPI Controller (rev 11)",
+        "00:1f.3 Audio device: Intel Corporation Alder Lake-S HD Audio Controller (rev 11)",
+        "00:1f.4 SMBus: Intel Corporation Alder Lake-S PCH SMBus Controller (rev 11)",
+        "00:1f.5 Serial bus controller: Intel Corporation Alder Lake-S PCH SPI Controller (rev 11)",
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (17) I219-LM (rev 11)",
+        "01:00.0 Non-Volatile memory controller: Intel Corporation SSD 660P Series (rev 03)",
+        "02:00.0 Non-Volatile memory controller: Sandisk Corp PC SN530 NVMe SSD (DRAM-less) (rev 01)"
+      ],
+      "usbDevices": [
+        "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 001 Device 002: ID 10c4:ea60 Silicon Labs CP210x UART Bridge",
+        "Bus 001 Device 003: ID 8087:0033 Intel Corp. AX211 Bluetooth",
+        "Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub",
+        "Bus 002 Device 003: ID 0b05:1976 ASUSTek Computer, Inc. USB 10/100/1G/2.5G LAN",
+        "Bus 002 Device 004: ID 18d1:9302 Google Inc. "
+      ],
+      "networkAdapters": [
+        "00:14.3 Network controller: Intel Corporation Alder Lake-S PCH CNVi WiFi (rev 11)",
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (17) I219-LM (rev 11)"
+      ]
     },
     {
       "id": "gpu",
       "name": "Threadripper",
       "model": "X399 \u00b7 Ryzen Threadripper 2950X",
-      "cpu": "AMD 2950X \u00b7 16 cores / 32 threads",
+      "cpu": "AMD Ryzen Threadripper 2950X 16-Core Processor \u00b7 32 threads",
       "ram": "128 GB",
       "zone": "house",
       "link": "Wired",
       "role": "GPU + heavy jobs + app storage",
       "suggested": "GPU + selected heavy jobs",
-      "summary": "One RTX 3090, lots of RAM, and the enterprise SSD mirror. Ordinary apps still depend on this box.",
-      "advice": "Keep the HPE mirror. Gradually move ordinary service dependencies to the HPs; fix fresh boot-disk selection before rebuilding.",
+      "summary": "Two RTX 3090s, an enterprise SSD mirror, and separate Talos, model-cache and bulk-storage paths.",
+      "advice": "The enterprise mirror protects against one member failure, not loss of this host.",
       "loss": "The GPU stops, as expected. The flash mirror and many single-copy app volumes also disappear with this host; mirroring disks inside it cannot prevent that.",
-      "power": 182,
+      "power": null,
       "ip": "192.168.10.14",
       "kind": "Proxmox",
       "disks": [
@@ -789,95 +1151,153 @@ window.HOMELAB_INVENTORY = {
           "model": "PNY CS900 1TB SSD",
           "bytes": 1000204886016,
           "interface": "sata",
-          "role": "Proxmox boot",
-          "path": "Host filesystem and local capacity",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Proxmox + bulk app storage",
+          "path": "pve / tr-sda-vmstore \u2192 VM 100 scsi4 (800 GiB)",
+          "note": "SMART overall passed; 33 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 33,
+            "powerOnHours": 25651,
+            "ataCounters": [
+              {
+                "id": 231,
+                "name": "SSD_Life_Left",
+                "raw": 93,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "sdb",
           "model": "MK000480GWCEV",
           "bytes": 480103981056,
           "interface": "sata",
-          "role": "HPE mirror member",
-          "path": "md0 \u2192 ssd-ent \u2192 GPU VM flash + extra disk",
-          "note": "HPE MK000480GWCEV, PLP; member of the same RAID1 mirror. Keep both members in place."
+          "role": "Enterprise RAID1 member",
+          "path": "md0 \u2192 ssd-ent \u2192 VM 100 scsi3 (440 GiB)",
+          "note": "SMART overall passed; 18 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 18,
+            "powerOnHours": 53697,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 202,
+                "name": "Unknown_SSD_Attribute",
+                "raw": 0,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "sdc",
           "model": "MK000480GWCEV",
           "bytes": 480103981056,
           "interface": "sata",
-          "role": "HPE mirror member",
-          "path": "md0 \u2192 ssd-ent \u2192 GPU VM flash + extra disk",
-          "note": "HPE MK000480GWCEV, PLP; member of the same RAID1 mirror. Keep both members in place."
-        },
-        {
-          "device": "nvme1n1",
-          "model": "EDILOCA EN605 512GB",
-          "bytes": 512110190592,
-          "interface": "nvme",
-          "role": "Local AI cache",
-          "path": "nvme1-vmstore \u2192 VM 103 scsi1, 450 GiB",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Enterprise RAID1 member",
+          "path": "md0 \u2192 ssd-ent \u2192 VM 100 scsi3 (440 GiB)",
+          "note": "SMART overall passed; 24 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 24,
+            "powerOnHours": 48973,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 202,
+                "name": "Unknown_SSD_Attribute",
+                "raw": 0,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "nvme0n1",
           "model": "EDILOCA EN605 512GB",
           "bytes": 512110190592,
           "interface": "nvme",
-          "role": "Talos boot + Longhorn",
-          "path": "nvme0-vmstore \u2192 VM 103 scsi0, 450 GiB",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Talos system",
+          "path": "nvme0-vmstore \u2192 VM 100 scsi0 (16 GiB) + scsi1 (434 GiB)",
+          "note": "SMART overall passed; 54 \u00b0C at collection. NVMe endurance used: 16%; media errors: 0.",
+          "health": {
+            "passed": true,
+            "temperatureC": 54,
+            "powerOnHours": 17564,
+            "percentage_used": 16,
+            "media_errors": 0,
+            "critical_warning": 0,
+            "data_units_written": 156636352,
+            "ataCounters": []
+          }
+        },
+        {
+          "device": "nvme1n1",
+          "model": "EDILOCA EN605 512GB",
+          "bytes": 512110190592,
+          "interface": "nvme",
+          "role": "AI model cache",
+          "path": "nvme1-vmstore \u2192 VM 100 scsi2 (450 GiB)",
+          "note": "SMART overall passed; 54 \u00b0C at collection. NVMe endurance used: 20%; media errors: 0.",
+          "health": {
+            "passed": true,
+            "temperatureC": 54,
+            "powerOnHours": 22806,
+            "percentage_used": 20,
+            "media_errors": 0,
+            "critical_warning": 0,
+            "data_units_written": 177986476,
+            "ataCounters": []
+          }
         }
       ],
       "vms": [
         {
-          "id": "102",
-          "name": "kali-linux",
-          "ramMiB": 12000,
-          "vcpus": 4,
-          "state": "stopped",
-          "ip": null,
-          "disks": [
-            {
-              "slot": "scsi0",
-              "backing": "truenas-smb:102/vm-102-disk-0.raw",
-              "size": "305 GiB"
-            }
-          ],
-          "namespaces": []
-        },
-        {
-          "id": "103",
-          "name": "talos-prod-cluster-v2-gpu-workers-7ct4kq",
+          "id": "100",
+          "name": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
           "ramMiB": 102400,
           "vcpus": 30,
           "state": "running",
-          "ip": "192.168.10.80",
+          "ip": "192.168.10.187",
           "disks": [
             {
               "slot": "scsi0",
-              "backing": "nvme0-vmstore:vm-103-disk-1",
-              "size": "450 GiB"
+              "backing": "nvme0-vmstore:vm-100-disk-1",
+              "size": "16 GiB"
             },
             {
               "slot": "scsi1",
-              "backing": "nvme1-vmstore:vm-103-disk-0",
-              "size": "450 GiB"
+              "backing": "nvme0-vmstore:vm-100-disk-2",
+              "size": "434 GiB"
             },
             {
               "slot": "scsi2",
-              "backing": "ssd-ent:vm-103-disk-0",
-              "size": "300 GiB"
+              "backing": "nvme1-vmstore:vm-100-disk-0",
+              "size": "450 GiB"
             },
             {
               "slot": "scsi3",
-              "backing": "ssd-ent:vm-103-disk-1",
-              "size": "120 GiB"
+              "backing": "ssd-ent:vm-100-disk-0",
+              "size": "440 GiB"
+            },
+            {
+              "slot": "scsi4",
+              "backing": "tr-sda-vmstore:vm-100-disk-0",
+              "size": "800 GiB"
             }
           ],
-          "talos": "Talos (v1.14.0)",
-          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "1passwordconnect",
@@ -885,14 +1305,10 @@ window.HOMELAB_INVENTORY = {
             },
             {
               "name": "argocd",
-              "pods": 1
+              "pods": 5
             },
             {
-              "name": "cobalt",
-              "pods": 1
-            },
-            {
-              "name": "convertx",
+              "name": "cloudflared",
               "pods": 1
             },
             {
@@ -908,19 +1324,23 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "excalidraw",
-              "pods": 1
+              "name": "deal-scout",
+              "pods": 2
             },
             {
-              "name": "external-dns",
-              "pods": 1
-            },
-            {
-              "name": "external-secrets",
+              "name": "dozzle",
               "pods": 1
             },
             {
               "name": "frigate",
+              "pods": 1
+            },
+            {
+              "name": "geocoder",
+              "pods": 1
+            },
+            {
+              "name": "gitea",
               "pods": 1
             },
             {
@@ -933,39 +1353,43 @@ window.HOMELAB_INVENTORY = {
             },
             {
               "name": "immich",
-              "pods": 4
+              "pods": 1
+            },
+            {
+              "name": "intercept",
+              "pods": 1
+            },
+            {
+              "name": "it-tools",
+              "pods": 1
             },
             {
               "name": "karakeep",
-              "pods": 3
+              "pods": 2
             },
             {
-              "name": "keep",
-              "pods": 3
+              "name": "keda",
+              "pods": 1
+            },
+            {
+              "name": "kopiur-system",
+              "pods": 1
             },
             {
               "name": "kube-system",
-              "pods": 7
+              "pods": 4
             },
             {
-              "name": "llama-cpp",
-              "pods": 1
+              "name": "langfuse",
+              "pods": 2
             },
             {
               "name": "loki-stack",
-              "pods": 3
+              "pods": 4
             },
             {
               "name": "longhorn-system",
-              "pods": 7
-            },
-            {
-              "name": "mailpit",
-              "pods": 1
-            },
-            {
-              "name": "metrics-server",
-              "pods": 1
+              "pods": 10
             },
             {
               "name": "monitoring",
@@ -973,11 +1397,11 @@ window.HOMELAB_INVENTORY = {
             },
             {
               "name": "news-reader",
-              "pods": 1
+              "pods": 2
             },
             {
               "name": "nginx-example",
-              "pods": 2
+              "pods": 1
             },
             {
               "name": "node-feature-discovery",
@@ -1001,30 +1425,30 @@ window.HOMELAB_INVENTORY = {
             },
             {
               "name": "posthog",
-              "pods": 17
+              "pods": 21
             },
             {
               "name": "presenton",
               "pods": 1
             },
             {
+              "name": "product-bench",
+              "pods": 1
+            },
+            {
               "name": "project-nomad",
-              "pods": 4
+              "pods": 1
             },
             {
               "name": "prometheus-stack",
-              "pods": 3
+              "pods": 5
             },
             {
               "name": "radar-ng",
               "pods": 8
             },
             {
-              "name": "redis-instance",
-              "pods": 1
-            },
-            {
-              "name": "redlib",
+              "name": "restore-canary",
               "pods": 1
             },
             {
@@ -1032,7 +1456,7 @@ window.HOMELAB_INVENTORY = {
               "pods": 2
             },
             {
-              "name": "snapshot-controller",
+              "name": "stirling-pdf",
               "pods": 1
             },
             {
@@ -1041,81 +1465,304 @@ window.HOMELAB_INVENTORY = {
             },
             {
               "name": "temporal",
-              "pods": 4
-            },
-            {
-              "name": "trivy-operator",
-              "pods": 1
+              "pods": 2
             },
             {
               "name": "truenas-csi",
               "pods": 2
             },
             {
-              "name": "tubesync",
-              "pods": 1
-            },
-            {
-              "name": "vert",
-              "pods": 1
-            },
-            {
-              "name": "vertical-pod-autoscaler",
+              "name": "vllm",
               "pods": 1
             },
             {
               "name": "worldmonitor",
               "pods": 1
             }
-          ]
+          ],
+          "passthrough": {
+            "hostpci0": "mapping=gpu-1,pcie=1",
+            "hostpci1": "mapping=gpu-2,pcie=1"
+          },
+          "talos": "Talos (v1.14.2)",
+          "kubernetes": "v1.37.1"
+        },
+        {
+          "id": "102",
+          "name": "kali-linux",
+          "ramMiB": 12000,
+          "vcpus": 4,
+          "state": "stopped",
+          "ip": null,
+          "disks": [
+            {
+              "slot": "scsi0",
+              "backing": "truenas-smb:102/vm-102-disk-0.raw",
+              "size": "305 GiB"
+            }
+          ],
+          "namespaces": [],
+          "passthrough": {}
         }
       ],
-      "ramBytes": 134941966336
+      "ramBytes": 134941495296,
+      "memoryAvailableBytes": 21291954176,
+      "software": "pve-manager/9.2.21/4f6e0ac86f9e8c7f (running kernel: 7.0.14-20-pve)",
+      "storages": [
+        {
+          "name": "local",
+          "type": "dir",
+          "status": "active",
+          "totalKiB": "98497960",
+          "usedKiB": "42934696",
+          "availableKiB": "50793340",
+          "percent": "43.59%"
+        },
+        {
+          "name": "nvme0-vmstore",
+          "type": "lvmthin",
+          "status": "active",
+          "totalKiB": "489975808",
+          "usedKiB": "241558073",
+          "availableKiB": "248417734",
+          "percent": "49.30%"
+        },
+        {
+          "name": "nvme1-vmstore",
+          "type": "lvmthin",
+          "status": "active",
+          "totalKiB": "489975808",
+          "usedKiB": "30378500",
+          "availableKiB": "459597307",
+          "percent": "6.20%"
+        },
+        {
+          "name": "ssd-ent",
+          "type": "lvm",
+          "status": "active",
+          "totalKiB": "468717568",
+          "usedKiB": "461373440",
+          "availableKiB": "7344128",
+          "percent": "98.43%"
+        },
+        {
+          "name": "tr-sda-vmstore",
+          "type": "lvm",
+          "status": "active",
+          "totalKiB": "975708160",
+          "usedKiB": "947912704",
+          "availableKiB": "27795456",
+          "percent": "97.15%"
+        },
+        {
+          "name": "truenas-smb",
+          "type": "cifs",
+          "status": "active",
+          "totalKiB": "8879492224",
+          "usedKiB": "532885248",
+          "availableKiB": "8346606976",
+          "percent": "6.00%"
+        }
+      ],
+      "pciDevices": [
+        "00:00.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Root Complex",
+        "00:00.2 IOMMU: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) I/O Memory Management Unit",
+        "00:01.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "00:01.1 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) PCIe GPP Bridge",
+        "00:01.2 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) PCIe GPP Bridge",
+        "00:01.3 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) PCIe GPP Bridge",
+        "00:02.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "00:03.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "00:04.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "00:07.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "00:07.1 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Internal PCIe GPP Bridge 0 to Bus B",
+        "00:08.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "00:08.1 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Internal PCIe GPP Bridge 0 to Bus B",
+        "00:14.0 SMBus: Advanced Micro Devices, Inc. [AMD] FCH SMBus Controller (rev 59)",
+        "00:14.3 ISA bridge: Advanced Micro Devices, Inc. [AMD] FCH LPC Bridge (rev 51)",
+        "00:18.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 0",
+        "00:18.1 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 1",
+        "00:18.2 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 2",
+        "00:18.3 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 3",
+        "00:18.4 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 4",
+        "00:18.5 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 5",
+        "00:18.6 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 6",
+        "00:18.7 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 7",
+        "00:19.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 0",
+        "00:19.1 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 1",
+        "00:19.2 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 2",
+        "00:19.3 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 3",
+        "00:19.4 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 4",
+        "00:19.5 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 5",
+        "00:19.6 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 6",
+        "00:19.7 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Data Fabric: Device 18h; Function 7",
+        "01:00.0 USB controller: Advanced Micro Devices, Inc. [AMD] X399 Series Chipset USB 3.1 xHCI Controller (rev 02)",
+        "01:00.1 SATA controller: Advanced Micro Devices, Inc. [AMD] X399 Series Chipset SATA Controller (rev 02)",
+        "01:00.2 PCI bridge: Advanced Micro Devices, Inc. [AMD] X399 Series Chipset PCIe Bridge (rev 02)",
+        "02:00.0 PCI bridge: Advanced Micro Devices, Inc. [AMD] 300 Series Chipset PCIe Port (rev 02)",
+        "02:04.0 PCI bridge: Advanced Micro Devices, Inc. [AMD] 300 Series Chipset PCIe Port (rev 02)",
+        "02:05.0 PCI bridge: Advanced Micro Devices, Inc. [AMD] 300 Series Chipset PCIe Port (rev 02)",
+        "02:06.0 PCI bridge: Advanced Micro Devices, Inc. [AMD] 300 Series Chipset PCIe Port (rev 02)",
+        "02:07.0 PCI bridge: Advanced Micro Devices, Inc. [AMD] 300 Series Chipset PCIe Port (rev 02)",
+        "08:00.0 SATA controller: ASMedia Technology Inc. ASM1166 Serial ATA Controller (rev 02)",
+        "09:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)",
+        "09:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)",
+        "0a:00.0 Non-Essential Instrumentation [1300]: Advanced Micro Devices, Inc. [AMD] Zeppelin/Raven/Raven2 PCIe Dummy Function",
+        "0a:00.2 Encryption controller: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Platform Security Processor (PSP) 3.0 Device",
+        "0a:00.3 USB controller: Advanced Micro Devices, Inc. [AMD] Zeppelin USB 3.0 xHCI Compliant Host Controller",
+        "0b:00.0 Non-Essential Instrumentation [1300]: Advanced Micro Devices, Inc. [AMD] Zeppelin/Renoir PCIe Dummy Function",
+        "0b:00.2 SATA controller: Advanced Micro Devices, Inc. [AMD] FCH SATA Controller [AHCI mode] (rev 51)",
+        "0b:00.3 Audio device: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) HD Audio Controller",
+        "40:00.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Root Complex",
+        "40:00.2 IOMMU: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) I/O Memory Management Unit",
+        "40:01.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "40:01.1 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) PCIe GPP Bridge",
+        "40:01.2 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) PCIe GPP Bridge",
+        "40:01.3 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) PCIe GPP Bridge",
+        "40:02.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "40:03.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "40:03.1 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) PCIe GPP Bridge",
+        "40:04.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "40:07.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "40:07.1 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Internal PCIe GPP Bridge 0 to Bus B",
+        "40:08.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-1fh) PCIe Dummy Host Bridge",
+        "40:08.1 PCI bridge: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Internal PCIe GPP Bridge 0 to Bus B",
+        "41:00.0 Non-Volatile memory controller: Realtek Semiconductor Co., Ltd. RTS5765DL NVMe SSD Controller (DRAM-less) (rev 01)",
+        "42:00.0 Non-Volatile memory controller: Realtek Semiconductor Co., Ltd. RTS5765DL NVMe SSD Controller (DRAM-less) (rev 01)",
+        "43:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)",
+        "43:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)",
+        "44:00.0 Ethernet controller: Mellanox Technologies MT27500 Family [ConnectX-3]",
+        "45:00.0 Non-Essential Instrumentation [1300]: Advanced Micro Devices, Inc. [AMD] Zeppelin/Raven/Raven2 PCIe Dummy Function",
+        "45:00.2 Encryption controller: Advanced Micro Devices, Inc. [AMD] Family 17h (Models 00h-0fh) Platform Security Processor (PSP) 3.0 Device",
+        "45:00.3 USB controller: Advanced Micro Devices, Inc. [AMD] Zeppelin USB 3.0 xHCI Compliant Host Controller",
+        "46:00.0 Non-Essential Instrumentation [1300]: Advanced Micro Devices, Inc. [AMD] Zeppelin/Renoir PCIe Dummy Function",
+        "46:00.2 SATA controller: Advanced Micro Devices, Inc. [AMD] FCH SATA Controller [AHCI mode] (rev 51)"
+      ],
+      "usbDevices": [
+        "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub",
+        "Bus 003 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 004 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub",
+        "Bus 005 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 005 Device 002: ID 040b:2000 Weltrend Semiconductor wired Keyboard [Dynex DX-WRK1401]",
+        "Bus 006 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub"
+      ],
+      "networkAdapters": [
+        "44:00.0 Ethernet controller: Mellanox Technologies MT27500 Family [ConnectX-3]"
+      ]
     },
     {
       "id": "dell",
       "name": "Dell OptiPlex",
       "model": "OptiPlex 7060 \u00b7 exposed motherboard",
-      "cpu": "Intel i5-8500 \u00b7 6 cores",
+      "cpu": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz \u00b7 6 threads",
       "ram": "40 GB",
       "zone": "dell",
       "link": "Wired \u00b7 2.5 GbE",
       "role": "Temporary worker + live storage",
       "suggested": "Restartable jobs and experiments",
-      "summary": "Useful extra capacity, but the acrylic-board build is intentionally temporary.",
-      "advice": "Move required replicas away before treating it as expendable. Historical CRC errors do not prove an active disk failure.",
+      "summary": "Two physical drives visible. The configured T-FORCE data path is absent from host block-device discovery.",
+      "advice": "Investigate inactive dell-ssd-vmstore before relying on its guest mount or Longhorn status.",
       "loss": "Work here stops. The owner accepts temporary hardware, but its current single-copy volumes are still real dependencies.",
       "power": null,
       "ip": "192.168.10.16",
       "kind": "Proxmox",
       "disks": [
         {
-          "device": "sda",
-          "model": "Samsung SSD 850 EVO 500GB",
-          "bytes": 500107862016,
+          "device": "sdb",
+          "model": "R9M2SH6Q240GQF72C",
+          "bytes": 240057409536,
           "interface": "sata",
-          "role": "Longhorn data",
-          "path": "dell-ssd-vmstore \u2192 VM 100 scsi1, 400 GiB",
-          "note": "~74,097 hours; 8,162 historical CRC errors; no reported reallocated/uncorrectable errors."
+          "role": "Proxmox + Talos system",
+          "path": "pve / local-lvm \u2192 VM 100 scsi0 (128 GiB)",
+          "note": "SMART overall passed; 31 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 31,
+            "powerOnHours": 95,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 187,
+                "name": "Reported_Uncorrect",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 198,
+                "name": "Offline_Uncorrectable",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 199,
+                "name": "UDMA_CRC_Error_Count",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 202,
+                "name": "Unknown_SSD_Attribute",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 231,
+                "name": "Unknown_SSD_Attribute",
+                "raw": 100,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
-          "device": "sdb",
+          "device": "sdc",
           "model": "APPLE SSD SM0256G",
           "bytes": 251000193024,
           "interface": "sata",
-          "role": "Adapted Apple boot SSD",
-          "path": "local-lvm \u2192 VM 100 scsi0, 128 GiB",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Longhorn data",
+          "path": "dell-apple-vmstore \u2192 VM 100 scsi2 (220 GiB)",
+          "note": "SMART overall passed; 29 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 29,
+            "powerOnHours": 35731,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 197,
+                "name": "Current_Pending_Sector",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 199,
+                "name": "UDMA_CRC_Error_Count",
+                "raw": 0,
+                "normalized": 200
+              }
+            ]
+          }
         }
       ],
       "vms": [
         {
           "id": "100",
-          "name": "talos-prod-cluster-v2-dell-workers-nkq6qd",
+          "name": "talos-prod-cluster-v2-dell-workers-2jfrb8",
           "ramMiB": 30720,
           "vcpus": 6,
           "state": "running",
-          "ip": "192.168.10.177",
+          "ip": "192.168.10.84",
           "disks": [
             {
               "slot": "scsi0",
@@ -1126,29 +1773,16 @@ window.HOMELAB_INVENTORY = {
               "slot": "scsi1",
               "backing": "dell-ssd-vmstore:vm-100-disk-0",
               "size": "400 GiB"
+            },
+            {
+              "slot": "scsi2",
+              "backing": "dell-apple-vmstore:vm-100-disk-0",
+              "size": "220 GiB"
             }
           ],
-          "talos": "Talos (v1.14.0)",
-          "kubernetes": "v1.37.0",
           "namespaces": [
             {
-              "name": "1passwordconnect",
-              "pods": 1
-            },
-            {
-              "name": "argocd",
-              "pods": 2
-            },
-            {
               "name": "cloudflared",
-              "pods": 1
-            },
-            {
-              "name": "cobalt",
-              "pods": 1
-            },
-            {
-              "name": "coroot",
               "pods": 1
             },
             {
@@ -1160,40 +1794,8 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "deal-scout",
+              "name": "intel-gpu-plugin",
               "pods": 1
-            },
-            {
-              "name": "external-dns",
-              "pods": 1
-            },
-            {
-              "name": "gitea",
-              "pods": 1
-            },
-            {
-              "name": "gitea-actions",
-              "pods": 1
-            },
-            {
-              "name": "hindsight",
-              "pods": 1
-            },
-            {
-              "name": "it-tools",
-              "pods": 1
-            },
-            {
-              "name": "jellyfin",
-              "pods": 1
-            },
-            {
-              "name": "keda",
-              "pods": 2
-            },
-            {
-              "name": "kopiur-system",
-              "pods": 2
             },
             {
               "name": "kube-system",
@@ -1201,54 +1803,22 @@ window.HOMELAB_INVENTORY = {
             },
             {
               "name": "loki-stack",
-              "pods": 4
+              "pods": 1
             },
             {
               "name": "longhorn-system",
-              "pods": 8
+              "pods": 4
             },
             {
               "name": "node-feature-discovery",
-              "pods": 2
-            },
-            {
-              "name": "open-webui",
               "pods": 1
             },
             {
               "name": "opentelemetry",
-              "pods": 3
-            },
-            {
-              "name": "paperless-ngx",
               "pods": 1
-            },
-            {
-              "name": "project-nomad",
-              "pods": 2
             },
             {
               "name": "prometheus-stack",
-              "pods": 3
-            },
-            {
-              "name": "redis",
-              "pods": 1
-            },
-            {
-              "name": "stirling-pdf",
-              "pods": 1
-            },
-            {
-              "name": "surfsense",
-              "pods": 5
-            },
-            {
-              "name": "temporal",
-              "pods": 1
-            },
-            {
-              "name": "temporal-worker-controller",
               "pods": 1
             },
             {
@@ -1256,27 +1826,93 @@ window.HOMELAB_INVENTORY = {
               "pods": 1
             },
             {
-              "name": "versatiles",
-              "pods": 1
-            },
-            {
-              "name": "vert",
-              "pods": 1
-            },
-            {
-              "name": "worldmonitor",
+              "name": "tubesync",
               "pods": 1
             }
-          ]
+          ],
+          "passthrough": {
+            "hostpci0": "mapping=intel-igpu,pcie=1"
+          },
+          "talos": "Talos (v1.14.2)",
+          "kubernetes": "v1.37.1"
         }
       ],
-      "ramBytes": 41846128640
+      "ramBytes": 41846075392,
+      "memoryAvailableBytes": 7199395840,
+      "software": "pve-manager/9.2.21/4f6e0ac86f9e8c7f (running kernel: 7.0.14-23-pve)",
+      "storages": [
+        {
+          "name": "dell-apple-vmstore",
+          "type": "lvm",
+          "status": "active",
+          "totalKiB": "245112832",
+          "usedKiB": "230686720",
+          "availableKiB": "14426112",
+          "percent": "94.11%"
+        },
+        {
+          "name": "dell-ssd-vmstore",
+          "type": "lvm",
+          "status": "inactive",
+          "totalKiB": "0",
+          "usedKiB": "0",
+          "availableKiB": "0",
+          "percent": "0.00%"
+        },
+        {
+          "name": "local",
+          "type": "dir",
+          "status": "active",
+          "totalKiB": "69799144",
+          "usedKiB": "16102220",
+          "availableKiB": "50105552",
+          "percent": "23.07%"
+        },
+        {
+          "name": "local-lvm",
+          "type": "lvmthin",
+          "status": "active",
+          "totalKiB": "146800640",
+          "usedKiB": "96682901",
+          "availableKiB": "50117738",
+          "percent": "65.86%"
+        }
+      ],
+      "pciDevices": [
+        "00:00.0 Host bridge: Intel Corporation 8th Gen Core Processor Host Bridge/DRAM Registers (rev 07)",
+        "00:02.0 VGA compatible controller: Intel Corporation CoffeeLake-S GT2 [UHD Graphics 630]",
+        "00:08.0 System peripheral: Intel Corporation Xeon E3-1200 v5/v6 / E3-1500 v5 / 6th/7th/8th Gen Core Processor Gaussian Mixture Model",
+        "00:12.0 Signal processing controller: Intel Corporation Cannon Lake PCH Thermal Controller (rev 10)",
+        "00:14.0 USB controller: Intel Corporation Cannon Lake PCH USB 3.1 xHCI Host Controller (rev 10)",
+        "00:14.2 RAM memory: Intel Corporation Cannon Lake PCH Shared SRAM (rev 10)",
+        "00:15.0 Serial bus controller: Intel Corporation Cannon Lake PCH Serial IO I2C Controller #0 (rev 10)",
+        "00:16.0 Communication controller: Intel Corporation Cannon Lake PCH HECI Controller (rev 10)",
+        "00:16.3 Serial controller: Intel Corporation Cannon Lake PCH Active Management Technology - SOL (rev 10)",
+        "00:17.0 SATA controller: Intel Corporation Cannon Lake PCH SATA AHCI Controller (rev 10)",
+        "00:1b.0 PCI bridge: Intel Corporation Cannon Lake PCH PCI Express Root Port #17 (rev f0)",
+        "00:1d.0 PCI bridge: Intel Corporation Cannon Lake PCH PCI Express Root Port #9 (rev f0)",
+        "00:1f.0 ISA bridge: Intel Corporation Q370 Chipset LPC/eSPI Controller (rev 10)",
+        "00:1f.3 Audio device: Intel Corporation Cannon Lake PCH cAVS (rev 10)",
+        "00:1f.4 SMBus: Intel Corporation Cannon Lake PCH SMBus Controller (rev 10)",
+        "00:1f.5 Serial bus controller: Intel Corporation Cannon Lake PCH SPI Controller (rev 10)",
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (7) I219-LM (rev 10)",
+        "01:00.0 SATA controller: Samsung Electronics Co Ltd S4LN058A01[SSUBX] AHCI SSD Controller (Apple slot) (rev 01)",
+        "02:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8125 2.5GbE Controller (rev 04)"
+      ],
+      "usbDevices": [
+        "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub"
+      ],
+      "networkAdapters": [
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (7) I219-LM (rev 10)",
+        "02:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8125 2.5GbE Controller (rev 04)"
+      ]
     },
     {
       "id": "shed",
       "name": "Shed HP Mini",
       "model": "ProDesk 600 G4 DM",
-      "cpu": "Intel i5-8500T \u00b7 6 cores",
+      "cpu": "Intel(R) Core(TM) i5-8500T CPU @ 2.10GHz \u00b7 6 threads",
       "ram": "32 GB",
       "zone": "shed",
       "link": "Ethernet \u2192 ASUS Wi-Fi media bridge",
@@ -1285,7 +1921,7 @@ window.HOMELAB_INVENTORY = {
       "summary": "Talos sees Ethernet; the trip back to the house crosses Wi-Fi.",
       "advice": "Keep it out of storage replication and quorum. Its Longhorn disks are already unschedulable.",
       "loss": "Attached radio/USB jobs stop. No Longhorn replicas were scheduled here in the audit.",
-      "power": 23,
+      "power": null,
       "ip": "192.168.10.20",
       "kind": "Proxmox",
       "disks": [
@@ -1294,28 +1930,51 @@ window.HOMELAB_INVENTORY = {
           "model": "PNY CS900 1TB SSD",
           "bytes": 1000204886016,
           "interface": "sata",
-          "role": "Data disk; no Longhorn replicas",
-          "path": "hp-ssd-vmstore \u2192 VM 100 scsi1, 850 GiB",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Longhorn scheduling disabled",
+          "path": "hp-ssd-vmstore \u2192 VM 100 scsi1 (850 GiB)",
+          "note": "SMART overall passed; 33 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 33,
+            "powerOnHours": 25327,
+            "ataCounters": [
+              {
+                "id": 231,
+                "name": "SSD_Life_Left",
+                "raw": 93,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "nvme0n1",
           "model": "SK hynix BC501 HFM256GDJTNG-8310A",
           "bytes": 256060514304,
           "interface": "nvme",
-          "role": "Proxmox + Talos boot",
-          "path": "local-lvm \u2192 VM 100 scsi0, 128 GiB",
-          "note": "SMART overall passed in the audit; this is not a lifetime guarantee."
+          "role": "Proxmox + Talos system",
+          "path": "pve / local-lvm \u2192 VM 100 scsi0 (128 GiB)",
+          "note": "SMART overall passed; 41 \u00b0C at collection. NVMe endurance used: 6%; media errors: 0.",
+          "health": {
+            "passed": true,
+            "temperatureC": 41,
+            "powerOnHours": 50406,
+            "percentage_used": 6,
+            "media_errors": 0,
+            "critical_warning": 0,
+            "data_units_written": 45183533,
+            "ataCounters": []
+          }
         }
       ],
       "vms": [
         {
           "id": "100",
-          "name": "talos-prod-cluster-v2-hp-micro-workers-7wwjmh",
-          "ramMiB": 25000,
+          "name": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+          "ramMiB": 12288,
           "vcpus": 4,
           "state": "running",
-          "ip": "192.168.10.156",
+          "ip": "192.168.10.128",
           "disks": [
             {
               "slot": "scsi0",
@@ -1328,8 +1987,6 @@ window.HOMELAB_INVENTORY = {
               "size": "850 GiB"
             }
           ],
-          "talos": "Talos (v1.14.0)",
-          "kubernetes": "v1.37.0",
           "namespaces": [
             {
               "name": "csi-driver-nfs",
@@ -1367,18 +2024,89 @@ window.HOMELAB_INVENTORY = {
               "name": "truenas-csi",
               "pods": 1
             }
-          ]
+          ],
+          "passthrough": {
+            "usb0": "mapping=sdr-blogv4,usb3=1",
+            "usb1": "mapping=sdr-adsb,usb3=1",
+            "usb2": "mapping=wifi-usb,usb3=1"
+          },
+          "talos": "Talos (v1.14.2)",
+          "kubernetes": "v1.37.1"
         }
       ],
-      "ramBytes": 33419948032
+      "ramBytes": 33419886592,
+      "memoryAvailableBytes": 25823387648,
+      "software": "pve-manager/9.2.21/4f6e0ac86f9e8c7f (running kernel: 7.0.14-20-pve)",
+      "storages": [
+        {
+          "name": "hp-ssd-vmstore",
+          "type": "lvm",
+          "status": "active",
+          "totalKiB": "976760832",
+          "usedKiB": "891289600",
+          "availableKiB": "85471232",
+          "percent": "91.25%"
+        },
+        {
+          "name": "local",
+          "type": "dir",
+          "status": "active",
+          "totalKiB": "71017632",
+          "usedKiB": "14320980",
+          "availableKiB": "53043432",
+          "percent": "20.17%"
+        },
+        {
+          "name": "local-lvm",
+          "type": "lvmthin",
+          "status": "active",
+          "totalKiB": "160669696",
+          "usedKiB": "15119018",
+          "availableKiB": "145550677",
+          "percent": "9.41%"
+        }
+      ],
+      "pciDevices": [
+        "00:00.0 Host bridge: Intel Corporation 8th Gen Core Processor Host Bridge/DRAM Registers (rev 07)",
+        "00:02.0 VGA compatible controller: Intel Corporation CoffeeLake-S GT2 [UHD Graphics 630]",
+        "00:12.0 Signal processing controller: Intel Corporation Cannon Lake PCH Thermal Controller (rev 10)",
+        "00:14.0 USB controller: Intel Corporation Cannon Lake PCH USB 3.1 xHCI Host Controller (rev 10)",
+        "00:14.2 RAM memory: Intel Corporation Cannon Lake PCH Shared SRAM (rev 10)",
+        "00:14.3 Network controller: Intel Corporation Cannon Lake PCH CNVi WiFi (rev 10)",
+        "00:16.0 Communication controller: Intel Corporation Cannon Lake PCH HECI Controller (rev 10)",
+        "00:16.3 Serial controller: Intel Corporation Cannon Lake PCH Active Management Technology - SOL (rev 10)",
+        "00:17.0 SATA controller: Intel Corporation Cannon Lake PCH SATA AHCI Controller (rev 10)",
+        "00:1b.0 PCI bridge: Intel Corporation Cannon Lake PCH PCI Express Root Port #21 (rev f0)",
+        "00:1f.0 ISA bridge: Intel Corporation Q370 Chipset LPC/eSPI Controller (rev 10)",
+        "00:1f.3 Audio device: Intel Corporation Cannon Lake PCH cAVS (rev 10)",
+        "00:1f.4 SMBus: Intel Corporation Cannon Lake PCH SMBus Controller (rev 10)",
+        "00:1f.5 Serial bus controller: Intel Corporation Cannon Lake PCH SPI Controller (rev 10)",
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (7) I219-LM (rev 10)",
+        "01:00.0 Non-Volatile memory controller: SK hynix BC501 NVMe Solid State Drive"
+      ],
+      "usbDevices": [
+        "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 001 Device 003: ID 2109:2812 VIA Labs, Inc. VL812 Hub",
+        "Bus 001 Device 004: ID 8087:0aaa Intel Corp. Bluetooth 9460/9560 Jefferson Peak (JfP)",
+        "Bus 001 Device 005: ID 0bda:2838 Realtek Semiconductor Corp. RTL2838 DVB-T",
+        "Bus 001 Device 006: ID 0bda:2838 Realtek Semiconductor Corp. RTL2838 DVB-T",
+        "Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub",
+        "Bus 002 Device 002: ID 2109:0812 VIA Labs, Inc. VL812 Hub",
+        "Bus 002 Device 003: ID 0bda:8153 Realtek Semiconductor Corp. RTL8153 Gigabit Ethernet Adapter",
+        "Bus 002 Device 004: ID 2357:0138 TP-Link 802.11ac NIC"
+      ],
+      "networkAdapters": [
+        "00:14.3 Network controller: Intel Corporation Cannon Lake PCH CNVi WiFi (rev 10)",
+        "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (7) I219-LM (rev 10)"
+      ]
     },
     {
       "id": "pi",
       "name": "Omni / DNS Pi",
       "model": "Raspberry Pi 5",
-      "cpu": "Broadcom BCM2712 \u00b7 4 cores",
+      "cpu": "Cortex-A76 \u00b7 4 threads",
       "ram": "8 GB",
-      "ramBytes": 8589934592,
+      "ramBytes": 8317272064,
       "zone": null,
       "link": "LAN; link speed not captured",
       "ip": "192.168.10.15",
@@ -1391,151 +2119,399 @@ window.HOMELAB_INVENTORY = {
       "power": null,
       "disks": [
         {
-          "device": "NVMe (device name not retained)",
-          "model": "Patriot P300",
-          "bytes": 256000000000,
-          "interface": "NVMe",
-          "role": "Pi boot + services",
-          "path": "Pi filesystem \u2192 Omni + Technitium",
-          "note": "256 GB nominal; about 210 GB filesystem free at collection. This Pi is not booting from an SD card."
+          "device": "nvme0n1",
+          "model": "Patriot M.2 P300 256GB",
+          "bytes": 256060514304,
+          "interface": "nvme",
+          "role": "Management system",
+          "path": "Ubuntu root; Docker services",
+          "note": "SMART overall passed; 32 \u00b0C at collection. NVMe endurance used: 13%; media errors: 0.",
+          "health": {
+            "passed": true,
+            "temperatureC": 32,
+            "powerOnHours": 14194,
+            "percentage_used": 13,
+            "media_errors": 0,
+            "critical_warning": 0,
+            "data_units_written": 82877960,
+            "ataCounters": []
+          }
         }
       ],
-      "vms": []
+      "vms": [],
+      "memoryAvailableBytes": 6148456448,
+      "software": "Ubuntu 26.04 LTS",
+      "services": [
+        {
+          "name": "proxcenter-frontend",
+          "image": "ghcr.io/adminsyspro/proxcenter-frontend:1.4.10-arm64-20261001",
+          "status": "Up 13 days (healthy)"
+        },
+        {
+          "name": "proxcenter-postgres",
+          "image": "postgres:16.15-alpine3.24",
+          "status": "Up 13 days (healthy)"
+        },
+        {
+          "name": "omni",
+          "image": "ghcr.io/siderolabs/omni:v1.12.3",
+          "status": "Up 13 days"
+        },
+        {
+          "name": "technitium-dns",
+          "image": "technitium/dns-server:15.5.1",
+          "status": "Up 13 days"
+        },
+        {
+          "name": "omni-infra-provider-proxmox-hp-micro",
+          "image": "ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0",
+          "status": "Up 13 days"
+        },
+        {
+          "name": "omni-infra-provider-proxmox-hp-elite",
+          "image": "ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0",
+          "status": "Up 13 days"
+        },
+        {
+          "name": "omni-infra-provider-proxmox-hp-sff",
+          "image": "ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0",
+          "status": "Up 13 days"
+        },
+        {
+          "name": "omni-infra-provider-proxmox-dell",
+          "image": "ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0",
+          "status": "Up 13 days"
+        },
+        {
+          "name": "omni-infra-provider-proxmox-threadripper",
+          "image": "ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0",
+          "status": "Up 13 days"
+        }
+      ],
+      "pciDevices": [
+        "0001:00:00.0 PCI bridge: Broadcom Inc. and subsidiaries BCM2712 PCIe Bridge (rev 21)",
+        "0001:01:00.0 Non-Volatile memory controller: Silicon Motion, Inc. SM2263EN/SM2263XT (DRAM-less) NVMe SSD Controllers (rev 03)",
+        "0002:00:00.0 PCI bridge: Broadcom Inc. and subsidiaries BCM2712 PCIe Bridge (rev 21)",
+        "0002:01:00.0 Ethernet controller: Raspberry Pi Ltd RP1 PCIe 2.0 South Bridge"
+      ],
+      "usbDevices": [
+        "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 002 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 003 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub",
+        "Bus 004 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 005 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub",
+        "Bus 005 Device 002: ID 0b05:1976 ASUSTek Computer, Inc. USB 10/100/1G/2.5G LAN"
+      ]
     },
     {
       "id": "nas",
       "name": "TrueNAS",
       "model": "HPE DL360 \u00b7 one Xeon",
-      "cpu": "Intel Xeon E5-2680 v4 \u00b7 14 cores / 28 threads",
+      "cpu": "Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz \u00b7 28 threads",
       "ram": "384 GB ECC",
-      "ramBytes": 405444912742.4,
+      "ramBytes": 405414486016,
       "zone": null,
       "link": "10 GbE",
       "ip": "192.168.10.133",
       "kind": "NAS",
       "role": "Shared files + RustFS backups",
       "suggested": "Measure working-set needs before sizing replacement RAM",
-      "summary": "Shared files, RustFS backups, and 341.4 GiB of RAM cache at the September 20 check.",
+      "summary": "Four imported pools, eleven physical drives, and external RustFS backups. Pool ONLINE state does not verify backups.",
       "advice": "Use the dated NAS benchmarks to compare pool and cache performance. Choose durability before moving database writes here; short tests do not establish minimum RAM.",
       "loss": "NAS-backed workloads can stall, and backup/restore jobs cannot reach RustFS. This outage trade-off is accepted; it is not permission to restore empty data.",
-      "power": 114,
-      "extraPower": "Separate drive PSU: ~43 W",
+      "power": null,
       "disks": [
         {
           "device": "sda",
-          "model": "Samsung SSD 860 EVO 1TB",
-          "bytes": 1000204886016,
-          "interface": "Host reports SAS",
-          "role": "ai-pool",
-          "path": "sda \u2192 ai-pool",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "model": "HP SSD S700 500GB",
+          "bytes": 500107862016,
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "ai-pool",
+          "note": "SMART overall passed; 44 \u00b0C at collection. Lifetime CRC counter: 816; this alone does not prove current errors.",
+          "health": {
+            "passed": true,
+            "temperatureC": 44,
+            "powerOnHours": 51391,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 187,
+                "name": "Reported_Uncorrect",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 198,
+                "name": "Offline_Uncorrectable",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 199,
+                "name": "UDMA_CRC_Error_Count",
+                "raw": 816,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "sdb",
-          "model": "T-FORCE 512GB",
-          "bytes": 512110190592,
-          "interface": "Host reports SAS",
-          "role": "boot-pool",
-          "path": "sdb \u2192 boot-pool",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "model": "Samsung SSD 860 EVO 1TB",
+          "bytes": 1000204886016,
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "ai-pool",
+          "note": "SMART overall passed; 32 \u00b0C at collection. Lifetime CRC counter: 4; this alone does not prove current errors.",
+          "health": {
+            "passed": true,
+            "temperatureC": 32,
+            "powerOnHours": 47995,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 187,
+                "name": "Uncorrectable_Error_Cnt",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 199,
+                "name": "CRC_Error_Count",
+                "raw": 4,
+                "normalized": 99
+              }
+            ]
+          }
         },
         {
           "device": "sdc",
-          "model": "MK000480GWCEV",
-          "bytes": 480103981056,
-          "interface": "Host reports SAS",
-          "role": "boot-pool",
-          "path": "sdc \u2192 boot-pool",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "model": "HUH721010AL4200",
+          "bytes": 10000831348736,
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "BigTank mirror-0",
+          "note": "SMART overall passed; 37 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 37,
+            "powerOnHours": 8372,
+            "ataCounters": []
+          }
         },
         {
           "device": "sdd",
-          "model": "P3-512",
-          "bytes": 512110190592,
-          "interface": "Host reports SAS",
-          "role": "ai-pool",
-          "path": "sdd \u2192 ai-pool",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "model": "HUH721010AL4200",
+          "bytes": 10000831348736,
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "BigTank mirror-1",
+          "note": "SMART overall passed; 50 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 50,
+            "powerOnHours": 15324,
+            "ataCounters": []
+          }
         },
         {
           "device": "sde",
-          "model": "HP SSD S700 500GB",
-          "bytes": 500107862016,
-          "interface": "Host reports SAS",
-          "role": "ai-pool",
-          "path": "sde \u2192 ai-pool",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "model": "T-FORCE 512GB",
+          "bytes": 512110190592,
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "boot-pool mirror",
+          "note": "SMART overall passed; 33 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 33,
+            "powerOnHours": 27729,
+            "ataCounters": [
+              {
+                "id": 231,
+                "name": "Unknown_SSD_Attribute",
+                "raw": 96,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "sdf",
-          "model": "ST10000NM0096",
+          "model": "HUH721010AL4200",
           "bytes": 10000831348736,
-          "interface": "Host reports SAS",
-          "role": "Backup10T",
-          "path": "sdf \u2192 Backup10T",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "BigTank mirror-0",
+          "note": "SMART overall passed; 45 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 45,
+            "powerOnHours": 8639,
+            "ataCounters": []
+          }
         },
         {
           "device": "sdg",
-          "model": "HUH721010AL4200",
-          "bytes": 10000831348736,
-          "interface": "Host reports SAS",
-          "role": "BigTank mirror-0",
-          "path": "sdg \u2192 BigTank mirror-0",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "model": "P3-512",
+          "bytes": 512110190592,
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "ai-pool",
+          "note": "SMART overall passed; 30 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 30,
+            "powerOnHours": 8551,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 197,
+                "name": "Current_Pending_Sector",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 198,
+                "name": "Offline_Uncorrectable",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 199,
+                "name": "UDMA_CRC_Error_Count",
+                "raw": 0,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "sdh",
           "model": "HUH721010AL4200",
           "bytes": 10000831348736,
-          "interface": "Host reports SAS",
-          "role": "BigTank mirror-1",
-          "path": "sdh \u2192 BigTank mirror-1",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "BigTank mirror-1",
+          "note": "SMART overall passed; 50 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 50,
+            "powerOnHours": 15053,
+            "ataCounters": []
+          }
         },
         {
           "device": "sdi",
-          "model": "HUH721010AL4200",
-          "bytes": 10000831348736,
-          "interface": "Host reports SAS",
-          "role": "BigTank mirror-0",
-          "path": "sdi \u2192 BigTank mirror-0",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "model": "MK000480GWCEV",
+          "bytes": 480103981056,
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "boot-pool mirror",
+          "note": "SMART overall passed; 19 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 19,
+            "powerOnHours": 56353,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 202,
+                "name": "Unknown_SSD_Attribute",
+                "raw": 0,
+                "normalized": 100
+              }
+            ]
+          }
         },
         {
           "device": "sdj",
-          "model": "HUH721010AL4200",
+          "model": "ST10000NM0096",
           "bytes": 10000831348736,
-          "interface": "Host reports SAS",
-          "role": "BigTank mirror-1",
-          "path": "sdj \u2192 BigTank mirror-1",
-          "note": "Pool membership verified with zpool status. Controller transport does not establish the drive connector type."
+          "interface": "sas",
+          "role": "NAS pool member",
+          "path": "Backup10T single disk",
+          "note": "SMART overall passed; 32 \u00b0C at collection.",
+          "health": {
+            "passed": true,
+            "temperatureC": 32,
+            "powerOnHours": 58401,
+            "ataCounters": []
+          }
+        },
+        {
+          "device": "sdk",
+          "model": "Samsung SSD 850 EVO 500GB",
+          "bytes": 500107862016,
+          "interface": "sas",
+          "role": "Unassigned physical disk",
+          "path": "No imported pool membership observed",
+          "note": "SMART overall passed; 31 \u00b0C at collection. Lifetime CRC counter: 8162; this alone does not prove current errors. Samsung 850 EVO retired from Dell in PR #2946; SMART pass does not reverse the recorded load-test failure.",
+          "health": {
+            "passed": true,
+            "temperatureC": 31,
+            "powerOnHours": 75027,
+            "ataCounters": [
+              {
+                "id": 5,
+                "name": "Reallocated_Sector_Ct",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 187,
+                "name": "Uncorrectable_Error_Cnt",
+                "raw": 0,
+                "normalized": 100
+              },
+              {
+                "id": 199,
+                "name": "CRC_Error_Count",
+                "raw": 8162,
+                "normalized": 91
+              }
+            ]
+          }
         }
       ],
       "vms": [],
-      "memoryCheckedAt": "2026-09-20T17:16:08.100Z",
+      "memoryCheckedAt": "2026-10-15T04:08:38.371121+00:00",
       "memory": [
         {
           "name": "ZFS cache",
-          "gib": 341.4
+          "gib": 83.3
         },
         {
           "name": "OS, apps and other allocations",
-          "gib": 13.8
+          "gib": 11.2
         },
         {
           "name": "Free",
-          "gib": 22.3
+          "gib": 283.0
         }
       ],
       "pools": [
-        {
-          "name": "BigTank",
-          "size": "18.2 TiB",
-          "used": 55,
-          "layout": "Two mirrors \u00b7 four 10 TB disks",
-          "note": "Main files and RustFS. One disk can fail in each mirror; losing both members of the same mirror loses the pool."
-        },
         {
           "name": "Backup10T",
           "size": "9.08 TiB",
@@ -1544,18 +2520,249 @@ window.HOMELAB_INVENTORY = {
           "note": "A separate pool on the same NAS, with no member-disk redundancy."
         },
         {
+          "name": "BigTank",
+          "size": "18.16 TiB",
+          "used": 56,
+          "layout": "Two mirrors \u00b7 four 10 TB disks",
+          "note": "Main files and RustFS. One disk can fail in each mirror; losing both members of the same mirror loses the pool."
+        },
+        {
           "name": "ai-pool",
           "size": "1.82 TiB",
-          "used": 74,
+          "used": 76,
           "layout": "Three SSDs striped",
           "note": "No mirror/parity. Any member loss threatens the whole pool."
         },
         {
           "name": "boot-pool",
-          "size": "222 GiB",
-          "used": 58,
+          "size": "0.22 TiB",
+          "used": 25,
           "layout": "T-FORCE + HPE mirror",
           "note": "The HPE is a boot mirror member, not a spare. Pool size is not the raw sum of member capacities."
+        }
+      ],
+      "memoryAvailableBytes": 304401170432,
+      "software": "TrueNAS-28.0.0-MASTER+20261012-230219",
+      "applianceVMs": [
+        {
+          "id": 5,
+          "name": "talos_prod_control_03",
+          "memory": 8000,
+          "vcpus": 1,
+          "cores": 2,
+          "threads": 1,
+          "autostart": false,
+          "status": {
+            "state": "STOPPED",
+            "pid": null,
+            "domain_state": null
+          }
+        }
+      ],
+      "services": [
+        {
+          "name": "tailscale",
+          "state": "RUNNING",
+          "version": "1.4.16"
+        },
+        {
+          "name": "rustfs",
+          "state": "RUNNING",
+          "version": "1.1.31"
+        },
+        {
+          "name": "physical-monitoring",
+          "state": "RUNNING",
+          "version": "1.0.0"
+        }
+      ],
+      "pciDevices": [
+        "00:00.0 Host bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DMI2 (rev 01)",
+        "00:01.0 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 1 (rev 01)",
+        "00:01.1 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 1 (rev 01)",
+        "00:02.0 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 2 (rev 01)",
+        "00:02.1 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 2 (rev 01)",
+        "00:02.2 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 2 (rev 01)",
+        "00:02.3 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 2 (rev 01)",
+        "00:03.0 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 3 (rev 01)",
+        "00:03.1 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 3 (rev 01)",
+        "00:03.2 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 3 (rev 01)",
+        "00:03.3 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 3 (rev 01)",
+        "00:04.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 0 (rev 01)",
+        "00:04.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 1 (rev 01)",
+        "00:04.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 2 (rev 01)",
+        "00:04.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 3 (rev 01)",
+        "00:04.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 4 (rev 01)",
+        "00:04.5 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 5 (rev 01)",
+        "00:04.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 6 (rev 01)",
+        "00:04.7 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Crystal Beach DMA Channel 7 (rev 01)",
+        "00:05.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Map/VTd_Misc/System Management (rev 01)",
+        "00:05.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D IIO Hot Plug (rev 01)",
+        "00:05.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D IIO RAS/Control Status/Global Errors (rev 01)",
+        "00:05.4 PIC: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D I/O APIC (rev 01)",
+        "00:11.0 Unassigned class [ff00]: Intel Corporation C610/X99 series chipset SPSR (rev 05)",
+        "00:14.0 USB controller: Intel Corporation C610/X99 series chipset USB xHCI Host Controller (rev 05)",
+        "00:1a.0 USB controller: Intel Corporation C610/X99 series chipset USB Enhanced Host Controller #2 (rev 05)",
+        "00:1c.0 PCI bridge: Intel Corporation C610/X99 series chipset PCI Express Root Port #1 (rev d5)",
+        "00:1c.2 PCI bridge: Intel Corporation C610/X99 series chipset PCI Express Root Port #3 (rev d5)",
+        "00:1c.4 PCI bridge: Intel Corporation C610/X99 series chipset PCI Express Root Port #5 (rev d5)",
+        "00:1c.6 PCI bridge: Intel Corporation C610/X99 series chipset PCI Express Root Port #7 (rev d5)",
+        "00:1c.7 PCI bridge: Intel Corporation C610/X99 series chipset PCI Express Root Port #8 (rev d5)",
+        "00:1d.0 USB controller: Intel Corporation C610/X99 series chipset USB Enhanced Host Controller #1 (rev 05)",
+        "00:1f.0 ISA bridge: Intel Corporation C610/X99 series chipset LPC Controller (rev 05)",
+        "00:1f.3 SMBus: Intel Corporation C610/X99 series chipset SMBus Controller (rev 05)",
+        "01:00.0 System peripheral: Hewlett-Packard Company Integrated Lights-Out Standard Slave Instrumentation & System Support (rev 06)",
+        "01:00.1 VGA compatible controller: Matrox Electronics Systems Ltd. MGA G200EH (rev 01)",
+        "01:00.2 System peripheral: Hewlett-Packard Company Integrated Lights-Out Standard Management Processor Support and Messaging (rev 06)",
+        "01:00.4 USB controller: Hewlett-Packard Company Integrated Lights-Out Standard Virtual USB Controller (rev 03)",
+        "02:00.0 Ethernet controller: Broadcom Inc. and subsidiaries NetXtreme BCM5719 Gigabit Ethernet PCIe (rev 01)",
+        "02:00.1 Ethernet controller: Broadcom Inc. and subsidiaries NetXtreme BCM5719 Gigabit Ethernet PCIe (rev 01)",
+        "02:00.2 Ethernet controller: Broadcom Inc. and subsidiaries NetXtreme BCM5719 Gigabit Ethernet PCIe (rev 01)",
+        "02:00.3 Ethernet controller: Broadcom Inc. and subsidiaries NetXtreme BCM5719 Gigabit Ethernet PCIe (rev 01)",
+        "03:00.0 Serial Attached SCSI controller: Hewlett-Packard Company Smart Array Gen9 Controllers (rev 01)",
+        "04:00.0 Ethernet controller: Intel Corporation 82599ES 10-Gigabit SFI/SFP+ Network Connection (rev 01)",
+        "04:00.1 Ethernet controller: Intel Corporation 82599ES 10-Gigabit SFI/SFP+ Network Connection (rev 01)",
+        "05:00.0 Serial Attached SCSI controller: Broadcom / LSI SAS2308 PCI-Express Fusion-MPT SAS-2 (rev 05)",
+        "ff:0b.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D R3 QPI Link 0/1 (rev 01)",
+        "ff:0b.1 Performance counters: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D R3 QPI Link 0/1 (rev 01)",
+        "ff:0b.2 Performance counters: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D R3 QPI Link 0/1 (rev 01)",
+        "ff:0b.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D R3 QPI Link Debug (rev 01)",
+        "ff:0c.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0c.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0c.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0c.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0c.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0c.5 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0c.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0c.7 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0d.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0d.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0d.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0d.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0d.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0d.5 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0f.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0f.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0f.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0f.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0f.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0f.5 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:0f.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Caching Agent (rev 01)",
+        "ff:10.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D R2PCIe Agent (rev 01)",
+        "ff:10.1 Performance counters: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D R2PCIe Agent (rev 01)",
+        "ff:10.5 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Ubox (rev 01)",
+        "ff:10.6 Performance counters: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Ubox (rev 01)",
+        "ff:10.7 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Ubox (rev 01)",
+        "ff:12.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Home Agent 0 (rev 01)",
+        "ff:12.1 Performance counters: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Home Agent 0 (rev 01)",
+        "ff:12.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Home Agent 0 Debug (rev 01)",
+        "ff:12.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Home Agent 1 (rev 01)",
+        "ff:12.5 Performance counters: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Home Agent 1 (rev 01)",
+        "ff:12.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Home Agent 1 Debug (rev 01)",
+        "ff:13.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Target Address/Thermal/RAS (rev 01)",
+        "ff:13.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Target Address/Thermal/RAS (rev 01)",
+        "ff:13.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Channel Target Address Decoder (rev 01)",
+        "ff:13.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Channel Target Address Decoder (rev 01)",
+        "ff:13.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 0/1 Broadcast (rev 01)",
+        "ff:13.7 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Global Broadcast (rev 01)",
+        "ff:14.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Channel 0 Thermal Control (rev 01)",
+        "ff:14.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Channel 1 Thermal Control (rev 01)",
+        "ff:14.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Channel 0 Error (rev 01)",
+        "ff:14.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 0 - Channel 1 Error (rev 01)",
+        "ff:14.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 0/1 Interface (rev 01)",
+        "ff:14.5 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 0/1 Interface (rev 01)",
+        "ff:14.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 0/1 Interface (rev 01)",
+        "ff:14.7 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 0/1 Interface (rev 01)",
+        "ff:16.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Target Address/Thermal/RAS (rev 01)",
+        "ff:16.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Target Address/Thermal/RAS (rev 01)",
+        "ff:16.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Channel Target Address Decoder (rev 01)",
+        "ff:16.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Channel Target Address Decoder (rev 01)",
+        "ff:16.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 2/3 Broadcast (rev 01)",
+        "ff:16.7 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Global Broadcast (rev 01)",
+        "ff:17.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 1 - Channel 0 Thermal Control (rev 01)",
+        "ff:17.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 1 - Channel 1 Thermal Control (rev 01)",
+        "ff:17.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 1 - Channel 0 Error (rev 01)",
+        "ff:17.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Memory Controller 1 - Channel 1 Error (rev 01)",
+        "ff:17.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 2/3 Interface (rev 01)",
+        "ff:17.5 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 2/3 Interface (rev 01)",
+        "ff:17.6 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 2/3 Interface (rev 01)",
+        "ff:17.7 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D DDRIO Channel 2/3 Interface (rev 01)",
+        "ff:1e.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Power Control Unit (rev 01)",
+        "ff:1e.1 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Power Control Unit (rev 01)",
+        "ff:1e.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Power Control Unit (rev 01)",
+        "ff:1e.3 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Power Control Unit (rev 01)",
+        "ff:1e.4 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Power Control Unit (rev 01)",
+        "ff:1f.0 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Power Control Unit (rev 01)",
+        "ff:1f.2 System peripheral: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D Power Control Unit (rev 01)"
+      ],
+      "usbDevices": [
+        "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 001 Device 002: ID 8087:800a Intel Corp. Hub",
+        "Bus 002 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 002 Device 002: ID 8087:8002 Intel Corp. 8 channel internal hub",
+        "Bus 003 Device 001: ID 1d6b:0001 Linux Foundation 1.1 root hub",
+        "Bus 004 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
+        "Bus 004 Device 002: ID 0424:2660 Microchip Technology, Inc. (formerly SMSC) Hub",
+        "Bus 005 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub"
+      ],
+      "nfsShares": [
+        {
+          "path": "/mnt/BigTank/k8s",
+          "enabled": true,
+          "ro": false
+        },
+        {
+          "path": "/mnt/BigTank/proxmox",
+          "enabled": true,
+          "ro": false
+        },
+        {
+          "path": "/mnt/BigTank/photos/All",
+          "enabled": true,
+          "ro": true
+        },
+        {
+          "path": "/mnt/ai-pool/llama-cpp",
+          "enabled": true,
+          "ro": false
+        },
+        {
+          "path": "/mnt/ai-pool/comfyui",
+          "enabled": true,
+          "ro": false
+        },
+        {
+          "path": "/mnt/ai-pool/vllm",
+          "enabled": true,
+          "ro": false
+        },
+        {
+          "path": "/mnt/BigTank/k8s/nfs/v/pvc-3d780155-d947-4d10-b6e0-9bd59d55ab3d",
+          "enabled": true,
+          "ro": false
+        },
+        {
+          "path": "/mnt/BigTank/k8s/nfs/v/pvc-0ff82677-7159-4335-a539-61da5f034c8e",
+          "enabled": true,
+          "ro": false
+        }
+      ],
+      "replication": [
+        {
+          "name": "BigTank/General,BigTank/backup,BigTank/photos - Backup10T",
+          "enabled": true,
+          "schedule": null,
+          "state": {
+            "state": "FINISHED",
+            "datetime": {
+              "$date": 1748136145000
+            },
+            "warnings": [
+              "cannot mount '/mnt/Backup10T/General': failed to create mountpoint: Read-only file system",
+              "cannot mount '/mnt/Backup10T/photos': failed to create mountpoint: Read-only file system"
+            ],
+            "last_snapshot": "BigTank/photos@auto-2025-05-23_19-27"
+          }
         }
       ]
     }
@@ -1568,7 +2775,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "250Gi",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "smb.csi.k8s.io"
+      "csi_driver": "smb.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "consumers-energy-sync",
@@ -1576,8 +2786,23 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "1Gi",
       "replicas": "1",
-      "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "detached",
+      "robustness": "unknown"
+    },
+    {
+      "namespace": "container-registry",
+      "claim": "registry",
+      "storage_class": "longhorn",
+      "requested_storage": "10Gi",
+      "replicas": "1",
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "copyparty",
@@ -1586,61 +2811,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "20Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "coroot",
-      "claim": "data-coroot-clickhouse-keeper-0",
-      "storage_class": "longhorn",
-      "requested_storage": "2Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "coroot",
-      "claim": "data-coroot-clickhouse-keeper-1",
-      "storage_class": "longhorn",
-      "requested_storage": "2Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "coroot",
-      "claim": "data-coroot-clickhouse-keeper-2",
-      "storage_class": "longhorn",
-      "requested_storage": "2Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "coroot",
-      "claim": "data-coroot-clickhouse-shard-0-0",
-      "storage_class": "longhorn",
-      "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "coroot",
-      "claim": "data-coroot-coroot-0",
-      "storage_class": "longhorn",
-      "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "coroot",
-      "claim": "data-coroot-prometheus",
-      "storage_class": "longhorn",
-      "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "deal-scout",
@@ -1648,8 +2822,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "1Gi",
       "replicas": "1",
-      "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "dozzle",
@@ -1658,16 +2835,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "1Gi",
       "replicas": "1",
       "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "fizzy",
-      "claim": "data",
-      "storage_class": "longhorn",
-      "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "frigate",
@@ -1675,8 +2846,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "10Gi",
       "replicas": "1",
-      "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "frigate",
@@ -1685,7 +2859,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "1Ti",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "smb.csi.k8s.io"
+      "csi_driver": "smb.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "frigate",
@@ -1694,25 +2871,70 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "5Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "geocoder",
+      "claim": "geocoder-downloads",
+      "storage_class": "longhorn",
+      "requested_storage": "20Gi",
+      "replicas": "1",
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "detached",
+      "robustness": "unknown"
+    },
+    {
+      "namespace": "geocoder",
+      "claim": "geocoder-postgres-data",
+      "storage_class": "longhorn",
+      "requested_storage": "100Gi",
+      "replicas": "1",
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "gitea-actions",
-      "claim": "act-runner-docker-cache",
+      "claim": "docker-storage-act-runner-0",
       "storage_class": "longhorn",
-      "requested_storage": "50Gi",
+      "requested_storage": "10Gi",
       "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "gitea-actions",
+      "claim": "docker-storage-act-runner-1",
+      "storage_class": "longhorn",
+      "requested_storage": "10Gi",
+      "replicas": "1",
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "gitea",
       "claim": "gitea-postgres-data",
       "storage_class": "longhorn",
       "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "house,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "gitea",
@@ -1720,8 +2942,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "10Gi",
       "replicas": "1",
-      "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "hindsight",
@@ -1729,17 +2954,23 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "5Gi",
       "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "home-assistant",
       "claim": "config",
       "storage_class": "longhorn",
-      "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "requested_storage": "20Gi",
+      "replicas": "2",
+      "replica_zones": "house,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "homepage-dashboard",
@@ -1747,8 +2978,23 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "5Gi",
       "replicas": "1",
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "imagery",
+      "claim": "imagery-tiles",
+      "storage_class": "longhorn",
+      "requested_storage": "20Gi",
+      "replicas": "1",
       "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "immich",
@@ -1756,26 +3002,35 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "20Gi",
       "replicas": "1",
-      "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "immich",
       "claim": "immich-postgres-data",
       "storage_class": "longhorn",
       "requested_storage": "20Gi",
-      "replicas": "1",
-      "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "house,hp-elite",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "immich",
-      "claim": "library",
-      "storage_class": "longhorn",
-      "requested_storage": "50Gi",
-      "replicas": "1",
-      "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "claim": "library-nas",
+      "storage_class": "truenas-nfs",
+      "requested_storage": "200Gi",
+      "replicas": "",
+      "replica_zones": "",
+      "csi_driver": "csi.truenas.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "immich",
@@ -1784,7 +3039,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "2Ti",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "nfs.csi.k8s.io"
+      "csi_driver": "nfs.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "intercept",
@@ -1792,17 +3050,23 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "20Gi",
       "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "intercept",
-      "claim": "intercept-postgres-data",
-      "storage_class": "longhorn",
+      "claim": "intercept-postgres-recovered",
+      "storage_class": "longhorn-wired-ha",
       "requested_storage": "20Gi",
-      "replicas": "1",
-      "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "hp-elite,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "jellyfin",
@@ -1810,8 +3074,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "5Gi",
       "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "jellyfin",
@@ -1820,7 +3087,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "1Gi",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "smb.csi.k8s.io"
+      "csi_driver": "smb.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "karakeep",
@@ -1829,7 +3099,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "karakeep",
@@ -1838,16 +3111,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "keep",
-      "claim": "keep-postgres-data",
-      "storage_class": "longhorn",
-      "requested_storage": "5Gi",
-      "replicas": "1",
-      "replica_zones": "hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "kiwix",
@@ -1856,34 +3123,46 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "100Gi",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "smb.csi.k8s.io"
+      "csi_driver": "smb.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
-      "namespace": "kube-system",
-      "claim": "registry",
+      "namespace": "langfuse",
+      "claim": "langfuse-clickhouse-data",
       "storage_class": "longhorn",
       "requested_storage": "50Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
-      "namespace": "llama-cpp",
-      "claim": "ai-model-cache",
-      "storage_class": "ai-model-cache-local",
-      "requested_storage": "450Gi",
-      "replicas": "",
-      "replica_zones": "",
-      "csi_driver": ""
+      "namespace": "langfuse",
+      "claim": "langfuse-postgres-data",
+      "storage_class": "longhorn",
+      "requested_storage": "20Gi",
+      "replicas": "1",
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
-      "namespace": "llama-cpp",
-      "claim": "llama-cpp-models-pvc",
-      "storage_class": "nfs-llama-cpp-10g",
-      "requested_storage": "150Gi",
-      "replicas": "",
-      "replica_zones": "",
-      "csi_driver": "nfs.csi.k8s.io"
+      "namespace": "langfuse",
+      "claim": "langfuse-redis-data",
+      "storage_class": "longhorn",
+      "requested_storage": "8Gi",
+      "replicas": "1",
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "loki-stack",
@@ -1892,25 +3171,22 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "loki-stack",
       "claim": "data-loki-write-0",
       "storage_class": "longhorn-flash",
-      "requested_storage": "10Gi",
+      "requested_storage": "20Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "n8n",
-      "claim": "data",
-      "storage_class": "longhorn",
-      "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "nginx-example",
@@ -1919,43 +3195,46 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "5Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "ninfer",
-      "claim": "ninfer-models-pvc",
-      "storage_class": "",
-      "requested_storage": "150Gi",
-      "replicas": "",
-      "replica_zones": "",
-      "csi_driver": "nfs.csi.k8s.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "detached",
+      "robustness": "unknown"
     },
     {
       "namespace": "open-webui",
-      "claim": "storage",
-      "storage_class": "longhorn",
+      "claim": "storage-recovered",
+      "storage_class": "longhorn-wired-ha",
       "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "hp-elite,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "paperless-ngx",
       "claim": "data",
       "storage_class": "longhorn",
       "requested_storage": "10Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "house,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "paperless-ngx",
       "claim": "media",
       "storage_class": "longhorn",
       "requested_storage": "20Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "house,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "paperless-ngx",
@@ -1963,8 +3242,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "10Gi",
       "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "paperless-ngx",
@@ -1972,17 +3254,47 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "10Gi",
       "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "paperless-ngx",
       "claim": "paperless-postgres-data",
       "storage_class": "longhorn",
       "requested_storage": "10Gi",
+      "replicas": "2",
+      "replica_zones": "house,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "paseo",
+      "claim": "paseo-home",
+      "storage_class": "longhorn",
+      "requested_storage": "20Gi",
       "replicas": "1",
-      "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "paseo",
+      "claim": "paseo-workspace",
+      "storage_class": "longhorn",
+      "requested_storage": "50Gi",
+      "replicas": "1",
+      "replica_zones": "hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "perplexica",
@@ -1991,25 +3303,34 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "posthog",
       "claim": "clickhouse-data-clickhouse-0",
       "storage_class": "longhorn-flash",
-      "requested_storage": "40Gi",
+      "requested_storage": "60Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "posthog",
       "claim": "postgres-data",
       "storage_class": "longhorn-flash",
-      "requested_storage": "8Gi",
+      "requested_storage": "16Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "posthog",
@@ -2018,16 +3339,22 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "4Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "posthog",
       "claim": "redpanda-data-kafka-0",
       "storage_class": "longhorn-flash",
-      "requested_storage": "8Gi",
+      "requested_storage": "32Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "presenton",
@@ -2036,7 +3363,22 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "product-bench",
+      "claim": "postgres-data",
+      "storage_class": "longhorn-flash",
+      "requested_storage": "40Gi",
+      "replicas": "1",
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "project-nomad",
@@ -2045,7 +3387,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "2Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "project-nomad",
@@ -2053,8 +3398,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "5Gi",
       "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "project-nomad",
@@ -2063,16 +3411,22 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "20Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "project-nomad",
-      "claim": "nomad-storage",
-      "storage_class": "longhorn",
-      "requested_storage": "120Gi",
-      "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "claim": "nomad-storage-nas",
+      "storage_class": "truenas-nfs",
+      "requested_storage": "200Gi",
+      "replicas": "",
+      "replica_zones": "",
+      "csi_driver": "csi.truenas.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "project-nomad",
@@ -2080,8 +3434,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "20Gi",
       "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "project-nomad",
@@ -2090,25 +3447,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "20Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "project-zomboid",
-      "claim": "zomboid-data",
-      "storage_class": "longhorn",
-      "requested_storage": "20Gi",
-      "replicas": "1",
-      "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
-    },
-    {
-      "namespace": "project-zomboid",
-      "claim": "zomboid-server-files",
-      "storage_class": "longhorn",
-      "requested_storage": "60Gi",
-      "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "prometheus-stack",
@@ -2117,7 +3459,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "5Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "prometheus-stack",
@@ -2126,7 +3471,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "prometheus-stack",
@@ -2135,7 +3483,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "50Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "radar-ng",
@@ -2144,16 +3495,22 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "20Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "radar-ng",
       "claim": "openmeteo-data",
-      "storage_class": "longhorn",
-      "requested_storage": "30Gi",
+      "storage_class": "longhorn-flash",
+      "requested_storage": "60Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "radar-ng",
@@ -2162,7 +3519,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "50Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "radar-ng",
@@ -2171,7 +3531,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "5Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "radar-ng",
@@ -2180,7 +3543,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "100Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "redis-instance",
@@ -2189,7 +3555,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "restore-canary",
@@ -2197,8 +3566,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "1Gi",
       "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "searxng",
@@ -2207,34 +3579,46 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "5Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "surfsense",
-      "claim": "surfsense-object-store",
-      "storage_class": "longhorn",
+      "claim": "surfsense-object-store-v2",
+      "storage_class": "longhorn-wired-ha",
       "requested_storage": "20Gi",
-      "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "hp-elite,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "surfsense",
-      "claim": "surfsense-postgres-data",
-      "storage_class": "longhorn",
+      "claim": "surfsense-postgres-data-v2",
+      "storage_class": "longhorn-wired-ha",
       "requested_storage": "20Gi",
-      "replicas": "1",
-      "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "replicas": "2",
+      "replica_zones": "hp-elite,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "surfsense",
-      "claim": "surfsense-redis-data",
+      "claim": "surfsense-redis-data-v2",
       "storage_class": "longhorn",
       "requested_storage": "2Gi",
       "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "swarmui",
@@ -2243,7 +3627,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "250Gi",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "nfs.csi.k8s.io"
+      "csi_driver": "nfs.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "swarmui",
@@ -2251,8 +3638,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "5Gi",
       "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "detached",
+      "robustness": "unknown"
     },
     {
       "namespace": "swarmui",
@@ -2260,8 +3650,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "40Gi",
       "replicas": "1",
-      "replica_zones": "dell",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "detached",
+      "robustness": "unknown"
     },
     {
       "namespace": "swarmui",
@@ -2269,8 +3662,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn",
       "requested_storage": "50Gi",
       "replicas": "1",
-      "replica_zones": "hp-sff",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "detached",
+      "robustness": "unknown"
     },
     {
       "namespace": "temporal",
@@ -2278,8 +3674,11 @@ window.HOMELAB_INVENTORY = {
       "storage_class": "longhorn-wired-ha",
       "requested_storage": "10Gi",
       "replicas": "2",
-      "replica_zones": "dell,hp-elite",
-      "csi_driver": "driver.longhorn.io"
+      "replica_zones": "hp-elite,hp-sff",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "tubesync",
@@ -2288,7 +3687,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
     },
     {
       "namespace": "tubesync",
@@ -2297,7 +3699,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "1Ti",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "smb.csi.k8s.io"
+      "csi_driver": "smb.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "versatiles",
@@ -2306,7 +3711,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "150Gi",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "smb.csi.k8s.io"
+      "csi_driver": "smb.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "vllm",
@@ -2315,7 +3723,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "60Gi",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": ""
+      "csi_driver": "",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "vllm",
@@ -2324,7 +3735,22 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "10Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "vllm",
+      "claim": "vllm-download-models",
+      "storage_class": "",
+      "requested_storage": "1Ti",
+      "replicas": "",
+      "replica_zones": "",
+      "csi_driver": "nfs.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "vllm",
@@ -2333,7 +3759,10 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "1Ti",
       "replicas": "",
       "replica_zones": "",
-      "csi_driver": "nfs.csi.k8s.io"
+      "csi_driver": "nfs.csi.k8s.io",
+      "phase": "Bound",
+      "volume_state": null,
+      "robustness": null
     },
     {
       "namespace": "worldmonitor",
@@ -2342,17 +3771,32 @@ window.HOMELAB_INVENTORY = {
       "requested_storage": "1Gi",
       "replicas": "1",
       "replica_zones": "house",
-      "csi_driver": "driver.longhorn.io"
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "attached",
+      "robustness": "healthy"
+    },
+    {
+      "namespace": "wyze-bridge",
+      "claim": "wyze-web-session",
+      "storage_class": "longhorn",
+      "requested_storage": "64Mi",
+      "replicas": "1",
+      "replica_zones": "house",
+      "csi_driver": "driver.longhorn.io",
+      "phase": "Bound",
+      "volume_state": "detached",
+      "robustness": "unknown"
     }
   ],
   "notes": [
-    "Host/disks from the September 5 SSH inventory; Kubernetes IPs and node versions were rechecked at runtimeVersionsCheckedAt after the upgrade. Pod namespace placement and claims remain from the earlier audit snapshot.",
-    "Disk capacity uses decimal GB/TB; VM allocations and RAM use GiB/MiB. Capacity bars are not disk-use measurements.",
-    "NAS pool percentages use the SSH snapshot; the later dashboard uses different usable-capacity accounting.",
-    "Suggested roles and outage walkthroughs are explanations, not applied policy or measured recovery tests."
+    "Read-only SSH, Kubernetes and authenticated Talos API collection on 2026-10-15. Host configuration, guest discovery and controller status are separate observations.",
+    "Physical disks exclude NAS zvol devices, guest disks and virtual RAID devices. Dell T-FORCE was not visible and is excluded from the observed count.",
+    "September performance datasets retain their original dates. No benchmarks, SMART self-tests, restore tests or infrastructure changes were performed.",
+    "Longhorn and guest mounts do not prove underlying hardware availability. Dell dell-ssd-vmstore was inactive despite the guest mount."
   ],
   "network": {
-    "source": "Network topology documentation and committed Cilium/Gateway manifests; these endpoints were not re-probed during the Talos upgrade.",
+    "source": "Historical network design retained; host addresses and Talos node IPs rechecked 2026-10-15. Router, bridge, DNS and HTTP paths were not tested.",
     "addresses": [
       {
         "name": "Firewalla router",
@@ -2450,7 +3894,7 @@ window.HOMELAB_INVENTORY = {
           },
           {
             "title": "Shed Talos VM",
-            "text": "192.168.10.156 at the audit"
+            "text": "192.168.10.128 at the October 15 audit"
           }
         ],
         "note": "Talos sees a wired interface. The radio hop still matters, so this host has a Wi-Fi scheduling taint and no scheduled Longhorn replicas."

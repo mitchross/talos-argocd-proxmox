@@ -2,7 +2,8 @@
 
 **Purpose:** one page that answers "which physical disk is this data on?" for
 every machine in the lab, and "where should new data go?".
-**Status:** current layout. Update this page in the same PR as any disk change.
+**Status:** maintained layout, rechecked October 15, 2026. Update this page after disk changes.
+See the [full inventory](../../inventory/2026-10-15-full-inventory.md) for dated capacities and health observations.
 
 ## How the layers fit
 
@@ -64,8 +65,13 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
 | Cisco SSD-240G, M.2 SATA on the onboard port (serial `STP27120U9C`) | consumer SATA | host root + `local-lvm` (thin pool `data`, 140 GiB) | 128 GiB | `/var` | — | Talos system |
-| T-FORCE 512 GB (serial `TPBF2303010020100129`) | consumer SATA | `dell-ssd-vmstore` (VG `dell-ssd-vg`, thick LVM) | 400 GiB | `/var/mnt/longhorn-dell-ssd` | `dell-ssd` (`wired-storage`) | ordinary volumes, second copies |
+| T-FORCE 512 GB (serial `TPBF2303010020100129`) | consumer SATA | `dell-ssd-vmstore` (VG `dell-ssd-vg`, thick LVM) | 400 GiB | `/var/mnt/longhorn-dell-ssd` | `dell-ssd` (`wired-storage`) | configured path; backing store inactive at audit |
 | Apple SM0256G (serial `S2PANYAH502828`), PCIe adapter | consumer AHCI | `dell-apple-vmstore` (VG `dell-apple-vg`, thick LVM) | 220 GiB | `/var/mnt/longhorn-dell-apple` | `dell-apple` (`wired-storage`) | ordinary volumes, second copies |
+
+**October 15 observation:** the T-FORCE drive was absent from host `lsblk` and LVM;
+`dell-ssd-vmstore` reported inactive. VM 100 still declared `scsi1`, and Talos
+still reported its mount. Host logs recorded an ATA disconnect. The table records
+the configured path, not proof that this backing store is available.
 
 The Cisco drive is about 10 GiB smaller than VG `pve` was on the Apple drive, so
 the thin pool is 140 GiB. VG `pve` has about 4 GiB free. UEFI boots `proxmox-cisco`.
@@ -88,8 +94,12 @@ hosts reach it at 2.5 GbE (the shed at 1 GbE).
 | **ai-pool** | 3 consumer SATA SSDs, striped | **none** — one dead disk loses the pool | model files that can be re-downloaded | anything you can't re-create |
 | **Backup10T** | 1× Seagate 10 TB HDD | none | replicated copies of BigTank datasets | primary data |
 
-About 346 GB of RAM cache (ZFS ARC) sits in front of all pools, so repeated reads are fast
-even from the HDDs. File creation and `fsync` still go to the disks: measured
+The NAS also has a mirrored boot pool (T-FORCE 512 GB and HPE 480 GB).
+A Samsung 850 EVO 500 GB was visible as `sdk`, outside the imported pools,
+on October 15. PR #2946 records its retirement from Dell after failed load tests.
+
+ZFS ARC caches reads across all pools. The October 15 sample held 83.3 GiB,
+compared with the larger September cache. Cache size varies with workload and uptime. File creation and `fsync` still go to the disks: measured
 from a pod, NFS created about 50 small files per second and did about 110
 `fsync` writes per second, against about 490 and 460 for a local Longhorn volume.
 

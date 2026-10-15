@@ -1,5 +1,10 @@
 # Diagnostics Hardware Report
 
+**Historical report:** the embedded inspection below retains its September dates.
+Use the [October 15 inventory](inventory/2026-10-15-full-inventory.md) and
+[refreshed explorer](lab.md) for current hardware, VMs and storage observations.
+September repair statuses below are historical, not current incident status.
+
 **September 20 NAS measurements:** the **Disks** and **Disk overload & repairs**
 tabs now compare local pool reads, writes and RAM cache performance. Read the
 [NAS performance report](nas-performance.md) for the method and hardware-sizing

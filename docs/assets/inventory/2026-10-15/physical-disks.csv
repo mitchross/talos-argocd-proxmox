@@ -1,0 +1,27 @@
+host,device,model,bytes,interface,role,path,note
+sff,sda,PNY CS900 1TB SSD,1000204886016,sata,Spare; orphan LVM PV,No volume group,SMART overall passed; 33 °C at collection.
+sff,sdb,INTEL SSDSC2BX400G4R,400088457216,sata,Control plane / etcd,hp-sff-cp → VM 101 scsi0 (100 GiB),SMART overall passed; 30 °C at collection.
+sff,sdc,PNY CS900 1TB SSD,1000204886016,sata,Proxmox + worker,pve / hp-prodesk-vmstore → VM 100 scsi0 + scsi1,SMART overall passed; 33 °C at collection.
+elite,nvme0n1,INTEL SSDPEKNW512G8,512110190592,nvme,Longhorn data,hp-elite-vmstore → VM 100 scsi1 (440 GiB),SMART overall passed; 35 °C at collection. NVMe endurance used: 76%; media errors: 0.
+elite,nvme1n1,WDC PC SN530 SDBPMPZ-256G-1101,256060514304,nvme,Proxmox + Talos system,pve / local-lvm → VM 100 scsi0 (128 GiB),SMART overall passed; 44 °C at collection. NVMe endurance used: 3%; media errors: 0.
+gpu,sda,PNY CS900 1TB SSD,1000204886016,sata,Proxmox + bulk app storage,pve / tr-sda-vmstore → VM 100 scsi4 (800 GiB),SMART overall passed; 33 °C at collection.
+gpu,sdb,MK000480GWCEV,480103981056,sata,Enterprise RAID1 member,md0 → ssd-ent → VM 100 scsi3 (440 GiB),SMART overall passed; 18 °C at collection.
+gpu,sdc,MK000480GWCEV,480103981056,sata,Enterprise RAID1 member,md0 → ssd-ent → VM 100 scsi3 (440 GiB),SMART overall passed; 24 °C at collection.
+gpu,nvme0n1,EDILOCA EN605 512GB,512110190592,nvme,Talos system,nvme0-vmstore → VM 100 scsi0 (16 GiB) + scsi1 (434 GiB),SMART overall passed; 54 °C at collection. NVMe endurance used: 16%; media errors: 0.
+gpu,nvme1n1,EDILOCA EN605 512GB,512110190592,nvme,AI model cache,nvme1-vmstore → VM 100 scsi2 (450 GiB),SMART overall passed; 54 °C at collection. NVMe endurance used: 20%; media errors: 0.
+dell,sdb,R9M2SH6Q240GQF72C,240057409536,sata,Proxmox + Talos system,pve / local-lvm → VM 100 scsi0 (128 GiB),SMART overall passed; 31 °C at collection.
+dell,sdc,APPLE SSD SM0256G,251000193024,sata,Longhorn data,dell-apple-vmstore → VM 100 scsi2 (220 GiB),SMART overall passed; 29 °C at collection.
+shed,sda,PNY CS900 1TB SSD,1000204886016,sata,Longhorn scheduling disabled,hp-ssd-vmstore → VM 100 scsi1 (850 GiB),SMART overall passed; 33 °C at collection.
+shed,nvme0n1,SK hynix BC501 HFM256GDJTNG-8310A,256060514304,nvme,Proxmox + Talos system,pve / local-lvm → VM 100 scsi0 (128 GiB),SMART overall passed; 41 °C at collection. NVMe endurance used: 6%; media errors: 0.
+pi,nvme0n1,Patriot M.2 P300 256GB,256060514304,nvme,Management system,Ubuntu root; Docker services,SMART overall passed; 32 °C at collection. NVMe endurance used: 13%; media errors: 0.
+nas,sda,HP SSD S700 500GB,500107862016,sas,NAS pool member,ai-pool,SMART overall passed; 44 °C at collection. Lifetime CRC counter: 816; this alone does not prove current errors.
+nas,sdb,Samsung SSD 860 EVO 1TB,1000204886016,sas,NAS pool member,ai-pool,SMART overall passed; 32 °C at collection. Lifetime CRC counter: 4; this alone does not prove current errors.
+nas,sdc,HUH721010AL4200,10000831348736,sas,NAS pool member,BigTank mirror-0,SMART overall passed; 37 °C at collection.
+nas,sdd,HUH721010AL4200,10000831348736,sas,NAS pool member,BigTank mirror-1,SMART overall passed; 50 °C at collection.
+nas,sde,T-FORCE 512GB,512110190592,sas,NAS pool member,boot-pool mirror,SMART overall passed; 33 °C at collection.
+nas,sdf,HUH721010AL4200,10000831348736,sas,NAS pool member,BigTank mirror-0,SMART overall passed; 45 °C at collection.
+nas,sdg,P3-512,512110190592,sas,NAS pool member,ai-pool,SMART overall passed; 30 °C at collection.
+nas,sdh,HUH721010AL4200,10000831348736,sas,NAS pool member,BigTank mirror-1,SMART overall passed; 50 °C at collection.
+nas,sdi,MK000480GWCEV,480103981056,sas,NAS pool member,boot-pool mirror,SMART overall passed; 19 °C at collection.
+nas,sdj,ST10000NM0096,10000831348736,sas,NAS pool member,Backup10T single disk,SMART overall passed; 32 °C at collection.
+nas,sdk,Samsung SSD 850 EVO 500GB,500107862016,sas,Unassigned physical disk,No imported pool membership observed,SMART overall passed; 31 °C at collection. Lifetime CRC counter: 8162; this alone does not prove current errors. Samsung 850 EVO retired from Dell in PR #2946; SMART pass does not reverse the recorded load-test failure.
