@@ -54,9 +54,9 @@ review its measured performance, and consider future changes.
 For current upgrade priorities, jump to the
 [September 20 decision report](audits/2026-09-20-homelab-report.html).
 
-The dates matter: a historical inventory is not a live dashboard, and a research
-proposal is not a deployed change. NAS benchmarks carry their own September 20
-collection date; other host inventories retain their original dates.
+The [full inventory](inventory/2026-10-15-full-inventory.md) and explorer were refreshed on October 15.
+Historical benchmarks retain their collection dates. An inventory is not a live dashboard,
+and a research proposal is not a deployed change.
 
 ## Frequent tasks
 

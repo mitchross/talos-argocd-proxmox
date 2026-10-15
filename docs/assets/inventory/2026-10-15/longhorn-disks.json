@@ -1,0 +1,326 @@
+[
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "disk": "dell-apple",
+    "path": "/var/mnt/longhorn-dell-apple",
+    "scheduling": true,
+    "maximumBytes": 236105764864,
+    "availableBytes": 227645849600,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-15T03:42:11Z",
+        "message": "Disk dell-apple(/var/mnt/longhorn-dell-apple) on node talos-prod-cluster-v2-dell-workers-2jfrb8 is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-15T03:42:11Z",
+        "message": "Disk dell-apple(/var/mnt/longhorn-dell-apple) on node talos-prod-cluster-v2-dell-workers-2jfrb8 is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "disk": "dell-ssd",
+    "path": "/var/mnt/longhorn-dell-ssd",
+    "scheduling": true,
+    "maximumBytes": 429284913152,
+    "availableBytes": 421003264000,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-15T03:58:11Z",
+        "message": "Disk dell-ssd(/var/mnt/longhorn-dell-ssd) on node talos-prod-cluster-v2-dell-workers-2jfrb8 is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-15T03:58:11Z",
+        "message": "Disk dell-ssd(/var/mnt/longhorn-dell-ssd) on node talos-prod-cluster-v2-dell-workers-2jfrb8 is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-dell-workers-2jfrb8",
+    "disk": "talos-ephemeral",
+    "path": "/var/lib/longhorn",
+    "scheduling": false,
+    "maximumBytes": 135060783104,
+    "availableBytes": 74553753600,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-15T03:42:11Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-dell-workers-2jfrb8 is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-15T03:42:11Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-dell-workers-2jfrb8 is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "disk": "gpu-bulk",
+    "path": "/var/mnt/longhorn-gpu-bulk",
+    "scheduling": true,
+    "maximumBytes": 858571935744,
+    "availableBytes": 805620940800,
+    "scheduledBytes": 569150275584,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T12:32:45Z",
+        "message": "Disk gpu-bulk(/var/mnt/longhorn-gpu-bulk) on node talos-prod-cluster-v2-gpu-workers-jxfkdr is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T12:32:45Z",
+        "message": "Disk gpu-bulk(/var/mnt/longhorn-gpu-bulk) on node talos-prod-cluster-v2-gpu-workers-jxfkdr is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "disk": "ssd-flash",
+    "path": "/var/mnt/longhorn-ssd-flash",
+    "scheduling": true,
+    "maximumBytes": 472287023104,
+    "availableBytes": 320235110400,
+    "scheduledBytes": 517543559168,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T12:32:45Z",
+        "message": "Disk ssd-flash(/var/mnt/longhorn-ssd-flash) on node talos-prod-cluster-v2-gpu-workers-jxfkdr is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T12:32:45Z",
+        "message": "Disk ssd-flash(/var/mnt/longhorn-ssd-flash) on node talos-prod-cluster-v2-gpu-workers-jxfkdr is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-gpu-workers-jxfkdr",
+    "disk": "talos-ephemeral",
+    "path": "/var/lib/longhorn",
+    "scheduling": false,
+    "maximumBytes": 465774317568,
+    "availableBytes": 253335961600,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T12:32:45Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-gpu-workers-jxfkdr is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T12:32:45Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-gpu-workers-jxfkdr is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "disk": "hp-elite-nvme",
+    "path": "/var/mnt/longhorn-hp-elite-nvme",
+    "scheduling": true,
+    "maximumBytes": 472213622784,
+    "availableBytes": 452460544000,
+    "scheduledBytes": 129922760704,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T03:48:10Z",
+        "message": "Disk hp-elite-nvme(/var/mnt/longhorn-hp-elite-nvme) on node talos-prod-cluster-v2-hp-elite-workers-l5zlgr is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T03:48:10Z",
+        "message": "Disk hp-elite-nvme(/var/mnt/longhorn-hp-elite-nvme) on node talos-prod-cluster-v2-hp-elite-workers-l5zlgr is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-elite-workers-l5zlgr",
+    "disk": "talos-ephemeral",
+    "path": "/var/lib/longhorn",
+    "scheduling": false,
+    "maximumBytes": 135060783104,
+    "availableBytes": 79796633600,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T03:48:10Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-hp-elite-workers-l5zlgr is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T03:48:10Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-hp-elite-workers-l5zlgr is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "disk": "hp-micro-ssd",
+    "path": "/var/mnt/longhorn-hp-micro-ssd",
+    "scheduling": false,
+    "maximumBytes": 912232812544,
+    "availableBytes": 894645043200,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-14T16:01:11Z",
+        "message": "Disk hp-micro-ssd(/var/mnt/longhorn-hp-micro-ssd) on node talos-prod-cluster-v2-hp-micro-workers-pstbbd is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-14T16:01:11Z",
+        "message": "Disk hp-micro-ssd(/var/mnt/longhorn-hp-micro-ssd) on node talos-prod-cluster-v2-hp-micro-workers-pstbbd is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-micro-workers-pstbbd",
+    "disk": "talos-ephemeral",
+    "path": "/var/lib/longhorn",
+    "scheduling": false,
+    "maximumBytes": 135060783104,
+    "availableBytes": 117964800000,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-14T16:01:11Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-hp-micro-workers-pstbbd is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-14T16:01:11Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-hp-micro-workers-pstbbd is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "disk": "hp-sff-ssd",
+    "path": "/var/mnt/longhorn-hp-sff-ssd",
+    "scheduling": true,
+    "maximumBytes": 740517990400,
+    "availableBytes": 614360678400,
+    "scheduledBytes": 403726925824,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T04:12:39Z",
+        "message": "Disk hp-sff-ssd(/var/mnt/longhorn-hp-sff-ssd) on node talos-prod-cluster-v2-hp-sff-workers-h76ncc is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T04:12:39Z",
+        "message": "Disk hp-sff-ssd(/var/mnt/longhorn-hp-sff-ssd) on node talos-prod-cluster-v2-hp-sff-workers-h76ncc is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  },
+  {
+    "node": "talos-prod-cluster-v2-hp-sff-workers-h76ncc",
+    "disk": "talos-ephemeral",
+    "path": "/var/lib/longhorn",
+    "scheduling": false,
+    "maximumBytes": 135060783104,
+    "availableBytes": 88394956800,
+    "scheduledBytes": 0,
+    "conditions": [
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T04:12:39Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-hp-sff-workers-h76ncc is ready",
+        "reason": "",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": "",
+        "lastTransitionTime": "2026-10-12T04:12:39Z",
+        "message": "Disk talos-ephemeral(/var/lib/longhorn) on node talos-prod-cluster-v2-hp-sff-workers-h76ncc is schedulable",
+        "reason": "",
+        "status": "True",
+        "type": "Schedulable"
+      }
+    ]
+  }
+]
