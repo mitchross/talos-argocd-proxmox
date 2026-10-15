@@ -30,10 +30,10 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # Longhorn disk on the Samsung 500 GB SSD (/dev/sda), a different spindle
+      # Longhorn disk on the T-FORCE 512 GB SSD, a different spindle
       # from the boot pool: replica writes never contend with image pulls. Needs
-      # a thick-LVM Proxmox storage `dell-ssd-vmstore`; 400 GiB of 465 leaves
-      # ~65 GiB headroom. Do not use LVM-thin: this repo has measured its
+      # a thick-LVM Proxmox storage `dell-ssd-vmstore`; 400 GiB of 477 leaves
+      # ~77 GiB headroom. Do not use LVM-thin: this repo has measured its
       # metadata commits collapsing fsync performance.
       additional_disks:
         - storage_selector: name == "dell-ssd-vmstore"

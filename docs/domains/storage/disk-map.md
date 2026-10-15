@@ -64,7 +64,7 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
 | Cisco SSD-240G, M.2 SATA on the onboard port (serial `STP27120U9C`) | consumer SATA | host root + `local-lvm` (thin pool `data`, 140 GiB) | 128 GiB | `/var` | — | Talos system |
-| Samsung 850 EVO 500 GB (`sda`) | consumer SATA | `dell-ssd-vmstore` | 400 GiB | `/var/mnt/longhorn-dell-ssd` | `dell-ssd` (`wired-storage`) | ordinary volumes, second copies |
+| T-FORCE 512 GB (serial `TPBF2303010020100129`) | consumer SATA | `dell-ssd-vmstore` (VG `dell-ssd-vg`, thick LVM) | 400 GiB | `/var/mnt/longhorn-dell-ssd` | `dell-ssd` (`wired-storage`) | ordinary volumes, second copies |
 | Apple SM0256G (serial `S2PANYAH502828`), PCIe adapter | consumer AHCI | `dell-apple-vmstore` (VG `dell-apple-vg`, thick LVM) | 220 GiB | `/var/mnt/longhorn-dell-apple` | `dell-apple` (`wired-storage`) | ordinary volumes, second copies |
 
 The Cisco drive is about 10 GiB smaller than VG `pve` was on the Apple drive, so

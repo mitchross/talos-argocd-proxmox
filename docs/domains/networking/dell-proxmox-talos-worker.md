@@ -21,7 +21,7 @@ extensions.
 | VM | 6 vCPU, 46 GiB RAM, 128 GiB boot + 400 GiB data disk | `omni/machine-classes/dell-worker.yaml` |
 | Talos worker | DHCP on `vmbr0`, zone `dell`, link `wired` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Node class | `node.vanillax.dev/class=dell-worker` | same cluster template |
-| Longhorn | Unschedulable boot disk + schedulable Samsung SSD | same cluster template |
+| Longhorn | Unschedulable boot disk + schedulable T-FORCE SSD | same cluster template |
 
 ## Networking
 
@@ -38,7 +38,7 @@ traffic. Never pin a NIC name in the machine config either.
 ## Storage
 
 The host boots Proxmox from a 251 GB SSD (`/dev/sdb`, LVM-thin `local-lvm`,
-151 GiB pool) and carries a separate Samsung 500 GB SSD at `/dev/sda`. That
+151 GiB pool) and carries a separate T-FORCE 512 GB SSD (serial `TPBF2303010020100129`). That
 second device is exposed as the **thick**-LVM Proxmox storage
 `dell-ssd-vmstore` — do not use LVM-Thin for it; this repo has measured thin
 metadata commits collapsing fsync performance.
@@ -92,8 +92,8 @@ replacement; do not combine it into a blind template sync.
    its 400 GiB provider-owned disk.
 
 2. In **Node → Disks → LVM**, confirm the thick volume group/storage
-   `dell-ssd-vmstore` exists on the Samsung `/dev/sda` with **Add Storage**
-   enabled. Stop if `/dev/sda` is no longer that device.
+   `dell-ssd-vmstore` (VG `dell-ssd-vg`) exists on the T-FORCE SSD with **Add Storage**
+   enabled. Stop if `pvs` shows `dell-ssd-vg` on any other drive.
 
 3. Apply the machine class, validate the template, and inspect the dry run:
 
