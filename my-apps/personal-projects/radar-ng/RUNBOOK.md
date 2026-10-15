@@ -1,5 +1,9 @@
 # radar-ng operations
 
+The images are the Rust backend (`v2.x`, since 2026-10-14; `v1.x` was Python). Context, release
+rules and gotchas: radar-ng `docs/rust-migration/HANDOFF.md`. Releases are forward-only: fix a bad
+image with a new image PR, never by reverting to an older one.
+
 For worker releases, configuration retention, functional gates and stateful
 handoff, use the [Temporal safe deployment runbook](../../../docs/domains/temporal/safe-deployments.md).
 
@@ -61,13 +65,16 @@ kubectl -n temporal exec deploy/temporal-admintools -- \
 
 A missing poller is a recovery signal, not permission to discard the execution.
 First restore the retained version's workers and release dependencies through
-GitOps. If that is impossible, follow the [selected pinned-run recovery procedure](../../../docs/domains/temporal/safe-deployments.md#rollback-and-existing-pinned-runs),
+GitOps. If that is impossible, follow the [pinned-run recovery procedure](../../../docs/domains/temporal/safe-deployments.md#fix-a-bad-release-forward-only),
 including replay and explicit approval of the execution and destination.
 
 For a replaceable scheduled ingestion job, termination and a fresh trigger may
 be acceptable only after its owner approves losing that run and checks for
 partial writes. Do not apply that shortcut to `WatchStormWorkflow`: it owns
 business state and buffered alerts. Do not bulk-terminate workflows.
+
+Exception: executions still pinned to a retired `v1.x` (Python) build may be terminated; the
+Schedules start fresh runs on the current build.
 
 Recovery requires both resumed scheduling and correct output: inspect the
 execution's assigned build, `/api/health`, and recent `manifest.json` frames.
