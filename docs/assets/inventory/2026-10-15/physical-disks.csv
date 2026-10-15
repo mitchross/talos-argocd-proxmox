@@ -2,7 +2,7 @@ host,device,model,bytes,interface,role,path,note
 sff,sda,PNY CS900 1TB SSD,1000204886016,sata,Spare; orphan LVM PV,No volume group,SMART overall passed; 33 °C at collection.
 sff,sdb,INTEL SSDSC2BX400G4R,400088457216,sata,Control plane / etcd,hp-sff-cp → VM 101 scsi0 (100 GiB),SMART overall passed; 30 °C at collection.
 sff,sdc,PNY CS900 1TB SSD,1000204886016,sata,Proxmox + worker,pve / hp-prodesk-vmstore → VM 100 scsi0 + scsi1,SMART overall passed; 33 °C at collection.
-elite,nvme0n1,INTEL SSDPEKNW512G8,512110190592,nvme,Longhorn data,hp-elite-vmstore → VM 100 scsi1 (440 GiB),SMART overall passed; 35 °C at collection. NVMe endurance used: 76%; media errors: 0.
+elite,nvme0n1,INTEL SSDPEKNW512G8,512110190592,nvme,Longhorn data,hp-elite-vmstore → VM 100 scsi1 (440 GiB); LXC 101 rootfs (10 GiB),SMART overall passed; 35 °C at collection. NVMe endurance used: 76%; media errors: 0.
 elite,nvme1n1,WDC PC SN530 SDBPMPZ-256G-1101,256060514304,nvme,Proxmox + Talos system,pve / local-lvm → VM 100 scsi0 (128 GiB),SMART overall passed; 44 °C at collection. NVMe endurance used: 3%; media errors: 0.
 gpu,sda,PNY CS900 1TB SSD,1000204886016,sata,Proxmox + bulk app storage,pve / tr-sda-vmstore → VM 100 scsi4 (800 GiB),SMART overall passed; 33 °C at collection.
 gpu,sdb,MK000480GWCEV,480103981056,sata,Enterprise RAID1 member,md0 → ssd-ent → VM 100 scsi3 (440 GiB),SMART overall passed; 18 °C at collection.

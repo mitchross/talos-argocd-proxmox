@@ -817,7 +817,7 @@
       "cpu": "13th Gen Intel(R) Core(TM) i5-13500T \u00b7 20 threads",
       "ram": "32 GB",
       "zone": "hp-elite",
-      "link": "Wired",
+      "link": "Wired \u00b7 2.5 GbE",
       "role": "Everyday apps + Zigbee",
       "suggested": "Everyday apps + protected state",
       "summary": "The other sensible home for everyday services. The Zigbee coordinator lives here too.",
@@ -833,7 +833,7 @@
           "bytes": 512110190592,
           "interface": "nvme",
           "role": "Longhorn data",
-          "path": "hp-elite-vmstore \u2192 VM 100 scsi1 (440 GiB)",
+          "path": "hp-elite-vmstore \u2192 VM 100 scsi1 (440 GiB); LXC 101 rootfs (10 GiB)",
           "note": "SMART overall passed; 35 \u00b0C at collection. NVMe endurance used: 76%; media errors: 0.",
           "health": {
             "passed": true,
@@ -1127,6 +1127,26 @@
       "networkAdapters": [
         "00:14.3 Network controller: Intel Corporation Alder Lake-S PCH CNVi WiFi (rev 11)",
         "00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (17) I219-LM (rev 11)"
+      ],
+      "containers": [
+        {
+          "id": "101",
+          "name": "proxmox-datacenter-manager",
+          "state": "running",
+          "vcpus": 2,
+          "ramMiB": 2048,
+          "swapMiB": 512,
+          "os": "debian",
+          "unprivileged": true,
+          "onboot": true,
+          "disks": [
+            {
+              "slot": "rootfs",
+              "backing": "hp-elite-vmstore:vm-101-disk-0",
+              "size": "10 GiB"
+            }
+          ]
+        }
       ]
     },
     {
@@ -1136,7 +1156,7 @@
       "cpu": "AMD Ryzen Threadripper 2950X 16-Core Processor \u00b7 32 threads",
       "ram": "128 GB",
       "zone": "house",
-      "link": "Wired",
+      "link": "Wired \u00b7 10 GbE",
       "role": "GPU + heavy jobs + app storage",
       "suggested": "GPU + selected heavy jobs",
       "summary": "Two RTX 3090s, an enterprise SSD mirror, and separate Talos, model-cache and bulk-storage paths.",
@@ -2556,7 +2576,17 @@
             "state": "STOPPED",
             "pid": null,
             "domain_state": null
-          }
+          },
+          "disks": [
+            {
+              "type": "DISK",
+              "path": "/dev/zvol/Backup10T/virtual-machine/talos_prod_control_03-f06my4"
+            },
+            {
+              "type": "CDROM",
+              "path": "/mnt/Backup10T/virtual-machine/metal-amd64-omni-omni-v1.11.1.iso"
+            }
+          ]
         }
       ],
       "services": [

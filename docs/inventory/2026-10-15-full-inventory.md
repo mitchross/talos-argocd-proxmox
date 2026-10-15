@@ -2,12 +2,12 @@
 
 **Status:** dated, read-only inventory. This replaces the September hardware snapshot in [Explore the lab](../lab.md).
 
-Collection: approximately 04:00–04:10 UTC. Kubernetes, Talos and host queries are separate samples, not an atomic snapshot.
+Collection: approximately 04:00–04:10 UTC; LXC configuration checked at 04:12 UTC. Kubernetes, Talos and host queries are separate samples, not an atomic snapshot.
 
 ## Coverage and limits
 
 - Seven physical machines: five Proxmox hosts, TrueNAS and the management Pi.
-- Seven Proxmox VMs: six running Talos VMs and one stopped Kali VM. No LXC guests were listed.
+- Seven Proxmox VMs: six running Talos VMs and one stopped Kali VM. Elite also runs LXC 101, Proxmox Datacenter Manager.
 - One additional stopped TrueNAS VM; three running TrueNAS apps and nine running Pi containers.
 - Twenty-six visible physical drives. The missing Dell T-FORCE is excluded. NAS zvols and guest disks are excluded.
 - All six Kubernetes nodes reported Ready: Talos v1.14.2, Kubernetes v1.37.1, containerd 2.3.6.
@@ -64,6 +64,16 @@ VM IDs are local to each host. NAS VM 5 is separate from the six active Talos no
 | shed | 100 | `talos-prod-cluster-v2-hp-micro-workers-pstbbd` | running | 4 | 12288 | 192.168.10.128 |
 | nas | 5 | `talos_prod_control_03` | STOPPED; autostart false | 2 | 8000 | Not collected |
 
+## LXC guest
+
+Elite runs `proxmox-datacenter-manager` as unprivileged Debian container 101 with autostart enabled.
+It has 2 vCPU, 2,048 MiB RAM, 512 MiB swap and a 10 GiB root filesystem.
+The backing volume is `hp-elite-vmstore:vm-101-disk-0`, on the Intel 660p.
+Its network uses DHCP on `vmbr0`; the guest address was not collected.
+
+The stopped NAS VM uses `/dev/zvol/Backup10T/virtual-machine/talos_prod_control_03-f06my4`.
+Its installation ISO is also on `Backup10T`; sanitized paths appear in the inventory JSON.
+
 ## Physical drives
 
 Capacity uses decimal GB. Device names can change after reconnecting hardware.
@@ -73,7 +83,7 @@ Capacity uses decimal GB. Device names can change after reconnecting hardware.
 | sff | sda | PNY CS900 1TB SSD | 1000.2 | No volume group | SMART overall passed; 33 °C at collection. |
 | sff | sdb | INTEL SSDSC2BX400G4R | 400.1 | hp-sff-cp → VM 101 scsi0 (100 GiB) | SMART overall passed; 30 °C at collection. |
 | sff | sdc | PNY CS900 1TB SSD | 1000.2 | pve / hp-prodesk-vmstore → VM 100 scsi0 + scsi1 | SMART overall passed; 33 °C at collection. |
-| elite | nvme0n1 | INTEL SSDPEKNW512G8 | 512.1 | hp-elite-vmstore → VM 100 scsi1 (440 GiB) | SMART overall passed; 35 °C at collection. NVMe endurance used: 76%; media errors: 0. |
+| elite | nvme0n1 | INTEL SSDPEKNW512G8 | 512.1 | hp-elite-vmstore → VM 100 scsi1 (440 GiB); LXC 101 rootfs (10 GiB) | SMART overall passed; 35 °C at collection. NVMe endurance used: 76%; media errors: 0. |
 | elite | nvme1n1 | WDC PC SN530 SDBPMPZ-256G-1101 | 256.1 | pve / local-lvm → VM 100 scsi0 (128 GiB) | SMART overall passed; 44 °C at collection. NVMe endurance used: 3%; media errors: 0. |
 | gpu | sda | PNY CS900 1TB SSD | 1000.2 | pve / tr-sda-vmstore → VM 100 scsi4 (800 GiB) | SMART overall passed; 33 °C at collection. |
 | gpu | sdb | MK000480GWCEV | 480.1 | md0 → ssd-ent → VM 100 scsi3 (440 GiB) | SMART overall passed; 18 °C at collection. |
