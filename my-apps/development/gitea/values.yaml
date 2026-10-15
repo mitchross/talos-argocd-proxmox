@@ -63,6 +63,11 @@ valkey:
   enabled: true
   architecture: standalone
   primary:
+    # Chart "nano" preset caps CPU at 150m and throttled a third of the time; no CPU limit.
+    resourcesPreset: none
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits: { memory: 512Mi }
     # Cache-only data, emptyDir on purpose: a restart costs a re-login and in-flight queue jobs replay.
     persistence:
       enabled: false

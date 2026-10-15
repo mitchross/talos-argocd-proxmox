@@ -73,7 +73,7 @@ backend:
       cpu: 50m
       memory: 256Mi
     limits:
-      memory: 1Gi
+      memory: 2Gi
   extraEnvFrom:
   - secretRef:
       name: loki-s3-credentials
