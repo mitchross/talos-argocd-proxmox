@@ -38,7 +38,7 @@ prometheus:
         memory: 3Gi
       # Head series fill ~5 GiB; the cap must also leave page cache or queries thrash TSDB reads.
       limits:
-        memory: 10Gi
+        memory: 14Gi
     securityContext:
       runAsNonRoot: true
       runAsUser: 65534

@@ -21,7 +21,7 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "2"
-          memory: 8Gi
+          memory: 12Gi
       - containerName: config-reloader
         mode: Off
 ---
