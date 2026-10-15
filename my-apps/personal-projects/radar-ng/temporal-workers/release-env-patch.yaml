@@ -40,7 +40,7 @@
   path: /spec/template/spec/containers/0/env/-
   value:
     name: HRRR_ENABLED_LAYERS
-    value: radar-hrrr,wind
+    value: radar-hrrr,wind,temperature,precip-accum,cloud
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
