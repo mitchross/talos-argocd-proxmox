@@ -77,10 +77,6 @@ spec:
             # 5 min: polite to Open-Meteo upstream, short enough that pull-to-refresh shows new data.
             - name: FORECAST_TTL_S
               value: "300"
-            - name: FORECAST_CACHE_MAX_ENTRIES
-              value: "512"
-            - name: WIND_CACHE_MAX_ENTRIES
-              value: "48"
             - name: API_RATE_LIMIT_RPS
               value: "20"
             - name: API_RATE_LIMIT_BURST

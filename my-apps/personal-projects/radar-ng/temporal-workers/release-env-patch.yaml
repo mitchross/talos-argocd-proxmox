@@ -40,7 +40,7 @@
   path: /spec/template/spec/containers/0/env/-
   value:
     name: HRRR_ENABLED_LAYERS
-    value: radar-hrrr,wind,temperature,precip-accum,cloud
+    value: radar-hrrr,wind,temperature,feels-like,dewpoint,precip-accum,cloud
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
@@ -121,3 +121,8 @@
   value:
     name: LIGHTNING_FLUSH_S
     value: '2.0'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: MRMS_QPE_24H_ENABLED
+    value: '1'
