@@ -21,7 +21,7 @@ extensions.
 | VM | 6 vCPU, 46 GiB RAM, 128 GiB boot + 400 GiB data disk | `omni/machine-classes/dell-worker.yaml` |
 | Talos worker | DHCP on `vmbr0`, zone `dell`, link `wired` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Node class | `node.vanillax.dev/class=dell-worker` | same cluster template |
-| Longhorn | Unschedulable boot disk + schedulable Apple SSD (`dell-apple`); `dell-ssd` out of service | same cluster template |
+| Longhorn | Unschedulable boot disk + schedulable Apple SSD (`dell-apple`); onboard SATA ports unused, out of service | same cluster template |
 
 ## Networking
 
@@ -41,8 +41,8 @@ The host boots Proxmox from a Cisco 240 GB M.2 SATA SSD (LVM-thin `local-lvm`,
 140 GiB pool). Longhorn data sits on an Apple SM0256G on a PCIe adapter, exposed
 as the **thick**-LVM storage `dell-apple-vmstore`. Do not use LVM-Thin for data
 disks; this repo has measured thin metadata commits collapsing fsync performance.
-The 400 GiB `dell-ssd-vmstore` data disk is out of service: drives on the onboard
-SATA data ports keep dropping off (see the [disk map](../storage/disk-map.md)).
+The onboard SATA data ports are unused: drives there keep dropping off (see the
+[disk map](../storage/disk-map.md)). The inactive `dell-ssd-vmstore` storage can be removed from Proxmox.
 
 The machine class puts the 128 GiB boot disk on `local-lvm` and a 220 GiB data
 disk on `dell-apple-vmstore`, so Longhorn replica writes and container image
@@ -92,9 +92,8 @@ replacement; do not combine it into a blind template sync.
    The live Dell is a schedulable Longhorn target, and deleting its VM destroys
    its 400 GiB provider-owned disk.
 
-2. In **Node → Disks → LVM**, confirm the thick volume group/storage
-   `dell-ssd-vmstore` (VG `dell-ssd-vg`) exists and is active. While it is out of
-   service, remove its disk from the machine class first, or the VM create fails.
+2. In **Node → Disks → LVM**, confirm the thick storage `dell-apple-vmstore`
+   exists and is active; the machine class requests only that data disk.
 
 3. Apply the machine class, validate the template, and inspect the dry run:
 
@@ -118,8 +117,8 @@ replacement; do not combine it into a blind template sync.
    ```
 
    Expected: the node is `Ready` with class `dell-worker` and zone `dell`, it
-   advertises no NVIDIA GPUs or extensions, Longhorn reports `dell-ssd`
-   schedulable at `/var/mnt/longhorn-dell-ssd`, and every volume stays healthy.
+   advertises no NVIDIA GPUs or extensions, Longhorn reports `dell-apple`
+   schedulable at `/var/mnt/longhorn-dell-apple`, and every volume stays healthy.
 
 ## Rollback and stop conditions
 
