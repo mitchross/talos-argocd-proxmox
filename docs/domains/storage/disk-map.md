@@ -65,15 +65,13 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
 | Cisco SSD-240G, M.2 SATA on the onboard port (serial `STP27120U9C`) | consumer SATA | host root + `local-lvm` (thin pool `data`, 140 GiB) | 128 GiB | `/var` | — | Talos system |
-| none (out of service) | — | `dell-ssd-vmstore` (inactive) | detached (`unused0`) | `/var/mnt/longhorn-dell-ssd` (absent) | `dell-ssd` (scheduling **off**) | nothing: drives on the onboard SATA data ports keep dropping off |
 | Apple SM0256G (serial `S2PANYAH502828`), PCIe adapter | consumer AHCI | `dell-apple-vmstore` (VG `dell-apple-vg`, thick LVM) | 220 GiB | `/var/mnt/longhorn-dell-apple` | `dell-apple` (`wired-storage`) | ordinary volumes, second copies |
 
 The Apple drive is the Dell's only Longhorn target. It sits on its own PCIe AHCI
 controller. A Samsung 850 EVO and a T-FORCE 512 GB both detached from the onboard
-SATA ports (`ata1`/`ata3`), under load and at idle. Keep `dell-ssd` scheduling off
-until a drive there passes a load test and a multi-day soak. The machine class
-still requests a `dell-ssd-vmstore` disk, so a rebuilt Dell VM needs that storage
-active or that disk removed from the class.
+SATA ports (`ata1`/`ata3`), under load and at idle. The old `dell-ssd` Longhorn
+disk, its UserVolume and its machine-class disk are removed. Add a drive on those
+ports only after a load test and a multi-day soak.
 
 The Cisco drive is about 10 GiB smaller than VG `pve` was on the Apple drive, so
 the thin pool is 140 GiB. VG `pve` has about 4 GiB free. UEFI boots `proxmox-cisco`.
