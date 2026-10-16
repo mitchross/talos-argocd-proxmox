@@ -84,9 +84,11 @@ patches:
       useNTS: false
 ---
 kind: ControlPlane
+# Three CPs on three hosts (hp-sff + the two Minis). Sync only after both new VMs are
+# registered and labelled; dry-run must keep the existing CP machine. Runbook: docs/domains/hosts/control-plane-ha.md
 machineClass:
-  name: hp-sff-control-plane
-  size: 1
+  name: control-plane-ha
+  size: 3
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
 - siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
@@ -103,12 +105,12 @@ patches:
     apiVersion: v1alpha1
     kind: KubeProxyConfig
     enabled: false
-- name: hp-sff-topology
+- name: control-plane-topology
   inline:
     apiVersion: v1alpha1
     kind: KubeNodeConfig
     labels:
-      topology.kubernetes.io/zone: hp-sff
+      topology.kubernetes.io/zone: control-plane
 - name: control-plane-api-server
   inline:
     apiVersion: v1alpha1
