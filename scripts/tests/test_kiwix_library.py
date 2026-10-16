@@ -74,6 +74,41 @@ class LibraryDownloadTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((self.data / '.downloads/reference.zim.sha256').read_text().strip(), self.checksum)
 
+    def dated_archive(self):
+        self.url = self.url.replace('reference.zim', 'reference_2026-10.zim')
+        (self.origin / 'reference_2026-10.zim').write_bytes(self.payload)
+        for name in ['reference_2026-09.zim', 'reference_2026-09.zim.part',
+                     'reference_2026-11.zim', 'reference_other_2026-09.zim']:
+            (self.data / name).write_bytes(b'preserve until replacement verifies')
+
+    def test_cleanup_only_older_same_series_after_verification(self):
+        self.dated_archive()
+        result = self.run_download()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.data / 'reference_2026-09.zim').exists())
+        self.assertFalse((self.data / 'reference_2026-09.zim.part').exists())
+        self.assertTrue((self.data / 'reference_2026-11.zim').exists())
+        self.assertTrue((self.data / 'reference_other_2026-09.zim').exists())
+        self.assertEqual((self.data / 'reference_2026-10.zim').read_bytes(), self.payload)
+
+    def test_verified_retry_cleans_leftovers_without_origin(self):
+        self.dated_archive()
+        self.assertEqual(self.run_download().returncode, 0)
+        (self.origin / 'reference_2026-10.zim').unlink()
+        (self.data / 'reference_2026-09.zim').write_bytes(b'old')
+        (self.data / 'reference_2026-10.zim.part').write_bytes(b'partial')
+        result = self.run_download()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.data / 'reference_2026-09.zim').exists())
+        self.assertFalse((self.data / 'reference_2026-10.zim.part').exists())
+
+    def test_failed_replacement_preserves_old_archive_and_partial(self):
+        self.dated_archive()
+        result = self.run_download('0' * 64)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue((self.data / 'reference_2026-09.zim').exists())
+        self.assertTrue((self.data / 'reference_2026-09.zim.part').exists())
+
     def test_partial_download_is_completed_before_publication(self):
         partial = self.data / '.downloads/reference.zim.part'
         partial.parent.mkdir()
