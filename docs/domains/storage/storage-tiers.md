@@ -29,7 +29,7 @@ Threadripper. The shed's disks are registered but have scheduling disabled. Dell
 is wired; the HP Micro in the shed is the machine behind the Wi-Fi media bridge.
 See the [dated physical inventory](../../audits/2026-09-05-inventory.md).
 
-The `wired-storage` tag includes SFF, Elite and Dell. Which physical disk holds
+The `wired-storage` tag includes SFF, Elite, Dell and Threadripper. Which physical disk holds
 what is listed once in the [disk map](disk-map.md); which volumes keep two
 copies is in [storage architecture](../../storage-architecture.md#two-copies-for-data-that-cant-be-re-created).
 

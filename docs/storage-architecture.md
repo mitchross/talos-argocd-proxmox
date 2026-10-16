@@ -251,7 +251,7 @@ drive → Proxmox storage → VM disk → mount) is in the [disk map](domains/st
 | `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | 440 GiB guest disk on a mirrored HPE enterprise SATA pair | GPU-node hot volumes and **every kopiur backup clone** (`longhorn-kopiur-staging-local` selects `clone-ok`) |
 | `gpu-bulk` (GPU node, tag `gpu-bulk`) | 800 GiB guest disk on the Threadripper's consumer PNY boot SSD | ordinary GPU-node volumes, so they don't take `clone-ok` space from backup clones |
 | `talos-ephemeral` on the GPU node | budget NVMe that also carries `/var` | nothing new (`allowScheduling: false`) |
-| `dell-ssd`, `hp-elite-nvme`, `hp-sff-ssd` (`wired-storage` nodes) | consumer SATA/QLC | ordinary replicas |
+| `dell-ssd`, `hp-elite-nvme`, `hp-sff-ssd` (`wired-storage` nodes; the GPU node carries the tag too) | consumer SATA/QLC | ordinary replicas |
 | hp-sff's second SSD | budget SATA | **etcd only** — keep Longhorn traffic off the single control plane's disk |
 | `hp-micro-ssd` (shed) | budget SATA behind Wi-Fi | nothing (`allowScheduling: false`) — never replicas or second copies |
 
