@@ -35,6 +35,10 @@ spec:
           mountPath: /config
         - name: media
           mountPath: /downloads
+        - name: hat-run
+          mountPath: /etc/s6-overlay/s6-rc.d/hat-syslog-server/run
+          subPath: hat-syslog-server-run
+          readOnly: true
         resources:
           requests:
             cpu: 100m
@@ -48,3 +52,7 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: media-pvc
+      - name: hat-run
+        configMap:
+          name: tubesync-scripts
+          defaultMode: 0755

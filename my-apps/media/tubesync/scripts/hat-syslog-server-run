@@ -1,0 +1,21 @@
+#!/command/with-contenv bash
+# Replaces the image's s6 run script. Archive is OFF: hat loads every row it archives into RAM
+# at once, and a backlog >2M rows OOM-killed the pod in a loop (2026-10-16).
+
+set -e
+cd /app
+
+DB_HIGH_SIZE='50000'
+DB_LOW_SIZE='10000'
+
+DIR="${XDG_STATE_HOME:-/config/state}/hat"
+DATABASE="${DIR}/syslog.db"
+
+mkdir -p "${DIR}"
+chown -R app:app "${DIR}"
+chmod 0700 "${DIR}"
+
+exec s6-setuidgid app \
+    hat-syslog-server --log-level 'INFO' \
+        --db-high-size "${DB_HIGH_SIZE}" --db-low-size "${DB_LOW_SIZE}" \
+        --db-path "${DATABASE}"
