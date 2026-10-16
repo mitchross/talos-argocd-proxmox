@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: livestream
-          image: ghcr.io/posthog/posthog/livestream:master@sha256:2a903c1a9696ca8a86b776e19aba4e117cb42f4b69a88421a4b640d3f62be1a8
+          image: ghcr.io/posthog/posthog/livestream:master@sha256:e26e2c10716c87866b2edfbde0196bbace1289f8d5038ecb182d7a10e21c27c8
           env:
             - name: KAFKA_HOSTS
               value: "kafka:9092"
@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
         - name: property-defs-rs
-          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:1a34d649966823440041e644ca8b32dba7d784a098a3d83399240fd423a5ef15
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:7ea97f3ef43c31bc16fa68a57625e2c15527d606b05173ef21a8cfb9f7ce704e
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -181,7 +181,7 @@ spec:
     spec:
       containers:
         - name: cymbal
-          image: ghcr.io/posthog/posthog/cymbal:master@sha256:9cea2da585aec312e9cc5cca0d2e6a0a31d6a32785d1d6a4647bb86980e31c8e
+          image: ghcr.io/posthog/posthog/cymbal:master@sha256:65d906fe9abe9183c3082d1f37cb886f66843fedb4177e0312862c9b4875248c
           env:
             - name: PGPASSWORD
               valueFrom:
