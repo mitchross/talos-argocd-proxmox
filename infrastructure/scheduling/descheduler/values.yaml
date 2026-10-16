@@ -38,6 +38,10 @@ deschedulerPolicy:
         # Memory only (cpu/pods omitted = 100% = ignored): under 55% receives, over 70% sheds. 15-pt gap stops ping-pong.
         - name: LowNodeUtilization
           args:
+            # kube-system pods (hubble) carry no requests, so evicting them never lowers the node and they bounce every run.
+            evictableNamespaces:
+              exclude:
+                - kube-system
             thresholds:
               memory: 55
             targetThresholds:
