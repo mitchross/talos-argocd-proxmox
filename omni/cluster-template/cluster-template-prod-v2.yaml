@@ -132,6 +132,20 @@ patches:
     extraArgs:
       kube-api-qps: "100"
       bind-address: 0.0.0.0
+    # Score memory 3:1 over CPU: with 6-30 vCPU nodes the equal default sends pods to the big-vCPU box even at 85% memory requests.
+    config:
+      profiles:
+        - schedulerName: default-scheduler
+          pluginConfig:
+            - name: NodeResourcesFit
+              args:
+                scoringStrategy:
+                  type: LeastAllocated
+                  resources:
+                    - name: memory
+                      weight: 3
+                    - name: cpu
+                      weight: 1
 - name: control-plane-performance
   inline:
     cluster:
