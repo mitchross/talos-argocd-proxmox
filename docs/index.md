@@ -29,6 +29,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: plain Postgres Deployments backed up by kopiur — daily snapshots (every 6 hours for data that can't be re-created), restore-before-bind
 - **Hosts**: Proxmox and Pi operating-system settings applied with Ansible from `host-monitoring/` ([guide](domains/hosts/physical-hosts-ansible.md))
+- **Control plane**: one Omni-provisioned CP today; three label-selected CPs when the Minis arrive ([runbook](domains/hosts/control-plane-ha.md))
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
 - **AI**: the production backend serves official `qwen3.8-27b` FP8 through vLLM
