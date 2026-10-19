@@ -33,3 +33,10 @@ plugins:
     - hindsight
     - homeassistant
   disabled: []
+
+# Coding work goes to Paseo, which holds the Claude Code, Codex and GitHub logins and the repo checkout.
+mcp_servers:
+  paseo:
+    url: https://paseo.vanillax.me/mcp/agents
+    headers:
+      Authorization: "Bearer ${PASEO_PASSWORD}"

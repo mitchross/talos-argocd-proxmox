@@ -15,6 +15,7 @@ flowchart LR
     Dash --> Gateway[Hermes gateway :8642]
     Gateway -->|qwen3.8-27b| LiteLLM --> vLLM
     Gateway --> Hindsight[(Hindsight memory)]
+    Gateway -->|MCP /mcp/agents| Paseo[Paseo pod] --> Claude[Claude Code / Codex]
     Git[my-apps/development/hermes] --> Argo[Argo CD] --> Gateway
     Gateway --> Vol[(hermes-data 10Gi)] --> Kopiur[Kopiur daily backup]
 ```
@@ -34,6 +35,7 @@ flowchart LR
 | Volume | `pvc.yaml` | `hermes-data`, Longhorn, restore-before-bind, daily kopiur backup |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks and the digest format; copied to the volume on every start |
+| Coding hand-off | `config/config.yaml` `mcp_servers.paseo` | Paseo's MCP endpoint, Bearer = Paseo password from 1Password `paseo/password`; Paseo runs Claude Code and Codex with the repo and GitHub login |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00, skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
 ## 1. Connect
@@ -48,6 +50,9 @@ In the Chat tab, ask in plain words: "is the cluster healthy", "why is wyze-brid
 Hermes loads the `homelab-ops` skill and runs the read-only `kubectl` checks. It names the Git directory that owns a fix; it cannot change the cluster.
 
 Check the daily digest under **Cron** in the dashboard. Run it by hand with the **Trigger** button.
+
+Ask for a fix: "open a PR that fixes the wyze-bridge secret". Hermes starts a Codex or Claude Code agent in [Paseo](paseo.md) with the evidence, waits, and reports the pull request link. You merge; Argo CD deploys. Hermes never merges.
+Watch the agent work in the Paseo app at any time.
 
 ## 3. Add a chat platform
 
