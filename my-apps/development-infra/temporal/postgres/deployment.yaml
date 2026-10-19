@@ -53,6 +53,8 @@ spec:
           ports:
             - containerPort: 5432
               name: postgres
+          # Logs statements over 1 s and lock waits over deadlock_timeout (1 s) to trace history write stalls.
+          args: ["-c", "log_min_duration_statement=1000", "-c", "log_lock_waits=on"]
           env:
             # Only used on first boot of an EMPTY volume; a restored volume skips init and its data wins.
             - name: POSTGRES_DB
