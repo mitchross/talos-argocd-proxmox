@@ -7,7 +7,7 @@ mkdir -p "$HERMES_HOME/workspace" "$HERMES_HOME/skills/devops/homelab-ops" "$HER
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/config.yaml "$HERMES_HOME/config.yaml"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-skills/SKILL.md "$HERMES_HOME/skills/devops/homelab-ops/SKILL.md"
 chown 10000:10000 "$HERMES_HOME" "$HERMES_HOME/workspace" "$HERMES_HOME/skills" "$HERMES_HOME/skills/devops" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local" "$HERMES_HOME/.local/bin"
-for plugin in hindsight langfuse homeassistant; do
+for plugin in hindsight homeassistant; do
   if [ ! -d "$HERMES_HOME/plugins/$plugin" ]; then
     echo "[seed] installing plugin $plugin"
     s6-setuidgid hermes /opt/hermes/bin/hermes plugins install "$plugin" --enable --yes-deps

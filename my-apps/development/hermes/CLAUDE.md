@@ -1,6 +1,6 @@
 # Hermes Agent: agent map
 
-Read this before you change Hermes or the LiteLLM, Hindsight, or Langfuse wiring it uses.
+Read this before you change Hermes or the LiteLLM or Hindsight wiring it uses.
 Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu/hermes.md).
 
 ## Which repo owns which change

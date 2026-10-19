@@ -31,6 +31,5 @@ agent:
 plugins:
   enabled:
     - hindsight
-    - langfuse
     - homeassistant
   disabled: []

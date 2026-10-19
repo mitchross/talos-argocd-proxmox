@@ -15,7 +15,6 @@ flowchart LR
     Dash --> Gateway[Hermes gateway :8642]
     Gateway -->|qwen3.8-27b| LiteLLM --> vLLM
     Gateway --> Hindsight[(Hindsight memory)]
-    Gateway --> Langfuse
     Git[my-apps/development/hermes] --> Argo[Argo CD] --> Gateway
     Gateway --> Vol[(hermes-data 10Gi)] --> Kopiur[Kopiur daily backup]
 ```
@@ -27,10 +26,10 @@ flowchart LR
 | Image | `docker.io/nousresearch/hermes-agent`, pinned by digest in `deployment.yaml` | One container runs the gateway and the dashboard under s6-overlay |
 | Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000 |
 | Settings | `config/config.yaml` → ConfigMap → copied to `/opt/data/config.yaml` by `scripts/seed.sh` on every start | Model, memory provider, dashboard URL, plugin list |
-| Plugins | `scripts/seed.sh` | Installs `hindsight`, `langfuse`, `homeassistant` into the volume on first start |
+| Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Login | 1Password `hermes/dashboard_password` → Secret `hermes-secrets` | Username `vanillax` |
-| Model | LiteLLM in-cluster, `qwen3.8-27b` | Free local model; traces land in Langfuse |
+| Model | LiteLLM in-cluster, `qwen3.8-27b` | Free local model; LiteLLM traces it in Langfuse |
 | Memory | Hindsight in-cluster, bank `hermes` | Key from 1Password `hindsight/tenant_api_key` |
 | Volume | `pvc.yaml` | `hermes-data`, Longhorn, restore-before-bind, daily kopiur backup |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
