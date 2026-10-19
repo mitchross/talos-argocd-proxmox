@@ -1,0 +1,36 @@
+# Git owns this file: scripts/seed.sh copies it over /opt/data/config.yaml on every start.
+# Runtime state (sessions, memories, logins, cron jobs) stays on the hermes-data volume.
+model:
+  provider: custom
+  default: qwen3.8-27b
+  base_url: http://litellm-service.litellm.svc.cluster.local:4000/v1
+  api_key: ${LITELLM_API_KEY}
+
+terminal:
+  backend: local
+  cwd: /opt/data/workspace
+  timeout: 180
+
+memory:
+  provider: hindsight
+  hindsight:
+    mode: local_external
+    api_url: http://hindsight-service.hindsight.svc.cluster.local:8888
+    bank_id: hermes
+    recall_budget: mid
+  memory_enabled: true
+  user_profile_enabled: true
+
+dashboard:
+  public_url: https://hermes.vanillax.me
+
+agent:
+  max_turns: 500
+  reasoning_effort: medium
+
+plugins:
+  enabled:
+    - hindsight
+    - langfuse
+    - homeassistant
+  disabled: []

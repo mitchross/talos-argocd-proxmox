@@ -1,0 +1,52 @@
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: hermes-data
+spec:
+  sources:
+    - pvc:
+        name: hermes-data
+  identity:
+    username: hermes-data
+    hostname: hermes
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  # The image's hermes user is uid 10000; the mover must match the data owner.
+  mover:
+    securityContext:
+      runAsUser: 10000
+      runAsGroup: 10000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 10000
+      supplementalGroups: [10000]
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: hermes-data-daily
+spec:
+  policyRef:
+    name: hermes-data
+  schedule:
+    cron: "19 4 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: hermes-data-restore
+spec:
+  source:
+    fromPolicy:
+      name: hermes-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 10000
+      runAsGroup: 10000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 10000
+      supplementalGroups: [10000]
