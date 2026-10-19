@@ -9,7 +9,8 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 |---|---|---|
 | Deployment, env, volume, route, backup | talos | `my-apps/development/hermes/` |
 | Hermes settings (model, memory, plugins, dashboard) | talos | `config/config.yaml`, copied over the volume on every start |
-| Plugin set | talos | `scripts/seed.sh` installs each listed plugin once into the volume |
+| Plugin set, skill copy, cron job | talos | `scripts/seed.sh` installs plugins once, copies `skills/homelab-ops/SKILL.md`, creates the `homelab-digest` cron job if missing |
+| Cluster access | talos | `rbac.yaml` (read-only ClusterRole `hermes-viewer`), `config/kube-in-cluster.yaml`, kubectl from the `kubectl` init container |
 | Image digest | talos | `deployment.yaml` `image:` (official `nousresearch/hermes-agent`) |
 | Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `litellm`, `hindsight` |
 | Upstream behavior | `NousResearch/hermes-agent` | read the tagged source; do not fork |
@@ -21,4 +22,5 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 - The container starts as root. s6-overlay drops the gateway and dashboard to uid 10000; the mover uses the same uid.
 - Keep `HERMES_DASHBOARD_PUBLIC_URL` equal to the route hostname, or dashboard auth redirects break.
 - The dashboard refuses a non-loopback bind without an auth provider; keep the basic-auth secrets in the ExternalSecret.
-- The pod has no cluster ServiceAccount token. Give it a read-only kubeconfig before any unattended cluster job.
+- `kubectl` in the pod is read-only (`hermes-viewer`: get, list, watch; no secrets). Do not add write verbs; fixes go through Git.
+- A cron job edited in the dashboard keeps its edits; the seed only creates `homelab-digest` when the name is absent from `cron/jobs.json`.
