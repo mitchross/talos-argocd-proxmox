@@ -181,7 +181,7 @@ spec:
     spec:
       containers:
         - name: cymbal
-          image: ghcr.io/posthog/posthog/cymbal:master@sha256:d6efbf276a5d43404df25afce6404e34839dd5f3c140e42f765e5fa63b9c27e7
+          image: ghcr.io/posthog/posthog/cymbal:master@sha256:c213b15cfa920ae85e77704aacb8960e8112572cf9d2a77a8d8225962ce9d2ff
           env:
             - name: PGPASSWORD
               valueFrom:
