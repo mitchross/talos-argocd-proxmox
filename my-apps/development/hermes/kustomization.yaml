@@ -4,6 +4,7 @@ namespace: hermes
 resources:
   - namespace.yaml
   - externalsecret.yaml
+  - rbac.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml
@@ -17,5 +18,11 @@ configMapGenerator:
   - name: hermes-scripts
     files:
       - seed.sh=scripts/seed.sh
+  - name: hermes-skills
+    files:
+      - SKILL.md=skills/homelab-ops/SKILL.md
+  - name: cluster-config
+    files:
+      - kubeconfig=config/kube-in-cluster.yaml
 components:
   - ../../common/kopiur-backup

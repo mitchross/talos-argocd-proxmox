@@ -33,6 +33,9 @@ flowchart LR
 | Model | LiteLLM in-cluster, `qwen3.8-27b` | Free local model; traces land in Langfuse |
 | Memory | Hindsight in-cluster, bank `hermes` | Key from 1Password `hindsight/tenant_api_key` |
 | Volume | `pvc.yaml` | `hermes-data`, Longhorn, restore-before-bind, daily kopiur backup |
+| Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
+| Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks and the digest format; copied to the volume on every start |
+| Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00, skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
 ## 1. Connect
 
@@ -40,7 +43,14 @@ flowchart LR
 2. Sign in with username `vanillax` and the password from 1Password `homelab-prod` → `hermes`.
 3. The **Status** page shows the gateway. The **Chat** tab opens a session.
 
-## 2. Add a chat platform
+## 2. Ask about the cluster
+
+In the Chat tab, ask in plain words: "is the cluster healthy", "why is wyze-bridge degraded", "which backups failed this week".
+Hermes loads the `homelab-ops` skill and runs the read-only `kubectl` checks. It names the Git directory that owns a fix; it cannot change the cluster.
+
+Check the daily digest under **Cron** in the dashboard. Run it by hand with the **Trigger** button.
+
+## 3. Add a chat platform
 
 Add the bot token to 1Password, add it to `externalsecret.yaml`, and restart the pod.
 
@@ -49,7 +59,7 @@ Add the bot token to 1Password, add it to `externalsecret.yaml`, and restart the
 | Telegram | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` |
 | Home Assistant | `HASS_TOKEN` (long-lived token from your HA profile page) |
 
-## 3. Add provider logins
+## 4. Add provider logins
 
 Provider logins are runtime state on the volume. Open the Chat tab and run `hermes auth add openai-codex --type oauth` for Codex. Claude through the Anthropic OAuth needs a Claude Max plan.
 

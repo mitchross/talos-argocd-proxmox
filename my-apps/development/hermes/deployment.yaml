@@ -15,7 +15,8 @@ spec:
       labels:
         app.kubernetes.io/name: hermes
     spec:
-      automountServiceAccountToken: false
+      serviceAccountName: hermes
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 60
       nodeSelector:
         kubernetes.io/arch: amd64
@@ -25,6 +26,23 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       initContainers:
+        # kubectl lands on the volume at /opt/data/.local/bin, which is already on the image PATH.
+        - name: kubectl
+          image: docker.io/alpine/k8s:1.37.1@sha256:712dc5385d1c1a3f83b747fa9e40f64d433a97f72ff42f9755ff7dd1f62846e4
+          command: ["/bin/sh", "-c", "mkdir -p /opt/data/.local/bin && install -m 0755 /usr/bin/kubectl /opt/data/.local/bin/kubectl"]
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
         - name: seed
           image: docker.io/nousresearch/hermes-agent:v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
           command: ["/bin/sh", "/etc/hermes-scripts/seed.sh"]
@@ -46,6 +64,9 @@ spec:
               readOnly: true
             - name: hermes-scripts
               mountPath: /etc/hermes-scripts
+              readOnly: true
+            - name: hermes-skills
+              mountPath: /etc/hermes-skills
               readOnly: true
       containers:
         - name: hermes
@@ -81,6 +102,9 @@ spec:
               value: http://langfuse-web.langfuse.svc.cluster.local:3000
             - name: HASS_URL
               value: http://home-assistant.home-assistant.svc.cluster.local:8123
+            # Explicit kubeconfig: any kubectl flag (e.g. --request-timeout) disables the in-cluster fallback.
+            - name: KUBECONFIG
+              value: /etc/hermes/cluster/kubeconfig
           resources:
             requests:
               cpu: 500m
@@ -103,6 +127,9 @@ spec:
               mountPath: /opt/data
             - name: shm
               mountPath: /dev/shm
+            - name: cluster-config
+              mountPath: /etc/hermes/cluster
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -114,6 +141,12 @@ spec:
           configMap:
             name: hermes-scripts
             defaultMode: 0555
+        - name: hermes-skills
+          configMap:
+            name: hermes-skills
+        - name: cluster-config
+          configMap:
+            name: cluster-config
         - name: shm
           emptyDir:
             medium: Memory
