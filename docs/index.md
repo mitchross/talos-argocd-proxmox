@@ -36,6 +36,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
   owns the local backend and Pi's optional OpenRouter DeepSeek Flash route; use the
   [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
   [Paseo](domains/ai-gpu/paseo.md) runs Claude Code, Codex, and Pi in a browser workspace.
+  [Hermes](domains/ai-gpu/hermes.md) is the always-on agent with cron, memory, and chat platforms.
 
 ## Reading order
 

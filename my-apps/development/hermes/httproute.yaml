@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hermes-internal
+spec:
+  parentRefs:
+    # Internal only (Tailscale via TrueNAS). Re-parent by renaming: Argo drops in-place parentRefs edits.
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - hermes.vanillax.me
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: hermes
+          port: 9119
+          weight: 1

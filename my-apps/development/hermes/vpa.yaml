@@ -1,0 +1,25 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: hermes
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hermes
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: hermes
+        controlledResources: [cpu, memory]
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 250m
+          memory: 1Gi
+        maxAllowed:
+          cpu: "4"
+          memory: 6Gi
+      - containerName: seed
+        mode: "Off"

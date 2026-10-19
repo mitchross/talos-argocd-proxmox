@@ -142,6 +142,7 @@ nav:
           - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
           - Paseo — coding agents in the cluster: domains/ai-gpu/paseo.md
           - Paseo — run on another cluster: domains/ai-gpu/paseo-other-clusters.md
+          - Hermes — the always-on agent in the cluster: domains/ai-gpu/hermes.md
       - Reference & ops:
           - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
           - Descheduler — why pods get moved: domains/scheduling/descheduler.md
