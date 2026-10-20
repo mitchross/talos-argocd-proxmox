@@ -15,7 +15,7 @@ flowchart LR
     Dash --> Gateway[Hermes gateway :8642]
     Gateway -->|qwen3.8-27b| LiteLLM --> vLLM
     Gateway --> Hindsight[(Hindsight memory)]
-    Gateway --> Langfuse
+    Gateway -->|MCP /mcp/agents| Paseo[Paseo pod] --> Claude[Claude Code / Codex]
     Git[my-apps/development/hermes] --> Argo[Argo CD] --> Gateway
     Gateway --> Vol[(hermes-data 10Gi)] --> Kopiur[Kopiur daily backup]
 ```
@@ -27,14 +27,15 @@ flowchart LR
 | Image | `docker.io/nousresearch/hermes-agent`, pinned by digest in `deployment.yaml` | One container runs the gateway and the dashboard under s6-overlay |
 | Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000 |
 | Settings | `config/config.yaml` → ConfigMap → copied to `/opt/data/config.yaml` by `scripts/seed.sh` on every start | Model, memory provider, dashboard URL, plugin list |
-| Plugins | `scripts/seed.sh` | Installs `hindsight`, `langfuse`, `homeassistant` into the volume on first start |
+| Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Login | 1Password `hermes/dashboard_password` → Secret `hermes-secrets` | Username `vanillax` |
-| Model | LiteLLM in-cluster, `qwen3.8-27b` | Free local model; traces land in Langfuse |
+| Model | LiteLLM in-cluster, `qwen3.8-27b` | Free local model; LiteLLM traces it in Langfuse |
 | Memory | Hindsight in-cluster, bank `hermes` | Key from 1Password `hindsight/tenant_api_key` |
 | Volume | `pvc.yaml` | `hermes-data`, Longhorn, restore-before-bind, daily kopiur backup |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks and the digest format; copied to the volume on every start |
+| Coding hand-off | `config/config.yaml` `mcp_servers.paseo` | Paseo's MCP endpoint, Bearer = Paseo password from 1Password `paseo/password`; Paseo runs Claude Code and Codex with the repo and GitHub login |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00, skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
 ## 1. Connect
@@ -49,6 +50,9 @@ In the Chat tab, ask in plain words: "is the cluster healthy", "why is wyze-brid
 Hermes loads the `homelab-ops` skill and runs the read-only `kubectl` checks. It names the Git directory that owns a fix; it cannot change the cluster.
 
 Check the daily digest under **Cron** in the dashboard. Run it by hand with the **Trigger** button.
+
+Ask for a fix: "open a PR that fixes the wyze-bridge secret". Hermes starts a Codex or Claude Code agent in [Paseo](paseo.md) with the evidence, waits, and reports the pull request link. You merge; Argo CD deploys. Hermes never merges.
+Watch the agent work in the Paseo app at any time.
 
 ## 3. Add a chat platform
 

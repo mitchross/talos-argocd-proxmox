@@ -78,6 +78,17 @@ Warnings: all clear | <object>: <reason> (xN)
 Suggested next step: <one line, or "none">
 ```
 
+## When a fix is needed: hand it to Paseo
+
+You cannot change the cluster. Paseo can: it runs Claude Code and Codex with the talos repo checked out at `/workspace/talos-argocd-proxmox` and a GitHub login that opens pull requests. The Paseo MCP tools are available in this session (`create_agent`, `send_agent_prompt`, `get_agent_status`, `get_agent_activity`, `list_agents`, `list_profiles`).
+
+Only start a coding agent when the user asks for a fix, or when the digest prompt says so. Steps:
+
+1. `list_profiles` and pick `implementation` (Codex) for a scoped change or `planning` (Claude) for a root-cause investigation.
+2. `create_agent` with that profile in the Paseo workspace for `/workspace/talos-argocd-proxmox`. The prompt must contain: the evidence you collected, the Git directory that owns the app, and these rules: read the repo `CLAUDE.md` first, work on a feature branch, open a pull request, never push to `main`, never merge.
+3. Poll `get_agent_status` until the agent finishes. Report the pull request link and a two-line summary. Do not merge; the user merges.
+4. If the agent asks a question, relay it to the user instead of answering on their behalf.
+
 ## When asked about one app
 
 Use the same read-only commands scoped with `-n <namespace>`. Read the last 50 log lines with `kubectl logs -n <ns> <pod> --tail=50`. Name the Git directory that owns the app: `my-apps/<category>/<app>/`.
