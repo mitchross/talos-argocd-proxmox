@@ -13,6 +13,8 @@ It refreshes that session independently, so developer API login failures do not 
 - [ExternalSecret](external-secret.yaml) retains the existing Bridge credentials and Kubernetes Secret keys.
   [Web session Secret](web-session-secret.yaml) reads the concealed `WEB_SESSION` field from `homelab-prod/wyze-bridge`.
   The receiver mounts only this seed Secret; Wyze Bridge does not receive it.
+  The seed ExternalSecret is not deployed, because enrollment has not written `WEB_SESSION` yet.
+  See [Session enrollment and recovery](#session-enrollment-and-recovery) before you scale up.
 - Web login remains at `https://wyze-bridge.vanillax.me`, through Service port `5000` and container port `5080`.
 - RTSP uses `rtsp://wyze-bridge.wyze-bridge.svc.cluster.local:8554/shed` inside Kubernetes.
   LAN consumers use `rtsp://192.168.10.46:8554/shed`.
@@ -62,7 +64,12 @@ Wyze Bridge may still report developer API login errors; this mode does not repa
 ## Session enrollment and recovery
 
 Use the official Web View service cookie named `session`. Do not use a developer portal token.
-The initial seed must exist before merging the deployment PR.
+The initial seed must exist before the Deployment scales above `replicas: 0`.
+
+The receiver reads the seed file on every authentication, also when the PVC holds valid state.
+A missing or empty seed stops authentication, so the seed Secret is required.
+[`kustomization.yaml`](kustomization.yaml) does not list `web-session-secret.yaml` until enrollment is complete.
+An ExternalSecret without the 1Password field fails with `SecretSyncedError` and degrades the Argo CD app.
 
 Install `agent-browser` and enable the 1Password CLI desktop integration.
 Open a named, visible browser session:
@@ -84,6 +91,13 @@ The helper uses private JSON input and retains the existing password and API fie
 It rejects an item containing a passkey because 1Password JSON editing cannot preserve passkeys.
 Approve the 1Password desktop prompt when it appears.
 Do not paste cookies into chat, command arguments, Git, or image build contexts.
+
+After the first enrollment, complete these steps in one PR:
+
+1. Add `web-session-secret.yaml` back to `resources:` in `kustomization.yaml`.
+2. Set `replicas: 1` in `deployment.yaml`.
+
+Expect the `wyze-web-session-seed` ExternalSecret to become Ready before the pod starts.
 
 The ExternalSecret refreshes hourly. The receiver detects projected seed changes without a pod restart.
 It retains its rotated cookie on the PVC when the original seed remains unchanged.
