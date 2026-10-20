@@ -11,9 +11,6 @@ all:
             gpu:
               ansible_host: 192.168.10.14
               physical_host: threadripper
-            dell:
-              ansible_host: 192.168.10.16
-              physical_host: dell
             sff:
               ansible_host: 192.168.10.21
               physical_host: hp-sff

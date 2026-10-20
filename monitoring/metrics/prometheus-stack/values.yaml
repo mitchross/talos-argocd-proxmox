@@ -62,10 +62,6 @@ prometheus:
             labels:
               physical_host: threadripper
               host_type: proxmox
-          - targets: ["192.168.10.16:9100"]
-            labels:
-              physical_host: dell
-              host_type: proxmox
           - targets: ["192.168.10.21:9100"]
             labels:
               physical_host: hp-sff
@@ -104,9 +100,6 @@ prometheus:
           - targets: ["192.168.10.14:8889"]
             labels:
               physical_host: threadripper
-          - targets: ["192.168.10.16:8889"]
-            labels:
-              physical_host: dell
           - targets: ["192.168.10.21:8889"]
             labels:
               physical_host: hp-sff
@@ -126,10 +119,6 @@ prometheus:
           - targets: ["192.168.10.14:9633"]
             labels:
               physical_host: threadripper
-              host_type: proxmox
-          - targets: ["192.168.10.16:9633"]
-            labels:
-              physical_host: dell
               host_type: proxmox
           - targets: ["192.168.10.21:9633"]
             labels:

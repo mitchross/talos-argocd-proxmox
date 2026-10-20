@@ -9,7 +9,6 @@ Proxmox hosts. Each host is its own failure domain, named by the
 | HP ProDesk SFF | 192.168.10.21 | `hp-sff` | control plane, general worker |
 | HP Elite Mini 600 G9 | 192.168.10.22 | `hp-elite` | large general worker |
 | Threadripper | 192.168.10.14 | `house` | GPU worker only |
-| Dell OptiPlex 7060 | 192.168.10.16 | `dell` | general worker |
 | HP 600 G4 micro | 192.168.10.20 | `shed` | worker with the USB radios |
 
 There is one etcd member. The cluster is not HA: losing the HP SFF stops the
@@ -94,7 +93,6 @@ Set up remote kernel logging before trusting any diagnosis of that host — see
 | `hp-sff-worker` | 6 | 40 GiB | (same host) | 128 GiB boot + 690 GiB Longhorn |
 | `hp-elite-worker` | 16 | 24 GiB | 30 GiB | 128 GiB boot + 440 GiB Longhorn |
 | `threadripper-gpu-worker` | 30 | 100 GiB | 125 GiB | 16 GiB boot + 434 GiB EPHEMERAL + 450 GiB models + 440 GiB flash + 800 GiB bulk; 2x RTX 3090 |
-| `dell-worker` | 4 | 30 GiB | 39 GiB | 128 GiB boot + 400 GiB Longhorn |
 | `hp-micro-worker` | 4 | 12 GiB | 15 GiB | 128 GiB boot + 850 GiB Longhorn (unschedulable) |
 
 The GPU's boot and EPHEMERAL disks total the existing 450 GiB NVMe0 allocation.
