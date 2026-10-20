@@ -14,7 +14,7 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 | GPUs | 2 × RTX 3090, tensor parallel 2, multiprocessing executor |
 | Interconnect | no custom all-reduce; NCCL P2P disabled; shared host transport |
 | Context ceiling | 262,144 tokens, native model limit, no RoPE extrapolation |
-| Concurrency | at most two sequences sharing one KV pool |
+| Concurrency | up to eight sequences sharing one KV pool; the pool, not the slot count, bounds what runs |
 | Attention | FlashInfer explicitly selected for Ampere FP8 KV |
 | KV / recurrent state | `fp8_e4m3` / float16 |
 | GPU utilization budget | 0.92 per GPU |
