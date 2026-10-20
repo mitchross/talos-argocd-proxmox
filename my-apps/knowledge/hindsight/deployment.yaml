@@ -48,6 +48,16 @@ spec:
               value: "http://litellm-service.litellm.svc.cluster.local:4000/v1"
             - name: HINDSIGHT_API_LLM_MODEL
               value: "qwen3.8-27b"
+            # Extraction without Qwen's thinking block; with xhigh thinking each call outran the timeout,
+            # retried, and queued 50+ orphaned requests at vLLM (LiteLLM never aborts upstream).
+            - name: HINDSIGHT_API_LLM_EXTRA_BODY
+              value: '{"chat_template_kwargs":{"enable_thinking":false,"preserve_thinking":false}}'
+            - name: HINDSIGHT_API_LLM_TIMEOUT
+              value: "600"
+            - name: HINDSIGHT_API_LLM_MAX_RETRIES
+              value: "1"
+            - name: HINDSIGHT_API_LLM_MAX_CONCURRENT
+              value: "4"
             - name: HINDSIGHT_API_LLM_API_KEY
               valueFrom:
                 secretKeyRef:
