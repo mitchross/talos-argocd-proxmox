@@ -1,10 +1,18 @@
 # Git owns this file: scripts/seed.sh copies it over /opt/data/config.yaml on every start.
 # Runtime state (sessions, memories, logins, cron jobs) stays on the hermes-data volume.
+# Brain: Sonnet through the Claude Code token (CLAUDE_CODE_OAUTH_TOKEN). Coding runs use Opus / GPT-6.1-sol, see the skill.
 model:
-  provider: custom
-  default: qwen3.8-27b
-  base_url: http://litellm-service.litellm.svc.cluster.local:4000/v1
-  api_key: ${LITELLM_API_KEY}
+  provider: anthropic
+  default: claude-sonnet-5-5
+
+# Qwen stays in the model picker as a free local option.
+providers:
+  litellm:
+    name: litellm
+    base_url: http://litellm-service.litellm.svc.cluster.local:4000/v1
+    api_key: ${LITELLM_API_KEY}
+    models:
+      - qwen3.8-27b
 
 terminal:
   backend: local
