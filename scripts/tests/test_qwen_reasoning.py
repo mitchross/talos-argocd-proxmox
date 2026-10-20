@@ -154,7 +154,7 @@ class DeclaredPolicyTests(unittest.TestCase):
         args = container['args']
         expected = {'--max-num-batched-tokens': '8192',
                     '--long-prefill-token-threshold': '4096',
-                    '--max-num-seqs': '2', '--max-model-len': '262144',
+                    '--max-num-seqs': '8', '--max-model-len': '262144',
                     '--mamba-cache-mode': 'align', '--prefix-match-unit': '16'}
         for flag, value in expected.items():
             self.assertEqual(args[args.index(flag) + 1], value)
