@@ -94,7 +94,7 @@ gh auth login --web --git-protocol https   # pick GitHub.com, follow the device 
 gh auth setup-git
 ```
 
-Check with `codex login status` and `gh auth status`. Expected: both report a signed-in account. The seed script reruns `gh auth setup-git` on every start.
+Check with `codex login status` and `gh auth status`. Expected: both report a signed-in account. Then ask Hermes in a chat: "run `command -v claude codex; gh auth status; codex login status` in the terminal". Hermes's terminal uses its own home (`/opt/data/home`); the seed links the logins into it, and this chat check proves Hermes itself can see them. The seed script reruns `gh auth setup-git` on every start.
 A restored volume keeps both logins. Device-code sign-in must be enabled in the ChatGPT security settings first.
 
 To let Hermes itself answer with Claude instead of Qwen, add the Anthropic provider later; it is not needed for the coding hand-off.

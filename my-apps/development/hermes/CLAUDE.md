@@ -22,6 +22,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 
 - Change Hermes through Git. Never edit `config.yaml` in the pod; the next start overwrites it.
 - Runtime state stays on the volume: sessions, cron jobs, skills, memories, provider logins.
+- The terminal tool runs with `HOME=/opt/data/home` and a login-shell PATH, not the pod env. Tool state lives under `/opt/data`; the seed symlinks it into `/opt/data/home` and writes `.profile` with `/opt/agents/bin`. Test fixes through Hermes's own terminal, never only with `kubectl exec`.
 - The container starts as root. s6-overlay drops the gateway and dashboard to uid 10000; the mover uses the same uid.
 - Keep `HERMES_DASHBOARD_PUBLIC_URL` equal to the route hostname, or dashboard auth redirects break.
 - The dashboard refuses a non-loopback bind without an auth provider; keep the basic-auth secrets in the ExternalSecret.
