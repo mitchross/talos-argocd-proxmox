@@ -87,6 +87,9 @@ spec:
               value: http://hindsight-service.hindsight.svc.cluster.local:8888
             - name: HASS_URL
               value: http://home-assistant.home-assistant.svc.cluster.local:8123
+            # claude -p defaults to Sonnet on this plan; every run must report this model in its JSON modelUsage.
+            - name: ANTHROPIC_MODEL
+              value: claude-opus-5-5
             # Explicit kubeconfig: any kubectl flag (e.g. --request-timeout) disables the in-cluster fallback.
             - name: KUBECONFIG
               value: /etc/hermes/cluster/kubeconfig

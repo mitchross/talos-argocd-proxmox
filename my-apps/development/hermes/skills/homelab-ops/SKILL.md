@@ -1,7 +1,7 @@
 ---
 name: homelab-ops
 description: Read-only health checks for the talos-prod-cluster-v2 homelab (Argo CD, pods, Longhorn, kopiur backups, events) and the daily digest format.
-version: 1.1.0
+version: 1.2.0
 platforms: [linux]
 metadata:
   hermes:
@@ -89,11 +89,12 @@ Only start a coding agent when the user asks for a fix, or when the digest promp
 3. Start the agent in the background with the terminal tool (`workdir=/opt/data/workspace/talos-argocd-proxmox`, `background=true`). The prompt must contain: the evidence you collected, the Git directory that owns the app, and these rules: read the repo `CLAUDE.md` first, stay on the current branch, commit, push the branch, open a pull request with `gh pr create`, never push to `main`, never merge.
 
 ```
-claude -p "<prompt>" --dangerously-skip-permissions --max-turns 60 --output-format text
-codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
+claude -p "<prompt>" --dangerously-skip-permissions --max-turns 60 --output-format json
+codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check --json "<prompt>"
 ```
+   Claude Code is pinned to `claude-opus-5-5` by the pod environment. Its JSON output ends with a `modelUsage` object; the keys are the models that ran.
    The pod is the sandbox: `kubectl` is read-only and only the repo checkout is writable, so the bypass flags are acceptable here. Never pass them anywhere else.
-4. Poll the background process with `process_manage` until it exits. Report the pull request link and a two-line summary. Do not merge; the user merges.
+4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name from modelUsage or the codex JSON>`. If `modelUsage` does not contain `claude-opus-5-5`, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
 
 If `claude` or `codex` fails to start (no login, no token), say so and fall back to the Paseo MCP tools (`list_profiles`, `create_agent`, `send_agent_prompt`, `get_agent_status`) with the same prompt.
