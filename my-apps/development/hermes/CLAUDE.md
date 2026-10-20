@@ -8,7 +8,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | Change | Owner | Path |
 |---|---|---|
 | Deployment, env, volume, route, backup | talos | `my-apps/development/hermes/` |
-| Hermes settings (model, memory, plugins, dashboard) | talos | `config/config.yaml`, copied over the volume on every start |
+| Hermes settings (model, providers, memory, plugins, dashboard) | talos | `config/config.yaml`, copied over the volume on every start |
 | Plugin set, skill copy, cron job, repo checkout, memory hooks | talos | `scripts/seed.sh` installs plugins once, copies `skills/homelab-ops/SKILL.md`, creates the `homelab-digest` cron job if missing, clones the talos repo into `/opt/data/workspace`, writes `~/.hindsight/*.json` and installs the Claude Code and Codex Hindsight hooks |
 | Cluster access | talos | `rbac.yaml` (read-only ClusterRole `hermes-viewer`), `config/kube-in-cluster.yaml`; `kubectl` ships in the image |
 | Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` |
@@ -28,6 +28,6 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 - `kubectl` in the pod is read-only (`hermes-viewer`: get, list, watch; no secrets). Do not add write verbs; fixes go through Git.
 - Claude Code and Codex come from the `hermes-dev` image, never from `npm install` on the volume. Bump them in homelab-images.
 - The Claude token is `CLAUDE_CODE_OAUTH_TOKEN` from 1Password; Codex and `gh` logins are one-time device logins stored on the volume.
-- `ANTHROPIC_MODEL=claude-opus-5-5` pins `claude -p`; keep it, the plan default is Sonnet. The skill prints the model from `modelUsage` on every hand-off.
-- The same token registers Anthropic in the model picker; the `gh` login registers GitHub Copilot. The default model stays `qwen3.8-27b` (`config.yaml`); the cron digest follows the default.
+- Model policy: Hermes brain = `claude-sonnet-5-5` (`config.yaml`, cron digest follows it); coding = `claude-opus-5-5 --effort high` or `gpt-6.1-sol` at high effort. `ANTHROPIC_MODEL` and `.codex/config.toml` (seed) pin the agents; the skill repeats the flags and reports the model on every hand-off.
+- Qwen stays as `providers.litellm` so the picker keeps the free local option; the `gh` login adds GitHub Copilot.
 - A cron job edited in the dashboard keeps its edits; the seed only creates `homelab-digest` when the name is absent from `cron/jobs.json`.

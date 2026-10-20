@@ -50,6 +50,13 @@ if ! grep -qs hindsight-memory "$HERMES_HOME/.claude/plugins/installed_plugins.j
   as_hermes claude plugin marketplace add vectorize-io/hindsight >/dev/null 2>&1 || true
   as_hermes claude plugin install hindsight-memory || echo "[seed] claude plugin install failed, continuing"
 fi
+# Codex defaults for every run in this pod; the hooks installer appends its own [features] block below.
+if ! grep -qs '^model_reasoning_effort' "$HERMES_HOME/.codex/config.toml"; then
+  mkdir -p "$HERMES_HOME/.codex"
+  printf 'model = "gpt-6.1-sol"\nmodel_reasoning_effort = "high"\n' | cat - "$HERMES_HOME/.codex/config.toml" 2>/dev/null > "$HERMES_HOME/.codex/config.toml.new"
+  mv "$HERMES_HOME/.codex/config.toml.new" "$HERMES_HOME/.codex/config.toml"
+  chown 10000:10000 "$HERMES_HOME/.codex" "$HERMES_HOME/.codex/config.toml"
+fi
 if [ ! -f "$HERMES_HOME/.codex/hooks.json" ]; then
   echo "[seed] installing Codex Hindsight hooks"
   # --mode local only writes hooks; cloud mode would overwrite .hindsight/codex.json.

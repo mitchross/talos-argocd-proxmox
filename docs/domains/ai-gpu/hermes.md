@@ -32,10 +32,10 @@ flowchart LR
 | Coding agents | `scripts/seed.sh`, `skills/homelab-ops/SKILL.md` | Seed clones the talos repo into `/opt/data/workspace`, writes the Hindsight hook configs, installs the Claude Code and Codex hooks. The skill runs `claude -p` or `codex exec` in the background |
 | Gitea login | 1Password `gitea/git_token` → `GITEA_TOKEN` | Git credential helper for `https://gitea.vanillax.me`; clone and push work, no `tea` CLI |
 | Claude login | 1Password `claude-code/oauth_token` → `CLAUDE_CODE_OAUTH_TOKEN` | From `claude setup-token` on the Max plan; no browser login in the pod |
-| Claude Code model | `deployment.yaml` `ANTHROPIC_MODEL=claude-opus-5-5` | Without it `claude -p` picks Sonnet; the skill reports `modelUsage` on every run |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Login | 1Password `hermes/dashboard_password` → Secret `hermes-secrets` | Username `vanillax` |
-| Model | LiteLLM in-cluster, `qwen3.8-27b` by default; Anthropic (Claude) and GitHub Copilot selectable per session | Qwen is free and local. Claude uses the Max plan through the Claude Code token; Copilot uses the `gh` login |
+| Brain | `claude-sonnet-5-5` through the Claude Code token (`config.yaml`) | Qwen (`providers.litellm`, free, local) and GitHub Copilot (`gh` login) stay selectable per session |
+| Coding agents' models | `ANTHROPIC_MODEL=claude-opus-5-5` + `--effort high`; `.codex/config.toml` `gpt-6.1-sol` + `high` | Skill repeats the flags and reports model and effort on every hand-off |
 | Memory | Hindsight in-cluster, bank `hermes` | Key from 1Password `hindsight/tenant_api_key` |
 | Volume | `pvc.yaml` | `hermes-data`, Longhorn, restore-before-bind, daily kopiur backup |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
@@ -51,8 +51,8 @@ flowchart LR
 
 ## 2. Pick the brain
 
-The model picker sits at the bottom right of the chat box. Click **Refresh models** once after a new login. **Custom endpoint → Qwen3.8 27b** runs on your GPUs. **Anthropic → Claude** runs on the Max plan. **GitHub Copilot** comes from the `gh` login. The choice holds for that session. New sessions and the daily digest start on Qwen.
-Compare them for a week on the same questions. Claude reasons better and is faster; Qwen costs nothing.
+The model picker sits at the bottom right of the chat box. Click **Refresh models** once after a new login. New sessions and the daily digest start on **Anthropic → Claude Sonnet 5.5**. **litellm → Qwen3.8 27b** runs on your GPUs for free. **GitHub Copilot** comes from the `gh` login. The choice holds for that session.
+The brain only navigates and coordinates. Code changes always run on Opus 5.5 (high) or GPT-6.1-sol (high) inside the pod, whatever the brain is.
 
 ## 3. Ask about the cluster
 
@@ -63,12 +63,17 @@ Check the daily digest under **Cron** in the dashboard. Run it by hand with the 
 
 Ask for a fix: "open a PR that fixes the wyze-bridge secret". Hermes starts Codex or Claude Code in its pod with the evidence, waits, and reports the pull request link. You merge; Argo CD deploys. Hermes never merges.
 
-Claude Code in the pod is pinned to `claude-opus-5-5` through `ANTHROPIC_MODEL`. Hermes ends each hand-off report with `Agent: claude, model: claude-opus-5-5`, read from Claude Code's own JSON `modelUsage`. To check by hand:
+Claude Code is pinned to `claude-opus-5-5` through `ANTHROPIC_MODEL`; Codex to `gpt-6.1-sol` at high effort through `.codex/config.toml`. Hermes ends each hand-off report with `Agent: …, model: …, effort: …`, copied from the agent's own output. To check by hand:
 
 ```bash
 kubectl -n hermes exec deploy/hermes -c hermes -- /command/s6-setuidgid hermes env HOME=/opt/data claude -p "Reply with exactly: OK" --max-turns 1 --output-format json | jq '.modelUsage | keys'
 ```
 Expected: `["claude-opus-5-5"]`.
+
+```bash
+kubectl -n hermes exec deploy/hermes -c hermes -- /command/s6-setuidgid hermes env HOME=/opt/data codex exec --skip-git-repo-check --sandbox read-only "Reply with exactly: OK" 2>&1 | grep -E "^(model|reasoning effort):"
+```
+Expected: `model: gpt-6.1-sol` and `reasoning effort: high`.
 
 ## 4. Add a chat platform
 

@@ -89,12 +89,12 @@ Only start a coding agent when the user asks for a fix, or when the digest promp
 3. Start the agent in the background with the terminal tool (`workdir=/opt/data/workspace/talos-argocd-proxmox`, `background=true`). The prompt must contain: the evidence you collected, the Git directory that owns the app, and these rules: read the repo `CLAUDE.md` first, stay on the current branch, commit, push the branch, open a pull request with `gh pr create`, never push to `main`, never merge.
 
 ```
-claude -p "<prompt>" --dangerously-skip-permissions --max-turns 60 --output-format json
-codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check --json "<prompt>"
+claude -p "<prompt>" --model claude-opus-5-5 --effort high --dangerously-skip-permissions --max-turns 60 --output-format json
+codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
 ```
-   Claude Code is pinned to `claude-opus-5-5` by the pod environment. Its JSON output ends with a `modelUsage` object; the keys are the models that ran.
+   Coding always runs on Opus 5.5 at high effort or GPT-6.1-sol at high effort. Never drop these flags. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
    The pod is the sandbox: `kubectl` is read-only and only the repo checkout is writable, so the bypass flags are acceptable here. Never pass them anywhere else.
-4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name from modelUsage or the codex JSON>`. If `modelUsage` does not contain `claude-opus-5-5`, say so. Do not merge; the user merges.
+4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not `claude-opus-5-5` or `gpt-6.1-sol`, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
 
 If `claude` or `codex` fails to start (no login, no token), say so and fall back to the Paseo MCP tools (`list_profiles`, `create_agent`, `send_agent_prompt`, `get_agent_status`) with the same prompt.
