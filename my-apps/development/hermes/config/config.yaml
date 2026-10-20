@@ -24,6 +24,9 @@ memory:
 dashboard:
   public_url: https://hermes.vanillax.me
 
+# Cron schedules and the agent clock follow this zone; the pod itself runs UTC.
+timezone: "America/Detroit"
+
 agent:
   max_turns: 500
   reasoning_effort: medium
@@ -31,6 +34,12 @@ agent:
 plugins:
   enabled:
     - hindsight
-    - langfuse
     - homeassistant
   disabled: []
+
+# Coding work goes to Paseo, which holds the Claude Code, Codex and GitHub logins and the repo checkout.
+mcp_servers:
+  paseo:
+    url: https://paseo.vanillax.me/mcp/agents
+    headers:
+      Authorization: "Bearer ${PASEO_PASSWORD}"
