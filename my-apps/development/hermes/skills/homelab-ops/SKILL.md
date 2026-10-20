@@ -1,7 +1,7 @@
 ---
 name: homelab-ops
 description: Read-only health checks for the talos-prod-cluster-v2 homelab (Argo CD, pods, Longhorn, kopiur backups, events) and the daily digest format.
-version: 1.0.0
+version: 1.1.0
 platforms: [linux]
 metadata:
   hermes:
@@ -16,7 +16,7 @@ You run inside the cluster with a read-only ServiceAccount. `kubectl` is on PATH
 ## Rules
 
 - Read only. Never run `delete`, `scale`, `patch`, `apply`, `edit`, `rollout restart`, `exec`, or `cordon`.
-- If a fix is needed, describe it and name the Git path under `my-apps/` or `infrastructure/`. The user changes the cluster through pull requests only.
+- If a fix is needed, describe it and name the Git path under `my-apps/` or `infrastructure/`. The user changes the cluster through pull requests only. A coding agent in this pod can open that pull request (see below).
 - Report observations, then hypotheses. A failed backup is an observation; its cause is a hypothesis until a log proves it.
 - Keep the digest short. Only report what is not healthy. Say "all clear" for a section with nothing to report.
 
@@ -78,16 +78,25 @@ Warnings: all clear | <object>: <reason> (xN)
 Suggested next step: <one line, or "none">
 ```
 
-## When a fix is needed: hand it to Paseo
+## When a fix is needed: run a coding agent in this pod
 
-You cannot change the cluster. Paseo can: it runs Claude Code and Codex with the talos repo checked out at `/workspace/talos-argocd-proxmox` and a GitHub login that opens pull requests. The Paseo MCP tools are available in this session (`create_agent`, `send_agent_prompt`, `get_agent_status`, `get_agent_activity`, `list_agents`, `list_profiles`).
+You cannot change the cluster. Claude Code (`claude`) and Codex (`codex`) are installed here, with the talos repo checked out at `/opt/data/workspace/talos-argocd-proxmox` and a GitHub login (`gh`) that opens pull requests.
 
 Only start a coding agent when the user asks for a fix, or when the digest prompt says so. Steps:
 
-1. `list_profiles` and pick `implementation` (Codex) for a scoped change or `planning` (Claude) for a root-cause investigation.
-2. `create_agent` with that profile in the Paseo workspace for `/workspace/talos-argocd-proxmox`. The prompt must contain: the evidence you collected, the Git directory that owns the app, and these rules: read the repo `CLAUDE.md` first, work on a feature branch, open a pull request, never push to `main`, never merge.
-3. Poll `get_agent_status` until the agent finishes. Report the pull request link and a two-line summary. Do not merge; the user merges.
-4. If the agent asks a question, relay it to the user instead of answering on their behalf.
+1. Pick the agent. Codex for a scoped change you can describe exactly. Claude Code for a root-cause investigation first.
+2. Refresh the checkout: `git -C /opt/data/workspace/talos-argocd-proxmox fetch --prune origin` then `git -C /opt/data/workspace/talos-argocd-proxmox checkout -B hermes/<short-name> origin/main`.
+3. Start the agent in the background with the terminal tool (`workdir=/opt/data/workspace/talos-argocd-proxmox`, `background=true`). The prompt must contain: the evidence you collected, the Git directory that owns the app, and these rules: read the repo `CLAUDE.md` first, stay on the current branch, commit, push the branch, open a pull request with `gh pr create`, never push to `main`, never merge.
+
+```
+claude -p "<prompt>" --dangerously-skip-permissions --max-turns 60 --output-format text
+codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
+```
+   The pod is the sandbox: `kubectl` is read-only and only the repo checkout is writable, so the bypass flags are acceptable here. Never pass them anywhere else.
+4. Poll the background process with `process_manage` until it exits. Report the pull request link and a two-line summary. Do not merge; the user merges.
+5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
+
+If `claude` or `codex` fails to start (no login, no token), say so and fall back to the Paseo MCP tools (`list_profiles`, `create_agent`, `send_agent_prompt`, `get_agent_status`) with the same prompt.
 
 ## When asked about one app
 

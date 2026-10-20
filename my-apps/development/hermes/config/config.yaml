@@ -37,7 +37,7 @@ plugins:
     - homeassistant
   disabled: []
 
-# Coding work goes to Paseo, which holds the Claude Code, Codex and GitHub logins and the repo checkout.
+# Fallback door to Paseo. Claude Code and Codex run in this pod first (skill homelab-ops).
 mcp_servers:
   paseo:
     url: https://paseo.vanillax.me/mcp/agents
