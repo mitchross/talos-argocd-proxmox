@@ -26,26 +26,13 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       initContainers:
-        # kubectl lands on the volume at /opt/data/.local/bin, which is already on the image PATH.
-        - name: kubectl
-          image: docker.io/alpine/k8s:1.37.1@sha256:712dc5385d1c1a3f83b747fa9e40f64d433a97f72ff42f9755ff7dd1f62846e4
-          command: ["/bin/sh", "-c", "mkdir -p /opt/data/.local/bin && install -m 0755 /usr/bin/kubectl /opt/data/.local/bin/kubectl"]
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
-            allowPrivilegeEscalation: false
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              memory: 256Mi
-          volumeMounts:
-            - name: data
-              mountPath: /opt/data
+        # Image from homelab-images/images/hermes-dev: official Hermes plus claude, codex, kubectl, gh, tmux.
         - name: seed
-          image: docker.io/nousresearch/hermes-agent:v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:a5bea93ce24f4f97616a85ecd10b9d1ba712ac5afa5724d2ddf2a27eae7b6f2c
           command: ["/bin/sh", "/etc/hermes-scripts/seed.sh"]
+          envFrom:
+            - secretRef:
+                name: hermes-secrets
           securityContext:
             runAsNonRoot: false
             runAsUser: 0
@@ -70,7 +57,7 @@ spec:
               readOnly: true
       containers:
         - name: hermes
-          image: docker.io/nousresearch/hermes-agent:v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:a5bea93ce24f4f97616a85ecd10b9d1ba712ac5afa5724d2ddf2a27eae7b6f2c
           args: ["gateway", "run"]
           # s6-overlay must start as root; it drops the gateway and dashboard to uid 10000 itself.
           securityContext:

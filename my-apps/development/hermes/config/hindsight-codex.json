@@ -1,0 +1,8 @@
+{
+  "hindsightApiUrl": "http://hindsight-service.hindsight.svc.cluster.local:8888",
+  "hindsightApiToken": "__HINDSIGHT_API_KEY__",
+  "bankId": "hermes",
+  "dynamicBankId": false,
+  "agentName": "codex-hermes",
+  "retainTags": ["codex", "hermes-pod"]
+}

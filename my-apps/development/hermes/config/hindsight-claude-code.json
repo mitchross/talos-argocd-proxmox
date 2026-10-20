@@ -1,0 +1,10 @@
+{
+  "hindsightApiUrl": "http://hindsight-service.hindsight.svc.cluster.local:8888",
+  "hindsightApiToken": "__HINDSIGHT_API_KEY__",
+  "bankId": "hermes",
+  "dynamicBankId": false,
+  "agentName": "claude-code-hermes",
+  "retainContext": "claude-code in the Hermes pod",
+  "retainTags": ["claude-code", "hermes-pod", "{session_id}"],
+  "recallBudget": "mid"
+}
