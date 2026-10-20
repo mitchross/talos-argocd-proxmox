@@ -80,8 +80,9 @@ spec:
             - "0.92"
             - --max-model-len
             - "262144"
+            # Slot count only; the KV pool (boot log "GPU KV cache size") bounds what runs. Two slots queued Hindsight retries 50 deep.
             - --max-num-seqs
-            - "2"
+            - "8"
             - --limit-mm-per-prompt
             - '{"image":1,"video":0}'
             - --async-scheduling

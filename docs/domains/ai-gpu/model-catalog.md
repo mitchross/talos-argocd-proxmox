@@ -31,7 +31,7 @@ Both cards belong to vLLM. Other GPU workloads stay parked.
 | Placement | TP=2, two RTX 3090s, no CPU offload |
 | KV / recurrent state | FP8 E4M3 / float16 |
 | Context ceiling | 262,144 tokens |
-| Concurrency | two sequences sharing the KV pool |
+| Concurrency | up to eight sequences sharing the KV pool |
 | Vision | one image per request, video disabled |
 | Reasoning | off / low / medium / xhigh; **xhigh** default |
 | Speculation | disabled |

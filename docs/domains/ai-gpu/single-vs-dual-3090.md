@@ -65,7 +65,7 @@ a gentle slowdown.
 ## What these numbers do not cover
 
 The measurement used a text-only profile at `--max-num-seqs 3`. Production uses
-FP8, TP=2, native vision, two slots and a 262,144-token ceiling — see the
+FP8, TP=2, native vision, eight slots and a 262,144-token ceiling — see the
 [current capacity audit](3090-llm-optimization.md).
 
 Not covered: vision (single-card ran `--language-model-only`, dropping the
