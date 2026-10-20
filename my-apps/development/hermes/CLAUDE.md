@@ -14,6 +14,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` |
 | Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `litellm`, `hindsight`, `home-assistant`, `paseo` (`password`), `claude-code` (`oauth_token`) |
 | Coding agents | talos | `skills/homelab-ops/SKILL.md` runs `claude -p` or `codex exec` in this pod; `config/config.yaml` `mcp_servers.paseo` is the fallback |
+| Gitea push/clone | talos | `GIT_CONFIG_*` env in `deployment.yaml` serves `GITEA_TOKEN` (1Password `gitea/git_token`) for `https://gitea.vanillax.me` |
 | Codex and GitHub logins | volume | `codex login --device-auth` and `gh auth login` once from the dashboard terminal; state lives on `hermes-data` |
 | Upstream behavior | `NousResearch/hermes-agent` | read the tagged source; do not fork |
 

@@ -30,6 +30,7 @@ flowchart LR
 | Settings | `config/config.yaml` → ConfigMap → copied to `/opt/data/config.yaml` by `scripts/seed.sh` on every start | Model, memory provider, dashboard URL, plugin list |
 | Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
 | Coding agents | `scripts/seed.sh`, `skills/homelab-ops/SKILL.md` | Seed clones the talos repo into `/opt/data/workspace`, writes the Hindsight hook configs, installs the Claude Code and Codex hooks. The skill runs `claude -p` or `codex exec` in the background |
+| Gitea login | 1Password `gitea/git_token` → `GITEA_TOKEN` | Git credential helper for `https://gitea.vanillax.me`; clone and push work, no `tea` CLI |
 | Claude login | 1Password `claude-code/oauth_token` → `CLAUDE_CODE_OAUTH_TOKEN` | From `claude setup-token` on the Max plan; no browser login in the pod |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Login | 1Password `hermes/dashboard_password` → Secret `hermes-secrets` | Username `vanillax` |
