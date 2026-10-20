@@ -9,7 +9,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
-  - web-session-secret.yaml
+  # Re-add web-session-secret.yaml after WEB_SESSION enrollment, before scaling up.
   - web-session-pvc.yaml
   - kopiur/wyze-web-session.yaml
 
