@@ -90,6 +90,13 @@ spec:
             # Explicit kubeconfig: any kubectl flag (e.g. --request-timeout) disables the in-cluster fallback.
             - name: KUBECONFIG
               value: /etc/hermes/cluster/kubeconfig
+            # Git reads these as config; no tea CLI in the image, so a shell helper serves the Gitea token.
+            - name: GIT_CONFIG_COUNT
+              value: "1"
+            - name: GIT_CONFIG_KEY_0
+              value: credential.https://gitea.vanillax.me.helper
+            - name: GIT_CONFIG_VALUE_0
+              value: '!f() { echo username=vanillax; echo "password=$GITEA_TOKEN"; }; f'
           resources:
             requests:
               cpu: 500m

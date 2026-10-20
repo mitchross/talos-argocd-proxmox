@@ -16,6 +16,7 @@ for f in claude-code codex; do
   sed "s|__HINDSIGHT_API_KEY__|${HINDSIGHT_API_KEY}|" "/etc/hermes-config/hindsight-$f.json" > "$HERMES_HOME/.hindsight/$f.json"
   chown 10000:10000 "$HERMES_HOME/.hindsight/$f.json"; chmod 0600 "$HERMES_HOME/.hindsight/$f.json"
 done
+rm -f "$HERMES_HOME/.local/bin/kubectl"  # pre-image leftover; it shadowed /usr/local/bin/kubectl
 chown 10000:10000 "$HERMES_HOME" "$HERMES_HOME/workspace" "$HERMES_HOME/skills" "$HERMES_HOME/skills/devops" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight"
 
 for plugin in hindsight homeassistant; do
