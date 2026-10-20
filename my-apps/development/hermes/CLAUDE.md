@@ -28,4 +28,6 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 - `kubectl` in the pod is read-only (`hermes-viewer`: get, list, watch; no secrets). Do not add write verbs; fixes go through Git.
 - Claude Code and Codex come from the `hermes-dev` image, never from `npm install` on the volume. Bump them in homelab-images.
 - The Claude token is `CLAUDE_CODE_OAUTH_TOKEN` from 1Password; Codex and `gh` logins are one-time device logins stored on the volume.
+- `ANTHROPIC_MODEL=claude-opus-5-5` pins `claude -p`; keep it, the plan default is Sonnet. The skill prints the model from `modelUsage` on every hand-off.
+- The same token registers Anthropic in the model picker; the `gh` login registers GitHub Copilot. The default model stays `qwen3.8-27b` (`config.yaml`); the cron digest follows the default.
 - A cron job edited in the dashboard keeps its edits; the seed only creates `homelab-digest` when the name is absent from `cron/jobs.json`.
