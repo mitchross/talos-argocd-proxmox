@@ -11,10 +11,10 @@ cluster template does that.
 
 1. A machine's firmware tries its disk first. With no bootable disk, it falls
    back to network boot and broadcasts a DHCP request.
-2. The Firewalla (`192.168.10.1`) answers with the IP address, as it does for
-   every client.
-3. booter answers **only PXE clients**, with boot-file information
-   (proxy-DHCP). It never hands out addresses, so normal clients are unaffected.
+2. The Firewalla (`192.168.10.1`) answers with the IP address and the boot
+   file (options 66/67, see below).
+3. booter also answers PXE clients with boot-file information (proxy-DHCP).
+   It never hands out addresses, so normal clients are unaffected.
 4. The machine fetches iPXE from booter over TFTP. iPXE then loads the Talos
    kernel from Image Factory, with the Omni join arguments from `booter.env`.
 5. Talos starts in maintenance mode and connects to Omni over SideroLink.
@@ -62,9 +62,26 @@ Power on a machine that has an empty disk and network boot enabled. Then run
 `docker logs -f booter`. Expect a boot response, a TFTP transfer and an iPXE
 request. The machine then appears in **Omni → Machines**.
 
-Some UEFI firmware ignores proxy-DHCP offers. If a machine never gets a boot
-response, check its BIOS network-boot settings. Do not change the Firewalla's
-DHCP options.
+## Firewalla DHCP options (required)
+
+The Dell Pro Micro's UEFI PXE ignores booter's proxy-DHCP offer. Keep these
+options in the Firewalla's LAN DHCP settings, so the main offer carries the
+boot file:
+
+| Option | Value |
+|---|---|
+| 66 (TFTP server) | `192.168.10.15` |
+| 67 (boot file) | `snp.efi` |
+
+booter still serves the file over TFTP, the iPXE script and the API. Never set
+`undionly.kpxe`: it is the legacy-BIOS loader and fails on UEFI machines.
+
+## BIOS checklist
+
+- Secure Boot off, UEFI IPv4 network boot on, HTTP Boot off.
+- A disk that still holds another OS boots first. Use the one-time boot menu
+  (Dell F12, HP F9) and pick the IPv4 PXE entry. After Talos installs, the
+  normal disk-first order works.
 
 ## Change the Talos version
 
