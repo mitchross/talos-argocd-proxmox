@@ -7,6 +7,7 @@ below. Each runbook carries its own prerequisites, checks, and recovery steps.
 | Chapter | What you will learn | Start here |
 | --- | --- | --- |
 | GitOps & ArgoCD | How changes in Git become running applications | [ArgoCD architecture](../domains/argocd/argocd.md) |
+| Temporal | How worker versions roll out safely, and what breaks them | [Worker versioning guide](../domains/temporal/worker-versioning-guide.md) |
 | Storage | Where application data lives and how volumes are attached | [Storage architecture](../storage-architecture.md) |
 | Backups & disaster recovery | How data is protected and restored | [kopiur backup architecture](../domains/storage/kopiur-backup-architecture.md) |
 | Databases | How this lab runs and protects Postgres | [Run Postgres here](../domains/cnpg/run-postgres-plain-english.md) |
