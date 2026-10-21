@@ -32,7 +32,7 @@ database it does not have, and returns `400 No connected db`.
 
 The OpenRouter credential lives only inside LiteLLM. Neither copy of Pi holds it.
 
-For the whole Paseo setup, see [Paseo and the AI stack](paseo.md).
+Paseo is off; its cluster copy stays in Git so CI keeps it in step. The cluster's agent is now [Hermes](hermes.md).
 
 ## Default reasoning and rollout
 

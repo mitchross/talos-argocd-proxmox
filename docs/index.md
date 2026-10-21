@@ -35,8 +35,8 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
   on both RTX 3090s. The [model catalog](domains/ai-gpu/model-catalog.md)
   owns the local backend and Pi's optional OpenRouter DeepSeek Flash route; use the
   [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
-  [Paseo](domains/ai-gpu/paseo.md) (turned off; namespace only) runs Claude Code, Codex, and Pi in a browser workspace.
-  [Hermes](domains/ai-gpu/hermes.md) is the always-on agent with cron, memory, and chat platforms.
+  [Hermes](domains/ai-gpu/hermes.md) is the always-on agent with cron, memory, chat platforms, and
+  in-pod Claude Code and Codex for pull requests. It replaced Paseo, which is off.
 
 ## Reading order
 
