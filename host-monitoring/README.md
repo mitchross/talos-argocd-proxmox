@@ -72,7 +72,7 @@ Verify both endpoints from the monitoring network, current disk identities,
 collector success and the Grafana host row before proceeding:
 
 ```sh
-ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/playbook.yaml --limit dell,sff,elite,pi
+ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/playbook.yaml --limit sff,elite,pi
 ```
 
 The Pi needs the `smartmontools` package; the Proxmox hosts already have it. Interpret Shed availability using its

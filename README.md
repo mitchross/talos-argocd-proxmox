@@ -98,16 +98,15 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | | Active cluster | Older template reference |
 > |---|---|---|
 > | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
-> | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `hp-elite-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
+> | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `hp-elite-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | HP SFF (house, wired): 1 CP + 1 worker; HP Elite (house, wired): 1 large worker; Threadripper: 1 GPU worker; Dell (house, wired): 1 worker; HP micro (shed, wifi): 1 worker | 3 CP + 3 workers + 1 GPU |
+> | Topology | HP SFF (house, wired): 1 CP + 1 worker; HP Elite (house, wired): 1 large worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker | 3 CP + 3 workers + 1 GPU |
 
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
-100 GiB GPU VM. HP Elite, Dell, and the shed HP each host one worker. Machine
+100 GiB GPU VM. HP Elite and the shed HP each host one worker. Machine
 classes define allocations for newly provisioned VMs, which can differ from
 existing VM settings. See the [dated host and disk inventory](docs/audits/2026-09-05-inventory.md)
-for measured capacity and drift. The Dell is temporary hardware, not a planned
-long-term quorum member.
+for measured capacity and drift.
 
 This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
@@ -133,7 +132,7 @@ disappear from Proxmox.
 ### 2. Apply the machine classes and provision Talos
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
-Apply all six classes before syncing the template; template sync owns the
+Apply all five classes before syncing the template; template sync owns the
 MachineSets. Applying a class does not mutate an existing VM: CPU, RAM, disks,
 and the visible machine identity change only when Omni provisions a replacement
 from that class.
@@ -144,7 +143,6 @@ omnictl apply -f omni/machine-classes/hp-sff-worker.yaml
 omnictl apply -f omni/machine-classes/hp-elite-worker.yaml
 omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
 omnictl apply -f omni/machine-classes/hp-micro-worker.yaml
-omnictl apply -f omni/machine-classes/dell-worker.yaml
 omnictl get machineclasses
 
 omnictl cluster template validate \
@@ -158,7 +156,7 @@ omnictl cluster template sync \
 omnictl get machinerequeststatuses -w
 ```
 
-Stop the watch with `Ctrl-C` after all six requests show
+Stop the watch with `Ctrl-C` after all five requests show
 `Provision Complete`. Do not use `cluster template status --wait` here: the
 cluster cannot become healthy until Cilium is installed in step 5.
 
@@ -439,13 +437,12 @@ Run Omni and `omnictl` **on the same release** (currently `v1.12.2`, pinned in `
 
 ## Hardware
 
-Five Proxmox hosts run the cluster. Four are wired to the 10G switch; the HP
+Four Proxmox hosts run the cluster. Three are wired to the 10G switch; the HP
 micro sits in the shed behind a Wi-Fi media bridge.
 
 | Host | Address | CPU / RAM | Role |
 |------|---------|-----------|------|
 | Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (1x RTX 3090 passthrough) |
-| Dell Optiplex | 192.168.10.16 | i5-8500 6c · 39 GB | CPU worker (2.5 GbE add-in NIC) |
 | HP micro (shed) | 192.168.10.20 | i5-8500T 6c · 31 GB | CPU worker, USB radios, Wi-Fi-bridged and solar-fed |
 | HP SFF (ProDesk) | 192.168.10.21 | i5-8500 6c · 63 GB | Control plane + CPU worker |
 | HP Elite | 192.168.10.22 | i5-13500T 20c · 31 GB | CPU worker (NVMe Longhorn disk) |
