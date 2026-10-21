@@ -58,6 +58,21 @@ def validate(documents: list[dict], classes: dict[str, dict]) -> tuple[list[str]
         if identity in seen:
             errors.append(f"Duplicate machine-set identity: {identity}")
         seen.add(identity)
+        # Bare-metal sets list machine UUIDs instead of a provider-backed class; Omni forbids both.
+        if "machines" in doc:
+            machines = doc.get("machines")
+            if "machineClass" in doc:
+                errors.append(f"{identity}: machines and machineClass are mutually exclusive")
+            elif not isinstance(machines, list) or not machines or not all(isinstance(m, str) and m for m in machines):
+                errors.append(f"{identity}: machines must be a non-empty list of machine UUIDs")
+            else:
+                try:
+                    zone = machine_patch(doc)["nodeLabels"].get(ZONE)
+                except ValueError:
+                    zone = None
+                if not isinstance(zone, str) or not zone:
+                    errors.append(f"{identity}: no inline {ZONE}; physical-host placement cannot be checked")
+            continue
         ref = doc.get("machineClass") or {}
         name, count = ref.get("name"), ref.get("size")
         if not isinstance(name, str) or not name or name not in classes:

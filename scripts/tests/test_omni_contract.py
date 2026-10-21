@@ -104,6 +104,17 @@ class OmniContractTests(unittest.TestCase):
         docs.append(deepcopy(docs[1]))
         self.assertTrue(any("Duplicate" in e for e in contract.validate(docs, classes)[0]))
 
+    def test_bare_metal_machine_list(self):
+        docs, classes = fixtures()
+        labels = {"inline": {"apiVersion": "v1alpha1", "kind": "KubeNodeConfig", "labels": {contract.ZONE: "mini"}}}
+        docs.append({"kind": "Workers", "name": "mini", "machines": ["uuid-1"], "patches": [labels]})
+        self.assertEqual(contract.validate(docs, classes)[0], [])
+        for bad in ({"machines": []}, {"machines": ["uuid-1"], "machineClass": {"name": "cp", "size": 1}}, {"machines": ["uuid-1"], "patches": []}):
+            with self.subTest(bad=bad):
+                broken = deepcopy(docs)
+                broken[-1] = {"kind": "Workers", "name": "mini", "patches": [labels], **bad}
+                self.assertTrue(contract.validate(broken, classes)[0])
+
 
 if __name__ == "__main__":
     unittest.main()
