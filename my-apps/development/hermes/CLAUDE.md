@@ -12,8 +12,8 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | Plugin set, skill copy, cron job, repo checkout, memory hooks | talos | `scripts/seed.sh` installs plugins once, copies `skills/homelab-ops/SKILL.md`, creates the `homelab-digest` cron job if missing, clones the talos repo into `/opt/data/workspace`, writes `~/.hindsight/*.json` and installs the Claude Code and Codex Hindsight hooks |
 | Cluster access | talos | `rbac.yaml` (read-only ClusterRole `hermes-viewer`), `config/kube-in-cluster.yaml`; `kubectl` ships in the image |
 | Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` |
-| Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `litellm`, `hindsight`, `home-assistant`, `paseo` (`password`), `claude-code` (`oauth_token`) |
-| Coding agents | talos | `skills/homelab-ops/SKILL.md` runs `claude -p` or `codex exec` in this pod; `config/config.yaml` `mcp_servers.paseo` is the fallback |
+| Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `litellm`, `hindsight`, `home-assistant`, `claude-code` (`oauth_token`) |
+| Coding agents | talos | `skills/homelab-ops/SKILL.md` runs `claude -p` or `codex exec` in this pod |
 | Gitea push/clone | talos | `GIT_CONFIG_*` env in `deployment.yaml` serves `GITEA_TOKEN` (1Password `gitea/git_token`) for `https://gitea.vanillax.me` |
 | Codex and GitHub logins | volume | `codex login --device-auth` and `gh auth login` once from the dashboard terminal; state lives on `hermes-data` |
 | Upstream behavior | `NousResearch/hermes-agent` | read the tagged source; do not fork |
