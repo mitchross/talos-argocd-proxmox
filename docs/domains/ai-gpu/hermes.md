@@ -49,6 +49,80 @@ flowchart LR
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks and the digest format; copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
+## The image
+
+The pod runs `ghcr.io/mitchross/hermes-dev`, built in [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev). The image holds tools only; everything Hermes writes lives on `hermes-data`.
+
+```mermaid
+flowchart LR
+    Df[images/hermes-dev/Dockerfile] --> CI[GitHub Actions build-hermes-dev.yml]
+    CI --> Test[scripts/test-hermes.sh] --> GHCR[ghcr.io/mitchross/hermes-dev:main + sha tag]
+    GHCR --> PR[Digest PR in this repo] --> Argo[Argo CD] --> Pod[hermes pod]
+    Ren[Renovate in homelab-images] --> Df
+```
+
+### What the Dockerfile adds
+
+| Layer | Source | Pinned by |
+|---|---|---|
+| Base | official `nousresearch/hermes-agent` (gateway, dashboard, s6-overlay, Node, Python) | tag + digest |
+| `tmux`, `jq`, `less`, `openssh-client` | Debian packages | base image |
+| `gh` | GitHub CLI `.deb` from the release page | `GH_VERSION` + `GH_SHA256` |
+| `kubectl` | `dl.k8s.io` | `KUBECTL_VERSION` + `KUBECTL_SHA256` |
+| Claude Code, Codex | npm, installed into `/opt/agents` | `CLAUDE_VERSION`, `CODEX_VERSION` |
+
+`/opt/agents/bin` comes first on `PATH`, so the pinned CLIs win over anything on the volume. `DISABLE_AUTOUPDATER=1` stops Claude Code from updating itself.
+The build runs `hermes-image-smoke` as uid 10000; it fails if `hermes`, `claude`, `codex`, `git`, `gh`, `kubectl`, `tmux`, `jq`, `rg`, `node`, `npm`, `python3` or `ssh` is missing.
+The image stays root at the end: s6-overlay needs root to start, then drops to `hermes` (10000:10000).
+Current versions are in the [Dockerfile](https://github.com/mitchross/homelab-images/blob/main/images/hermes-dev/Dockerfile).
+
+### How CI builds it
+
+[`build-hermes-dev.yml`](https://github.com/mitchross/homelab-images/blob/main/.github/workflows/build-hermes-dev.yml) runs on a push that touches `images/hermes-dev/**` or `scripts/**`, on manual dispatch, and every Monday at 05:17 UTC. The Monday run skips the cache, so base-image security fixes land.
+
+1. Build for `linux/amd64` only. There is no `arm64` image.
+2. Test with [`scripts/test-hermes.sh`](https://github.com/mitchross/homelab-images/blob/main/scripts/test-hermes.sh): run the smoke script as uid 10000 on an empty `/opt/data`, like a fresh PVC, then boot the container as root and check that `--version` prints `Hermes Agent v0.x`.
+3. Push the tested image as `sha-<commit>-<run>-<attempt>`. On `main` it is also tagged `main`.
+4. Print the digest in the job summary.
+
+Pull requests from forks build and test but push nothing.
+
+### How updates reach the cluster
+
+| Change | Who | Then |
+|---|---|---|
+| Base image digest, Claude Code, Codex | Renovate in homelab-images opens a PR; the two agent CLIs are grouped as "coding agents" on Monday mornings | Merge it; CI publishes a new `main` |
+| `gh`, `kubectl` | By hand: bump the version and the SHA-256 together in the Dockerfile | Same |
+| New `main` digest in this repo | Renovate's `kubernetes` manager watches `hermes-dev:main@sha256:…` in `deployment.yaml` and adds it to the "all container digests" PR | Merge it; Argo CD restarts the pod |
+
+To pin a digest by hand, read it from the job summary or run:
+
+```bash
+docker buildx imagetools inspect ghcr.io/mitchross/hermes-dev:main | grep Digest
+```
+
+Put it in **both** `image:` lines in `deployment.yaml`, the `seed` init container and the `hermes` container, in one PR.
+
+### Build and test it yourself
+
+From a homelab-images checkout, on an `amd64` machine with Docker:
+
+```bash
+docker build --platform linux/amd64 -t hermes-dev:local images/hermes-dev
+bash scripts/test-hermes.sh hermes-dev:local
+```
+
+**It worked when** the script prints the tool versions and a `Hermes Agent v0.x` line, and exits 0.
+
+### Check what the pod runs
+
+```bash
+kubectl -n hermes get pod -l app.kubernetes.io/name=hermes -o jsonpath='{.items[0].status.containerStatuses[0].imageID}{"\n"}'
+kubectl -n hermes exec deploy/hermes -c hermes -- sh -c '/opt/hermes/bin/hermes --version; claude --version; codex --version; gh --version | head -1; kubectl version --client'
+```
+
+The digest must match `deployment.yaml` on `main`.
+
 ## 1. Connect
 
 Away from home, turn on Tailscale first. Hermes has no public address.
@@ -148,7 +222,7 @@ Expect `Synced` and `Healthy`, one `1/1 Running` pod, `hermes-data` `Bound`, bot
 | Env vars, resources, route, backup | PR to `my-apps/development/hermes/`. Argo CD rolls the pod. |
 | Model, providers, memory, plugins | PR to `config/config.yaml`. The seed copies it over the volume on the next start. |
 | The ops skill or the digest | PR to `skills/homelab-ops/SKILL.md`. Edits made in the pod are overwritten on the next start. |
-| Tools or agent versions | PR to homelab-images `images/hermes-dev`, wait for the CI image, then a digest PR here. |
+| Tools or agent versions | PR to homelab-images `images/hermes-dev`, wait for the CI image, then a digest PR here. See [The image](#the-image). |
 | Passwords and tokens | Edit 1Password. The ExternalSecret refreshes within 1 hour; restart the pod when no agent work runs. |
 
 Never edit `config.yaml` or the skill in the pod to change configuration. Git is the source of truth.
