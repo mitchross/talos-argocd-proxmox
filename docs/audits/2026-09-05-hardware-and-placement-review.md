@@ -18,7 +18,7 @@ before claiming automatic recovery from a host failure.
 new placement policies, replica migrations, or Talos upgrades were performed
 for this report. Recommendations below are not deployed configuration.
 
-**Evidence:** the [physical inventory](2026-09-05-inventory.md), read-only SSH
+**Evidence:** the September 5 physical inventory (removed; see the [current fleet inventory](../inventory/2026-10-21-fleet-inventory.md)), read-only SSH
 and storage measurements from this audit, the
 [detailed findings](2026-09-05-architecture-audit.md), and repository commit
 `3cac0eb1`. Node labels, taints, Longhorn disk eligibility and resource usage

@@ -270,7 +270,7 @@ The September 5 inventory has six Talos nodes across five Proxmox hosts.
 The sole control plane shares the HP SFF with one worker. Most Longhorn volumes
 still have one replica; Temporal Postgres has two. Losing a physical host can
 therefore remove both a controller and the only usable copy of some app data.
-See the [physical inventory](../../audits/2026-09-05-inventory.md) and
+See the [fleet inventory](../../inventory/2026-10-21-fleet-inventory.md) and
 [availability findings](../../audits/2026-09-05-architecture-audit.md).
 
 The shed reaches the LAN through a Wi-Fi media bridge. It should not become a

@@ -150,13 +150,12 @@ nav:
           - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
   - Inventory:
       - inventory/index.md
+      - Fleet inventory — 21 October: inventory/2026-10-21-fleet-inventory.md
       - Full inventory — 15 October: inventory/2026-10-15-full-inventory.md
       - Explore the lab: lab.md
       - Hardware diagnostics: diagnostics.md
-      - etcd and Dell boot disks — 11 October: inventory/2026-10-11-etcd-and-dell-boot-disks.md
-      - radar-ng stress test — 26 September: inventory/2026-09-26-radar-ng-stress-test.md
+      - etcd on the Intel S3610 — 11 October: inventory/2026-10-11-etcd-on-s3610.md
       - Storage audit — 26 September: inventory/2026-09-26-storage-audit.md
-      - Repository and hardware inventory — 5 September: audits/2026-09-05-inventory.md
   - Audits:
       - audits/index.md
       - Homelab report & recommendations: audits/2026-09-20-homelab-report.html

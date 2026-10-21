@@ -10,8 +10,10 @@ seven hosts, VM allocations, physical disks, Talos mounts and storage accounting
 The explorer below uses that refreshed snapshot. Performance measurements retain
 their September 20 and October 11 dates.
 
-The Dell OptiPlex in this snapshot is now retired. The snapshot does not show the
-two bare-metal minis; see the [disk map](domains/storage/disk-map.md) for current hosts.
+The explorer has not been refreshed since then: it still shows the retired Dell OptiPlex
+and not the two bare-metal minis. For the current machine list and load, read the
+**[October 21 fleet inventory](inventory/2026-10-21-fleet-inventory.md)**. For disks, read
+the [disk map](domains/storage/disk-map.md).
 
 <div id="lab-explorer">
   <p>The interactive inventory is loading. The <a href="../inventory/2026-10-15-full-inventory/">full written inventory</a> is also available.</p>
@@ -28,7 +30,7 @@ two bare-metal minis; see the [disk map](domains/storage/disk-map.md) for curren
 The [full inventory](inventory/2026-10-15-full-inventory.md) records the evidence
 and limits. Historical performance results remain in the
 [fleet assessment](inventory/2026-09-20-capacity-and-benchmarks.md) and
-[October disk measurements](inventory/2026-10-11-etcd-and-dell-boot-disks.md).
+[etcd measurements](inventory/2026-10-11-etcd-on-s3610.md).
 
 ## What this page knows
 

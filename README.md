@@ -106,8 +106,8 @@ The HP SFF hosts the control plane and one worker; the Threadripper hosts the
 100 GiB GPU VM. HP Elite and the shed HP each host one worker. Two bare-metal
 minis (`mini-pc-dell-ultra-worker`, `hp-elite-gen12`) run Talos without Proxmox. Machine
 classes define allocations for newly provisioned VMs, which can differ from
-existing VM settings. See the [dated host and disk inventory](docs/audits/2026-09-05-inventory.md)
-for measured capacity and drift.
+existing VM settings. See the [fleet inventory](docs/inventory/2026-10-21-fleet-inventory.md)
+for measured capacity.
 
 This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
