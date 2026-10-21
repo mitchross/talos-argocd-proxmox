@@ -38,14 +38,14 @@ Cluster `talos-prod-cluster-v2`: **7 nodes**, all Ready, Talos v1.14.4, kernel 6
 
 | Node | Host | Role / pool | CPU (alloc) | Memory (alloc) | CPU used | Memory used (working set) | Memory requested | Pods | Accelerators |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
-| `talos-prod-cluster-v2-control-planes-7mxjxv` | `.21` VM | control plane (`NoSchedule`) | 4 | 11.1 GiB | 0.32 | 5.8 GiB | 4.2 GiB | 20 | — |
-| `talos-prod-cluster-v2-gpu-workers-jxfkdr` | `.14` VM | `gpu` | 30 | 97.7 GiB | 12.0 | 39.8 GiB | 66.8 GiB (68%) | 62 | `nvidia.com/gpu=2` (RTX 3090) |
-| `talos-prod-cluster-v2-hp-sff-workers-h76ncc` | `.21` VM | `general` | 6 | 38.7 GiB | 0.65 | 12.5 GiB | 23.6 GiB (61%) | 44 | `gpu.intel.com/i915=4` |
-| `talos-prod-cluster-v2-hp-elite-workers-l5zlgr` | `.22` VM | `general` | 16 | 24.9 GiB | 1.87 | 9.0 GiB | 15.7 GiB (63%) | 69 | `gpu.intel.com/i915=4` |
-| `talos-prod-cluster-v2-hp-micro-workers-pstbbd` | `.20` VM | `edge` (taint `link=wifi`) | 4 | 11.2 GiB | 0.06 | 2.1 GiB | 2.6 GiB | 13 | — |
+| `talos-prod-cluster-v2-control-planes-7mxjxv` | `.21` VM | control plane (`NoSchedule`) | 3.95 | 11.1 GiB | 0.32 | 5.8 GiB | 4.2 GiB | 20 | — |
+| `talos-prod-cluster-v2-gpu-workers-jxfkdr` | `.14` VM | `gpu` | 29.95 | 97.7 GiB | 12.0 | 39.8 GiB | 66.8 GiB (68%) | 62 | `nvidia.com/gpu=2` (RTX 3090) |
+| `talos-prod-cluster-v2-hp-sff-workers-h76ncc` | `.21` VM | `general` | 5.95 | 38.7 GiB | 0.65 | 12.5 GiB | 23.6 GiB (61%) | 44 | `gpu.intel.com/i915=4` |
+| `talos-prod-cluster-v2-hp-elite-workers-l5zlgr` | `.22` VM | `general` | 15.95 | 24.9 GiB | 1.87 | 9.0 GiB | 15.7 GiB (63%) | 69 | `gpu.intel.com/i915=4` |
+| `talos-prod-cluster-v2-hp-micro-workers-pstbbd` | `.20` VM | `edge` (taint `link=wifi`) | 3.95 | 11.2 GiB | 0.06 | 2.1 GiB | 2.6 GiB | 13 | — |
 | `mini-pc-dell-ultra-worker` | `.181` bare metal | `general` | 13.25 | 13.5 GiB | 0.27 | 6.3 GiB | 8.0 GiB (59%) | 48 | `gpu.intel.com/i915=4`, NPU extension (no device plugin yet) |
-| `hp-elite-gen12` | `.82` bare metal | `general` | 12 | 13.7 GiB | 0.30 | 3.6 GiB | 7.2 GiB (53%) | 45 | `gpu.intel.com/i915=4` |
-| **Total** | | | **85** | **210.8 GiB** | **15.5** | **79.1 GiB** | **128.1 GiB** | **301** | |
+| `hp-elite-gen12` | `.82` bare metal | `general` | 11.25 | 13.7 GiB | 0.30 | 3.6 GiB | 7.2 GiB (53%) | 45 | `gpu.intel.com/i915=4` |
+| **Total** | | | **84.25** | **210.8 GiB** | **15.5** | **79.1 GiB** | **128.1 GiB** | **301** | |
 
 The bare-metal minis give Kubernetes 13.5–13.7 GiB of their 16 GiB, after the kubelet reservations (`system` 1 GiB, `kube` 512 MiB). The 16 GiB shed VM, by comparison, gives 11.2 GiB.
 
