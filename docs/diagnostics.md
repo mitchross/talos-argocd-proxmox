@@ -12,8 +12,7 @@ limits. These tests exclude SMB/NFS and do not refresh the older host, recovery
 or application-health findings below.
 
 The September 10 post-reboot inspection covers drives, hosts, Talos nodes,
-applications and recovery. **Keep the Dell for now:** normal compute demand fits,
-but its spare wired failure domain matters when another machine fails. The
+applications and recovery. The Dell host it describes is now retired. The
 **Repair plan** tab shows the capacity budget, selective data-copy proposal and
 RAM reuse options. These hardware and placement changes are not implemented.
 

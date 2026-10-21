@@ -10,6 +10,9 @@ seven hosts, VM allocations, physical disks, Talos mounts and storage accounting
 The explorer below uses that refreshed snapshot. Performance measurements retain
 their September 20 and October 11 dates.
 
+The Dell OptiPlex in this snapshot is now retired. The snapshot does not show the
+two bare-metal minis; see the [disk map](domains/storage/disk-map.md) for current hosts.
+
 <div id="lab-explorer">
   <p>The interactive inventory is loading. The <a href="../inventory/2026-10-15-full-inventory/">full written inventory</a> is also available.</p>
 </div>

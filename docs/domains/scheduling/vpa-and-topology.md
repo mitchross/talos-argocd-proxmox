@@ -99,7 +99,8 @@ The active Omni template uses physical-host zone labels:
 | --- | --- | --- |
 | HP SFF | Control plane and worker | `hp-sff` |
 | HP Elite | Worker | `hp-elite` |
-| Dell | Temporary worker | `dell` |
+| Dell Pro Micro (bare metal) | Worker `mini-pc-dell-ultra-worker` | `mini-pc-dell-ultra` |
+| HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12` | `hp-elite-gen12` |
 | Threadripper | GPU worker | `house` |
 | Shed HP | Worker behind the media bridge | `shed` |
 
@@ -131,13 +132,12 @@ The Omni template declares a separate `node.vanillax.dev/pool` label:
 
 | Worker | Pool | Intended job |
 |---|---|---|
-| HP SFF and HP Elite | `general` | Everyday services and selected application state |
+| HP SFF, HP Elite and the bare-metal minis | `general` | Everyday services and selected application state |
 | Threadripper | `gpu` | GPU workloads and selected heavy jobs |
 | Shed HP Micro | `edge` | Attached devices and permitted edge jobs |
-| Dell | `disposable` | Temporary, restartable work after required state is relocated |
 
 These labels describe intent; existing apps and Longhorn replicas are not moved
-by a label alone. In particular, the Dell still holds real data. Cloudflared and
+by a label alone. Cloudflared and
 the OpenTelemetry gateway consume the label as a soft preference. No new taints,
 storage tags or control-plane scheduling changes accompany these labels.
 

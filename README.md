@@ -100,10 +100,11 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
 > | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `hp-elite-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | HP SFF (house, wired): 1 CP + 1 worker; HP Elite (house, wired): 1 large worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker | 3 CP + 3 workers + 1 GPU |
+> | Topology | HP SFF (house, wired): 1 CP + 1 worker; HP Elite (house, wired): 1 large worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 2 bare-metal mini workers (PXE via booter) | 3 CP + 3 workers + 1 GPU |
 
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
-100 GiB GPU VM. HP Elite and the shed HP each host one worker. Machine
+100 GiB GPU VM. HP Elite and the shed HP each host one worker. Two bare-metal
+minis (`mini-pc-dell-ultra-worker`, `hp-elite-gen12`) run Talos without Proxmox. Machine
 classes define allocations for newly provisioned VMs, which can differ from
 existing VM settings. See the [dated host and disk inventory](docs/audits/2026-09-05-inventory.md)
 for measured capacity and drift.
@@ -157,7 +158,8 @@ omnictl get machinerequeststatuses -w
 ```
 
 Stop the watch with `Ctrl-C` after all five requests show
-`Provision Complete`. Do not use `cluster template status --wait` here: the
+`Provision Complete`. The bare-metal minis make no machine requests. They join
+when booter on the Pi PXE-boots them; check them with `omnictl get machines`. Do not use `cluster template status --wait` here: the
 cluster cannot become healthy until Cilium is installed in step 5.
 
 > **Sync this template, not a stale working copy.** A 2026-06-11 rebuild used
@@ -428,7 +430,7 @@ still have only one replica.
 
 ### Upgrading Omni / omnictl
 
-Run Omni and `omnictl` **on the same release** (currently `v1.12.2`, pinned in `omni/omni/omni.env.example`). When upgrading:
+Run Omni and `omnictl` **on the same release** (currently `v1.12.4`, pinned in `omni/omni/omni.env.example`). When upgrading:
 
 1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.
@@ -437,15 +439,17 @@ Run Omni and `omnictl` **on the same release** (currently `v1.12.2`, pinned in `
 
 ## Hardware
 
-Four Proxmox hosts run the cluster. Three are wired to the 10G switch; the HP
-micro sits in the shed behind a Wi-Fi media bridge.
+Four Proxmox hosts and two bare-metal minis run the cluster. All are wired except the
+HP micro, which sits in the shed behind a Wi-Fi media bridge.
 
 | Host | Address | CPU / RAM | Role |
 |------|---------|-----------|------|
-| Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (1x RTX 3090 passthrough) |
+| Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (2x RTX 3090 passthrough) |
 | HP micro (shed) | 192.168.10.20 | i5-8500T 6c · 31 GB | CPU worker, USB radios, Wi-Fi-bridged and solar-fed |
 | HP SFF (ProDesk) | 192.168.10.21 | i5-8500 6c · 63 GB | Control plane + CPU worker |
 | HP Elite | 192.168.10.22 | i5-13500T 20c · 31 GB | CPU worker (NVMe Longhorn disk) |
+| Dell Pro Micro QCM1250 (bare metal) | DHCP | Core Ultra 5 245T 14c · 16 GB | CPU worker `mini-pc-dell-ultra-worker`, compute-only |
+| HP Elite Mini 800 G9 (bare metal) | DHCP | i5-12500T 12t · 16 GB | CPU worker `hp-elite-gen12`, compute-only |
 
 ```
 Storage
@@ -454,12 +458,13 @@ Storage
 └── Local NVMe AI model cache on the Threadripper host
 
 Network
-├── 10G switch (2.5 GbE to the Optiplex, Wi-Fi bridge to the shed)
+├── 10G switch (Wi-Fi bridge to the shed)
 ├── Firewalla Gold
 └── Internal DNS Resolution (Technitium on the rpi5)
 ```
 
-The second RTX 3090 lives in a 7800X3D workstation outside the cluster. Wall-plug
+The bare-metal minis PXE-boot into Omni through booter on the Pi; see
+[omni/pi-services/booter/](omni/pi-services/booter/README.md). Wall-plug
 power and cost for every host are metered — see
 [docs/domains/power/metering.md](docs/domains/power/metering.md).
 
@@ -470,7 +475,7 @@ power and cost for every host are metered — see
 | **ArgoCD not syncing** | `kubectl get applicationsets -n argocd` · `kubectl describe applicationset infrastructure -n argocd` · check for stale operations before reverting Git: `kubectl get application argocd -n argocd -o yaml` |
 | **Cilium issues** | `cilium status` · `kubectl logs -n kube-system -l k8s-app=cilium` · `cilium connectivity test` |
 | **Storage issues** | `kubectl get pvc -A` · `kubectl get pods -n longhorn-system` |
-| **Longhorn manager crashlooping on the webhook / every PVC Pending** | Check cross-node pod networking first: `kubectl exec -n kube-system <cilium-pod> -c cilium-agent -- cilium-health status`. `Node 1/1` with `Endpoints 0/1` means the pod overlay is broken to that node, not Longhorn — see [Dell worker: nodes Ready but pods cannot cross nodes](docs/domains/networking/dell-proxmox-talos-worker.md#known-failure-nodes-are-ready-but-pods-cannot-cross-nodes) |
+| **Longhorn manager crashlooping on the webhook / every PVC Pending** | Check cross-node pod networking first: `kubectl exec -n kube-system <cilium-pod> -c cilium-agent -- cilium-health status`. `Node 1/1` with `Endpoints 0/1` means the pod overlay is broken to that node, not Longhorn — see [nodes Ready but pods cannot cross nodes](docs/domains/networking/topology.md#nodes-are-ready-but-pods-cannot-cross-nodes) |
 | **Secrets not syncing** | `kubectl get externalsecret -A` · `kubectl get pods -n 1passwordconnect` · `kubectl describe clustersecretstore 1password` |
 | **GPU issues** | `kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true` · `kubectl get pods -n gpu-operator` |
 | **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Succeeded` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |

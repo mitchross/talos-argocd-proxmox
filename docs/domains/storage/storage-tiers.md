@@ -10,7 +10,7 @@ The class name alone does not describe the physical device or prove availability
 
 | Class | Current backing / selection | Appropriate use and limitation |
 |---|---|---|
-| `longhorn` (default) | One V1 replica on an eligible Longhorn disk. Live claims span Threadripper, SFF, Elite and Dell; the latter three use dedicated data disks, not their Talos boot filesystems. | Small app state and caches with an explicit one-copy availability trade-off. Kopiur protects enrolled state, but a backup does not provide immediate failover. |
+| `longhorn` (default) | One V1 replica on an eligible Longhorn disk. Live claims span Threadripper, SFF and Elite; SFF and Elite use dedicated data disks, not their Talos boot filesystems. | Small app state and caches with an explicit one-copy availability trade-off. Kopiur protects enrolled state, but a backup does not provide immediate failover. |
 | `longhorn-flash` | One replica selected by disk tag `flash`; currently the Threadripper's 440 GiB guest disk on two mirrored HPE SATA SSDs with PLP and thick LVM | Selected write-heavy state and noisy local I/O. The mirror survives one member disk loss; it does not survive loss of the Threadripper host. |
 | `longhorn-wired-ha` | Two replicas with hard node/zone/disk separation on Longhorn nodes tagged `wired-storage` | Selected state that needs a surviving live copy. Requires healthy replicas, a working control plane, eligible compute and the rest of the application's dependencies. |
 | `truenas-nfs` | TrueNAS BigTank, HDD mirrors behind a large RAM cache, RWX; each PVC is its own dataset with `sync=standard` | Bulk, read-mostly data where NAS downtime is accepted: the immich library, project-nomad downloads. Measured from a pod: fast repeated reads, but only about 50 file creates and 110 `fsync` writes per second, so never databases, Docker/overlay storage or search indexes. |
@@ -24,12 +24,13 @@ support the Kopiur workflow; capacity planning must include staging claims.
 
 ## Placement and ownership
 
-The active Omni template configures Longhorn data disks on SFF, Elite, Dell and
-Threadripper. The shed's disks are registered but have scheduling disabled. Dell
-is wired; the HP Micro in the shed is the machine behind the Wi-Fi media bridge.
+The active Omni template configures Longhorn data disks on SFF, Elite and
+Threadripper. The shed's disks are registered but have scheduling disabled. The HP
+Micro in the shed is the machine behind the Wi-Fi media bridge. The bare-metal minis
+(`mini-pc-dell-ultra-worker`, `hp-elite-gen12`) are compute-only: they have no Longhorn disk.
 See the [dated physical inventory](../../audits/2026-09-05-inventory.md).
 
-The `wired-storage` tag includes SFF, Elite, Dell and Threadripper. Which physical disk holds
+The `wired-storage` tag includes SFF, Elite and Threadripper. Which physical disk holds
 what is listed once in the [disk map](disk-map.md); which volumes keep two
 copies is in [storage architecture](../../storage-architecture.md#two-copies-for-data-that-cant-be-re-created).
 

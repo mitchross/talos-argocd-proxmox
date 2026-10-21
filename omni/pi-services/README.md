@@ -19,7 +19,7 @@ The target files are desired state until deployed and verified live.
 | Technitium DNS | 15.5.1 | [15.6.2](https://github.com/TechnitiumSoftware/DnsServer/releases/tag/v15.6.2), pinned in [Compose](technitium/docker-compose.yml) |
 | ProxCenter frontend | Native ARM64 1.4.10, Node 26.10.0 | [1.4.12](https://github.com/adminsyspro/proxcenter-ui/releases/tag/v1.4.12); rebuild with Node 26.12.0 / Alpine 3.24 |
 | ProxCenter PostgreSQL | 16.15-alpine3.24 | Already current; pinned in [override](proxcenter/docker-compose.override.yml) |
-| booter (PXE) | Not deployed | [0.4.0](https://github.com/siderolabs/booter/releases/tag/v0.4.0), pinned in [Compose](booter/docker-compose.yml); see [booter/README.md](booter/README.md) |
+| booter (PXE) | 0.4.0, running in `~/booter` | Already current; pinned in [Compose](booter/docker-compose.yml); see [booter/README.md](booter/README.md) |
 
 Upstream ProxCenter's [publishing workflow](https://github.com/adminsyspro/proxcenter-ui/blob/main/.github/workflows/docker-publish.yml)
 still builds only `linux/amd64`. Its stable `v1.4.12` release resolves to

@@ -2,8 +2,8 @@
 
 ## Overview
 
-The cluster (`talos-prod-cluster-v2`) spans five Proxmox hosts on a flat LAN.
-Four are wired through the 10G switch; the fifth sits in the shed behind a Wi-Fi
+The cluster (`talos-prod-cluster-v2`) spans four Proxmox hosts and two bare-metal
+minis on a flat LAN. All are wired except the shed host, which sits behind a Wi-Fi
 media bridge. Every node address is on the same `192.168.10.0/24`:
 
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
@@ -15,9 +15,9 @@ media bridge. Every node address is on the same `192.168.10.0/24`:
   Longhorn tag.
 - **HP Elite worker VM** — DHCP on the wired LAN; 13th-gen i5-13500T, NVMe
   Longhorn disk, also `wired-storage`.
-- **Dell Optiplex worker VM** — DHCP on the wired LAN (2.5 GbE add-in card on
-  the Optiplex host); see the
-  [Dell Proxmox Talos worker runbook](dell-proxmox-talos-worker.md).
+- **Bare-metal mini workers** — `mini-pc-dell-ultra-worker` (Dell Pro Micro) and
+  `hp-elite-gen12` (HP Elite Mini 800 G9). DHCP on the wired LAN, 1 GbE,
+  compute-only. They PXE-boot into Omni through booter on the Pi.
 - **HP micro worker VM** — DHCP, in the shed behind an ASUS RT-AX86U media
   bridge; carries the USB radios and is tainted `node.vanillax.dev/link=wifi`.
 - **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
@@ -53,10 +53,17 @@ instance-manager or replica flows, uses VXLAN.
 | HP SFF `.21` | One control plane and one worker | Wired; both VMs fail with the same chassis |
 | HP Elite `.22` | One worker | Wired |
 | Threadripper `.14` | One GPU worker, two RTX 3090s | Wired |
-| Dell `.16` | One temporary worker | Wired; improvised hardware, not long-term quorum capacity |
+| Dell Pro Micro (bare metal) | Worker `mini-pc-dell-ultra-worker` | Wired 1 GbE; no Proxmox |
+| HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12` | Wired 1 GbE; no Proxmox |
 | Shed HP `.20` | One worker with USB radios | Ethernet to ASUS RT-AX86U, then Wi-Fi media bridge |
-| Pi 5 `.15` | Omni and Technitium, outside Kubernetes | Separate management/DNS host |
+| Pi 5 `.15` | Omni, Technitium and booter (PXE), outside Kubernetes | Separate management/DNS host |
 | TrueNAS `.133` | NAS and RustFS, outside Kubernetes | 10 GbE; planned NAS downtime stalls its consumers |
+
+**Plan, not done yet:** the HP Elite `.22` (Mini 600 G9, i5-13500T) will become a
+bare-metal worker named `hp-elite-gen13`. Today it is a Proxmox host with one worker VM.
+
+Firewalla DHCP sends PXE clients to the Pi (option 66 `192.168.10.15`, option 67
+`snp.efi`). See the [booter README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md).
 
 A 10G switch does not give every attached host a 10 GbE link. See the
 [dated hardware inventory](../../audits/2026-09-05-inventory.md) for measured
@@ -70,14 +77,13 @@ host capacity, disks, and evidence limits.
 |--------|-----|---------|
 | Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
 | Proxmox | 192.168.10.14 | Hypervisor |
-| Dell Optiplex Proxmox | 192.168.10.16 | CPU-only hypervisor (wired 2.5 GbE) |
 | HP micro Proxmox | 192.168.10.20 | Shed hypervisor behind the media bridge; USB radios |
 | HP SFF Proxmox | 192.168.10.21 | CPU-only hypervisor (wired); hosts the control plane |
 | HP Elite Proxmox | 192.168.10.22 | CPU-only hypervisor (wired, i5-13500T) |
-| Technitium / Omni (rpi5) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
+| Technitium / Omni (rpi5) | 192.168.10.15 | Split-DNS for `vanillax.me`, self-hosted Omni, booter PXE server |
 | ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the shed |
 | Control Plane | DHCP | K8s control-plane node; verify live address with `kubectl` |
-| Dell CPU Worker | DHCP | K8s CPU worker node; verify live address with `kubectl` |
+| Bare-metal mini workers | DHCP | `mini-pc-dell-ultra-worker`, `hp-elite-gen12`; verify live addresses with `kubectl` |
 | TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
 | GPU Worker | DHCP | K8s GPU worker node; verify live address with `kubectl` |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |
@@ -102,7 +108,6 @@ machine:
 | Bridge | Physical NIC | CIDR | Purpose |
 |--------|--------------|------|---------|
 | vmbr0 | ens2 | 192.168.10.14/24 | Main LAN (10G) |
-| vmbr0 (Dell) | `uplink25g` (RTL8125B) | 192.168.10.16/24 | Wired 2.5 GbE; the onboard I219 `nic0` is unused (e1000e hang bug) |
 
 ## TrueNAS Network Configuration
 
@@ -132,6 +137,41 @@ ping 192.168.10.133
 # Test NFS mount
 showmount -e 192.168.10.133
 ```
+
+### Nodes are Ready, but pods cannot cross nodes
+
+After a clean rebuild, every node can be `Ready` while Longhorn managers
+crashloop and new PVCs remain `Pending`. `Ready` only proves that the nodes can
+reach Kubernetes; it does not prove that pods can reach pods on other nodes.
+
+Check Cilium from an agent pod:
+
+```bash
+kubectl exec -n kube-system <cilium-pod> -- cilium-health status --probe
+```
+
+`Node 1/1` with `Endpoints 0/1` means the normal network works but the pod
+overlay does not. The cause is a virtio checksum offload bug, not MTU, Cilium
+state, or the host's NIC.
+
+Keep both offload guards in the cluster-level Talos `EthernetConfig`:
+
+```yaml
+apiVersion: v1alpha1
+kind: EthernetConfig
+name: eth0
+features:
+  tx-checksum-ip-generic: false
+  tx-udp_tnl-csum-segmentation: false
+```
+
+An unchanged template sync may do nothing because Omni already considers the
+config current. Adding the second guard produced a real config change and made
+Talos re-apply the settings. It did not visibly reboot the nodes.
+
+Success means Cilium reports every node and endpoint reachable and all Longhorn
+managers return to `2/2 Running`. Let existing CrashLoop backoff expire; do not
+keep restarting Longhorn, change MTU, or redesign the bridge for this symptom.
 
 ### Storage Performance Testing
 

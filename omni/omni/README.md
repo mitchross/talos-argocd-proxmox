@@ -336,7 +336,7 @@ outside Talos and are deployed from merged Git configuration over SSH.
 the CLI's gopenpgp library and fail with `EdDSA verification failure`.
 
 ```bash
-omnictl infraprovider create proxmox-dell      # infrastructure provider
+omnictl infraprovider create proxmox-hp-elite      # infrastructure provider
 omnictl serviceaccount create talos-prod-sa --use-user-role   # cluster access
 ```
 
@@ -344,7 +344,7 @@ Each prints an endpoint and a key **shown exactly once** — capture it
 immediately and store it in your secret manager.
 
 > Provider IDs must be valid **DNS labels** as of v1.10 — lowercase letters,
-> digits, and dashes only. `proxmox-dell` is fine; `Proxmox_Dell` is rejected.
+> digits, and dashes only. `proxmox-hp-elite` is fine; `Proxmox_HP_Elite` is rejected.
 
 The first `omnictl` command on a new machine triggers a browser auth flow: it
 generates a local keypair, prints a URL, and blocks until you approve. The

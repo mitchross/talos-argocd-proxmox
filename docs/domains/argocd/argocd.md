@@ -273,9 +273,9 @@ therefore remove both a controller and the only usable copy of some app data.
 See the [physical inventory](../../audits/2026-09-05-inventory.md) and
 [availability findings](../../audits/2026-09-05-architecture-audit.md).
 
-The Dell is temporary capacity, and the shed reaches the LAN through a Wi-Fi
-media bridge. Neither should become a quorum member merely because it has
-spare RAM. GPU workloads depend on the Threadripper's single RTX 3090.
+The shed reaches the LAN through a Wi-Fi media bridge. It should not become a
+quorum member merely because it has spare RAM. GPU workloads depend on the
+Threadripper's two RTX 3090s.
 
 More nodes do not require changing the directory model. Improving availability
 now requires reviewing placement, storage, and capacity together:
