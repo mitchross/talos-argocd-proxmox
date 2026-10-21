@@ -38,9 +38,9 @@ TERM_HOME="$HERMES_HOME/home"
 mkdir -p "$TERM_HOME/.config" "$HERMES_HOME/.config/gh" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude"
 touch "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
 for d in .codex .claude .hindsight .claude.json .gitconfig; do
-  [ -L "$TERM_HOME/$d" ] || { rm -rf "$TERM_HOME/$d"; ln -s "$HERMES_HOME/$d" "$TERM_HOME/$d"; }
+  [ -L "$TERM_HOME/$d" ] || { rm -rf "${TERM_HOME:?}/$d"; ln -s "$HERMES_HOME/$d" "$TERM_HOME/$d"; }
 done
-[ -L "$TERM_HOME/.config/gh" ] || { rm -rf "$TERM_HOME/.config/gh"; ln -s "$HERMES_HOME/.config/gh" "$TERM_HOME/.config/gh"; }
+[ -L "$TERM_HOME/.config/gh" ] || { rm -rf "${TERM_HOME:?}/.config/gh"; ln -s "$HERMES_HOME/.config/gh" "$TERM_HOME/.config/gh"; }
 printf 'export PATH=/opt/agents/bin:$PATH\n' > "$TERM_HOME/.profile"
 chown -R 10000:10000 "$TERM_HOME" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
 
