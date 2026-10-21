@@ -300,8 +300,8 @@ it a good home for read-mostly bulk data and a poor one for databases. Placement
 rules built on this are in the [disk map](domains/storage/disk-map.md#where-should-new-data-go).
 
 **Network:** the NAS has one 10 GbE port, but only the Threadripper host also has
-10 GbE. hp-sff, hp-elite and Dell connect at 2.5 GbE (about 312 MB/s at most) and
-the shed host at 1 GbE, so a pod's NFS speed is capped by its host's link.
+10 GbE. hp-sff and hp-elite connect at 2.5 GbE (about 312 MB/s at most). The
+bare-metal minis and the shed host connect at 1 GbE. A pod's NFS speed is capped by its host's link.
 
 ## Earlier measurements — retained for context
 

@@ -63,6 +63,7 @@ plane and worker MachineSets; do not create MachineSets separately.
 │   ├── docker-compose.yml
 │   ├── .env.example
 │   └── config.yaml.example
+├── pi-services/               # Other Pi services, incl. booter (PXE for bare-metal workers)
 ├── machine-classes/           # VM specs (control-plane, worker, GPU, single-node)
 ├── cluster-template/          # Cluster template + machine config patches
 └── docs/                      # Additional documentation

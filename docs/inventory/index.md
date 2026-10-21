@@ -11,8 +11,8 @@ health and repair evidence. For speed verdicts and upgrade priorities, open
 Talos mounts, Proxmox storage, Longhorn capacity and management services.
 The explorer uses this snapshot. Older benchmarks retain their original dates.
 
-**Open finding:** Dell’s `dell-ssd-vmstore` was inactive during collection, despite
-its reported guest mount. See the inventory for the separate host and guest observations.
+The Dell OptiPlex in this snapshot is now retired. The snapshot does not show the
+two bare-metal minis; see the [disk map](../domains/storage/disk-map.md) for current hosts.
 
 ## Where every disk is
 

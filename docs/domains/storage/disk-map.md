@@ -60,22 +60,6 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 | WD SN530 256 GB (`nvme1`) | consumer NVMe | host root + `local-lvm` | 128 GiB | `/var` | — | Talos system |
 | Intel 660p 512 GB (`nvme0`) | consumer **QLC**, past its rated writes | `hp-elite-vmstore` | 440 GiB | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes, Home Assistant. **Replace this drive first.** |
 
-### Dell `.16` — worker
-
-| Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
-|---|---|---|---|---|---|---|
-| Cisco SSD-240G, M.2 SATA on the onboard port (serial `STP27120U9C`) | consumer SATA | host root + `local-lvm` (thin pool `data`, 140 GiB) | 128 GiB | `/var` | — | Talos system |
-| Apple SM0256G (serial `S2PANYAH502828`), PCIe adapter | consumer AHCI | `dell-apple-vmstore` (VG `dell-apple-vg`, thick LVM) | 220 GiB | `/var/mnt/longhorn-dell-apple` | `dell-apple` (`wired-storage`) | ordinary volumes, second copies |
-
-The Apple drive is the Dell's only Longhorn target. It sits on its own PCIe AHCI
-controller. A Samsung 850 EVO and a T-FORCE 512 GB both detached from the onboard
-SATA ports (`ata1`/`ata3`), under load and at idle. The old `dell-ssd` Longhorn
-disk, its UserVolume and its machine-class disk are removed. Add a drive on those
-ports only after a load test and a multi-day soak.
-
-The Cisco drive is about 10 GiB smaller than VG `pve` was on the Apple drive, so
-the thin pool is 140 GiB. VG `pve` has about 4 GiB free. UEFI boots `proxmox-cisco`.
-
 ### HP Micro `.20` — shed worker (Wi-Fi link)
 
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
@@ -83,10 +67,22 @@ the thin pool is 140 GiB. VG `pve` has about 4 GiB free. UEFI boots `proxmox-cis
 | SK hynix BC501 256 GB (`nvme0`) | consumer NVMe | host root + `local-lvm` | 128 GiB | `/var` | — | Talos system |
 | PNY CS900 1 TB (`sda`) | consumer SATA | `hp-ssd-vmstore` | 850 GiB | `/var/mnt/longhorn-hp-micro-ssd` | `hp-micro-ssd` (scheduling **off**) | nothing: a Wi-Fi link is too slow and flaky for replicas |
 
+## Bare-metal workers (no Proxmox)
+
+These minis PXE-boot into Omni through booter on the Pi; see
+[booter](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md). Talos installs on the one
+NVMe. The template pins it with `install.diskSelector` on `disk.serial`. Both nodes
+are compute-only: they have no Longhorn disk.
+
+| Node | Physical drive | Class | Talos mount | Longhorn disk | Holds |
+|---|---|---|---|---|---|
+| `mini-pc-dell-ultra-worker` (Dell Pro Micro) | KIOXIA BG7 256 GB NVMe (serial `3GTCT3A8Z438`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
+| `hp-elite-gen12` (HP Elite Mini 800 G9) | Samsung MZVL2256 256 GB NVMe (serial `S63XNA0TC92107`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
+
 ## TrueNAS `.133`
 
-The NAS has one 10 GbE port. Only the Threadripper also has 10 GbE; the other
-hosts reach it at 2.5 GbE (the shed at 1 GbE).
+The NAS has one 10 GbE port. Only the Threadripper also has 10 GbE. The other
+Proxmox hosts reach it at 2.5 GbE. The bare-metal minis and the shed reach it at 1 GbE.
 
 | Pool | Disks | Redundancy | Good for | Not for |
 |---|---|---|---|---|
@@ -96,7 +92,7 @@ hosts reach it at 2.5 GbE (the shed at 1 GbE).
 
 The NAS also has a mirrored boot pool (T-FORCE 512 GB and HPE 480 GB).
 A Samsung 850 EVO 500 GB was visible as `sdk`, outside the imported pools,
-on October 15. PR #2946 records its retirement from Dell after failed load tests.
+on October 15. It is retired after failed load tests (PR #2946).
 
 ZFS ARC caches reads across all pools. The October 15 sample held 83.3 GiB,
 compared with the larger September cache. Cache size varies with workload and uptime. File creation and `fsync` still go to the disks: measured
@@ -136,7 +132,7 @@ pvesm status | grep tr-sda-vmstore     # expected: active
 
 Every other storage name the machine classes select (`nvme0-vmstore`,
 `nvme1-vmstore`, `ssd-ent`, `hp-sff-cp-vmstore`, `hp-prodesk-vmstore`,
-`hp-elite-vmstore`, `dell-ssd-vmstore`, `dell-apple-vmstore`, `hp-ssd-vmstore`, `local-lvm`) must also
+`hp-elite-vmstore`, `hp-ssd-vmstore`, `local-lvm`) must also
 exist with that exact name. Check each host with `pvesm status`.
 
 ## Adding a disk to a running node

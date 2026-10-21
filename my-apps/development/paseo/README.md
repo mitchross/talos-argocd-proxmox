@@ -1,6 +1,6 @@
 # Paseo
 
-Argo CD syncs this directory as `my-apps-paseo`. It runs Paseo at `https://paseo.vanillax.me`.
+Argo CD syncs this directory as `my-apps-paseo`. Paseo is turned off: `kustomization.yaml` lists only the namespace. When on, it runs at `https://paseo.vanillax.me`.
 
 **How to connect, log in, verify, and change it:** [docs/domains/ai-gpu/paseo.md](../../../docs/domains/ai-gpu/paseo.md).
 **Which repo owns which change:** [CLAUDE.md](CLAUDE.md).

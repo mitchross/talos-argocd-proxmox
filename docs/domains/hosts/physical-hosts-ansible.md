@@ -30,7 +30,7 @@ resource mappings, or Proxmox package upgrades.
 
 | Group | Names | SSH user |
 |---|---|---|
-| `proxmox` | `gpu` (.14), `dell` (.16), `shed` (.20), `sff` (.21), `elite` (.22) | `root` |
+| `proxmox` | `gpu` (.14), `shed` (.20), `sff` (.21), `elite` (.22) | `root` |
 | `management` | `pi` (.15) | `vanillax` with sudo |
 | `appliances` | `nas` (.133) | listed for reference; no playbook targets it |
 

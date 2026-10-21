@@ -13,7 +13,7 @@ what it costs, and how to add a plug.
 | Threadripper Host | `threadripper_*` | homelab | Threadripper 2950X/X399 host (`192.168.10.14`): GPU worker + general worker VMs, 2× RTX 3090 |
 | NAS Drive PSU | `nas_psu_*` | homelab | The drive-shelf PSU for the NAS |
 | TrueNAS (DL360) | `truenas_*` | homelab | The TrueNAS/DL360 host itself (`192.168.10.133`) |
-| HP SFF + Optiplex | `hp_sff_*` | homelab | **Two hosts on one outlet**: HP 8500 SFF (`.21`) and Dell Optiplex 8500 |
+| HP SFF + Optiplex | `hp_sff_*` | homelab | HP 8500 SFF (`.21`). The plug name still says Optiplex; that host is retired |
 | HP Elite Mini G9 | `hp_elite_*` | homelab | HP Elite Mini 600 G9 (`.22`) |
 | Gaming PC | `gaming_pc_*` | office | 7800X3D workstation. **Not a cluster node**; the two AI RTX 3090s are on Threadripper |
 | MacBook + Monitor | `macbook_*` | office | Office desk |

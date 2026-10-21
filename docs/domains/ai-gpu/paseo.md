@@ -1,7 +1,9 @@
 # Paseo: coding agents in the cluster
 
 **Purpose:** host Paseo in this cluster, connect to it, log the agents in, and keep it running.
-**Status:** current state. Argo CD syncs [`my-apps/development/paseo`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/paseo) as `my-apps-paseo`.
+**Status:** turned off. Argo CD syncs [`my-apps/development/paseo`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/paseo) as `my-apps-paseo`, but its `kustomization.yaml` lists only the namespace. No pod or PVC runs; the kopiur repository keeps the backups. To turn it on, uncomment the resources there.
+
+The rest of this page describes Paseo when it is on.
 **Agent map:** [Paseo CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/CLAUDE.md) says which repo owns which change.
 
 ## What Paseo is

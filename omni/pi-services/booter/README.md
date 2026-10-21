@@ -12,7 +12,8 @@ cluster template does that.
 1. A machine's firmware tries its disk first. With no bootable disk, it falls
    back to network boot and broadcasts a DHCP request.
 2. The Firewalla (`192.168.10.1`) answers with the IP address, as it does for
-   every client.
+   every client. It also sends option 66 (`192.168.10.15`) and option 67
+   (`snp.efi`), for firmware that ignores proxy-DHCP.
 3. booter answers **only PXE clients**, with boot-file information
    (proxy-DHCP). It never hands out addresses, so normal clients are unaffected.
 4. The machine fetches iPXE from booter over TFTP. iPXE then loads the Talos
@@ -62,9 +63,9 @@ Power on a machine that has an empty disk and network boot enabled. Then run
 `docker logs -f booter`. Expect a boot response, a TFTP transfer and an iPXE
 request. The machine then appears in **Omni → Machines**.
 
-Some UEFI firmware ignores proxy-DHCP offers. If a machine never gets a boot
-response, check its BIOS network-boot settings. Do not change the Firewalla's
-DHCP options.
+Some UEFI firmware ignores proxy-DHCP offers. The Firewalla options 66 and 67
+cover that case. If a machine never gets a boot response, check its BIOS
+network-boot settings and those two options.
 
 ## Change the Talos version
 
