@@ -27,9 +27,9 @@ It runs as a CronJob with two rules:
 
 - **RemoveDuplicates:** if two replicas of the same app ended up on one node, move
   one, so losing that node doesn't take out every copy.
-- **LowNodeUtilization:** if some nodes are busy (above 70% of memory requests)
+- **LowNodeUtilization:** if some nodes are busy (above 65% of memory requests)
   **and** some are quiet (below 55%), move pods from busy to quiet until the busy
-  node drops under 70% or the quiet one passes 55%. Memory only: CPU and pod count
+  node drops under 65% or the quiet one passes 55%. Memory only: CPU and pod count
   are never tight here. It uses the pods' *requests* (what they reserve), not live
   usage, because requests are what stop new pods from scheduling.
 
@@ -61,7 +61,7 @@ Example output, and what it means:
 "Number of evictions/requests"  totalEvicted=0
 ```
 
-Three nodes are above 70% and none is below 55%, so there is nowhere better to put
+Three nodes are above 65% and none is below 55%, so there is nowhere better to put
 anything, and it correctly moves nothing. That signals the cluster is **full on
 requests**, not unbalanced. The fix for that is lowering requests (the
 [VPA](vpa-and-topology.md) does this over time; check its `minAllowed` floors) or
