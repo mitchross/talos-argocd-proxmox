@@ -17,6 +17,7 @@ configMapGenerator:
       - config.yaml=config/config.yaml
       - hindsight-claude-code.json=config/hindsight-claude-code.json
       - hindsight-codex.json=config/hindsight-codex.json
+      - hindsight-hermes.json=config/hindsight-hermes.json
   - name: hermes-scripts
     files:
       - seed.sh=scripts/seed.sh
