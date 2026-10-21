@@ -53,6 +53,8 @@ flowchart LR
 
 The pod runs `ghcr.io/mitchross/hermes-dev`, built in [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev). The image holds tools only; everything Hermes writes lives on `hermes-data`.
 
+Nous Research publishes a Docker image but no Helm chart. The community charts and operators template many agents per cluster; this cluster runs one, so it uses plain Kustomize manifests and its own image.
+
 ```mermaid
 flowchart LR
     Df[images/hermes-dev/Dockerfile] --> CI[GitHub Actions build-hermes-dev.yml]
@@ -78,7 +80,7 @@ Current versions are in the [Dockerfile](https://github.com/mitchross/homelab-im
 
 ### How CI builds it
 
-[`build-hermes-dev.yml`](https://github.com/mitchross/homelab-images/blob/main/.github/workflows/build-hermes-dev.yml) runs on a push that touches `images/hermes-dev/**` or `scripts/**`, on manual dispatch, and every Monday at 05:17 UTC. The Monday run skips the cache, so base-image security fixes land.
+[`build-hermes-dev.yml`](https://github.com/mitchross/homelab-images/blob/main/.github/workflows/build-hermes-dev.yml) runs on a push or pull request that touches `images/hermes-dev/**`, `scripts/**` or the workflow itself, on manual dispatch, and every Monday at 05:17 UTC. The Monday run skips the cache, so base-image security fixes land.
 
 1. Build for `linux/amd64` only. There is no `arm64` image.
 2. Test with [`scripts/test-hermes.sh`](https://github.com/mitchross/homelab-images/blob/main/scripts/test-hermes.sh): run the smoke script as uid 10000 on an empty `/opt/data`, like a fresh PVC, then boot the container as root and check that `--version` prints `Hermes Agent v0.x`.
