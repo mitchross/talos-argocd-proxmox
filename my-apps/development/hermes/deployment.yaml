@@ -117,6 +117,14 @@ spec:
               path: /api/status
               port: http
             periodSeconds: 15
+          # Restarts the pod only after 5 min without an answer, so a slow tool run doesn't trigger it.
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 10
           volumeMounts:
             - name: data
               mountPath: /opt/data
