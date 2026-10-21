@@ -45,9 +45,3 @@ plugins:
     - homeassistant
   disabled: []
 
-# Fallback door to Paseo. Claude Code and Codex run in this pod first (skill homelab-ops).
-mcp_servers:
-  paseo:
-    url: https://paseo.vanillax.me/mcp/agents
-    headers:
-      Authorization: "Bearer ${PASEO_PASSWORD}"

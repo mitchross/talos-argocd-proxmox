@@ -97,7 +97,7 @@ codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-ap
 4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not `claude-opus-5-5` or `gpt-6.1-sol`, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
 
-If `claude` or `codex` fails to start (no login, no token), say so and fall back to the Paseo MCP tools (`list_profiles`, `create_agent`, `send_agent_prompt`, `get_agent_status`) with the same prompt.
+If `claude` or `codex` fails to start (no login, no token), say so and stop. The Paseo fallback is gone (Paseo was turned off in PR #3072); hand the prompt to the owner to run in Claude Code on CachyOS instead.
 
 ## When asked about one app
 

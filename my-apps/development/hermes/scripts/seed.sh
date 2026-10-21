@@ -8,16 +8,18 @@ REPO_DIR="$HERMES_HOME/workspace/talos-argocd-proxmox"
 export HERMES_HOME HOME PATH="/command:${PATH}"
 as_hermes() { s6-setuidgid hermes env HOME="$HOME" "$@"; }
 
-mkdir -p "$HERMES_HOME/workspace" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight"
+mkdir -p "$HERMES_HOME/workspace" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight" "$HERMES_HOME/hindsight"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/config.yaml "$HERMES_HOME/config.yaml"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-skills/SKILL.md "$HERMES_HOME/skills/devops/homelab-ops/SKILL.md"
+# Hermes memory plugin settings; this file replaces the env-derived config, the API key still comes from HINDSIGHT_API_KEY.
+install -o 10000 -g 10000 -m 0644 /etc/hermes-config/hindsight-hermes.json "$HERMES_HOME/hindsight/config.json"
 # Hook configs for claude and codex in this pod; the token comes from the mounted Secret, never from Git.
 for f in claude-code codex; do
   sed "s|__HINDSIGHT_API_KEY__|${HINDSIGHT_API_KEY}|" "/etc/hermes-config/hindsight-$f.json" > "$HERMES_HOME/.hindsight/$f.json"
   chown 10000:10000 "$HERMES_HOME/.hindsight/$f.json"; chmod 0600 "$HERMES_HOME/.hindsight/$f.json"
 done
 rm -f "$HERMES_HOME/.local/bin/kubectl"  # pre-image leftover; it shadowed /usr/local/bin/kubectl
-chown 10000:10000 "$HERMES_HOME" "$HERMES_HOME/workspace" "$HERMES_HOME/skills" "$HERMES_HOME/skills/devops" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight"
+chown 10000:10000 "$HERMES_HOME" "$HERMES_HOME/hindsight" "$HERMES_HOME/workspace" "$HERMES_HOME/skills" "$HERMES_HOME/skills/devops" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight"
 
 for plugin in hindsight homeassistant; do
   if [ ! -d "$HERMES_HOME/plugins/$plugin" ]; then
