@@ -7,7 +7,7 @@
 ## What Hermes is
 
 Hermes is an agent that runs when nobody is at a keyboard. It keeps a gateway process alive for cron jobs and chat platforms, remembers across sessions through Hindsight, and loads skills on demand.
-Hermes is the coordinator: it runs Claude Code and Codex inside its own pod to open pull requests. [Paseo](paseo.md) stays as a separate workspace and as the fallback door.
+Hermes is the coordinator: it runs Claude Code and Codex inside its own pod to open pull requests.
 
 ```mermaid
 flowchart LR
@@ -16,7 +16,6 @@ flowchart LR
     Gateway -->|qwen3.8-27b| LiteLLM --> vLLM
     Gateway --> Hindsight[(Hindsight memory)]
     Gateway -->|claude -p / codex exec| Agents[Claude Code / Codex in the pod] --> GitHub[Pull request]
-    Gateway -.->|MCP fallback| Paseo[Paseo pod]
     Git[my-apps/development/hermes] --> Argo[Argo CD] --> Gateway
     Gateway --> Vol[(hermes-data 10Gi)] --> Kopiur[Kopiur daily backup]
 ```
@@ -40,7 +39,6 @@ flowchart LR
 | Volume | `pvc.yaml` | `hermes-data`, Longhorn, restore-before-bind, daily kopiur backup |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks and the digest format; copied to the volume on every start |
-| Paseo fallback | `config/config.yaml` `mcp_servers.paseo` | Paseo's MCP endpoint, Bearer = Paseo password from 1Password `paseo/password`; used only when the in-pod agents cannot start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00, skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
 ## 1. Connect
