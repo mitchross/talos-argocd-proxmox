@@ -40,12 +40,12 @@ instructions. Check the owning manifests and canonical runbook before acting.
 - [docs/domains/ai-gpu/model-catalog.md](docs/domains/ai-gpu/model-catalog.md) — app-to-backend wiring.
 - [docs/domains/ai-gpu/gpu-scale-swap.md](docs/domains/ai-gpu/gpu-scale-swap.md) — replica overrides and the single-card swap procedure.
 - [docs/domains/ai-gpu/pi-agent-local-dev.md](docs/domains/ai-gpu/pi-agent-local-dev.md) — Pi agent providers, routing, PC vs cluster config.
-- [docs/domains/ai-gpu/paseo.md](docs/domains/ai-gpu/paseo.md) — Paseo hosting: build, connect, one-time logins, Pi, verify, troubleshoot.
-- [my-apps/development/paseo/CLAUDE.md](my-apps/development/paseo/CLAUDE.md) — which repo owns each Paseo change, runtime permissions, invariants.
+- [docs/domains/ai-gpu/hermes.md](docs/domains/ai-gpu/hermes.md) — Hermes hosting: connect, models, one-time logins, verify, troubleshoot.
+- [my-apps/development/hermes/CLAUDE.md](my-apps/development/hermes/CLAUDE.md) — which repo owns each Hermes change, runtime rules, model policy.
 
-- [docs/domains/ai-gpu/paseo-other-clusters.md](docs/domains/ai-gpu/paseo-other-clusters.md) — run Paseo on another cluster: Compose, plain manifests, own-LLM Pi.
+- [docs/domains/ai-gpu/hermes-other-clusters.md](docs/domains/ai-gpu/hermes-other-clusters.md) — run Hermes on another cluster: Compose, plain manifests, own LLM.
   Use it instead of this cluster's GitOps directory. The image is built in
-  [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/paseo-dev).
+  [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev).
 
 ## Self-hosted PostHog
 

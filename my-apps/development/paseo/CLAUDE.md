@@ -1,7 +1,7 @@
 # Paseo: agent map
 
 Read this before you change Paseo, its image, or any Pi/LiteLLM wiring it uses.
-Human steps and concepts live in [docs/domains/ai-gpu/paseo.md](../../../docs/domains/ai-gpu/paseo.md).
+Human steps and concepts live in [the retired Paseo guide](https://github.com/mitchross/talos-argocd-proxmox/blob/1a9141fdc0389c93144be01ff9195bf997870c51/docs/domains/ai-gpu/paseo.md) (removed from main; Hermes replaced Paseo, see [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu/hermes.md)).
 
 ## Which repo owns which change
 
