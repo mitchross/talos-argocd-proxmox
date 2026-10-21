@@ -2,9 +2,9 @@
 set -euo pipefail
 
 [[ $(uname -m) == aarch64 ]] || { echo 'Build on the ARM64 Pi.' >&2; exit 1; }
-source_revision=533d8127b60fd5f5d59985109893725c80f1c687
-base_image=node:26.10.0-alpine3.24@sha256:f78d6d4ca1b1463e66837575f9ac0035aaad30d9497dc9f3bc611b544be2ab15
-image_tag=ghcr.io/adminsyspro/proxcenter-frontend:1.4.10-arm64-20261001
+source_revision=ef72b932aafa60f59a2646b8349d815bbd50c38e
+base_image=node:26.12.0-alpine3.24@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5
+image_tag=ghcr.io/adminsyspro/proxcenter-frontend:1.4.12-arm64-20261021
 build_dir=$(mktemp -d /var/tmp/proxcenter-arm64.XXXXXX)
 trap 'rm -rf "$build_dir"' EXIT
 
@@ -27,7 +27,7 @@ path.write_text(source)
 PY
 
 docker build --pull --platform linux/arm64 \
-  --build-arg "GIT_SHA=$source_revision" --build-arg APP_VERSION=1.4.10 \
+  --build-arg "GIT_SHA=$source_revision" --build-arg APP_VERSION=1.4.12 \
   --label org.opencontainers.image.source=https://github.com/adminsyspro/proxcenter-ui \
   --label "org.opencontainers.image.revision=$source_revision" \
   --tag "$image_tag" "$build_dir/frontend"
