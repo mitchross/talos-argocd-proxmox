@@ -473,9 +473,9 @@ patches:
     apiVersion: v1alpha1
     kind: KubeNodeConfig
     labels:
-      node.vanillax.dev/class: mini-pc-ultra
+      node.vanillax.dev/class: mini-pc-dell-ultra
       node.vanillax.dev/pool: general
-      topology.kubernetes.io/zone: mini-pc-ultra
+      topology.kubernetes.io/zone: mini-pc-dell-ultra
       node.vanillax.dev/link: wired
     nodeIP:
       validSubnets:
@@ -504,4 +504,4 @@ patches:
     apiVersion: v1alpha1
     kind: HostnameConfig
     auto: "off"
-    hostname: mini-pc-ultra
+    hostname: mini-pc-dell-ultra-worker
