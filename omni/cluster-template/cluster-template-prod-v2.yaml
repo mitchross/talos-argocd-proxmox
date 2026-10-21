@@ -452,3 +452,56 @@ patches:
     machine:
       kubelet:
         $patch: delete
+---
+# Bare metal (PXE via booter on the Pi): pinned by UUID, no provider or MachineClass.
+kind: Workers
+name: mini-pc-ultra-workers
+machines:
+- 4c4c4544-004a-4210-8037-b9c04f314b34
+systemExtensions:
+- siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
+- siderolabs/intel-npu # renovate: datasource=docker depName=siderolabs/intel-npu
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+patches:
+# No Longhorn disk label: createDefaultDiskLabeledNodes keeps this node compute-only.
+- name: mini-pc-ultra-worker
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: mini-pc-ultra
+      node.vanillax.dev/pool: general
+      topology.kubernetes.io/zone: mini-pc-ultra
+      node.vanillax.dev/link: wired
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: mini-pc-ultra-kubelet
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
+      systemReserved:
+        cpu: 500m
+        memory: 1Gi
+      kubeReserved:
+        cpu: 250m
+        memory: 512Mi
+---
+# Dell Pro Micro QCM1250. Factory Windows on this NVMe is overwritten on install.
+kind: Machine
+name: 4c4c4544-004a-4210-8037-b9c04f314b34
+install:
+  diskSelector: disk.serial == "3GTCT3A8Z438"
+patches:
+- name: mini-pc-ultra-hostname
+  inline:
+    apiVersion: v1alpha1
+    kind: HostnameConfig
+    auto: "off"
+    hostname: mini-pc-ultra
