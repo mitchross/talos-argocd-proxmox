@@ -76,8 +76,8 @@ wait for all the Applications it generates; those reconcile independently. See
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
-| Omni server + `omnictl` | `v1.12.2` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.14.2` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Omni server + `omnictl` | `v1.12.4` | `omni/omni/omni.env.example` |
+| Talos Linux | `v1.14.4` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Kubernetes | `v1.37.1` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.1` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
@@ -385,7 +385,7 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 
 ## Cluster Upgrades & Talos 1.14 Notes
 
-The prod template pins Talos **1.14.2** and Kubernetes **1.37.1**; the kopiur
+The prod template pins Talos **1.14.4** and Kubernetes **1.37.1**; the kopiur
 rendering target and Cluster CI schema stay at 1.37.0. `kubectl get nodes -o wide` shows what
 each node actually runs, since Omni rolls an upgrade out one node at a time.
 
