@@ -8,6 +8,8 @@ configures a workstation; cluster changes go through Git and ArgoCD.
 ## Where Pi runs: your PC or the cluster
 
 The same three providers work in both places. Only the URL and the key's source change.
+The cluster column is Paseo, which is turned off. Its files stay in Git but CI no longer checks them:
+compare them with this page before you turn Paseo back on.
 
 ```mermaid
 flowchart LR
@@ -22,7 +24,7 @@ flowchart LR
 | Config file | `~/.pi/agent/models.json` from `mitchross/dotfiles` | [`my-apps/development/paseo/config/pi-models.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/pi-models.json), mounted read-only |
 | `baseUrl` | `https://litellm.vanillax.me/v1` | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
 | Key | LiteLLM master key, read by `!cat <file>` or `$LITELLM_API_KEY` | `$LITELLM_API_KEY` from 1Password `litellm/master_key` via ESO |
-| Sampler hook | `~/.pi/agent/extensions/qwen-sampling.ts` | [`config/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/qwen-sampling.ts), a CI-checked copy of [`scripts/pi/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/qwen-sampling.ts) |
+| Sampler hook | `~/.pi/agent/extensions/qwen-sampling.ts` | [`config/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/qwen-sampling.ts), a copy of [`scripts/pi/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/qwen-sampling.ts) |
 | Launchers | zsh aliases in `~/.zshrc` | bash aliases from the `paseo-dev` image; no `pi-direct-openrouter` |
 | Change it | dotfiles PR + `chezmoi apply` | PR to the Paseo app; ArgoCD rolls the pod |
 
@@ -32,7 +34,7 @@ database it does not have, and returns `400 No connected db`.
 
 The OpenRouter credential lives only inside LiteLLM. Neither copy of Pi holds it.
 
-Paseo is off; its cluster copy stays in Git so CI keeps it in step. The cluster's agent is now [Hermes](hermes.md).
+The cluster's agent is now [Hermes](hermes.md), which does not run Pi.
 
 ## Default reasoning and rollout
 
@@ -285,7 +287,7 @@ a PR to `my-apps/ai/litellm/config.yaml`.
 
 Three providers, all pointing at the authenticated gateway. The workstation copy
 is tracked in `mitchross/dotfiles`; this block is the repo's copy and CI checks
-it against `litellm/config.yaml` and Paseo's cluster copy, so keep them in step.
+it against `litellm/config.yaml`, so keep them in step.
 
 ```json
 {
