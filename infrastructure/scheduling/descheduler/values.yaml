@@ -35,7 +35,7 @@ deschedulerPolicy:
                     - name: longhorn-flash
                     - name: longhorn-wired-ha
         - name: RemoveDuplicates
-        # Memory only (cpu/pods omitted = 100% = ignored): under 55% receives, over 70% sheds. 15-pt gap stops ping-pong.
+        # Memory only (cpu/pods omitted = 100% = ignored): under 55% receives, over 65% sheds. The 10-pt gap stops ping-pong.
         - name: LowNodeUtilization
           args:
             # kube-system pods (hubble) carry no requests, so evicting them never lowers the node and they bounce every run.
@@ -45,7 +45,7 @@ deschedulerPolicy:
             thresholds:
               memory: 55
             targetThresholds:
-              memory: 70
+              memory: 65
       plugins:
         balance:
           enabled:
