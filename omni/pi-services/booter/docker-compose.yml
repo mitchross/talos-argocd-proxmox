@@ -1,0 +1,15 @@
+services:
+  booter:
+    image: ghcr.io/siderolabs/booter:v0.4.0@sha256:360c4bc65a9153683d6eb947c958033b435159a23fed51e08f8726421a4a438d
+    container_name: booter
+    restart: unless-stopped
+    # Proxy-DHCP (UDP 67/4011) and TFTP (UDP 69) need the LAN broadcast domain, not a bridge.
+    network_mode: host
+    # EXTRA_KERNEL_ARGS (Omni join args, contains the join token) comes from this file only.
+    env_file: booter.env
+    command:
+      - --api-advertise-address=192.168.10.15
+      - --api-port=50084
+      # Keep equal to talos.version in omni/cluster-template/cluster-template-prod-v2.yaml.
+      - --talos-version=v1.14.4
+      - --extensions=siderolabs/intel-ucode,siderolabs/realtek-firmware

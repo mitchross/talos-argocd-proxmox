@@ -1,28 +1,29 @@
 # Pi service maintenance
 
-Runbook for the ARM64 Pi at `192.168.10.15`. Omni, its five Proxmox providers,
-Technitium DNS and ProxCenter run here in Docker, outside Talos and Argo CD.
+Runbook for the ARM64 Pi at `192.168.10.15`. Omni, its Proxmox providers,
+Technitium DNS, ProxCenter and booter run here in Docker, outside Talos and Argo CD.
 Deploy configuration from a merged PR over SSH. Existing secret files and
 persistent storage stay on the Pi; do not copy them into Git.
 
 ## Version choices
 
-The October 1, 2026 inspection found these running versions and prepared targets.
+The October 21, 2026 inspection found these running versions and prepared targets.
 The target files are desired state until deployed and verified live.
 
 | Service | Inspected running state | Prepared target |
 | --- | --- | --- |
-| Docker Engine / containerd | 29.8.1 / 2.3.5 | 29.8.2 / 2.3.6 |
-| Docker Compose / Buildx | 5.5.1 / 0.37.1 | Already current in Docker's ARM64 apt repository |
-| Omni | 1.12.2 | [1.12.3](https://github.com/siderolabs/omni/releases/tag/v1.12.3), pinned in [omni.env.example](../omni/omni.env.example) |
-| Proxmox providers, five containers | 0.3.0 | Already latest stable; keep [existing pins](../proxmox-providers/docker-compose.yml) |
-| Technitium DNS | 15.4.0 | [15.5.1](https://github.com/TechnitiumSoftware/DnsServer/releases/tag/v15.5.1), pinned in [Compose](technitium/docker-compose.yml) |
-| ProxCenter frontend | Native ARM64 1.4.10, Node 26.8.2, Alpine 3.24.1 | Same stable application source; rebuild with Node 26.10.0 / Alpine 3.24.2 |
-| ProxCenter PostgreSQL | 16.15, digest from September 17 | Same major/minor, refreshed image pinned in [override](proxcenter/docker-compose.override.yml) |
+| Docker Engine / containerd | 29.8.2 / 2.3.6 | 29.9.1 / 2.4.2 |
+| Docker Compose / Buildx | 5.5.1 / 0.37.1 | 5.6.0 / 0.38.0 from Docker's ARM64 apt repository |
+| Omni | 1.12.4 | Already current; pinned in [omni.env.example](../omni/omni.env.example) |
+| Proxmox providers | 0.3.0 | Already latest stable; keep [existing pins](../proxmox-providers/docker-compose.yml) |
+| Technitium DNS | 15.5.1 | [15.6.2](https://github.com/TechnitiumSoftware/DnsServer/releases/tag/v15.6.2), pinned in [Compose](technitium/docker-compose.yml) |
+| ProxCenter frontend | Native ARM64 1.4.10, Node 26.10.0 | [1.4.12](https://github.com/adminsyspro/proxcenter-ui/releases/tag/v1.4.12); rebuild with Node 26.12.0 / Alpine 3.24 |
+| ProxCenter PostgreSQL | 16.15-alpine3.24 | Already current; pinned in [override](proxcenter/docker-compose.override.yml) |
+| booter (PXE) | Not deployed | [0.4.0](https://github.com/siderolabs/booter/releases/tag/v0.4.0), pinned in [Compose](booter/docker-compose.yml); see [booter/README.md](booter/README.md) |
 
 Upstream ProxCenter's [publishing workflow](https://github.com/adminsyspro/proxcenter-ui/blob/main/.github/workflows/docker-publish.yml)
-still builds only `linux/amd64`. Its stable `v1.4.10` release resolves to
-`533d8127b60fd5f5d59985109893725c80f1c687`, matching `/opt/proxcenter-src` at inspection.
+still builds only `linux/amd64`. Its stable `v1.4.12` release resolves to
+`ef72b932aafa60f59a2646b8349d815bbd50c38e`.
 Do not run its installer or pull its frontend image on this Pi.
 
 The [build script](proxcenter/build-arm64.sh) downloads that immutable source
@@ -69,7 +70,7 @@ sudo apt-get -s install --only-upgrade docker-ce docker-ce-cli containerd.io doc
 sudo apt-get install --only-upgrade docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
 ```
 
-Expect Docker 29.8.2 and containerd 2.3.6 or the reviewed later patch targets.
+Expect Docker 29.9.1 and containerd 2.4.2 or the reviewed later patch targets.
 Docker's package update can restart all containers. Verify `systemctl is-active
  docker containerd`, `docker ps`, LAN DNS and Omni before continuing.
 
@@ -136,7 +137,7 @@ docker exec proxcenter-frontend wget -qO- http://127.0.0.1:3000/api/health
 docker exec proxcenter-frontend node --version
 ```
 
-Expect `status: healthy`, `db: reachable` and Node `v26.10.0`. Confirm the image
+Expect `status: healthy`, `db: reachable` and Node `v26.12.0`. Confirm the image
 is ARM64, both containers are healthy, and the five configured Proxmox
 connections remain. Preserve the previous frontend image and all data volumes.
 
