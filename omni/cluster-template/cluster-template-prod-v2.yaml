@@ -505,3 +505,54 @@ patches:
     kind: HostnameConfig
     auto: "off"
     hostname: mini-pc-dell-ultra-worker
+---
+# Bare metal (PXE via booter on the Pi): HP Elite Mini 800 G9, pinned by UUID.
+kind: Workers
+name: hp-elite-gen12-workers
+machines:
+- 8e57d492-b3b0-41c5-86a6-47c7c5516434
+systemExtensions:
+- siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+patches:
+# No Longhorn disk label: createDefaultDiskLabeledNodes keeps this node compute-only.
+- name: hp-elite-gen12-worker
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: hp-elite-gen12
+      node.vanillax.dev/pool: general
+      topology.kubernetes.io/zone: hp-elite-gen12
+      node.vanillax.dev/link: wired
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: hp-elite-gen12-kubelet
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
+      systemReserved:
+        cpu: 500m
+        memory: 1Gi
+      kubeReserved:
+        cpu: 250m
+        memory: 512Mi
+---
+kind: Machine
+name: 8e57d492-b3b0-41c5-86a6-47c7c5516434
+install:
+  diskSelector: disk.serial == "S63XNA0TC92107"
+patches:
+- name: hp-elite-gen12-hostname
+  inline:
+    apiVersion: v1alpha1
+    kind: HostnameConfig
+    auto: "off"
+    hostname: hp-elite-gen12
