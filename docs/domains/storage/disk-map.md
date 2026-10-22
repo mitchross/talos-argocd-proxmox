@@ -65,11 +65,12 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 These minis PXE-boot into Omni through booter on the Pi; see
 [booter](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md). Talos installs on the one
 NVMe. The template pins it with `install.diskSelector` on `disk.serial`.
-`hp-elite-gen13` also has a Longhorn disk. The other two are compute-only.
+`hp-elite-gen13` and `mini-pc-dell-ultra-worker` also have a Longhorn disk. `hp-elite-gen12` is compute-only.
 
 | Node | Physical drive | Class | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|
 | `mini-pc-dell-ultra-worker` (Dell Pro Micro) | KIOXIA BG7 256 GB NVMe (serial `3GTCT3A8Z438`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
+| `mini-pc-dell-ultra-worker` | APPLE SSD SM0256 256 GB SATA (no serial; matched by model) | consumer SATA | `/var/mnt/longhorn-dell-ultra-ssd` | `dell-ultra-ssd` (`wired-storage`) | ordinary volumes |
 | `hp-elite-gen12` (HP Elite Mini 800 G9) | Samsung MZVL2256 256 GB NVMe (serial `S63XNA0TC92107`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `hp-elite-gen13` (HP Elite Mini 600 G9) | WD SN530 256 GB NVMe (serial `22245M458316`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `hp-elite-gen13` | Intel 660p 512 GB NVMe (serial `BTNH9154019K512A`) | consumer **QLC**, past its rated writes | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes. **Replace this drive first.** |
