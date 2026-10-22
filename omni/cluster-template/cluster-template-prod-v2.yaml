@@ -486,7 +486,6 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
-# No Longhorn disk label: createDefaultDiskLabeledNodes keeps this node compute-only.
 - name: mini-pc-ultra-worker
   inline:
     apiVersion: v1alpha1
@@ -511,6 +510,28 @@ patches:
       kubeReserved:
         cpu: 250m
         memory: 512Mi
+# Longhorn reads default-disks-config only when its node first registers; add disks to a live node in its nodes.longhorn.io spec.
+- name: mini-pc-ultra-longhorn-disks
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-node-tags: '["wired-storage"]'
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ultra-ssd","path":"/var/mnt/longhorn-dell-ultra-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ultra-ssd"]}]
+# The Apple SATA SSD reports no serial, so match it by model.
+- name: mini-pc-ultra-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-dell-ultra-ssd
+    provisioning:
+      diskSelector:
+        match: disk.model == "APPLE SSD SM0256" && !system_disk
+      minSize: 200GB
+      grow: true
 ---
 # Dell Pro Micro QCM1250. Factory Windows on this NVMe is overwritten on install.
 kind: Machine
