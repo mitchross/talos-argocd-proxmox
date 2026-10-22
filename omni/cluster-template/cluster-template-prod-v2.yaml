@@ -286,7 +286,7 @@ patches:
     annotations:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
-        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]}]
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]},{"name":"hp-sff-ssd2","path":"/var/mnt/longhorn-hp-sff-ssd2","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd2"]}]
 - name: hp-sff-kubelet
   inline:
     apiVersion: v1alpha1
@@ -302,6 +302,17 @@ patches:
       diskSelector:
         match: "!system_disk && disk.size >= 600u * GB"
       minSize: 600GB
+      grow: true
+# Second PNY (920 GiB VM disk); 900 GB floor keeps it off the 690 GiB disk above.
+- name: hp-sff-longhorn-ssd2-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-hp-sff-ssd2
+    provisioning:
+      diskSelector:
+        match: "!system_disk && disk.size >= 900u * GB"
+      minSize: 900GB
       grow: true
 ---
 # Bare metal (PXE via booter on the Pi): HP Elite Mini 600 G9, pinned by UUID.

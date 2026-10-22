@@ -49,7 +49,7 @@ right one.
 |---|---|---|---|---|---|---|
 | Intel DC S3610 400 GB (serial `BTHC650308T8400VGN`) | **enterprise, PLP** | `hp-sff-cp-vmstore` (VG `hp-sff-cp`, thick LVM) | `scsi0` 100 GiB (control plane) | `STATE` + `ETCD` (`/var/lib/etcd`) + `EPHEMERAL` | — | **etcd only.** Never add Longhorn here: it is the only control plane. |
 | PNY CS900 1 TB (serial `…01C1`) | consumer SATA | host root + `hp-prodesk-vmstore` (thick LVM) | 128 GiB + 690 GiB (worker) | `/var` + `/var/mnt/longhorn-hp-sff-ssd` | `hp-sff-ssd` (node tag `wired-storage`) | ordinary volumes, second copies |
-| PNY CS900 1 TB (serial `…01C5`) | consumer SATA | — | — | — | — | spare: an orphan LVM PV in no VG, not wiped |
+| PNY CS900 1 TB (serial `…01C5`) | consumer SATA | `hp-sff-ssd2-vmstore` (VG `hp-sff-ssd2`, thick LVM) | 920 GiB (worker) | `/var/mnt/longhorn-hp-sff-ssd2` | `hp-sff-ssd2` (`wired-storage`) | ordinary volumes, second copies |
 
 Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` serials, not `sdX`.
 
