@@ -38,7 +38,7 @@ reboot hosts or change VMs. Existing SSH and sudo access are required:
 ```sh
 ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/logging-playbook.yaml --syntax-check
 ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/logging-playbook.yaml --limit shed
-ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/logging-playbook.yaml --limit gpu,sff,elite,pi
+ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/logging-playbook.yaml --limit gpu,sff,pi
 ```
 
 Confirm advancing `talos-system` and `host-journal` streams for every expected
