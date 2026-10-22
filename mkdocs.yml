@@ -104,7 +104,9 @@ nav:
           - ArgoCD architecture: domains/argocd/argocd.md
           - Root entrypoints & sync waves: domains/argocd/entrypoints.md
           - Static transition risk check: domains/argocd/gitops-risk-check.md
-          - Temporal safe worker deployments: domains/temporal/safe-deployments.md
+      - Temporal:
+          - Worker versioning — homelab to production: domains/temporal/worker-versioning-guide.md
+          - Safe worker deployments (runbook): domains/temporal/safe-deployments.md
       - Storage:
           - Storage architecture (source of truth): storage-architecture.md
           - Disk map — every disk and where data goes: domains/storage/disk-map.md
