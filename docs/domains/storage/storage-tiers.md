@@ -24,13 +24,13 @@ support the Kopiur workflow; capacity planning must include staging claims.
 
 ## Placement and ownership
 
-The active Omni template configures Longhorn data disks on SFF, Elite and
-Threadripper. The shed's disks are registered but have scheduling disabled. The HP
-Micro in the shed is the machine behind the Wi-Fi media bridge. The bare-metal minis
-(`mini-pc-dell-ultra-worker`, `hp-elite-gen12`) are compute-only: they have no Longhorn disk.
-See the [fleet inventory](../../inventory/2026-10-21-fleet-inventory.md).
+The active Omni template configures Longhorn data disks on SFF (two disks),
+Threadripper, `hp-elite-gen13` and `mini-pc-dell-ultra-worker`. The shed's disks are
+registered but have scheduling disabled. The HP Micro in the shed is the machine
+behind the Wi-Fi media bridge. `hp-elite-gen12` is compute-only: it has no Longhorn disk.
+See the [fleet inventory](../../inventory/2026-10-22-fleet-inventory.md).
 
-The `wired-storage` tag includes SFF, Elite and Threadripper. Which physical disk holds
+The `wired-storage` tag includes SFF, Threadripper, `hp-elite-gen13` and the Dell. Which physical disk holds
 what is listed once in the [disk map](disk-map.md); which volumes keep two
 copies is in [storage architecture](../../storage-architecture.md#two-copies-for-data-that-cant-be-re-created).
 

@@ -98,15 +98,16 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | | Active cluster | Older template reference |
 > |---|---|---|
 > | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
-> | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `hp-elite-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` | `omni/machine-classes/` |
+> | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | HP SFF (house, wired): 1 CP + 1 worker; HP Elite (house, wired): 1 large worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 2 bare-metal mini workers (PXE via booter) | 3 CP + 3 workers + 1 GPU |
+> | Topology | HP SFF (house, wired): 1 CP + 1 worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 3 bare-metal mini workers (PXE via booter) | 3 CP + 3 workers + 1 GPU |
 
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
-100 GiB GPU VM. HP Elite and the shed HP each host one worker. Two bare-metal
-minis (`mini-pc-dell-ultra-worker`, `hp-elite-gen12`) run Talos without Proxmox. Machine
+100 GiB GPU VM; the shed HP hosts one worker. Three bare-metal minis
+(`mini-pc-dell-ultra-worker`, `hp-elite-gen12`, `hp-elite-gen13`) run Talos without
+Proxmox; see [bare-metal Talos workers](docs/domains/hosts/bare-metal-talos.md). Machine
 classes define allocations for newly provisioned VMs, which can differ from
-existing VM settings. See the [fleet inventory](docs/inventory/2026-10-21-fleet-inventory.md)
+existing VM settings. See the [fleet inventory](docs/inventory/2026-10-22-fleet-inventory.md)
 for measured capacity.
 
 This is the only rebuild procedure in this README. Run it from the repository
@@ -133,7 +134,7 @@ disappear from Proxmox.
 ### 2. Apply the machine classes and provision Talos
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
-Apply all five classes before syncing the template; template sync owns the
+Apply all four classes before syncing the template; template sync owns the
 MachineSets. Applying a class does not mutate an existing VM: CPU, RAM, disks,
 and the visible machine identity change only when Omni provisions a replacement
 from that class.
@@ -141,7 +142,6 @@ from that class.
 ```bash
 omnictl apply -f omni/machine-classes/hp-sff-control-plane.yaml
 omnictl apply -f omni/machine-classes/hp-sff-worker.yaml
-omnictl apply -f omni/machine-classes/hp-elite-worker.yaml
 omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
 omnictl apply -f omni/machine-classes/hp-micro-worker.yaml
 omnictl get machineclasses
@@ -157,9 +157,11 @@ omnictl cluster template sync \
 omnictl get machinerequeststatuses -w
 ```
 
-Stop the watch with `Ctrl-C` after all five requests show
+Stop the watch with `Ctrl-C` after all four requests show
 `Provision Complete`. The bare-metal minis make no machine requests. They join
-when booter on the Pi PXE-boots them; check them with `omnictl get machines`. Do not use `cluster template status --wait` here: the
+when booter on the Pi PXE-boots them; check them with `omnictl get machines`.
+Reused data disks on them need a wipe before Longhorn can use them; see
+[bare-metal Talos workers](docs/domains/hosts/bare-metal-talos.md). Do not use `cluster template status --wait` here: the
 cluster cannot become healthy until Cilium is installed in step 5.
 
 > **Sync this template, not a stale working copy.** A 2026-06-11 rebuild used
@@ -439,7 +441,7 @@ Run Omni and `omnictl` **on the same release** (currently `v1.12.4`, pinned in `
 
 ## Hardware
 
-Four Proxmox hosts and two bare-metal minis run the cluster. All are wired except the
+Three Proxmox hosts and three bare-metal minis run the cluster. All are wired except the
 HP micro, which sits in the shed behind a Wi-Fi media bridge.
 
 | Host | Address | CPU / RAM | Role |
@@ -447,9 +449,9 @@ HP micro, which sits in the shed behind a Wi-Fi media bridge.
 | Threadripper (X399) | 192.168.10.14 | 2950X 16c/32t · 128 GB ECC | GPU worker (2x RTX 3090 passthrough) |
 | HP micro (shed) | 192.168.10.20 | i5-8500T 6c · 31 GB | CPU worker, USB radios, Wi-Fi-bridged and solar-fed |
 | HP SFF (ProDesk) | 192.168.10.21 | i5-8500 6c · 63 GB | Control plane + CPU worker |
-| HP Elite | 192.168.10.22 | i5-13500T 20c · 31 GB | CPU worker (NVMe Longhorn disk) |
-| Dell Pro Micro QCM1250 (bare metal) | DHCP | Core Ultra 5 245T 14c · 16 GB | CPU worker `mini-pc-dell-ultra-worker`, compute-only |
-| HP Elite Mini 800 G9 (bare metal) | DHCP | i5-12500T 12t · 16 GB | CPU worker `hp-elite-gen12`, compute-only |
+| Dell Pro Micro QCM1250 (bare metal) | DHCP | Core Ultra 5 245T 14c · 32 GB | CPU worker `mini-pc-dell-ultra-worker`, iGPU + NPU, SATA Longhorn disk |
+| HP Elite Mini 800 G9 (bare metal) | DHCP | i5-12500T 12t · 16 GB | CPU worker `hp-elite-gen12`, Zigbee (Home Assistant), compute-only |
+| HP Elite Mini 600 G9 (bare metal) | DHCP | i5-13500T 20t · 16 GB | CPU worker `hp-elite-gen13`, NVMe Longhorn disk |
 
 ```
 Storage

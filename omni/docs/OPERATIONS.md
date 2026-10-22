@@ -50,7 +50,6 @@ Apply each machine class individually using the `-f` flag:
 ```bash
 omnictl apply -f machine-classes/hp-sff-control-plane.yaml
 omnictl apply -f machine-classes/hp-sff-worker.yaml
-omnictl apply -f machine-classes/hp-elite-worker.yaml
 omnictl apply -f machine-classes/hp-micro-worker.yaml
 omnictl apply -f machine-classes/threadripper-gpu-worker.yaml
 ```

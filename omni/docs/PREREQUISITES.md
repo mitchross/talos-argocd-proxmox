@@ -129,7 +129,7 @@ Save this - you'll use it as `OMNI_ACCOUNT_UUID`.
 After deploying Omni, generate an infrastructure provider key with **omnictl**:
 
 ```bash
-omnictl infraprovider create proxmox-hp-elite
+omnictl infraprovider create proxmox-hp-sff
 ```
 
 This prints an endpoint and a key. The key is **shown exactly once** — copy it
@@ -144,7 +144,7 @@ machines, while a service account key (`omnictl serviceaccount create`) is for
 cluster access.
 
 ⚠️ Provider IDs must be valid **DNS labels** as of Omni v1.10 — lowercase
-letters, digits, and dashes only. `proxmox-hp-elite` is fine; `Proxmox_HP_Elite` is
+letters, digits, and dashes only. `proxmox-hp-sff` is fine; `Proxmox_HP_SFF` is
 rejected.
 
 ## Storage Considerations

@@ -13,11 +13,11 @@ media bridge. Every node address is on the same `192.168.10.0/24`:
   the bare-metal X399/2950X Threadripper host.
 - **HP SFF worker VM** — DHCP on the wired LAN; carries the `wired-storage`
   Longhorn tag.
-- **HP Elite worker VM** — DHCP on the wired LAN; 13th-gen i5-13500T, NVMe
-  Longhorn disk, also `wired-storage`.
-- **Bare-metal mini workers** — `mini-pc-dell-ultra-worker` (Dell Pro Micro) and
-  `hp-elite-gen12` (HP Elite Mini 800 G9). DHCP on the wired LAN, 1 GbE,
-  compute-only. They PXE-boot into Omni through booter on the Pi.
+- **Bare-metal mini workers** — `mini-pc-dell-ultra-worker` (Dell Pro Micro),
+  `hp-elite-gen12` (HP Elite Mini 800 G9) and `hp-elite-gen13` (HP Elite Mini
+  600 G9). DHCP on the wired LAN, 1 GbE. They PXE-boot into Omni through booter
+  on the Pi; see [bare-metal Talos workers](../hosts/bare-metal-talos.md).
+  `hp-elite-gen12` holds the Zigbee stick.
 - **HP micro worker VM** — DHCP, in the shed behind an ASUS RT-AX86U media
   bridge; carries the USB radios and is tainted `node.vanillax.dev/link=wifi`.
 - **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
@@ -51,22 +51,19 @@ instance-manager or replica flows, uses VXLAN.
 | Physical host | Talos role | Network boundary |
 | --- | --- | --- |
 | HP SFF `.21` | One control plane and one worker | Wired; both VMs fail with the same chassis |
-| HP Elite `.22` | One worker | Wired |
 | Threadripper `.14` | One GPU worker, two RTX 3090s | Wired |
 | Dell Pro Micro (bare metal) | Worker `mini-pc-dell-ultra-worker` | Wired 1 GbE; no Proxmox |
-| HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12` | Wired 1 GbE; no Proxmox |
+| HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12`, Zigbee stick | Wired 1 GbE; no Proxmox |
+| HP Elite Mini 600 G9 (bare metal) | Worker `hp-elite-gen13` | Wired 1 GbE; no Proxmox |
 | Shed HP `.20` | One worker with USB radios | Ethernet to ASUS RT-AX86U, then Wi-Fi media bridge |
 | Pi 5 `.15` | Omni, Technitium and booter (PXE), outside Kubernetes | Separate management/DNS host |
 | TrueNAS `.133` | NAS and RustFS, outside Kubernetes | 10 GbE; planned NAS downtime stalls its consumers |
-
-**Plan, not done yet:** the HP Elite `.22` (Mini 600 G9, i5-13500T) will become a
-bare-metal worker named `hp-elite-gen13`. Today it is a Proxmox host with one worker VM.
 
 Firewalla DHCP sends PXE clients to the Pi (option 66 `192.168.10.15`, option 67
 `snp.efi`). See the [booter README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md).
 
 A 10G switch does not give every attached host a 10 GbE link. See the
-[fleet inventory](../../inventory/2026-10-21-fleet-inventory.md) for measured
+[fleet inventory](../../inventory/2026-10-22-fleet-inventory.md) for measured
 host capacity, and the [disk map](../storage/disk-map.md) for disks.
 
 ## IP Assignments
@@ -79,11 +76,10 @@ host capacity, and the [disk map](../storage/disk-map.md) for disks.
 | Proxmox | 192.168.10.14 | Hypervisor |
 | HP micro Proxmox | 192.168.10.20 | Shed hypervisor behind the media bridge; USB radios |
 | HP SFF Proxmox | 192.168.10.21 | CPU-only hypervisor (wired); hosts the control plane |
-| HP Elite Proxmox | 192.168.10.22 | CPU-only hypervisor (wired, i5-13500T) |
 | Technitium / Omni (rpi5) | 192.168.10.15 | Split-DNS for `vanillax.me`, self-hosted Omni, booter PXE server |
 | ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the shed |
 | Control Plane | DHCP | K8s control-plane node; verify live address with `kubectl` |
-| Bare-metal mini workers | DHCP | `mini-pc-dell-ultra-worker`, `hp-elite-gen12`; verify live addresses with `kubectl` |
+| Bare-metal mini workers | DHCP | `mini-pc-dell-ultra-worker`, `hp-elite-gen12`, `hp-elite-gen13`; verify live addresses with `kubectl` |
 | TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
 | GPU Worker | DHCP | K8s GPU worker node; verify live address with `kubectl` |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |

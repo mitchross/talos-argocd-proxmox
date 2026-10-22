@@ -53,16 +53,3 @@ services:
       --provider-name "Proxmox HP SFF"
       --provider-description "HP ProDesk SFF host (192.168.10.21), house, wired"
 
-  hp-elite:
-    <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0@sha256:ff59aec4a164aa4a26296a346e0a8819964e7f946cf86ba4e84f2afec21e5cbd
-    container_name: omni-infra-provider-proxmox-hp-elite
-    volumes:
-      - ./hp-elite.config.yaml:/config.yaml:ro
-    command: >
-      --config-file /config.yaml
-      --omni-api-endpoint ${OMNI_API_ENDPOINT}
-      --omni-service-account-key ${OMNI_INFRA_PROVIDER_KEY_HP_ELITE}
-      --id proxmox-hp-elite
-      --provider-name "Proxmox HP Elite"
-      --provider-description "HP Elite Mini 600 G9 host (192.168.10.22), house, wired, large CPU worker"

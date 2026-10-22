@@ -128,7 +128,7 @@ pvesm status | grep tr-sda-vmstore     # expected: active
 
 Every other storage name the machine classes select (`nvme0-vmstore`,
 `nvme1-vmstore`, `ssd-ent`, `hp-sff-cp-vmstore`, `hp-prodesk-vmstore`,
-`hp-elite-vmstore`, `hp-ssd-vmstore`, `local-lvm`) must also
+`hp-sff-ssd2-vmstore`, `hp-ssd-vmstore`, `local-lvm`) must also
 exist with that exact name. Check each host with `pvesm status`.
 
 ## Adding a disk to a running node
@@ -137,9 +137,11 @@ exist with that exact name. Check each host with `pvesm status`.
    machine class `additional_disks`, so a rebuilt VM gets it.
 2. Attach it to the running VM (the class change alone does not):
    `qm set <vmid> --scsiN <storage>:<GiB>,aio=io_uring,cache=none,discard=on,iothread=1,ssd=1`
-3. Add a `UserVolumeConfig` (unique exact size) and the Longhorn disk entry to the
+3. Add a `UserVolumeConfig` and the Longhorn disk entry to the
    node's section of the cluster template, **at the end of that section** — patch
    IDs are numbered by position, so inserting in the middle renames existing patches.
+   VM disks report no serial, so select by a size floor that no existing disk on
+   the node meets (for example `disk.size >= 900u * GB`).
    Then `omnictl cluster template diff`, then `sync`.
 4. Register the disk on the live Longhorn node (the annotation only applies to new nodes):
    ```bash
