@@ -53,13 +53,6 @@ right one.
 
 Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` serials, not `sdX`.
 
-### HP Elite `.22` — worker
-
-| Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
-|---|---|---|---|---|---|---|
-| WD SN530 256 GB (`nvme1`) | consumer NVMe | host root + `local-lvm` | 128 GiB | `/var` | — | Talos system |
-| Intel 660p 512 GB (`nvme0`) | consumer **QLC**, past its rated writes | `hp-elite-vmstore` | 440 GiB | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes, Home Assistant. **Replace this drive first.** |
-
 ### HP Micro `.20` — shed worker (Wi-Fi link)
 
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
@@ -71,13 +64,15 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 
 These minis PXE-boot into Omni through booter on the Pi; see
 [booter](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md). Talos installs on the one
-NVMe. The template pins it with `install.diskSelector` on `disk.serial`. Both nodes
-are compute-only: they have no Longhorn disk.
+NVMe. The template pins it with `install.diskSelector` on `disk.serial`.
+`hp-elite-gen13` also has a Longhorn disk. The other two are compute-only.
 
 | Node | Physical drive | Class | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|
 | `mini-pc-dell-ultra-worker` (Dell Pro Micro) | KIOXIA BG7 256 GB NVMe (serial `3GTCT3A8Z438`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `hp-elite-gen12` (HP Elite Mini 800 G9) | Samsung MZVL2256 256 GB NVMe (serial `S63XNA0TC92107`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
+| `hp-elite-gen13` (HP Elite Mini 600 G9) | WD SN530 256 GB NVMe (serial `22245M458316`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
+| `hp-elite-gen13` | Intel 660p 512 GB NVMe (serial `BTNH9154019K512A`) | consumer **QLC**, past its rated writes | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes. **Replace this drive first.** |
 
 ## TrueNAS `.133`
 

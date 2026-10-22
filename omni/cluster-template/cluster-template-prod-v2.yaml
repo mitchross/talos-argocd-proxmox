@@ -304,19 +304,20 @@ patches:
       minSize: 600GB
       grow: true
 ---
+# Bare metal (PXE via booter on the Pi): HP Elite Mini 600 G9, pinned by UUID.
 kind: Workers
-name: hp-elite-workers
-machineClass:
-  name: hp-elite-worker
-  size: 1
+name: hp-elite-gen13-workers
+machines:
+- 00e0d31e-1f61-4281-80e0-713248293ae8
 systemExtensions:
+- siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
 - siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
-- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
 - siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
+# Keep class hp-elite-worker: frigate and immich-ml select on it.
 - name: hp-elite-worker
   inline:
     apiVersion: v1alpha1
@@ -350,6 +351,12 @@ patches:
     kind: KubeletConfig
     config:
       serializeImagePulls: false
+      systemReserved:
+        cpu: 500m
+        memory: 1Gi
+      kubeReserved:
+        cpu: 250m
+        memory: 512Mi
 - name: hp-elite-longhorn-nvme-volume
   inline:
     apiVersion: v1alpha1
@@ -357,9 +364,21 @@ patches:
     name: longhorn-hp-elite-nvme
     provisioning:
       diskSelector:
-        match: "!system_disk && disk.size >= 400u * GB"
+        match: disk.serial == "BTNH9154019K512A"
       minSize: 400GB
       grow: true
+---
+kind: Machine
+name: 00e0d31e-1f61-4281-80e0-713248293ae8
+install:
+  diskSelector: disk.serial == "22245M458316"
+patches:
+- name: hp-elite-gen13-hostname
+  inline:
+    apiVersion: v1alpha1
+    kind: HostnameConfig
+    auto: "off"
+    hostname: hp-elite-gen13
 ---
 kind: Workers
 name: gpu-workers
