@@ -13,7 +13,7 @@ The setup involves three main components:
 
 ## Runtime and upgrade
 
-Git declares Frigate **0.18.0-rc2**, pinned by image digest, with one replica on
+Git declares Frigate **0.18.2**, pinned by image digest, with one replica on
 `node.vanillax.dev/class: hp-elite-worker` (the HP Elite i5-13500T). Detection
 uses the bundled **USB Coral EdgeTPU** model. Video decode
 and the existing Nest H.264 re-encode streams also use CPU. The six Nest
@@ -164,8 +164,8 @@ can use VAAPI. With FFmpeg 8, go2rtc hardware transcodes also require an explici
 render path).
 
 Sources: [0.18 RC2 release and breaking changes](https://github.com/blakeblackshear/frigate/discussions/24215),
-[OpenVINO support](https://github.com/blakeblackshear/frigate/blob/v0.18.0-rc2/docs/docs/configuration/object_detectors.md#openvino-detector),
-[FFmpeg 8 hardware transcoding](https://github.com/blakeblackshear/frigate/blob/v0.18.0-rc2/docs/docs/troubleshooting/go2rtc.md#hardware-accelerated-transcoding-with-ffmpeg-8).
+[OpenVINO support](https://github.com/blakeblackshear/frigate/blob/v0.18.2/docs/docs/configuration/object_detectors.md#openvino-detector),
+[FFmpeg 8 hardware transcoding](https://github.com/blakeblackshear/frigate/blob/v0.18.2/docs/docs/troubleshooting/go2rtc.md#hardware-accelerated-transcoding-with-ffmpeg-8).
 
 The ConfigMap remains the Git-owned configuration; make configuration changes
 through PRs. The file declares schema version `0.18-0` and is validated directly
