@@ -24,8 +24,8 @@ site after the audit decisions are settled.
 renders; read-only Kubernetes/Prometheus queries; SSH inventory of five Proxmox
 hosts, TrueNAS, and the Omni/DNS Pi; relevant Mink incident records; owner-confirmed
 constraints. Runtime observations were taken on September 5 and are snapshots,
-not uptime guarantees. The [inventory](2026-09-05-inventory.md) contains the physical
-map, evidence limits, documentation inventory, and downloadable resource lists.
+not uptime guarantees. Its September 5 inventory page was removed on 2026-10-21; the
+[current fleet inventory](../inventory/2026-10-21-fleet-inventory.md) replaces it.
 
 For the consolidated engineering judgment, disk move priorities and proposed
 node pools, read the [hardware and placement review](2026-09-05-hardware-and-placement-review.md).

@@ -1,35 +1,34 @@
 # Inventory
 
-**Start with [Explore the lab](../lab.md)** to see the machines, disks, and
-workload placement. Use [hardware diagnostics](../diagnostics.md) for disk
+**Start with the [fleet inventory](2026-10-21-fleet-inventory.md)** for every machine,
+node and its load today. [Explore the lab](../lab.md) has the interactive map from the
+October 15 snapshot. Use [hardware diagnostics](../diagnostics.md) for disk
 health and repair evidence. For speed verdicts and upgrade priorities, open
 [Audits](../audits/index.md) in the sidebar.
 
+## Fleet inventory — October 21, 2026 (current)
+
+[Open the fleet inventory](2026-10-21-fleet-inventory.md) for every machine and node:
+CPU, RAM, load, uptime, memory requests per node, accelerators, Longhorn disks and
+GitOps health. It is the first snapshot with the two bare-metal minis
+(`mini-pc-dell-ultra-worker`, `hp-elite-gen12`) and without the retired Dell OptiPlex.
+
 ## Full inventory — October 15, 2026
 
-[Open the refreshed inventory](2026-10-15-full-inventory.md) for hosts, VMs, disks,
-Talos mounts, Proxmox storage, Longhorn capacity and management services.
-The explorer uses this snapshot. Older benchmarks retain their original dates.
-
-The Dell OptiPlex in this snapshot is now retired. The snapshot does not show the
-two bare-metal minis; see the [disk map](../domains/storage/disk-map.md) for current hosts.
+[Open the October 15 inventory](2026-10-15-full-inventory.md) for VM disk paths,
+Proxmox storage, physical drives with SMART status, and NAS pools. The explorer
+still uses this snapshot. It shows the Dell OptiPlex (now retired) and not the minis.
 
 ## Where every disk is
 
 The [disk map](../domains/storage/disk-map.md) is the current, maintained answer
 to "which physical disk holds this data, and where should new data go?".
 
-## etcd and Dell boot disks — October 11, 2026
+## etcd on the Intel S3610 — October 11, 2026
 
 | Open | What it answers |
 | --- | --- |
-| [etcd and Dell boot disks](2026-10-11-etcd-and-dell-boot-disks.md) | How much faster is etcd on the Intel S3610? How does the Dell's new boot drive compare with the Apple drive? |
-
-## radar-ng stress test — September 26, 2026
-
-| Open | What it answers |
-| --- | --- |
-| [radar-ng stress test](2026-09-26-radar-ng-stress-test.md) | Where does the radar-ng tile-server break, and why did it restart under load? |
+| [etcd on the Intel S3610](2026-10-11-etcd-on-s3610.md) | How much faster is etcd on an enterprise SSD? What latency should a new control plane match? |
 
 ## Storage audit — September 26, 2026
 
@@ -37,11 +36,11 @@ to "which physical disk holds this data, and where should new data go?".
 | --- | --- |
 | [Storage audit](2026-09-26-storage-audit.md) | How much do the SSDs write per day? Which disks are full on paper? What is at risk on the NAS? |
 
-## Current measurements — September 20, 2026
+## Benchmarks — September 20, 2026
 
 | Open | What it answers |
 | --- | --- |
-| [Fleet capacity and benchmarks](2026-09-20-capacity-and-benchmarks.md) | Which paths are fast or slow? What limits consolidation and future upgrades? |
+| [Disk and network benchmarks](2026-09-20-capacity-and-benchmarks.md) | Which disk and network paths are fast or slow? Its host list predates the minis and includes the retired Dell. |
 | [NAS hardware and performance](../nas-performance.md) | How fast are the pools, how much does RAM help, and what happens with four transfers? |
 | [Hardware diagnostics](../diagnostics.md) | How do the new measurements fit the existing disk and repair evidence? |
 | [Explore the lab](../lab.md) | What is in each machine? Open its latest measurement alongside the hardware snapshot. |
@@ -49,12 +48,6 @@ to "which physical disk holds this data, and where should new data go?".
 These are measured snapshots, not live monitoring. Each dataset retains its own
 date and test method. New results replace older current recommendations; the
 older observations remain available for historical comparison.
-
-## Historical inventory
-
-The [September 5 inventory](../audits/2026-09-05-inventory.md) retains its
-repository counts, host map and downloadable resource lists. Do not use its old
-performance or placement figures in preference to the September 20 assessment.
 
 Open [audits](../audits/index.md) for prioritized findings, or
 [ongoing research](../research/index.md) for changes still being considered.
