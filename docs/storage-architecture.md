@@ -248,32 +248,32 @@ drive → Proxmox storage → VM disk → mount) is in the [disk map](domains/st
 
 | Disk | Physical drive | Holds |
 |---|---|---|
-| `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | 440 GiB guest disk on a mirrored HPE enterprise SATA pair | GPU-node hot volumes and **every kopiur backup clone** (`longhorn-kopiur-staging-local` selects `clone-ok`) |
+| `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | 440 GiB guest disk on a mirrored HPE enterprise SATA pair | GPU-node hot volumes and kopiur backup clones (`longhorn-kopiur-staging-local` selects `clone-ok`) |
+| `hp-sff-ssd2` (hp-sff, tags `hp-sff-ssd2`, `clone-ok`) | 920 GiB guest disk on a consumer PNY 1 TB | ordinary replicas, and backup clones when the GPU node is down or full |
 | `gpu-bulk` (GPU node, tag `gpu-bulk`) | 800 GiB guest disk on the Threadripper's consumer PNY boot SSD | ordinary GPU-node volumes, so they don't take `clone-ok` space from backup clones |
 | `talos-ephemeral` on the GPU node | budget NVMe that also carries `/var` | nothing new (`allowScheduling: false`) |
-| `hp-elite-nvme`, `hp-sff-ssd` (`wired-storage` nodes; the GPU node carries the tag too) | consumer SATA/QLC | ordinary replicas |
+| `hp-elite-nvme`, `hp-sff-ssd`, `dell-ultra-ssd` (`wired-storage` nodes; the GPU node carries the tag too) | consumer SATA/QLC | ordinary replicas |
 | hp-sff's second SSD | budget SATA | **etcd only** — keep Longhorn traffic off the single control plane's disk |
 | `hp-micro-ssd` (shed) | budget SATA behind Wi-Fi | nothing (`allowScheduling: false`) — never replicas or second copies |
 
-Only the `clone-ok` disk takes backup clones because every kopiur run clones
-the whole volume; see [disk writes](domains/storage/disk-writes.md) for the
+Only `clone-ok` disks take backup clones because every kopiur run clones
+the whole volume. Two disks on two hosts carry the tag, so one dead host does not stop backups; see [disk writes](domains/storage/disk-writes.md) for the
 rest of the write budget.
 
 ### Two copies for data that can't be re-created
 
-Most volumes are one replica: losing a node takes its apps down until it
-returns (or kopiur restores them). Data you'd hate to lose runs two replicas on
-different wired nodes (hard replica anti-affinity):
+The default `longhorn` class and `longhorn-wired-ha` both make two replicas on
+different `wired-storage` nodes (hard replica anti-affinity). A new or restored
+volume gets two copies from its class, so losing one node does not stop it.
 
-- **`longhorn-wired-ha` StorageClass** — open-webui, temporal, surfsense,
-  intercept. Two copies come from the class itself.
-- **Raised by hand on the Longhorn Volume** (a PVC's StorageClass cannot be
-  changed) — `home-assistant/config`, `paperless-ngx/data`,
-  `paperless-ngx/media`, `paperless-ngx/paperless-postgres-data`,
-  `immich/immich-postgres-data`, `gitea/gitea-postgres-data`.
+Exceptions keep one copy:
 
-The hand-raised setting lives only on the live Volume, so a rebuild or restore
-brings these back as one replica. Re-apply it for each `<ns>/<pvc>` above:
+- **`longhorn-flash`** — one disk on one host. Its users (PostHog, radar-ng,
+  Prometheus, Loki) stop when the Threadripper stops.
+- **Volumes created before the two-copy default.** Their count lives on the live
+  Volume. Caches and re-creatable data stay at one copy on purpose.
+
+To raise one existing volume to two copies, run this for its `<ns>/<pvc>`:
 
 ```bash
 pv=$(kubectl -n <ns> get pvc <pvc> -o jsonpath='{.spec.volumeName}')

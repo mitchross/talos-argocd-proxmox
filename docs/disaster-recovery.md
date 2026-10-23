@@ -318,10 +318,9 @@ Record all four acceptance checks, with live evidence:
    a new workflow/timer. For apps with separate file/database PVCs, confirm both
    restore points describe compatible data. Validate restored credentials against
    1Password before treating an authentication failure as data corruption.
-4. **Second replicas**: restored volumes come back with one replica. Re-apply
-   `numberOfReplicas: 2` to the volumes listed in
-   [two copies for data that can't be re-created](storage-architecture.md#two-copies-for-data-that-cant-be-re-created)
-   (the command is there), and confirm each reaches `2 healthy`.
+4. **Second replicas**: restored `longhorn` and `longhorn-wired-ha` volumes get two
+   replicas from their class. Confirm they reach `2 healthy`; see
+   [two copies for data that can't be re-created](storage-architecture.md#two-copies-for-data-that-cant-be-re-created).
 
 ---
 
