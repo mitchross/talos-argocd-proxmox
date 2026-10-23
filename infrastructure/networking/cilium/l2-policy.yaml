@@ -12,9 +12,9 @@ metadata:
 spec:
   loadBalancerIPs: true
 
-  # VMs name NICs ens18; bare metal uses eno1/enp128s31f6, which the old eth|ens regex missed.
+  # VM ens18, bare-metal eno1/enp*, USB enx<MAC>; an unmatched NIC on the lease holder blackholes the IP.
   interfaces:
-    - ^(eth|en[osp])[0-9a-z]+$
+    - ^(eth|en[ospx])[0-9a-z]+$
 
 
   # Announce for all LoadBalancer services
