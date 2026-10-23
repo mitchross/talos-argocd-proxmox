@@ -18,5 +18,6 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "2"
+          # Downloads burst far above any request; with no CPU limit, a higher request only blocks scheduling.
+          cpu: "1"
           memory: 4Gi

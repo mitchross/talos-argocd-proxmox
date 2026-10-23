@@ -7,9 +7,9 @@ holds, and the placement table this command applies.
 
 Answer from the app's docs or source, not from its name:
 
-- **Database?** (Postgres, MySQL, SQLite, Redis with persistence) → `longhorn`.
-  Use `longhorn-wired-ha` only if the app must survive a node loss. Never NFS.
-- **Heavy writer?** (ClickHouse, time-series, tile renderers, anything writing
+- **Database?** (Postgres, MySQL, SQLite, Redis with persistence) → `longhorn`
+  (two copies on different wired nodes). Never NFS.
+- **Heavy writer?** (ClickHouse, Kafka, tile renderers, anything writing
   GBs per hour) → `longhorn-flash`, the only enterprise drive.
 - **Bulk, read-mostly files the app creates?** (photo libraries, downloads,
   archives) → `truenas-nfs`, `ReadWriteMany`. It creates only ~50 files/s, so not

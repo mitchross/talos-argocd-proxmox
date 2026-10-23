@@ -269,9 +269,12 @@ volume gets two copies from its class, so losing one node does not stop it.
 Exceptions keep one copy:
 
 - **`longhorn-flash`** — one disk on one host. Its users (PostHog, radar-ng,
-  Prometheus, Loki) stop when the Threadripper stops.
+  product-bench) stop when the Threadripper stops. PostHog is also pinned there by memory.
 - **Volumes created before the two-copy default.** Their count lives on the live
   Volume. Caches and re-creatable data stay at one copy on purpose.
+
+Two copies survive one failed node, not a house power cut: every wired node
+loses power at once. Recover damaged data from the kopiur backup.
 
 To raise one existing volume to two copies, run this for its `<ns>/<pvc>`:
 

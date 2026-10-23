@@ -39,7 +39,7 @@ right one.
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
 | PNY CS900 1 TB (`sda`) | consumer SATA | host root + `tr-sda-vmstore` (thick LVM) | `scsi4` 800 GiB | `/var/mnt/longhorn-gpu-bulk` | `gpu-bulk` (tag `gpu-bulk`) | ordinary app volumes for GPU-node pods (photon, project-nomad, small databases) |
-| 2× HPE MK000480GWCEV 480 GB (`sdb`+`sdc`, mdadm mirror) | **enterprise, PLP** | `ssd-ent` (thick LVM) | `scsi3` 440 GiB | `/var/mnt/longhorn-ssd-flash` | `ssd-flash` (tags `flash`, `clone-ok`) | heavy writers (`longhorn-flash` class: PostHog, radar-ng, Prometheus, Loki) and **every kopiur backup clone** |
+| 2× HPE MK000480GWCEV 480 GB (`sdb`+`sdc`, mdadm mirror) | **enterprise, PLP** | `ssd-ent` (thick LVM) | `scsi3` 440 GiB | `/var/mnt/longhorn-ssd-flash` | `ssd-flash` (tags `flash`, `clone-ok`) | heavy writers (`longhorn-flash` class: PostHog, radar-ng, product-bench) and **every kopiur backup clone** |
 | EDILOCA EN605 512 GB (`nvme0`) | consumer NVMe | `nvme0-vmstore` (thin) | `scsi0` 16 GiB + `scsi1` 434 GiB | Talos boot + `EPHEMERAL` (`/var`) | `talos-ephemeral` (scheduling **off**) | container images, logs, `emptyDir` |
 | EDILOCA EN605 512 GB (`nvme1`) | consumer NVMe | `nvme1-vmstore` (thin) | `scsi2` 450 GiB | `/var/mnt/ai-model-cache` | — | vLLM model cache (`ai-model-cache-local` PV) |
 
@@ -99,8 +99,8 @@ from a pod, NFS created about 50 small files per second and did about 110
 
 | The data is… | Put it on | Why |
 |---|---|---|
-| A database (Postgres, MySQL, SQLite, Redis with persistence) | `longhorn` (or `longhorn-wired-ha` if it must survive a node loss) | databases wait on every write; NFS makes each one slow |
-| A heavy writer (ClickHouse, time-series, tile renderers) | `longhorn-flash` | only the enterprise drive can take that write volume |
+| A database (Postgres, MySQL, SQLite, Redis with persistence) | `longhorn` (two copies) | databases wait on every write; NFS makes each one slow |
+| A heavy writer (ClickHouse, Kafka, tile renderers) | `longhorn-flash` | only the enterprise drive can take that write volume |
 | Bulk, read-mostly files (media, downloads, archives, photo libraries) | `truenas-nfs` | lots of space, no SSD wear, served from the NAS RAM cache |
 | A cache that rebuilds itself | `longhorn`, sized to what it really uses | small and local; never back it up |
 | Anything that runs Docker/overlay storage or an embedded search engine | `longhorn` | overlay filesystems and search-index locking don't work well on NFS |

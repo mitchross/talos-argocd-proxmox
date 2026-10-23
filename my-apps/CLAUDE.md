@@ -173,7 +173,7 @@ Full reasoning + measured numbers: **`docs/domains/storage/storage-tiers.md`**.
 | Use | Class | Why |
 |-----|-------|-----|
 | **Anything RWO** — app state, databases, caches | `longhorn` (default) | node-local block. **Databases included.** |
-| **Heavy writers** — ClickHouse, time-series, tile renderers | `longhorn-flash` | the only enterprise (high-endurance) drive |
+| **Heavy writers** — ClickHouse, Kafka, tile renderers | `longhorn-flash` | the only enterprise (high-endurance) drive |
 | **Bulk, read-mostly files you create** — photo libraries, downloads, archives | `truenas-nfs` | NAS space, no SSD wear; ~50 creates/s, so not for write-heavy or many-tiny-file churn. kopiur policy uses `copyMethod: Direct` (see `my-apps/media/immich/`) |
 | **Existing NAS shares / media / model weights** | static NFS or SMB PVs | files, not blocks |
 
