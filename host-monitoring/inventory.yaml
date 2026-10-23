@@ -14,9 +14,6 @@ all:
             sff:
               ansible_host: 192.168.10.21
               physical_host: hp-sff
-            elite:
-              ansible_host: 192.168.10.22
-              physical_host: hp-elite
             shed:
               ansible_host: 192.168.10.20
               physical_host: hp-shed

@@ -42,9 +42,9 @@ spec:
           mountPath: /custom
       containers:
       - name: frigate
-        # Keep the release candidate pinned until Nest streaming is verified.
+        # 0.18.2+ required: earlier 0.18 builds have root RCE via go2rtc (GHSA-93xj-hg88-ffg7).
         # renovate: ignore
-        image: ghcr.io/blakeblackshear/frigate:0.18.0-rc2@sha256:9678a83a76e4730ac7d9ea7428370e32ae656d6b312aaad30d6c69f3fef14d35
+        image: ghcr.io/blakeblackshear/frigate:0.18.2@sha256:fd60f99ffd4eb6c42360ed4e14953e270586f239309ab3983e55b2e97ffac09a
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
