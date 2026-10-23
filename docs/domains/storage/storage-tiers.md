@@ -18,7 +18,7 @@ The class name alone does not describe the physical device or prove availability
 
 `longhorn-kopiur-staging-local` is a separate, disposable restore/backup staging
 mechanism. Do not select it for authoritative application data. Its clones
-land only on disks tagged `clone-ok`: the Threadripper flash disk and `hp-sff-ssd2`, so backups keep running when either node is down. Its
+land only on disks tagged `clone-ok`: the Threadripper flash disk and `hp-sff-ssd2`. Either disk can take any clone. A dead host no longer blocks clones, but a volume whose only copy is on that host cannot be backed up. Its
 WaitForFirstConsumer behavior and the existing Longhorn overprovisioning allowance
 support the Kopiur workflow; capacity planning must include staging claims.
 

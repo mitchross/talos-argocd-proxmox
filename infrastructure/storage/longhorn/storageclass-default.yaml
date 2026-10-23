@@ -16,6 +16,8 @@ parameters:
   # Two copies on different wired nodes: one dead node must not strand a volume.
   numberOfReplicas: "2"
   nodeSelector: "wired-storage"
+  replicaSoftAntiAffinity: "disabled"
+  replicaZoneSoftAntiAffinity: "disabled"
   staleReplicaTimeout: "30"
   fromBackup: ""
   fsType: "ext4"

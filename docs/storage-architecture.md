@@ -249,7 +249,7 @@ drive → Proxmox storage → VM disk → mount) is in the [disk map](domains/st
 | Disk | Physical drive | Holds |
 |---|---|---|
 | `ssd-flash` (GPU node, tags `flash`, `clone-ok`) | 440 GiB guest disk on a mirrored HPE enterprise SATA pair | GPU-node hot volumes and kopiur backup clones (`longhorn-kopiur-staging-local` selects `clone-ok`) |
-| `hp-sff-ssd2` (hp-sff, tags `hp-sff-ssd2`, `clone-ok`) | 920 GiB guest disk on a consumer PNY 1 TB | ordinary replicas, and backup clones when the GPU node is down or full |
+| `hp-sff-ssd2` (hp-sff, tags `hp-sff-ssd2`, `clone-ok`) | 920 GiB guest disk on a consumer PNY 1 TB | ordinary replicas and backup clones; Longhorn picks either `clone-ok` disk for each clone |
 | `gpu-bulk` (GPU node, tag `gpu-bulk`) | 800 GiB guest disk on the Threadripper's consumer PNY boot SSD | ordinary GPU-node volumes, so they don't take `clone-ok` space from backup clones |
 | `talos-ephemeral` on the GPU node | budget NVMe that also carries `/var` | nothing new (`allowScheduling: false`) |
 | `hp-elite-nvme`, `hp-sff-ssd`, `dell-ultra-ssd` (`wired-storage` nodes; the GPU node carries the tag too) | consumer SATA/QLC | ordinary replicas |
@@ -257,7 +257,7 @@ drive → Proxmox storage → VM disk → mount) is in the [disk map](domains/st
 | `hp-micro-ssd` (shed) | budget SATA behind Wi-Fi | nothing (`allowScheduling: false`) — never replicas or second copies |
 
 Only `clone-ok` disks take backup clones because every kopiur run clones
-the whole volume. Two disks on two hosts carry the tag, so one dead host does not stop backups; see [disk writes](domains/storage/disk-writes.md) for the
+the whole volume. Two disks on two hosts carry the tag, so one dead host no longer blocks clones of volumes that still have a readable copy. A volume whose only copy is on the dead host still cannot be backed up; see [disk writes](domains/storage/disk-writes.md) for the
 rest of the write budget.
 
 ### Two copies for data that can't be re-created
