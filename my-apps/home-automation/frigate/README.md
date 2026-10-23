@@ -13,6 +13,13 @@ The setup involves three main components:
 
 ## Runtime and upgrade
 
+> **Current state:** the USB Coral is retired and the HP Elite is now the
+> bare-metal node `hp-elite-gen13`. The deployment below still selects the
+> `custom-usb.coral-tpu` label, so no node matches and the pod stays `Pending`.
+> Frigate moves to the Dell Pro Micro (`mini-pc-dell-ultra-worker`) with OpenVINO
+> on its NPU in [#3088](https://github.com/mitchross/talos-argocd-proxmox/issues/3088).
+> The Coral sections describe the declared config until that change lands.
+
 Git declares Frigate **0.18.2**, pinned by image digest, with one replica on
 `node.vanillax.dev/class: hp-elite-worker` (the HP Elite i5-13500T). Detection
 uses the bundled **USB Coral EdgeTPU** model. Video decode
@@ -329,7 +336,7 @@ Nest credentials:
 kubectl -n frigate get pods
 kubectl -n frigate get events --sort-by=.lastTimestamp
 kubectl -n frigate get vpa frigate -o yaml
-kubectl describe node talos-prod-cluster-v2-hp-elite-workers-rgkw5s
+kubectl describe node -l node.vanillax.dev/class=hp-elite-worker
 ```
 
 A verified outage followed `ResizeDeferred`, `EvictedByVPA`, then

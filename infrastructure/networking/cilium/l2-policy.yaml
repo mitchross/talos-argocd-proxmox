@@ -12,9 +12,9 @@ metadata:
 spec:
   loadBalancerIPs: true
 
-  # Matches Talos eth/ens interfaces, including eth0.
+  # VM ens18, bare-metal eno1/enp*, USB enx<MAC>; an unmatched NIC on the lease holder blackholes the IP.
   interfaces:
-    - ^(eth|ens)\d+$
+    - ^(eth|en[ospx])[0-9a-z]+$
 
 
   # Announce for all LoadBalancer services
