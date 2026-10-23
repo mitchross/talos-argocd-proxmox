@@ -12,9 +12,9 @@ metadata:
 spec:
   loadBalancerIPs: true
 
-  # Matches Talos eth/ens interfaces, including eth0.
+  # VMs name NICs ens18; bare metal uses eno1/enp128s31f6, which the old eth|ens regex missed.
   interfaces:
-    - ^(eth|ens)\d+$
+    - ^(eth|en[osp])[0-9a-z]+$
 
 
   # Announce for all LoadBalancer services
