@@ -1,15 +1,18 @@
 # Cluster Topology
 
-`talos-prod-cluster-v2` spreads one control plane and five workers across five
-Proxmox hosts. Each host is its own failure domain, named by the
-`topology.kubernetes.io/zone` label on its nodes.
+`talos-prod-cluster-v2` runs one control plane and three workers as VMs on three
+Proxmox hosts, plus three bare-metal workers (see
+[bare-metal Talos workers](../../docs/domains/hosts/bare-metal-talos.md)). Each host
+is its own failure domain, named by the `topology.kubernetes.io/zone` label on its nodes.
 
 | Host | IP | Zone | Guests |
 |---|---|---|---|
 | HP ProDesk SFF | 192.168.10.21 | `hp-sff` | control plane, general worker |
-| HP Elite Mini 600 G9 | 192.168.10.22 | `hp-elite` | large general worker |
 | Threadripper | 192.168.10.14 | `house` | GPU worker only |
 | HP 600 G4 micro | 192.168.10.20 | `shed` | worker with the USB radios |
+| HP Elite Mini 600 G9 (bare metal) | DHCP | `hp-elite` | `hp-elite-gen13`, no Proxmox |
+| HP Elite Mini 800 G9 (bare metal) | DHCP | `hp-elite-gen12` | `hp-elite-gen12`, no Proxmox |
+| Dell Pro Micro (bare metal) | DHCP | `mini-pc-dell-ultra` | `mini-pc-dell-ultra-worker`, no Proxmox |
 
 There is one etcd member. The cluster is not HA: losing the HP SFF stops the
 Kubernetes API until it returns.
@@ -90,8 +93,7 @@ Set up remote kernel logging before trusting any diagnosis of that host — see
 | VM | vCPU | RAM | Host RAM | Disks |
 |---|---|---|---|---|
 | `hp-sff-control-plane` | 4 | 12 GiB | 62 GiB | 100 GiB on its own SSD (`hp-sff-cp-vmstore`) |
-| `hp-sff-worker` | 6 | 40 GiB | (same host) | 128 GiB boot + 690 GiB Longhorn |
-| `hp-elite-worker` | 16 | 24 GiB | 30 GiB | 128 GiB boot + 440 GiB Longhorn |
+| `hp-sff-worker` | 6 | 40 GiB | (same host) | 128 GiB boot + 690 GiB Longhorn + 920 GiB Longhorn (`hp-sff-ssd2-vmstore`) |
 | `threadripper-gpu-worker` | 30 | 100 GiB | 125 GiB | 16 GiB boot + 434 GiB EPHEMERAL + 450 GiB models + 440 GiB flash + 800 GiB bulk; 2x RTX 3090 |
 | `hp-micro-worker` | 4 | 12 GiB | 15 GiB | 128 GiB boot + 850 GiB Longhorn (unschedulable) |
 
@@ -121,7 +123,7 @@ GiB free, and its 690 GiB Longhorn LV is XFS, which cannot be shrunk in place.
 Keep that VG thick. An lvmthin pool's metadata commits collapse fsync
 throughput, which is precisely what etcd depends on.
 
-The HP Elite Longhorn disk is the 512 GB Intel NVMe. SMART reported 74% wear
+The `hp-elite-gen13` Longhorn disk is the 512 GB Intel 660p. SMART reported 74% wear
 when it was commissioned, with zero media/data-integrity errors; watch its wear
 and error counters and replace it before exhaustion.
 

@@ -5,7 +5,8 @@ machines into Omni. A machine with an empty disk boots Talos from the network an
 appears in **Omni → Machines** as an available machine. No USB stick is needed.
 
 booter does not add a machine to a cluster, label it or wipe its disks. The
-cluster template does that.
+cluster template does that. For the full add-or-convert procedure, see
+[bare-metal Talos workers](https://github.com/mitchross/talos-argocd-proxmox/blob/main/docs/domains/hosts/bare-metal-talos.md).
 
 ## How it works
 

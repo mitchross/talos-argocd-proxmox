@@ -13,6 +13,7 @@ below. Each runbook carries its own prerequisites, checks, and recovery steps.
 | Databases | How this lab runs and protects Postgres | [Run Postgres here](../domains/cnpg/run-postgres-plain-english.md) |
 | Networking | How clients and applications reach each other | [Network topology](../domains/networking/topology.md) |
 | Physical hosts | How the Proxmox hosts and Pi are configured with Ansible, outside Argo CD | [Physical hosts with Ansible](../domains/hosts/physical-hosts-ansible.md) |
+| Bare-metal nodes | Add a machine or convert a Proxmox host to bare-metal Talos, wipe reused disks, register Longhorn disks | [Bare-metal Talos workers](../domains/hosts/bare-metal-talos.md) |
 | AI / GPU | How models are served and GPU capacity is managed | [Model catalog](../domains/ai-gpu/model-catalog.md) |
 | Reference & ops | Scheduling policy, observability, and maintenance | [VPA and topology](../domains/scheduling/vpa-and-topology.md) |
 

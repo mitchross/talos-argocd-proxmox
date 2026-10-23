@@ -1,17 +1,24 @@
 # Inventory
 
-**Start with the [fleet inventory](2026-10-21-fleet-inventory.md)** for every machine,
+**Start with the [fleet inventory](2026-10-22-fleet-inventory.md)** for every machine,
 node and its load today. [Explore the lab](../lab.md) has the interactive map from the
 October 15 snapshot. Use [hardware diagnostics](../diagnostics.md) for disk
 health and repair evidence. For speed verdicts and upgrade priorities, open
 [Audits](../audits/index.md) in the sidebar.
 
-## Fleet inventory — October 21, 2026 (current)
+## Fleet inventory — October 22, 2026 (current)
+
+[Open the fleet inventory](2026-10-22-fleet-inventory.md) for every machine and node:
+CPU, RAM, load, memory requests, accelerators, Longhorn disks and GitOps health. It is the
+first snapshot with three bare-metal minis (`hp-elite-gen13` replaced the `.22` Proxmox host)
+and with every non-Wi-Fi data disk in Longhorn.
+
+## Fleet inventory — October 21, 2026
 
 [Open the fleet inventory](2026-10-21-fleet-inventory.md) for every machine and node:
 CPU, RAM, load, uptime, memory requests per node, accelerators, Longhorn disks and
-GitOps health. It is the first snapshot with the two bare-metal minis
-(`mini-pc-dell-ultra-worker`, `hp-elite-gen12`) and without the retired Dell OptiPlex.
+GitOps health, with the `.22` HP Elite still a Proxmox host. It is the first snapshot
+with the two bare-metal minis and without the retired Dell OptiPlex.
 
 ## Full inventory — October 15, 2026
 

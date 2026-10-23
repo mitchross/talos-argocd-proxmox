@@ -135,6 +135,7 @@ nav:
           - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
       - Physical hosts:
           - Ansible host management: domains/hosts/physical-hosts-ansible.md
+          - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
       - AI / GPU:
           - Model catalog: domains/ai-gpu/model-catalog.md
           - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
@@ -152,6 +153,7 @@ nav:
           - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
   - Inventory:
       - inventory/index.md
+      - Fleet inventory — 22 October: inventory/2026-10-22-fleet-inventory.md
       - Fleet inventory — 21 October: inventory/2026-10-21-fleet-inventory.md
       - Full inventory — 15 October: inventory/2026-10-15-full-inventory.md
       - Explore the lab: lab.md
