@@ -66,10 +66,6 @@ prometheus:
             labels:
               physical_host: hp-sff
               host_type: proxmox
-          - targets: ["192.168.10.22:9100"]
-            labels:
-              physical_host: hp-elite
-              host_type: proxmox
           - targets: ["192.168.10.20:9100"]
             labels:
               physical_host: hp-shed
@@ -103,9 +99,6 @@ prometheus:
           - targets: ["192.168.10.21:8889"]
             labels:
               physical_host: hp-sff
-          - targets: ["192.168.10.22:8889"]
-            labels:
-              physical_host: hp-elite
           - targets: ["192.168.10.20:8889"]
             labels:
               physical_host: hp-shed
@@ -123,10 +116,6 @@ prometheus:
           - targets: ["192.168.10.21:9633"]
             labels:
               physical_host: hp-sff
-              host_type: proxmox
-          - targets: ["192.168.10.22:9633"]
-            labels:
-              physical_host: hp-elite
               host_type: proxmox
           - targets: ["192.168.10.20:9633"]
             labels:
