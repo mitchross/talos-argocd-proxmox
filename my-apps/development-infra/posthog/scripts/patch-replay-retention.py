@@ -41,7 +41,7 @@ def patch_source(source):
 
 
 if __name__ == "__main__":
-    path = Path("/code/posthog/api/team.py")
+    path = Path("/code/posthog/api/team/team_serializer.py")
     original = path.read_text()
     patched = patch_source(original)
     if patched != original:
