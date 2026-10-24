@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: cobalt
-        image: ghcr.io/imputnet/cobalt:11@sha256:63186dd68afd57ce3bb1f62cc4c139f5fa95b9c3e87a3cf5c6e4c7a570523f62
+        image: ghcr.io/imputnet/cobalt:11@sha256:28540f81d2cffbd9d089c08438e39a7689a7cee7e9a5b0f60de93a22d19f5dbe
         imagePullPolicy: IfNotPresent
         env:
         - name: API_URL
