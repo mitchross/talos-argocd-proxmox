@@ -67,7 +67,7 @@ backend:
   replicas: 1
   # Write-path WAL/cache only; log data lives on S3. Backup-exempt, rebuilds from S3.
   persistence:
-    storageClass: longhorn-flash
+    storageClass: longhorn
   resources:
     requests:
       cpu: 50m
@@ -90,9 +90,9 @@ read:
       name: loki-s3-credentials
 write:
   replicas: 1
-  # Local write-path state on the flash isolation tier (log data is on S3/RustFS).
+  # Local write-path state only (log data is on S3/RustFS).
   persistence:
-    storageClass: longhorn-flash
+    storageClass: longhorn
   resources:
     requests:
       cpu: 50m

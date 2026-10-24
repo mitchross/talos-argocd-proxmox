@@ -34,7 +34,13 @@ deschedulerPolicy:
                   protectedStorageClasses:
                     - name: longhorn-flash
                     - name: longhorn-wired-ha
+                    - name: longhorn-kopiur-staging-local
         - name: RemoveDuplicates
+          args:
+            namespaces:
+              exclude:
+                - kube-system
+                - longhorn-system
         # Memory only (cpu/pods omitted = 100% = ignored): under 55% receives, over 65% sheds. The 10-pt gap stops ping-pong.
         - name: LowNodeUtilization
           args:
@@ -42,6 +48,8 @@ deschedulerPolicy:
             evictableNamespaces:
               exclude:
                 - kube-system
+                # Evicting Longhorn CSI/manager pods restarts attach and backup work cluster-wide.
+                - longhorn-system
             thresholds:
               memory: 55
             targetThresholds:

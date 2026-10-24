@@ -26,7 +26,9 @@ prometheus:
           annotations:
             storage.vanillax.dev/backup-exempt-reason: "Prometheus metrics are re-scrapeable; monitoring data not worth backup pipeline overhead"
         spec:
-          storageClassName: longhorn-flash
+          # Two wired copies keep metrics up when the GPU node is down (~6 GB/day written).
+          # The operator never moves the bound PVC: delete it to change class.
+          storageClassName: longhorn
           accessModes:
             - ReadWriteOnce
           resources:
@@ -219,7 +221,7 @@ alertmanager:
           annotations:
             storage.vanillax.dev/backup-exempt-reason: "Alertmanager silences are operator-set; trivially recreated"
         spec:
-          storageClassName: longhorn-flash
+          storageClassName: longhorn
           accessModes:
             - ReadWriteOnce
           resources:
@@ -267,7 +269,7 @@ grafana:
     passwordKey: admin-password
   persistence:
     enabled: true
-    storageClassName: longhorn-flash
+    storageClassName: longhorn
     size: 10Gi
     accessModes:
       - ReadWriteOnce

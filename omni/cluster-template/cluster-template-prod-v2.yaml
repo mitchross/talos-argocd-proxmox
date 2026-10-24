@@ -286,7 +286,7 @@ patches:
     annotations:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
-        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]},{"name":"hp-sff-ssd2","path":"/var/mnt/longhorn-hp-sff-ssd2","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd2"]}]
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-sff-ssd","path":"/var/mnt/longhorn-hp-sff-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd"]},{"name":"hp-sff-ssd2","path":"/var/mnt/longhorn-hp-sff-ssd2","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-sff-ssd2","clone-ok"]}]
 - name: hp-sff-kubelet
   inline:
     apiVersion: v1alpha1
@@ -465,7 +465,7 @@ patches:
         match: '!system_disk && disk.size == 434u * GiB'
       minSize: 400GiB
       grow: true
-# Append new patches below: patch IDs are positional. Consumer PNY for ordinary app volumes; clones stay on clone-ok flash.
+# Append new patches below: patch IDs are positional. Consumer PNY for ordinary app volumes; clones go to clone-ok disks.
 - name: longhorn-gpu-bulk-volume
   inline:
     apiVersion: v1alpha1

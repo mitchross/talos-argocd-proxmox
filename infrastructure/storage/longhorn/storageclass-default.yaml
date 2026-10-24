@@ -4,6 +4,8 @@ metadata:
   name: longhorn
   annotations:
     storageclass.kubernetes.io/is-default-class: "true"
+    # Parameters are immutable: to change them, delete the live StorageClass once; ArgoCD re-creates it.
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -11,7 +13,11 @@ volumeBindingMode: Immediate
 mountOptions:
   - context=system_u:object_r:ephemeral_t:s0
 parameters:
-  numberOfReplicas: "1"
+  # Two copies on different wired nodes: one dead node must not strand a volume.
+  numberOfReplicas: "2"
+  nodeSelector: "wired-storage"
+  replicaSoftAntiAffinity: "disabled"
+  replicaZoneSoftAntiAffinity: "disabled"
   staleReplicaTimeout: "30"
   fromBackup: ""
   fsType: "ext4"
