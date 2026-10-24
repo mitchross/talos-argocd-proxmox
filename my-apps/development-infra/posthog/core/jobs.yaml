@@ -80,7 +80,7 @@ spec:
       - name: migrate
         # Keep the migration hook on the same monolith digest as web/workers.
         # Mixed monolith/node digests caused schema drift during pod restarts.
-        image: posthog/posthog:latest@sha256:df6086ee4eb969de7f14520dc6e7862259e206872d2dd188694a03a71637361b
+        image: posthog/posthog:latest@sha256:eabdb6ea48a8ada5e8229283249ce267f03158fa8193f93acf1be18fae16867e
         command:
         - /bin/sh
         - -c
@@ -163,7 +163,7 @@ spec:
       containers:
       - name: remote-config-sync
         # Keep on the same monolith digest as web/workers.
-        image: posthog/posthog:latest@sha256:df6086ee4eb969de7f14520dc6e7862259e206872d2dd188694a03a71637361b
+        image: posthog/posthog:latest@sha256:eabdb6ea48a8ada5e8229283249ce267f03158fa8193f93acf1be18fae16867e
         command:
         - /bin/sh
         - -c
