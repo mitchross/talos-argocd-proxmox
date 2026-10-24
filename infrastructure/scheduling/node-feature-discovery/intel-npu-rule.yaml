@@ -1,0 +1,22 @@
+# Intel NPU (PCI class 1200) -> feature.node.kubernetes.io/custom-pci.intel-npu=true; intel-npu-plugin schedules on it.
+# pci.device features cover every PCI class; deviceClassWhitelist below only filters the built-in pci-* labels.
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: intel-npu-rule
+spec:
+  rules:
+  - name: "intel-npu-pci"
+    labels:
+      "custom-pci.intel-npu": "true"
+    matchFeatures:
+    - feature: pci.device
+      matchExpressions:
+        vendor:
+          op: In
+          value:
+          - "8086"
+        class:
+          op: In
+          value:
+          - "1200"

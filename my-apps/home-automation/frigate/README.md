@@ -13,19 +13,12 @@ The setup involves three main components:
 
 ## Runtime and upgrade
 
-> **Current state:** the USB Coral is retired and the HP Elite is now the
-> bare-metal node `hp-elite-gen13`. The deployment below still selects the
-> `custom-usb.coral-tpu` label, so no node matches and the pod stays `Pending`.
-> Frigate moves to the Dell Pro Micro (`mini-pc-dell-ultra-worker`) with OpenVINO
-> on its NPU in [#3088](https://github.com/mitchross/talos-argocd-proxmox/issues/3088).
-> The Coral sections describe the declared config until that change lands.
-
 Git declares Frigate **0.18.2**, pinned by image digest, with one replica on
-`node.vanillax.dev/class: hp-elite-worker` (the HP Elite i5-13500T). Detection
-uses the bundled **USB Coral EdgeTPU** model. Video decode
-and the existing Nest H.264 re-encode streams also use CPU. The six Nest
-streams retain their keyframe workaround; camera stability on this release
-must be checked after deployment.
+`node.vanillax.dev/class: mini-pc-dell-ultra` (the bare-metal Dell Pro Micro,
+Core Ultra 5 245T). Object detection runs on the **Intel NPU** through OpenVINO.
+The Arrow Lake iGPU decodes the camera inputs and runs the go2rtc Nest H.264
+re-encode. The Nest streams retain their keyframe workaround. The USB Coral is
+no longer used ([#3088](https://github.com/mitchross/talos-argocd-proxmox/issues/3088)).
 
 ### Event recording
 
@@ -55,36 +48,62 @@ To restore continuous history, revert this recording-policy change through a
 PR. Cleanup-deleted footage cannot be restored by changing the policy back.
 See [Frigate recording retention](https://docs.frigate.video/configuration/record/).
 
-### USB Coral detector
+### Intel NPU detector and iGPU video
 
-The HP Talos VM receives the USB Coral through Proxmox passthrough. Frigate
-mounts `/dev/bus/usb` and uses `detectors.coral` with `type: edgetpu` and
-`device: usb`. Its pinned image supplies `/edgetpu_model.tflite`: a 320×320
-RGB, NHWC, uint8-input SSD-family model with `/labelmap.txt`. The previous
-OpenVINO XML model and BGR preprocessing are incompatible with this detector.
+Frigate uses `detectors.ov` with `type: openvino` and `device: NPU`. The NPU
+compiles only static-shape models, so the top-level `model` block selects the
+bundled SSDLite MobileNet v2 IR (`/openvino-model/ssdlite_mobilenet_v2.xml`,
+300×300, NHWC, BGR) and its 91-class label map. A YOLOv9-t export is a later,
+optional accuracy upgrade.
 
-The pod requires the existing `custom-usb.coral-tpu` node label as well as
-the HP node class. The NodeFeatureRule recognizes both the bootloader vendor
-`1a6e` and initialized vendor `18d1`. The full USB IDs are `1a6e:089a` before
-initialization and `18d1:9302` afterward. Mounting the entire USB bus accommodates
-device-number changes during firmware loading. Proxmox passthrough must also
-survive that re-enumeration; a physical-port mapping can avoid tying it to just
-one vendor/product identity.
+The pod requests `npu.intel.com/accel: 1` and `gpu.intel.com/i915: 1`. These
+resources come from two device plugins:
 
-Use USB 3 and verify the device remains visible after the first inference.
-See Frigate's [Coral setup](https://docs.frigate.video/configuration/object_detectors/#edge-tpu-detector)
-and [USB troubleshooting](https://docs.frigate.video/troubleshooting/edgetpu/).
+| Resource | Plugin | Node selector |
+|---|---|---|
+| `npu.intel.com/accel` | [`intel-npu-plugin`](../../../infrastructure/gpu/intel-npu-plugin/) | `feature.node.kubernetes.io/custom-pci.intel-npu=true`, set by the NFD [`intel-npu-rule`](../../../infrastructure/scheduling/node-feature-discovery/intel-npu-rule.yaml) |
+| `gpu.intel.com/i915` | [`intel-gpu-plugin`](../../../infrastructure/gpu/intel-gpu-plugin/) | `feature.node.kubernetes.io/pci-0300_8086.present=true` |
 
-After merge and sync, check the pod becomes Ready, logs report `TPU found`,
-and `/api/stats` reports a running `coral` detector with nonzero inference
-speed. A USB label alone proves enumeration, not successful inference. Video
-FPS and playable recordings must still be verified separately; Coral performs
-object detection and does not repair Nest video transport or decoding.
+The NPU also needs the Talos `siderolabs/intel-npu` extension on the node. It
+supplies the `intel_vpu` kernel module and the NPU firmware. Frigate bundles
+its own NPU userspace; do not mount host NPU libraries. If the host firmware is
+older than Frigate's bundled driver, inference fails with
+`MAPPED_INFERENCE_VERSION is NOT compatible with the ELF`. Update the Talos
+extension in that case. See Frigate's
+[Intel NPU host requirements](https://github.com/blakeblackshear/frigate/blob/v0.18.2/docs/docs/configuration/object_detectors.md#intel-npu-requirements).
 
-If the device disappears, check Proxmox passthrough and the node label first.
-To roll back, revert this detector/model, USB mount, and Coral selector change
-through a PR to restore the prior CPU OpenVINO configuration. Do not pair the
-OpenVINO XML model with an EdgeTPU detector.
+The Deployment stays `Pending` until the NPU plugin advertises
+`npu.intel.com/accel` on the Dell. Argo CD sync waves cannot order Applications
+from different ApplicationSets, so this is expected after a fresh sync. The
+scheduler places the pod once the resource appears.
+
+`ffmpeg.hwaccel_args: preset-vaapi` decodes the camera inputs on the iGPU.
+Frigate's docs recommend QSV presets for the newest Intel generations; VAAPI
+also works there and selects the H.264/H.265 profile automatically. The go2rtc
+Nest re-encode streams use `#hardware=vaapi`. That replaces the `h264`
+libx264 template with the `h264/vaapi` template, which keeps the same 5-frame
+GOP. FFmpeg 8 needs an explicit device for this, so `go2rtc.ffmpeg.global`
+sets `-vaapi_device /dev/dri/renderD128`. See
+[FFmpeg 8 hardware transcoding](https://github.com/blakeblackshear/frigate/blob/v0.18.2/docs/docs/troubleshooting/go2rtc.md#hardware-accelerated-transcoding-with-ffmpeg-8).
+
+After merge and sync, check the NPU resource and the device node:
+
+```bash
+kubectl get node mini-pc-dell-ultra-worker -o jsonpath='{.status.allocatable.npu\.intel\.com/accel}{"\n"}'
+kubectl -n intel-npu-plugin get pods -o wide
+kubectl -n frigate exec deployment/frigate -- ls -l /dev/accel/accel0 /dev/dri/renderD128
+kubectl -n frigate exec deployment/frigate -- curl -s http://127.0.0.1:5000/api/stats | jq '.detectors'
+```
+
+Expect `1` allocatable NPU, a running plugin pod on the Dell, both device
+nodes present, and an `ov` detector with an inference speed near 10 ms.
+`intel_gpu_top` on the node should show video decode load. Then watch a 48-hour
+soak for detection gaps.
+
+If the NPU fails, check the plugin logs and the firmware message above first.
+If go2rtc logs `A hardware device reference is required`, check the render node
+path. To roll back, revert the move PR. That restores the Coral detector and
+its node selector, so the pod runs again only on a node with a labeled Coral.
 
 ### Buffered Nest video input
 
@@ -106,10 +125,10 @@ individual option caused the failures; they do not establish long-term
 reliability across all cameras.
 
 After deployment, verify sustained camera FPS and newly recorded playable
-segments through multiple Nest renewals. Coral detector health alone is not a
+segments through multiple Nest renewals. Detector health alone is not a
 camera-health check. If this configuration regresses capture, revert the
 `go2rtc.ffmpeg` templates and all six `#input=nest-buffered` selectors together
-through a PR; keep the Coral detector and USB mount in place.
+through a PR; keep the NPU detector in place.
 
 ### Nest go2rtc override
 
@@ -153,22 +172,13 @@ recovery and recording continuity remain rollout acceptance checks.
 
 To roll back this follow-up, revert the source pin, image VERSION and
 init-container tag together through a PR to `b101-222d37f-v1`. Keep the buffered
-input templates and Coral configuration in place.
+input templates and NPU configuration in place.
 
 To return to bundled go2rtc, revert the override commit through a PR. That
 removes the init container and binary mount while retaining Frigate RC2 and
 the database. The next pod uses the bundled binary automatically. This
 rollback can restore the known Nest frame-drop problem, but does not require
 a database downgrade.
-
-The Talos VM currently advertises no Intel GPU device or Intel GPU resource.
-OpenVINO supports Intel integrated GPUs, but switching `device` to `GPU` alone
-will not expose the physical GPU. GPU acceleration requires a separate
-Proxmox passthrough change, Talos Intel driver/firmware support, and container
-access to the render device. Once verified, OpenVINO can use `GPU` and FFmpeg
-can use VAAPI. With FFmpeg 8, go2rtc hardware transcodes also require an explicit
-`go2rtc.ffmpeg.global: "-vaapi_device /dev/dri/renderD128"` (using the verified
-render path).
 
 Sources: [0.18 RC2 release and breaking changes](https://github.com/blakeblackshear/frigate/discussions/24215),
 [OpenVINO support](https://github.com/blakeblackshear/frigate/blob/v0.18.2/docs/docs/configuration/object_detectors.md#openvino-detector),
@@ -193,8 +203,8 @@ kubectl -n argocd get application my-apps-frigate
 kubectl -n frigate logs deployment/frigate --since=5m
 ```
 
-Expect a ready Frigate pod on the HP Elite, ArgoCD Synced/Healthy, a running
-Coral detector, and no repeated MQTT authentication or FFmpeg restart
+Expect a ready Frigate pod on the Dell, ArgoCD Synced/Healthy, a running
+NPU detector, and no repeated MQTT authentication or FFmpeg restart
 errors. Use the stream check below to verify all five cameras receive frames;
 pod readiness alone does not establish that cameras or recordings work.
 
@@ -336,7 +346,7 @@ Nest credentials:
 kubectl -n frigate get pods
 kubectl -n frigate get events --sort-by=.lastTimestamp
 kubectl -n frigate get vpa frigate -o yaml
-kubectl describe node -l node.vanillax.dev/class=hp-elite-worker
+kubectl describe node -l node.vanillax.dev/class=mini-pc-dell-ultra
 ```
 
 A verified outage followed `ResizeDeferred`, `EvictedByVPA`, then
@@ -345,11 +355,16 @@ when the pinned HP node had only 3,339,704,223 bytes of unreserved memory.
 Actual memory usage was lower; scheduler reservations caused the rejection.
 
 The Frigate policy caps memory requests at 3 GiB, retains `RequestsOnly` and
-the 12 GiB runtime limit, and excludes the fixed-size binary installer.
+the 8 GiB runtime limit, and excludes the fixed-size binary installer.
 Its earlier sync wave applies the policy before the Deployment rollout.
-This cap fits the observed reservations with about 114 MiB remaining; it is
-not a capacity guarantee if other workloads grow. Recheck placement and node
-usage before increasing it or adding another continuously decoded camera.
+The cap was sized for the old HP node. On 2026-10-23 the Dell had about
+14.5 GiB of unreserved memory, but planned control-plane duty
+([#3071](https://github.com/mitchross/talos-argocd-proxmox/issues/3071)) will
+share it. Recheck node usage before increasing the cap or adding a camera.
+
+`FailedScheduling: Insufficient npu.intel.com/accel` means the NPU plugin is not
+advertising the device. Check the plugin as described in
+[Intel NPU detector and iGPU video](#intel-npu-detector-and-igpu-video).
 
 After merge and sync, expect a Ready replacement with a memory request no
 greater than 3 GiB. If an existing Pending pod retains the old request, wait

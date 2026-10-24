@@ -21,7 +21,7 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "4"
-          # Larger reservations stranded the replacement on the pinned HP node.
+          # Larger reservations stranded the replacement on its pinned node; the Dell is shared.
           memory: 3Gi
       - containerName: install-go2rtc
         mode: "Off"
