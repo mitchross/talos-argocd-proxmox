@@ -138,6 +138,21 @@ kubectl -n longhorn-system delete nodes.longhorn.io <old-node>
 Finally, remove the host's Proxmox provider from
 `omni/proxmox-providers/docker-compose.yml` and its machine class.
 
+## Swap a node's NIC (for example a USB 2.5G adapter)
+
+Talos needs no config change. These nodes have no per-NIC network settings, so
+Talos runs DHCP on every physical NIC. The Talos kernel includes the Realtek
+(`r8152`) and ASIX (`ax88179_178a`) USB NIC drivers. A USB NIC is named `enx<MAC>`.
+
+1. In Firewalla, move the node's DHCP reservation to the new NIC's MAC. A new MAC
+   otherwise gets a new IP.
+2. Unplug the old cable, then plug in the new NIC. Use one NIC at a time: two
+   cables give the node two IPs on the same subnet.
+3. Check that the node is `Ready` with its old IP: `kubectl get node <node> -o wide`.
+4. Check that the live L2 policy matches the new name:
+   `kubectl get ciliuml2announcementpolicy l2-policy -o jsonpath='{.spec.interfaces}'`.
+   If the lease holder's NIC does not match, its LoadBalancer IPs stop answering.
+
 ## Gotchas
 
 | Symptom | Cause | Fix |
@@ -148,6 +163,7 @@ Finally, remove the host's Proxmox provider from
 | `talosctl` loops on browser login (`invalid signature`, "this login link is not valid") | Its context name does not match the key `omnictl` registered | `omnictl talosconfig -c talos-prod-cluster-v2 --force <file>`, rename the context to `default`, and pass `--talosconfig <file>` |
 | Old machine stays `tearingDown` | Omni cannot reach the machine to reset it | `omnictl delete link <uuid>` (step 7) |
 | Machine boots the old OS instead of PXE | The disk is still bootable | Use F12 one-time network boot until Talos is installed |
+| A merged change is not live and the app stays `OutOfSync` | ArgoCD auto-sync does not retry a revision whose sync failed (for example, it timed out while a node was down) | Sync the app or the one resource by hand |
 
 ## Add a disk to an existing Proxmox VM
 
