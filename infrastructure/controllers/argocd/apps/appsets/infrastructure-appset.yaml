@@ -48,6 +48,7 @@ spec:
       # CDI-based driver/toolkit shipped by Talos system extensions.
       - path: infrastructure/gpu/nvidia-gpu-operator
       - path: infrastructure/gpu/intel-gpu-plugin
+      - path: infrastructure/gpu/intel-npu-plugin
       - path: infrastructure/scheduling/node-feature-discovery
       - path: infrastructure/scheduling/metrics-server
       - path: infrastructure/scheduling/descheduler

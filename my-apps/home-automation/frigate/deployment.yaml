@@ -15,10 +15,9 @@ spec:
       labels:
         app: frigate
     spec:
-      # The HP Elite exposes its i5-13500T CPU, but no Intel GPU in the Talos VM.
+      # Dell Pro Micro: NPU for detection, iGPU for decode and the go2rtc re-encode.
       nodeSelector:
-        node.vanillax.dev/class: hp-elite-worker
-        feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
+        node.vanillax.dev/class: mini-pc-dell-ultra
       initContainers:
       - name: install-go2rtc
         image: ghcr.io/mitchross/frigate-go2rtc:b101-ec152af-v3
@@ -85,6 +84,9 @@ spec:
             memory: 2Gi
           limits:
             memory: 8Gi
+            gpu.intel.com/i915: "1"
+            # Stays Pending until intel-npu-plugin advertises this on the Dell.
+            npu.intel.com/accel: "1"
         securityContext:
           privileged: true
           allowPrivilegeEscalation: true
@@ -122,8 +124,6 @@ spec:
         # Recording segments stage here before moving to /media; on the root disk this wrote ~100 GB/day.
         - name: tmp-cache
           mountPath: /tmp/cache
-        - name: coral-usb
-          mountPath: /dev/bus/usb
       volumes:
       - name: go2rtc-binary
         emptyDir: {}
@@ -145,8 +145,3 @@ spec:
         emptyDir:
           medium: Memory
           sizeLimit: 1Gi
-      # Coral re-enumerates after firmware loading; mount the bus, not one device number.
-      - name: coral-usb
-        hostPath:
-          path: /dev/bus/usb
-          type: Directory

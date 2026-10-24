@@ -48,21 +48,20 @@ record:
 detect:
   enabled: true
 detectors:
-  coral:
-    type: edgetpu
-    device: usb
+  ov:
+    type: openvino
+    device: NPU
+# The NPU needs a static-shape model; this is the bundled SSDLite IR. Model config is top-level only.
 model:
-  path: /edgetpu_model.tflite
-  width: 320
-  height: 320
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  width: 300
+  height: 300
   input_tensor: nhwc
-  input_pixel_format: rgb
-  input_dtype: int
-  model_type: ssd
-  labelmap_path: /labelmap.txt
+  input_pixel_format: bgr
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
 ffmpeg:
   input_args: preset-rtsp-generic
-  # Intel GPU passthrough is not configured; video decoding uses the HP CPU.
+  hwaccel_args: preset-vaapi
   # Nest streams carry Opus audio; MP4 recordings need AAC. This preset
   # transcodes audio to AAC for the record role (without it, recordings are
   # silent or fail to mux the Opus track).
@@ -71,34 +70,38 @@ ffmpeg:
 # go2rtc with Nest cameras via direct SDM API
 go2rtc:
   ffmpeg:
+    # FFmpeg 8 refuses go2rtc's VAAPI hwupload without an explicit device; the Dell has one GPU.
+    global: "-hide_banner -vaapi_device /dev/dri/renderD128"
     # Preserve startup reference frames while Nest codec parameters arrive.
     nest-buffered: "-threads 2 -analyzeduration 20000000 -probesize 20000000 -timeout 60000000 -rtsp_transport tcp -i {input}"
     # At 5 FPS, the default GOP of 50 makes new consumers wait up to ten seconds.
     h264: "-c:v libx264 -threads 2 -g 5 -keyint_min 5 -sc_threshold 0 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p"
+    # #hardware=vaapi swaps the libx264 template above for this one; keep the GOP in step.
+    h264/vaapi: "-c:v h264_vaapi -g 5 -bf 0 -profile:v high -level:v 4.1 -sei:v 0"
   streams:
     shed:
     - "rtsp://wyze-bridge.wyze-bridge.svc.cluster.local:8554/shed"
-    # Each raw Nest WebRTC stream feeds a buffered H264 re-encode for live/detect/record.
+    # Each raw Nest WebRTC stream feeds a buffered H264 iGPU re-encode for live/detect/record.
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
     backyard-sub:
-    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
+    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
     garage-inside-sub:
-    - "ffmpeg:garage-inside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
+    - "ffmpeg:garage-inside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
     garage-outside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv2h0W3viecoGaYuzNnJYw5JpuFl22mo6_2OxWG7xIs8fTPCL0uwgrIOU8WEm7IiTIOQ_cgyzkh18OaR6nBzlTUWQ0&protocols=WEB_RTC&video=h264&audio=opus"
     garage-outside-sub:
-    - "ffmpeg:garage-outside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
+    - "ffmpeg:garage-outside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
     living-room-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEvWU1Xm4--F8EQvLgj32449ix_pnGNv82a1xR6gJoWCsdxUyyWk1b3C9Aox-hLzJtQ2rp85L1F_BAw1HYaMgaLIa5U&protocols=WEB_RTC&video=h264&audio=opus"
     living-room-sub:
-    - "ffmpeg:living-room-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
+    - "ffmpeg:living-room-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
     kitchen-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
     kitchen-sub:
-    - "ffmpeg:kitchen-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
+    - "ffmpeg:kitchen-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
 cameras:
   shed:
     # Enable after the bridge produces decoded frames in the cluster.

@@ -9,7 +9,7 @@ on the Pi. They have no Proxmox provider and no machine class.
 
 | Node | Hardware | Talos disk | Longhorn disk | Notes |
 |---|---|---|---|---|
-| `mini-pc-dell-ultra-worker` | Dell Pro Micro, Core Ultra 5 245T, 2× 16 GiB | KIOXIA BG7 NVMe | `dell-ultra-ssd` (Apple SATA SSD) | iGPU + NPU; Frigate target ([#3088](https://github.com/mitchross/talos-argocd-proxmox/issues/3088)) |
+| `mini-pc-dell-ultra-worker` | Dell Pro Micro, Core Ultra 5 245T, 2× 16 GiB | KIOXIA BG7 NVMe | `dell-ultra-ssd` (Apple SATA SSD) | iGPU + NPU; runs Frigate (NPU detection, iGPU decode; [#3088](https://github.com/mitchross/talos-argocd-proxmox/issues/3088)) |
 | `hp-elite-gen12` | HP Elite Mini 800 G9, i5-12500T, 2× 8 GiB | Samsung NVMe | — (compute-only) | Zigbee stick; Home Assistant runs here |
 | `hp-elite-gen13` | HP Elite Mini 600 G9, i5-13500T, 1× 16 GiB | WD SN530 NVMe | `hp-elite-nvme` (Intel 660p) | Keeps class label `hp-elite-worker` |
 
