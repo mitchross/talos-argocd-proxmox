@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: tileserver
-          image: maptiler/tileserver-gl:v5.6.0@sha256:3a9ccdb24820b6814c8119bcc8a4376c39867cb0ffe69d62919ef898b90c2427
+          image: maptiler/tileserver-gl:v5.7.0@sha256:24d0364e1d40da0ae3fb3269f617c26e36a883ad4b7454e5c4064a8795bfc807
           imagePullPolicy: IfNotPresent
           args:
             - --config
