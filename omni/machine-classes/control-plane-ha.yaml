@@ -1,0 +1,11 @@
+---
+# omnictl apply -f omni/machine-classes/control-plane-ha.yaml
+# Label-selected class: one Proxmox provider cannot autoprovision one CP per standalone host.
+# Each CP VM is built by hand and boots Omni media with --initial-labels vanillax.dev/role=control-plane.
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: control-plane-ha
+spec:
+  matchlabels:
+    - vanillax.dev/role = control-plane
