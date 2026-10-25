@@ -85,7 +85,8 @@ go2rtc:
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
     backyard-sub:
-    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
+    # Test: backyard re-encodes on CPU to rule out the iGPU path; it flapped alone while the other four Nest cams on VAAPI stayed stable.
+    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
     garage-inside-sub:
