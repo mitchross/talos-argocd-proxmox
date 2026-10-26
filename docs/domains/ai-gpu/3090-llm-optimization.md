@@ -1,7 +1,13 @@
 # 3090 LLM optimization
 
-**262,144 tokens is the per-request ceiling.** Two sequence slots share the
-engine's allocated KV pool; they do not each receive an independent 262K pool.
+**262,144 tokens is the per-request ceiling.** Up to eight sequence slots share
+the engine's allocated KV pool; they do not each receive an independent 262K pool.
+
+In plain words: the *KV cache* is GPU memory that holds the tokens of requests
+in progress. All running requests share it, so one huge request leaves less
+room for the others.
+
+New to the stack? Read [Local AI in this homelab: start here](index.md) first.
 
 Baseline: official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
 vision, speculation off. Exact flags and rollback live in the
@@ -9,9 +15,9 @@ vision, speculation off. Exact flags and rollback live in the
 
 ## Historical capacity observations
 
-The September 6 audit measured the earlier v0.28.0 deployment with medium
-reasoning explicitly requested. These values are not a new measurement of the
-v0.29.0 prefill settings or the xhigh default. Re-check the running engine after
+The September 6 audit measured an earlier vLLM release with medium
+reasoning explicitly requested. These values are not a measurement of the
+current prefill settings or the xhigh default. Re-check the running engine after
 rollout; do not relabel the historical pool as current capacity.
 
 | Observation | Value |

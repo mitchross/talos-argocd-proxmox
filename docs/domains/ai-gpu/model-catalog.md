@@ -2,6 +2,11 @@
 
 **Two models. One local, one paid.** Everything else is wiring.
 
+This page lists each model, where it runs, what it costs, and how the `pi-auto`
+router picks between them.
+
+New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+
 | Model | Where it runs | Cost | Reached as |
 |---|---|---|---|
 | `qwen3.8-27b` | your two RTX 3090s | free | `qwen3.8-27b` |

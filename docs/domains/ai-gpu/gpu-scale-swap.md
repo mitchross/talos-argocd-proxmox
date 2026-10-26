@@ -3,6 +3,11 @@
 **You do not deploy a GPU app. You swap which one holds the card**, by flipping
 committed replica counts in one commit.
 
+In plain words: each graphics card runs one app at a time. To give a card to a
+different app, scale the current owner to 0 and the new owner to 1 in Git.
+
+New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+
 ## The rule
 
 GPU workloads are mutually-exclusive whole-card: time-slicing off, every pod
