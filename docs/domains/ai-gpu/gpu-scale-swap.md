@@ -6,7 +6,7 @@ committed replica counts in one commit.
 In plain words: each graphics card runs one app at a time. To give a card to a
 different app, scale the current owner to 0 and the new owner to 1 in Git.
 
-New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 ## The rule
 

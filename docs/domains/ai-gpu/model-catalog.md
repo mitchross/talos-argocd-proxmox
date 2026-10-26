@@ -5,7 +5,7 @@
 This page lists each model, where it runs, what it costs, and how the `pi-auto`
 router picks between them.
 
-New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 | Model | Where it runs | Cost | Reached as |
 |---|---|---|---|

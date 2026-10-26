@@ -32,7 +32,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
 - **AI**: the production backend serves official `qwen3.8-27b` FP8 through vLLM
-  on both RTX 3090s. [Local AI: start here](domains/ai-gpu/index.md) explains the stack step by step. The [model catalog](domains/ai-gpu/model-catalog.md)
+  on both RTX 3090s. The [local AI starter kit](domains/ai-gpu/index.md) lists the parts and the build order. The [model catalog](domains/ai-gpu/model-catalog.md)
   owns the local backend and Pi's optional OpenRouter DeepSeek Flash route; use the
   [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
   [Hermes](domains/ai-gpu/hermes.md) is the always-on agent with cron, memory, chat platforms, and

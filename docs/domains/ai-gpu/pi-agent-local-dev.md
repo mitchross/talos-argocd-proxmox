@@ -1,7 +1,7 @@
 # Pi and Hermes: the two AI agents
 
 **Use Pi at your keyboard. Use Hermes when the work should run without you.**
-New to the stack? Read [AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 An *agent* is an LLM that can also run tools: read files, run commands, edit
 code. This homelab has two. Both send their LLM requests to the same LiteLLM

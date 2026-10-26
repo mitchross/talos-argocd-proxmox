@@ -137,7 +137,7 @@ nav:
           - Ansible host management: domains/hosts/physical-hosts-ansible.md
           - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
       - AI / GPU:
-          - Local AI — start here: domains/ai-gpu/index.md
+          - Local AI starter kit — start here: domains/ai-gpu/index.md
           - Model catalog: domains/ai-gpu/model-catalog.md
           - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
           - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
