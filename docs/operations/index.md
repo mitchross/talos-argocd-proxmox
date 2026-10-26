@@ -14,7 +14,7 @@ below. Each runbook carries its own prerequisites, checks, and recovery steps.
 | Networking | How clients and applications reach each other | [Network topology](../domains/networking/topology.md) |
 | Physical hosts | How the Proxmox hosts and Pi are configured with Ansible, outside Argo CD | [Physical hosts with Ansible](../domains/hosts/physical-hosts-ansible.md) |
 | Bare-metal nodes | Add a machine or convert a Proxmox host to bare-metal Talos, wipe reused disks, register Longhorn disks | [Bare-metal Talos workers](../domains/hosts/bare-metal-talos.md) |
-| AI / GPU | How models are served and GPU capacity is managed | [Model catalog](../domains/ai-gpu/model-catalog.md) |
+| Local AI | The parts of self-hosted AI, how models are served, GPU capacity | [Local AI starter kit](../domains/ai-gpu/index.md) |
 | Reference & ops | Scheduling policy, observability, and maintenance | [VPA and topology](../domains/scheduling/vpa-and-topology.md) |
 
 Next, explore the machines that run these services in [Inventory](../inventory/index.md).

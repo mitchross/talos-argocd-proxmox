@@ -5,7 +5,7 @@
 This page lists each model, where it runs, what it costs, and how the `pi-auto`
 router picks between them.
 
-New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 | Model | Where it runs | Cost | Reached as |
 |---|---|---|---|
@@ -85,26 +85,71 @@ authoritative.
 | Advertised limits | 229,376 input plus 32,768 output |
 
 One request goes to one backend. This is model selection, not response
-splitting. Local generation inherits xhigh from vLLM; the classifier still
-explicitly disables thinking. DeepSeek's high/max settings are unchanged.
+splitting.
+
+### What goes where
+
+| Tier | Model | Effort | Runs on |
+|---|---|---|---|
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: xhigh | the two RTX 3090s, free |
+| `COMPLEX` | `deepseek-flash` | `high` | OpenRouter, paid |
+| `REASONING` | `deepseek-flash` | `max` | OpenRouter, paid |
+| classifier failed | `deepseek-flash` | as above | OpenRouter, paid |
+
+`SIMPLE` / `MEDIUM` work on local Qwen: greetings, renames, writing tests,
+explaining code, inspecting the cluster. `COMPLEX` / `REASONING` work goes to
+DeepSeek: debugging, root-cause hunts, architecture. Classification failures go
+up, because a wrong cheap guess costs more than a paid answer.
+
+### How it decides
+
+Local Qwen grades each request through the `pi-classifier` route: thinking off,
+greedy decoding, a 64-token answer. Greedy is required. Sampled classification
+returned `SIMPLE`, `MEDIUM` and `COMPLEX` for one identical input across six
+runs.
+
+`classification_mode: every_request` grades every request instead of holding
+one verdict through a tool loop. LiteLLM **rejects** `stall_escalation_enabled`
+alongside `classification_mode: user_turn` or `session_affinity`, because a held
+decision hides the tool calls that stall detection watches.
+
+`stall_escalation_enabled` moves a task up a tier when its newest tool call
+repeats, or fails, three times in the last six. It rescues a task Qwen accepted
+and then got stuck on.
+
+Include `LITELLM ESCALATE` in a message to force a one-tier bump. It picks a
+stronger tier, not a specific model.
+
+### Safety rails
+
+| Rail | What it does |
+|---|---|
+| `max_tokens_from_tier_model: false` | keeps the client's 32K output cap; the default would hand Flash 943K |
+| `enable_context_window_escalation: true` | an oversized prompt moves up instead of being cut |
+| `router_settings.fallbacks` on `qwen3.8-27b-auto` | a vLLM outage sends **`pi-auto` only** to DeepSeek |
 
 `qwen3.8-27b-auto` is the same vLLM backend as `qwen3.8-27b` under a second
-name, so the router's DeepSeek failover reaches `pi-auto` alone and never the
-shared route every other client uses.
+name. LiteLLM fallbacks key on the model name, so a rule on `qwen3.8-27b` would
+send every client (Open WebUI, Hindsight, bare `pi` and the rest) to paid
+OpenRouter during an outage. Local-only clients must fail instead.
 
-Full behaviour: [Pi agent guide](pi-agent-local-dev.md).
+Source of truth: [`litellm/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/litellm/config.yaml).
+To see the split live, read [AI gateway and analytics](ai-observability.md).
 
 ## Wiring
 
-| Path | Endpoint |
-|---|---|
-| Apps → gateway | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
-| Workstation → gateway | `https://litellm.vanillax.me/v1` |
-| Gateway → Qwen | `http://vllm-service.vllm.svc.cluster.local:8080/v1` |
-| Gateway → DeepSeek | OpenRouter, key from 1Password |
-| Direct diagnostics | `llama.vanillax.me`, `vllm.vanillax.me` |
+| Caller | Endpoint | Auth |
+|---|---|---|
+| Apps → gateway | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | namespace `ExternalSecret` |
+| Workstation → gateway | `https://litellm.vanillax.me/v1` | LiteLLM key in `~/.pi/agent/litellm-api-key` |
+| Gateway → Qwen | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | local placeholder |
+| Gateway → DeepSeek | OpenRouter | `litellm-secrets` `ExternalSecret` |
+| Gateway → Langfuse | `http://langfuse-web.langfuse.svc.cluster.local:3000` | project keys |
+| Direct diagnostics | `llama.vanillax.me`, `vllm.vanillax.me` | none; bypasses all telemetry |
 
-Auth is a namespace-local ExternalSecret from `litellm/master_key`.
+Every namespace receives `homelab-prod/litellm/master_key` through External
+Secrets. No keys sit in ConfigMaps or workflow JSON. This is one shared gateway
+key, not a per-app budget or access control.
 
 Every declared LLM consumer uses LiteLLM: Open WebUI, Perplexica/Vane,
 Presenton, SurfSense, Hindsight, Hermes, Home Assistant, Karakeep,

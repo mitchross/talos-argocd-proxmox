@@ -6,7 +6,7 @@ committed replica counts in one commit.
 In plain words: each graphics card runs one app at a time. To give a card to a
 different app, scale the current owner to 0 and the new owner to 1 in Git.
 
-New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 ## The rule
 
@@ -79,4 +79,4 @@ alongside vLLM. Un-archived GPU jobs such as llmfit need the two-card server par
   changing it is an electrical decision.
 
 Related: [model catalog](model-catalog.md) ·
-[3090 LLM optimization](3090-llm-optimization.md)
+[Context and speed on RTX 3090s](3090-llm-optimization.md)

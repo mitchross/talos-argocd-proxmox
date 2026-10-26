@@ -3,7 +3,7 @@
 **Which model answered?** Open Grafana `/d/pi-routing`.
 **Why did that turn escalate?** Open `langfuse.vanillax.me`, filter tag `pi`.
 
-New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 Every LLM request in the homelab goes through one gateway, LiteLLM. LiteLLM
 sends each request to a backend and reports what happened to two places.
@@ -82,18 +82,8 @@ Edit the JSON through a PR; ArgoCD reloads them.
 
 ## Routes and credentials
 
-| Caller | Endpoint | Auth |
-|---|---|---|
-| Pi (all gateway routes) | `https://litellm.vanillax.me/v1` | LiteLLM key on the workstation |
-| Apps | `http://litellm-service.litellm.svc.cluster.local:4000/v1` | namespace ExternalSecret |
-| LiteLLM → Qwen | `http://vllm-service.vllm.svc.cluster.local:8080/v1` | local placeholder |
-| LiteLLM → DeepSeek | OpenRouter | `litellm-secrets` ExternalSecret |
-| LiteLLM → Langfuse | `http://langfuse-web.langfuse.svc.cluster.local:3000` | project keys |
-| Direct diagnostics | `https://vllm.vanillax.me/v1` | bypasses all telemetry |
-
-Every namespace receives `homelab-prod/litellm/master_key` through External
-Secrets. No keys in ConfigMaps or workflow JSON. This is a shared gateway
-credential, not a per-app budget or access control.
+Every URL, key and auth path is listed once, in
+[model catalog § Wiring](model-catalog.md#wiring).
 
 ## Langfuse storage
 
@@ -144,8 +134,9 @@ Roughly 15 minutes.
    Both database policies exist and snapshots reach `Succeeded` with non-zero
    files. A brand-new empty PVC is not a tested restore.
 
-To see both `pi-auto` backends on `/d/pi-routing`, send one easy and one hard
-request:
+## Check that `pi-auto` uses both models
+
+Send one easy and one hard request:
 
 ```bash
 K=$(cat ~/.pi/agent/litellm-api-key)
@@ -158,7 +149,10 @@ done
 ```
 
 Expect `openai/qwen3.8-27b` first and `openrouter/~deepseek/deepseek-flash-latest`
-second. The hard request costs a fraction of a cent.
+second. The hard request costs a fraction of a cent. Both then show on
+`/d/pi-routing`.
+
+## Check the adapter before a LiteLLM bump
 
 Check the adapter before you deploy a LiteLLM bump:
 

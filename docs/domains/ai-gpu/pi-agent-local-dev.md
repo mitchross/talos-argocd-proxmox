@@ -1,7 +1,7 @@
 # Pi and Hermes: the two AI agents
 
 **Use Pi at your keyboard. Use Hermes when the work should run without you.**
-New to the stack? Read [AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 An *agent* is an LLM that can also run tools: read files, run commands, edit
 code. This homelab has two. Both send their LLM requests to the same LiteLLM
@@ -58,36 +58,18 @@ The OpenRouter credential lives only inside LiteLLM, except for the
 
 **It worked when** Pi answers and Grafana `/d/pi-routing` counts one request.
 
-## Default reasoning and rollout
+## Reasoning defaults
 
-Local Qwen defaults to **xhigh** with preserved reasoning. This is an
-accuracy-first operating choice, not a guarantee of better answers; expect
-longer reasoning and more output-budget use. Explicit low, medium and off
-remain available on the direct Qwen provider. The model, sampler, 262K context,
-32K output allowance and 49,152-token compaction reserve are unchanged.
+Direct Qwen (`pi`, `pi-qwen-only`) defaults to **xhigh** reasoning with
+preserved thinking. Pick medium, low or off per session when you want less.
+Xhigh uses more time and output tokens; it does not promise better answers.
 
-The companion `mitchross/dotfiles` change sets both Pi's default and the
-`pi-qwen-only` alias. After merging both PRs, pull the updated dotfiles source,
-preview these two targets with `chezmoi diff`, then apply only those targets:
+`pi-auto` shows `medium` in Pi but sends no effort to Qwen. Auto-routed Qwen
+uses the server default, xhigh; DeepSeek uses high or max by tier. Do not change
+the auto provider to xhigh or forward Qwen kwargs into cloud routes.
 
-```bash
-chezmoi diff ~/.pi/agent/settings.json ~/.zshrc
-chezmoi apply ~/.pi/agent/settings.json ~/.zshrc
-source ~/.zshrc
-jq '{defaultThinkingLevel, modelThinkingLevels}' ~/.pi/agent/settings.json
-type pi-qwen-only
-```
-
-Expect the default and local Qwen entry to be `xhigh`, and the local alias to
-contain `--thinking xhigh`. Start a fresh Pi session: reloading extensions does
-not necessarily change a resumed session's saved thinking level. In an existing
-session, explicitly select xhigh. A stale alias or per-model setting can still
-send medium and override the server default.
-
-`pi-auto` keeps its medium UI placeholder: it sends no Qwen effort mapping.
-Local auto-routed generation therefore inherits the server's xhigh default;
-DeepSeek's high/max and the thinking-off classifier stay unchanged. Do not
-change the auto provider to xhigh or forward Qwen kwargs into cloud routes.
+A resumed session keeps its saved thinking level. Start a new session with
+`/new` after you change defaults.
 
 ## The four launchers
 
@@ -120,42 +102,13 @@ A later message can move the same session from Qwen to OpenRouter. Start `/new`
 before a cloud-eligible task if the current conversation holds anything that
 must not leave the cluster.
 
-## What goes where
+## What `pi-auto` does
 
-| Tier | Model | Effort | Runs on |
-|---|---|---|---|
-| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: xhigh | your two RTX 3090s, free |
-| `COMPLEX` | `deepseek-flash` | `high` | paid OpenRouter |
-| `REASONING` | `deepseek-flash` | `max` | paid OpenRouter |
-| classifier failed | `deepseek-flash` | as above | paid OpenRouter |
-
-`SIMPLE` / `MEDIUM` work on local Qwen: greetings, renames, writing tests,
-explaining code, inspecting the cluster. `COMPLEX` / `REASONING` work goes to
-DeepSeek: debugging, root-cause hunts, architecture.
-
-Classification failures resolve upward. Guessing cheap is the costly miss.
-
-## How it decides
-
-Local Qwen judges each request through the `pi-classifier` route: thinking off,
-greedy decoding, a 64-token answer. Greedy is required. Sampled classification
-returned `SIMPLE`, `MEDIUM` and `COMPLEX` for one identical input across six
-runs, so the same work reached different backends.
-
-`classification_mode: every_request` classifies every request instead of holding
-one verdict through a tool loop. LiteLLM **rejects** `stall_escalation_enabled`
-alongside `classification_mode: user_turn` or `session_affinity`, because a held
-decision hides the tool calls stall detection must watch.
-
-`stall_escalation_enabled` moves a task up a tier when its newest tool call
-repeats, or errors, three times in the last six. This is the net for a task Qwen
-accepted and then got stuck on. It fires without you noticing.
-
-Include `LITELLM ESCALATE` in a message to force a one-tier bump by hand. It
-picks a stronger tier, not a specific model.
-
-The auto router is a **beta** LiteLLM feature. Source of truth is
-[`litellm/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/litellm/config.yaml).
+Under `pi-withflash`, LiteLLM grades every request. Easy work stays on local
+Qwen; hard work, stuck tool loops and oversized prompts go to paid DeepSeek
+Flash. Tiers, grading and safety rails live in the
+[model catalog § The router](model-catalog.md#the-router). Routing changes are
+server-side, so they need no Pi reinstall.
 
 ## Which model answered?
 
@@ -164,29 +117,10 @@ Pi always displays `pi-auto`. It will not tell you.
 1. Grafana `/d/pi-routing` — the ratio, the escalation count, the spend
 2. Langfuse `langfuse.vanillax.me` — per trace, filter tag `pi`, read `providedModelName`
 
+How to read both: [AI gateway and analytics](ai-observability.md).
+
 Pi's cost readout prices every turn as DeepSeek, so local turns look paid when
 they cost nothing. Trust the dashboards.
-
-## Safety rails
-
-| Rail | What it does |
-|---|---|
-| `max_tokens_from_tier_model: false` | keeps Pi's 32K output cap; the default would hand Flash 943K |
-| `enable_context_window_escalation: true` | an oversized prompt moves up instead of being truncated |
-| `router_settings.fallbacks` | vLLM outage sends **`pi-auto` only** to DeepSeek |
-
-`qwen3.8-27b-auto` is the same vLLM backend as `qwen3.8-27b` under a second
-name. Failover is keyed on it alone. LiteLLM fallbacks key on the model name, so
-a rule on `qwen3.8-27b` would divert every gateway client — bare `pi`,
-`pi-qwen-only`, Open WebUI, Perplexica, Presenton, Hindsight, ComfyUI —
-to paid OpenRouter during an outage. Local-only callers must fail closed.
-
-## Routing changes need no workstation change
-
-Tiers, effort, escalation and failover for `pi-auto` are server-side. The
-launcher only names `vanillax-auto/pi-auto`. Changing its routing needs no
-Pi reinstall. Direct-Qwen defaults are different: its workstation settings and
-alias send an explicit effort, so the xhigh rollout above needs a chezmoi apply.
 
 ## CachyOS workstation inventory
 
