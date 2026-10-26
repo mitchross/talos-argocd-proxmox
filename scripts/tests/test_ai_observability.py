@@ -126,7 +126,7 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(auto_model['maxTokens'], 32768)
         self.assertEqual(auto_model['cost'], deepseek['cost'])
         self.assertIn('CachyOS workstation inventory', guide)
-        self.assertIn('@narumitw/pi-subagents` 3.0.1', guide)
+        self.assertIn('`@narumitw/pi-subagents`', guide)
         self.assertIn('diff -u ~/.pi/agent/extensions/qwen-sampling.ts', guide)
         self.assertIn('pi-withflash', guide)
         self.assertIn('pi-flash', guide)

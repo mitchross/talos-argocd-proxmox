@@ -171,12 +171,31 @@ alias send an explicit effort, so the xhigh rollout above needs a chezmoi apply.
 | Item | State |
 |---|---|
 | OS | CachyOS rolling release, Arch-based |
-| Pi | 0.85.1 under `mise`'s Node 24.14.1 |
+| Pi | npm package under `mise`'s Node LTS |
 | Launchers | interactive zsh aliases in `~/.zshrc` |
 | Providers | `~/.pi/agent/models.json` |
 | Defaults, Ctrl+P scope | `~/.pi/agent/settings.json` |
 | Request hook | `~/.pi/agent/extensions/qwen-sampling.ts` |
-| Subagents | `@narumitw/pi-subagents` 3.0.1 |
+| Packages | listed under `packages` in `~/.pi/agent/settings.json` |
+
+## Tools Pi can use
+
+Pi ships `read`, `bash`, `edit` and `write`. Packages add the rest:
+
+| Package | Adds |
+|---|---|
+| `@narumitw/pi-subagents` | background subagent jobs that message the main agent |
+| `@dreki-gg/pi-lsp` | LSP diagnostics, hover, definitions, references, symbols |
+| `pi-web-access` | web search, URL fetch, GitHub clone, PDF extraction |
+| `pi-mcp-adapter` | MCP servers as Pi tools; the built-in MCP is off (`"-builtin:mcp"`) |
+| `@narumitw/pi-chrome-devtools` | Chrome DevTools Protocol tools |
+| `@d3ara1n/pi-ask-user` | an ask-user tool that keeps the transcript visible |
+| `@narumitw/pi-goal` | `/goal`: work one objective on its own until done |
+| `pi-plan` | plan mode: read-only exploration, then execute |
+| `@narumitw/pi-statusline` | replaces the footer with a detailed status line |
+
+Install one with `pi install npm:<package>`. Pi adds it to `settings.json`.
+Every tool call runs on the workstation; only the model request goes to LiteLLM.
 
 ## Keep the sampler current
 
