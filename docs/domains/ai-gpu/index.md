@@ -1,155 +1,142 @@
-# Local AI in this homelab: start here
+# Local AI starter kit
 
-**Purpose:** explain, step by step, how this homelab runs its own AI, and point
-to the page for each part.
-**Status:** current state.
+**Purpose:** explain the parts of a self-hosted AI setup, what each part does,
+and the order to build them. This homelab is the worked example.
+**Status:** current state. Every part below runs here today.
 
-## The short version
+## The idea in one paragraph
 
-The homelab runs a large language model (LLM) on two gaming graphics cards.
-Apps and agents never call that model directly. They call one gateway, which
-picks a model, forwards the request, and records what happened.
-
-The story has five parts. Each part answers one question:
-
-1. **Run the model** — how does an LLM run at home?
-2. **Put a proxy in front** — why does everything go through LiteLLM?
-3. **Decide local or cloud** — how does `pi-auto` choose a model?
-4. **Use agents** — what do Pi and Hermes add?
-5. **Measure it** — how do you know what ran and what it cost?
+Run a large language model (LLM) on your own graphics cards, so everyday work
+is free and stays private. Put one proxy in front of it. Every app and agent
+calls the proxy, never the model. The proxy can send hard work to a paid cloud
+model, and it records every request so you can see what ran and what it cost.
 
 ```mermaid
 flowchart LR
-    subgraph Agents and apps
-        Pi[Pi on your PC]
-        Hermes[Hermes in the cluster]
-        Apps[Open WebUI and other apps]
+    subgraph People and tools
+        Chat[Chat UI]
+        Pi[Desk agent: Pi]
+        Hermes[Background agent: Hermes]
+        Apps[Other apps]
     end
-    LiteLLM[LiteLLM proxy]
-    Classifier{{pi-auto: easy or hard?}}
-    vLLM[vLLM: Qwen on 2x RTX 3090<br/>free, stays at home]
-    OR[OpenRouter: DeepSeek Flash<br/>paid, leaves home]
-    Prom[Prometheus + Grafana<br/>counts and charts]
-    LF[Langfuse<br/>one record per request]
-    Pi --> LiteLLM
-    Hermes --> LiteLLM
-    Apps --> LiteLLM
-    LiteLLM --> Classifier
-    Classifier -->|easy| vLLM
-    Classifier -->|hard| OR
-    LiteLLM -.-> Prom
-    LiteLLM -.-> LF
-    vLLM -.-> Prom
+    Proxy[Proxy: LiteLLM]
+    Router{{Router: pi-auto<br/>easy or hard?}}
+    Local[Model server: vLLM<br/>Qwen on 2x RTX 3090<br/>free, private]
+    Cloud[Cloud model: DeepSeek Flash<br/>via OpenRouter, paid]
+    Metrics[Metrics: Prometheus + Grafana]
+    Traces[Traces: Langfuse]
+    Chat --> Proxy
+    Pi --> Proxy
+    Hermes --> Proxy
+    Apps --> Proxy
+    Proxy --> Router
+    Router -->|easy| Local
+    Router -->|hard| Cloud
+    Proxy -.-> Metrics
+    Proxy -.-> Traces
+    Local -.-> Metrics
 ```
 
-## Words you need
+## The parts
 
-| Word | Means here |
+| Part | What it does | Here | Lives in |
+|---|---|---|---|
+| **GPUs** | Do the math that runs the model | 2x RTX 3090, 24 GB each, 220 W cap | GPU worker node |
+| **Model** | The weights: a large file of numbers that produces answers | Qwen3.8 27B, FP8 | NAS, copied to local disk |
+| **Model server** | Loads the model on the GPUs and answers over an OpenAI-style API | vLLM | [`my-apps/ai/vllm/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/vllm) |
+| **Proxy** | One URL and key for every client; maps model names to backends; holds cloud keys; records requests | LiteLLM | [`my-apps/ai/litellm/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/litellm) |
+| **Cloud model** | A stronger model for work the local one gets wrong | DeepSeek Flash via OpenRouter | OpenRouter account, key in 1Password |
+| **Router** | Grades each request and picks local or cloud | LiteLLM `pi-auto` route | [`litellm/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/litellm/config.yaml) |
+| **Chat UI** | A ChatGPT-style web page for people | Open WebUI | [`my-apps/ai/open-webui/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/open-webui) |
+| **Desk agent** | Codes with you in a terminal: reads files, runs commands, edits | Pi | `~/.pi/agent/` on each PC |
+| **Background agent** | Runs without you: checks, daily digest, chat, opens PRs | Hermes | [`my-apps/development/hermes/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/hermes) |
+| **Memory** | Lets an agent remember across sessions | Hindsight | [`my-apps/knowledge/hindsight/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/knowledge/hindsight) |
+| **Metrics** | Counts and trends: requests, local vs paid, speed, GPU power | Prometheus + Grafana | [`dashboards/ai/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/monitoring/metrics/prometheus-stack/dashboards/ai) |
+| **Traces** | One record per request: prompt, answer, tokens, cost, routing reason | Langfuse | [`my-apps/ai/langfuse/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/langfuse) |
+| **Secrets** | Delivers keys to pods without putting them in Git | 1Password + External Secrets | `ExternalSecret` per namespace |
+
+The proxy is the centre. Every other part either sits behind it (models) or in
+front of it (people, apps, agents), and it feeds both measurement tools.
+
+## Build order
+
+Build in this order. Each step needs the one before it, and each ends with a
+check that proves it works.
+
+### 1. Run the model
+
+Put the model server on the GPUs and load the model.
+
+| Choice | Why |
 |---|---|
-| **LLM** | A large language model: the program that reads a prompt and writes an answer |
-| **token** | A piece of a word, about 4 characters. Limits and prices count tokens |
-| **context window** | The most tokens one request can hold, prompt plus answer |
-| **inference** | Running the model to get an answer (not training it) |
-| **vLLM** | The server program that runs the local LLM on the graphics cards |
-| **Qwen** (`qwen3.8-27b`) | The local LLM. Free, and the data stays at home |
-| **DeepSeek Flash** (`deepseek-flash`) | The paid cloud LLM. Prompts leave home |
-| **OpenRouter** | A cloud service that sells access to many LLMs with one key |
-| **LiteLLM** | The proxy. Every client calls it; it calls the LLM |
-| **`pi-auto`** | A LiteLLM route that picks Qwen or DeepSeek for each request |
-| **classifier** | A short Qwen call that grades each `pi-auto` request |
-| **tier** | The grade: `SIMPLE`, `MEDIUM` (Qwen) or `COMPLEX`, `REASONING` (DeepSeek) |
-| **reasoning effort** | How long the LLM "thinks" before it answers: off, low, medium, high, xhigh, max |
-| **agent** | An LLM that can also run tools: read files, run commands, edit code |
-| **Pi** | A terminal coding agent from [pi.dev](https://pi.dev). Not Raspberry Pi |
-| **Hermes** | An agent that runs in the cluster all day, with chat, cron jobs and memory |
-| **Prometheus / Grafana** | Prometheus stores numbers over time; Grafana draws them as charts |
-| **Langfuse** | Stores each request: prompt, answer, tokens, cost, routing reason |
+| 27B model in FP8 | Fits two 24 GB cards with a 262,144-token context window |
+| vLLM | Serves many requests at once; speaks the OpenAI API every tool expects |
+| Two cards (TP=2) | One card works; two read long prompts faster ([one vs two](single-vs-dual-3090.md)) |
+| 220 W per card | Less heat and noise for a small speed loss |
 
-## Step 1: run the model
-
-An LLM is a large file of numbers, called *weights*. To answer, the computer
-multiplies the prompt through those numbers. Graphics cards (GPUs) do that
-quickly, so the model runs on GPUs.
-
-| Choice | Here | Why |
-|---|---|---|
-| Model | Qwen3.8 27B, FP8 | Fits in two 24 GB cards with a long context window |
-| Server | vLLM | Serves many requests at once and speaks the OpenAI API |
-| Cards | 2x RTX 3090, split with tensor parallelism (TP=2) | One card works, but two answer the first token faster |
-| Context | 262,144 tokens per request | Enough for a large code base in one prompt |
-| Power | 220 W per card | Less heat and noise for a small speed loss |
-
-The weights download once to the NAS, then copy to fast local disk on the GPU
-node. vLLM loads them from there at start.
-
-**Where:** [`my-apps/ai/vllm/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/vllm).
-**Gotcha:** one app owns a card at a time. Image generation stays off while vLLM
-holds both cards. To swap, follow the [GPU scale-swap runbook](gpu-scale-swap.md).
-
-**See it yourself:**
+**Done when:**
 
 ```bash
-kubectl -n vllm get pods
 curl -s https://vllm.vanillax.me/v1/models | jq -r '.data[].id'
 ```
 
-Expect one `Running` pod and the model id `qwen3.8-27b`.
+prints `qwen3.8-27b`.
 
-More: [Model catalog](model-catalog.md),
-[3090 LLM optimization](3090-llm-optimization.md),
-[one vs two 3090s](single-vs-dual-3090.md).
+**Gotcha:** one app owns a card at a time. To give the cards to image
+generation, follow the [GPU scale-swap runbook](gpu-scale-swap.md).
 
-## Step 2: put a proxy in front
+### 2. Put the proxy in front
 
-vLLM alone has no keys, no cloud models, and no request log. LiteLLM sits in
-front of it. Every client sends the same OpenAI-style request to LiteLLM.
-
-LiteLLM then does four jobs:
-
-| Job | What it means |
-|---|---|
-| **One address** | Apps use one URL and one key, whatever model answers |
-| **Model names** | `qwen3.8-27b` goes to vLLM; `deepseek-flash` goes to OpenRouter |
-| **Secrets** | Only LiteLLM holds the OpenRouter key. Apps never see it |
-| **Records** | It reports every request to Prometheus and Langfuse |
+Point LiteLLM at vLLM and give it a master key. From now on, nothing calls vLLM
+directly.
 
 | Who calls | URL |
 |---|---|
 | Apps in the cluster | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
-| Your PC | `https://litellm.vanillax.me/v1` |
+| People's PCs | `https://litellm.vanillax.me/v1` |
 
-**Where:** [`my-apps/ai/litellm/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/litellm/config.yaml).
-**Gotcha:** an app that calls vLLM directly still works, but it skips all
-records. Always call LiteLLM.
+**Done when:** a request with `"model":"qwen3.8-27b"` to the proxy URL answers.
 
-## Step 3: decide local or cloud
+**Gotcha:** a client that calls vLLM directly still works, but skips every
+record in step 4. Make the proxy the only documented URL.
 
-Qwen is free and private, but it is not the strongest model. DeepSeek Flash is
-stronger, costs money, and sends the prompt out of the house. The `pi-auto`
-route lets LiteLLM choose per request.
+### 3. Connect the first users
 
-How one `pi-auto` request flows:
+Point the chat UI and apps at the proxy. Each namespace gets the proxy key from
+1Password through an `ExternalSecret`, never from a file in Git.
 
-1. LiteLLM sends the last few messages to the classifier, a short Qwen call with
-   thinking off and fixed (greedy) output.
-2. The classifier answers with one tier.
-3. `SIMPLE` and `MEDIUM` go to Qwen. `COMPLEX` and `REASONING` go to DeepSeek.
-4. LiteLLM forwards the request and streams the answer back.
+**Done when:** Open WebUI answers a chat message.
 
-Some cases go to DeepSeek without a hard grade:
+### 4. Measure before you add the cloud
 
-| Case | Why |
+Turn on the proxy's `prometheus` and `langfuse_otel` callbacks, and load the
+Grafana dashboards. Do this before step 5, so the first paid request is visible.
+
+| Question | Tool |
 |---|---|
-| The classifier fails | A wrong cheap guess costs more than a paid answer |
-| The same tool call repeats or fails 3 times in 6 | Qwen is stuck, so a stronger model takes over |
-| The prompt is too big for Qwen | Cutting the prompt would make the answer wrong |
-| vLLM is down | Only `pi-auto` falls back; other apps fail instead of paying |
+| How many requests? How fast? Any errors? | Grafana `/d/ai-gateway-analytics` |
+| Is the model server busy? | Grafana `/d/vllm-inference` |
+| Are the cards hot or at full power? | Grafana `/d/gpu-overview` |
+| What did one request say, and why did it go where it did? | Langfuse |
 
-**Gotcha:** one conversation can move between Qwen and DeepSeek message by
-message. Do not use `pi-auto` for data that must stay at home.
+**Done when:** the step 3 chat message appears in Grafana and as a trace in
+Langfuse. Details: [AI gateway and analytics](ai-observability.md).
 
-**See it yourself:** send one easy and one hard request, and read which model
-answered:
+### 5. Add the cloud model and the router
+
+Add the cloud model to the proxy, then the `pi-auto` route that chooses per
+request:
+
+1. A short local call, the *classifier*, grades the request as `SIMPLE`,
+   `MEDIUM`, `COMPLEX` or `REASONING`.
+2. `SIMPLE` and `MEDIUM` go to the local model. The others go to the cloud.
+3. These cases also go to the cloud: the classifier fails, the agent repeats
+   the same tool call, the prompt is too big, or the model server is down.
+
+Only clients that ask for `pi-auto` can reach the cloud. Every other client
+stays local and fails instead of paying when the model server is down.
+
+**Done when:** one easy and one hard request go to different models:
 
 ```bash
 K=$(cat ~/.pi/agent/litellm-api-key)
@@ -161,53 +148,60 @@ for p in "What is 2+2?" "Design a lock-free MPMC queue in Rust and prove it line
 done
 ```
 
-Expect `openai/qwen3.8-27b` first, then `openrouter/~deepseek/deepseek-flash-latest`.
-The hard request costs a fraction of a cent.
+Expect `openai/qwen3.8-27b`, then `openrouter/~deepseek/deepseek-flash-latest`.
+Grafana `/d/pi-routing` then shows the local/paid split.
+Details: [Model catalog](model-catalog.md).
 
-More: [Model catalog § The router](model-catalog.md#the-router).
+**Gotcha:** one conversation can move between local and cloud message by
+message. Prompts sent to the cloud leave the building.
 
-## Step 4: use agents
+### 6. Give people agents
 
-A chat app answers one message. An agent works in a loop: it asks the LLM what
-to do, runs a tool, sends the result back, and repeats until the task is done.
-One task can make dozens of LLM requests. That is why the per-request choice in
-step 3 matters.
+An agent works in a loop: ask the model, run a tool, send back the result,
+repeat. One task can make dozens of requests, which is why the router in step 5
+pays off.
 
-| | Pi | Hermes |
+| | Desk agent (Pi) | Background agent (Hermes) |
 |---|---|---|
-| Runs | on your PC, in a terminal | in the cluster, all day |
-| Use it for | coding with you at the keyboard | health checks, a daily digest, chat, PRs while you are away |
-| Models | you pick: Qwen, DeepSeek or `pi-auto` | Claude Sonnet as the brain; Qwen as a free choice |
+| Runs | on each person's PC | one pod in the cluster, all day |
+| Use it for | coding with someone at the keyboard | health checks, a daily digest, chat, PRs while nobody watches |
+| Models | the person picks local, cloud or `pi-auto` | Claude Sonnet as the brain; Qwen as a free choice |
+| Memory | the current session | Hindsight, across sessions |
+| Limits | what the person's PC can reach | read-only cluster access; humans merge its PRs |
 
-Both call LiteLLM, so both appear in the records.
+**Done when:** Pi answers "what does this repo do?" and Hermes's Status page
+shows the gateway running.
+Details: [Pi and Hermes agents](pi-agent-local-dev.md),
+[Hermes in the cluster](hermes.md), [Hermes on another cluster](hermes-other-clusters.md).
 
-More: [Pi and Hermes agents](pi-agent-local-dev.md), [Hermes in the cluster](hermes.md),
-[Hermes on another cluster](hermes-other-clusters.md).
+### 7. Run it day to day
 
-## Step 5: measure it
+| Task | Where |
+|---|---|
+| Check the local/paid split and spend weekly | Grafana `/d/pi-routing` |
+| Find why a request went to the cloud | Langfuse, `routing_decision.cause` |
+| Change models, router tiers or limits | PR to `litellm/config.yaml` |
+| Tune context and speed | [3090 LLM optimization](3090-llm-optimization.md) |
+| Swap the cards to another app | [GPU scale-swap runbook](gpu-scale-swap.md) |
 
-You need two kinds of answer, so there are two tools:
+## Words you need
 
-| Question | Tool | Where |
-|---|---|---|
-| How many requests stayed local? What did paid cost this week? | Grafana | `/d/pi-routing`, `/d/ai-gateway-analytics` |
-| Is vLLM busy? How fast does it answer? | Grafana | `/d/vllm-inference` |
-| Are the cards hot or at full power? | Grafana | `/d/gpu-overview` |
-| Why did this one request go to DeepSeek? What did it say? | Langfuse | `langfuse.vanillax.me`, tag `pi` |
-
-Grafana shows totals and trends. Langfuse shows single requests. Start in
-Grafana, then open Langfuse to look at one request.
-
-**Gotcha:** Pi shows the name `pi-auto`, not the model that answered, and prices
-every request as DeepSeek. Trust the dashboards, not Pi's cost line.
-
-More: [AI gateway and analytics](ai-observability.md).
+| Word | Means here |
+|---|---|
+| **LLM** | A large language model: reads a prompt, writes an answer |
+| **token** | A piece of a word, about 4 characters. Limits and prices count tokens |
+| **context window** | The most tokens one request can hold, prompt plus answer |
+| **inference** | Running the model to get an answer, not training it |
+| **FP8** | Weights stored at 8 bits each, so a bigger model fits the cards |
+| **tier** | The router's grade: `SIMPLE`, `MEDIUM`, `COMPLEX`, `REASONING` |
+| **reasoning effort** | How long the model "thinks" first: off, low, medium, high, xhigh, max |
+| **agent** | An LLM that can also run tools |
+| **Pi** | A terminal coding agent from [pi.dev](https://pi.dev). Not Raspberry Pi |
 
 ## Rules that keep it safe
 
-- Only vLLM runs the local LLM. Do not add Ollama or another GPU server.
-- One app owns a graphics card at a time.
-- Apps call LiteLLM, never vLLM directly.
-- Prompts sent to DeepSeek leave home and cost money. Use `pi-qwen-only` for
-  private work.
-- All changes go through Git and ArgoCD. Do not edit the cluster by hand.
+- Use one model server. Here that is vLLM; do not add Ollama beside it.
+- Give each graphics card to one app at a time.
+- Make every client call the proxy, never the model server.
+- Keep private work on the local model: use `pi-qwen-only`, not `pi-auto`.
+- Change everything through Git and ArgoCD. Do not edit the cluster by hand.

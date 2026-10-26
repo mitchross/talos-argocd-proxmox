@@ -7,7 +7,7 @@ In plain words: the *KV cache* is GPU memory that holds the tokens of requests
 in progress. All running requests share it, so one huge request leaves less
 room for the others.
 
-New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 Baseline: official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
 vision, speculation off. Exact flags and rollback live in the

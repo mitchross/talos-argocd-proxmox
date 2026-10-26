@@ -3,7 +3,7 @@
 **Which model answered?** Open Grafana `/d/pi-routing`.
 **Why did that turn escalate?** Open `langfuse.vanillax.me`, filter tag `pi`.
 
-New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+New to the stack? Read [Local AI starter kit](index.md) first.
 
 Every LLM request in the homelab goes through one gateway, LiteLLM. LiteLLM
 sends each request to a backend and reports what happened to two places.

@@ -4,7 +4,7 @@
 **Status:** current state. Argo CD syncs [`my-apps/development/hermes`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/hermes) as `my-apps-hermes`.
 **Agent map:** [Hermes CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/CLAUDE.md) says which repo owns which change.
 **Other clusters:** [Run Hermes on another cluster](hermes-other-clusters.md).
-**New to the stack?** Read [Local AI in this homelab: start here](index.md), then [Pi and Hermes agents](pi-agent-local-dev.md) to choose an agent.
+**New to the stack?** Read [Local AI starter kit](index.md), then [Pi and Hermes agents](pi-agent-local-dev.md) to choose an agent.
 
 ## What Hermes is
 

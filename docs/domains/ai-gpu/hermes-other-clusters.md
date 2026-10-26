@@ -3,7 +3,7 @@
 **Purpose:** run the public `hermes-dev` image in another homelab, with Docker Compose or plain Kubernetes manifests.
 **Scope:** nothing from this cluster is needed: no Argo CD, 1Password, Longhorn, Kopiur, LiteLLM or Hindsight.
 **This cluster's setup:** [Hermes Agent: the AI agent in the cluster](hermes.md).
-**How the pieces fit:** [Local AI in this homelab: start here](index.md).
+**How the pieces fit:** [Local AI starter kit](index.md).
 **Image source:** [homelab-images/images/hermes-dev](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev) lists what is installed and how it is built.
 
 ## Use a coding agent
