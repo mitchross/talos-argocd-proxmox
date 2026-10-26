@@ -10,7 +10,11 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate  # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+    # Surge first: RWX/no PVC, so the old pod serves until the new one is Ready.
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: versatiles
