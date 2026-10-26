@@ -11,7 +11,11 @@ spec:
       app.kubernetes.io/name: kiwix
   replicas: 1
   strategy:
-    type: Recreate
+    # Surge first: RWX/no PVC, so the old pod serves until the new one is Ready.
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
