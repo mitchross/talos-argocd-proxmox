@@ -84,7 +84,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "100 * sum(increase(litellm_deployment_success_responses_total{requested_model=\"pi-auto\", litellm_model_name=~\"qwen3.8-27b.*\"}[$__range])) / (sum(increase(litellm_deployment_success_responses_total{requested_model=\"pi-auto\"}[$__range])) > 0)",
+          "expr": "100 * sum(increase(litellm_deployment_success_responses_total{requested_model=~\"pi-auto|qwen3.8-27b-auto\", litellm_model_name=~\"qwen3.8-27b.*\"}[$__range])) / (sum(increase(litellm_deployment_success_responses_total{requested_model=~\"pi-auto|qwen3.8-27b-auto\"}[$__range])) > 0)",
           "legendFormat": "__auto",
           "instant": true,
           "range": false
@@ -154,7 +154,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "sum(increase(litellm_deployment_success_responses_total{requested_model=\"pi-auto\", litellm_model_name!~\"qwen3.8-27b.*\"}[$__range]))",
+          "expr": "sum(increase(litellm_deployment_success_responses_total{requested_model=~\"pi-auto|qwen3.8-27b-auto\", litellm_model_name!~\"qwen3.8-27b.*\"}[$__range]))",
           "legendFormat": "__auto",
           "instant": true,
           "range": false
@@ -378,7 +378,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "sum by (litellm_model_name) (increase(litellm_deployment_success_responses_total{requested_model=\"pi-auto\"}[$__range]))",
+          "expr": "sum by (litellm_model_name) (increase(litellm_deployment_success_responses_total{requested_model=~\"pi-auto|qwen3.8-27b-auto\"}[$__range]))",
           "legendFormat": "{{litellm_model_name}}",
           "instant": true,
           "range": false
@@ -480,7 +480,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "sum by (litellm_model_name) (increase(litellm_deployment_success_responses_total{requested_model=\"pi-auto\"}[$__interval])) > 0",
+          "expr": "sum by (litellm_model_name) (increase(litellm_deployment_success_responses_total{requested_model=~\"pi-auto|qwen3.8-27b-auto\"}[$__interval])) > 0",
           "legendFormat": "{{litellm_model_name}}",
           "instant": false,
           "range": true
