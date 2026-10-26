@@ -363,6 +363,24 @@ omnictl kubeconfig --cluster talos-prod-cluster-v2 --service-account --user talo
 kubectl get nodes
 ```
 
+**talosctl without a browser.** talosctl reads the same `OMNI_SERVICE_ACCOUNT_KEY`. Without it, talosctl opens a browser login, and that fails for a service-account identity.
+
+```bash
+# Run once per shell, before any talosctl command.
+export OMNI_ENDPOINT=https://omni.vanillax.me:443
+export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
+
+# Only when ~/.talos/config is missing or stale (it then uses identity talos-prod-sa@serviceaccount.omni.sidero.dev).
+talosctl config remove omni-prod-talos-prod-cluster-v2 -y 2>/dev/null || true
+omnictl talosconfig --cluster talos-prod-cluster-v2
+
+talosctl -n <node-ip> version --short
+```
+
+- `Could not authenticate: key expired` plus a browser link means the key is not exported in this shell. Do not click **Grant Access**; export the key and run the command again.
+- Each browser grant registers an extra 4-hour key on `talos-prod-sa`. `omnictl serviceaccount list` shows them; they expire on their own.
+- Keep the key in 1Password only. Do not write it to dotfiles.
+
 **Renewal** (expires after 1 year):
 
 ```bash
