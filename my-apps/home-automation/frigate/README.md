@@ -132,47 +132,51 @@ through a PR; keep the NPU detector in place.
 
 ### Nest go2rtc override
 
-Frigate's stock go2rtc 1.9.14 connected to Google but repeatedly lost usable
-frames with missing H.264 parameter sets and local RTSP 404 errors. This
-application supplies [bober10113's recovery follow-up](https://github.com/bober10113/go2rtc/tree/codex/b101-v63-recovery-followup)
-at commit `ec152af109f3f2ead77b81650772444a91d3fb44`. The fork adds per-stream
-session state, recurring renewal, keyframe requests and recovery coordination
-for the derived FFmpeg streams. The follow-up separates successful-publish
-observation from retry cooldown, rejects stale recovery callbacks, avoids
-repeating completed video warm-up, bounds command-slot waiting, closes failed
-WebRTC peers, and classifies Google errors without logging arbitrary response
-bodies. It is a community fork, not an upstream release.
+Frigate's built-in go2rtc kept losing Nest video. Lots of people hit the same
+thing ([go2rtc #2386](https://github.com/AlexxIT/go2rtc/issues/2386),
+[#2365](https://github.com/AlexxIT/go2rtc/issues/2365),
+[#2108](https://github.com/AlexxIT/go2rtc/issues/2108)).
 
-The publish regression test reproduces an incorrect 45-second cooldown on the
-previous `222d37f` revision and passes on this revision. The image build runs
-that test plus Nest command-admission, error-redaction, and failed-peer cleanup
-regressions. This fixes verified recovery defects; it does not guarantee that
-Google will make every camera available.
+Here is the loop:
 
-`go2rtc-image/Dockerfile` builds that exact revision. The image workflow tests
-PRs and publishes `ghcr.io/mitchross/frigate-go2rtc` only from `main`. Change
-`go2rtc-image/VERSION` and the init-container image tag together when changing
-the image; published tags are not overwritten. The first rollout may wait in
-`ImagePullBackOff` until the main-branch image build finishes. The GHCR package
-must be public for the cluster's anonymous pull; if a first publish creates a
-private package, set package visibility to public before expecting the init
-container to start.
+1. Frigate gets no frames for 20 seconds and restarts its reader.
+2. go2rtc takes that as a dead camera and throws away the Nest stream.
+3. It asks Google for a brand new stream.
+4. The new stream takes a while to send a usable first frame, so we're back at step 1.
 
-The init container copies the binary to an `emptyDir`. Frigate mounts it
-read-only at its supported `/config/go2rtc` override path. Nothing is written
-to the backed-up config PVC, so a rollback does not leave a custom binary
-behind. VPA targets the Frigate container by name.
+We build go2rtc from [`mitchross/go2rtc`](https://github.com/mitchross/go2rtc/tree/frigate-nest)
+(commit `027bae2`). That's plain upstream go2rtc plus some community Nest fixes
+that haven't been merged upstream yet:
 
-Verify the startup log identifies `1.9.14+dev.ec152af`, all five cameras maintain
-nonzero FPS, and successful `ExtendWebRtcStream` operations continue through
-multiple five-minute session windows. Pod readiness alone is insufficient.
-The isolated pre-merge trial still saw a stream disconnect and a doorbell
-capture timeout despite successful session requests. Sustained production
-recovery and recording continuity remain rollout acceptance checks.
+- [#2516](https://github.com/AlexxIT/go2rtc/pull/2516) by Inrego. Stops go2rtc
+  from dropping the stream when Nest goes quiet for a few seconds. Asks the
+  camera for a fresh frame when one is late. Keeps renewing the stream when a
+  renewal fails once. Includes [#2351](https://github.com/AlexxIT/go2rtc/pull/2351) by tillo.
+- Asks for fresh frames two ways (PLI and FIR), because some Nest models ignore one of them.
+- Retries a preloaded stream if its first connect fails.
 
-To roll back this follow-up, revert the source pin, image VERSION and
-init-container tag together through a PR to `b101-222d37f-v1`. Keep the buffered
-input templates and NPU configuration in place.
+`config.yml` also preloads every Nest stream. go2rtc keeps them open all the
+time, so when Frigate restarts its reader it just reconnects to a stream that is
+already running. Google never sees a new request.
+
+We used to run a different community fork (bober10113, tag `b101-ec152af-v3`).
+It made things worse: one camera was getting a new stream every couple of
+minutes, and Frigate got "not found" errors while the fork was recovering.
+
+The Dockerfile builds that exact commit and runs its tests. Bump
+`go2rtc-image/VERSION` and the init container tag together. The image is only
+published from `main`, so the first rollout may sit in `ImagePullBackOff` for a
+few minutes.
+
+How to tell it's working:
+
+- The log says `version=1.9.14+dev.027bae2`.
+- Each camera renews its stream about every 3 minutes (`ExtendWebRtcStream` in
+  the `[nest]` logs). New streams (`GenerateWebRtcStream`) should be rare.
+- All five cameras stay at 5 fps, and `Ffmpeg process crashed` barely shows up.
+  Frigate logs that line once per second while a camera is down.
+
+To roll back, revert the PR.
 
 To return to bundled go2rtc, revert the override commit through a PR. That
 removes the init container and binary mount while retaining Frigate RC2 and
@@ -315,27 +319,12 @@ awake and drains it even on house wiring, because house wiring only trickle-char
 The externally powered garage camera is a different case. See [Google power behavior](https://support.google.com/googlehome/answer/11830989?hl=en)
 and [SDM live-session rules](https://developers.google.com/nest/device-access/traits/device/camera-live-stream#extendwebrtcstream).
 
-### Garage outside and kitchen recovery trial
+### Garage outside and kitchen retry interval
 
-The externally powered battery-model garage camera and wired kitchen camera
-use a 90-second FFmpeg retry interval as a recovery trial. On the deployed Nest bridge,
-an independent reader took 40.33 seconds to decode its first frame and then
-decoded 50 frames without errors, while Frigate repeatedly restarted its reader
-after 20 seconds and produced no fresh recordings. A kitchen reader separately
-decoded ten frames without errors in 68.18 seconds during the same failure.
-
-In Frigate RC2, `retry_interval` gates watchdog restarts as well as initial
-watchdog startup. It does not change the hard-coded 20-second stale-frame
-threshold, so an offline status or stale-frame message can precede an actual
-restart. This trial trades slower retries of genuine failures for more time to
-finish Nest recovery; it does not fix session negotiation or keyframe delivery.
-
-After merge and sync, verify `garage-outside` and `kitchen` reach their
-configured 5 FPS and create fresh, decodable recordings across at least two session renewals.
-Check live playback after reopening the viewer as well. If it remains offline
-or recovery regresses, remove the affected camera's `retry_interval` through a PR to
-restore the default 10-second interval. Keep the other cameras at their current
-intervals until this trial establishes a benefit.
+These two cameras used to wait 90 seconds between retries to give the old fork
+time to recover. Now that the streams stay open, they use Frigate's normal
+retry. If one of them starts dropping again, add `retry_interval: 90` back to
+that camera.
 
 ### Frigate Pending after a VPA eviction
 

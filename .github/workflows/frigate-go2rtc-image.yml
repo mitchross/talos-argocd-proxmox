@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           tag="$(cat "$CONTEXT/VERSION")"
-          [[ "$tag" =~ ^b101-[a-f0-9]{7}-v[0-9]+$ ]]
+          [[ "$tag" =~ ^(nest|b101)-[a-f0-9]{7}-v[0-9]+$ ]]
           grep -Fq "image: $IMAGE:$tag" my-apps/home-automation/frigate/deployment.yaml
           if [[ -n "$BASE_SHA" ]] && git cat-file -e "$BASE_SHA:$CONTEXT/VERSION" 2>/dev/null; then
             old_tag="$(git show "$BASE_SHA:$CONTEXT/VERSION")"
