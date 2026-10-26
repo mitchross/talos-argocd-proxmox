@@ -85,8 +85,7 @@ go2rtc:
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
     backyard-sub:
-    # Test: backyard re-encodes on CPU to rule out the iGPU path; it flapped alone while the other four Nest cams on VAAPI stayed stable.
-    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
+    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
     garage-inside-sub:
@@ -103,6 +102,18 @@ go2rtc:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
     kitchen-sub:
     - "ffmpeg:kitchen-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
+  # Keep Nest streams open so a Frigate reader restart doesn't ask Google for a new stream.
+  preload:
+    backyard-nest: video
+    backyard-sub: video
+    garage-inside-nest: video
+    garage-inside-sub: video
+    garage-outside-nest: video
+    garage-outside-sub: video
+    living-room-nest: video
+    living-room-sub: video
+    kitchen-nest: video
+    kitchen-sub: video
 cameras:
   shed:
     # Enable after the bridge produces decoded frames in the cluster.
@@ -172,8 +183,6 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
-      # This Nest feed took 40 seconds to decode after attachment; avoid restart churn.
-      retry_interval: 90
       input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-outside-sub
@@ -219,8 +228,6 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
-      # A separate reader decoded successfully after 68 seconds during recovery.
-      retry_interval: 90
       input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/kitchen-sub

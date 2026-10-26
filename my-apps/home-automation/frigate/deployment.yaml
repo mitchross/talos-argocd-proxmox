@@ -20,7 +20,7 @@ spec:
         node.vanillax.dev/class: mini-pc-dell-ultra
       initContainers:
       - name: install-go2rtc
-        image: ghcr.io/mitchross/frigate-go2rtc:b101-ec152af-v3
+        image: ghcr.io/mitchross/frigate-go2rtc:nest-027bae2-v1
         command: ["/bin/cp", "/go2rtc", "/custom/go2rtc"]
         resources:
           requests:
