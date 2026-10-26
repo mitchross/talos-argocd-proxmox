@@ -320,6 +320,19 @@ awake and drains it even on house wiring, because house wiring only trickle-char
 The externally powered garage camera is a different case. See [Google power behavior](https://support.google.com/googlehome/answer/11830989?hl=en)
 and [SDM live-session rules](https://developers.google.com/nest/device-access/traits/device/camera-live-stream#extendwebrtcstream).
 
+### Backyard re-encodes on the CPU
+
+Backyard's Nest feed changes resolution on its own, between 1920x1080 and
+640x360 (in one minute: 1,790 frames at 1080p and 68 at 360p). The other four
+cameras stay at 1080p. The iGPU re-encode can't handle a size change, so it
+died about 90 times an hour. The CPU re-encode just rescales, so `backyard-sub`
+leaves out `#hardware=vaapi`.
+
+All five Nest cameras also read their restream with
+`-use_wallclock_as_timestamps 1`. Without it, a timestamp jump makes Frigate's
+fps filter push out a burst of duplicate frames (backyard showed 100 fps), and
+Frigate kills the reader for going over its fps limit.
+
 ### Garage outside and kitchen retry interval
 
 These two cameras used to wait 90 seconds between retries to give the old fork
