@@ -85,7 +85,8 @@ go2rtc:
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
     backyard-sub:
-    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered#hardware=vaapi"
+    # CPU, not iGPU: backyard's Nest feed switches between 1080p and 360p, and the iGPU re-encode dies on every switch.
+    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5#input=nest-buffered"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
     garage-inside-sub:
@@ -137,7 +138,8 @@ cameras:
   backyard:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
+      # Wall-clock timestamps: a timestamp jump in the restream otherwise makes Frigate's fps filter emit a burst of duplicate frames, and Frigate kills the reader for exceeding its fps limit.
+      input_args: -use_wallclock_as_timestamps 1 -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/backyard-sub
         roles:
@@ -161,7 +163,7 @@ cameras:
   garage-inside:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
+      input_args: -use_wallclock_as_timestamps 1 -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-inside-sub
         roles:
@@ -183,7 +185,7 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
+      input_args: -use_wallclock_as_timestamps 1 -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-outside-sub
         roles:
@@ -205,7 +207,7 @@ cameras:
   living-room:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
+      input_args: -use_wallclock_as_timestamps 1 -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/living-room-sub
         roles:
@@ -228,7 +230,7 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
+      input_args: -use_wallclock_as_timestamps 1 -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
       - path: rtsp://127.0.0.1:8554/kitchen-sub
         roles:
