@@ -2,7 +2,7 @@ FROM golang:1.27.3-alpine@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e8835
 RUN apk add --no-cache git
 WORKDIR /src
 RUN git init . && git remote add origin https://github.com/mitchross/go2rtc.git \
-    && git fetch --depth=1 origin 027bae2023b597640f3f6e1479abffaea4b93f5b \
+    && git fetch --depth=1 origin e7600f4665d14e4e2d8c5bbb72cc10285d243269 \
     && git checkout --detach FETCH_HEAD
 RUN go mod download && go mod verify
 # Upstream's other packages have tests that fail without source registration; run the patched ones.
