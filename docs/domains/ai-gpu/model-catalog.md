@@ -26,7 +26,7 @@ Both cards belong to vLLM. Other GPU workloads stay parked.
 
 | Property | Value |
 |---|---|
-| Engine | stock vLLM `v0.29.0`, pinned digest |
+| Engine | stock vLLM, pinned image digest |
 | Weights | official `Qwen/Qwen3.8-27B-FP8`, pinned revision |
 | Placement | TP=2, two RTX 3090s, no CPU offload |
 | KV / recurrent state | FP8 E4M3 / float16 |
@@ -67,7 +67,7 @@ authoritative.
 | Property | Value |
 |---|---|
 | Gateway model | `pi-auto` |
-| Implementation | **beta** `auto_router/complexity_router`, LiteLLM `v1.102.1` |
+| Implementation | **beta** LiteLLM `auto_router/complexity_router` |
 | Local tiers | `SIMPLE`, `MEDIUM` → `qwen3.8-27b-auto` |
 | Paid tiers | `COMPLEX` → `deepseek-flash` at `high`; `REASONING` at `max` |
 | Classifier | local Qwen, greedy, 64 tokens |
@@ -102,9 +102,10 @@ Full behaviour: [Pi agent guide](pi-agent-local-dev.md).
 Auth is a namespace-local ExternalSecret from `litellm/master_key`.
 
 Every declared LLM consumer uses LiteLLM: Open WebUI, Perplexica/Vane,
-Presenton, SurfSense, Hindsight, Project Nomad, ComfyUI's vision
-bridge, WorldMonitor, Deal Scout, Karakeep and News Reader. They all
-stay on local Qwen unless their model is changed explicitly.
+Presenton, SurfSense, Hindsight, Hermes, Home Assistant, Karakeep,
+ComfyUI's vision bridge, WorldMonitor, Deal Scout, News Reader and
+Radar-ng. Paseo uses it too when it is turned on. They all stay on local
+Qwen unless their model is changed explicitly.
 
 Direct vLLM callers bypass Langfuse. Applications must use the authenticated
 gateway to appear in telemetry.

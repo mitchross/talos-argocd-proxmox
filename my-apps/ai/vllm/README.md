@@ -10,7 +10,7 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 |---|---|
 | Model | Official `Qwen/Qwen3.8-27B-FP8`, no Unsloth/GGUF conversion |
 | Revision | `017b9c7af6b5689d5dd426a76e0bc077eb5ca20a` |
-| Runtime | stock vLLM `v0.29.0`, existing immutable image digest |
+| Runtime | stock vLLM, pinned immutable image digest |
 | GPUs | 2 × RTX 3090, tensor parallel 2, multiprocessing executor |
 | Interconnect | no custom all-reduce; NCCL P2P disabled; shared host transport |
 | Context ceiling | 262,144 tokens, native model limit, no RoPE extrapolation |
