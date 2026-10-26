@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: boot-reason
+  labels:
+    app.kubernetes.io/name: boot-reason
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: boot-reason
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: boot-reason
+    spec:
+      # Critical pods stop last during a graceful node shutdown.
+      priorityClassName: system-node-critical
+      terminationGracePeriodSeconds: 10
+      automountServiceAccountToken: false
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: boot-reason
+        image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+        command: ["/bin/sh", "/script/boot-reason.sh"]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            cpu: 1m
+            memory: 4Mi
+          limits:
+            memory: 16Mi
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: script
+          mountPath: /script
+          readOnly: true
+        - name: state
+          mountPath: /state
+      volumes:
+      - name: script
+        configMap:
+          name: boot-reason-script
+      - name: state
+        hostPath:
+          path: /var/lib/boot-reason
+          type: DirectoryOrCreate

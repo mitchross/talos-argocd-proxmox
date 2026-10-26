@@ -19,7 +19,7 @@ spec:
             severity: info
           annotations:
             summary: "Node {{ $labels.instance }} rebooted"
-            description: "The boot timestamp changed or uptime is under ten minutes. This includes planned reboots; inspect node logs to determine the cause."
+            description: "The boot timestamp changed or uptime is under ten minutes. This includes planned reboots. For Talos nodes, the boot-reason log says whether it was clean, unclean or a watchdog reset: {k8s_namespace_name=\"boot-reason\"} |= \"boot-reason\""
             dashboard_url: https://grafana.vanillax.me/d/node-crash-logs
         - alert: NodeKernelOOMKill
           expr: increase(node_vmstat_oom_kill[5m]) > 0

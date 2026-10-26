@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: boot-reason
+  labels:
+    # hostPath for the per-node state file needs the privileged level.
+    pod-security.kubernetes.io/enforce: privileged
