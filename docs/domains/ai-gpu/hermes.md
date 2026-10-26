@@ -6,6 +6,11 @@
 **Other clusters:** [Run Hermes on another cluster](hermes-other-clusters.md).
 **New to the stack?** Read [Local AI starter kit](index.md), then [Pi and Hermes agents](pi-agent-local-dev.md) to choose an agent.
 
+!!! tip "Do this first"
+    1. Turn on Tailscale if you are away from home.
+    2. Open `https://hermes.vanillax.me` and sign in ([Connect](#1-connect)).
+    3. In **Chat**, ask "is the cluster healthy". About 2 minutes.
+
 ## What Hermes is
 
 Hermes is an agent that keeps running when nobody is at a keyboard. One pod in the `hermes` namespace runs a gateway for cron jobs and chat platforms, plus a web dashboard.
@@ -180,6 +185,23 @@ In the Chat tab, ask in plain words: "is the cluster healthy", "why is wyze-brid
 Hermes loads the `homelab-ops` skill and runs the read-only `kubectl` checks. It names the Git directory that owns a fix; it cannot change the cluster.
 
 Check the daily digest under **Cron** in the dashboard. Run it by hand with the **Trigger** button.
+
+```mermaid
+sequenceDiagram
+    participant Y as You
+    participant H as Hermes
+    participant A as Codex or Claude Code (in the pod)
+    participant G as GitHub
+    participant R as ArgoCD
+    Y->>H: "open a PR that fixes X"
+    H->>A: task plus read-only evidence
+    A->>G: branch, commit, pull request
+    A-->>H: PR link
+    H-->>Y: PR link, agent, model, effort
+    Y->>G: review and merge
+    G->>R: main changes
+    R->>R: sync the cluster
+```
 
 Ask for a fix: "open a PR that fixes the wyze-bridge secret". Hermes starts Codex or Claude Code in its pod with the evidence, waits, and reports the pull request link. You merge; Argo CD deploys. Hermes never merges.
 

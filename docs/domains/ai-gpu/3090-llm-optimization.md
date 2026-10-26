@@ -13,6 +13,11 @@ Baseline: official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
 vision, speculation off. Exact flags and rollback live in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).
 
+!!! tip "In 10 seconds"
+    - One request can hold up to 262,144 tokens.
+    - All running requests share one memory pool, so one huge request slows the rest.
+    - Read the real pool size from the vLLM boot log, not from math.
+
 ## Historical capacity observations
 
 The September 6 audit measured an earlier vLLM release with medium
@@ -30,6 +35,15 @@ rollout; do not relabel the historical pool as current capacity.
 | Available KV | 5.07 GiB per GPU |
 | Engine KV pool | **325,717 tokens** |
 | Concurrency at 262,144 tokens | **1.24×** |
+
+```mermaid
+pie showData
+    title One 24 GiB card (September audit)
+    "Model weights" : 14.46
+    "KV cache pool" : 5.07
+    "Activations and workspace" : 2.55
+    "Kept free (0.92 budget)" : 1.92
+```
 
 Two cards give 48 GiB aggregate through tensor parallelism, as separate per-card
 allocations. Host RAM helps loading and transport; it does **not** enlarge the

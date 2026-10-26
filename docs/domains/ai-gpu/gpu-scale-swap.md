@@ -39,6 +39,12 @@ Replica overrides in each `kustomization.yaml` are authoritative.
 
 About 10 minutes plus reconciliation.
 
+```mermaid
+flowchart LR
+    E[Edit both replica counts<br/>in one commit] --> P[PR and merge] --> A[ArgoCD syncs]
+    A --> O[Old pod stops,<br/>card freed] --> N[New pod: Pending, then Running]
+```
+
 1. Pick the target state from the truth table.
 2. Edit outgoing and incoming replica counts in **one commit**.
 3. Open a PR. Merge is the operator's call.

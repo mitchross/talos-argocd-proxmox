@@ -13,6 +13,11 @@ New to the stack? Read [Local AI starter kit](index.md) first.
 | `deepseek-flash` | OpenRouter, external | paid | `deepseek-flash` |
 | `pi-auto` | picks between the two | mixed | `pi-auto` |
 
+!!! tip "In 10 seconds"
+    - **Qwen**: local, free, private. The default for every app.
+    - **DeepSeek Flash**: cloud, paid, prompts leave home.
+    - **`pi-auto`**: picks one of the two for each request.
+
 `pi-auto` is not a third model. It is a LiteLLM router that chooses one of the
 other two per request.
 
@@ -86,6 +91,26 @@ authoritative.
 
 One request goes to one backend. This is model selection, not response
 splitting.
+
+```mermaid
+sequenceDiagram
+    participant C as Client (Pi)
+    participant L as LiteLLM pi-auto
+    participant K as Classifier (local Qwen)
+    participant Q as Qwen (free)
+    participant D as DeepSeek (paid)
+    C->>L: request, model = pi-auto
+    L->>K: last 4 turns
+    K-->>L: SIMPLE / MEDIUM / COMPLEX / REASONING
+    alt SIMPLE or MEDIUM
+        L->>Q: forward
+        Q-->>L: answer
+    else COMPLEX, REASONING, stuck, too big, or classifier failed
+        L->>D: forward at high or max effort
+        D-->>L: answer
+    end
+    L-->>C: answer (Pi still shows pi-auto)
+```
 
 ### What goes where
 
