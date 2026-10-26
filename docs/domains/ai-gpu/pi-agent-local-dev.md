@@ -3,6 +3,11 @@
 **Use Pi at your keyboard. Use Hermes when the work should run without you.**
 New to the stack? Read [Local AI starter kit](index.md) first.
 
+!!! tip "Do this first"
+    1. Pick the agent from the table below.
+    2. For Pi, follow [Pi in five minutes](#pi-in-five-minutes). About 5 minutes.
+    3. For Hermes, follow [Hermes § Connect](hermes.md#1-connect).
+
 An *agent* is an LLM that can also run tools: read files, run commands, edit
 code. This homelab has two. Both send their LLM requests to the same LiteLLM
 gateway, so both show up in Grafana and Langfuse.
@@ -72,6 +77,16 @@ A resumed session keeps its saved thinking level. Start a new session with
 `/new` after you change defaults.
 
 ## The four launchers
+
+```mermaid
+flowchart LR
+    A{Data must stay home?} -->|yes| Q[pi-qwen-only]
+    A -->|no| B{Gateway down?}
+    B -->|yes| R[pi-direct-openrouter]
+    B -->|no| C{Known to be hard?}
+    C -->|yes| F[pi-flash]
+    C -->|no| W[pi-withflash]
+```
 
 | Launcher | Model | Use it for |
 |---|---|---|

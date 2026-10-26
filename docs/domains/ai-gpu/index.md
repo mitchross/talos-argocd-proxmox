@@ -4,6 +4,11 @@
 and the order to build them. This homelab is the worked example.
 **Status:** current state. Every part below runs here today.
 
+!!! tip "Do this first"
+    1. Read [The parts](#the-parts) table. About 2 minutes.
+    2. Run the step 1 check below. It proves the model is up.
+    3. Work down the [build order](#build-order) and tick each step.
+
 ## The idea in one paragraph
 
 Run a large language model (LLM) on your own graphics cards, so everyday work
@@ -85,6 +90,23 @@ apps share the GPUs and you want Git to record every change.
 
 Build in this order. Each step needs the one before it, and each ends with a
 check that proves it works.
+
+```mermaid
+flowchart LR
+    S1[1. Model] --> S2[2. Proxy] --> S3[3. First users] --> S4[4. Measure]
+    S4 --> S5[5. Cloud + router] --> S6[6. Agents] --> S7[7. Day to day]
+    style S4 stroke-width:3px
+```
+
+Track your progress:
+
+- [ ] 1. `curl …/v1/models` prints `qwen3.8-27b`
+- [ ] 2. The proxy answers a `qwen3.8-27b` request
+- [ ] 3. Open WebUI answers a chat message
+- [ ] 4. That message shows in Grafana and Langfuse
+- [ ] 5. One easy and one hard request go to different models
+- [ ] 6. Pi answers, and Hermes's Status page shows the gateway running
+- [ ] 7. You check `/d/pi-routing` once a week
 
 ### 1. Run the model
 

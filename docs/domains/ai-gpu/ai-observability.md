@@ -5,6 +5,11 @@
 
 New to the stack? Read [Local AI starter kit](index.md) first.
 
+!!! tip "Which tool do I open?"
+    - **How many, how fast, how much?** Grafana.
+    - **Why did this one request do that?** Langfuse.
+    - **Is it even running?** Run [Verify a deployment](#verify-a-deployment). About 15 minutes.
+
 Every LLM request in the homelab goes through one gateway, LiteLLM. LiteLLM
 sends each request to a backend and reports what happened to two places.
 
@@ -36,6 +41,13 @@ Grafana, then open Langfuse to see why one request went where it did.
 
 Pi shows the `pi-auto` alias, never the backend that answered. LiteLLM records
 two model labels on each request, and the split is the gap between them:
+
+```mermaid
+flowchart LR
+    R[Pi sends model = pi-auto] --> T{tier}
+    T -->|local| Q["requested_model = qwen3.8-27b-auto<br/>litellm_model_name = qwen3.8-27b"]
+    T -->|paid| D["requested_model = pi-auto<br/>litellm_model_name = ~deepseek/deepseek-flash-latest"]
+```
 
 | Label | Meaning | Local Qwen turn | DeepSeek turn |
 |---|---|---|---|

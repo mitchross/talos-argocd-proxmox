@@ -6,6 +6,14 @@
 **How the pieces fit:** [Local AI starter kit](index.md).
 **Image source:** [homelab-images/images/hermes-dev](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev) lists what is installed and how it is built.
 
+```mermaid
+flowchart TD
+    A{Do you run Kubernetes?} -->|no| C[Option A: Docker Compose]
+    A -->|yes| K[Option B: Kubernetes manifests]
+    C --> L[Connect and log in]
+    K --> L
+```
+
 ## Use a coding agent
 
 Paste this prompt into Claude Code or Codex, inside your own cluster repo:
