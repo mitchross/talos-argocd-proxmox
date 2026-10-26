@@ -28,7 +28,7 @@ spec:
       initContainers:
         # Image from homelab-images/images/hermes-dev: official Hermes plus claude, codex, kubectl, gh, tmux.
         - name: seed
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:01add65752e3c7529811c01a110174289433625bed90fca82e03222cda15a4b1
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:9aba5811123571ede076af5ec29e8000498a10ab732e3b57120f5c9c8a10ddf2
           command: ["/bin/sh", "/etc/hermes-scripts/seed.sh"]
           envFrom:
             - secretRef:
@@ -57,7 +57,7 @@ spec:
               readOnly: true
       containers:
         - name: hermes
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:01add65752e3c7529811c01a110174289433625bed90fca82e03222cda15a4b1
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:9aba5811123571ede076af5ec29e8000498a10ab732e3b57120f5c9c8a10ddf2
           args: ["gateway", "run"]
           # s6-overlay must start as root; it drops the gateway and dashboard to uid 10000 itself.
           securityContext:
