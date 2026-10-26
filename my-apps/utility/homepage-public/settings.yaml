@@ -1,0 +1,19 @@
+title: VanillaX Apps
+description: Public apps self-hosted at vanillax.me
+theme: dark
+color: slate
+headerStyle: clean
+hideVersion: true
+layout:
+  Knowledge:
+    style: row
+    columns: 4
+  Tools:
+    style: row
+    columns: 4
+  Privacy:
+    style: row
+    columns: 2
+  Projects:
+    style: row
+    columns: 4

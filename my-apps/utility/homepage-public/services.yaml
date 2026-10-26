@@ -1,0 +1,61 @@
+# Only apps on the external gateway; keep machine endpoints (webhooks, ingest, APIs) off this public page.
+- Knowledge:
+    - News Reader:
+        icon: mdi-newspaper-variant-outline
+        href: https://news.vanillax.me
+        description: RSS / News Reader
+    - Kiwix:
+        icon: kiwix.png
+        href: https://kiwix.vanillax.me
+        description: Offline Encyclopedia
+    - Karakeep:
+        icon: mdi-bookmark-multiple-outline
+        href: https://karakeep.vanillax.me
+        description: Bookmark & Read-Later
+    - World Monitor:
+        icon: mdi-earth
+        href: https://worldmonitor.vanillax.me
+        description: Global News & Events Dashboard
+- Tools:
+    - Maps:
+        icon: mdi-map-outline
+        href: https://maps.vanillax.me
+        description: Worldwide Map
+    - IT-Tools:
+        icon: it-tools.png
+        href: https://it-tools.vanillax.me
+        description: IT Utility Tools Collection
+    - Excalidraw:
+        icon: excalidraw.png
+        href: https://excalidraw.vanillax.me
+        description: Virtual Whiteboard
+    - Vert:
+        icon: mdi-swap-horizontal
+        href: https://vert.vanillax.me
+        description: File Converter
+    - Cobalt:
+        icon: mdi-download-circle-outline
+        href: https://dl.vanillax.me
+        description: Video & Audio Downloader
+- Privacy:
+    - SearXNG:
+        icon: searxng.png
+        href: https://search.vanillax.me
+        description: Private Metasearch Engine
+    - Redlib:
+        icon: redlib.png
+        href: https://redlib.vanillax.me
+        description: Private Reddit Frontend
+- Projects:
+    - Radar:
+        icon: mdi-weather-lightning-rainy
+        href: https://radar.vanillax.me
+        description: Weather Radar
+    - Deal Scout:
+        icon: mdi-tag-search-outline
+        href: https://deals.vanillax.me
+        description: Deal Finder
+    - Product Bench:
+        icon: mdi-chart-box-outline
+        href: https://bench.vanillax.me
+        description: Product Benchmark Lab
