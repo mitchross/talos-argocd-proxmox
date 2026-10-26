@@ -72,6 +72,24 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: pmtiles-rwx
+  namespace: radar-ng
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; the basemap pod's fetch-basemap init container rebuilds it from a build.protomaps.com daily build"
+spec:
+  # longhorn-flash, not HDD-NFS: pmtiles random reads thrash on HDD. RWX lets basemap roll across nodes.
+  accessModes: [ReadWriteMany]
+  storageClassName: longhorn-flash
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # Unused since the move to pmtiles-rwx; drop in a follow-up PR (risk check blocks PVC removal).
   name: pmtiles
   namespace: radar-ng
   labels:
@@ -79,7 +97,6 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; the basemap pod's fetch-basemap init container rebuilds it from a build.protomaps.com daily build"
 spec:
-  # longhorn-flash RWO: pmtiles mmap random reads thrash on HDD-over-NFS.
   accessModes: [ReadWriteOnce]
   storageClassName: longhorn-flash
   resources:

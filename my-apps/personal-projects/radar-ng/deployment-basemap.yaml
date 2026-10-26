@@ -1,4 +1,4 @@
-# Serves the PMTiles archive on the pmtiles PVC; the fetch-basemap init container fills it when it's missing.
+# Serves the PMTiles archive on the pmtiles-rwx PVC; the fetch-basemap init container fills it when it's missing.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,7 +11,11 @@ spec:
   # An empty PVC means a ~35-min CONUS extract before the pod starts; don't flag that as a failed rollout.
   progressDeadlineSeconds: 3600
   strategy:
-    type: Recreate  # RWO PVC; only one writer at a time
+    # Surge first: the old pod serves while the new init container re-extracts (atomic tmp+mv).
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: basemap
@@ -70,6 +74,10 @@ spec:
           ports:
             - containerPort: 8081
               name: http
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
           volumeMounts:
             - name: pmtiles
               mountPath: /data
@@ -93,4 +101,4 @@ spec:
             pullPolicy: IfNotPresent
         - name: pmtiles
           persistentVolumeClaim:
-            claimName: pmtiles
+            claimName: pmtiles-rwx
