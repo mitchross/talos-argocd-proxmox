@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: homepage-public
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: homepage-public
+      app.kubernetes.io/managed-by: argocd
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - vpa.yaml
+
+configMapGenerator:
+  - name: homepage-public-config
+    files:
+      - settings.yaml
+      - services.yaml
+      - widgets.yaml
+      - bookmarks.yaml

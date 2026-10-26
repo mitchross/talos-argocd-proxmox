@@ -1,0 +1,5 @@
+# Replaces the skeleton, whose resources widget would publish node CPU, memory and disk.
+- search:
+    provider: custom
+    url: https://search.vanillax.me/search?q=
+    target: _blank
