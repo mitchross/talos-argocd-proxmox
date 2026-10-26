@@ -365,6 +365,8 @@ kubectl get nodes
 
 **talosctl without a browser.** talosctl reads the same `OMNI_SERVICE_ACCOUNT_KEY`. Without it, talosctl opens a browser login, and that fails for a service-account identity.
 
+The dotfiles (`mitchross/dotfiles`, `dot_zshrc.tmpl`) wrap `talosctl` to do this automatically: the first call in a shell reads the key from 1Password, and later calls reuse it. Without the wrapper, run the exports by hand:
+
 ```bash
 # Run once per shell, before any talosctl command.
 export OMNI_ENDPOINT=https://omni.vanillax.me:443
@@ -377,7 +379,7 @@ omnictl talosconfig --cluster talos-prod-cluster-v2
 talosctl -n <node-ip> version --short
 ```
 
-- `Could not authenticate: key expired` plus a browser link means the key is not exported in this shell. Do not click **Grant Access**; export the key and run the command again.
+- `Could not authenticate: key expired` plus a browser link means talosctl has no key: `op` is signed out, or the wrapper is missing. Run `eval "$(op signin)"` and try again. Do not click **Grant Access**.
 - Each browser grant registers an extra 4-hour key on `talos-prod-sa`. `omnictl serviceaccount list` shows them; they expire on their own.
 - Keep the key in 1Password only. Do not write it to dotfiles.
 
