@@ -3,6 +3,11 @@
 **Production uses two cards.** One card also works — the cost is prefill
 latency, not usable context.
 
+In plain words: *prefill* is the model reading your prompt; *decode* is it
+writing the answer. Two cards read long prompts faster. Writing speed is the same.
+
+New to the stack? Read [Local AI in this homelab: start here](index.md) first.
+
 | | 2× RTX 3090 (TP=2) | 1× RTX 3090 (TP=1) |
 |---|---:|---:|
 | KV cache pool | 313,367 tok | 200,826 tok |

@@ -137,11 +137,12 @@ nav:
           - Ansible host management: domains/hosts/physical-hosts-ansible.md
           - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
       - AI / GPU:
+          - Local AI — start here: domains/ai-gpu/index.md
           - Model catalog: domains/ai-gpu/model-catalog.md
           - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
           - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
           - AI gateway and analytics: domains/ai-gpu/ai-observability.md
-          - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
+          - Pi and Hermes agents: domains/ai-gpu/pi-agent-local-dev.md
           - Hermes — the AI agent in the cluster: domains/ai-gpu/hermes.md
           - Hermes — run on another cluster: domains/ai-gpu/hermes-other-clusters.md
       - Reference & ops:

@@ -1,40 +1,62 @@
-# Pi agent: local Qwen and DeepSeek Flash
+# Pi and Hermes: the two AI agents
 
-**Use `pi-withflash` for automatic routing; use `pi` or `pi-qwen-only` to stay local.**
+**Use Pi at your keyboard. Use Hermes when the work should run without you.**
+New to the stack? Read [AI in this homelab: start here](index.md) first.
 
-Pi is the coding agent from [pi.dev](https://pi.dev), not Raspberry Pi. This page
-configures a workstation; cluster changes go through Git and ArgoCD.
+An *agent* is an LLM that can also run tools: read files, run commands, edit
+code. This homelab has two. Both send their LLM requests to the same LiteLLM
+gateway, so both show up in Grafana and Langfuse.
 
-## Where Pi runs: your PC or the cluster
-
-The same three providers work in both places. Only the URL and the key's source change.
-The cluster column is Paseo, which is turned off. Its files stay in Git but CI no longer checks them:
-compare them with this page before you turn Paseo back on.
+| | Pi | Hermes |
+|---|---|---|
+| Runs on | your PC, in a terminal | one pod in the cluster, all day |
+| You talk to it | `pi` in a terminal | `https://hermes.vanillax.me` (Tailscale) |
+| Good for | coding in a repo on your PC | cluster health checks, daily digest, chat, opening PRs while you are away |
+| Its "brain" model | your launcher picks: Qwen, DeepSeek or `pi-auto` | Claude Sonnet; Qwen in the picker as a free choice |
+| Who writes code | Pi itself, with the brain model | Claude Code or Codex inside the pod |
+| Config | `~/.pi/agent/` from `mitchross/dotfiles` | [`my-apps/development/hermes/config/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/config.yaml) |
+| Gateway URL | `https://litellm.vanillax.me/v1` | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
+| LiteLLM key | file `~/.pi/agent/litellm-api-key` | `LITELLM_API_KEY` from 1Password `litellm/master_key` via External Secrets |
+| Can reach the cluster | only what your PC can reach | read-only `kubectl`, no Secrets |
+| Change it | dotfiles PR + `chezmoi apply` | PR to `my-apps/development/hermes/`; ArgoCD rolls the pod |
 
 ```mermaid
 flowchart LR
     PC[Pi on your PC] -->|https://litellm.vanillax.me| LiteLLM
-    Paseo[Pi in Paseo pod] -->|litellm-service.litellm:4000| LiteLLM
+    Hermes[Hermes pod] -->|litellm-service.litellm:4000| LiteLLM
+    Hermes -->|brain| Anthropic[Claude subscription]
     LiteLLM -->|qwen3.8-27b| vLLM[vLLM on 2x3090, free]
     LiteLLM -->|deepseek-flash| OR[OpenRouter, paid]
 ```
 
-| | Your PC | Paseo (cluster) |
-|---|---|---|
-| Config file | `~/.pi/agent/models.json` from `mitchross/dotfiles` | [`my-apps/development/paseo/config/pi-models.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/pi-models.json), mounted read-only |
-| `baseUrl` | `https://litellm.vanillax.me/v1` | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
-| Key | LiteLLM master key, read by `!cat <file>` or `$LITELLM_API_KEY` | `$LITELLM_API_KEY` from 1Password `litellm/master_key` via ESO |
-| Sampler hook | `~/.pi/agent/extensions/qwen-sampling.ts` | [`config/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/paseo/config/qwen-sampling.ts), a copy of [`scripts/pi/qwen-sampling.ts`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/qwen-sampling.ts) |
-| Launchers | zsh aliases in `~/.zshrc` | bash aliases from the `paseo-dev` image; no `pi-direct-openrouter` |
-| Change it | dotfiles PR + `chezmoi apply` | PR to the Paseo app; ArgoCD rolls the pod |
+Hermes does not run Pi and does not use `pi-auto`. Its LiteLLM provider lists
+only `qwen3.8-27b`. To add a model to the Hermes picker, add it under
+`providers.litellm.models` in its `config.yaml` through a PR. Login, coding
+agents and troubleshooting: [Hermes in the cluster](hermes.md).
 
-`apiKey` takes a literal, `$NAME`/`${NAME}` for an environment variable, or `!command`.
-A bare `LITELLM_API_KEY` is a literal: LiteLLM sees an unknown key, looks for a key
-database it does not have, and returns `400 No connected db`.
+The rest of this page sets up Pi on a workstation.
 
-The OpenRouter credential lives only inside LiteLLM. Neither copy of Pi holds it.
+!!! note "Paseo"
+    Paseo, the old cluster workspace for Pi, is off. Its files stay in Git, but CI
+    no longer checks them. Compare them with this page before you turn Paseo on.
 
-The cluster's agent is now [Hermes](hermes.md), which does not run Pi.
+`apiKey` in Pi takes a literal, `$NAME`/`${NAME}` for an environment variable, or
+`!command`. A bare `LITELLM_API_KEY` is a literal: LiteLLM sees an unknown key,
+looks for a key database it does not have, and returns `400 No connected db`.
+
+The OpenRouter credential lives only inside LiteLLM, except for the
+`pi-direct-openrouter` emergency launcher below.
+
+## Pi in five minutes
+
+1. Install Pi: `npm install -g @earendil-works/pi-coding-agent`.
+2. Write the LiteLLM key to `~/.pi/agent/litellm-api-key` (see [Credentials](#credentials)).
+3. Copy the [`models.json`](#reference-piagentmodelsjson) and
+   [`settings.json`](#reference-piagentsettingsjson) references below into `~/.pi/agent/`.
+4. Add the [launcher aliases](#the-four-launchers) to `~/.zshrc`, then run `source ~/.zshrc`.
+5. Run `pi-withflash` in a repo and ask "what does this repo do?".
+
+**It worked when** Pi answers and Grafana `/d/pi-routing` counts one request.
 
 ## Default reasoning and rollout
 
