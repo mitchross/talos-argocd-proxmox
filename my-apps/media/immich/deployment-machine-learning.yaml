@@ -3,17 +3,17 @@ kind: Deployment
 metadata:
   name: immich-machine-learning
   namespace: immich
-  annotations:
-    # Client-side apply clears legacy rollingUpdate fields when switching to Recreate.
-    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: machine-learning
 spec:
   replicas: 1
   strategy:
-    type: Recreate
-    rollingUpdate: null
+    # Surge first: the RWX cache lets the old pod serve until the new one is Ready.
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: immich
@@ -85,4 +85,4 @@ spec:
       # must NOT mount the RWO library PVC — that would Multi-Attach across nodes.
       - name: cache
         persistentVolumeClaim:
-          claimName: immich-ml-cache
+          claimName: immich-ml-cache-rwx

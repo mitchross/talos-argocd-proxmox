@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: immich-ml-cache
+  name: immich-ml-cache-rwx
   namespace: immich
   labels:
     app.kubernetes.io/name: immich
@@ -10,8 +10,9 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Immich ML model cache; downloads on demand if missing"
 spec:
+  # Longhorn RWX (share-manager NFS) so a surge rollout can mount it on two nodes.
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 20Gi

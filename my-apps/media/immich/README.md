@@ -35,7 +35,7 @@ and never touches the media filesystem.
 | Originals (~1.3 TB) | TrueNAS NFS, read-only static PV | NAS-side ZFS + replication; `backup-exempt` |
 | Phone uploads, thumbnails, previews, transcodes, DB dumps | `library-nas` PVC, 200Gi `truenas-nfs` (NAS) | kopiur **daily** 03:37, read in place (`copyMethod: Direct`) |
 | Database | `immich-postgres-data` PVC, 20Gi Longhorn | kopiur **hourly** :23, CHECKPOINT before-hook |
-| ML models | `immich-ml-cache` PVC, 20Gi Longhorn | `backup-exempt` — re-downloads on demand |
+| ML models | `immich-ml-cache-rwx` PVC, 20Gi Longhorn RWX | `backup-exempt` — re-downloads on demand |
 
 Postgres has **two independent backups**. kopiur snapshots the PVC hourly, and
 Immich writes its own SQL dump to `/library/backups` at 02:00 — which the daily
