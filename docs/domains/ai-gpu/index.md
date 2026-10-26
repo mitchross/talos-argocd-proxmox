@@ -58,6 +58,29 @@ flowchart LR
 The proxy is the centre. Every other part either sits behind it (models) or in
 front of it (people, apps, agents), and it feeds both measurement tools.
 
+## Same parts on one PC or on Kubernetes
+
+The design does not depend on Kubernetes. On one PC with a graphics card, run
+the same parts as containers. This homelab runs them as Kubernetes apps.
+The roles, the build order and the LiteLLM `config.yaml` stay the same; only
+hostnames, secrets and how you ship a change are different.
+
+| Part | One PC (containers) | Kubernetes (this homelab) |
+|---|---|---|
+| GPUs | the PC's graphics card, passed to the container | a GPU node; the pod requests whole `nvidia.com/gpu` cards |
+| Model server | a vLLM container | a vLLM Deployment with `Recreate` |
+| Proxy | a LiteLLM container at `http://localhost:4000/v1` | a LiteLLM Deployment at `litellm-service.litellm:4000`, plus an HTTPRoute |
+| Proxy config | `config.yaml` on disk | the same `config.yaml` in a ConfigMap |
+| Secrets | an `.env` file, never committed | 1Password + `ExternalSecret` |
+| Metrics, traces | Prometheus, Grafana and Langfuse containers | kube-prometheus-stack and the Langfuse app |
+| Desk agent | Pi on the same PC, pointed at `localhost` | Pi on each PC, pointed at `litellm.vanillax.me` |
+| Background agent | Hermes in Docker Compose ([Option A](hermes-other-clusters.md#option-a-docker-compose)) | the Hermes pod |
+| Ship a change | edit a file, restart the container | open a PR; ArgoCD applies it |
+| Backups | copy the volumes | kopiur snapshots with restore-before-bind |
+
+Start on one PC to learn the parts. Move to Kubernetes when several people or
+apps share the GPUs and you want Git to record every change.
+
 ## Build order
 
 Build in this order. Each step needs the one before it, and each ends with a
