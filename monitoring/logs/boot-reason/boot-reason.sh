@@ -10,7 +10,6 @@ boot_id=$(cat /proc/sys/kernel/random/boot_id)
 prev_boot=$(cat "$S/boot_id" 2>/dev/null || echo "")
 clean_boot=$(cat "$S/clean" 2>/dev/null || echo "")
 last_seen=$(cat "$S/last_seen" 2>/dev/null || echo 0)
-now=$(date +%s)
 uptime=$(cut -d. -f1 /proc/uptime)
 
 # A watchdog that fired leaves WDIOF_CARDRESET (0x20) in bootstatus.
