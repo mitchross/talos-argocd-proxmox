@@ -145,7 +145,7 @@ Here is the loop:
 4. The new stream takes a while to send a usable first frame, so we're back at step 1.
 
 We build go2rtc from [`mitchross/go2rtc`](https://github.com/mitchross/go2rtc/tree/frigate-nest)
-(commit `027bae2`). That's plain upstream go2rtc plus some community Nest fixes
+(commit `e7600f4`). That's plain upstream go2rtc plus some community Nest fixes
 that haven't been merged upstream yet:
 
 - [#2516](https://github.com/AlexxIT/go2rtc/pull/2516) by Inrego. Stops go2rtc
@@ -154,6 +154,8 @@ that haven't been merged upstream yet:
   renewal fails once. Includes [#2351](https://github.com/AlexxIT/go2rtc/pull/2351) by tillo.
 - Asks for fresh frames two ways (PLI and FIR), because some Nest models ignore one of them.
 - Retries a preloaded stream if its first connect fails.
+- Reconnects when the video stops, even if audio keeps coming. Google sometimes
+  freezes the video track while audio keeps flowing, and the stream looked alive.
 
 `config.yml` also preloads every Nest stream. go2rtc keeps them open all the
 time, so when Frigate restarts its reader it just reconnects to a stream that is
@@ -170,11 +172,10 @@ few minutes.
 
 How to tell it's working:
 
-- The log says `version=1.9.14+dev.027bae2`.
-- Each camera renews its stream about every 3 minutes (`ExtendWebRtcStream` in
-  the `[nest]` logs). New streams (`GenerateWebRtcStream`) should be rare.
-- All five cameras stay at 5 fps, and `Ffmpeg process crashed` barely shows up.
-  Frigate logs that line once per second while a camera is down.
+- The log says `version=1.9.14+dev.e7600f4`.
+- All five cameras stay at 5 fps.
+- In Frigate's stats (`/api/stats`), `reconnects_last_hour` stays low for every
+  camera. A camera stuck in a loop shows dozens.
 
 To roll back, revert the PR.
 
