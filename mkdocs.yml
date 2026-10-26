@@ -19,7 +19,6 @@ theme:
     - navigation.instant
     - navigation.tracking
     - navigation.top
-    - navigation.indexes
     - toc.follow
     - search.suggest
     - search.highlight
@@ -94,12 +93,12 @@ extra_javascript:
 
 nav:
   - Overview:
-      - Home — the big picture: index.md
+      - Start here — the big picture: index.md
       - Getting started — the easy guide: easy-guide.md
       - Documentation reader contract: documentation-standard.md
       - Glossary: glossary.md
   - Operations:
-      - operations/index.md
+      - Operations overview: operations/index.md
       - GitOps & ArgoCD:
           - ArgoCD architecture: domains/argocd/argocd.md
           - Root entrypoints & sync waves: domains/argocd/entrypoints.md
@@ -136,15 +135,6 @@ nav:
       - Physical hosts:
           - Ansible host management: domains/hosts/physical-hosts-ansible.md
           - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
-      - AI / GPU:
-          - Local AI starter kit — start here: domains/ai-gpu/index.md
-          - Model catalog: domains/ai-gpu/model-catalog.md
-          - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
-          - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
-          - AI gateway and analytics: domains/ai-gpu/ai-observability.md
-          - Pi and Hermes agents: domains/ai-gpu/pi-agent-local-dev.md
-          - Hermes — the AI agent in the cluster: domains/ai-gpu/hermes.md
-          - Hermes — run on another cluster: domains/ai-gpu/hermes-other-clusters.md
       - Reference & ops:
           - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
           - Descheduler — why pods get moved: domains/scheduling/descheduler.md
@@ -152,12 +142,24 @@ nav:
           - Observability — radar-ng cookbook: domains/observability/radar-ng.md
           - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
           - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
+  - Local AI:
+      - Starter kit — start here: domains/ai-gpu/index.md
+      - Models and GPUs:
+          - Model catalog and router: domains/ai-gpu/model-catalog.md
+          - Context and speed on 3090s: domains/ai-gpu/3090-llm-optimization.md
+          - One 3090 vs two: domains/ai-gpu/single-vs-dual-3090.md
+          - Swap which app owns the GPUs: domains/ai-gpu/gpu-scale-swap.md
+      - Measure it — Grafana and Langfuse: domains/ai-gpu/ai-observability.md
+      - Agents:
+          - Pi and Hermes — which to use: domains/ai-gpu/pi-agent-local-dev.md
+          - Hermes in the cluster: domains/ai-gpu/hermes.md
+          - Hermes on another cluster: domains/ai-gpu/hermes-other-clusters.md
   - Inventory:
-      - inventory/index.md
+      - Inventory overview: inventory/index.md
       - Fleet inventory: inventory/2026-10-22-fleet-inventory.md
       - Explore the lab: lab.md
   - Audits:
-      - audits/index.md
+      - Audits overview: audits/index.md
       - Homelab report & recommendations: audits/2026-09-20-homelab-report.html
       - Proxmox & Kubernetes performance: inventory/2026-09-20-capacity-and-benchmarks.md
       - NAS performance & RAM: nas-performance.md
@@ -170,7 +172,7 @@ nav:
           - Storage audit — 26 September: inventory/2026-09-26-storage-audit.md
           - Hardware diagnostics — September: diagnostics.md
   - Ongoing research:
-      - research/index.md
+      - Research overview: research/index.md
       - Tiered storage: domains/storage/architecture-future.md
       - Multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md
       - Multi-cluster requirements: domains/multicluster/prd.md
