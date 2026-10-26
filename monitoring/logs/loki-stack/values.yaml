@@ -102,9 +102,6 @@ write:
   extraEnvFrom:
   - secretRef:
       name: loki-s3-credentials
-# Log data lives on external S3 (RustFS), so the chart's bundled MinIO stays off.
-minio:
-  enabled: false
 # Chart defaults request ~11Gi of memcached for a trickle of logs; pod request = round(allocatedMemory * 1.2).
 chunksCache:
   allocatedMemory: 512
