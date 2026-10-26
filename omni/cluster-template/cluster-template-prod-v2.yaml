@@ -328,6 +328,14 @@ systemExtensions:
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
 patches:
+- name: hp-elite-gen13-watchdog
+  inline:
+    # Bare metal only: the Intel TCO watchdog resets the box if Talos hangs for 2 minutes.
+    # monitoring/logs/boot-reason reports a watchdog reset after the next boot.
+    apiVersion: v1alpha1
+    kind: WatchdogTimerConfig
+    device: /dev/watchdog0
+    timeout: 2m0s
 # Keep class hp-elite-worker: frigate and immich-ml select on it.
 - name: hp-elite-worker
   inline:
@@ -497,6 +505,14 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
+- name: mini-pc-ultra-watchdog
+  inline:
+    # Bare metal only: the Intel TCO watchdog resets the box if Talos hangs for 2 minutes.
+    # monitoring/logs/boot-reason reports a watchdog reset after the next boot.
+    apiVersion: v1alpha1
+    kind: WatchdogTimerConfig
+    device: /dev/watchdog0
+    timeout: 2m0s
 - name: mini-pc-ultra-worker
   inline:
     apiVersion: v1alpha1
@@ -570,6 +586,14 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
+- name: hp-elite-gen12-watchdog
+  inline:
+    # Bare metal only: the Intel TCO watchdog resets the box if Talos hangs for 2 minutes.
+    # monitoring/logs/boot-reason reports a watchdog reset after the next boot.
+    apiVersion: v1alpha1
+    kind: WatchdogTimerConfig
+    device: /dev/watchdog0
+    timeout: 2m0s
 # No Longhorn disk label: createDefaultDiskLabeledNodes keeps this node compute-only.
 - name: hp-elite-gen12-worker
   inline:

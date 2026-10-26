@@ -131,3 +131,29 @@ Rollback: delete `/etc/sysctl.d/60-crash-capture.conf`,
 `netconsole.service`, `/etc/default/grub.d/60-nvme-apst.cfg` and
 `/etc/default/grub.d/60-cpu-cstate.cfg` and `/etc/default/grub.d/60-i915-dc.cfg`, run
 `update-grub`, then reboot the host.
+
+## Why did a Talos node reboot?
+
+The playbook above is for Debian hosts. Talos nodes get two things instead:
+
+- **boot-reason** (`monitoring/logs/boot-reason/`). After every boot it logs
+  whether the last boot ended `clean`, `unclean` or by `watchdog`, and when
+  the node was last alive. See its README for the query.
+- **Hardware watchdog** on the bare-metal nodes (`WatchdogTimerConfig` in the
+  Omni template). If Talos hangs for 2 minutes, the Intel TCO watchdog resets
+  the box, and boot-reason reports `watchdog`. Sync the template once to turn
+  it on.
+
+How to read it:
+
+- `clean`: someone or something rebooted it on purpose (Omni upgrade, `talosctl reboot`).
+- `watchdog`: the node hung. Look at kernel logs just before `previous_boot_last_seen`.
+- `unclean` with normal logs right up to the end: the node lost power or the
+  hardware reset it. Talos reboots instantly on a kernel panic and its kernel
+  can't save panic text (no pstore backend), so a panic looks the same. Check
+  the BIOS event log for power or thermal events.
+
+Talos's kernel has netconsole built in, which would catch panic text, but it
+can only be turned on with a kernel argument. Omni has an open reboot-loop bug
+with kernel arguments ([siderolabs/omni#2382](https://github.com/siderolabs/omni/issues/2382)),
+so it's not enabled.
