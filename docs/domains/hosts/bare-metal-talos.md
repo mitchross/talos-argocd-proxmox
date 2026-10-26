@@ -135,8 +135,18 @@ kubectl -n longhorn-system delete replicas.longhorn.io <stale-replica>...
 kubectl -n longhorn-system delete nodes.longhorn.io <old-node>
 ```
 
-Finally, remove the host's Proxmox provider from
-`omni/proxmox-providers/docker-compose.yml` and its machine class.
+Keep the host's Proxmox provider running until `omnictl get machinesets` no
+longer lists the old set. The provider deletes the old VM through the Proxmox
+API, so wipe Proxmox only after that.
+
+Then remove the provider from `omni/proxmox-providers/docker-compose.yml` and
+the Pi, and delete its machine class and Omni provider object:
+
+```bash
+docker compose stop <host> && docker compose rm -f <host>   # on the Pi
+omnictl delete machineclasses.omni.sidero.dev <host>-worker
+omnictl infraprovider delete proxmox-<host>
+```
 
 ## Swap a node's NIC (for example a USB 2.5G adapter)
 
@@ -162,6 +172,7 @@ Talos runs DHCP on every physical NIC. The Talos kernel includes the Realtek
 | Longhorn node shows no data disk after the volume is ready | The node registered before the disk existed | Patch the live node (step 6) |
 | `talosctl` loops on browser login (`invalid signature`, "this login link is not valid") | Its context name does not match the key `omnictl` registered | `omnictl talosconfig -c talos-prod-cluster-v2 --force <file>`, rename the context to `default`, and pass `--talosconfig <file>` |
 | Old machine stays `tearingDown` | Omni cannot reach the machine to reset it | `omnictl delete link <uuid>` (step 7) |
+| Old machine set and machine request stay `tearingDown`; provider logs `no route to host` on `:8006` | Proxmox was removed before the provider deleted the VM | Stop the provider on the Pi, then `omnictl infraprovider delete proxmox-<host>` (step 7) |
 | Machine boots the old OS instead of PXE | The disk is still bootable | Use F12 one-time network boot until Talos is installed |
 | A merged change is not live and the app stays `OutOfSync` | ArgoCD auto-sync does not retry a revision whose sync failed (for example, it timed out while a node was down) | Sync the app or the one resource by hand |
 
