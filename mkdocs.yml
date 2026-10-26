@@ -147,7 +147,6 @@ nav:
       - Models and GPUs:
           - Model catalog and router: domains/ai-gpu/model-catalog.md
           - Context and speed on 3090s: domains/ai-gpu/3090-llm-optimization.md
-          - One 3090 vs two: domains/ai-gpu/single-vs-dual-3090.md
           - Swap which app owns the GPUs: domains/ai-gpu/gpu-scale-swap.md
       - Measure it — Grafana and Langfuse: domains/ai-gpu/ai-observability.md
       - Agents:

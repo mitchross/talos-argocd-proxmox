@@ -94,7 +94,7 @@ Put the model server on the GPUs and load the model.
 |---|---|
 | 27B model in FP8 | Fits two 24 GB cards with a 262,144-token context window |
 | vLLM | Serves many requests at once; speaks the OpenAI API every tool expects |
-| Two cards (TP=2) | One card works; two read long prompts faster ([one vs two](single-vs-dual-3090.md)) |
+| Two cards (TP=2) | One card works; two read long prompts faster ([one card or two](3090-llm-optimization.md#one-card-or-two)) |
 | 220 W per card | Less heat and noise for a small speed loss |
 
 **Done when:**
@@ -113,10 +113,8 @@ generation, follow the [GPU scale-swap runbook](gpu-scale-swap.md).
 Point LiteLLM at vLLM and give it a master key. From now on, nothing calls vLLM
 directly.
 
-| Who calls | URL |
-|---|---|
-| Apps in the cluster | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |
-| People's PCs | `https://litellm.vanillax.me/v1` |
+Apps in the cluster use the internal service URL; people's PCs use
+`https://litellm.vanillax.me/v1`. Every URL and key: [model catalog § Wiring](model-catalog.md#wiring).
 
 **Done when:** a request with `"model":"qwen3.8-27b"` to the proxy URL answers.
 
@@ -147,33 +145,14 @@ Langfuse. Details: [AI gateway and analytics](ai-observability.md).
 
 ### 5. Add the cloud model and the router
 
-Add the cloud model to the proxy, then the `pi-auto` route that chooses per
-request:
+Add the cloud model to the proxy, then the `pi-auto` route. A short local
+call, the *classifier*, grades each request. Easy work stays local; hard work,
+stuck tool loops, oversized prompts and classifier failures go to the cloud.
+Only clients that ask for `pi-auto` can reach the cloud; every other client
+stays local. How it decides: [model catalog § The router](model-catalog.md#the-router).
 
-1. A short local call, the *classifier*, grades the request as `SIMPLE`,
-   `MEDIUM`, `COMPLEX` or `REASONING`.
-2. `SIMPLE` and `MEDIUM` go to the local model. The others go to the cloud.
-3. These cases also go to the cloud: the classifier fails, the agent repeats
-   the same tool call, the prompt is too big, or the model server is down.
-
-Only clients that ask for `pi-auto` can reach the cloud. Every other client
-stays local and fails instead of paying when the model server is down.
-
-**Done when:** one easy and one hard request go to different models:
-
-```bash
-K=$(cat ~/.pi/agent/litellm-api-key)
-for p in "What is 2+2?" "Design a lock-free MPMC queue in Rust and prove it linearizable."; do
-  curl -s -D - -o /dev/null https://litellm.vanillax.me/v1/chat/completions \
-    -H "Authorization: Bearer $K" -H 'Content-Type: application/json' \
-    -d "{\"model\":\"pi-auto\",\"max_tokens\":256,\"messages\":[{\"role\":\"user\",\"content\":\"$p\"}]}" \
-    | grep -i x-litellm-model-name
-done
-```
-
-Expect `openai/qwen3.8-27b`, then `openrouter/~deepseek/deepseek-flash-latest`.
-Grafana `/d/pi-routing` then shows the local/paid split.
-Details: [Model catalog](model-catalog.md).
+**Done when:** the [two-request check](ai-observability.md#check-that-pi-auto-uses-both-models)
+shows one local and one cloud answer, and Grafana `/d/pi-routing` shows the split.
 
 **Gotcha:** one conversation can move between local and cloud message by
 message. Prompts sent to the cloud leave the building.
@@ -184,18 +163,15 @@ An agent works in a loop: ask the model, run a tool, send back the result,
 repeat. One task can make dozens of requests, which is why the router in step 5
 pays off.
 
-| | Desk agent (Pi) | Background agent (Hermes) |
-|---|---|---|
-| Runs | on each person's PC | one pod in the cluster, all day |
-| Use it for | coding with someone at the keyboard | health checks, a daily digest, chat, PRs while nobody watches |
-| Models | the person picks local, cloud or `pi-auto` | Claude Sonnet as the brain; Qwen as a free choice |
-| Memory | the current session | Hindsight, across sessions |
-| Limits | what the person's PC can reach | read-only cluster access; humans merge its PRs |
+Use a **desk agent** (Pi) for coding with someone at the keyboard. Use a
+**background agent** (Hermes) for checks, a daily digest, chat and PRs while
+nobody watches. Humans merge every PR. Side-by-side comparison:
+[Pi and Hermes](pi-agent-local-dev.md).
 
 **Done when:** Pi answers "what does this repo do?" and Hermes's Status page
 shows the gateway running.
-Details: [Pi and Hermes agents](pi-agent-local-dev.md),
-[Hermes in the cluster](hermes.md), [Hermes on another cluster](hermes-other-clusters.md).
+Setup: [Pi](pi-agent-local-dev.md#pi-in-five-minutes), [Hermes in the cluster](hermes.md),
+[Hermes on another cluster](hermes-other-clusters.md).
 
 ### 7. Run it day to day
 
@@ -204,7 +180,7 @@ Details: [Pi and Hermes agents](pi-agent-local-dev.md),
 | Check the local/paid split and spend weekly | Grafana `/d/pi-routing` |
 | Find why a request went to the cloud | Langfuse, `routing_decision.cause` |
 | Change models, router tiers or limits | PR to `litellm/config.yaml` |
-| Tune context and speed | [3090 LLM optimization](3090-llm-optimization.md) |
+| Tune context and speed | [Context and speed on RTX 3090s](3090-llm-optimization.md) |
 | Swap the cards to another app | [GPU scale-swap runbook](gpu-scale-swap.md) |
 
 ## Words you need

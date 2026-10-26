@@ -79,4 +79,4 @@ alongside vLLM. Un-archived GPU jobs such as llmfit need the two-card server par
   changing it is an electrical decision.
 
 Related: [model catalog](model-catalog.md) ·
-[3090 LLM optimization](3090-llm-optimization.md)
+[Context and speed on RTX 3090s](3090-llm-optimization.md)

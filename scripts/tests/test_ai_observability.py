@@ -239,7 +239,7 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertIsNotNone(match, image)
         self.assertGreaterEqual(tuple(map(int, match.groups())), (1, 102, 1), image)
 
-        guide = (ROOT / 'docs/domains/ai-gpu/pi-agent-local-dev.md').read_text()
+        guide = (ROOT / 'docs/domains/ai-gpu/model-catalog.md').read_text()
         self.assertIn('SIMPLE` / `MEDIUM` work on local Qwen', guide)
         self.assertIn('COMPLEX` / `REASONING`', guide)
         self.assertIn('stall_escalation_enabled', guide)
