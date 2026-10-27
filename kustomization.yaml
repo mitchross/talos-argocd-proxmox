@@ -1,8 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-namespace: redis
-# redis-commander removed (Node 12, EOL, abandoned upstream; #3155). Only the namespace stays so this
-# Application keeps existing: the risk gate blocks removing an Application. Delete the directory later
-# in a separate PR after verifying live that Argo preserves the namespace.
-resources:
-  - namespace.yaml
