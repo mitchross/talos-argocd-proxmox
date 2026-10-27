@@ -31,7 +31,7 @@ digests, check all five:
    rejects both operations on a new column. Preserve table placement and Kafka/MV
    recreation order. Run the PostHog tests above after updating the fixture/hash.
 
-Rules: bump `posthog/posthog` and `posthog/posthog-node` digests **in lockstep**
+Rules: bump `posthog/posthog` and `ghcr.io/posthog/posthog-node` digests **in lockstep**
 (migrate job must match web/worker). Data-layer images (postgres, valkey,
 redpanda, clickhouse) only move when upstream's compose pins move. Gate =
 `run_async_migrations --check` in the migrate hook; a failed check fails the
