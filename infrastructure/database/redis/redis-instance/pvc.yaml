@@ -8,7 +8,7 @@ metadata:
     component: master
     backup-exempt: "true"
   annotations:
-    storage.vanillax.dev/backup-exempt-reason: "Redis persistence is disposable/cache-like in this homelab (paperless Celery broker + redis-commander UI; system-of-record is paperless data/media PVCs + paperless-postgres, all kopiur-backed); do not back up."
+    storage.vanillax.dev/backup-exempt-reason: "Redis persistence is disposable/cache-like in this homelab (paperless Celery broker; system-of-record is paperless data/media PVCs + paperless-postgres, all kopiur-backed); do not back up."
 spec:
   accessModes:
     - ReadWriteOnce

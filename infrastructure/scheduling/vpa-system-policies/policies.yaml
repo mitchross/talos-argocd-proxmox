@@ -91,28 +91,6 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: redis-commander
-  namespace: redis
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: redis-commander
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
   name: redis-master
   namespace: redis-instance
 spec:
