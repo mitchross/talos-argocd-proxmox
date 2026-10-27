@@ -489,8 +489,6 @@ patches:
       kubelet:
         $patch: delete
 ---
-# Bare metal (PXE via booter on the Pi): pinned by UUID, no provider or MachineClass.
----
 # hp-sff control-plane VM (Proxmox .21). Keeps its NoSchedule taint; the zone label moved here from the set.
 kind: Machine
 name: ce56971b-9cee-4c50-bf08-09cae9c37724
