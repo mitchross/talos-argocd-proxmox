@@ -71,7 +71,14 @@ def validate(documents: list[dict], classes: dict[str, dict]) -> tuple[list[str]
                 except ValueError:
                     zone = None
                 if not isinstance(zone, str) or not zone:
-                    errors.append(f"{identity}: no inline {ZONE}; physical-host placement cannot be checked")
+                    # A set spanning several hosts (the control plane) labels each machine in its Machine document.
+                    per_machine = {d.get("name"): d for d in documents if d.get("kind") == "Machine"}
+                    try:
+                        zones = [machine_patch(per_machine.get(m, {})).get("nodeLabels", {}).get(ZONE) for m in machines]
+                    except ValueError:
+                        zones = [None]
+                    if not all(isinstance(z, str) and z for z in zones):
+                        errors.append(f"{identity}: no inline {ZONE}; physical-host placement cannot be checked")
             continue
         ref = doc.get("machineClass") or {}
         name, count = ref.get("name"), ref.get("size")
