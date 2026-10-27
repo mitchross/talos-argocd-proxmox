@@ -371,6 +371,13 @@ kubeStateMetrics:
   enabled: true
 # Expose PVC backup labels so alerts/dashboards can distinguish backup-exempt PVCs.
 kube-state-metrics:
+  prometheus:
+    monitor:
+      metricRelabelings:
+        # unreferenced pod/replicaset/configmap/secret/service/endpointslice state (~17k series); owner metrics stay
+        - sourceLabels: [__name__]
+          action: drop
+          regex: (kube_configmap_created|kube_configmap_info|kube_configmap_metadata_resource_version|kube_endpointslice_created|kube_endpointslice_endpoints|kube_endpointslice_info|kube_endpointslice_ports|kube_persistentvolumeclaim_status_condition|kube_pod_container_info|kube_pod_container_state_started|kube_pod_container_status_last_terminated_exitcode|kube_pod_container_status_last_terminated_timestamp|kube_pod_container_status_ready|kube_pod_container_status_running|kube_pod_container_status_terminated|kube_pod_container_status_waiting|kube_pod_created|kube_pod_ips|kube_pod_restart_policy|kube_pod_scheduler|kube_pod_service_account|kube_pod_start_time|kube_pod_status_container_ready_time|kube_pod_status_initialized_time|kube_pod_status_qos_class|kube_pod_status_ready_time|kube_pod_status_scheduled|kube_pod_status_scheduled_time|kube_pod_tolerations|kube_replicaset_created|kube_replicaset_metadata_generation|kube_replicaset_spec_replicas|kube_replicaset_status_fully_labeled_replicas|kube_replicaset_status_observed_generation|kube_replicaset_status_ready_replicas|kube_replicaset_status_replicas|kube_replicaset_status_terminating_replicas|kube_secret_created|kube_secret_info|kube_secret_metadata_resource_version|kube_secret_type|kube_service_created|kube_service_info|kube_service_spec_type)
   resources:
     requests:
       cpu: 50m
@@ -547,14 +554,65 @@ prometheusOperator:
     runAsNonRoot: true
     runAsUser: 65534
 # Additional monitoring components
+# Series trimming (#3104): drops only series no dashboard or rule reads. Histogram _sum/_count stay, so
+# averages still work; only quantile buckets go. Setting metricRelabelings replaces the chart defaults,
+# so those are repeated first. Measured 2026-10-26 on the live head block (series per scrape).
 kubelet:
   enabled: true
   serviceMonitor:
     interval: 30s
+    metricRelabelings:
+      # chart default
+      - sourceLabels: [__name__, le]
+        action: drop
+        regex: (csi_operations|storage_operation_duration)_seconds_bucket;(0.25|2.5|15|25|120|600)(\.0)?
+      # unreferenced quantile buckets (~12k series)
+      - sourceLabels: [__name__]
+        action: drop
+        regex: (apiserver_storage_data_key_generation_duration_seconds_bucket|csi_operations_seconds_bucket|dra_operations_duration_seconds_bucket|kubelet_cgroup_manager_duration_seconds_bucket|kubelet_http_requests_duration_seconds_bucket|kubelet_image_pull_duration_seconds_bucket|kubelet_pod_start_duration_seconds_bucket|kubelet_pod_start_sli_duration_seconds_bucket|kubelet_pod_start_total_duration_seconds_bucket|kubelet_runtime_operations_duration_seconds_bucket|kubelet_topology_manager_admission_duration_ms_bucket|kubelet_volume_metric_collection_duration_seconds_bucket|prober_probe_duration_seconds_bucket|rest_client_rate_limiter_duration_seconds_bucket|rest_client_request_duration_seconds_bucket|rest_client_request_size_bytes_bucket|rest_client_response_size_bytes_bucket|storage_operation_duration_seconds_bucket|volume_operation_total_seconds_bucket|workqueue_queue_duration_seconds_bucket|workqueue_work_duration_seconds_bucket|kubernetes_feature_enabled)
+    cAdvisorMetricRelabelings:
+      # chart defaults
+      - sourceLabels: [__name__]
+        action: drop
+        regex: container_cpu_(cfs_throttled_seconds_total|load_average_10s|system_seconds_total|user_seconds_total)
+      - sourceLabels: [__name__]
+        action: drop
+        regex: container_fs_(io_current|io_time_seconds_total|io_time_weighted_seconds_total|reads_merged_total|sector_reads_total|sector_writes_total|writes_merged_total)
+      - sourceLabels: [__name__]
+        action: drop
+        regex: container_memory_mapped_file
+      - sourceLabels: [__name__]
+        action: drop
+        regex: container_(file_descriptors|tasks_state|threads_max)
+      - sourceLabels: [__name__, scope]
+        action: drop
+        regex: container_memory_failures_total;hierarchy
+      - sourceLabels: [__name__, interface]
+        action: drop
+        regex: container_network_.*;(cali|cilium|cni|lxc|nodelocaldns|tunl).*
+      - sourceLabels: [__name__]
+        action: drop
+        regex: container_spec.*
+      - sourceLabels: [id, pod]
+        action: drop
+        regex: .+;
+      # unreferenced per-container cgroup counters (~25k series)
+      - sourceLabels: [__name__]
+        action: drop
+        regex: (container_blkio_device_usage_total|container_creation_time_seconds|container_health_state|container_last_seen|container_memory_events_high_total|container_memory_events_max_total|container_memory_failcnt|container_memory_failures_total|container_memory_file_dirty_bytes|container_memory_file_writeback_bytes|container_memory_kernel_usage|container_memory_max_usage_bytes|container_memory_pgscan_total|container_memory_pgsteal_total|container_memory_total_active_file_bytes|container_memory_total_inactive_file_bytes|container_memory_workingset_refault_anon_total|container_processes|container_sockets|container_start_time_seconds|container_threads|container_ulimits_soft|container_memory_failures_total)
 kubeApiServer:
   enabled: true
   serviceMonitor:
     interval: 30s
+    metricRelabelings:
+      # chart default
+      - sourceLabels: [__name__, le]
+        action: drop
+        regex: (etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|40|45|50)(\.0)?
+      # unreferenced quantile buckets (~55k series)
+      - sourceLabels: [__name__]
+        action: drop
+        regex: (apiserver_admission_controller_admission_duration_seconds_bucket|apiserver_admission_webhook_admission_duration_seconds_bucket|apiserver_flowcontrol_demand_seats_bucket|apiserver_flowcontrol_priority_level_request_utilization_bucket|apiserver_flowcontrol_priority_level_seat_utilization_bucket|apiserver_flowcontrol_request_execution_seconds_bucket|apiserver_flowcontrol_request_wait_duration_seconds_bucket|apiserver_request_body_size_bytes_bucket|apiserver_request_duration_seconds_bucket|apiserver_response_sizes_bucket|apiserver_storage_list_duration_seconds_bucket|apiserver_storage_transformation_duration_seconds_bucket|apiserver_watch_cache_initialization_duration_seconds_bucket|apiserver_watch_cache_read_wait_seconds_bucket|apiserver_watch_events_dispatch_duration_seconds_bucket|apiserver_watch_events_sizes_bucket|apiserver_watch_list_duration_seconds_bucket|informer_processing_latency_seconds_bucket|rest_client_request_duration_seconds_bucket|rest_client_request_size_bytes_bucket|rest_client_response_size_bytes_bucket|workqueue_queue_duration_seconds_bucket|workqueue_work_duration_seconds_bucket|kubernetes_feature_enabled)
 # Off here: Talos hides the etcd/controller-manager/scheduler bind addresses from the chart's selectors, so the
 # additionalScrapeConfigs jobs above scrape them; kube-proxy doesn't exist (Cilium replaces it).
 kubeControllerManager:
