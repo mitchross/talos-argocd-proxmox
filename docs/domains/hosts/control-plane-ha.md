@@ -16,6 +16,7 @@ Neither mini holds a Longhorn replica today, so resetting them loses no volume d
 
 ## Before you sync
 
+0. The Pi (Omni) stays a single point of failure for management: three control planes keep the cluster running, not reachable. While it is healthy, export direct credentials (check `omnictl kubeconfig --help` and `omnictl talosconfig --help` for the break-glass flag) and keep them offline, and copy the Omni state backup off the Pi.
 1. Snapshot etcd and copy it off the node: `talosctl -n 192.168.10.94 etcd snapshot /tmp/etcd-pre-3cp.db`.
 2. Expect downtime while each mini is reset and rejoins: Home Assistant and Zigbee on `hp-elite-gen12`, Frigate on the Dell. Pick a quiet hour.
 3. From the main checkout (the `docker-hub-auth` patch is gitignored): `git pull`, then
