@@ -86,8 +86,8 @@ rollout. Two are Degraded: `my-apps-homepage-public` and `infrastructure-contain
    requested. A second DIMM in the 600 G9 doubles it.
 5. **The Intel 660p is past its rated writes.** It is the first disk to replace; see the
    [disk map](../domains/storage/disk-map.md).
-6. **Control plane is still one VM.** The 1 → 3 move is tracked in
-   [#3071](https://github.com/mitchross/talos-argocd-proxmox/issues/3071).
+6. **Control plane is one VM by decision.** Omni cannot move the populated control-plane
+   machine set from machine-class to manual mode, so the 1 → 3 move was dropped (#3197).
 7. **Omni still lists health records for the retired `proxmox-dell` and `proxmox-hp-elite`
    providers.** They are in the `infra-provider-ephemeral` namespace, which Omni does not keep
    across restarts, so the next Omni restart clears them.
