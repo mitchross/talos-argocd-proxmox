@@ -42,15 +42,22 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          # Homepage rejects Hosts outside HOMEPAGE_ALLOWED_HOSTS; kubelet otherwise sends the pod IP.
           readinessProbe:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: apps.vanillax.me
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: apps.vanillax.me
             periodSeconds: 30
           resources:
             requests:
