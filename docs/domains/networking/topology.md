@@ -63,7 +63,7 @@ Firewalla DHCP sends PXE clients to the Pi (option 66 `192.168.10.15`, option 67
 `snp.efi`). See the [booter README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md).
 
 A 10G switch does not give every attached host a 10 GbE link. See the
-[fleet inventory](../../inventory/2026-10-22-fleet-inventory.md) for measured
+[fleet inventory](../../inventory/2026-10-27-fleet-inventory.md) for measured
 host capacity, and the [disk map](../storage/disk-map.md) for disks.
 
 ## IP Assignments

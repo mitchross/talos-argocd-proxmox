@@ -5,7 +5,7 @@ under [Audits](../audits/index.md).
 
 | Page | What it answers |
 | --- | --- |
-| [Fleet inventory](2026-10-22-fleet-inventory.md) | Which machines and nodes exist, what runs on them, and how loaded they are. |
+| [Fleet inventory](2026-10-27-fleet-inventory.md) | Which machines and nodes exist, what runs on them, and how loaded they are. |
 | [Explore the lab](../lab.md) | What is inside each machine, as an interactive map. Its data predates the bare-metal minis. |
 | [Disk map](../domains/storage/disk-map.md) | Which physical disk holds which data, and where new data should go. |
 

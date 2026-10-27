@@ -107,7 +107,7 @@ The HP SFF hosts the control plane and one worker; the Threadripper hosts the
 (`mini-pc-dell-ultra-worker`, `hp-elite-gen12`, `hp-elite-gen13`) run Talos without
 Proxmox; see [bare-metal Talos workers](docs/domains/hosts/bare-metal-talos.md). Machine
 classes define allocations for newly provisioned VMs, which can differ from
-existing VM settings. See the [fleet inventory](docs/inventory/2026-10-22-fleet-inventory.md)
+existing VM settings. See the [fleet inventory](docs/inventory/2026-10-27-fleet-inventory.md)
 for measured capacity.
 
 This is the only rebuild procedure in this README. Run it from the repository

@@ -28,7 +28,7 @@ The active Omni template configures Longhorn data disks on SFF (two disks),
 Threadripper, `hp-elite-gen13` and `mini-pc-dell-ultra-worker`. The shed's disks are
 registered but have scheduling disabled. The HP Micro in the shed is the machine
 behind the Wi-Fi media bridge. `hp-elite-gen12` is compute-only: it has no Longhorn disk.
-See the [fleet inventory](../../inventory/2026-10-22-fleet-inventory.md).
+See the [fleet inventory](../../inventory/2026-10-27-fleet-inventory.md).
 
 The `wired-storage` tag includes SFF, Threadripper, `hp-elite-gen13` and the Dell. Which physical disk holds
 what is listed once in the [disk map](disk-map.md); which volumes keep two

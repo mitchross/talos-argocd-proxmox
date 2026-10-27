@@ -155,7 +155,7 @@ nav:
           - Hermes on another cluster: domains/ai-gpu/hermes-other-clusters.md
   - Inventory:
       - Inventory overview: inventory/index.md
-      - Fleet inventory: inventory/2026-10-22-fleet-inventory.md
+      - Fleet inventory: inventory/2026-10-27-fleet-inventory.md
       - Explore the lab: lab.md
   - Audits:
       - Audits overview: audits/index.md
@@ -165,6 +165,7 @@ nav:
       - Architecture audit — 5 September: audits/2026-09-05-architecture-audit.md
       - Hardware and workload placement — 5 September: audits/2026-09-05-hardware-and-placement-review.md
       - Past snapshots:
+          - Fleet inventory — 22 October: inventory/2026-10-22-fleet-inventory.md
           - Fleet inventory — 21 October: inventory/2026-10-21-fleet-inventory.md
           - Full inventory — 15 October: inventory/2026-10-15-full-inventory.md
           - etcd on the Intel S3610 — 11 October: inventory/2026-10-11-etcd-on-s3610.md
