@@ -24,8 +24,9 @@ Upgrade procedure: `UPGRADE.md` (this directory).
 
 ## Invariants — do not break these
 
-1. **`posthog/posthog` and `posthog/posthog-node` digests move in lockstep.**
+1. **`posthog/posthog` and `ghcr.io/posthog/posthog-node` digests move in lockstep.**
    The migrate Job runs the monolith image; web/worker/plugin-server must match.
+   Docker Hub `posthog/posthog-node` stopped updating in July 2026; use the ghcr image.
 2. **Before any monolith bump, run `UPGRADE.md`.** Both historical outages here
    were upstream config drift, not code: a missing `named_collections` entry,
    and a never-bootstrapped `sharded_*` table. The checklist catches both.

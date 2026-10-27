@@ -24,10 +24,10 @@ feature flags) on any Kubernetes cluster. The reference implementation lives in
 |---|---|---|---|
 | web | `posthog/posthog` | Django UI/API monolith | 8000 (+8001 metrics) |
 | worker | `posthog/posthog` | Celery tasks/scheduler | — |
-| plugins | `posthog/posthog-node` (`PLUGIN_SERVER_MODE` unset) | CDP / webhooks | 6738 |
-| ingestion-general | `posthog/posthog-node` (`ingestion-v2-combined`) | event ingestion pipeline | — |
-| ingestion-sessionreplay | `posthog/posthog-node` (`recordings-blob-ingestion-v2`) | replay blob writer → S3 | — |
-| recording-api | `posthog/posthog-node` (`recording-api`) | replay playback | 6738 |
+| plugins | `ghcr.io/posthog/posthog-node` (`PLUGIN_SERVER_MODE` unset) | CDP / webhooks | 6738 |
+| ingestion-general | `ghcr.io/posthog/posthog-node` (`ingestion-v2-combined`) | event ingestion pipeline | — |
+| ingestion-sessionreplay | `ghcr.io/posthog/posthog-node` (`recordings-blob-ingestion-v2`) | replay blob writer → S3 | — |
+| recording-api | `ghcr.io/posthog/posthog-node` (`recording-api`) | replay playback | 6738 |
 | capture | `ghcr.io/posthog/posthog/capture` | Rust event intake | 3000 |
 | replay-capture | same image, recordings mode | Rust replay intake | 3000 |
 | feature-flags | `ghcr.io/posthog/posthog/feature-flags` | Rust `/decide` + `/flags` | 3001 |
@@ -261,7 +261,7 @@ You are the vendor. Every bump is deliberate:
 
 1. **Pin by digest** (`image:tag@sha256:…`), including `:latest`/`:master`
    images — the tag documents intent, the digest makes it immutable.
-2. **Bump `posthog/posthog` and `posthog/posthog-node` in lockstep** — the
+2. **Bump `posthog/posthog` and `ghcr.io/posthog/posthog-node` in lockstep** — the
    migrate Job runs the monolith image; web/worker/plugin-server must match it.
 3. Before any monolith bump, run the drift checklist — upstream's compose and
    configs move without notice, and config drift (not code) is what breaks
