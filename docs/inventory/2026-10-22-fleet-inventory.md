@@ -1,7 +1,8 @@
 # Fleet inventory — October 22, 2026
 
 **Purpose:** list every machine in the lab, with what runs on it and how loaded it is.
-**Status:** dated, read-only snapshot. It replaces the [October 21 inventory](2026-10-21-fleet-inventory.md)
+**Status:** dated, read-only snapshot, replaced by the [October 27 inventory](2026-10-27-fleet-inventory.md).
+It replaced the [October 21 inventory](2026-10-21-fleet-inventory.md)
 as the current host list. Disks are maintained in the [disk map](../domains/storage/disk-map.md).
 
 Collection: about 04:40 UTC, from the Kubernetes API (`kubectl get nodes`, `kubectl top nodes`,
