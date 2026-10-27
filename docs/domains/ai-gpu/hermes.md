@@ -285,3 +285,11 @@ Never delete the app directory as a rollback: Argo CD can prune the volume.
 - Coding agents run with their approval prompts off. The pod is the sandbox: `kubectl` is read-only and cannot read Secrets.
 - The pod holds LiteLLM's master key, so an agent can spend OpenRouter credit through LiteLLM.
 - Omni, `talosctl`, Longhorn evictions and other write actions are not available in the pod; Hermes hands them to you.
+
+## Node loss
+
+Hermes is a single writer: sessions, cron and Codex state are SQLite on `hermes-data`, so it runs 1 replica (`Recreate`) and cannot run active/active. Availability comes from fast failover, not a second pod.
+
+- The volume must keep **2 Longhorn copies** on different nodes. Volumes created before #3100 may still have 1: check `kubectl -n longhorn-system get volumes.longhorn.io <pvc> -o jsonpath='{.spec.numberOfReplicas}'` and raise it to 2.
+- The pod tolerates `not-ready`/`unreachable` for 30 s (default 300 s), then reschedules; Longhorn's `node-down-pod-deletion-policy` detaches the volume. Expect a few minutes: eviction, attach, and a ~1.4 GB image pull on a node without the image cached.
+- Do not move `hermes-data` to NFS/SMB: SQLite locking is unsafe there, and TrueNAS would become a single point of failure.
