@@ -33,10 +33,6 @@
         icon: mdi-swap-horizontal
         href: https://vert.vanillax.me
         description: File Converter
-    - Cobalt:
-        icon: mdi-download-circle-outline
-        href: https://dl.vanillax.me
-        description: Video & Audio Downloader
 - Privacy:
     - SearXNG:
         icon: searxng.png
