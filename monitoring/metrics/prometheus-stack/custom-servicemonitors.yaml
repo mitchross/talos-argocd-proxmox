@@ -91,6 +91,11 @@ spec:
     - port: manager
       interval: 30s
       path: /metrics
+      # Client/workqueue latency buckets no dashboard or alert reads (~12k series); _sum/_count stay.
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          action: drop
+          regex: (longhorn_rest_client_rate_limiter_latency_seconds_bucket|longhorn_rest_client_request_latency_seconds_bucket|longhorn_workqueue_queue_duration_seconds_bucket|longhorn_workqueue_work_duration_seconds_bucket)
 ---
 # ServiceMonitor for Cilium
 apiVersion: monitoring.coreos.com/v1
