@@ -135,6 +135,7 @@ nav:
       - Physical hosts:
           - Ansible host management: domains/hosts/physical-hosts-ansible.md
           - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
+          - Control plane (1 to 3): domains/hosts/control-plane-ha.md
       - Reference & ops:
           - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
           - Descheduler — why pods get moved: domains/scheduling/descheduler.md

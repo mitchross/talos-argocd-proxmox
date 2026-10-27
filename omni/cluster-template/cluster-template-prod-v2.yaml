@@ -83,10 +83,14 @@ patches:
       - 192.168.10.1
       useNTS: false
 ---
+# 3 members (decided in #3071): the hp-sff CP VM plus the two bare-metal minis. A set takes machines OR a
+# machineClass, so all three are pinned by UUID. Rollback to 1 = revert this PR, then sync (see
+# docs/domains/hosts/control-plane-ha.md).
 kind: ControlPlane
-machineClass:
-  name: hp-sff-control-plane
-  size: 1
+machines:
+- ce56971b-9cee-4c50-bf08-09cae9c37724 # hp-sff CP VM (Proxmox .21), stays NoSchedule
+- 8e57d492-b3b0-41c5-86a6-47c7c5516434 # hp-elite-gen12, schedulable
+- 4c4c4544-004a-4210-8037-b9c04f314b34 # mini-pc-dell-ultra-worker, schedulable
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
 - siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
@@ -103,12 +107,6 @@ patches:
     apiVersion: v1alpha1
     kind: KubeProxyConfig
     enabled: false
-- name: hp-sff-topology
-  inline:
-    apiVersion: v1alpha1
-    kind: KubeNodeConfig
-    labels:
-      topology.kubernetes.io/zone: hp-sff
 - name: control-plane-api-server
   inline:
     apiVersion: v1alpha1
@@ -492,10 +490,81 @@ patches:
         $patch: delete
 ---
 # Bare metal (PXE via booter on the Pi): pinned by UUID, no provider or MachineClass.
-kind: Workers
-name: mini-pc-ultra-workers
-machines:
-- 4c4c4544-004a-4210-8037-b9c04f314b34
+---
+# hp-sff control-plane VM (Proxmox .21). Keeps its NoSchedule taint; the zone label moved here from the set.
+kind: Machine
+name: ce56971b-9cee-4c50-bf08-09cae9c37724
+patches:
+- name: hp-sff-topology
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      topology.kubernetes.io/zone: hp-sff
+---
+# Bare metal (PXE via booter on the Pi): HP Elite Mini 800 G9. Was worker set hp-elite-gen12-workers (#3071 step 4).
+# Compute-only: no Longhorn disk label, so createDefaultDiskLabeledNodes keeps replicas off this control plane.
+kind: Machine
+name: 8e57d492-b3b0-41c5-86a6-47c7c5516434
+install:
+  diskSelector: disk.serial == "S63XNA0TC92107"
+systemExtensions:
+- siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+patches:
+- name: hp-elite-gen12-watchdog
+  inline:
+    # Bare metal only: the Intel TCO watchdog resets the box if Talos hangs for 2 minutes.
+    # monitoring/logs/boot-reason reports a watchdog reset after the next boot.
+    apiVersion: v1alpha1
+    kind: WatchdogTimerConfig
+    device: /dev/watchdog0
+    timeout: 2m0s
+- name: hp-elite-gen12-labels
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: hp-elite-gen12
+      node.vanillax.dev/pool: general
+      topology.kubernetes.io/zone: hp-elite-gen12
+      node.vanillax.dev/link: wired
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: hp-elite-gen12-kubelet
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
+      # 16 GB-class control plane that also runs workloads: keep headroom for etcd and the API server.
+      systemReserved:
+        cpu: 500m
+        memory: 2Gi
+      kubeReserved:
+        cpu: 250m
+        memory: 1Gi
+- name: schedulable-control-plane
+  inline:
+    cluster:
+      allowSchedulingOnControlPlanes: true
+- name: hp-elite-gen12-hostname
+  inline:
+    apiVersion: v1alpha1
+    kind: HostnameConfig
+    auto: "off"
+    hostname: hp-elite-gen12
+---
+# Dell Pro Micro QCM1250. Factory Windows on this NVMe is overwritten on install. Was worker set mini-pc-ultra-workers.
+kind: Machine
+name: 4c4c4544-004a-4210-8037-b9c04f314b34
+install:
+  diskSelector: disk.serial == "3GTCT3A8Z438"
 systemExtensions:
 - siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
 - siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
@@ -513,7 +582,7 @@ patches:
     kind: WatchdogTimerConfig
     device: /dev/watchdog0
     timeout: 2m0s
-- name: mini-pc-ultra-worker
+- name: mini-pc-ultra-labels
   inline:
     apiVersion: v1alpha1
     kind: KubeNodeConfig
@@ -531,12 +600,13 @@ patches:
     kind: KubeletConfig
     config:
       serializeImagePulls: false
+      # 16 GB-class control plane that also runs workloads: keep headroom for etcd and the API server.
       systemReserved:
         cpu: 500m
-        memory: 1Gi
+        memory: 2Gi
       kubeReserved:
         cpu: 250m
-        memory: 512Mi
+        memory: 1Gi
 # Longhorn reads default-disks-config only when its node first registers; add disks to a live node in its nodes.longhorn.io spec.
 - name: mini-pc-ultra-longhorn-disks
   inline:
@@ -559,75 +629,13 @@ patches:
         match: disk.model == "APPLE SSD SM0256" && !system_disk
       minSize: 200GB
       grow: true
----
-# Dell Pro Micro QCM1250. Factory Windows on this NVMe is overwritten on install.
-kind: Machine
-name: 4c4c4544-004a-4210-8037-b9c04f314b34
-install:
-  diskSelector: disk.serial == "3GTCT3A8Z438"
-patches:
+- name: schedulable-control-plane
+  inline:
+    cluster:
+      allowSchedulingOnControlPlanes: true
 - name: mini-pc-ultra-hostname
   inline:
     apiVersion: v1alpha1
     kind: HostnameConfig
     auto: "off"
     hostname: mini-pc-dell-ultra-worker
----
-# Bare metal (PXE via booter on the Pi): HP Elite Mini 800 G9, pinned by UUID.
-kind: Workers
-name: hp-elite-gen12-workers
-machines:
-- 8e57d492-b3b0-41c5-86a6-47c7c5516434
-systemExtensions:
-- siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
-- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
-- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
-- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
-- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
-patches:
-- name: hp-elite-gen12-watchdog
-  inline:
-    # Bare metal only: the Intel TCO watchdog resets the box if Talos hangs for 2 minutes.
-    # monitoring/logs/boot-reason reports a watchdog reset after the next boot.
-    apiVersion: v1alpha1
-    kind: WatchdogTimerConfig
-    device: /dev/watchdog0
-    timeout: 2m0s
-# No Longhorn disk label: createDefaultDiskLabeledNodes keeps this node compute-only.
-- name: hp-elite-gen12-worker
-  inline:
-    apiVersion: v1alpha1
-    kind: KubeNodeConfig
-    labels:
-      node.vanillax.dev/class: hp-elite-gen12
-      node.vanillax.dev/pool: general
-      topology.kubernetes.io/zone: hp-elite-gen12
-      node.vanillax.dev/link: wired
-    nodeIP:
-      validSubnets:
-      - 192.168.10.0/24
-- name: hp-elite-gen12-kubelet
-  inline:
-    apiVersion: v1alpha1
-    kind: KubeletConfig
-    config:
-      serializeImagePulls: false
-      systemReserved:
-        cpu: 500m
-        memory: 1Gi
-      kubeReserved:
-        cpu: 250m
-        memory: 512Mi
----
-kind: Machine
-name: 8e57d492-b3b0-41c5-86a6-47c7c5516434
-install:
-  diskSelector: disk.serial == "S63XNA0TC92107"
-patches:
-- name: hp-elite-gen12-hostname
-  inline:
-    apiVersion: v1alpha1
-    kind: HostnameConfig
-    auto: "off"
-    hostname: hp-elite-gen12
