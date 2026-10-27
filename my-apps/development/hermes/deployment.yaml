@@ -20,6 +20,17 @@ spec:
       terminationGracePeriodSeconds: 60
       nodeSelector:
         kubernetes.io/arch: amd64
+      # Fast failover: the default 300 s wait before evicting from a dead node delays Hermes by 5 minutes.
+      # Longhorn already force-deletes the pod and detaches the volume once the node is down.
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
       securityContext:
         fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
