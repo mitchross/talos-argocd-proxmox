@@ -23,7 +23,7 @@ Hermes replaced Paseo, the old browser workspace for coding agents. Paseo is off
 flowchart LR
     Client[Browser or phone] --> TS[Tailscale via TrueNAS] --> GW[gateway-internal-technitium] --> Dash[Hermes dashboard :9119]
     Dash --> Gateway[Hermes gateway :8642]
-    Gateway -->|brain: claude-sonnet-5-5| Anthropic[Claude subscription]
+    Gateway -->|brain: claude-opus-5-5| Anthropic[Claude subscription]
     Gateway -.->|picker: qwen3.8-27b| LiteLLM --> vLLM
     Gateway --> Hindsight[(Hindsight memory)]
     Gateway -->|claude -p / codex exec| Agents[Claude Code / Codex in the pod] --> GitHub[Pull request]
@@ -41,7 +41,7 @@ flowchart LR
 | Settings | `config/config.yaml` → ConfigMap → copied to `/opt/data/config.yaml` by `scripts/seed.sh` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
 | Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
 | Coding agents | `scripts/seed.sh`, `skills/homelab-ops/SKILL.md` | Seed clones the talos repo into `/opt/data/workspace`, writes the Hindsight hook configs, installs the Claude Code and Codex hooks. The skill runs `claude -p` or `codex exec` in the background |
-| Brain | `claude-sonnet-5-5` through the Claude Code token (`config.yaml`) | Qwen (`providers.litellm`, free, local) and GitHub Copilot (`gh` login) stay selectable per session |
+| Brain | `claude-opus-5-5`, medium reasoning effort, through the Claude Code token (`config.yaml`) | Qwen (`providers.litellm`, free, local) and GitHub Copilot (`gh` login) stay selectable per session |
 | Coding agents' models | `ANTHROPIC_MODEL=claude-opus-5-5` + `--effort high`; `.codex/config.toml` `gpt-6.1-sol` + `high` | Skill repeats the flags and reports model and effort on every hand-off |
 | Claude login | 1Password `claude-code/oauth_token` → `CLAUDE_CODE_OAUTH_TOKEN` | From `claude setup-token` on the Max plan; no browser login in the pod |
 | Gitea login | 1Password `gitea/git_token` → `GITEA_TOKEN` | Git credential helper for `https://gitea.vanillax.me`; clone and push work, no `tea` CLI |
@@ -155,7 +155,7 @@ The Tailscale app on TrueNAS (`192.168.10.133`) must provide two things:
 ## 2. Pick the brain
 
 The model picker sits at the bottom right of the chat box. Click **Refresh models** once after a new login.
-New sessions and the daily digest start on **Anthropic → Claude Sonnet 5.5**. **litellm → Qwen3.8 27b** runs on your GPUs for free. **GitHub Copilot** comes from the `gh` login. The choice holds for that session.
+New sessions, the daily digest and Kanban workers on the default profile start on **Anthropic → Claude Opus 5.5** at medium effort. **litellm → Qwen3.8 27b** runs on your GPUs for free. **GitHub Copilot** comes from the `gh` login. The choice holds for that session.
 
 The brain only navigates and coordinates. Code changes always run on Opus 5.5 (high) or GPT-6.1-sol (high) inside the pod, whatever the brain is.
 
