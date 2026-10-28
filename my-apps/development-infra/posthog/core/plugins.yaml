@@ -120,6 +120,10 @@ spec:
               value: "redis7"
             - name: CDP_REDIS_PORT
               value: "6379"
+            - name: CDP_VALKEY_HOST
+              value: "redis7"
+            - name: CDP_VALKEY_PORT
+              value: "6379"
             - name: LOGS_REDIS_HOST
               value: "redis7"
             - name: LOGS_REDIS_PORT
