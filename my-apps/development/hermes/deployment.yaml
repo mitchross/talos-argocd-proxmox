@@ -111,12 +111,14 @@ spec:
               value: credential.https://gitea.vanillax.me.helper
             - name: GIT_CONFIG_VALUE_0
               value: '!f() { echo username=vanillax; echo "password=$GITEA_TOKEN"; }; f'
+          # The CPU limit sets the worker count Jest, cargo and Node pick, keeping test and build runs inside the memory limit.
           resources:
             requests:
               cpu: 500m
               memory: 1Gi
             limits:
-              memory: 6Gi
+              cpu: "8"
+              memory: 12Gi
           startupProbe:
             httpGet:
               path: /api/status
