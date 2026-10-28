@@ -36,7 +36,7 @@ flowchart LR
 
 | Piece | Where | Notes |
 |---|---|---|
-| Image | `ghcr.io/mitchross/hermes-dev` from [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev), pinned by digest in `deployment.yaml` | Official Hermes plus `claude`, `codex`, `kubectl`, `gh`, `tmux`; one container runs the gateway and the dashboard under s6-overlay |
+| Image | `ghcr.io/mitchross/hermes-dev` from [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev), pinned by digest in `deployment.yaml` | Official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`; one container runs the gateway and the dashboard under s6-overlay |
 | Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000. Init container `seed` runs `scripts/seed.sh` first |
 | Settings | `config/config.yaml` → ConfigMap → copied to `/opt/data/config.yaml` by `scripts/seed.sh` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
 | Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
@@ -52,7 +52,11 @@ flowchart LR
 | Volume | `pvc.yaml` | `hermes-data`, 100Gi Longhorn, restore-before-bind |
 | Backups | `kopiur/hermes-data.yaml` | Hourly at :28; keeps 24 hourly, 14 daily, 6 weekly, 3 monthly. Mover runs as 10000:10000 |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
-| Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks and the digest format; copied to the volume on every start |
+| Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) → `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
+| Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). The pod key lives on the volume; its public half is in the Pi's `authorized_keys` |
+| Personality | `config/SOUL.md` → `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
+| Third-party skills | `scripts/external-skills.txt` | i-have-adhd, Ponytail and Matt Pocock's skills, pinned by commit. Change the sha to update one |
+| Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and ask-first rules for Omni, Talos and the Pi; copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
 ## The image
@@ -77,6 +81,7 @@ flowchart LR
 | `tmux`, `jq`, `less`, `openssh-client` | Debian packages | base image |
 | `gh` | GitHub CLI `.deb` from the release page | `GH_VERSION` + `GH_SHA256` |
 | `kubectl` | `dl.k8s.io` | `KUBECTL_VERSION` + `KUBECTL_SHA256` |
+| `omnictl`, `talosctl` | Sidero GitHub releases | `OMNICTL_VERSION` (matches the Omni server), `TALOSCTL_VERSION` (matches the cluster), each with a SHA-256 |
 | Claude Code, Codex | npm, installed into `/opt/agents` | `CLAUDE_VERSION`, `CODEX_VERSION` |
 
 `/opt/agents/bin` comes first on `PATH`, so the pinned CLIs win over anything on the volume. `DISABLE_AUTOUPDATER=1` stops Claude Code from updating itself.
@@ -284,7 +289,8 @@ Never delete the app directory as a rollback: Argo CD can prune the volume.
 - The pod's GitHub login can reach every repo of the account.
 - Coding agents run with their approval prompts off. The pod is the sandbox: `kubectl` is read-only and cannot read Secrets.
 - The pod holds LiteLLM's master key, so an agent can spend OpenRouter credit through LiteLLM.
-- Omni, `talosctl`, Longhorn evictions and other write actions are not available in the pod; Hermes hands them to you.
+- The Omni key and `ssh pi` can change production. The ops skill makes Hermes ask before each change; nothing enforces it.
+- Proxmox hosts and Longhorn evictions are not available in the pod; Hermes hands them to you.
 
 ## Node loss
 

@@ -11,16 +11,21 @@ resources:
   - httproute.yaml
   - vpa.yaml
   - kopiur/hermes-data.yaml
+  - pi-egress.yaml
 configMapGenerator:
   - name: hermes-config
     files:
       - config.yaml=config/config.yaml
+      - SOUL.md=config/SOUL.md
+      - ssh_config=config/ssh_config
+      - known_hosts=config/known_hosts
       - hindsight-claude-code.json=config/hindsight-claude-code.json
       - hindsight-codex.json=config/hindsight-codex.json
       - hindsight-hermes.json=config/hindsight-hermes.json
   - name: hermes-scripts
     files:
       - seed.sh=scripts/seed.sh
+      - external-skills.txt=scripts/external-skills.txt
   - name: hermes-skills
     files:
       - SKILL.md=skills/homelab-ops/SKILL.md

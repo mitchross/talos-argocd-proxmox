@@ -1,7 +1,7 @@
 ---
 name: homelab-ops
-description: Read-only health checks for the talos-prod-cluster-v2 homelab (Argo CD, pods, Longhorn, kopiur backups, events) and the daily digest format.
-version: 1.2.0
+description: Read-only health checks for the talos-prod-cluster-v2 homelab (Argo CD, pods, Longhorn, kopiur backups, events), the daily digest format, and Omni, Talos and Pi access.
+version: 1.3.0
 platforms: [linux]
 metadata:
   hermes:
@@ -98,6 +98,16 @@ codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-ap
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
 
 If `claude` or `codex` fails to start (no login, no token), say so and stop. The Paseo fallback is gone (Paseo was turned off in PR #3072); hand the prompt to the owner to run in Claude Code on CachyOS instead.
+
+## Omni, Talos and the Pi
+
+These tools can change production. Read first. Before any change, show the exact command and its effect, then wait for the user's yes.
+
+- `omnictl` uses the Operator service account from `OMNI_ENDPOINT` and `OMNI_SERVICE_ACCOUNT_KEY`. Start with `omnictl get clustermachinestatus` and `omnictl get machines`.
+- `talosctl` reaches nodes through Omni with `~/.talos/config`. Start with `talosctl -n <node-ip> dmesg | tail -50` or `talosctl -n <node-ip> services`.
+- `ssh pi` opens a shell on the rpi5 (192.168.10.15) as `vanillax`, with Docker and passwordless sudo. It runs Omni, the Proxmox infra providers, booter and Technitium DNS. Start with `ssh pi docker ps`.
+- Never run `omnictl delete`, `omnictl cluster template sync`, `talosctl reset`, `talosctl upgrade` or `docker compose down` on the Pi without an explicit yes for that command.
+- Proxmox hosts are not reachable from this pod. Hand those steps to the user.
 
 ## When asked about one app
 

@@ -10,9 +10,11 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | Deployment, env, volume, route, backup | talos | `my-apps/development/hermes/` |
 | Hermes settings (model, providers, memory, plugins, dashboard) | talos | `config/config.yaml`, copied over the volume on every start |
 | Plugin set, skill copy, cron job, repo checkout, memory hooks | talos | `scripts/seed.sh` installs plugins once, copies `skills/homelab-ops/SKILL.md`, creates the `homelab-digest` cron job if missing, clones the talos repo into `/opt/data/workspace`, writes `~/.hindsight/*.json` (agent hooks) and `$HERMES_HOME/hindsight/config.json` (Hermes memory plugin) and installs the Claude Code and Codex Hindsight hooks |
+| Personality and third-party skills | talos | `config/SOUL.md` copied on every start; `scripts/external-skills.txt` pins skill repos by commit |
+| Omni, Talos, Pi | talos | 1Password `hermes-omni-sa` (Operator role) in `externalsecret.yaml`; `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` |
 | Cluster access | talos | `rbac.yaml` (read-only ClusterRole `hermes-viewer`), `config/kube-in-cluster.yaml`; `kubectl` ships in the image |
-| Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` |
-| Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `litellm`, `hindsight`, `home-assistant`, `claude-code` (`oauth_token`) |
+| Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` |
+| Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `hermes-omni-sa`, `litellm`, `hindsight`, `home-assistant`, `claude-code` (`oauth_token`) |
 | Coding agents | talos | `skills/homelab-ops/SKILL.md` runs `claude -p` or `codex exec` in this pod; there is no fallback (Paseo is off, #3072) |
 | Gitea push/clone | talos | `GIT_CONFIG_*` env in `deployment.yaml` serves `GITEA_TOKEN` (1Password `gitea/git_token`) for `https://gitea.vanillax.me` |
 | Codex and GitHub logins | volume | `codex login --device-auth` and `gh auth login` once from the dashboard terminal; state lives on `hermes-data` |
