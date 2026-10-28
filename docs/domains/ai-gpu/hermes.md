@@ -42,7 +42,7 @@ flowchart LR
 | Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
 | Coding agents | `scripts/seed.sh`, `skills/homelab-ops/SKILL.md` | Seed clones the talos repo into `/opt/data/workspace`, writes the Hindsight hook configs, installs the Claude Code and Codex hooks. The skill runs `claude -p` or `codex exec` in the background |
 | Brain | `claude-opus-5-5`, medium reasoning effort, through the Claude Code token (`config.yaml`) | Qwen (`providers.litellm`, free, local) and GitHub Copilot (`gh` login) stay selectable per session |
-| Coding agents' models | `ANTHROPIC_MODEL=claude-opus-5-5` + `--effort high`; `.codex/config.toml` `gpt-6.1-sol` + `high` | Skill repeats the flags and reports model and effort on every hand-off |
+| Coding agents' models | `ANTHROPIC_MODEL=claude-opus-5-5` + `--effort high`; `.codex/config.toml` `gpt-6.1-sol` + `high` | The skill passes `--model` on every run: Sonnet 5.5 for spelled-out fixes, Opus 5.5 or GPT-6.1-sol for investigation and design. It reports model and effort on every hand-off |
 | Claude login | 1Password `claude-code/oauth_token` → `CLAUDE_CODE_OAUTH_TOKEN` | From `claude setup-token` on the Max plan; no browser login in the pod |
 | Gitea login | 1Password `gitea/git_token` → `GITEA_TOKEN` | Git credential helper for `https://gitea.vanillax.me`; clone and push work, no `tea` CLI |
 | Dashboard login | 1Password `hermes/dashboard_password` and `dashboard_secret` → Secret `hermes-secrets` | Username `vanillax`. The secret signs sessions, so logins survive restarts |
@@ -157,7 +157,7 @@ The Tailscale app on TrueNAS (`192.168.10.133`) must provide two things:
 The model picker sits at the bottom right of the chat box. Click **Refresh models** once after a new login.
 New sessions, the daily digest and Kanban workers on the default profile start on **Anthropic → Claude Opus 5.5** at medium effort. **litellm → Qwen3.8 27b** runs on your GPUs for free. **GitHub Copilot** comes from the `gh` login. The choice holds for that session.
 
-The brain only navigates and coordinates. Code changes always run on Opus 5.5 (high) or GPT-6.1-sol (high) inside the pod, whatever the brain is.
+The brain only navigates and coordinates. Code changes run inside the pod: Sonnet 5.5 (high) for spelled-out fixes, Opus 5.5 (high) or GPT-6.1-sol (high) for investigation and design.
 
 ## 3. Log the coding agents in once
 
