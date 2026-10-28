@@ -7,7 +7,7 @@ labels:
 kubernetes:
   version: v1.37.1
 talos:
-  version: v1.14.4
+  version: v1.14.5
 patches:
 # Never set .machine.kubelet: Talos 1.14 rejects it next to this document, and Omni's
 # Kubernetes upgrade patch always adds a KubeletConfig. The image follows kubernetes.version.
