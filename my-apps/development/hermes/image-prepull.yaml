@@ -1,0 +1,54 @@
+# Keeps hermes-dev cached on every node Hermes can land on, so a failover skips the ~7 GB pull.
+# The init container's image counts as in use, so kubelet image GC keeps it. Bump its digest with deployment.yaml.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hermes-image-prepull
+spec:
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-image-prepull
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-image-prepull
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: pull
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:40159c8b0ad99666f3fedab15826173e0d06bee2661f6392f9cb2430caf9cfe5
+          command: ["/bin/true"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.10.1@sha256:278fb9dbcca9518083ad1e11276933a2e96f23de604a3a08cc3c80002767d24c
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 1m
+              memory: 8Mi
+            limits:
+              memory: 16Mi

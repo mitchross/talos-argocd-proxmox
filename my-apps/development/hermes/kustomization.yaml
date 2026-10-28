@@ -7,6 +7,7 @@ resources:
   - rbac.yaml
   - pvc.yaml
   - deployment.yaml
+  - image-prepull.yaml
   - service.yaml
   - httproute.yaml
   - vpa.yaml
