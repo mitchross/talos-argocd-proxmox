@@ -41,17 +41,16 @@ spec:
               value: "postgresql://hindsight:$(POSTGRES_PASSWORD)@hindsight-db:5432/hindsight"
             - name: HINDSIGHT_API_VECTOR_EXTENSION
               value: "pgvector"
-            # Memory-processing LLM: active in-cluster LiteLLM gateway backend.
+            # Fact extraction runs on cloud DeepSeek via LiteLLM/OpenRouter so memory saves keep working when the GPU node is down.
             - name: HINDSIGHT_API_LLM_PROVIDER
               value: "openai"
             - name: HINDSIGHT_API_LLM_BASE_URL
               value: "http://litellm-service.litellm.svc.cluster.local:4000/v1"
             - name: HINDSIGHT_API_LLM_MODEL
-              value: "qwen3.8-27b"
-            # Extraction without Qwen's thinking block; with xhigh thinking each call outran the timeout,
-            # retried, and queued 50+ orphaned requests at vLLM (LiteLLM never aborts upstream).
+              value: "deepseek-flash"
+            # OpenRouter reasoning off: same JSON, ~60% fewer billed output tokens.
             - name: HINDSIGHT_API_LLM_EXTRA_BODY
-              value: '{"chat_template_kwargs":{"enable_thinking":false,"preserve_thinking":false}}'
+              value: '{"reasoning":{"enabled":false}}'
             - name: HINDSIGHT_API_LLM_TIMEOUT
               value: "600"
             - name: HINDSIGHT_API_LLM_MAX_RETRIES

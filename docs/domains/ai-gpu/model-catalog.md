@@ -180,7 +180,9 @@ Every declared LLM consumer uses LiteLLM: Open WebUI, Perplexica/Vane,
 Presenton, SurfSense, Hindsight, Hermes, Home Assistant, Karakeep,
 ComfyUI's vision bridge, WorldMonitor, Deal Scout, News Reader and
 Radar-ng. Paseo uses it too when it is turned on. They all stay on local
-Qwen unless their model is changed explicitly.
+Qwen unless their model is changed explicitly. Hindsight is the exception: it
+extracts facts with paid `deepseek-flash` (reasoning off), so memory saves keep
+working while vLLM is down.
 
 Direct vLLM callers bypass Langfuse. Applications must use the authenticated
 gateway to appear in telemetry.
