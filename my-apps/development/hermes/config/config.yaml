@@ -39,6 +39,13 @@ agent:
   max_turns: 500
   reasoning_effort: medium
 
+# Archive hides idle sessions (reversible); prune deletes ended ones. Pinned and open sessions are never touched.
+sessions:
+  auto_archive: true
+  auto_archive_days: 7
+  auto_prune: true
+  retention_days: 90
+
 plugins:
   enabled:
     - hindsight
