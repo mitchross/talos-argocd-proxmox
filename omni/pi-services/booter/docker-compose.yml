@@ -11,5 +11,5 @@ services:
       - --api-advertise-address=192.168.10.15
       - --api-port=50084
       # Keep equal to talos.version in omni/cluster-template/cluster-template-prod-v2.yaml.
-      - --talos-version=v1.14.4
+      - --talos-version=v1.14.5
       - --extensions=siderolabs/intel-ucode,siderolabs/realtek-firmware
