@@ -24,6 +24,7 @@ data:
         }
       ],
       "force": {
+        "timezone": "America/Detroit",
         "dependencyDashboard": true,
         "dependencyDashboardTitle": "Dependency Dashboard — self-hosted (LAN registry)",
         "customDatasources": {
@@ -45,6 +46,12 @@ data:
           }
         ],
         "packageRules": [
+          {
+            "description": "Group routine LAN image updates weekly; protected images remain separate.",
+            "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+            "groupName": "weekly LAN image updates",
+            "schedule": ["* 0-5 * * 1"]
+          },
           {
             "description": "Self-hosted scope: disable EVERY manager (incl. the custom.regex managers the repo config defines for Omni/K8sGPT, which the GitHub App owns). Only registry.vanillax.me deps, re-enabled below, belong to this instance.",
             "matchManagers": ["helm-values", "kubernetes", "kustomize", "argocd", "terraform", "dockerfile", "custom.regex"],
@@ -73,6 +80,14 @@ data:
             "matchDatasources": ["custom.gitea-vanillax"],
             "matchPackageNames": ["registry.vanillax.me/radar-ng-open-meteo-worker"],
             "matchFileNames": ["my-apps/personal-projects/radar-ng/deployment-open-meteo.yaml"],
+            "groupName": "radar open-meteo image",
+            "automerge": false
+          },
+          {
+            "description": "Review major image upgrades separately.",
+            "matchUpdateTypes": ["major"],
+            "groupName": null,
+            "groupSlug": null,
             "automerge": false
           }
         ]
