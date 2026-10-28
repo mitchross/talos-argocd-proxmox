@@ -17,7 +17,7 @@ Upgrade procedure: `UPGRADE.md` (this directory).
 | `data-layer/` | postgres, valkey, redpanda, single-node clickhouse (Recreate, RWO PVCs) |
 | `config/clickhouse/` | The single-node ClickHouse config that makes upstream migrations pass |
 | `core/clickhouse-init.yaml` | Bootstraps `sharded_events` + migration tables before migrate |
-| `core/jobs.yaml` | kafka-init (topics) + posthog-migrate (Django → CH → async `--check` gate) |
+| `core/jobs.yaml` | kafka-init (topics) + posthog-migrate (Django → CH → async `--check` gate) + cyclotron-node-migrate (sqlx, `cyclotron_node` database for `plugins`) |
 | `core/personhog.yaml` | PersonHog router + PostgreSQL-backed replica; Django person/group lookups require `PERSONHOG_ADDR` |
 | `core/*.yaml` | App tier: web, worker, plugin-server modes, rust capture/flags services |
 | `kopiur/postgres-data.yaml` | Backup of the identity layer (see DR below) |
@@ -36,7 +36,7 @@ Upgrade procedure: `UPGRADE.md` (this directory).
    `ai_events`, `aux`, `ops`, `sessions`) — all pointing at the one node.
    `migrate_clickhouse` hard-fails on any missing name.
 4. **Sync-wave order is load-bearing**: namespace/secrets (-1) → data layer (0)
-   → kafka-init + clickhouse-init + PersonHog (1) → migrate (2) → apps (3). The
+   → kafka-init + clickhouse-init + PersonHog (1) → migrate + cyclotron-node-migrate (2) → apps (3). The
    `run_async_migrations --check` gate fails the deploy before app pods roll —
    never remove it.
 5. **Worker concurrency stays capped** (`WEB_CONCURRENCY=4` +
