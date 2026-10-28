@@ -31,6 +31,6 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 - `kubectl` in the pod is read-only (`hermes-viewer`: get, list, watch; no secrets). Do not add write verbs; fixes go through Git.
 - Claude Code and Codex come from the `hermes-dev` image, never from `npm install` on the volume. Bump them in homelab-images.
 - The Claude token is `CLAUDE_CODE_OAUTH_TOKEN` from 1Password; Codex and `gh` logins are one-time device logins stored on the volume.
-- Model policy: Hermes brain = `claude-opus-5-5` at `agent.reasoning_effort: medium` (`config.yaml`; cron digest and Kanban workers on the default profile follow it); coding = `claude-opus-5-5 --effort high` or `gpt-6.1-sol` at high effort. `ANTHROPIC_MODEL` and `.codex/config.toml` (seed) pin the agents; the skill repeats the flags and reports the model on every hand-off.
+- Model policy: Hermes brain = `claude-opus-5-5` at `agent.reasoning_effort: medium` (`config.yaml`; cron digest and Kanban workers on the default profile follow it); coding = `claude-sonnet-5-5 --effort high` for spelled-out fixes, `claude-opus-5-5 --effort high` or `gpt-6.1-sol` at high effort for investigation and design. `ANTHROPIC_MODEL` and `.codex/config.toml` (seed) pin the agents; the skill repeats the flags and reports the model on every hand-off.
 - Qwen stays as `providers.litellm` so the picker keeps the free local option; the `gh` login adds GitHub Copilot.
 - A cron job edited in the dashboard keeps its edits; the seed only creates `homelab-digest` when the name is absent from `cron/jobs.json`.

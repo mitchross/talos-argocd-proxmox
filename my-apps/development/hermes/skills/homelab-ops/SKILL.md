@@ -1,7 +1,7 @@
 ---
 name: homelab-ops
 description: Read-only health checks for the talos-prod-cluster-v2 homelab (Argo CD, pods, Longhorn, kopiur backups, events), the daily digest format, and Omni, Talos and Pi access.
-version: 1.3.0
+version: 1.4.0
 platforms: [linux]
 metadata:
   hermes:
@@ -90,11 +90,12 @@ Only start a coding agent when the user asks for a fix, or when the digest promp
 
 ```
 claude -p "<prompt>" --model claude-opus-5-5 --effort high --dangerously-skip-permissions --max-turns 60 --output-format json
+claude -p "<prompt>" --model claude-sonnet-5-5 --effort high --dangerously-skip-permissions --max-turns 60 --output-format json
 codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
 ```
-   Coding always runs on Opus 5.5 at high effort or GPT-6.1-sol at high effort. Never drop these flags. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
+   Pick the model by the task. Sonnet 5.5 for spelled-out fixes: the file and the change are already known (an audit finding, an issue with a fix) and tests can prove it. Opus 5.5 or GPT-6.1-sol, both high effort, for investigation, design choices or cross-cutting changes. When unsure, use Opus. Never drop `--model` or `--effort`. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
    `kubectl` is read-only, but agents here also inherit the Omni Operator key and `ssh pi`. Tell them not to use Omni, Talos or the Pi; never pass the bypass flags anywhere else.
-4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not `claude-opus-5-5` or `gpt-6.1-sol`, say so. Do not merge; the user merges.
+4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not the one you chose, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
 
 If `claude` or `codex` fails to start (no login, no token), say so and stop. The Paseo fallback is gone (Paseo was turned off in PR #3072); hand the prompt to the owner to run in Claude Code on CachyOS instead.
