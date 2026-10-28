@@ -7,18 +7,18 @@ persistent storage stay on the Pi; do not copy them into Git.
 
 ## Version choices
 
-The October 21, 2026 inspection found these running versions and prepared targets.
+The October 27, 2026 inspection found these running versions and prepared targets.
 The target files are desired state until deployed and verified live.
 
 | Service | Inspected running state | Prepared target |
 | --- | --- | --- |
-| Docker Engine / containerd | 29.8.2 / 2.3.6 | 29.9.1 / 2.4.2 |
-| Docker Compose / Buildx | 5.5.1 / 0.37.1 | 5.6.0 / 0.38.0 from Docker's ARM64 apt repository |
+| Docker Engine / containerd | 29.9.2 / 2.4.2 | Already current after refreshing Docker's ARM64 apt repository |
+| Docker Compose / Buildx | 5.6.1 / 0.38.1 | Already current after refreshing Docker's ARM64 apt repository |
 | Omni | 1.12.4 | Already current; pinned in [omni.env.example](../omni/omni.env.example) |
 | Proxmox providers | 0.3.0 | Already latest stable; keep [existing pins](../proxmox-providers/docker-compose.yml) |
 | Technitium DNS | 15.5.1 | [15.6.2](https://github.com/TechnitiumSoftware/DnsServer/releases/tag/v15.6.2), pinned in [Compose](technitium/docker-compose.yml) |
-| ProxCenter frontend | Native ARM64 1.4.10, Node 26.10.0 | [1.4.12](https://github.com/adminsyspro/proxcenter-ui/releases/tag/v1.4.12); rebuild with Node 26.12.0 / Alpine 3.24 |
-| ProxCenter PostgreSQL | 16.15-alpine3.24 | Already current; pinned in [override](proxcenter/docker-compose.override.yml) |
+| ProxCenter frontend | Native ARM64 1.4.10, Node 26.10.0 | [1.4.12](https://github.com/adminsyspro/proxcenter-ui/releases/tag/v1.4.12); rebuild with Node 26.12.1 / Alpine 3.24 |
+| ProxCenter PostgreSQL | 16.15-alpine3.24 | Refresh the image digest for the same PostgreSQL version in [override](proxcenter/docker-compose.override.yml) |
 | booter (PXE) | 0.4.0, running in `~/booter` | Already current; pinned in [Compose](booter/docker-compose.yml); see [booter/README.md](booter/README.md) |
 
 Upstream ProxCenter's [publishing workflow](https://github.com/adminsyspro/proxcenter-ui/blob/main/.github/workflows/docker-publish.yml)
@@ -70,7 +70,7 @@ sudo apt-get -s install --only-upgrade docker-ce docker-ce-cli containerd.io doc
 sudo apt-get install --only-upgrade docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
 ```
 
-Expect Docker 29.9.1 and containerd 2.4.2 or the reviewed later patch targets.
+Expect Docker 29.9.2 and containerd 2.4.2 or the reviewed later patch targets.
 Docker's package update can restart all containers. Verify `systemctl is-active
  docker containerd`, `docker ps`, LAN DNS and Omni before continuing.
 
@@ -115,7 +115,7 @@ docker compose --env-file omni.env up -d --no-deps omni
 ```
 
 Verify the HTTPS UI and machine connections and inspect Omni's migration log.
-The provider release is already current; check that all five reconnect after
+The provider release is already current; check that all three reconnect after
 Omni restarts. Keep the workstation's `omnictl` aligned with the server.
 
 After the ARM64 build succeeds, copy the [ProxCenter override](proxcenter/docker-compose.override.yml)
@@ -137,7 +137,7 @@ docker exec proxcenter-frontend wget -qO- http://127.0.0.1:3000/api/health
 docker exec proxcenter-frontend node --version
 ```
 
-Expect `status: healthy`, `db: reachable` and Node `v26.12.0`. Confirm the image
+Expect `status: healthy`, `db: reachable` and Node `v26.12.1`. Confirm the image
 is ARM64, both containers are healthy, and the five configured Proxmox
 connections remain. Preserve the previous frontend image and all data volumes.
 
