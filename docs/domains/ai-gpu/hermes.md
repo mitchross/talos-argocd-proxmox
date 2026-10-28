@@ -297,5 +297,13 @@ Never delete the app directory as a rollback: Argo CD can prune the volume.
 Hermes is a single writer: sessions, cron and Codex state are SQLite on `hermes-data`, so it runs 1 replica (`Recreate`) and cannot run active/active. Availability comes from fast failover, not a second pod.
 
 - The volume must keep **2 Longhorn copies** on different nodes. Volumes created before #3100 may still have 1: check `kubectl -n longhorn-system get volumes.longhorn.io <pvc> -o jsonpath='{.spec.numberOfReplicas}'` and raise it to 2.
-- The pod tolerates `not-ready`/`unreachable` for 30 s (default 300 s), then reschedules; Longhorn's `node-down-pod-deletion-policy` detaches the volume. Expect a few minutes: eviction, attach, and a ~1.4 GB image pull on a node without the image cached.
+- The pod tolerates `not-ready`/`unreachable` for 30 s (default 300 s), then reschedules; Longhorn's `node-down-pod-deletion-policy` detaches the volume. Expect 1 to 2 minutes: eviction, attach and start.
+- `image-prepull.yaml` keeps the ~7 GB `hermes-dev` image on every amd64 node, so a failover does not wait for a pull. Bump its digest together with `deployment.yaml`.
+- The `hermes-data` volume has **offline rebuilding disabled**. With it on, Longhorn attaches a degraded, detached volume to another node to rebuild it and holds it there, so the new Hermes pod cannot attach. The global setting stays on for kopiur clones. Longhorn stores this per volume, not in Git; reapply it after the volume is recreated:
+
+    ```bash
+    kubectl -n longhorn-system patch volumes.longhorn.io "$(kubectl -n hermes get pvc hermes-data -o jsonpath='{.spec.volumeName}')" \
+      --type merge -p '{"spec":{"offlineRebuilding":"disabled"}}'
+    ```
+
 - Do not move `hermes-data` to NFS/SMB: SQLite locking is unsafe there, and TrueNAS would become a single point of failure.

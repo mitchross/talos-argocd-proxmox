@@ -3,6 +3,11 @@
 # entry requires a reason and stale exact-name entries fail validation.
 coverageExemptions:
   - apiVersion: apps/v1
+    kind: DaemonSet
+    namespace: hermes
+    name: hermes-image-prepull
+    reason: "Image cache only: a pause container with fixed 1m/8Mi requests."
+  - apiVersion: apps/v1
     kind: Deployment
     namespace: comfyui
     name: comfyui
