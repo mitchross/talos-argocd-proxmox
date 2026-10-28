@@ -23,5 +23,3 @@ spec:
           memory: 6Gi
       - containerName: seed
         mode: "Off"
-      - containerName: kubectl
-        mode: "Off"

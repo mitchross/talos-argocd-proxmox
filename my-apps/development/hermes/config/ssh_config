@@ -1,0 +1,7 @@
+Host pi rpi5 192.168.10.15
+    HostName 192.168.10.15
+    User vanillax
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+    StrictHostKeyChecking yes
+    ServerAliveInterval 30

@@ -1,0 +1,18 @@
+# The shared default-deny-lan-egress policy has no grant for the rpi5: SSH, plus Omni and talosctl over 443.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-pi
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: hermes
+  egress:
+    - toCIDR:
+        - 192.168.10.15/32
+      toPorts:
+        - ports:
+            - port: "22"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
