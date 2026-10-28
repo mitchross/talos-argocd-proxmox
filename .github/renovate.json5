@@ -3,6 +3,8 @@
   extends: [
     'config:recommended',
   ],
+  automerge: false,
+  timezone: 'America/Detroit',
   prHourlyLimit: 3,
   enabledManagers: [
     'helm-values',
@@ -57,14 +59,18 @@
   },
   packageRules: [
     {
-      description: 'Group ALL container digest pins into one rolling PR. Version bumps stay as separate PRs. Placed first so more-specific rules (PostHog group, etc.) override this groupName.',
-      matchDatasources: [
-        'docker',
-      ],
+      description: 'Group routine updates weekly per Application; later rules preserve protected groups.',
       matchUpdateTypes: [
+        'minor',
+        'patch',
         'digest',
+        'pin',
+        'pinDigest',
       ],
-      groupName: 'all container digests',
+      groupName: 'weekly {{{replace "^((?:infrastructure/database/[^/]+/[^/]+|(?:my-apps|infrastructure|monitoring)/[^/]+/[^/]+))(?:/.*)?$" "$1" packageFileDir}}} updates',
+      // Override inherited monorepo slugs with the rendered Application group name.
+      groupSlug: '{{groupName}}',
+      schedule: ['* 0-5 * * 1'],
     },
     {
       matchUpdateTypes: [
@@ -77,7 +83,7 @@
         'kustomize',
         'argocd',
       ],
-      automerge: true,
+      automerge: false,
       automergeType: 'pr',
     },
     {
@@ -98,6 +104,7 @@
       matchPackageNames: [
         'cilium',
       ],
+      groupName: 'cilium',
       automerge: false,
     },
     {
@@ -105,6 +112,7 @@
       matchPackageNames: [
         'longhorn',
       ],
+      groupName: 'longhorn',
       automerge: false,
     },
     {
@@ -157,6 +165,7 @@
         'my-apps/personal-projects/radar-ng/deployment-open-meteo.yaml',
       ],
       allowedVersions: '<1.5.3 || >=1.5.4',
+      groupName: 'open-meteo',
       automerge: false,
     },
     {
@@ -175,6 +184,7 @@
       matchPackageNames: [
         'ghcr.io/mitchross/radar-ng-temporal-worker',
       ],
+      groupName: 'radar temporal worker',
       automerge: false,
     },
     // PostHog sidecars are split across two rules: Renovate rejects matchUpdateTypes + versioning in one rule, and matching rules merge.
@@ -235,7 +245,7 @@
     },
     {
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
-      // Keep the Docker Hub valkey/valkey form, or the minor/patch automerge rule applies to it.
+      // List both registry forms so every Valkey reference stays excluded.
       matchPackageNames: [
         'postgres',
         'valkey/valkey',
@@ -277,9 +287,10 @@
       enabled: false,
     },
     {
-      // 0.x minors are breaking and CRDs must be re-verified on every bump, so no automerge (PRs still open immediately).
+      // 0.x minors are breaking; verify CRDs and review each bump.
       description: 'kopiur chart/image bumps require manual review — pre-1.0 breaking minors + announced breaking chart refactor (#203)',
       matchPackageNames: ['kopiur', 'ghcr.io/home-operations/charts/kopiur', 'ghcr.io/home-operations/kopiur-controller', 'ghcr.io/home-operations/kopiur-webhook', 'ghcr.io/home-operations/kopiur-mover'],
+      groupName: 'kopiur',
       automerge: false,
       prCreation: 'immediate',
     },
@@ -289,18 +300,25 @@
       matchDatasources: ['helm'],
       matchPackageNames: ['argo-cd'],
       registryUrls: ['https://argoproj.github.io/argo-helm'],
+      groupName: 'argo-cd',
       dependencyDashboardApproval: true,
       automerge: false,
     },
     {
       // deal-scout's release script opens its own GitOps PR for both images; a Renovate bump would race it and split their versions.
-      // Keep this rule last: later rules win.
       description: 'deal-scout images are released by their own pipeline; Renovate must not bump them',
       matchPackageNames: [
         'ghcr.io/mitchross/deal-scout',
         'ghcr.io/mitchross/deal-scout-worker',
       ],
       enabled: false,
+    },
+    {
+      description: 'Review major upgrades separately from routine updates and each other.',
+      matchUpdateTypes: ['major'],
+      groupName: null,
+      groupSlug: null,
+      automerge: false,
     },
   ],
   ignorePaths: [
