@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: worldmonitor
-          image: ghcr.io/mitchross/worldmonitor:sha-c08ffcf
+          image: ghcr.io/mitchross/worldmonitor:sha-96d29d1@sha256:24ae2252f83739a9813ced46c7beba09c4d03df0682fe4f8f4769b4b7a8e2af6
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
