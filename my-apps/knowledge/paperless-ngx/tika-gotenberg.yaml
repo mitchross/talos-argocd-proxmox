@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: tika
-          image: apache/tika:latest@sha256:fe2c6e3fca77b986ff3368107a20fa5060a3eefd03d14c12b45c0334626335d2
+          image: apache/tika:latest@sha256:b99f19c4fd76237dafe7d22f719b9bddfa9a449da687c597a41e2f6d9a595418
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
