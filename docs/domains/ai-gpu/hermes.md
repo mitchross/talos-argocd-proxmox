@@ -53,10 +53,10 @@ flowchart LR
 | Backups | `kopiur/hermes-data.yaml` | Hourly at :28; keeps 24 hourly, 14 daily, 6 weekly, 3 monthly. Mover runs as 10000:10000 |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
 | Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) → `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
-| Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). The pod key lives on the volume; its public half is in the Pi's `authorized_keys` |
+| Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`: OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated; its public half is in the Pi's `authorized_keys` |
 | Personality | `config/SOUL.md` → `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
 | Third-party skills | `scripts/external-skills.txt` | i-have-adhd, Ponytail and Matt Pocock's skills, pinned by commit. Change the sha to update one |
-| Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and ask-first rules for Omni, Talos and the Pi; copied to the volume on every start |
+| Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi; copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
 ## The image
@@ -289,7 +289,7 @@ Never delete the app directory as a rollback: Argo CD can prune the volume.
 - The pod's GitHub login can reach every repo of the account.
 - Coding agents run with their approval prompts off. The pod is the sandbox: `kubectl` is read-only and cannot read Secrets.
 - The pod holds LiteLLM's master key, so an agent can spend OpenRouter credit through LiteLLM.
-- The Omni key and `ssh pi` can change production. The ops skill makes Hermes ask before each change; nothing enforces it.
+- The Omni Operator key, `ssh pi` (passwordless sudo) and coding agents with approvals off share one trust boundary. The ask-first rules are agent instructions, not enforced controls.
 - Proxmox hosts and Longhorn evictions are not available in the pod; Hermes hands them to you.
 
 ## Node loss

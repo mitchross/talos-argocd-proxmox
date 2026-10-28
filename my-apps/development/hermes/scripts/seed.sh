@@ -56,23 +56,29 @@ fi
 TERM_HOME="$HERMES_HOME/home"
 mkdir -p "$TERM_HOME/.config" "$HERMES_HOME/.config/gh" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude"
 touch "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
-for d in .codex .claude .hindsight .claude.json .gitconfig; do
+# OpenSSH reads ~/.ssh from the passwd home (/opt/data), not $HOME. Move the Pi-authorized key there once.
+mkdir -p "$HERMES_HOME/.ssh"
+if [ ! -f "$HERMES_HOME/.ssh/id_ed25519" ] && [ -f "$TERM_HOME/.ssh/id_ed25519" ] && [ ! -L "$TERM_HOME/.ssh" ]; then
+  mv "$TERM_HOME/.ssh/id_ed25519" "$TERM_HOME/.ssh/id_ed25519.pub" "$HERMES_HOME/.ssh/"
+fi
+for d in .codex .claude .hindsight .claude.json .gitconfig .ssh; do
   [ -L "$TERM_HOME/$d" ] || { rm -rf "${TERM_HOME:?}/$d"; ln -s "$HERMES_HOME/$d" "$TERM_HOME/$d"; }
 done
 [ -L "$TERM_HOME/.config/gh" ] || { rm -rf "${TERM_HOME:?}/.config/gh"; ln -s "$HERMES_HOME/.config/gh" "$TERM_HOME/.config/gh"; }
-printf 'export PATH=/opt/agents/bin:$PATH\n' > "$TERM_HOME/.profile"
-# SSH targets and pinned host keys from Git; the private key is generated once and stays on the volume.
-mkdir -p "$TERM_HOME/.ssh" "$TERM_HOME/.talos"
-install -m 0600 /etc/hermes-config/ssh_config "$TERM_HOME/.ssh/config"
-install -m 0644 /etc/hermes-config/known_hosts "$TERM_HOME/.ssh/known_hosts"
-[ -f "$TERM_HOME/.ssh/id_ed25519" ] || ssh-keygen -q -t ed25519 -N "" -C hermes-cluster-pod -f "$TERM_HOME/.ssh/id_ed25519"
-chmod 0700 "$TERM_HOME/.ssh"; chmod 0600 "$TERM_HOME/.ssh/id_ed25519"
+printf '%s\n' 'export PATH=/opt/agents/bin:/opt/rust/cargo/bin:/usr/local/go/bin:$PATH' \
+  'export RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/data/.cargo' > "$TERM_HOME/.profile"
+# SSH targets and pinned host keys come from Git; the private key stays on the volume and is never regenerated.
+mkdir -p "$TERM_HOME/.talos"
+install -m 0600 /etc/hermes-config/ssh_config "$HERMES_HOME/.ssh/config"
+install -m 0644 /etc/hermes-config/known_hosts "$HERMES_HOME/.ssh/known_hosts"
+chmod 0700 "$HERMES_HOME/.ssh"
+if [ -f "$HERMES_HOME/.ssh/id_ed25519" ]; then chmod 0600 "$HERMES_HOME/.ssh/id_ed25519"; else echo "[seed] no SSH key in $HERMES_HOME/.ssh; ssh pi will fail"; fi
 # talosctl reaches nodes through Omni with the Operator service account from 1Password.
 if [ -n "${OMNI_SERVICE_ACCOUNT_KEY:-}" ] && command -v omnictl >/dev/null 2>&1; then
   omnictl talosconfig --cluster talos-prod-cluster-v2 --force --merge=false "$TERM_HOME/.talos/config" \
     || echo "[seed] talosconfig failed, continuing"
 fi
-chown -R 10000:10000 "$TERM_HOME" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
+chown -R 10000:10000 "$TERM_HOME" "$HERMES_HOME/.ssh" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
 
 # Coding agents: repo checkout, git identity, shared-memory hooks. gh and codex logins are done once by hand (docs).
 as_hermes git config --global user.name "Hermes Agent"

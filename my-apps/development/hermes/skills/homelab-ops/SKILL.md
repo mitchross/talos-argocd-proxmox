@@ -93,7 +93,7 @@ claude -p "<prompt>" --model claude-opus-5-5 --effort high --dangerously-skip-pe
 codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
 ```
    Coding always runs on Opus 5.5 at high effort or GPT-6.1-sol at high effort. Never drop these flags. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
-   The pod is the sandbox: `kubectl` is read-only and only the repo checkout is writable, so the bypass flags are acceptable here. Never pass them anywhere else.
+   `kubectl` is read-only, but agents here also inherit the Omni Operator key and `ssh pi`. Tell them not to use Omni, Talos or the Pi; never pass the bypass flags anywhere else.
 4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not `claude-opus-5-5` or `gpt-6.1-sol`, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
 
@@ -101,7 +101,12 @@ If `claude` or `codex` fails to start (no login, no token), say so and stop. The
 
 ## Omni, Talos and the Pi
 
-These tools can change production. Read first. Before any change, show the exact command and its effect, then wait for the user's yes.
+These tools can change production. Act by risk:
+
+- Reads run without asking: status, logs, `get`, `docker ps`, `journalctl`.
+- Impactful actions need a short explanation of the effect first: restarting a container or service, rebooting one node, applying one machine config.
+- Destructive or wide actions need an explicit yes for that exact command (list below).
+- Declarative changes still go through Git, a PR and Argo CD. Direct maintenance on the Pi, Omni or Talos is allowed when Git does not own that state.
 
 - `omnictl` uses the Operator service account from `OMNI_ENDPOINT` and `OMNI_SERVICE_ACCOUNT_KEY`. Start with `omnictl get clustermachinestatus` and `omnictl get machines`.
 - `talosctl` reaches nodes through Omni with `~/.talos/config`. Start with `talosctl -n <node-ip> dmesg | tail -50` or `talosctl -n <node-ip> services`.
