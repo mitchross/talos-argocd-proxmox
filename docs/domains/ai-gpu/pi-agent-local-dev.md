@@ -17,7 +17,7 @@ gateway, so both show up in Grafana and Langfuse.
 | Runs on | your PC, in a terminal | one pod in the cluster, all day |
 | You talk to it | `pi` in a terminal | `https://hermes.vanillax.me` (Tailscale) |
 | Good for | coding in a repo on your PC | cluster health checks, daily digest, chat, opening PRs while you are away |
-| Its "brain" model | your launcher picks: Qwen, DeepSeek or `pi-auto` | Claude Sonnet; Qwen in the picker as a free choice |
+| Its "brain" model | your launcher picks: Qwen, DeepSeek or `pi-auto` | Claude Opus; Qwen in the picker as a free choice |
 | Who writes code | Pi itself, with the brain model | Claude Code or Codex inside the pod |
 | Config | `~/.pi/agent/` from `mitchross/dotfiles` | [`my-apps/development/hermes/config/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/config.yaml) |
 | Gateway URL | `https://litellm.vanillax.me/v1` | `http://litellm-service.litellm.svc.cluster.local:4000/v1` |

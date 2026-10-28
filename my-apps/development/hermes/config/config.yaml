@@ -1,9 +1,9 @@
 # Git owns this file: scripts/seed.sh copies it over /opt/data/config.yaml on every start.
 # Runtime state (sessions, memories, logins, cron jobs) stays on the hermes-data volume.
-# Brain: Sonnet through the Claude Code token (CLAUDE_CODE_OAUTH_TOKEN). Coding runs use Opus / GPT-6.1-sol, see the skill.
+# Brain: Opus at medium effort (agent.reasoning_effort) through the Claude Code token (CLAUDE_CODE_OAUTH_TOKEN). Coding runs use Opus / GPT-6.1-sol, see the skill.
 model:
   provider: anthropic
-  default: claude-sonnet-5-5
+  default: claude-opus-5-5
 
 # Qwen stays in the model picker as a free local option.
 providers:
