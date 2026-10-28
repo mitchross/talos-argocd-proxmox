@@ -86,6 +86,12 @@ spec:
                 secretKeyRef:
                   name: posthog-secrets
                   key: posthog-db-url
+            # Separate database; the posthog-cyclotron-node-migrate hook creates and migrates it.
+            - name: CYCLOTRON_NODE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-cyclotron-node-db-url
             - name: OBJECT_STORAGE_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
