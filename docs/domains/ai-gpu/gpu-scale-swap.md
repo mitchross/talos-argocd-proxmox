@@ -67,7 +67,7 @@ service/route wiring together.
 
 ## What breaks while vLLM is at 0
 
-Open WebUI, Perplexica, SurfSense, LiteLLM, Hindsight, Presenton,
+Open WebUI, Perplexica, SurfSense, LiteLLM, Presenton,
 Hermes, Home Assistant and any Pi session on the cluster endpoint lose their backend.
 
 ComfyUI's vision-to-image helper needs the chat backend, so it cannot run
