@@ -3,6 +3,7 @@
   extends: [
     'config:recommended',
   ],
+  automerge: false,
   timezone: 'America/Detroit',
   prHourlyLimit: 3,
   enabledManagers: [
@@ -58,7 +59,7 @@
   },
   packageRules: [
     {
-      description: 'Group routine updates weekly; later rules keep protected dependencies separate.',
+      description: 'Group routine updates weekly per Application; later rules preserve protected groups.',
       matchUpdateTypes: [
         'minor',
         'patch',
@@ -66,7 +67,9 @@
         'pin',
         'pinDigest',
       ],
-      groupName: 'weekly routine updates',
+      groupName: 'weekly {{{replace "^((?:infrastructure/database/[^/]+/[^/]+|(?:my-apps|infrastructure|monitoring)/[^/]+/[^/]+))(?:/.*)?$" "$1" packageFileDir}}} updates',
+      // Override inherited monorepo slugs with the rendered Application group name.
+      groupSlug: '{{groupName}}',
       schedule: ['* 0-5 * * 1'],
     },
     {
@@ -80,7 +83,7 @@
         'kustomize',
         'argocd',
       ],
-      automerge: true,
+      automerge: false,
       automergeType: 'pr',
     },
     {
@@ -242,7 +245,7 @@
     },
     {
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
-      // Keep the Docker Hub valkey/valkey form, or the minor/patch automerge rule applies to it.
+      // List both registry forms so every Valkey reference stays excluded.
       matchPackageNames: [
         'postgres',
         'valkey/valkey',

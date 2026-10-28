@@ -24,6 +24,7 @@ data:
         }
       ],
       "force": {
+        "automerge": false,
         "timezone": "America/Detroit",
         "dependencyDashboard": true,
         "dependencyDashboardTitle": "Dependency Dashboard — self-hosted (LAN registry)",
@@ -47,9 +48,10 @@ data:
         ],
         "packageRules": [
           {
-            "description": "Group routine LAN image updates weekly; protected images remain separate.",
+            "description": "Group routine LAN image updates weekly per Application; protected images remain separate.",
             "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
-            "groupName": "weekly LAN image updates",
+            "groupName": "weekly {{{replace \"^((?:infrastructure/database/[^/]+/[^/]+|(?:my-apps|infrastructure|monitoring)/[^/]+/[^/]+))(?:/.*)?$\" \"$1\" packageFileDir}}} updates",
+            "groupSlug": "{{groupName}}",
             "schedule": ["* 0-5 * * 1"]
           },
           {
