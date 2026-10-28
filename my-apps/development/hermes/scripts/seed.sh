@@ -66,7 +66,14 @@ for d in .codex .claude .hindsight .claude.json .gitconfig .ssh; do
 done
 [ -L "$TERM_HOME/.config/gh" ] || { rm -rf "${TERM_HOME:?}/.config/gh"; ln -s "$HERMES_HOME/.config/gh" "$TERM_HOME/.config/gh"; }
 printf '%s\n' 'export PATH=/opt/agents/bin:/opt/rust/cargo/bin:/usr/local/go/bin:$PATH' \
-  'export RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/data/.cargo' > "$TERM_HOME/.profile"
+  'export RUSTUP_HOME=/opt/data/tools/rustup RUSTUP_AUTO_INSTALL=1 CARGO_HOME=/opt/data/.cargo' > "$TERM_HOME/.profile"
+# The image's Rust is read-only; a volume RUSTUP_HOME defaults to it via a link and installs repo-pinned toolchains once.
+mkdir -p "$HERMES_HOME/tools/rustup"; chown 10000:10000 "$HERMES_HOME/tools" "$HERMES_HOME/tools/rustup"
+for tc in /opt/rust/rustup/toolchains/*-x86_64-unknown-linux-gnu; do
+  as_hermes env RUSTUP_HOME="$HERMES_HOME/tools/rustup" /opt/rust/cargo/bin/rustup toolchain link hermes-image "$tc" >/dev/null \
+    && as_hermes env RUSTUP_HOME="$HERMES_HOME/tools/rustup" /opt/rust/cargo/bin/rustup default hermes-image >/dev/null \
+    || echo "[seed] rustup link failed, continuing"
+done
 # SSH targets and pinned host keys come from Git; the private key stays on the volume and is never regenerated.
 mkdir -p "$TERM_HOME/.talos"
 install -m 0600 /etc/hermes-config/ssh_config "$HERMES_HOME/.ssh/config"

@@ -37,7 +37,8 @@ flowchart LR
 | Piece | Where | Notes |
 |---|---|---|
 | Image | `ghcr.io/mitchross/hermes-dev` from [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev), pinned by digest in `deployment.yaml` | Official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`; one container runs the gateway and the dashboard under s6-overlay |
-| Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000. Init container `seed` runs `scripts/seed.sh` first |
+| Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000. Init container `seed` runs `scripts/seed.sh` first. Limits 8 CPU / 12 GiB: the CPU limit caps how many workers Jest and cargo start; VPA sets the requests |
+| Rust toolchains | `scripts/seed.sh` | `RUSTUP_HOME=/opt/data/tools/rustup` on the volume. The image's toolchain is linked as default `hermes-image`; a repo's `rust-toolchain.toml` version installs once on first use (`RUSTUP_AUTO_INSTALL=1`) |
 | Settings | `config/config.yaml` → ConfigMap → copied to `/opt/data/config.yaml` by `scripts/seed.sh` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
 | Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
 | Coding agents | `scripts/seed.sh`, `skills/homelab-ops/SKILL.md` | Seed clones the talos repo into `/opt/data/workspace`, writes the Hindsight hook configs, installs the Claude Code and Codex hooks. The skill runs `claude -p` or `codex exec` in the background |

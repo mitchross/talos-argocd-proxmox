@@ -19,7 +19,7 @@ spec:
           cpu: 250m
           memory: 1Gi
         maxAllowed:
-          cpu: "4"
-          memory: 6Gi
+          cpu: "8"
+          memory: 12Gi
       - containerName: seed
         mode: "Off"
