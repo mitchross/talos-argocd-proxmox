@@ -46,6 +46,25 @@ sessions:
   auto_prune: true
   retention_days: 90
 
+# Branches and PRs need no prompt; the default branch is off-limits. deny globs match the whole command
+# and block even in yolo mode, so the guardian policy also covers compound commands.
+approvals:
+  mode: smart
+  smart_policy: >-
+    APPROVE without asking: git add, commit and push to a feature branch; gh pr create, view and comment;
+    gh issue create, view and comment; launching claude -p or codex exec coding hand-offs that disallow
+    gh pr merge and pushes to main or master.
+    Always ESCALATE: any push to main or master (including git push while the current branch is main or
+    master), force pushes, gh pr merge, and deleting remote branches.
+  deny:
+    - "git push origin main*"
+    - "git push origin master*"
+    - "git push origin HEAD:main*"
+    - "git push origin HEAD:master*"
+    - "git push --force*"
+    - "git push -f *"
+    - "gh pr merge*"
+
 plugins:
   enabled:
     - hindsight
