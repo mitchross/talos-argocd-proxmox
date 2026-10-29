@@ -32,14 +32,17 @@ record:
   motion:
     days: 0
   alerts:
-    pre_capture: 60
+    # Frigate holds at most 6 ten-second segments in its cache, about 60s
+    # including the one being written. A pre_capture near 60s overflows it, and
+    # Frigate drops segments ("Unable to keep up"). 30s stays well inside.
+    pre_capture: 30
     post_capture: 180
     retain:
       days: 10
       # Keep quiet footage inside the pre/post window too.
       mode: all
   detections:
-    pre_capture: 60
+    pre_capture: 30
     post_capture: 180
     retain:
       days: 10
