@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: recording-api
-          image: ghcr.io/posthog/posthog-node:master@sha256:91f0832fa7c5287b1f26452f4fc4843915c1983c96c33cfa83c360cf7d9d2d92
+          image: ghcr.io/posthog/posthog-node:master@sha256:d217dcea89a3d06c9b869b512681c497c372495244712296f319051aa9a5cd25
           command:
             - node
             - nodejs/dist/index.js
