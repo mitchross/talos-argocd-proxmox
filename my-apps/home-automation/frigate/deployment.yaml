@@ -83,7 +83,11 @@ spec:
             cpu: 1000m
             memory: 2Gi
           limits:
-            memory: 8Gi
+            # The tmpfs caches (/tmp/cache, /dev/shm) and SMB write-back cache
+            # count against this. At 8Gi, busy hours hit the cap and tmpfs writes
+            # failed with "No space left on device", breaking recording segments.
+            # Frigate itself uses 4-5Gi; scheduling uses the request, not this.
+            memory: 12Gi
             gpu.intel.com/i915: "1"
             # Stays Pending until intel-npu-plugin advertises this on the Dell.
             npu.intel.com/accel: "1"
