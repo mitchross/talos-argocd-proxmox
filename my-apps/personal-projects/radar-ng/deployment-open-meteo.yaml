@@ -41,7 +41,7 @@ spec:
       containers:
         - name: open-meteo
           # Both containers use one verified artifact so the sync format matches the served binary.
-          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v2.0.19@sha256:95ec2d726e9f2d2252c21b447933a370b83efc94afb47ba9a33806d45f670ca6
+          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v2.0.20@sha256:875353e44733df9bc621ac8f789ad67a3eb7ccbde78c0c77c72bf1a30c22ca8f
           imagePullPolicy: IfNotPresent
           workingDir: /app
           command: ["/app/openmeteo-api"]
@@ -85,7 +85,7 @@ spec:
         # Sidecar, not a standalone WorkerDeployment: it must share this RWO volume with the serve container (same pod).
         # Runs non-versioned (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env).
         - name: sync-worker
-          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v2.0.19@sha256:95ec2d726e9f2d2252c21b447933a370b83efc94afb47ba9a33806d45f670ca6
+          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v2.0.20@sha256:875353e44733df9bc621ac8f789ad67a3eb7ccbde78c0c77c72bf1a30c22ca8f
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
