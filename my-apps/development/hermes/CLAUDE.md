@@ -12,7 +12,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | Plugin set, skill copy, cron job, repo checkout, memory hooks | talos | `scripts/seed.sh` installs plugins once, copies `skills/homelab-ops/SKILL.md`, creates the `homelab-digest` cron job if missing, clones the talos repo into `/opt/data/workspace`, writes `~/.hindsight/*.json` (agent hooks) and `$HERMES_HOME/hindsight/config.json` (Hermes memory plugin) and installs the Claude Code and Codex Hindsight hooks |
 | Personality and third-party skills | talos | `config/SOUL.md` copied on every start; `scripts/external-skills.txt` pins skill repos by commit |
 | Omni, Talos, Pi | talos | 1Password `hermes-omni-sa` (Operator role) in `externalsecret.yaml`; `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` |
-| Cluster access | talos | `rbac.yaml` (read-only ClusterRole `hermes-viewer`), `config/kube-in-cluster.yaml`; `kubectl` ships in the image |
+| Cluster access | talos | `rbac.yaml` (`hermes-viewer` reads, `hermes-operator` does day-to-day fixes), `config/kube-in-cluster.yaml`; `kubectl` ships in the image |
 | Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` and `image-prepull.yaml`; bump both together |
 | Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `hermes-omni-sa`, `litellm`, `hindsight`, `home-assistant`, `claude-code` (`oauth_token`) |
 | Coding agents | talos | `skills/homelab-ops/SKILL.md` runs `claude -p` or `codex exec` in this pod; there is no fallback (Paseo is off, #3072) |
@@ -28,7 +28,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 - The container starts as root. s6-overlay drops the gateway and dashboard to uid 10000; the mover uses the same uid.
 - Keep `HERMES_DASHBOARD_PUBLIC_URL` equal to the route hostname, or dashboard auth redirects break.
 - The dashboard refuses a non-loopback bind without an auth provider; keep the basic-auth secrets in the ExternalSecret.
-- `kubectl` in the pod is read-only (`hermes-viewer`: get, list, watch; no secrets). Do not add write verbs; fixes go through Git.
+- `kubectl` in the pod can read everything except secrets (`hermes-viewer`) and do day-to-day fixes (`hermes-operator`): exec, port-forward, delete or evict pods, rollout restart, scale, run a Job, cordon/uncordon. It cannot create or edit app resources; config changes still go through Git, and Argo CD reverts any drift.
 - Claude Code and Codex come from the `hermes-dev` image, never from `npm install` on the volume. Bump them in homelab-images.
 - The Claude token is `CLAUDE_CODE_OAUTH_TOKEN` from 1Password; Codex and `gh` logins are one-time device logins stored on the volume.
 - Model policy: Hermes brain = `claude-opus-5-5` at `agent.reasoning_effort: medium` (`config.yaml`; cron digest and Kanban workers on the default profile follow it); coding = `claude-sonnet-5-5 --effort high` for spelled-out fixes, `claude-opus-5-5 --effort high` or `gpt-6.1-sol` at high effort for investigation and design. `ANTHROPIC_MODEL` and `.codex/config.toml` (seed) pin the agents; the skill repeats the flags and reports the model on every hand-off.

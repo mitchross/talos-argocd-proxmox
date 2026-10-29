@@ -1,7 +1,7 @@
 ---
 name: homelab-ops
-description: Read-only health checks for the talos-prod-cluster-v2 homelab (Argo CD, pods, Longhorn, kopiur backups, events), the daily digest format, and Omni, Talos and Pi access.
-version: 1.4.0
+description: Health checks and day-to-day fixes for the talos-prod-cluster-v2 homelab (Argo CD, pods, Longhorn, kopiur backups, events), the daily digest format, and Omni, Talos and Pi access.
+version: 1.5.0
 platforms: [linux]
 metadata:
   hermes:
@@ -9,13 +9,14 @@ metadata:
     category: devops
 ---
 
-# Homelab ops: read-only cluster checks
+# Homelab ops: cluster checks and quick fixes
 
-You run inside the cluster with a read-only ServiceAccount. `kubectl` is on PATH and already authenticated.
+You run inside the cluster. `kubectl` is on PATH and already authenticated. It reads everything except secrets, and can do day-to-day fixes: exec, port-forward, delete or evict pods, `rollout restart`, scale, run a Job, cordon/uncordon. It cannot create or edit app resources; config changes go through Git. Say what a restart or delete will do before you run it.
 
 ## Rules
 
-- Read only. Never run `delete`, `scale`, `patch`, `apply`, `edit`, `rollout restart`, `exec`, or `cordon`.
+- Reads need no approval. `exec`, `port-forward`, `rollout restart`, deleting or evicting a pod, `scale`, running a Job, and `cordon`/`uncordon` are allowed for diagnosis and quick recovery; say what they do first.
+- Never use `apply`, `edit`, `create`, or `patch` to change app config. Argo CD reverts it, and the change belongs in Git.
 - If a fix is needed, describe it and name the Git path under `my-apps/` or `infrastructure/`. The user changes the cluster through pull requests only. A coding agent in this pod can open that pull request (see below).
 - Report observations, then hypotheses. A failed backup is an observation; its cause is a hypothesis until a log proves it.
 - Keep the digest short. Only report what is not healthy. Say "all clear" for a section with nothing to report.
@@ -94,7 +95,7 @@ claude -p "<prompt>" --model claude-sonnet-5-5 --effort high --dangerously-skip-
 codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
 ```
    Pick the model by the task. Sonnet 5.5 for spelled-out fixes: the file and the change are already known (an audit finding, an issue with a fix) and tests can prove it. Opus 5.5 or GPT-6.1-sol, both high effort, for investigation, design choices or cross-cutting changes. When unsure, use Opus. Never drop `--model` or `--effort`. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
-   `kubectl` is read-only, but agents here also inherit the Omni Operator key and `ssh pi`. Tell them not to use Omni, Talos or the Pi; never pass the bypass flags anywhere else.
+   Agents here also inherit the Omni Operator key and `ssh pi`. Tell them not to use Omni, Talos or the Pi; never pass the bypass flags anywhere else.
 4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not the one you chose, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
 
