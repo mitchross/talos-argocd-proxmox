@@ -28,7 +28,7 @@ spec:
       - name: open-webui
         # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
         # `main` and `cuda` share a commit; `main` keeps local Whisper on CPU without shipping CUDA.
-        image: ghcr.io/open-webui/open-webui:main@sha256:096c8f3d3132016210ca87b0b4dff01d2d66d9fe4fee088fae13fc30f9ac54f3
+        image: ghcr.io/open-webui/open-webui:main@sha256:0b399a8ba34558e181d316750455f2a95376a38cd60a61b9c942e138898944bd
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
