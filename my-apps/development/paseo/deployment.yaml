@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: paseo
-          image: ghcr.io/mitchross/paseo-dev:main@sha256:f5795662cdd852fddee5b2b6abcd361ccabe16daf9386301d97dbc2dee6a5605
+          image: ghcr.io/mitchross/paseo-dev:main@sha256:c457fd574291622b35ffa31f40041e16a815f9edbe6afe47ae3bef3755b223ee
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
