@@ -58,6 +58,11 @@ rules:
   - apiGroups: [batch]
     resources: [jobs]
     verbs: [create, delete]
+  # Raise or lower a Longhorn volume's copy count. Existing volumes keep the
+  # count they were made with, so a storage-class change never reaches them.
+  - apiGroups: [longhorn.io]
+    resources: [volumes]
+    verbs: [patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
