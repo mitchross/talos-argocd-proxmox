@@ -82,9 +82,11 @@ chmod 0700 "$HERMES_HOME/.ssh"
 if [ -f "$HERMES_HOME/.ssh/id_ed25519" ]; then chmod 0600 "$HERMES_HOME/.ssh/id_ed25519"; else echo "[seed] no SSH key in $HERMES_HOME/.ssh; ssh pi will fail"; fi
 # talosctl reaches nodes through Omni with the Operator service account from 1Password.
 if [ -n "${OMNI_SERVICE_ACCOUNT_KEY:-}" ] && command -v omnictl >/dev/null 2>&1; then
-  omnictl talosconfig --cluster talos-prod-cluster-v2 --force --merge=false "$TERM_HOME/.talos/config" \
+  # omnictl caches under $HOME/.talos; as root at /opt/data that dir was unreadable and failed every backup.
+  HOME="$TERM_HOME" omnictl talosconfig --cluster talos-prod-cluster-v2 --force --merge=false "$TERM_HOME/.talos/config" \
     || echo "[seed] talosconfig failed, continuing"
 fi
+rm -rf "$HERMES_HOME/.talos"
 chown -R 10000:10000 "$TERM_HOME" "$HERMES_HOME/.ssh" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
 
 # Coding agents: repo checkout, git identity, shared-memory hooks. gh and codex logins are done once by hand (docs).
