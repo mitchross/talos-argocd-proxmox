@@ -28,3 +28,46 @@ roleRef:
   kind: ClusterRole
   name: hermes-viewer
   apiGroup: rbac.authorization.k8s.io
+---
+# Day-to-day fixes without touching desired state: exec into pods, restart or
+# delete pods, roll out a Deployment, run a Job from a CronJob, cordon a node.
+# No create/update of app resources (those go through Git) and still no secrets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hermes-operator
+rules:
+  - apiGroups: [""]
+    resources: [pods/exec, pods/portforward, pods/attach]
+    verbs: [create, get]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [delete]
+  - apiGroups: [""]
+    resources: [pods/eviction]
+    verbs: [create]
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [patch]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets]
+    verbs: [patch]
+  - apiGroups: [apps]
+    resources: [deployments/scale, statefulsets/scale]
+    verbs: [patch, update]
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [create, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hermes-operator
+subjects:
+  - kind: ServiceAccount
+    name: hermes
+    namespace: hermes
+roleRef:
+  kind: ClusterRole
+  name: hermes-operator
+  apiGroup: rbac.authorization.k8s.io
