@@ -35,21 +35,33 @@ if [ "$frontend_ready" != 1 ]; then
   exit 1
 fi
 
+# How long Temporal keeps a closed workflow before deleting it.
+# radar-ng runs ~4,600 workflows a day, so it keeps 2 days; the rest keep 7.
+retention_for() {
+  case "$1" in
+    radar-ng) echo 48h ;;
+    *) echo 168h ;;
+  esac
+}
+
 # Namespaces to ensure exist. Listed here instead of parameterized via
 # env var so a grep in the repo finds every namespace we use.
 # One namespace per app keeps histories, schedules and task queues apart.
 # `default` stays so nothing breaks before an app has moved.
 for NS in default radar-ng deal-scout news-reader; do
   echo "[seed] ensuring namespace: $NS"
+  RETENTION=$(retention_for "$NS")
   if temporal_rpc operator namespace describe -n "$NS" >/dev/null 2>&1; then
-    echo "[seed]   already exists"
+    echo "[seed]   already exists; setting retention $RETENTION"
+    # Existing namespaces keep their create-time retention unless updated here.
+    temporal_rpc operator namespace update --retention "$RETENTION" -n "$NS"
   else
     DESCRIPTION="Application namespace (GitOps-seeded)"
     if [ "$NS" = "default" ]; then
       DESCRIPTION="Default user namespace (GitOps-seeded)"
     fi
     temporal_rpc operator namespace create \
-      --retention 168h \
+      --retention "$RETENTION" \
       --description "$DESCRIPTION" \
       -n "$NS"
     echo "[seed]   created"
