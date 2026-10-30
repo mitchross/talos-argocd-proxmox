@@ -19,7 +19,6 @@ spec:
   retention:
     keepDaily: 14
     keepWeekly: 6
-    keepMonthly: 3
   # No fsGroup: on NFS it would make the node re-chown every file on each run. The NAS maps all clients to root, so reads succeed.
   mover:
     securityContext:

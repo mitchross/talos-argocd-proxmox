@@ -12,7 +12,6 @@ spec:
   retention:
     keepDaily: 14
     keepWeekly: 6
-    keepMonthly: 3
   mover:
     securityContext:
       runAsUser: 1000

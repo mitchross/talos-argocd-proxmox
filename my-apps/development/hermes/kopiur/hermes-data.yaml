@@ -13,7 +13,6 @@ spec:
     keepHourly: 24
     keepDaily: 14
     keepWeekly: 6
-    keepMonthly: 3
   # The image's hermes user is uid 10000; the mover must match the data owner.
   mover:
     securityContext:

@@ -16,7 +16,6 @@ spec:
   retention:
     keepDaily: 14
     keepWeekly: 6
-    keepMonthly: 3
   # Weekly non-destructive repo/blob verification; the full delete-and-restore drill stays a manual operator action (README).
   verification:
     quick:

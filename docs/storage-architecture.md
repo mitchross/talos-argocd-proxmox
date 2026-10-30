@@ -339,7 +339,7 @@ Do not add hourly schedules.
 | Field | Where | Example |
 |---|---|---|
 | cadence | stub `SnapshotSchedule.spec.schedule.cron` | `"5 3 * * *"` (daily 03:05), `"19 */6 * * *"` (every 6 h at :19) |
-| retention | stub `SnapshotPolicy.spec.retention` | `{ keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }` |
+| retention | stub `SnapshotPolicy.spec.retention` | `{ keepDaily: 14, keepWeekly: 6 }` |
 | concurrency | component → `concurrencyPolicy: Forbid` | no overlapping snapshot Jobs |
 
 **One shared Kopia repository for the whole cluster** (`ClusterRepository
