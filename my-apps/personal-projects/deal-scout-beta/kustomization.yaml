@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: deal-scout-beta
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - temporal-workers/temporal-connection.yaml
+  - temporal-workers/ebay-externalsecret.yaml
+  - temporal-workers/temporal-worker-deployment.yaml
+  - vpa.yaml
+  - kopiur/seed-restore.yaml
+
+# Uniform kopiur fields (repository, populator, onMissingSnapshot) for the seed Restore.
+components:
+  - ../../common/kopiur-backup

@@ -1,0 +1,77 @@
+# Beta worker: same schedules as prod, in its own Temporal namespace, writing to the beta dashboard.
+# No Facebook runner polls beta, so its Facebook scan jobs stay unclaimed (expected).
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: deal-scout
+  namespace: deal-scout-beta
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal
+    temporalNamespace: deal-scout-beta
+  rollout:
+    strategy: Progressive
+    gate:
+      workflowType: DealScoutDeploymentSmokeWorkflow
+    steps:
+      - rampPercentage: 50
+        pauseDuration: 2m
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: deal-scout-worker
+    spec:
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          # Source: deal-scout repo crates/worker/ (Rust). No personal browser profile is
+          # present; eBay authentication is application-only OAuth.
+          image: ghcr.io/mitchross/deal-scout-worker:v0.35.0@sha256:7a2671d3e86b3da2c15da07854cc01dde60ec9c5a785c45b4bcf3bd60b6223f1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DEAL_SCOUT_API
+              value: "http://deal-scout:8000"
+            # Code default. Also the pod-template change the namespace move needs: the controller's
+            # build id hashes only the pod template and the connection, so temporalNamespace alone rolls nothing.
+            - name: SCAN_TIMEZONE
+              value: "America/Detroit"
+            - name: CLUSTER_SOURCES
+              value: "ebay,slickdeals,msu,comprenew,lowcostminipcs"
+            - name: DEAL_SCOUT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: deal-scout-secrets
+                  key: INGEST_TOKEN
+            - name: EBAY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: deal-scout-ebay
+                  key: EBAY_CLIENT_ID
+            - name: EBAY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: deal-scout-ebay
+                  key: EBAY_CLIENT_SECRET
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              memory: 512Mi
