@@ -15,8 +15,7 @@ spec:
     hostname: gitea
   retention:
     keepDaily: 14
-    keepWeekly: 6
-    keepMonthly: 3
+    keepWeekly: 8
   mover:
     securityContext:
       runAsUser: 1000

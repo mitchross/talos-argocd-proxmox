@@ -15,7 +15,7 @@ spec:
     hostname: karakeep
   retention:
     keepDaily: 7
-    keepWeekly: 4
+    keepWeekly: 8
   mover:
     securityContext:
       runAsUser: 1001

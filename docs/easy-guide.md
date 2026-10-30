@@ -392,7 +392,7 @@ small touches, all in Git (click through the tabs):
     spec:
       sources: [{ pvc: { name: storage } }]
       identity: { username: storage, hostname: open-webui }
-      retention: { keepDaily: 14, keepWeekly: 6, keepMonthly: 3 }
+      retention: { keepDaily: 14, keepWeekly: 8 }
       mover:   # runs as the DATA OWNER — Part 6
         securityContext: { runAsUser: 568, runAsGroup: 568, runAsNonRoot: true }
         podSecurityContext: { fsGroup: 568, supplementalGroups: [568] }
