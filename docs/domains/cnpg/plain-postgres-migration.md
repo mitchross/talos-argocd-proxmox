@@ -98,9 +98,8 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
    ```
 6. **Retire the CNPG cluster** — delete
    `infrastructure/database/cloudnative-pg/gitea/` and its entry anywhere it's
-   referenced; add its `serverName` lineages to the rustfs lifecycle
-   expiration ConfigMap (`infrastructure/backup/rustfs-lifecycle/`) as an
-   abandoned lineage.
+   referenced. The bucket-wide rule in
+   `infrastructure/backup/rustfs-lifecycle/` expires its Barman data.
 
 ## Full-retirement checklist (after the last DB migrates)
 
@@ -135,8 +134,8 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
       history retains them)
 
 The one open item is retiring the `postgres-backups` lifecycle ConfigMap once
-the abandoned Barman buckets age out (60-day expiration rules cover every
-lineage as of 2026-08-13).
+the abandoned Barman buckets age out (one bucket-wide 60-day expiration rule
+covers every lineage).
 
 ## Related
 
