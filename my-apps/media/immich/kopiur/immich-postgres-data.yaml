@@ -25,7 +25,7 @@ spec:
   retention:
     keepHourly: 8
     keepDaily: 7
-    keepWeekly: 4
+    keepWeekly: 8
   mover:
     securityContext:
       runAsUser: 999 # postgres uid:gid in the official image

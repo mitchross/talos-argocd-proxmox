@@ -15,7 +15,7 @@ spec:
     hostname: restore-canary
   retention:
     keepDaily: 14
-    keepWeekly: 6
+    keepWeekly: 8
   # Weekly non-destructive repo/blob verification; the full delete-and-restore drill stays a manual operator action (README).
   verification:
     quick:

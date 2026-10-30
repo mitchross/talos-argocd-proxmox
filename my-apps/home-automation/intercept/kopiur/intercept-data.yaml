@@ -13,7 +13,7 @@ spec:
     hostname: intercept
   retention:
     keepDaily: 14
-    keepWeekly: 6
+    keepWeekly: 8
   mover:
     securityContext:
       runAsUser: 0

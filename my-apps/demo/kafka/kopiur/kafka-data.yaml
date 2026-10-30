@@ -24,7 +24,7 @@ spec:
     hostname: kafka
   retention:
     keepDaily: 14
-    keepWeekly: 6
+    keepWeekly: 8
   mover:
     securityContext:
       # Verified from quay.io/strimzi/kafka:1.1.0-kafka-4.3.0 (/etc/passwd).

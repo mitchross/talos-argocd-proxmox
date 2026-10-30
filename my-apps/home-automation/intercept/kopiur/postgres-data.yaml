@@ -23,7 +23,7 @@ spec:
           timeout: 2m
   retention:
     keepDaily: 7
-    keepWeekly: 4
+    keepWeekly: 8
   mover:
     securityContext:
       runAsUser: 999

@@ -18,7 +18,7 @@ spec:
     hostname: immich
   retention:
     keepDaily: 14
-    keepWeekly: 6
+    keepWeekly: 8
   # No fsGroup: on NFS it would make the node re-chown every file on each run. The NAS maps all clients to root, so reads succeed.
   mover:
     securityContext:

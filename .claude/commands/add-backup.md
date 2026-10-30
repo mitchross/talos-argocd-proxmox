@@ -47,7 +47,7 @@ are gone.
    spec:
      sources: [{ pvc: { name: <pvc> } }]
      identity: { username: <pvc>, hostname: <ns> }
-     retention: { keepDaily: 14, keepWeekly: 6 }   # 6h tier (can't re-create): keepHourly:8,keepDaily:7,keepWeekly:4
+     retention: { keepDaily: 14, keepWeekly: 8 }   # 6h tier (can't re-create): keepHourly:8,keepDaily:7,keepWeekly:8
      mover:
        securityContext: { runAsUser: <UID>, runAsGroup: <GID>, runAsNonRoot: true }   # root: {runAsUser:0,runAsNonRoot:false}
        podSecurityContext: { fsGroup: <GID>, supplementalGroups: [<GID>] }

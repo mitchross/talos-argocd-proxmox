@@ -15,7 +15,7 @@ spec:
     hostname: perplexica
   retention:
     keepDaily: 14
-    keepWeekly: 6
+    keepWeekly: 8
   mover:
     # config.json is 0:568/0600; db.sqlite is 568:568/0664.
     # UID 0 reads the config; GID 568 reads the database without DAC capabilities.

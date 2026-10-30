@@ -15,7 +15,7 @@ spec:
     hostname: frigate
   retention:
     keepDaily: 14
-    keepWeekly: 6
+    keepWeekly: 8
   mover:
     securityContext:
       # Frigate writes .jwt_secret as root and the uid-568 mover cannot open it.
