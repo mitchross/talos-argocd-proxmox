@@ -83,6 +83,11 @@ spec:
             - secretRef:
                 name: hermes-secrets
           env:
+            # The browser tool's Chromium can't build its sandbox in this pod (non-root, no user
+            # namespaces), and Hermes only injects --no-sandbox under Docker or root. The pod is the
+            # isolation boundary, so pass the flags explicitly.
+            - name: AGENT_BROWSER_ARGS
+              value: "--no-sandbox,--disable-dev-shm-usage"
             - name: HERMES_DASHBOARD
               value: "1"
             - name: HERMES_DASHBOARD_HOST
