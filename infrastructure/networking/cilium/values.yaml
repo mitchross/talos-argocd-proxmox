@@ -45,6 +45,8 @@ cgroup:
 # unknown pod IPs, so cross-node pod traffic must stay encapsulated. UDP 8472 must pass between nodes.
 routingMode: tunnel
 tunnelProtocol: vxlan
+# Pin to the LAN MTU: auto-detect set 1280 on every node, the same as siderolink. Pods adopt it when recreated.
+MTU: 1500
 
 ipam:
   mode: kubernetes
