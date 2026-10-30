@@ -48,7 +48,7 @@ retention_for() {
 # env var so a grep in the repo finds every namespace we use.
 # One namespace per app keeps histories, schedules and task queues apart.
 # `default` stays so nothing breaks before an app has moved.
-for NS in default radar-ng deal-scout news-reader; do
+for NS in default radar-ng deal-scout deal-scout-beta news-reader; do
   echo "[seed] ensuring namespace: $NS"
   RETENTION=$(retention_for "$NS")
   if temporal_rpc operator namespace describe -n "$NS" >/dev/null 2>&1; then
