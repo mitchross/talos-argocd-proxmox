@@ -26,6 +26,7 @@ Wall-plug draw and cost per host are metered separately — see
 [power metering](../power/metering.md).
 
 Verify live node addresses with `kubectl get nodes -o wide`.
+See [switch ports and VLANs](switch-port-vlan-map.md) for the physical switch map.
 
 ### Expected shed-node downtime
 

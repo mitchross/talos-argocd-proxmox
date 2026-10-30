@@ -1,0 +1,72 @@
+---
+title: Switch ports and VLANs
+config:
+  layout: elk
+---
+flowchart TB
+  accTitle: Home network switch ports and VLANs
+  accDescr: The Firewalla router connects to switch 192.168.1.2 port 5. Port 4 of that switch connects to port 8 of switch 192.168.1.4 at 2.5G. Port 9 of that switch connects to port 8 of switch 192.168.1.5 at 10G. All three inter-switch links carry VLANs 1, 10, 50, 100, 101 and 103.
+
+  ROUTER["`Firewalla router
+  192.168.1.1 / 192.168.10.1`"]
+
+  subgraph S2["SWITCH 192.168.1.2 — Sodola SL-SG0024W"]
+    direction LR
+    S2P5["`p5 2.5G trunk
+    uplink to router`"]
+    S2P1["`p1 2.5G VLAN 10
+    192.168.10.15 management host`"]
+    S2P2["`p2 2.5G VLAN 10
+    CachyOS desktop`"]
+    S2P4["`p4 2.5G trunk
+    to 192.168.1.4`"]
+    S2FREE["`p3, p6 no link`"]
+  end
+
+  subgraph S4["SWITCH 192.168.1.4 — 2G080110GSM"]
+    direction LR
+    S4P8["`p8 2.5G trunk
+    to 192.168.1.2`"]
+    S4P1["`p1 1G VLAN 10
+    device not identified`"]
+    S4P2["`p2 1G VLAN 10
+    hp-elite-gen12`"]
+    S4P3["`p3 2.5G VLAN 10
+    Dell mini, hp-elite-gen13`"]
+    S4P4["`p4 2.5G VLAN 10
+    HP SFF host .21 and VMs`"]
+    S4P5["`p5 2.5G VLAN 101
+    17 IoT MAC addresses`"]
+    S4P6["`p6 100M VLAN 100
+    device not identified`"]
+    S4P7["`p7 2.5G trunk
+    Firewalla MAC, ASUS bridge .70`"]
+    S4P9["`p9 10G trunk
+    to 192.168.1.5`"]
+  end
+
+  subgraph S5["SWITCH 192.168.1.5 — 10gswitch"]
+    direction LR
+    S5P8["`p8 10G trunk
+    to 192.168.1.4`"]
+    S5P1["`p1 10G VLAN 10
+    TrueNAS .133`"]
+    S5P3["`p3 10G VLAN 10
+    Threadripper .14 and GPU VM`"]
+    S5P4["`p4 10G VLAN 10
+    link up, 0 packets received`"]
+    S5FREE["`p2, p5, p6, p7 no link`"]
+  end
+
+  ROUTER uplink@<--> S2P5
+  S2P4 trunk24@<--> S4P8
+  S4P9 trunk45@<--> S5P8
+
+  classDef trunk fill:#fff3df,stroke:#d8ad55,color:#17212b
+  classDef vlan10 fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef client fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef idle fill:#eef1f4,stroke:#aab4bf,color:#17212b
+  class ROUTER,S2P5,S2P4,S4P8,S4P7,S4P9,S5P8 trunk
+  class S2P1,S2P2,S4P1,S4P2,S4P3,S4P4,S5P1,S5P3,S5P4 vlan10
+  class S4P5,S4P6 client
+  class S2FREE,S5FREE idle
