@@ -147,7 +147,7 @@ spec:
       interval: 60s
       rules:
         - alert: ApplicationHighMemoryUsage
-          expr: (container_memory_working_set_bytes{container!="POD",container!=""} / container_spec_memory_limit_bytes) * 100 > 90
+          expr: max by (namespace,pod,container)(container_memory_working_set_bytes{container!="",container!="POD"}) / on (namespace,pod,container) max by (namespace,pod,container)(kube_pod_container_resource_limits{resource="memory",unit="byte"}) * 100 > 90
           for: 5m
           labels:
             severity: warning
