@@ -36,8 +36,7 @@
   },
   'helm-values': {
     managerFilePatterns: [
-      '/^infra/.+/values\\.yaml$/',
-      '/^apps/.+/values\\.yaml$/',
+      '/^infrastructure/.+/values\\.yaml$/',
       '/^monitoring/.+/values\\.yaml$/',
       '/^my-apps/.+/values\\.yaml$/',
     ],
