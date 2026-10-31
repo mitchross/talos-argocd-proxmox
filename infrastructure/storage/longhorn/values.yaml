@@ -28,7 +28,9 @@ defaultSettings:
   # Budget = disk size * this % against DECLARED PVC size. Never drop to 100%:
   # a DR restore doubles declared demand via `prime-*` PVCs and deadlocks the rebuild.
   storageOverProvisioningPercentage: "200"
-  allowRecurringJobWhileVolumeDetached: "true"
+  # false: recurring jobs skip detached volumes. With true, fstrim-daily attaches them without a
+  # mounted filesystem and fails "Action [trimFilesystem] not available" (longhorn/longhorn#7292).
+  allowRecurringJobWhileVolumeDetached: "false"
   replicaAutoBalance: "best-effort"
   # Plain scalars only — per-engine JSON strings trip "mismatched data engines" errors.
   fastReplicaRebuildEnabled: "true"

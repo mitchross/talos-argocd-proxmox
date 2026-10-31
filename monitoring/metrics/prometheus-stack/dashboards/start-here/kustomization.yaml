@@ -16,3 +16,6 @@ configMapGenerator:
   - name: capacity-dashboard
     files:
       - capacity.json
+  - name: homelab-now-dashboard
+    files:
+      - homelab-now.json

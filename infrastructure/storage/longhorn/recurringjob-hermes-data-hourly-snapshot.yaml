@@ -1,0 +1,15 @@
+# Hourly restore points without a full-volume clone. Retain prunes only this job's snapshots.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: hermes-data-hourly-snapshot
+  namespace: longhorn-system
+  annotations:
+    # CRD ships in this same app's chart; skip the dry-run on a fresh bootstrap.
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  task: snapshot
+  cron: "58 * * * *"
+  groups: []
+  retain: 24
+  concurrency: 1
