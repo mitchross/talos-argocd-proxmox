@@ -15,6 +15,13 @@ mkdir -p "${DIR}"
 chown -R app:app "${DIR}"
 chmod 0700 "${DIR}"
 
+# These logs are disposable: hat crashes on a corrupt DB, so start fresh instead of crash-looping.
+if [ -f "${DATABASE}" ] && ! python3 -c 'import sqlite3, sys
+sys.exit(sqlite3.connect(sys.argv[1]).execute("PRAGMA quick_check(1)").fetchone()[0] != "ok")' "${DATABASE}" 2>/dev/null; then
+    rm -f "${DATABASE}" "${DATABASE}-journal" "${DATABASE}-wal" "${DATABASE}-shm"
+fi
+rm -f "${DATABASE}.broken"
+
 exec s6-setuidgid app \
     hat-syslog-server --log-level 'INFO' \
         --db-high-size "${DB_HIGH_SIZE}" --db-low-size "${DB_LOW_SIZE}" \

@@ -17,6 +17,32 @@ spec:
       labels:
         app: tubesync
     spec:
+      initContainers:
+      # SponsorBlock is a per-source DB setting with no env override; cuts force a full VP9 re-encode.
+      - name: disable-sponsorblock
+        image: ghcr.io/meeb/tubesync:v0.18.5
+        imagePullPolicy: IfNotPresent
+        workingDir: /app
+        command:
+        - python3
+        - manage.py
+        - shell
+        - -c
+        - from sync.models import Source; Source.objects.update(enable_sponsorblock=False)
+        env:
+        - name: TZ
+          value: America/New_York
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: media
+          mountPath: /downloads
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
       containers:
       - name: tubesync
         image: ghcr.io/meeb/tubesync:v0.18.5
