@@ -43,7 +43,7 @@ ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/logging-playb
 
 Confirm advancing `talos-system` and `host-journal` streams for every expected
 node in Grafana. Host Collector metrics listen on the host LAN IP at `:8889`;
-`physical-logs` must be up. Existing `PrometheusTargetDown` alerts cover hosts
+`physical-logs` must be up. Existing stock `TargetDown` alerts cover hosts
 whose collectors have not been installed. The log receiver is loopback-only;
 the existing Loki LAN endpoint `192.168.10.48` is not a public route.
 
