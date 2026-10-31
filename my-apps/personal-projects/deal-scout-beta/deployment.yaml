@@ -29,7 +29,7 @@ spec:
       containers:
         - name: deal-scout
           # Source: github.com/mitchross/deal-scout, crates/dashboard/ (Rust)
-          image: ghcr.io/mitchross/deal-scout:v0.35.0@sha256:f3d560b8805265418ee11aae4a7ad2be946cbda3f2c99d4791ef3f9feefe922f
+          image: ghcr.io/mitchross/deal-scout:v0.35.1@sha256:76befdafe97d6d23af8ca87f7d68d67353cfc11723bc62174893b2d0e38d36e0
           imagePullPolicy: IfNotPresent
           env:
             # Fewer glibc malloc arenas: each Tokio blocking thread otherwise keeps its own,
