@@ -28,14 +28,10 @@ spec:
           type: RuntimeDefault
       containers:
         - name: deal-scout
-          # Source: github.com/mitchross/deal-scout, dashboard/
+          # Source: github.com/mitchross/deal-scout, crates/dashboard/ (Rust)
           image: ghcr.io/mitchross/deal-scout:v0.35.1@sha256:76befdafe97d6d23af8ca87f7d68d67353cfc11723bc62174893b2d0e38d36e0
           imagePullPolicy: IfNotPresent
           env:
-            # Fewer glibc malloc arenas: each Tokio blocking thread otherwise keeps its own,
-            # and big JSON responses leave them full (suspected cause of the high RSS).
-            - name: MALLOC_ARENA_MAX
-              value: "2"
             - name: LITELLM_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -91,10 +87,10 @@ spec:
             requests:
               cpu: 25m
               memory: 96Mi
-            # Rust v0.35.0 sits at ~500-600Mi idle and was OOMKilled at 768Mi under concurrent
-            # /api/listings?limit=10000 load (deal-scout#144). VPA only moves requests, so keep headroom here.
+            # v0.35.1 (jemalloc) idles at ~30-50Mi and peaked at ~500Mi in a mixed-load test; kept at
+            # 768Mi (deal-scout#150). VPA only moves requests, so keep headroom here.
             limits:
-              memory: 1536Mi
+              memory: 768Mi
           volumeMounts:
             - name: data
               mountPath: /data
