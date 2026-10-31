@@ -28,14 +28,14 @@ for img in "${!D[@]}"; do
 done
 BR=chore/radar-ng-backend-$NEW; WT=/opt/data/workspace/wt-radar-ng-$NEW
 cd /opt/data/workspace/talos-argocd-proxmox && git fetch -q origin && git worktree add -q -b "$BR" "$WT" origin/main || exit 1
-cd "$WT/my-apps/personal-projects/radar-ng"
+cd "$WT/my-apps/personal-projects/radar-ng" || exit 1
 for img in "${!D[@]}"; do
   grep -rlE "radar-ng-$img:v[0-9.]+@" . | xargs sed -i -E "s#radar-ng-$img:v[0-9.]+@sha256:[0-9a-f]{64}#radar-ng-$img:$NEW@${D[$img]}#g"
 done
 OUT=$(kubectl kustomize .)
 echo "new refs: $(grep -cE "radar-ng-(tile-server|temporal-worker|open-meteo-worker):$NEW@" <<<"$OUT")"
 echo "other refs: $(grep -E "radar-ng-(tile-server|temporal-worker|open-meteo-worker):v" <<<"$OUT" | grep -vc ":$NEW@" || true)"
-cd "$WT"
+cd "$WT" || exit 1
 BODY=${TMPDIR:-/opt/data/cache/scratch}/talos-radar-ng-$NEW-body.md
 cat > "$BODY" <<EOF
 Bumps the radar-ng backend images to $NEW (radar-ng ${SHA:0:7}, PR mitchross/radar-ng#$SRCPR).

@@ -19,12 +19,12 @@ got=$(curl -fsSI -H "Authorization: Bearer $tok" -H "Accept: $ACCEPT" "https://g
 [ "$got" = "$DIG" ] && echo "registry ok" || { echo "MISMATCH $got"; exit 1; }
 BR=chore/radar-ng-web-$NEW; WT=/opt/data/workspace/wt-radar-ng-web-$NEW
 cd /opt/data/workspace/talos-argocd-proxmox && git fetch -q origin && git worktree add -q -b "$BR" "$WT" origin/main || exit 1
-cd "$WT/my-apps/personal-projects/radar-ng"
+cd "$WT/my-apps/personal-projects/radar-ng" || exit 1
 OLD=$(grep -ohE "radar-ng-web:v[0-9.]+" deployment-web.yaml | head -1); OLD=${OLD#*:}
 sed -i -E "s#radar-ng-web:v[0-9.]+@sha256:[0-9a-f]{64}#radar-ng-web:$NEW@$DIG#g" deployment-web.yaml
 OUT=$(kubectl kustomize .)
 echo "web refs on $NEW: $(grep -c "radar-ng-web:$NEW@" <<<"$OUT"), others: $(grep "radar-ng-web:v" <<<"$OUT" | grep -vc ":$NEW@" || true)"
-cd "$WT"
+cd "$WT" || exit 1
 BODY=${TMPDIR:-/opt/data/cache/scratch}/talos-radar-ng-web-$NEW-body.md
 { echo "Bumps the radar-ng web image from $OLD to $NEW (radar-ng ${SHA:0:7}, mitchross/radar-ng#$SRCPR)."; echo; echo "What ships to radar.vanillax.me:"; cat "$NOTES"; echo; echo "Checks: the \`tag@digest\` comes from the ghcr-web run's \`published\` annotation and matches the registry. \`kubectl kustomize\` renders one web ref, on $NEW."; echo; echo "Rollback: revert this PR."; } > "$BODY"
 git commit -q --only my-apps/personal-projects/radar-ng -m "chore(radar-ng): bump web image to $NEW" && git show --stat HEAD | tail -1

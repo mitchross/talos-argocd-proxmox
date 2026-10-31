@@ -5,6 +5,7 @@
 set -u
 WT=$1; LOG=$2; ENVF=${3:-/opt/data/tools/deal-scout-env.sh}
 mkdir -p "$LOG"
+# shellcheck source=/dev/null
 [ -f "$ENVF" ] && source "$ENVF"
 cd "$WT" || exit 1
 [ -d node_modules ] || npm ci --no-audit --no-fund > "$LOG/npm-ci-root.log" 2>&1

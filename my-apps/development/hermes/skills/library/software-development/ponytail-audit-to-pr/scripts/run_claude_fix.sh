@@ -7,6 +7,7 @@ set -u
 WT=$1; PROMPT=$2; MODEL=${3:-claude-sonnet-5-5}; ENVF=${4:-}
 SCRATCH=${TMPDIR:-/opt/data/cache/scratch}
 OUT="$SCRATCH/claude-fix-$(basename "$WT")"
+# shellcheck source=/dev/null
 [ -n "$ENVF" ] && source "$ENVF"
 cd "$WT" || exit 1
 SETTINGS=$(/opt/hermes/.venv/bin/python -c '
