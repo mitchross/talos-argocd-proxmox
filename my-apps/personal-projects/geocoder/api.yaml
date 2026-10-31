@@ -24,10 +24,10 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       initContainers:
-        # Holds the pod in Init until Postgres answers (e.g. while restore-before-bind hydrates the PVC) instead of crash-looping.
+        # Holds the pod in Init until Postgres answers instead of crash-looping. -U: uid 1000 has no passwd entry, so libpq "no attempt".
         - name: wait-for-db
           image: postgis/postgis:18-3.6@sha256:4a43e3c3e5d55b9208240fc71db543b79c638766280c625a425bd0a2390989c4
-          command: ["sh", "-c", "until pg_isready -h geocoder-postgres -p 5432 -t 5; do sleep 2; done"]
+          command: ["sh", "-c", "until pg_isready -U postgres -h geocoder-postgres -p 5432 -t 5; do sleep 2; done"]
           resources:
             requests: {cpu: 5m, memory: 8Mi}
             limits: {memory: 32Mi}
