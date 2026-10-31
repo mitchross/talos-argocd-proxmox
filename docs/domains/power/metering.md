@@ -139,6 +139,10 @@ series are `consumers_energy:bill_*` and `consumers_energy:recalc_*` statistics.
 Import them with `scripts/import-history.mjs` in `consumers-energy-sync`. The
 import does not rewrite recorded `*_cost` meters.
 
+`consumers_energy:recalc_*` ends October 30, 2026; live `*_cost` statistics
+continue the trend. `consumers_energy:grid_*` updates with each daily sync. Bill
+series update only when you import new bills.
+
 ## House-level data from Consumers Energy
 
 The plugs only see the homelab. The whole-house number comes from the utility:

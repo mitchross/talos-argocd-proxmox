@@ -1781,7 +1781,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Rate over time",
+      "title": "Rate over time (summer Jun-Sep, non-summer Oct-May)",
       "id": 31,
       "gridPos": {
         "h": 8,

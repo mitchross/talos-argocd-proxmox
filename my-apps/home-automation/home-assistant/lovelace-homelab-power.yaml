@@ -906,7 +906,14 @@ views:
               - mean
             entities:
               - entity: consumers_energy:bill_rate
+                name: Bill cost per kWh, with fixed fees
                 color: '#ffa726'
+              - entity: sensor.current_electricity_rate
+                name: Live marginal rate
+                color: '#66bb6a'
+            min_y_axis: 0.15
+            max_y_axis: 0.30
+            fit_y_data: true
             grid_options:
               columns: full
       - type: grid
@@ -923,7 +930,11 @@ views:
               - change
             entities:
               - entity: consumers_energy:bill_cost
+                name: Bills, by cycle
                 color: '#ef5350'
+              - entity: consumers_energy:grid_cost
+                name: Daily sync, marginal cost by month
+                color: '#ffa726'
             grid_options:
               columns: full
       - type: grid
@@ -940,7 +951,11 @@ views:
               - change
             entities:
               - entity: consumers_energy:bill_kwh
+                name: Bills, by cycle
                 color: '#90a4ae'
+              - entity: consumers_energy:grid_kwh
+                name: Daily sync, by month
+                color: '#26a69a'
             grid_options:
               columns: full
       - type: grid
@@ -957,11 +972,28 @@ views:
               - change
             entities:
               - entity: consumers_energy:recalc_homelab_cost
-                color: '#42a5f5'
+                name: Homelab repriced, to Oct 30
+                color: '#90caf9'
               - entity: consumers_energy:recalc_threadripper_cost
-                color: '#ef5350'
+                name: Threadripper repriced, to Oct 30
+                color: '#ef9a9a'
               - entity: consumers_energy:recalc_gaming_pc_cost
-                color: '#ab47bc'
+                name: Gaming PC repriced, to Oct 30
+                color: '#ce93d8'
+              - entity: sensor.homelab_cost
+                name: Homelab live
+                color: '#1e88e5'
+              - entity: sensor.threadripper_cost
+                name: Threadripper live
+                color: '#e53935'
+              - entity: sensor.gaming_pc_cost
+                name: Gaming PC live
+                color: '#8e24aa'
+            grid_options:
+              columns: full
+          - type: markdown
+            content: |
+              Summer rates run June–September; non-summer rates run October–May. Oct 16–17 readings are unusually low, so that dip is not a saving.
             grid_options:
               columns: full
       - type: grid
@@ -979,6 +1011,9 @@ views:
             entities:
               - entity: sensor.current_electricity_rate
                 color: '#ffa726'
+            min_y_axis: 0.15
+            max_y_axis: 0.30
+            fit_y_data: true
             grid_options:
               columns: full
   - title: Devices
