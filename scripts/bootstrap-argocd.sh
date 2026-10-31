@@ -79,10 +79,10 @@ echo "📦 Creating argocd namespace..."
 kubectl apply -f "$ROOT_DIR/infrastructure/controllers/argocd/ns.yaml"
 
 # Step 1.25: Install the CRDs from the same Argo CD RC tag as the runtime.
-# Chart 10.10.0 bundles v3.5.4 CRDs; values.yaml disables those so bootstrap
-# and GitOps both use the vendored v3.6.0-rc2 schemas from this repo.
+# Chart 10.11.6 bundles v3.5.x CRDs; values.yaml disables those so bootstrap
+# and GitOps both use the vendored v3.6.0-rc4 schemas from this repo.
 echo ""
-echo "🧩 Installing ArgoCD v3.6.0-rc2 CRDs..."
+echo "🧩 Installing ArgoCD v3.6.0-rc4 CRDs..."
 kubectl apply --server-side --force-conflicts \
   -k "$ROOT_DIR/infrastructure/controllers/argocd/crds"
 kubectl wait --for=condition=established --timeout=60s \
