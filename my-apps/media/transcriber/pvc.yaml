@@ -1,0 +1,16 @@
+# Same NAS folder MeTube writes to: every media-inbox-smb PVC mounts \\192.168.10.133\k8s\media-inbox.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-inbox
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "SMB video inbox on the NAS; downloads re-fetchable, not snapshottable"
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: media-inbox-smb
+  resources:
+    requests:
+      storage: 500Gi
