@@ -94,7 +94,6 @@ Two rules follow:
 
 ## Notes
 
-- `project-nomad` is intentionally managed by `appsets/my-apps-appset.yaml` as a single bundled app at `my-apps/knowledge/project-nomad`. Its child folders are resources inside that app, not generated Argo CD Applications.
 - `my-apps/common/*` is **excluded** from the my-apps generator: those directories are shared Kustomize Components (`kind: Component`), which kustomize builds as an *empty* render — without the exclude the AppSet generates a phantom zero-resource Application. `validate-argocd-apps.sh` Check 8 fails CI if a Component dir ever becomes discoverable again.
 - `my-apps/development/strimzi` is **excluded** from the my-apps generator: the files live with the dev tools, but `custom-entrypoints/strimzi-app.yaml` deploys them at wave 4 into namespace `kafka`.
 - Category folders are for people only. Application names and namespaces come from the last folder, so moving an app between categories (for example `my-apps/media/x` → `my-apps/utility/x`) only changes its source path. Renaming the last folder creates a new Application and namespace.
@@ -118,14 +117,6 @@ Two rules follow:
 - Global ignore rules for HTTPRoute, ExternalSecret, and PVC restore fields live in `infrastructure/controllers/argocd/values.yaml`; AppSets should only carry app-specific ignore rules.
 - AppProjects are intentionally permissive for a single-operator homelab. They are labels and UI grouping, not hard tenant guardrails.
 - Hook Jobs are acceptable when they are idempotent, bounded, and documented. The RustFS lifecycle Job is a PostSync hook because S3 lifecycle PUTs are idempotent and Kubernetes Jobs are immutable.
-
-## Project Nomad App Boundary
-
-Project Nomad is not special to Argo CD; it is special only in repo shape. The `my-apps` ApplicationSet discovers app directories with `my-apps/*/*`, so `my-apps/knowledge/project-nomad` is the generated Application boundary.
-
-Inside that directory there is one parent `kustomization.yaml`. Subdirectories such as `mysql/`, `redis/`, `qdrant/`, `embeddings/`, `kiwix/`, `protomaps/`, `cyberchef/`, and `flatnotes/` are resource folders referenced by the parent kustomization, not independent app directories.
-
-Do not exclude `my-apps/knowledge/project-nomad/*`; that pattern targets child folders the AppSet does not generate. If Project Nomad should ever become multiple Argo CD Applications, add child `kustomization.yaml` files deliberately and update the generator/validation model at the same time.
 
 ## Archived apps
 

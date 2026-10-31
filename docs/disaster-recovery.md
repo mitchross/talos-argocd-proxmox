@@ -307,7 +307,7 @@ Record all four acceptance checks, with live evidence:
    `storage.vanillax.dev/backup-exempt-reason` annotation — non-zero isn't a
    restore failure but it masks real problems (history: two exempt PVCs once sat
    unnoticed because acceptance only quoted the protected counters). PostHog's
-   ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage`
+   ClickHouse/Kafka/Redis, and standalone Redis
    are the expected exempt set (PostHog's `postgres-data` is protected — it
    carries the API keys/dashboards).
 
