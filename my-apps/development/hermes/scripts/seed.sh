@@ -120,4 +120,20 @@ if [ ! -f "$HERMES_HOME/.codex/hooks.json" ]; then
   # --mode local only writes hooks; cloud mode would overwrite .hindsight/codex.json.
   as_hermes sh -c 'curl -fsSL https://hindsight.vectorize.io/get-codex | bash -s -- --mode local' || echo "[seed] codex hooks install failed, continuing"
 fi
+# Hermes-made skills kept in Git (skills/library/<category>/<name>) so a new volume gets them back.
+# Install only when missing: the live copy keeps evolving on the volume and is never overwritten.
+if [ -e "$REPO_DIR/.git" ]; then
+  lib=/tmp/skills-library
+  rm -rf "$lib"; mkdir -p "$lib"
+  if as_hermes git -C "$REPO_DIR" archive origin/main my-apps/development/hermes/skills/library 2>/dev/null | tar -x -C "$lib" 2>/dev/null; then
+    root="$lib/my-apps/development/hermes/skills/library"
+    find "$root" -name SKILL.md | while read -r f; do
+      rel=$(dirname "${f#"$root"/}"); dest="$HERMES_HOME/skills/$rel"
+      [ -e "$dest/SKILL.md" ] && continue
+      mkdir -p "$(dirname "$dest")"; cp -R "$(dirname "$f")" "$dest"
+      chown -R 10000:10000 "$HERMES_HOME/skills/${rel%%/*}"
+      echo "[seed] restored skill $rel"
+    done
+  fi
+fi
 echo "[seed] done"

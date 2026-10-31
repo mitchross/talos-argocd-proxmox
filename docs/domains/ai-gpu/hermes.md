@@ -56,7 +56,9 @@ flowchart LR
 | Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) → `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
 | Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`: OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated; its public half is in the Pi's `authorized_keys` |
 | Personality | `config/SOUL.md` → `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
-| Third-party skills | `scripts/external-skills.txt` | i-have-adhd, Ponytail and Matt Pocock's skills, pinned by commit. Change the sha to update one |
+| Third-party skills | `scripts/external-skills.txt` | i-have-adhd, Ponytail, Matt Pocock's, Vercel (React) and Expo skills, pinned by commit. Change the sha to update one |
+| Hermes-made skills | `skills/library/<category>/<name>/` | Skills Hermes wrote itself. The seed copies one in only when the volume lacks it, so the live copy keeps its edits; refresh Git through a PR |
+| Cloudflare | `config.yaml` `mcp_servers.cloudflare` → `https://mcp.cloudflare.com/mcp`; 1Password `hermes/cloudflare_api_token` → `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi; copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
