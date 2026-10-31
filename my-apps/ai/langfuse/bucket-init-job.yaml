@@ -16,7 +16,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: init-bucket
-        image: public.ecr.aws/aws-cli/aws-cli:2.39.2
+        image: public.ecr.aws/aws-cli/aws-cli:2.39.3
         command:
         - /bin/bash
         - /scripts/init-bucket.sh
