@@ -109,3 +109,38 @@ mountOptions:
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
+---
+# Shared video inbox (\\192.168.10.133\k8s\media-inbox): every PVC of this class mounts the SAME folder, across namespaces.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: media-inbox-smb
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
+provisioner: smb.csi.k8s.io
+parameters:
+  source: //192.168.10.133/k8s
+  subDir: media-inbox
+  onDelete: retain
+  # The provisioner secret makes the driver create subDir if missing (v1.20 controllerserver.go).
+  csi.storage.k8s.io/provisioner-secret-name: smbcreds
+  csi.storage.k8s.io/provisioner-secret-namespace: csi-driver-smb
+  csi.storage.k8s.io/node-stage-secret-name: smbcreds
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
+mountOptions:
+    - uid=1000
+    - gid=1000
+    - dir_mode=0775
+    - file_mode=0664
+    - vers=3.1.1
+    - max_channels=4
+    - noserverino
+    - cache=loose
+    - rsize=4194304
+    - wsize=4194304
+    - actimeo=60
+    - echo_interval=60
+    - max_credits=64
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
