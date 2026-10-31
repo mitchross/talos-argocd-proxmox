@@ -48,6 +48,30 @@ spec:
           annotations:
             summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready"
             description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for more than 10 minutes."
+        # Replaces the stock KubeJobFailed for CronJobs: alert on the latest run only, so a later
+        # success clears it while failed Jobs stay around for investigation.
+        - alert: CronJobLastRunFailed
+          expr: |
+            (
+              (kube_cronjob_status_last_schedule_time > kube_cronjob_status_last_successful_time)
+              or
+              (kube_cronjob_status_last_schedule_time unless on (namespace, cronjob) kube_cronjob_status_last_successful_time)
+            )
+            unless on (namespace, cronjob) (kube_cronjob_status_active > 0)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} last run failed"
+            description: "The most recent run of {{ $labels.namespace }}/{{ $labels.cronjob }} did not succeed. Check `kubectl -n {{ $labels.namespace }} get jobs` and the failed Job's pod logs (Loki keeps them after the pod is deleted)."
+        - alert: StandaloneJobFailed
+          expr: kube_job_failed{job="kube-state-metrics"} > 0 unless on (namespace, job_name) kube_job_owner{owner_kind="CronJob"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Job {{ $labels.namespace }}/{{ $labels.job_name }} failed"
+            description: "Job {{ $labels.namespace }}/{{ $labels.job_name }} (not owned by a CronJob) failed. Delete it after investigation to clear this alert."
     # Resource Usage Alerts
     - name: kubernetes.resources
       interval: 30s
