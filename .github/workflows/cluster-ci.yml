@@ -28,10 +28,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Match the binaries bundled in Argo CD v3.6.0-rc2: a render that only passes with other versions proves nothing.
+  # Match the binaries bundled in Argo CD v3.6.0-rc4: a render that only passes with other versions proves nothing.
   # Argo CD 3.5+ renders with Helm 4 only.
-  KUSTOMIZE_VERSION: 5.8.1
-  HELM_VERSION: 4.3.0
+  KUSTOMIZE_VERSION: 5.8.3
+  HELM_VERSION: 4.3.1
   KUBECONFORM_VERSION: v0.7.0
   KUBERNETES_VERSION: 1.37.0
 
