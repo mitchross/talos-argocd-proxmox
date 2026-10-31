@@ -1,6 +1,6 @@
 # AI Stack Guide
 
-Local AI inference uses official Qwen3.8-27B FP8 on stock vLLM 0.29.0 with
+Local AI inference uses official Qwen3.8-27B FP8 on stock vLLM (version pinned in `vllm/deployment.yaml`) with
 both RTX 3090s (TP=2), FP8 KV and native vision. GPU allocations are whole-card
 with time-slicing off. The server ceiling is 262,144 tokens; speculation is off.
 

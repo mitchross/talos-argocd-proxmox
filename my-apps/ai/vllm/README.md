@@ -3,7 +3,7 @@
 **Git-declared backend and operating policy.** The
 [2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
 records measurements of the earlier v0.28.0 deployment, with medium sent
-explicitly. It is not a benchmark of the v0.29.0 tunables or xhigh default below.
+explicitly. It is not a benchmark of the current tunables or xhigh default below; the running version is pinned in `deployment.yaml`.
 Confirm the running arguments and repeat acceptance after merge and Argo reconciliation.
 
 | Setting | Value |
