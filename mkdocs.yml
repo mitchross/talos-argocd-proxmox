@@ -112,7 +112,6 @@ nav:
           - Storage tiers (which class): domains/storage/storage-tiers.md
           - Disk writes and SSD wear: domains/storage/disk-writes.md
           - Longhorn volumes and SELinux labels: domains/storage/selinux-mount-context.md
-          - Storage model (RWO/RWX & sizing): domains/storage/storage-model-rwo-rwx-and-sizing.md
           - TrueNAS special-vdev stall runbook: truenas-special-vdev-stall-runbook.md
       - Backups & disaster recovery (kopiur):
           - Interactive course — surviving a cluster wipe: learn/course.md
