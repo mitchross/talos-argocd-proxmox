@@ -51,7 +51,7 @@ ingress:
       noTLSVerify: true
       originServerName: radar.vanillax.me
   # Wildcard is intentional: only ExternalDNS-published hostnames reach the tunnel, internal
-  # services have no Cloudflare DNS, and HTTPRoutes enforce hostnames (explicit alt: config-explicit.yaml.example).
+  # services have no Cloudflare DNS, and HTTPRoutes enforce hostnames.
   - hostname: "*.vanillax.me"
     service: http://posthog-injector.posthog-injector.svc.cluster.local:8080
   - hostname: vanillax.me
