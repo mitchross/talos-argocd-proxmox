@@ -25,7 +25,7 @@ no longer used ([#3088](https://github.com/mitchross/talos-argocd-proxmox/issues
 [config.yml](config.yml) retains alert and detection recordings with 60 seconds
 before the event and 180 seconds after it ends. Frigate 0.18 RC2 limits
 `pre_capture` to 60 seconds. `retain.mode: all` preserves quiet segments within
-that window. Recordings remain available for 10 days; overlapping events can
+that window. Recordings remain available for 30 days; overlapping events can
 produce a longer continuous stretch.
 
 Both continuous and general motion retention are zero. Clips therefore follow

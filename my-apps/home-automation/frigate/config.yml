@@ -21,7 +21,7 @@ snapshots:
   timestamp: true
   bounding_box: true
   retain:
-    default: 14
+    default: 30
 motion:
   threshold: 45
   contour_area: 20
@@ -38,14 +38,14 @@ record:
     pre_capture: 30
     post_capture: 180
     retain:
-      days: 10
+      days: 30
       # Keep quiet footage inside the pre/post window too.
       mode: all
   detections:
     pre_capture: 30
     post_capture: 180
     retain:
-      days: 10
+      days: 30
       mode: all
 # Object detection is now disabled by default in 0.16.0+
 detect:
