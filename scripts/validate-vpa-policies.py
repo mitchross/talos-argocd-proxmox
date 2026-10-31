@@ -283,7 +283,7 @@ def main() -> int:
             continue
         if any(matches_exception(key, entry) for entry in workload_exemptions):
             continue
-        warnings.append(f"{label(key)} has no VPA and no reviewed exemption")
+        errors.append(f"{label(key)} has no VPA and no reviewed exemption")
 
     # Exact exemptions should not silently outlive their workload.
     for entry in coverage_exemptions:
