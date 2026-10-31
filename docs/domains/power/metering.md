@@ -54,9 +54,17 @@ energy component steps between three windows:
 
 | Window | When | All-in rate |
 |---|---|---|
-| Summer on-peak | June–August, weekdays 14:00–19:00 | ~$0.285 |
-| Summer off-peak | June–August, all other hours | ~$0.235 |
-| Non-summer | September–May | ~$0.213 |
+| Summer on-peak | June–September, weekdays 14:00–19:00 | ~$0.285 |
+| Summer off-peak | June–September, all other hours | ~$0.235 |
+| Non-summer | October–May | ~$0.214 |
+
+The October 2026 bill confirms the season boundary: it bills September 15–30 at
+summer rates and October 1–14 at the non-summer rate. Per-kWh riders on that bill
+total $0.122290, and sales tax is 4%.
+
+The Consumers Energy portal export prices only energy plus Distribution. It
+excludes PSCR, other surcharges, tax, and fixed fees, so its $0.17633/kWh in
+October 2026 is below the marginal bill rate.
 
 Rates live in `my-apps/home-automation/home-assistant/configuration.yaml` under
 `input_number:`. **Git is the source of truth**: the `initial:` values reset the
