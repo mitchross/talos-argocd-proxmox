@@ -217,11 +217,3 @@ resources:
 - namespace.yaml
 - externalsecret.yaml
 ```
-
-### Component Reuse
-
-```yaml
-# kustomization.yaml
-components:
-- ../../common/deployment-defaults  # Applies revisionHistoryLimit: 2 to all Deployments
-```

@@ -43,10 +43,4 @@ Create a new application at `$ARGUMENTS` following the project's GitOps patterns
    - Storage + secrets: `my-apps/media/immich/`
    - Database: `my-apps/development/gitea/postgres/` (plain Postgres + kopiur)
 
-6. Apply common Kustomize components where appropriate:
-   ```yaml
-   components:
-   - ../../common/deployment-defaults
-   ```
-
 ArgoCD will auto-discover the app from the directory structure. No manual Application resource needed.
