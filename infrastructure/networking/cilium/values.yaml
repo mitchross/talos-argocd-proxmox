@@ -100,6 +100,8 @@ k8sClientRateLimit:
 # in agent memory, so a restarting agent 429s a mass pod restart before it can relearn it.
 extraConfig:
   api-rate-limit: "endpoint-create=rate-limit:10/s,rate-burst:48,parallel-requests:24,max-wait-duration:30s"
+  # The Wi-Fi shed node can't finish its first k8s sync in the 3m default and crash-loops; the startupProbe allows 600s.
+  k8s-sync-timeout: "8m"
 
 # Must match the README seed flag, or a fresh bootstrap leaves envoy holding zero listeners.
 envoy:
