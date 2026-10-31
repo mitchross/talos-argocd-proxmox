@@ -1199,7 +1199,7 @@
           "range": false
         }
       ],
-      "description": "CE portal export, month to date: energy and distribution only. It excludes PSCR, surcharges, tax, and fixed fees, so the bill is higher."
+      "description": "CE usage month to date at the marginal bill rate. It excludes fixed fees and covers calendar months, not bill cycles."
     },
     {
       "datasource": {
@@ -3427,7 +3427,7 @@
           "range": false
         }
       ],
-      "description": "CE portal export cost / kWh yesterday: energy and distribution only. It excludes PSCR, surcharges, and tax, so it reads below the model rate."
+      "description": "CE cost / kWh yesterday at the marginal bill rate. Compare with the model rate next to it."
     },
     {
       "datasource": {
