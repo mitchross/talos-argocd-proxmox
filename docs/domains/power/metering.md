@@ -62,9 +62,10 @@ The October 2026 bill confirms the season boundary: it bills September 15–30 a
 summer rates and October 1–14 at the non-summer rate. Per-kWh riders on that bill
 total $0.122290, and sales tax is 4%.
 
-The Consumers Energy portal export prices only energy plus Distribution. It
-excludes PSCR, other surcharges, tax, and fixed fees, so its $0.17633/kWh in
-October 2026 is below the marginal bill rate.
+The Consumers Energy portal export prices only energy plus Distribution. The
+sync CronJob adds the other per-kWh charges and tax through
+`CE_COST_ADDER_PER_KWH` and `CE_SALES_TAX_PCT`. Update them when a bill changes
+a rider. Imported cost excludes fixed fees.
 
 Rates live in `my-apps/home-automation/home-assistant/configuration.yaml` under
 `input_number:`. **Git is the source of truth**: the `initial:` values reset the
@@ -174,7 +175,7 @@ database backend.
 ```bash
 # local checkout: node --env-file=.env index.mjs [--download-only|--import-only|--dry-run]
 docker run --rm --user 1001:1001 --env-file .env -v ce-data:/data \
-  ghcr.io/mitchross/consumers-energy-sync:v0.1.4
+  ghcr.io/mitchross/consumers-energy-sync:v0.1.5
 ```
 
 `/data` holds the Playwright cookie jar (a credential) and the CSVs; keep it
