@@ -20,6 +20,8 @@ strategy:
 
 image:
   rootless: true
+  # Chart 12.7.0 (appVersion 1.27.0) is the newest chart; fullOverride pins the image past it. Keep -rootless and the digest.
+  fullOverride: docker.gitea.com/gitea:28.2.0-rootless@sha256:94807314454f6525994a3b76286ba12bc7e7f8cd14f61d9e67431767f8103306
 
 podSecurityContext:
   fsGroup: 1000

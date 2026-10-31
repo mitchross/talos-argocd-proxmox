@@ -391,5 +391,17 @@
       ],
       datasourceTemplate: 'docker',
     },
+    {
+      description: 'Gitea image (image.fullOverride in values.yaml); the chart appVersion lags, and helm-values cannot read fullOverride. Same digests on Docker Hub and docker.gitea.com.',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^my-apps/development/gitea/values\\.yaml$/',
+      ],
+      matchStrings: [
+        'fullOverride:\\s*docker\\.gitea\\.com/gitea:(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})',
+      ],
+      depNameTemplate: 'gitea/gitea',
+      datasourceTemplate: 'docker',
+    },
   ],
 }
