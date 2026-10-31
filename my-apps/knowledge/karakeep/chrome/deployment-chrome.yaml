@@ -16,14 +16,10 @@ spec:
     spec:
       containers:
         - name: chrome
-          image: docker.io/zenika/alpine-chrome:124@sha256:eb3378c1ed0079f94db054a5fe1aaa790a254ec0d6bbc67eda052420d86a179d
+          image: ghcr.io/karakeep-app/karakeep-chrome:156.0.8078.47-r1@sha256:4ad61127638dd27bfe685222787c5780dd1d083d23a7658c39af657775814c44
           imagePullPolicy: IfNotPresent
-          command:
-            - chromium-browser
-            - --headless
-            - --no-sandbox
+          # The image entrypoint sets headless, no-sandbox and the 9222 forwarder; do not override it with command.
+          args:
             - --disable-gpu
             - --disable-dev-shm-usage
-            - --remote-debugging-address=0.0.0.0
-            - --remote-debugging-port=9222
             - --hide-scrollbars
