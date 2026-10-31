@@ -64,7 +64,7 @@ plane and worker MachineSets; do not create MachineSets separately.
 │   ├── .env.example
 │   └── config.yaml.example
 ├── pi-services/               # Other Pi services, incl. booter (PXE for bare-metal workers)
-├── machine-classes/           # VM specs (control-plane, worker, GPU, single-node)
+├── machine-classes/           # VM specs (HP SFF control plane/worker, HP micro worker, Threadripper GPU worker)
 ├── cluster-template/          # Cluster template + machine config patches
 └── docs/                      # Additional documentation
     ├── ARCHITECTURE.md
@@ -79,7 +79,7 @@ plane and worker MachineSets; do not create MachineSets separately.
 Define "machine classes" in Omni that specify CPU, RAM, and disk resources. The Proxmox provider watches for new machines and automatically creates VMs matching your specifications.
 
 ### GPU Support (Optional)
-Include NVIDIA GPU support for AI/ML workloads. See the machine classes in [machine-classes/](machine-classes/) (e.g. `gpu-worker.yaml`, `threadripper-gpu-worker.yaml`) and the patches in [cluster-template/patches/](cluster-template/patches/) for configuration details.
+Include NVIDIA GPU support for AI/ML workloads. See the machine classes in [machine-classes/](machine-classes/) (e.g. `threadripper-gpu-worker.yaml`) and the patches in [cluster-template/patches/](cluster-template/patches/) for configuration details.
 
 ### Production Ready
 - SSL/TLS encryption with Let's Encrypt

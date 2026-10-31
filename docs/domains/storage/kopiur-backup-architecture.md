@@ -265,32 +265,7 @@ holds at `Pending` until kopiur restores its data, *then* binds.
 
 ## 5. To add a backup (checklist)
 
-1. `kubectl -n <ns> exec <pod> -- stat -c '%u:%g' <data-mountpath>` → note the **owner uid:gid**.
-2. Namespace: add label `kopiur.home-operations.com/repo: cluster-kopia` (+ the
-   `privileged-movers` annotation only if owner is `0`).
-3. Add `kopiur/<pvc>.yaml` stub (SnapshotPolicy + Schedule + Restore) with the
-   mover set to that uid:gid. Schedule **daily** unless the data can't be
-   re-created (then every 6 hours, `keepHourly: 8`; never hourly — each run
-   clones the whole volume). Pick a distinct cron minute across **all**
-   schedules: a 6-hourly `MM */6 * * *` also runs at 00/06/12/18:MM. List the
-   taken minutes before picking:
-   ```bash
-   grep -rh 'cron:' my-apps/*/*/kopiur* my-apps/*/*/*/kopiur* | sort
-   ```
-4. PVC: `dataSourceRef -> Restore/<pvc>-restore` + the two `ServerSide*` annotations
-   (`argocd.argoproj.io/compare-options: ServerSideDiff=false` and
-   `argocd.argoproj.io/sync-options: ServerSideApply=false` — the immutable-`dataSourceRef` diff mask).
-   **Retrofitting a running app?** Expected: ArgoCD shows a
-   `PVC is invalid: Forbidden` ComparisonError — `dataSourceRef` is immutable
-   on a Bound PVC. Harmless: backups start immediately anyway, and the
-   `dataSourceRef` arms on the next recreate (which is exactly what DR is).
-   The annotations + AppSet `ignoreDifferences` mask the diff.
-5. Kustomization: add the stub to `resources:` and `../../common/kopiur-backup` to `components:`.
-6. Verify: `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot,secret`.
-
-Copy from [`my-apps/ai/open-webui/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/open-webui) (simple)
-or [`my-apps/knowledge/project-nomad/mysql/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/knowledge/project-nomad/mysql)
-(daemon-drop uid `999:568`). Full step-by-step: [`.claude/commands/add-backup.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/.claude/commands/add-backup.md).
+Follow [`/project:add-backup`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/.claude/commands/add-backup.md). It is the one procedure: data owner, namespace label, per-PVC stub, PVC `dataSourceRef`, kustomization and verification.
 
 ---
 

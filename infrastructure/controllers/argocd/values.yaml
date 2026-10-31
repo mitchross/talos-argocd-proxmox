@@ -1,14 +1,14 @@
 # Argo CD v3.6 release-candidate evaluation.
 # Keep the Helm chart pin independent; this override moves every Argo CD
-# component to RC2 while retaining the currently tested chart templates.
+# component to RC4 while retaining the currently tested chart templates.
 # RC1 has an open Server-Side Diff/SSA false-negative report (#29921), so keep
 # the existing hard-refresh/cache safeguards in this file while evaluating it.
 global:
   image:
-    tag: "v3.6.0-rc2"
+    tag: "v3.6.0-rc4"
 
-# Chart 10.10.0 packages v3.5.4 CRDs. RC1 changed the Application,
-# ApplicationSet, and AppProject schemas, so the matching v3.6.0-rc2 CRDs are
+# Chart 10.11.6 packages v3.5.x CRDs. RC1 changed the Application,
+# ApplicationSet, and AppProject schemas, so the matching v3.6.0-rc4 CRDs are
 # vendored under ./crds and rendered by Kustomize. Bootstrap uses the same files.
 crds:
   install: false
@@ -203,29 +203,6 @@ configs:
           hs.status = obj.status.health.status
           if obj.status.health.message ~= nil then
             hs.message = obj.status.health.message
-          end
-        end
-      end
-      return hs
-    # Strimzi Kafka has no built-in Argo health assessment. Walk (`ipairs`) its
-    # condition list and translate Ready=True to Healthy or NotReady=True to
-    # Degraded. Until either condition exists, remain Progressing. Because the
-    # Kafka CR is wave 0 and KafkaTopic is wave 1, this prevents topics from
-    # landing before the broker is actually ready.
-    resource.customizations.health.kafka.strimzi.io_Kafka: |
-      hs = {}
-      hs.status = "Progressing"
-      hs.message = "Waiting for Strimzi reconciliation"
-      if obj.status ~= nil and obj.status.conditions ~= nil then
-        for _, c in ipairs(obj.status.conditions) do
-          if c.type == "Ready" and c.status == "True" then
-            hs.status = "Healthy"
-            hs.message = c.message or "Kafka is ready"
-            return hs
-          elseif c.type == "NotReady" and c.status == "True" then
-            hs.status = "Degraded"
-            hs.message = c.message or c.reason or "Kafka is not ready"
-            return hs
           end
         end
       end

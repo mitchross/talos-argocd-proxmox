@@ -7,7 +7,7 @@ The Git-declared production backend is **vLLM**, never Ollama. See
 staging order, runtime flags, reasoning/sampling controls and rollback.
 
 - Model ID: `qwen3.8-27b`; official `Qwen/Qwen3.8-27B-FP8`.
-- vLLM v0.29.0, two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
+- vLLM (version: `my-apps/ai/vllm/deployment.yaml`), two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
 - **MTP/speculation stays off** pending the long-session fixes and validation.
 - Explicit thinking levels: `low`, `medium`, `xhigh`; coding/server default
   is `xhigh`, preservation true. Lower effort is opt-in; WebUI's generic high maps to xhigh.
@@ -32,7 +32,7 @@ its classifier stays thinking-off and its DeepSeek high/max routes are unchanged
 Whole-card allocations, time-slicing disabled, `Recreate` strategy. vLLM
 requests both RTX 3090s; ComfyUI and SwarmUI remain at zero replicas.
 Use committed replica counts and the
-[scale-swap runbook](../../../docs/domains/ai-gpu/gpu-scale-swap.md).
+[scale-swap runbook](../../docs/domains/ai-gpu/gpu-scale-swap.md).
 
 Do not set `NVIDIA_VISIBLE_DEVICES` or `CUDA_VISIBLE_DEVICES` in GPU workloads;
 the device plugin/CDI owns allocation. The `nvidia-powerlimit` utility DaemonSet

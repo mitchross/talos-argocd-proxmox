@@ -7,8 +7,7 @@ metadata:
   labels:
     app: tile-server
 spec:
-  # Replicas are managed by the HPA, currently pinned to one because the API
-  # mounts Longhorn RWO publication volumes.
+  # One replica: the API mounts Longhorn RWO publication volumes.
   replicas: 1
   # RWO Longhorn volumes — Recreate, or the replacement pod deadlocks on Multi-Attach.
   strategy:

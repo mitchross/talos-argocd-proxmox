@@ -1,5 +1,5 @@
 # Plain Postgres, no operator: kopiur hourly snapshots + restore-before-bind; a restored crash-consistent
-# snapshot WAL-recovers on boot. Runbook: docs/domains/cnpg/plain-postgres-migration.md
+# snapshot WAL-recovers on boot. Runbook: docs/domains/cnpg/run-postgres-plain-english.md
 apiVersion: apps/v1
 kind: Deployment
 metadata:

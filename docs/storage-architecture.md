@@ -359,35 +359,7 @@ CNPG/Barman `postgres-backups` bucket is aging out via lifecycle policy).
 
 ### Enable a backup
 
-Five steps, all in Git (full annotated checklist in
-[kopiur backup architecture §5](domains/storage/kopiur-backup-architecture.md#5-to-add-a-backup-checklist),
-or the [`/project:add-backup`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/.claude/commands/add-backup.md) command):
-
-1. **Find the data owner:** `kubectl -n <ns> exec <pod> -- stat -c '%u:%g' <data-mountpath>`.
-2. **Namespace:** add label `kopiur.home-operations.com/repo: cluster-kopia`
-   (plus the `privileged-movers` annotation only if the owner is `0`).
-3. **Stub:** add `kopiur/<pvc>.yaml` (`SnapshotPolicy` + `SnapshotSchedule` +
-   `Restore`) with the mover `securityContext` set to that UID:GID and a
-   distinct cron minute.
-4. **PVC:** add `dataSourceRef → Restore/<pvc>-restore` + the two `ServerSide*`
-   annotations (the immutable-`dataSourceRef` diff mask). On an already-Bound
-   PVC expect the harmless `Forbidden` ComparisonError (see
-   [Troubleshooting](#common-failure-modes)) — backups start now, the
-   `dataSourceRef` arms on next recreate.
-5. **Kustomization:** add the stub to `resources:` and
-   `../../common/kopiur-backup` to `components:`.
-
-Then commit, sync, and verify:
-
-```bash
-kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot,secret
-```
-
-Copy from a canonical example: `my-apps/ai/open-webui/` (simple, single-UID
-`568`), `my-apps/knowledge/_archive/project-nomad/mysql/` (daemon-drop `999:568`), or
-`my-apps/home-automation/home-assistant/kopiur/` (root-owned, uid `0` + the
-`privileged-movers` annotation). Helm-rendered PVCs get the `dataSourceRef`
-injected via Kustomize `patches:`.
+Follow [`/project:add-backup`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/.claude/commands/add-backup.md) — the one add-a-backup procedure (all steps in Git, then sync and verify `Snapshot` reaches `Succeeded`).
 
 ### Exempt a PVC (deliberate non-backup)
 

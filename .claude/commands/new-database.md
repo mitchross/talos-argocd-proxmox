@@ -6,7 +6,7 @@ New databases are **ordinary Postgres Deployments inside the owning app's
 directory**, backed up by kopiur like every other PVC. Zero-touch DR
 (restore-before-bind), no operator, no overlay dance. Reference
 implementation: `my-apps/development/gitea/postgres/`. Full pattern +
-rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
+rationale: `docs/domains/cnpg/run-postgres-plain-english.md`.
 
 ### Steps
 
@@ -59,6 +59,6 @@ explicitly rather than resurrecting the old manifests.
 ## Reference
 
 - **Plain Postgres reference:** `my-apps/development/gitea/postgres/`
-- **Migration/pattern doc:** [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)
+- **Pattern doc:** [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
 - **Operator guide (plain English):** [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
 - Two-database example (initdb script + schema-hook sync waves): `my-apps/development-infra/temporal/postgres/`

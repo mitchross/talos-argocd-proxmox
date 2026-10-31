@@ -24,6 +24,14 @@ spec:
                 matchExpressions:
                   - key: feature.node.kubernetes.io/pci-0300_10de.present
                     operator: DoesNotExist
+      initContainers:
+        # Holds the pod in Init until Postgres answers (e.g. while restore-before-bind hydrates the PVC) instead of crash-looping.
+        - name: wait-for-db
+          image: pgvector/pgvector:pg17
+          command: ["sh", "-c", "until pg_isready -h db -p 5432 -t 5; do sleep 2; done"]
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
       containers:
         - name: zero
           image: rocicorp/zero:1.11.3

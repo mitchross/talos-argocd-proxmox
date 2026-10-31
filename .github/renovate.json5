@@ -11,33 +11,27 @@
     'kubernetes',
     'kustomize',
     'argocd',
-    'terraform',
+    'docker-compose',
     'dockerfile',
     'custom.regex',
   ],
   argocd: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
       '/^infrastructure/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
       '/^monitoring/.+\\.yaml$/',
     ],
   },
   kubernetes: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
       '/^infrastructure/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
       '/^monitoring/.+\\.yaml$/',
-      '/^iac/.+\\.yaml$/',
     ],
   },
   'helm-values': {
     managerFilePatterns: [
-      '/^infra/.+/values\\.yaml$/',
-      '/^apps/.+/values\\.yaml$/',
+      '/^infrastructure/.+/values\\.yaml$/',
       '/^monitoring/.+/values\\.yaml$/',
       '/^my-apps/.+/values\\.yaml$/',
     ],
@@ -47,14 +41,14 @@
       '(^|/)kustomization\\.ya?ml$',
     ],
   },
-  terraform: {
+  'docker-compose': {
     managerFilePatterns: [
-      '//^iac/terraform/.+\\.tf$//',
+      '/^(omni|host-monitoring)/.*compose[^/]*\\.ya?ml$/',
     ],
   },
   dockerfile: {
     managerFilePatterns: [
-      '//^docker/.+/Dockerfile$//',
+      '/(^|/)Dockerfile$/',
     ],
   },
   packageRules: [
@@ -325,8 +319,6 @@
     // Archived applications are excluded from Argo CD discovery.
     'my-apps/**/_archive/**',
     '**/charts/**',
-    // ClusterPolicy fails Renovate's YAML parse, and its images are owned by the gpu-operator chart anyway.
-    'infrastructure/gpu/nvidia-gpu-operator/cluster-policy.yaml',
   ],
   // Managers for the LAN registry live in the self-hosted config (my-apps/development/renovate/configmap.yaml);
   // these use public datasources and run in both instances.

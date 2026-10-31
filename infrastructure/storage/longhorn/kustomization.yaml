@@ -5,7 +5,6 @@ resources:
   - namespace.yaml
   # Longhorn UI route: infrastructure/networking/gateway/httproute-longhorn.yaml
   # (deploys at wave 4 alongside the Gateway)
-  - volumesnapshotclass.yaml
   - node-failure-settings.yaml
   - storageclass-default.yaml
   # Fast local flash tier — enterprise-SSD Longhorn disk (tag `flash`).

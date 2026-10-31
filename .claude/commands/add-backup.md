@@ -56,7 +56,6 @@ are gone.
    kind: SnapshotSchedule
    metadata: { name: <pvc>-daily, namespace: <ns> }
    spec: { policyRef: { name: <pvc> }, schedule: { cron: "MM 3 * * *" } }   # daily default (each run clones the whole volume); distinct minute vs ALL schedules, incl. 6h "MM */6 * * *" (collides with 00/06/12/18:MM)
-   # Taken minutes: grep -rh 'cron:' my-apps/*/*/kopiur* my-apps/*/*/*/kopiur* | sort
    ---
    apiVersion: kopiur.home-operations.com/v1alpha1
    kind: Restore
@@ -66,6 +65,14 @@ are gone.
      mover:
        securityContext: { runAsUser: <UID>, runAsGroup: <GID>, runAsNonRoot: true }
        podSecurityContext: { fsGroup: <GID>, supplementalGroups: [<GID>] }
+   ```
+
+   Schedule **daily** unless the data can't be re-created (then every 6 hours,
+   `keepHourly: 8`; never hourly). Pick a cron minute no other schedule uses; a
+   6-hourly `MM */6 * * *` also runs at 00/06/12/18:MM. List the taken minutes first:
+
+   ```bash
+   grep -rh 'cron:' my-apps/*/*/kopiur* my-apps/*/*/*/kopiur* | sort
    ```
 
    The component injects the uniform fields (`repository: cluster-kopia`,

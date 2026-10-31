@@ -35,7 +35,7 @@ Grafana → Dashboards → search "radar-ng".
 | **Tile timestamps per layer** | gauge per layer — should always be 3 frames behind in steady state |
 | **Pod CPU vs request** | which pods are CPU-bound vs idle |
 | **Pod memory vs limit** | early-warning before OOM |
-| **tile-server HPA replicas** | 2–6 swing under load |
+| **tile-server replicas** | 1 ready replica; a gap means restart or unscheduled |
 | **OOM kills (1h)** | should be 0 |
 | **Container restarts (1h)** | should be 0 |
 
@@ -217,10 +217,7 @@ check Grafana radar-ng dashboard
         │                                     └─ backlog flat ────▶ OOM kill or crash
         │                                                           (kubectl describe pod)
         │
-        ├─ tile-server req/sec spike ─▶ traffic surge (HPA should kick in)
-        │                                     │
-        │                              kubectl get hpa -n radar-ng
-        │                                     └─ maxReplicas hit ─▶ bump HPA ceiling
+        ├─ tile-server req/sec spike ─▶ traffic surge (single replica; check CPU vs request, VPA adjusts it)
         │
         └─ all panels green ─────────▶ client-side issue (check Tempo for radar-ng-mobile)
                                               ├─ Tempo: span errors for radar-ng-mobile

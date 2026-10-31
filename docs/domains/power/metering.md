@@ -54,9 +54,18 @@ energy component steps between three windows:
 
 | Window | When | All-in rate |
 |---|---|---|
-| Summer on-peak | June–August, weekdays 14:00–19:00 | ~$0.285 |
-| Summer off-peak | June–August, all other hours | ~$0.235 |
-| Non-summer | September–May | ~$0.213 |
+| Summer on-peak | June–September, weekdays 14:00–19:00 | ~$0.285 |
+| Summer off-peak | June–September, all other hours | ~$0.235 |
+| Non-summer | October–May | ~$0.214 |
+
+The October 2026 bill confirms the season boundary: it bills September 15–30 at
+summer rates and October 1–14 at the non-summer rate. Per-kWh riders on that bill
+total $0.122290, and sales tax is 4%.
+
+The Consumers Energy portal export prices only energy plus Distribution. The
+sync CronJob adds the other per-kWh charges and tax through
+`CE_COST_ADDER_PER_KWH` and `CE_SALES_TAX_PCT`. Update them when a bill changes
+a rider. Imported cost excludes fixed fees.
 
 Rates live in `my-apps/home-automation/home-assistant/configuration.yaml` under
 `input_number:`. **Git is the source of truth**: the `initial:` values reset the
@@ -118,6 +127,18 @@ estimate.
 **The HP SFF plug cannot be attributed.** It feeds two hosts. Split the outlet
 before concluding which of the two to retire.
 
+## Rate and season charts
+
+Grafana **Power & Cost** has a *Rates and GPU cost* row with the live rate, burn
+rate, GPU draw, and the same load priced at each rate. Gaming PC and Cooling have
+rate and burn-rate charts. These charts cover 15 days because Prometheus retention
+applies to all metrics. GPU values use board power, not wall power.
+
+Home Assistant **Rates & savings** holds the long-term charts. Bill and repriced
+series are `consumers_energy:bill_*` and `consumers_energy:recalc_*` statistics.
+Import them with `scripts/import-history.mjs` in `consumers-energy-sync`. The
+import does not rewrite recorded `*_cost` meters.
+
 ## House-level data from Consumers Energy
 
 The plugs only see the homelab. The whole-house number comes from the utility:
@@ -154,7 +175,7 @@ database backend.
 ```bash
 # local checkout: node --env-file=.env index.mjs [--download-only|--import-only|--dry-run]
 docker run --rm --user 1001:1001 --env-file .env -v ce-data:/data \
-  ghcr.io/mitchross/consumers-energy-sync:v0.1.4
+  ghcr.io/mitchross/consumers-energy-sync:v0.1.5
 ```
 
 `/data` holds the Playwright cookie jar (a credential) and the CSVs; keep it

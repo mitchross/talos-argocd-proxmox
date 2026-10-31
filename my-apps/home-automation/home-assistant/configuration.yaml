@@ -76,6 +76,7 @@ prometheus:
       - sensor.office_*
       - sensor.combined_*
       - sensor.current_electricity_rate
+      - sensor.electricity_rate_*
       - sensor.electricity_tariff_period
       # House-level data pushed by the consumers-energy-sync CronJob.
       - sensor.consumers_energy_*
@@ -298,7 +299,7 @@ input_number:
     mode: box
     unit_of_measurement: "USD/kWh"
     icon: mdi:transmission-tower
-    initial: 0.122077
+    initial: 0.122290
   rate_sales_tax_pct:
     name: "Rate — Sales Tax"
     min: 0
@@ -1274,7 +1275,7 @@ template:
 
       # now()-based templates re-render every minute; float(<bill default>) keeps this right
       # before the input_number sliders are first touched.
-      # Summer is June-August: September bills at the non-summer rate.
+      # Summer is June-September: bills switch to the non-summer rate on October 1.
       - name: "Current Electricity Rate"
         unique_id: current_electricity_rate
         unit_of_measurement: "USD/kWh"
@@ -1282,7 +1283,7 @@ template:
         icon: mdi:cash-multiple
         state: >
           {% set n = now() %}
-          {% set summer = n.month in [6, 7, 8] %}
+          {% set summer = n.month in [6, 7, 8, 9] %}
           {% set onpeak = summer and n.weekday() < 5 and 14 <= n.hour < 19 %}
           {% if onpeak %}
             {% set e = states('input_number.rate_summer_onpeak') | float(0.151904) %}
@@ -1291,7 +1292,7 @@ template:
           {% else %}
             {% set e = states('input_number.rate_nonsummer') | float(0.082996) %}
           {% endif %}
-          {% set r = states('input_number.rate_delivery_riders') | float(0.122077) %}
+          {% set r = states('input_number.rate_delivery_riders') | float(0.122290) %}
           {% set t = states('input_number.rate_sales_tax_pct') | float(4) %}
           {{ ((e + r) * (1 + t / 100)) | round(5) }}
 
@@ -1300,7 +1301,7 @@ template:
         icon: mdi:clock-outline
         state: >
           {% set n = now() %}
-          {% set summer = n.month in [6, 7, 8] %}
+          {% set summer = n.month in [6, 7, 8, 9] %}
           {% set onpeak = summer and n.weekday() < 5 and 14 <= n.hour < 19 %}
           {% if onpeak %}Summer On-Peak
           {% elif summer %}Summer Off-Peak

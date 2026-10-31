@@ -37,6 +37,13 @@ spec:
           readOnly: true
         - name: library
           mountPath: /library
+      # Holds the pod in Init until Postgres answers (e.g. while restore-before-bind hydrates the PVC) instead of crash-looping.
+      - name: wait-for-db
+        image: ghcr.io/immich-app/postgres:17-vectorchord0.4.3@sha256:79b95b795f0911e95ffa4d092a2162c4d81a984d5629bc8f786afe0bc0657671
+        command: ["sh", "-c", "until pg_isready -h immich-postgres -p 5432 -t 5; do sleep 2; done"]
+        resources:
+          requests: {cpu: 5m, memory: 8Mi}
+          limits: {memory: 32Mi}
       containers:
       - name: immich-server
         image: ghcr.io/immich-app/immich-server:v3.3.5@sha256:485d546a2e31d6a8b4db8423fcba5c109de8c218d93410af115fd1ccfc4352a6
