@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: capture-ai
-          image: ghcr.io/posthog/posthog/capture:master@sha256:b3356d831b2afb7893f3f415a5a07055951949526aa3d4a40589d48d5ad53bf6
+          image: ghcr.io/posthog/posthog/capture:master@sha256:19998d990129045bdb965ae4a04aafd3b9f2664bd45ed8df2e3c2a753818475a
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"
