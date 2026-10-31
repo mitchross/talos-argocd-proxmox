@@ -92,15 +92,10 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 
 ## Rebuild and Bootstrap
 
-> **The active cluster is `talos-prod-cluster-v2`.** The older template is
-> retained as a reference; its presence does not mean a second cluster is running:
->
-> | | Active cluster | Older template reference |
-> |---|---|---|
-> | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
-> | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` | `omni/machine-classes/` |
-> | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | HP SFF (house, wired): 1 CP + 1 worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 3 bare-metal mini workers (PXE via booter) | 3 CP + 3 workers + 1 GPU |
+> **The active cluster is `talos-prod-cluster-v2`**, defined by
+> `omni/cluster-template/cluster-template-prod-v2.yaml`. Machine classes: `hp-sff-control-plane.yaml` +
+> `hp-sff-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml`.
+> Topology: HP SFF (house, wired): 1 CP + 1 worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 3 bare-metal mini workers (PXE via booter).
 
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
 100 GiB GPU VM; the shed HP hosts one worker. Three bare-metal minis

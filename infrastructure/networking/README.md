@@ -387,7 +387,7 @@ networking-adjacent gotchas for that migration:
   missing disk patch keeps the LoadBalancer unhealthy forever —
   symptoms look like "L2 isn't announcing" when the real cause is that
   nodes never made it out of `UPGRADING`. See the root README for the
-  fix (already applied in `omni/cluster-template/cluster-template.yaml`).
+  fix (already applied in `omni/cluster-template/cluster-template-prod-v2.yaml`).
 - **NVIDIA OSS driver migration** (in progress) changes the GPU
   worker's extension set but doesn't change its networking posture —
   node IP, L2 membership, and Cilium pod CIDR are unaffected.
