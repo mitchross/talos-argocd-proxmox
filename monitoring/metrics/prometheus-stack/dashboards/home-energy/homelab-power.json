@@ -369,7 +369,7 @@
           "range": false
         }
       ],
-      "description": "All-in TOU rate: (energy + delivery riders) x (1 + tax). Summer on-peak is weekdays 2-7 pm, June-August."
+      "description": "All-in TOU rate: (energy + delivery riders) x (1 + tax). Summer on-peak is weekdays 2-7 pm, June-September."
     },
     {
       "datasource": {
@@ -1199,7 +1199,7 @@
           "range": false
         }
       ],
-      "description": "What Consumers Energy billed this month so far."
+      "description": "CE portal export, month to date: energy and distribution only. It excludes PSCR, surcharges, tax, and fixed fees, so the bill is higher."
     },
     {
       "datasource": {
@@ -3427,7 +3427,7 @@
           "range": false
         }
       ],
-      "description": "Yesterday's CE cost / kWh. Compare with the model rate next to it."
+      "description": "CE portal export cost / kWh yesterday: energy and distribution only. It excludes PSCR, surcharges, and tax, so it reads below the model rate."
     },
     {
       "datasource": {

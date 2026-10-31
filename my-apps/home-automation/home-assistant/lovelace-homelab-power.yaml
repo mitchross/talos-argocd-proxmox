@@ -802,12 +802,12 @@ views:
               {% set tax = 1 + states('input_number.rate_sales_tax_pct') | float(0) / 100 %}
               <table width="100%">
               <tr><th>Configured tariff</th><th>Energy $/kWh</th><th>With riders + tax</th></tr>
-              {% for key, label in [('rate_nonsummer', 'Sep–May'), ('rate_summer_offpeak', 'Summer off-peak'), ('rate_summer_onpeak', 'Summer on-peak')] %}
+              {% for key, label in [('rate_nonsummer', 'Oct–May'), ('rate_summer_offpeak', 'Summer off-peak'), ('rate_summer_onpeak', 'Summer on-peak')] %}
               <tr><td>{{ label }}</td><td>{{ num(states('input_number.' ~ key), 4, '$') }}</td><td>{{ num((states('input_number.' ~ key) | float(0) + riders) * tax, 4, '$') }}</td></tr>
               {% endfor %}
               </table>
 
-              Summer: June–August. On-peak: weekdays 14:00–19:00, local time. Riders: **{{ num(riders, 4, '$') }}/kWh**; tax: **{{ states('input_number.rate_sales_tax_pct') }}%**.
+              Summer: June–September. On-peak: weekdays 14:00–19:00, local time. Riders: **{{ num(riders, 4, '$') }}/kWh**; tax: **{{ states('input_number.rate_sales_tax_pct') }}%**.
 
               These are the configured assumptions, not a fresh tariff quote. Usage cost excludes fixed monthly fees. Permanent rate changes go through GitOps.
             grid_options:
@@ -2102,7 +2102,7 @@ views:
             content: |
               **Git is the source of truth.** These sliders reset on restart; a permanent change goes in
               `configuration.yaml`. All-in rate = (energy + delivery riders) × (1 + tax); summer is
-              June–August with a 2–7 pm weekday on-peak window.
+              June–September with a 2–7 pm weekday on-peak window.
 
               **Lockout.** Homelab plugs are switched back on within seconds if turned off. To power-cycle
               one on purpose, disable the *Homelab plug power-off lockout* automation first.
