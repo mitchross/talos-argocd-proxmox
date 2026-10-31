@@ -11,27 +11,22 @@
     'kubernetes',
     'kustomize',
     'argocd',
-    'terraform',
+    'docker-compose',
     'dockerfile',
     'custom.regex',
   ],
   argocd: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
       '/^infrastructure/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
       '/^monitoring/.+\\.yaml$/',
     ],
   },
   kubernetes: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
       '/^infrastructure/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
       '/^monitoring/.+\\.yaml$/',
-      '/^iac/.+\\.yaml$/',
     ],
   },
   'helm-values': {
@@ -46,14 +41,14 @@
       '(^|/)kustomization\\.ya?ml$',
     ],
   },
-  terraform: {
+  'docker-compose': {
     managerFilePatterns: [
-      '//^iac/terraform/.+\\.tf$//',
+      '/^(omni|host-monitoring)/.*compose[^/]*\\.ya?ml$/',
     ],
   },
   dockerfile: {
     managerFilePatterns: [
-      '//^docker/.+/Dockerfile$//',
+      '/(^|/)Dockerfile$/',
     ],
   },
   packageRules: [
