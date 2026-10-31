@@ -29,15 +29,6 @@ spec:
       annotations:
         summary: "GPU monitoring down"
         description: "DCGM exporter on node {{ $labels.kubernetes_node }} has been down for more than 5 minutes."
-    # XID Errors - Hardware Issues
-    - alert: GPUXidErrors
-      expr: increase(DCGM_FI_DEV_XID_ERRORS[5m]) > 0
-      for: 1m
-      labels:
-        severity: critical
-      annotations:
-        summary: "GPU {{ $labels.gpu }} XID errors detected"
-        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has reported XID errors. This indicates a potential hardware issue."
     # PCIe Errors
     - alert: GPUPCIeReplayErrors
       expr: increase(DCGM_FI_DEV_PCIE_REPLAY_COUNTER[5m]) > 10
@@ -47,30 +38,3 @@ spec:
       annotations:
         summary: "GPU {{ $labels.gpu }} PCIe replay errors"
         description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is experiencing PCIe replay errors ({{ $value }} in last 5m)."
-    # ECC Errors - Uncorrectable (critical hardware failure)
-    - alert: GPUECCErrors
-      expr: increase(DCGM_FI_DEV_ECC_DBE_VOL_TOTAL[5m]) > 0
-      for: 1m
-      labels:
-        severity: critical
-      annotations:
-        summary: "GPU {{ $labels.gpu }} uncorrectable ECC errors"
-        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has uncorrectable ECC memory errors. Critical hardware issue."
-    # ECC Errors - Excessive correctable (degrading memory)
-    - alert: GPUECCSingleBitErrors
-      expr: increase(DCGM_FI_DEV_ECC_SBE_VOL_TOTAL[5m]) > 100
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "GPU {{ $labels.gpu }} excessive correctable ECC errors"
-        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has excessive single-bit ECC errors ({{ $value }} in 5m). Memory may be degrading."
-    # Thermal Throttling - actual performance degradation
-    - alert: GPUThermalThrottling
-      expr: DCGM_FI_DEV_THERMAL_VIOLATION > 0
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "GPU {{ $labels.gpu }} thermal throttling"
-        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is thermally throttling. Check cooling system."
