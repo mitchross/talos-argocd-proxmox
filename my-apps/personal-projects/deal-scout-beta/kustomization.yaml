@@ -2,19 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: deal-scout-beta
 
+# Beta is retired (Rust is prod since v0.35.0). Only the namespace stays so the
+# Argo Application prunes everything else; delete this folder in a follow-up PR.
 resources:
   - namespace.yaml
-  - externalsecret.yaml
-  - pvc.yaml
-  - deployment.yaml
-  - service.yaml
-  - httproute.yaml
-  - temporal-workers/temporal-connection.yaml
-  - temporal-workers/ebay-externalsecret.yaml
-  - temporal-workers/temporal-worker-deployment.yaml
-  - vpa.yaml
-  - kopiur/seed-restore.yaml
-
-# Uniform kopiur fields (repository, populator, onMissingSnapshot) for the seed Restore.
-components:
-  - ../../common/kopiur-backup
