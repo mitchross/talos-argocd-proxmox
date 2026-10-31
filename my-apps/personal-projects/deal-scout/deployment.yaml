@@ -87,10 +87,10 @@ spec:
             requests:
               cpu: 25m
               memory: 96Mi
-            # v0.35.1 (jemalloc) idles at ~30-50Mi and peaked at ~500Mi in a mixed-load test; kept at
-            # 768Mi (deal-scout#150). VPA only moves requests, so keep headroom here.
+            # Idles at ~30-50Mi, but live peaks reached 714-852Mi on 2026-10-31 and v0.35.3 was
+            # OOMKilled twice at 768Mi during startup. VPA only moves requests, so keep headroom here.
             limits:
-              memory: 768Mi
+              memory: 1536Mi
           volumeMounts:
             - name: data
               mountPath: /data
