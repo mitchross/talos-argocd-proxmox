@@ -113,7 +113,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
 - After adding a backed-up PVC, verify the in-namespace `kopiur-rustfs` Secret (fanned in by the ClusterExternalSecret) and the kopiur CRs: `kubectl -n <ns> get secret kopiur-rustfs; kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (the `Snapshot` should reach `Succeeded` with non-zero files)
 - The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`.
-- Keep the FULL bucket lifecycle policy in `infrastructure/backup/rustfs-lifecycle/lifecycle.json` when editing it — PUT replaces the whole RustFS lifecycle config. (The retired CNPG Barman lineages are all listed there and aging out.)
+- Keep the FULL bucket lifecycle policy in `infrastructure/backup/rustfs-lifecycle/lifecycle.json` when editing it — PUT replaces the whole RustFS lifecycle config. (One bucket-wide 60-day rule expires the retired CNPG Barman data.)
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 - Add an app-owned `vpa.yaml` for new long-running workloads, using
   `InPlaceOrRecreate`, `minReplicas: 1`, and `RequestsOnly`; record intentional
