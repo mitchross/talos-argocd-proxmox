@@ -20,6 +20,7 @@ spec:
           memory: 1Gi
         maxAllowed:
           cpu: "8"
-          memory: 12Gi
+          # Above the container limit the VPA just pins the request to the cap; keep it under the limit.
+          memory: 14Gi
       - containerName: seed
         mode: "Off"

@@ -123,7 +123,9 @@ spec:
               memory: 1Gi
             limits:
               cpu: "8"
-              memory: 12Gi
+              # The VPA target saturated the old 12Gi cap (uncapped target 13.6Gi), so it could no longer
+              # track real usage. Headroom here keeps the OOM margin as the limit, not as a fixed ceiling.
+              memory: 16Gi
           startupProbe:
             httpGet:
               path: /api/status
@@ -135,6 +137,8 @@ spec:
               path: /api/status
               port: http
             periodSeconds: 15
+            # Cargo and Jest runs saturate the CPU limit, and /api/status then misses the 1 s default.
+            timeoutSeconds: 5
           # Restarts the pod only after 5 min without an answer, so a slow tool run doesn't trigger it.
           livenessProbe:
             httpGet:

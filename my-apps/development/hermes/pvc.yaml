@@ -15,7 +15,8 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 100Gi
+      # Rust debug builds in agent worktrees wrote 79Gi in one hour and filled 100Gi.
+      storage: 200Gi
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
