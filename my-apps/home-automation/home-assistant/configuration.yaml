@@ -76,6 +76,7 @@ prometheus:
       - sensor.office_*
       - sensor.combined_*
       - sensor.current_electricity_rate
+      - sensor.electricity_rate_*
       - sensor.electricity_tariff_period
       # House-level data pushed by the consumers-energy-sync CronJob.
       - sensor.consumers_energy_*
