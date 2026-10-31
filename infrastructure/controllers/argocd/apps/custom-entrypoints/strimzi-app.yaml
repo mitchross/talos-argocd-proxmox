@@ -24,7 +24,7 @@ spec:
     automated:
       prune: true
       selfHeal: true
-      allowEmpty: false
+      allowEmpty: true  # retired: source is empty so prune removes everything
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
