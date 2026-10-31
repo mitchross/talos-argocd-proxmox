@@ -32,10 +32,7 @@ resources:
 - service.yaml
 EOF
 
-# 3. Git commit - ArgoCD discovers automatically
-git add my-apps/category/app-name
-git commit -m "Add app-name application"
-git push
+# 3. Open a PR - ArgoCD discovers the app after merge
 ```
 
 ### Application with Web Access
