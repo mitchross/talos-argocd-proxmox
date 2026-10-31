@@ -23,8 +23,8 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn V1, placed by drive endurance; mostly one replica, with
-  two for data that can't be re-created. NAS provides bulk files and
+- **Storage**: Longhorn V1, placed by drive endurance; two replicas by default,
+  one on the flash tier. NAS provides bulk files and
   off-cluster backups. [Current machines and capacity](inventory/2026-10-27-fleet-inventory.md).
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: plain Postgres Deployments backed up by kopiur — daily snapshots (every 6 hours for data that can't be re-created), restore-before-bind

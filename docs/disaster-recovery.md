@@ -106,7 +106,7 @@ so the beta `secure: false` workaround is unnecessary for Longhorn V1.
     -> bootstrap-argocd.sh
     -> sync waves install Cilium management -> Longhorn -> kopiur -> DB support
     -> generated apps: backed-up PVCs hydrate via restore-before-bind
-    -> re-raise the hand-set two-replica volumes
+    -> confirm restored `longhorn` volumes reach two healthy replicas
     -> verify application reads/writes, credentials and fresh backups
 ```
 
