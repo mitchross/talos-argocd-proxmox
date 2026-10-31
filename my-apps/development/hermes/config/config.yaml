@@ -39,6 +39,15 @@ agent:
   max_turns: 500
   reasoning_effort: medium
 
+# delegate_task helpers run on Sonnet to spare the Opus limit; the main chat stays on Opus.
+delegation:
+  provider: anthropic
+  model: claude-sonnet-5-5
+
+# Weekly skill review may also merge overlapping agent-made skills (archived, never deleted).
+curator:
+  consolidate: true
+
 # Archive hides idle sessions (reversible); prune deletes ended ones. Pinned and open sessions are never touched.
 sessions:
   auto_archive: true
