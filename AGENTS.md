@@ -17,7 +17,9 @@ This rule takes precedence over direct-push examples in `CLAUDE.md` files.
 - Preserve the user's requested objective, approach, and scope. Explain any necessary change of approach before substituting a solution.
 - An implementation request authorizes scoped investigation, edits, validation, feature-branch commit/push, PR creation, and CI review without repeated approval. Honor narrower requests, including analysis-only work.
 - Keep routine work fast: scoped discovery → change → targeted local checks → PR → CI review. Complete required repository checks, let CI run broad suites, and repeat validation only for new changes, failures or unresolved risks. Keep plans and reports brief; scale risk review to the actual impact.
-- Start from a refreshed, intended base; preserve others' changes and stage only task-owned files. Do not create a worktree unless the user asks or another session's changes occupy the checkout; remove it after you push the branch.
+- Start from a refreshed, intended base; preserve others' changes and stage only task-owned files. Use the existing checkout by default; create a worktree only if the user requests one or another active session has changes in that checkout.
+- If a worktree is necessary, create it under `~/.local/share/agent-worktrees/<repo>/<task>/`, never as a sibling in `~/programming`; reuse the task's worktree rather than creating additional directories.
+- On task completion, failure, or cancellation, clean up task-owned worktrees with `git worktree remove <path>` and `git worktree prune` after confirming all changes are committed/pushed or otherwise preserved. Never force-remove a dirty, locked, or in-use worktree; instead report its path and the blocker. Removing a worktree must not delete its task branch.
 - Destructive live or storage operations require explicit authorization and verified prerequisites.
 - Do not advance a dependent GitOps phase merely because its prerequisite PR merged; verify the required prerequisite state live first.
 - After merge, verify the affected runtime when applicable. Documentation/instruction-only changes do not need a cluster health gate.
