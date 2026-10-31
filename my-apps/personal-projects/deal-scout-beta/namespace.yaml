@@ -1,9 +1,0 @@
-# Rust beta of Deal Scout (deal-scout#144): its own database, worker and Temporal
-# namespace, at beta-dealscout.vanillax.me (LAN only). Production stays in deal-scout.
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: deal-scout-beta
-  labels:
-    # kopiur ClusterRepository tenancy: needed for the one-time seed Restore.
-    kopiur.home-operations.com/repo: cluster-kopia
