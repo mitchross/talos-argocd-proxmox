@@ -14,12 +14,11 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      # The HPA scales on CPU utilization (a percentage of the CPU request).
-      # VPA must not move that denominator; this policy is memory-only.
       - containerName: "*"
-        controlledResources: ["memory"]
+        controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
+          cpu: "3"
           memory: 4Gi
 ---
 apiVersion: autoscaling.k8s.io/v1

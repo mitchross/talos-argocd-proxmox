@@ -312,7 +312,7 @@
       "id": 8,
       "type": "timeseries",
       "title": "Pod CPU vs request",
-      "description": "Per-pod CPU consumption normalized to the pod's CPU request. >100% means the pod is bursting into limit headroom; sustained >70% on tile-server triggers HPA scale-out.",
+      "description": "Per-pod CPU consumption normalized to the pod's CPU request. >100% means the pod is bursting into limit headroom; sustained >70% on tile-server means the CPU request is too low (VPA adjusts it).",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -421,8 +421,8 @@
     {
       "id": 10,
       "type": "timeseries",
-      "title": "Tile-server replicas (HPA)",
-      "description": "Current vs desired vs min/max. If current pins at maxReplicas you're undersized \u2014 bump the HPA cap.",
+      "title": "Tile-server replicas",
+      "description": "Ready vs desired replicas. One replica is intended (RWO volumes); a gap means the pod is restarting or unscheduled.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -435,36 +435,18 @@
       },
       "targets": [
         {
-          "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"radar-ng\", deployment=\"tile-server\"}",
           "refId": "A",
-          "legendFormat": "current",
+          "legendFormat": "ready",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           }
         },
         {
-          "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
+          "expr": "kube_deployment_spec_replicas{namespace=\"radar-ng\", deployment=\"tile-server\"}",
           "refId": "B",
           "legendFormat": "desired",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
-          "refId": "C",
-          "legendFormat": "max",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "expr": "kube_horizontalpodautoscaler_spec_min_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
-          "refId": "D",
-          "legendFormat": "min",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
