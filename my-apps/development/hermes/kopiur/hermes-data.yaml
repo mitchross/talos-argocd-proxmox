@@ -10,7 +10,7 @@ spec:
     username: hermes-data
     hostname: hermes
   retention:
-    keepHourly: 24
+    keepHourly: 8
     keepDaily: 14
     keepWeekly: 8
   # The image's hermes user is uid 10000; the mover must match the data owner.
@@ -26,14 +26,13 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
-  name: hermes-data-hourly
+  name: hermes-data-6h
 spec:
   policyRef:
     name: hermes-data
   schedule:
-    # Hourly: Hermes state (sessions, memory, skills) changes all day.
-    # :28 is unused by every other schedule, so it never collides with the 03/04 daily or */6 tiers.
-    cron: "28 * * * *"
+    # Each run clones the whole volume; hourly restore points are Longhorn snapshots (see pvc.yaml).
+    cron: "28 */6 * * *"
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore

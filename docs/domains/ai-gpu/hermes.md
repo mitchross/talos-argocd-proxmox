@@ -29,7 +29,7 @@ flowchart LR
     Gateway -->|claude -p / codex exec| Agents[Claude Code / Codex in the pod] --> GitHub[Pull request]
     Gateway -->|read-only kubectl| K8s[Cluster API]
     Git[my-apps/development/hermes] --> Argo[Argo CD] --> Gateway
-    Gateway --> Vol[(hermes-data 100Gi)] --> Kopiur[Kopiur hourly backup]
+    Gateway --> Vol[(hermes-data 100Gi)] --> Kopiur[Kopiur 6-hourly backup]
 ```
 
 ## How it is built
@@ -51,7 +51,7 @@ flowchart LR
 | Home Assistant | 1Password `home-assistant/ha-longlived-token` → `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Volume | `pvc.yaml` | `hermes-data`, 100Gi Longhorn, restore-before-bind |
-| Backups | `kopiur/hermes-data.yaml` | Hourly at :28; keeps 24 hourly, 14 daily, 6 weekly, 3 monthly. Mover runs as 10000:10000 |
+| Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28; keeps 8 hourly, 14 daily, 6 weekly, 3 monthly. Mover runs as 10000:10000. Longhorn also keeps 24 hourly snapshots on the volume; they do not survive loss of the volume |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
 | Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) → `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
 | Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`: OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated; its public half is in the Pi's `authorized_keys` |
@@ -244,7 +244,7 @@ curl -s https://hermes.vanillax.me/api/status | jq '{version, gateway_state}'
 kubectl -n hermes get snapshot
 ```
 
-Expect `Synced` and `Healthy`, one `1/1 Running` pod, `hermes-data` `Bound`, both ExternalSecrets `SecretSynced`, `[seed] done`, `"gateway_state": "running"`, and an hourly snapshot `Succeeded` within the last hour.
+Expect `Synced` and `Healthy`, one `1/1 Running` pod, `hermes-data` `Bound`, both ExternalSecrets `SecretSynced`, `[seed] done`, `"gateway_state": "running"`, and a Kopiur snapshot `Succeeded` within the last 6 hours.
 
 ## Change Hermes
 
