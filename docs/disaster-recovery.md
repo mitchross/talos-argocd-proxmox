@@ -6,7 +6,7 @@
 > [kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
 > and [kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md).
 > Databases are plain Postgres + kopiur (CNPG retired 2026-08-13 — history in
-> the [plain Postgres migration doc](domains/cnpg/plain-postgres-migration.md))
+> the [CNPG retirement note](domains/cnpg/plain-postgres-migration.md))
 > and use the same automatic PVC restoration. Database recovery still needs
 > application-level acceptance; see [post-restore acceptance](#post-restore-acceptance).
 

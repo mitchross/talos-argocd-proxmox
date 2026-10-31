@@ -126,7 +126,7 @@ nav:
               - kopiur trial: kopiur-trial.md
       - Databases:
           - Run Postgres here — plain-English guide (start here): domains/cnpg/run-postgres-plain-english.md
-          - Plain Postgres pattern & CNPG retirement: domains/cnpg/plain-postgres-migration.md
+          - CNPG retirement note: domains/cnpg/plain-postgres-migration.md
       - Networking:
           - Topology: domains/networking/topology.md
           - Cilium policies: domains/networking/policy.md

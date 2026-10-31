@@ -168,7 +168,7 @@ Project procedures live in `.claude/commands/` (also listed as skills); Codex us
 | **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
 | **RustFS lifecycle policy** | `infrastructure/backup/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/secrets/1passwordconnect/` |
-| **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/plain-postgres-migration.md`) |
+| **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/run-postgres-plain-english.md`) |
 | **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development-infra/temporal/postgres/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |

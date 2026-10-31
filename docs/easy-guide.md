@@ -672,7 +672,7 @@ is delayed, never corrupted. (Row 3 of the table in Part 5.)
 **What about the databases?**
 Same flow. Every database is a plain Postgres Deployment whose PVC follows
 the exact same restore-before-bind path as every other PVC (CNPG was retired
-2026-08-13 — [pattern + history](domains/cnpg/plain-postgres-migration.md)).
+2026-08-13 — [pattern](domains/cnpg/run-postgres-plain-english.md#the-pattern)).
 The operator's guide is
 [run-postgres-plain-english.md](domains/cnpg/run-postgres-plain-english.md).
 
