@@ -11,7 +11,7 @@ This rule takes precedence over direct-push examples in `CLAUDE.md` files.
 
 ## Git workflow
 
-This block is the same in every repo. Rules below it may add to it, never relax it.
+This block is the same in every repo. Other rules in this file may add to it, never relax it.
 
 - Work on a feature branch and open a pull request. Never push to the default branch.
 - Never merge a pull request. The owner merges after review.
