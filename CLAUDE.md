@@ -107,12 +107,11 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
 - Move app folders and change the ApplicationSet paths that match them in **separate PRs** (add new paths → move → drop old paths). One commit doing both let the monitoring AppSet delete its apps with their PVCs (2026-09-28). See `docs/domains/argocd/entrypoints.md`
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
-- Use **vLLM** (`qwen3.8-27b`) as the only GPU inference backend — **never ollama**
 - Use sync waves when adding infrastructure components
-- Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
+- Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job` Never use `Replace=true,Force=true` sync-options on Jobs (duplicate Job execution, [#24005](https://github.com/argoproj/argo-cd/issues/24005)).
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
 - After adding a backed-up PVC, verify the in-namespace `kopiur-rustfs` Secret (fanned in by the ClusterExternalSecret) and the kopiur CRs: `kubectl -n <ns> get secret kopiur-rustfs; kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (the `Snapshot` should reach `Succeeded` with non-zero files)
-- The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`.
+- The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`. Never run the mover as plain `root` to fix a permission error; only root-owned data gets `runAsUser: 0` + the `privileged-movers` namespace annotation.
 - Keep the FULL bucket lifecycle policy in `infrastructure/backup/rustfs-lifecycle/lifecycle.json` when editing it — PUT replaces the whole RustFS lifecycle config. (One bucket-wide 60-day rule expires the retired CNPG Barman data.) `loki-lifecycle.json` expires orphaned Loki chunks; keep its 14 days above the longest Loki retention.
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 - Add an app-owned `vpa.yaml` for new long-running workloads, using
@@ -130,9 +129,6 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
   drains. Increase replicas first or leave the PDB disabled.
 - Create manual ArgoCD `Application` resources (use directory discovery)
 - Use `kubectl edit` on Talos nodes (changes are ephemeral)
-- Create Services without named ports when using HTTPRoute
-- Mix Ingress and Gateway API
-- Commit secrets to Git
 - Bypass GitOps workflow for configuration changes
 - Hide deployment or migration behavior in an inline YAML block or an undocumented CLI command
 - Deploy without considering sync wave order
@@ -140,12 +136,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Manually create or delete kopiur `SnapshotPolicy`/`SnapshotSchedule`/`Restore` (or `ReplicationSource`/`ReplicationDestination` — those CRDs are gone) out of band. Manage backups through the per-PVC stub + the `kopiur-backup` component in git.
 - Make observability a core dependency or install Prometheus Operator CRDs early just to satisfy bootstrap apps. `kube-prometheus-stack` is the sole owner of `monitoring.coreos.com` CRDs.
 - Back up Redis or PostHog's ClickHouse/Kafka PVCs — backup-exempt disposable data. PostHog's **Postgres** is kopiur-backed (identity layer: API keys, users, dashboards, flag definitions — survives cluster rebuild).
-- Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
-- Use `RollingUpdate` strategy on Deployments with RWO PVCs (causes Multi-Attach deadlock)
-- Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
-- Use `Replace=true,Force=true` sync-options on Jobs — causes duplicate Job execution bug ([#24005](https://github.com/argoproj/argo-cd/issues/24005)); use ArgoCD hooks instead
 - Auto-merge major Helm chart version bumps for critical infrastructure (kube-prometheus-stack, longhorn, cilium) — **a kube-prometheus-stack v82→v83 auto-merge caused a full cluster outage on 2026-04-08 via Kyverno webhook deadlock**. Pin Renovate to minor/patch only for these charts.
-- Run a kopiur mover as plain `root` to "fix" a permission error. Under baseline Pod Security the mover has no read capabilities, so root can't read non-root data — set the mover `securityContext` to the **data owner uid:gid** instead (`docs/domains/storage/kopiur-mover-permissions.md`). Only use `runAsUser: 0` + the `privileged-movers` namespace annotation when the data is genuinely root-owned.
 
 ## Custom Commands
 

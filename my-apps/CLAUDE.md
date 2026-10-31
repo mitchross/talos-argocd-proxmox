@@ -165,32 +165,15 @@ patches:
 
 ### Which StorageClass? (decide BEFORE writing the PVC)
 
-Full reasoning + measured numbers: **`docs/domains/storage/storage-tiers.md`**.
-
-| Use | Class | Why |
-|-----|-------|-----|
-| **Anything RWO** — app state, databases, caches | `longhorn` (default) | node-local block. **Databases included.** |
-| **Heavy writers** — ClickHouse, Kafka, tile renderers | `longhorn-flash` | the only enterprise (high-endurance) drive |
-| **Bulk, read-mostly files you create** — photo libraries, downloads, archives | `truenas-nfs` | NAS space, no SSD wear; ~50 creates/s, so not for write-heavy or many-tiny-file churn. kopiur policy uses `copyMethod: Direct` (see `my-apps/media/immich/`) |
-| **Existing NAS shares / media / model weights** | static NFS or SMB PVs | files, not blocks |
-
-Size PVCs to real use plus headroom: Longhorn books the full request, and oversized volumes block backup clones. Never put Docker/overlay storage or embedded search engines on NFS. Full map of disks: `docs/domains/storage/disk-map.md`.
-
-**Do NOT put databases on network-attached block storage.** The NVMe/TCP flash-pool experiment was not adopted
-(`docs/domains/storage/storage-tiers.md` § Historical experiment); database flash belongs **local to the node**.
+Follow `.claude/commands/place-storage.md` for class, size and backup mode; measured numbers are in `docs/domains/storage/storage-tiers.md`.
+Never put databases on network-attached block storage: the NVMe/TCP flash-pool experiment was not adopted, so database flash stays **local to the node**.
 
 ### Application with Persistent Storage + Backups
 
-Backups are **kopiur**: a per-PVC stub (`SnapshotPolicy` + `SnapshotSchedule` + `Restore` in
-`kopiur/<pvc>.yaml`), the shared `../../common/kopiur-backup` component, the namespace label
-`kopiur.home-operations.com/repo: cluster-kopia`, and the PVC `dataSourceRef` pointing at
-`<pvc>-restore`. Steps and YAML: `/add-backup` (`.claude/commands/add-backup.md`). Reference app: `my-apps/ai/open-webui/`.
+Follow `.claude/commands/add-backup.md` (kopiur stub, shared component, namespace label, PVC `dataSourceRef`, mover uid). Reference app: `my-apps/ai/open-webui/`.
 
-- The mover MUST run as the **data owner uid:gid**: under baseline Pod Security a root mover cannot read non-root data. Root-owned data only: `runAsUser: 0` + the `privileged-movers` namespace annotation (`docs/domains/storage/kopiur-mover-permissions.md`).
 - Restore-before-bind: on recreate the PVC stays `Pending` while the populator hydrates it. A new PVC with no snapshot binds **empty** and backs up forward (`onMissingSnapshot: Continue`), so confirm `kubectl -n <ns> get snapshot` shows one before relying on restore.
 - Multi-PVC apps: one stub + `dataSourceRef` per PVC, mover uid per PVC (`my-apps/knowledge/_archive/project-nomad/`); backed-up and `backup-exempt` PVCs mix freely (`my-apps/home-automation/frigate/`).
-- Helm-rendered PVCs: inject `dataSourceRef` + the masking annotations with a Kustomize `patches:` block (`my-apps/development/gitea/`); never put backup objects in chart `extraDeploy:`.
-- `backup-exempt: "true"` (temporary/cache, externally-synced or frequently-recreated data) needs the fully-qualified `storage.vanillax.dev/backup-exempt-reason` annotation; the bare key is silently ignored. PostHog ClickHouse/Kafka/Redis are exempt; PostHog **Postgres** is backed up (it holds the API keys).
 
 ## Configuration Patterns
 
