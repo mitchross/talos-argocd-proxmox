@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: strimzi-retired
-data:
-  note: "Strimzi operator retired; delete custom-entrypoints/strimzi-app.yaml once this is the only resource."
