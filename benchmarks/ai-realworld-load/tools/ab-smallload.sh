@@ -10,7 +10,7 @@
 #
 # Client-side numbers (ttft/decode_tps/e2e) come from the same probe code for
 # both engines. Engine-side numbers come from each engine's own run collector
-# (collect.sh for vLLM, collect-ninfer.sh for NInfer) started around this script.
+# (collect.sh for vLLM) started around this script.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
