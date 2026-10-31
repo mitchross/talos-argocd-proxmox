@@ -173,8 +173,8 @@ This cluster's waves, and *why* each sits where it does:
 | **2** | **kopiur operator** (CRDs + controller + webhook) | The volume populator must exist before any PVC references a `Restore`. |
 | **3** | **kopiur config** (`ClusterRepository`, credential fanout, `VolumeSnapshotClass`) | The repo definition + S3 creds must be live before movers run. |
 | **4** | Infrastructure + database AppSets, KEDA, VPA, Temporal worker | The platform layer. Databases are ordinary apps — their PVCs restore like any other. |
-| **5** | Monitoring AppSet (kube-prometheus-stack), OTEL operator | Observability is deliberately **not** a core dependency. |
-| **6** | **my-apps AppSet** — every user app + its per-PVC backup CRs | By now, everything a restoring PVC needs already exists. |
+| **5** | Monitoring AppSet (kube-prometheus-stack) | Observability is deliberately **not** a core dependency. |
+| **6** | OTEL operator, **my-apps AppSet** — every user app + its per-PVC backup CRs | By now, everything a restoring PVC needs already exists. |
 
 Two implementation details make this actually work — both bite people who copy
 the pattern without them:
@@ -558,12 +558,13 @@ Survives (off-cluster):
 
 The rebuild, end to end:
 
-1. `omnictl` provisions fresh Talos VMs on Proxmox (machine classes + template).
-2. `./scripts/bootstrap-argocd.sh` installs Argo and starts the dependency waves.
-3. Waves 0–3 walk: network → secrets → storage → kopiur operator → repo config.
-4. App PVCs (databases included) hold `Pending` while kopiur hydrates them;
+1. Run the procedure in [disaster-recovery.md](disaster-recovery.md). It includes
+   the two manual seeds (Cilium and 1Password) that `bootstrap-argocd.sh`
+   assumes; skipping them leaves no CNI and no External Secrets.
+2. Waves 0–3 walk: network → secrets → storage → kopiur operator → repo config.
+3. App PVCs (databases included) hold `Pending` while kopiur hydrates them;
    apps start on restored data in parallel.
-5. You drink the coffee.
+4. You drink the coffee.
 
 A [restore canary](disaster-recovery.md#the-restore-canary) takes daily backups
 and runs weekly quick verification. Its isolated test PVC is where an operator
