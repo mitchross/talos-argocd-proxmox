@@ -13,6 +13,8 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
+      # Old failed Jobs otherwise keep KubeJobFailed firing long after a later run succeeds.
+      ttlSecondsAfterFinished: 172800
       activeDeadlineSeconds: 900
       template:
         spec:

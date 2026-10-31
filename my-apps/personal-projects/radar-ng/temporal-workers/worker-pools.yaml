@@ -305,7 +305,8 @@ spec:
             - { name: state, mountPath: /data/state }
           resources:
             requests: { cpu: "500m", memory: "1Gi" }
-            limits:   { cpu: "4", memory: "6Gi" }
+            # 4 concurrent decodes peak at ~3.9 cores; a 4-core limit throttled ~15% of CFS periods.
+            limits:   { cpu: "6", memory: "6Gi" }
       volumes:
         - name: tiles
           persistentVolumeClaim: { claimName: tiles }
