@@ -23,6 +23,19 @@ spec:
         runAsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        # Holds the pod in Init until Postgres answers (e.g. while restore-before-bind hydrates the PVC) instead of crash-looping.
+        - name: wait-for-db
+          image: postgis/postgis:18-3.6@sha256:4a43e3c3e5d55b9208240fc71db543b79c638766280c625a425bd0a2390989c4
+          command: ["sh", "-c", "until pg_isready -h geocoder-postgres -p 5432 -t 5; do sleep 2; done"]
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
       containers:
         - name: api
           image: registry.vanillax.me/geocoder/geocoder:v0.1.7@sha256:5e676b2b2324d3f4e26bc5665506f2749108908a54ce8aedc48ffa9e3de0e5df

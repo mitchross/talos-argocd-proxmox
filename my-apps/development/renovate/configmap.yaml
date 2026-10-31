@@ -56,7 +56,7 @@ data:
           },
           {
             "description": "Self-hosted scope: disable EVERY manager (incl. the custom.regex managers the repo config defines for Omni/K8sGPT, which the GitHub App owns). Only registry.vanillax.me deps, re-enabled below, belong to this instance.",
-            "matchManagers": ["helm-values", "kubernetes", "kustomize", "argocd", "terraform", "dockerfile", "custom.regex"],
+            "matchManagers": ["helm-values", "kubernetes", "kustomize", "argocd", "docker-compose", "dockerfile", "custom.regex"],
             "enabled": false
           },
           {

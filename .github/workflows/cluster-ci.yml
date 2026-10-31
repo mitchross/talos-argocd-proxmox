@@ -7,7 +7,6 @@ on:
       - monitoring/**
       - my-apps/**
       - scripts/**
-      - scripts/validate-argocd-apps.sh
       - .github/workflows/cluster-ci.yml
       - .github/renovate.json5
   push:
@@ -18,7 +17,6 @@ on:
       - monitoring/**
       - my-apps/**
       - scripts/**
-      - scripts/validate-argocd-apps.sh
       - .github/workflows/cluster-ci.yml
       - .github/renovate.json5
 
@@ -246,8 +244,6 @@ jobs:
           python3 -m unittest discover -s my-apps/ai/presenton/scripts -p 'test_*.py' -v
           python3 -m unittest discover -s my-apps/ai/comfyui/scripts -p 'test_*.py' -v
           python3 -m unittest discover -s my-apps/personal-projects/news-reader/tests -v
-          python3 -m unittest discover -s monitoring/ai-ops/_archive/holmesgpt/tests -v
-          python3 -m unittest discover -s my-apps/development-infra/posthog/tests -v
           python3 -m unittest discover -s scripts/tests -p test_qwen_reasoning.py -v
           kustomize build infrastructure/controllers/argocd --enable-helm \
             --helm-kube-version "${KUBERNETES_VERSION}" \

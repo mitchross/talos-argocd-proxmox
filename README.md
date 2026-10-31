@@ -61,8 +61,8 @@ wait for all the Applications it generates; those reconcile independently. See
 | **2** | kopiur operator | Kopia-native backup operator (CRDs + controller + webhook); serves the volume populator for restore-before-bind |
 | **3** | kopiur config | kopiur `ClusterRepository` + credential fanout + `VolumeSnapshotClass` |
 | **4** | Infrastructure AppSet + custom entrypoints + Database AppSet | cert-manager extras, GPU Operators, Gateway, KEDA, VPA, Temporal Worker Controller; Database AppSet (Redis + shared DB support) fully auto-syncs |
-| **5** | OTEL Operator + Monitoring AppSet | OpenTelemetry Operator, Prometheus, Grafana, Loki |
-| **6** | Observability overlays + My-Apps AppSet | KEDA/OTEL ServiceMonitors (after monitoring CRDs exist) and `my-apps/*/*` user apps |
+| **5** | Monitoring AppSet | Prometheus, Grafana, Loki |
+| **6** | OTEL Operator + Observability overlays + My-Apps AppSet | OpenTelemetry Operator, KEDA/OTEL ServiceMonitors (after monitoring CRDs exist) and `my-apps/*/*` user apps |
 
 > The backup stack is **kopiur** (since 2026-06-27). The retired pvc-plumber + VolSync stack is gone — if you see those names in old docs or git history, ignore them. See [Backup System](#backup-system).
 
@@ -77,8 +77,8 @@ wait for all the Applications it generates; those reconcile independently. See
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.12.4` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.14.4` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
-| Kubernetes | `v1.37.1` | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Talos Linux | set in the template | `omni/cluster-template/cluster-template-prod-v2.yaml` |
+| Kubernetes | set in the template | `omni/cluster-template/cluster-template-prod-v2.yaml` |
 | Cilium | `1.20.1` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.6.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.10.0` + Argo CD `v3.6.0-rc2` image/CRDs | `infrastructure/controllers/argocd/` |
@@ -92,15 +92,10 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 
 ## Rebuild and Bootstrap
 
-> **The active cluster is `talos-prod-cluster-v2`.** The older template is
-> retained as a reference; its presence does not mean a second cluster is running:
->
-> | | Active cluster | Older template reference |
-> |---|---|---|
-> | Cluster | `talos-prod-cluster-v2` | `talos-prod-cluster` |
-> | Machine classes | `hp-sff-control-plane.yaml` + `hp-sff-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml` | `omni/machine-classes/` |
-> | Template | `omni/cluster-template/cluster-template-prod-v2.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | HP SFF (house, wired): 1 CP + 1 worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 3 bare-metal mini workers (PXE via booter) | 3 CP + 3 workers + 1 GPU |
+> **The active cluster is `talos-prod-cluster-v2`**, defined by
+> `omni/cluster-template/cluster-template-prod-v2.yaml`. Machine classes: `hp-sff-control-plane.yaml` +
+> `hp-sff-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml`.
+> Topology: HP SFF (house, wired): 1 CP + 1 worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 3 bare-metal mini workers (PXE via booter).
 
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
 100 GiB GPU VM; the shed HP hosts one worker. Three bare-metal minis
@@ -337,7 +332,7 @@ From here, new applications are discovered automatically — add a directory wit
 
 ### Mass-restore stability notes
 
-- **Replica rebuilds are throttled to 1/node in Git** (`infrastructure/storage/longhorn/node-failure-settings.yaml`). Full-cluster restores overload any engine on this hardware — don't raise the limit mid-bootstrap.
+- **Replica rebuilds are throttled to 2/node in Git** (`infrastructure/storage/longhorn/node-failure-settings.yaml`). Full-cluster restores overload any engine on this hardware — don't raise the limit mid-bootstrap.
 - A mover pod stuck >15 min on `MountVolume … hasn't been attached yet` with an old VolumeAttachment = stale CSI state — delete the mover pod (its Job recreates it, forcing a fresh attach).
 - Pods crashlooping on `read-only file system` after a storage disruption: the volume must FULLY detach (or the pod must land on another node) to drop the stale ro mount — scale to 0, wait for the Longhorn volume to show `detached`, scale back (databases: scale the postgres Deployment).
 - History: the Longhorn V2/SPDK engine was tried and retired here (2026-06-12, open Longhorn bugs #13315/#13314). Do not re-enable V2 without a fixed release and a passed DR drill — short version in [docs/disaster-recovery.md](docs/disaster-recovery.md).

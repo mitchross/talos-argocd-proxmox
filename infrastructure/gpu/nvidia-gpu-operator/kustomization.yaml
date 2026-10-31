@@ -11,8 +11,6 @@ configMapGenerator:
 - name: nvidia-powerlimit-scripts
   files:
   - scripts/reconcile-power-limit.sh
-# cluster-policy.yaml intentionally not included — the Helm chart generates its
-# own ClusterPolicy from valuesInline below. Keeping both would cause a conflict.
 
 # Talos system extensions ship the driver + toolkit and write CDI specs; the chart manages only device plugin, GFD, validator.
 helmCharts:

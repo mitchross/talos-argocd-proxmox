@@ -12,7 +12,7 @@ their September 20 and October 11 dates.
 
 The explorer has not been refreshed since then: it still shows the retired Dell OptiPlex
 and not the two bare-metal minis. For the current machine list and load, read the
-**[October 21 fleet inventory](inventory/2026-10-21-fleet-inventory.md)**. For disks, read
+**[October 27 fleet inventory](inventory/2026-10-27-fleet-inventory.md)**. For disks, read
 the [disk map](domains/storage/disk-map.md).
 
 <div id="lab-explorer">

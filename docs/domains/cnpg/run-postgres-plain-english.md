@@ -7,8 +7,8 @@ GitOps.
 cluster (plain Postgres + kopiur, default since 2026-07-09; the last two
 CloudNativePG databases were retired 2026-08-13 in a data-zero cutover).
 **Scope:** day-to-day operations and recovery. Creating a brand-new database
-is covered by the [migration/pattern doc](plain-postgres-migration.md) and the
-`/project:new-database` command — this page links there instead of repeating it.
+is covered by [The pattern](#the-pattern) below and the
+`/project:new-database` command.
 
 ---
 
@@ -82,9 +82,31 @@ Where the pieces live (gitea is the reference — copy it, don't invent):
 | The backup contract | `my-apps/development/gitea/kopiur/gitea-postgres-data.yaml` | `SnapshotPolicy` (daily) + `SnapshotSchedule` + `Restore` |
 | The password | 1Password → ExternalSecret → `gitea-db-secret` | Never in Git. See [rotation gotcha](#gotcha-4-the-password-lives-in-two-places) |
 
-To **create** a new database, follow
-[plain-postgres-migration.md](plain-postgres-migration.md) § "The pattern" or
+To **create** a new database, follow [The pattern](#the-pattern) or
 run `/project:new-database <app>`. Don't hand-roll the four files.
+
+### The pattern
+
+Reference: `my-apps/development/gitea/postgres/`. Four pieces inside the
+owning app's directory:
+
+| Piece | Key points |
+|---|---|
+| `postgres/deployment.yaml` | `postgres:<MAJOR.MINOR>` pinned; `Recreate`; uid/gid/fsGroup **999**; `PGDATA` subdir; `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` env declare the database on first (empty-volume) boot — no admin tool; `--data-checksums`; `pg_isready` startup/readiness/liveness probes; 60s termination grace |
+| `postgres/service.yaml` | named port `postgres`/5432 |
+| `postgres/pvc.yaml` | `longhorn` + `dataSourceRef` → the kopiur `Restore` + the two masking annotations |
+| `kopiur/<app>-postgres-data.yaml` | stub with mover `999:999`, **daily** retention tier (`keepDaily: 7, keepWeekly: 8`), distinct cron minute |
+
+The trade: restores land on the **last snapshot** (daily tier targets daily
+snapshots, 6h for irreplaceable data), not any point in time. There are no
+replicas or failover (single pod, `Recreate`). Postgres **major** upgrades are
+a manual dump/restore; minors and patches stay Renovate-automated.
+
+kopiur's CSI VolumeSnapshot is crash-consistent. Postgres recovers from that
+by WAL replay on boot, as after a power cut, and `--data-checksums` makes
+torn-page corruption loudly detectable. The startup probe allows about five
+minutes before liveness can restart the container; size it from observed
+recovery time for a large database.
 
 ---
 
@@ -165,8 +187,9 @@ matter on the very first boot of an *empty* volume. Two traps follow:
 - Changing the 1Password item alone does **not** change the database password —
   it just makes the app present a wrong password. Rotation is a sequence:
   `ALTER ROLE ... WITH PASSWORD` inside psql **first**, then update 1Password,
-  then restart consumers. Full order:
-  [plain-postgres-migration.md § credential state](plain-postgres-migration.md#credential-state-after-restore).
+  then restart consumers. Authenticate with the current password, keep the
+  password and the SQL out of Git and shell history, and verify consumers
+  before discarding the old credential.
 - After a **restore**, the database has the password from snapshot time. If
   someone rotated since the snapshot, the app will get auth errors until you
   re-run the `ALTER ROLE` with the current 1Password value.
@@ -315,8 +338,8 @@ Retired 2026-08-13. gitea and immich migrated with their data; paperless and
 temporal were cut over as fresh empty databases (a deliberate data-zero
 decision during a cluster rebuild — their old Barman buckets are aging out
 via the RustFS lifecycle policy). If you find CNPG instructions anywhere,
-they're history — this page is the pattern. Full story:
-[plain-postgres-migration.md](plain-postgres-migration.md).
+they're history — this page is the pattern. The migration steps are in git
+history; see [plain-postgres-migration.md](plain-postgres-migration.md).
 
 ---
 
@@ -354,7 +377,7 @@ What to actually look at, and why:
 
 ## Related
 
-- [Plain Postgres pattern + cutover runbook](plain-postgres-migration.md) — creating/migrating a database
+- [CNPG retirement note](plain-postgres-migration.md) — the old cutover runbook lives in git history
 - [kopiur backup architecture](../storage/kopiur-backup-architecture.md) — how loops 2 and 3 work inside
 - [kopiur mover permissions](../storage/kopiur-mover-permissions.md) — the uid/gid gotcha when adding backups
 - [Cluster disaster recovery runbook](../../disaster-recovery.md) — levels 3–4 in full, restore canary

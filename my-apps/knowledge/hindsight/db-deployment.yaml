@@ -19,6 +19,7 @@ spec:
         app: hindsight-db
     spec:
       enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
@@ -45,6 +46,13 @@ spec:
           ports:
             - containerPort: 5432
               name: postgres
+          # Covers WAL replay after a restore so liveness can't restart Postgres mid-recovery.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "hindsight"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "hindsight"]

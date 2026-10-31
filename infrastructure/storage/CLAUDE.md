@@ -62,7 +62,7 @@ spec:
 
 Linux kernel (5.4+) defaults NFS `read_ahead_kb` to **128 KB**, limiting sequential reads to ~140 MB/s regardless of link speed.
 
-**Fix applied in Talos machine config** (`omni/cluster-template/cluster-template.yaml`):
+**Fix applied in Talos machine config** (`omni/cluster-template/cluster-template-prod-v2.yaml`):
 
 | Setting | Purpose | Where |
 |---------|---------|-------|

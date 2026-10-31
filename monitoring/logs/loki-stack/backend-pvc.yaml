@@ -1,0 +1,20 @@
+# Adopts the StatefulSet's existing claim so the exemption is recorded; chart labels would hit immutable volumeClaimTemplates.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-loki-backend-0
+  namespace: loki-stack
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Loki compactor marks and cache; log chunks live in RustFS (S3)"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi

@@ -53,8 +53,8 @@ spec:
               type: RuntimeDefault
           containers:
             - name: kubectl
-              # bitnami free images moved to bitnamilegacy on Docker Hub; bitnami/kubectl no longer resolves.
-              image: bitnamilegacy/kubectl:1.33.4
+              # Distroless (no shell), so the command stays a plain argv; keep the tag within one minor of the cluster.
+              image: registry.k8s.io/kubectl:v1.37.1@sha256:b7cab618e281b1ee7484e7b706a96e2135fbb6e072c2a573a7dab4e87d7f2385
               command:
                 - kubectl
                 - -n

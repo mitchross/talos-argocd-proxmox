@@ -37,7 +37,7 @@ the manual Secret patch below during rebuilds.
 
 ## Post-nuke order
 
-1. Restore Gitea CNPG and the Gitea app.
+1. Restore the Gitea app; its plain Postgres PVC comes back through kopiur restore-before-bind.
 2. Verify 1Password Connect and External Secrets are healthy.
 3. Verify this ExternalSecret synced:
 
