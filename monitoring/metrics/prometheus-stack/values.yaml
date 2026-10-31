@@ -9,6 +9,9 @@ defaultRules:
     # Single-worker cluster: these demand N-1 failover headroom that cannot exist here.
     KubeCPUOvercommit: true
     KubeMemoryOvercommit: true
+    # Fires for every kept failed Job, even after the CronJob's next run succeeds.
+    # Replaced by CronJobLastRunFailed + StandaloneJobFailed in custom-alerts.yaml.
+    KubeJobFailed: true
 # Prometheus Configuration
 prometheus:
   enabled: true
