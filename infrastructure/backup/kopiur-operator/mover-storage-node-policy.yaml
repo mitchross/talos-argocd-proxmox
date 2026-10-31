@@ -5,7 +5,7 @@ kind: MutatingAdmissionPolicy
 metadata:
   name: kopiur-mover-storage-node.vanillax.dev
 spec:
-  failurePolicy: Fail
+  failurePolicy: Ignore
   reinvocationPolicy: IfNeeded
   matchConstraints:
     resourceRules:
