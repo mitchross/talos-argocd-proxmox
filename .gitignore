@@ -139,6 +139,8 @@ __pycache__/
 # Local assistant permissions and runtime state
 .claude/settings.local.json
 .claude/worktrees/
+# Hermes-managed worktrees (hermes -w, /worktree new, delegated tasks)
+/.worktrees/
 
 # Local Python tool caches
 .pytest_cache/
