@@ -8,8 +8,9 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: 2
+  # Recreate: one worker at a time, because both pods would share the fixed HINDSIGHT_API_WORKER_ID below.
   strategy:
-    type: RollingUpdate
+    type: Recreate
   selector:
     matchLabels:
       app: hindsight
@@ -57,6 +58,10 @@ spec:
               value: "1"
             - name: HINDSIGHT_API_LLM_MAX_CONCURRENT
               value: "4"
+            # Stable id so a new pod reclaims the old pod's in-flight jobs on start. The default
+            # (pod hostname) strands them in 'processing' and blocks consolidation (upstream #1719).
+            - name: HINDSIGHT_API_WORKER_ID
+              value: hindsight
             - name: HINDSIGHT_API_LLM_API_KEY
               valueFrom:
                 secretKeyRef:
