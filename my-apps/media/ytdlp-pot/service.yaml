@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bgutil-pot
+spec:
+  # Pinned: TubeSync's POT setting accepts only an IP, not a DNS name. 10.96.0.0/24 is the static band.
+  clusterIP: 10.96.0.44
+  selector:
+    app.kubernetes.io/name: bgutil-pot
+  ports:
+    - name: http
+      port: 4416
+      targetPort: http

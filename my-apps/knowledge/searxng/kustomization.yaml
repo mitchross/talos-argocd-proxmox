@@ -10,6 +10,7 @@ resources:
   - redis.yaml
   - anubis-deployment.yaml
   - anubis-policy-externalsecret.yaml
+  - anubis-key-externalsecret.yaml
   - anubis-service.yaml
   - anubis-vpa.yaml
   - anubis-podmonitor.yaml
