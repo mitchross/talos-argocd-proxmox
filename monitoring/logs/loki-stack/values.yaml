@@ -53,6 +53,7 @@ loki:
           - action: index_label
             attributes: [host.name]
   # Without retention_enabled + delete_request_store, retention_period is a soft mark — chunks are never deleted.
+  # Compactor marks live on local disk, so a lost PVC strands chunks; the 14-day rule in rustfs-lifecycle removes them. Keep it above the longest retention_stream.
   compactor:
     retention_enabled: true
     retention_delete_delay: 2h

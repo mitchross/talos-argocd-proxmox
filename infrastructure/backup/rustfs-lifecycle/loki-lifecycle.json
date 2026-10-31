@@ -1,0 +1,14 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-orphan-chunks-after-14-days",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "1/"
+      },
+      "Expiration": {
+        "Days": 14
+      }
+    }
+  ]
+}
