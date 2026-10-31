@@ -1,4 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# Retired: demo/kafka is off. Empty on purpose so Argo prunes the operator and CRDs; delete the Application next.
-resources: []
+namespace: kafka
+# Retired: demo/kafka is off. This placeholder lets Argo prune the operator and CRDs; delete the Application next.
+resources:
+  - retired.yaml
