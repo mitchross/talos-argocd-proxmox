@@ -32,7 +32,7 @@ its classifier stays thinking-off and its DeepSeek high/max routes are unchanged
 Whole-card allocations, time-slicing disabled, `Recreate` strategy. vLLM
 requests both RTX 3090s; ComfyUI and SwarmUI remain at zero replicas.
 Use committed replica counts and the
-[scale-swap runbook](../../../docs/domains/ai-gpu/gpu-scale-swap.md).
+[scale-swap runbook](../../docs/domains/ai-gpu/gpu-scale-swap.md).
 
 Do not set `NVIDIA_VISIBLE_DEVICES` or `CUDA_VISIBLE_DEVICES` in GPU workloads;
 the device plugin/CDI owns allocation. The `nvidia-powerlimit` utility DaemonSet

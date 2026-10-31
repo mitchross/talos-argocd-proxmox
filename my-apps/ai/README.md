@@ -13,10 +13,10 @@ canonical runtime, source references and reasoning acceptance checks.
 ComfyUI and SwarmUI are parked while vLLM owns both cards. The API model is
 `qwen3.8-27b`.
 
-For coding, follow the [Pi.dev setup guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md).
+For coding, follow the [Pi.dev setup guide](../../docs/domains/ai-gpu/pi-agent-local-dev.md).
 Pi's local defaults and launcher also need the companion dotfiles update;
 ArgoCD does not update workstation settings. The
-[dual-3090 capacity audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
+[dual-3090 capacity audit](../../docs/domains/ai-gpu/3090-llm-optimization.md)
 separates historical memory measurements from current operating guidance.
 
 ### Using with OpenClaw / Other Tools
@@ -32,12 +32,12 @@ export OPENAI_API_KEY="${LITELLM_API_KEY:?Set the gateway key outside Git first}
 
 Select `qwen3.8-27b` for local-only requests. Direct vLLM endpoints are for
 diagnostics and bypass gateway telemetry. See the
-[model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for route boundaries.
+[model catalog](../../docs/domains/ai-gpu/model-catalog.md) for route boundaries.
 
 ## Image Generation (ComfyUI)
 
 ComfyUI is parked while vLLM owns both cards. The workflows below are retained
-for a deliberate [GPU scale-swap](../../../docs/domains/ai-gpu/gpu-scale-swap.md).
+for a deliberate [GPU scale-swap](../../docs/domains/ai-gpu/gpu-scale-swap.md).
 
 ### Text-to-Image: Z-Image-Turbo
 
