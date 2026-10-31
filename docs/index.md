@@ -25,7 +25,7 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
 - **Storage**: Longhorn V1, placed by drive endurance; mostly one replica, with
   two for data that can't be re-created. NAS provides bulk files and
-  off-cluster backups. [Current machines and capacity](inventory/2026-10-21-fleet-inventory.md).
+  off-cluster backups. [Current machines and capacity](inventory/2026-10-27-fleet-inventory.md).
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: plain Postgres Deployments backed up by kopiur — daily snapshots (every 6 hours for data that can't be re-created), restore-before-bind
 - **Hosts**: Proxmox and Pi operating-system settings applied with Ansible from `host-monitoring/` ([guide](domains/hosts/physical-hosts-ansible.md))
@@ -55,7 +55,8 @@ review its measured performance, and consider future changes.
 For current upgrade priorities, jump to the
 [September 20 decision report](audits/2026-09-20-homelab-report.html).
 
-The [full inventory](inventory/2026-10-15-full-inventory.md) and explorer were refreshed on October 15.
+The [fleet inventory](inventory/2026-10-27-fleet-inventory.md) is the current machine list;
+the [full inventory](inventory/2026-10-15-full-inventory.md) and explorer were refreshed on October 15.
 Historical benchmarks retain their collection dates. An inventory is not a live dashboard,
 and a research proposal is not a deployed change.
 
