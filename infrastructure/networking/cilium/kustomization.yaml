@@ -11,6 +11,7 @@ resources:
  - ip-pool.yaml
  - l2-policy.yaml
  - policies/block-lan-access.yaml
+ - hermes-config-reader.yaml
 
 helmCharts:
 - name: cilium
