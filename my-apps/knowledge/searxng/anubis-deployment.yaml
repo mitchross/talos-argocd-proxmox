@@ -44,7 +44,14 @@ spec:
             # Without this Anubis will bounce a solved challenge to any host (open redirect).
             - name: REDIRECT_DOMAINS
               value: "search.vanillax.me"
-            # Signing key is generated per pod: a rollout re-challenges everyone once (cookie lasts 7 d).
+            # Fixed signing key, so passes survive restarts and rollouts (cookie lasts 7 d).
+            # optional: until the 1Password field exists Anubis falls back to a random per-pod key.
+            - name: ED25519_PRIVATE_KEY_HEX
+              valueFrom:
+                secretKeyRef:
+                  name: anubis-key
+                  key: ED25519_PRIVATE_KEY_HEX
+                  optional: true
           ports:
             - name: http
               containerPort: 8923
