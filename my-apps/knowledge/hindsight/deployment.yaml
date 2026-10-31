@@ -8,9 +8,13 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: 2
-  # Recreate: one worker at a time, because both pods would share the fixed HINDSIGHT_API_WORKER_ID below.
+  # One pod at a time (old stops before new starts): both would share the fixed HINDSIGHT_API_WORKER_ID below.
+  # Not Recreate: server-side apply can't clear the defaulted rollingUpdate block on this live Deployment.
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: hindsight
