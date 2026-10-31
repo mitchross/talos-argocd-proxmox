@@ -104,3 +104,32 @@ sensor:
       {{ (states('sensor.combined_cost_yesterday') | float(0) / states('sensor.combined_total_energy_yesterday') | float(1)) | round(5) if states('sensor.combined_total_energy_yesterday') | float(0) > 0 else none }}
     availability: |-
       {{ has_value('sensor.combined_cost_yesterday') and states('sensor.combined_total_energy_yesterday') | float(0) > 0 }}
+  - name: Electricity Rate Summer On Peak
+    unique_id: electricity_rate_summer_on_peak
+    unit_of_measurement: USD/kWh
+    state: |-
+      {{ ((states('input_number.rate_summer_onpeak') | float + states('input_number.rate_delivery_riders') | float) * (1 + states('input_number.rate_sales_tax_pct') | float / 100)) | round(5) }}
+    availability: |-
+      {{ has_value('input_number.rate_summer_onpeak') and has_value('input_number.rate_delivery_riders') and has_value('input_number.rate_sales_tax_pct') }}
+  - name: Electricity Rate Summer Off Peak
+    unique_id: electricity_rate_summer_off_peak
+    unit_of_measurement: USD/kWh
+    state: |-
+      {{ ((states('input_number.rate_summer_offpeak') | float + states('input_number.rate_delivery_riders') | float) * (1 + states('input_number.rate_sales_tax_pct') | float / 100)) | round(5) }}
+    availability: |-
+      {{ has_value('input_number.rate_summer_offpeak') and has_value('input_number.rate_delivery_riders') and has_value('input_number.rate_sales_tax_pct') }}
+  - name: Electricity Rate Non Summer
+    unique_id: electricity_rate_non_summer
+    unit_of_measurement: USD/kWh
+    state: |-
+      {{ ((states('input_number.rate_nonsummer') | float + states('input_number.rate_delivery_riders') | float) * (1 + states('input_number.rate_sales_tax_pct') | float / 100)) | round(5) }}
+    availability: |-
+      {{ has_value('input_number.rate_nonsummer') and has_value('input_number.rate_delivery_riders') and has_value('input_number.rate_sales_tax_pct') }}
+  # The Prometheus exporter drops date strings but converts timestamp sensors to epoch seconds.
+  - name: Consumers Energy Last Reading Timestamp
+    unique_id: consumers_energy_last_reading_timestamp
+    device_class: timestamp
+    state: |-
+      {{ (states('sensor.consumers_energy_last_reading') ~ 'T00:00:00') | as_datetime | as_local }}
+    availability: |-
+      {{ (states('sensor.consumers_energy_last_reading') ~ 'T00:00:00') | as_datetime(none) is not none }}

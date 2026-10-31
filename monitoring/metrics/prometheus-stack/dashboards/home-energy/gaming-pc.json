@@ -1765,6 +1765,215 @@
         "mode": "markdown",
         "content": "A **session** is the plug drawing more than the threshold (350 W; idle is ~200 W, gaming 450-600 W) until five quiet minutes pass. **Idle tax** is everything the PC costs outside sessions: sitting on at 200 W is about 1.4 kWh a day. The threshold is `input_number.gaming_pc_active_threshold_w` in Home Assistant (Settings view); input helpers are not exported, so the dashed line here is fixed at 350 W."
       }
+    },
+    {
+      "type": "row",
+      "title": "Rates and GPU cost",
+      "id": 30,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Rate over time",
+      "id": 31,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "timeFrom": "15d",
+      "description": "All-in marginal rate from Consumers Energy bills. Summer is June-September. Prometheus keeps 15 days; Home Assistant Rates & savings holds long-term trends.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "lineInterpolation": "stepAfter"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max({__name__=~\"homeassistant_sensor_.+\",entity=\"sensor.current_electricity_rate\"})",
+          "legendFormat": "Live rate",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max({__name__=~\"homeassistant_sensor_.+\",entity=\"sensor.electricity_rate_summer_on_peak\"})",
+          "legendFormat": "Summer on-peak",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max({__name__=~\"homeassistant_sensor_.+\",entity=\"sensor.electricity_rate_summer_off_peak\"})",
+          "legendFormat": "Summer off-peak",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max({__name__=~\"homeassistant_sensor_.+\",entity=\"sensor.electricity_rate_non_summer\"})",
+          "legendFormat": "Non-summer",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Gaming burn rate vs electricity rate",
+      "id": 32,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "timeFrom": "15d",
+      "description": "Dollars per hour at the live rate, with the rate on the right axis.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Live rate"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 4
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "stepAfter"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    6,
+                    4
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max({__name__=~\"homeassistant_sensor_.+\",entity=\"sensor.gaming_pc_gaming_cost_rate\"})",
+          "legendFormat": "Gaming PC while gaming",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max({__name__=~\"homeassistant_sensor_.+\",entity=\"sensor.current_electricity_rate\"})",
+          "legendFormat": "Live rate",
+          "refId": "B"
+        }
+      ]
     }
   ],
   "refresh": "1m",

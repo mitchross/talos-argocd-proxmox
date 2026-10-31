@@ -13,6 +13,8 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
+      # Old failed Jobs otherwise keep KubeJobFailed firing long after a later run succeeds.
+      ttlSecondsAfterFinished: 172800
       activeDeadlineSeconds: 900
       template:
         spec:
@@ -27,7 +29,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: sync
-              image: ghcr.io/mitchross/consumers-energy-sync:v0.1.4@sha256:6ca740fc2174eaa56d59de197d0e9cdb4bf9040dca859dff13093de6e4ba4da7
+              image: ghcr.io/mitchross/consumers-energy-sync:v0.1.5@sha256:9cfa465ba236d79c99edbf83b53726926ebaa60947e3f33fc3fb51266f838fce
               envFrom:
                 - secretRef:
                     name: consumers-energy-sync
@@ -40,6 +42,11 @@ spec:
                   value: America/Detroit
                 - name: HOME
                   value: /tmp
+                # Bill charges the CE export omits: per-kWh riders minus Distribution, plus tax.
+                - name: CE_COST_ADDER_PER_KWH
+                  value: "0.028957"
+                - name: CE_SALES_TAX_PCT
+                  value: "4"
               volumeMounts:
                 - name: data
                   mountPath: /data

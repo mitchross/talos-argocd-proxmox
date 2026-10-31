@@ -207,29 +207,6 @@ configs:
         end
       end
       return hs
-    # Strimzi Kafka has no built-in Argo health assessment. Walk (`ipairs`) its
-    # condition list and translate Ready=True to Healthy or NotReady=True to
-    # Degraded. Until either condition exists, remain Progressing. Because the
-    # Kafka CR is wave 0 and KafkaTopic is wave 1, this prevents topics from
-    # landing before the broker is actually ready.
-    resource.customizations.health.kafka.strimzi.io_Kafka: |
-      hs = {}
-      hs.status = "Progressing"
-      hs.message = "Waiting for Strimzi reconciliation"
-      if obj.status ~= nil and obj.status.conditions ~= nil then
-        for _, c in ipairs(obj.status.conditions) do
-          if c.type == "Ready" and c.status == "True" then
-            hs.status = "Healthy"
-            hs.message = c.message or "Kafka is ready"
-            return hs
-          elseif c.type == "NotReady" and c.status == "True" then
-            hs.status = "Degraded"
-            hs.message = c.message or c.reason or "Kafka is not ready"
-            return hs
-          end
-        end
-      end
-      return hs
     # Report current-generation rollout failures, including failed candidate gate workflows.
     resource.customizations.health.temporal.io_WorkerDeployment: |
       local hs = {status = "Progressing", message = "Waiting for Temporal WorkerDeployment reconciliation"}
