@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: whisper-models
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Model cache; OVMS re-downloads it from Hugging Face"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

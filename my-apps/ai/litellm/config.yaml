@@ -106,6 +106,18 @@ model_list:
       max_input_tokens: 229376
       max_output_tokens: 32768
 
+  # Speech-to-text on the gen12 iGPU (my-apps/ai/whisper, OpenVINO Model Server). OVMS accepts mp3/wav only.
+  - model_name: whisper
+    litellm_params:
+      model: openai/whisper-large-v3-turbo
+      api_base: http://whisper.whisper.svc.cluster.local:8000/v3
+      api_key: "ovms-no-key-required"
+      timeout: 1800
+    model_info:
+      mode: audio_transcription
+      input_cost_per_second: 0
+      output_cost_per_second: 0
+
 litellm_settings:
   callbacks: ["prometheus", "langfuse_otel"]
   # Cover long-context requests beyond the built-in 600-second histogram ceiling.

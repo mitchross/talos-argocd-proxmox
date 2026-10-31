@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whisper
+  labels:
+    app.kubernetes.io/name: whisper
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: whisper
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: whisper
+    spec:
+      # The only Intel iGPU no other app uses (Frigate holds the Dell's, Immich gen13's, Jellyfin the SFF's).
+      nodeSelector:
+        kubernetes.io/hostname: hp-elite-gen12
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 5000
+        runAsGroup: 5000
+        fsGroup: 5000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ovms
+          image: openvino/model_server:2026.4.1-gpu@sha256:a928903fe429f1e3e27107cc45932d30d95febfd2d1159dc50869c3eac76fc58
+          # First start pulls the model from Hugging Face into /models; later starts reuse it.
+          args:
+            - --rest_port=8000
+            - --source_model=OpenVINO/whisper-large-v3-turbo-int8-ov
+            - --model_name=whisper-large-v3-turbo
+            - --model_repository_path=/models
+            - --task=speech2text
+            - --target_device=GPU
+          ports:
+            - name: http
+              containerPort: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            httpGet:
+              path: /v2/health/ready
+              port: http
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: /v2/health/ready
+              port: http
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /v2/health/live
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+              gpu.intel.com/i915: 1
+            limits:
+              memory: 4Gi
+              gpu.intel.com/i915: 1
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: whisper-models
