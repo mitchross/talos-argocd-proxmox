@@ -77,6 +77,22 @@ approvals:
 plugins:
   enabled:
     - hindsight
+    # Enabled but inert on purpose: the adapter drops every state_changed event until
+    # platforms.homeassistant.extra.watch_domains (or watch_entities/watch_all) is set.
     - homeassistant
   disabled: []
+
+# Written by the config migrator. Pinning it here stops the 0 -> 51 migration from running on
+# every start and re-creating the plugin bookkeeping keys below.
+_config_version: 51
+
+_left_core_installed:
+  - homeassistant
+known_plugin_toolsets:
+  acp:
+    - homeassistant
+  webhook:
+    - homeassistant
+_left_core_scoped:
+  - homeassistant
 
