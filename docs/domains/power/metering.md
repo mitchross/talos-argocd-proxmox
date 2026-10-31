@@ -118,6 +118,18 @@ estimate.
 **The HP SFF plug cannot be attributed.** It feeds two hosts. Split the outlet
 before concluding which of the two to retire.
 
+## Rate and season charts
+
+Grafana **Power & Cost** has a *Rates and GPU cost* row with the live rate, burn
+rate, GPU draw, and the same load priced at each rate. Gaming PC and Cooling have
+rate and burn-rate charts. These charts cover 15 days because Prometheus retention
+applies to all metrics. GPU values use board power, not wall power.
+
+Home Assistant **Rates & savings** holds the long-term charts. Bill and repriced
+series are `consumers_energy:bill_*` and `consumers_energy:recalc_*` statistics.
+Import them with `scripts/import-history.mjs` in `consumers-energy-sync`. The
+import does not rewrite recorded `*_cost` meters.
+
 ## House-level data from Consumers Energy
 
 The plugs only see the homelab. The whole-house number comes from the utility:

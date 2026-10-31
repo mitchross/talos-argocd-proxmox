@@ -892,6 +892,95 @@ views:
               One cooling hour at the configured wattage and current rate: **{{ num(states('input_number.ac_cooling_wattage') | float(0) / 1000 * states('sensor.current_electricity_rate') | float(0), 2, '$') }}**. Gaming is part of office; do not add it again.
             grid_options:
               columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Bill cost per kWh by cycle · winter vs summer
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: month
+            days_to_show: 730
+            stat_types:
+              - mean
+            entities:
+              - entity: consumers_energy:bill_rate
+                color: '#ffa726'
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Bill cost by cycle
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: month
+            days_to_show: 730
+            stat_types:
+              - change
+            entities:
+              - entity: consumers_energy:bill_cost
+                color: '#ef5350'
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: House kWh by bill cycle
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: month
+            days_to_show: 730
+            stat_types:
+              - change
+            entities:
+              - entity: consumers_energy:bill_kwh
+                color: '#90a4ae'
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Homelab cost trend · repriced at bill rates
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: day
+            days_to_show: 365
+            stat_types:
+              - change
+            entities:
+              - entity: consumers_energy:recalc_homelab_cost
+                color: '#42a5f5'
+              - entity: consumers_energy:recalc_threadripper_cost
+                color: '#ef5350'
+              - entity: consumers_energy:recalc_gaming_pc_cost
+                color: '#ab47bc'
+            grid_options:
+              columns: full
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Live rate trend
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: day
+            days_to_show: 365
+            stat_types:
+              - mean
+            entities:
+              - entity: sensor.current_electricity_rate
+                color: '#ffa726'
+            grid_options:
+              columns: full
   - title: Devices
     icon: mdi:power-plug
     path: devices
