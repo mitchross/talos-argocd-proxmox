@@ -49,15 +49,25 @@ spec:
         ports:
         - containerPort: 5432
           name: postgres
+        # Covers WAL replay after a restore so liveness can't restart Postgres mid-recovery.
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U posthog
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 60
         livenessProbe:
           exec:
             command:
             - /bin/sh
             - -c
             - pg_isready -U posthog
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 30
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
         readinessProbe:
           exec:
             command:
