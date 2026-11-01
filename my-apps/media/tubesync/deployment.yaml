@@ -6,7 +6,8 @@ metadata:
   labels:
     app: tubesync
 spec:
-  replicas: 1
+  # Paused: YouTube rate-limits the home IP (HTTP 429) and every retry extends it. Set back to 1 to resume.
+  replicas: 0
   strategy:
     type: Recreate
   selector:
