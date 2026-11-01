@@ -30,3 +30,13 @@ mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/productivity/t
 mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/productivity/to-questionnaire productivity
 mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/productivity/wait-what productivity
 mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/productivity/writing-for-agents productivity
+vercel-labs/agent-skills 1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62 skills/react-best-practices software-development
+vercel-labs/agent-skills 1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62 skills/react-native-skills software-development
+vercel-labs/agent-skills 1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62 skills/composition-patterns software-development
+vercel-labs/agent-skills 1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62 skills/web-design-guidelines software-development
+expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-router mobile
+expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-native-ui mobile
+expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-data-fetching mobile
+expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-dev-client mobile
+expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-animation mobile
+expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-module mobile

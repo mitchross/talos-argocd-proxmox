@@ -96,3 +96,11 @@ known_plugin_toolsets:
 _left_core_scoped:
   - homeassistant
 
+# Remote MCP servers. Cloudflare's OAuth login needs a browser on this pod, so it uses an API token
+# from 1Password (cloudflared-proxmox/api-token) as a bearer header instead.
+mcp_servers:
+  cloudflare:
+    url: "https://mcp.cloudflare.com/mcp"
+    headers:
+      Authorization: "Bearer ${env:CLOUDFLARE_API_TOKEN}"
+    timeout: 180
