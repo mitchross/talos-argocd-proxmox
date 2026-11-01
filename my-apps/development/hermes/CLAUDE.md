@@ -12,7 +12,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | Plugin set, skill copy, cron job, repo checkout, memory hooks | talos | `scripts/seed.sh` installs plugins once, copies `skills/homelab-ops/SKILL.md`, creates the `homelab-digest` cron job if missing, clones the talos repo into `/opt/data/workspace`, writes `~/.hindsight/*.json` (agent hooks) and `$HERMES_HOME/hindsight/config.json` (Hermes memory plugin) and installs the Claude Code and Codex Hindsight hooks |
 | Personality and third-party skills | talos | `config/SOUL.md` copied on every start; `scripts/external-skills.txt` pins skill repos by commit |
 | Hermes-made skills | talos | `skills/library/<category>/<name>/`; the seed copies a skill only when the volume lacks it, never over a live copy |
-| MCP servers | talos | `config.yaml` `mcp_servers`; tokens come from `hermes-secrets` as `${env:NAME}` (Cloudflare: `hermes/cloudflare_api_token`) |
+| MCP servers | talos | `config.yaml` `mcp_servers`; tokens come from `hermes-secrets` as `${env:NAME}` (Cloudflare: `cert-manager-proxmox/api-token` (shared with cert-manager and external-dns)) |
 | Omni, Talos, Pi | talos | 1Password `hermes-omni-sa` (Operator role) in `externalsecret.yaml`; `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` |
 | Cluster access | talos | `rbac.yaml` (`hermes-viewer` reads, `hermes-operator` does day-to-day fixes), `config/kube-in-cluster.yaml`; `kubectl` ships in the image |
 | Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` and `image-prepull.yaml`; bump both together |

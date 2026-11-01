@@ -81,7 +81,7 @@ plugins:
   disabled: []
 
 # Remote MCP servers. Cloudflare's OAuth login needs a browser on this pod, so it uses an API token
-# from 1Password (hermes/cloudflare_api_token) as a bearer header instead.
+# from 1Password (cert-manager-proxmox/api-token, shared with cert-manager) as a bearer header instead.
 mcp_servers:
   cloudflare:
     url: "https://mcp.cloudflare.com/mcp"
