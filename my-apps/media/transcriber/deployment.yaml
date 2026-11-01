@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transcriber
+  labels:
+    app.kubernetes.io/name: transcriber
+spec:
+  replicas: 1
+  # Two copies would transcribe the same file twice.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: transcriber
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: transcriber
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: transcriber
+          # Reuses MeTube's image for its python3 + ffmpeg/ffprobe; the program is scripts/transcriber.py.
+          image: ghcr.io/alexta69/metube:2026.10.27@sha256:845a67373a9f9e62b88e5f9067867202200d63db3615a051acbd77b09e86b9ce
+          command: ["python3", "-u", "/scripts/transcriber.py"]
+          env:
+            - name: INBOX_DIR
+              value: /inbox
+            - name: WORK_DIR
+              value: /work
+            - name: LITELLM_BASE_URL
+              value: http://litellm-service.litellm.svc.cluster.local:4000/v1
+            - name: LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: transcriber-litellm
+                  key: api-key
+            - name: STT_MODEL
+              value: whisper
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: inbox
+              mountPath: /inbox
+            - name: work
+              mountPath: /work
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: inbox
+          persistentVolumeClaim:
+            claimName: media-inbox
+        - name: work
+          emptyDir:
+            sizeLimit: 5Gi
+        - name: scripts
+          configMap:
+            name: transcriber-scripts

@@ -29,7 +29,7 @@ flowchart LR
     Gateway -->|claude -p / codex exec| Agents[Claude Code / Codex in the pod] --> GitHub[Pull request]
     Gateway -->|read-only kubectl| K8s[Cluster API]
     Git[my-apps/development/hermes] --> Argo[Argo CD] --> Gateway
-    Gateway --> Vol[(hermes-data 100Gi)] --> Kopiur[Kopiur 6-hourly backup]
+    Gateway --> Vol[(hermes-data 200Gi)] --> Kopiur[Kopiur 6-hourly backup]
 ```
 
 ## How it is built
@@ -50,7 +50,7 @@ flowchart LR
 | Memory | Hindsight in-cluster, bank `hermes`; plugin settings in `config/hindsight-hermes.json`, copied to `hindsight/config.json` by the seed | Key from 1Password `hindsight/tenant_api_key` |
 | Home Assistant | 1Password `home-assistant/ha-longlived-token` → `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
-| Volume | `pvc.yaml` | `hermes-data`, 100Gi Longhorn, restore-before-bind |
+| Volume | `pvc.yaml` | `hermes-data`, 200Gi Longhorn, restore-before-bind |
 | Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28; keeps 8 hourly, 14 daily, 6 weekly, 3 monthly. Mover runs as 10000:10000. Longhorn also keeps 24 hourly snapshots on the volume; they do not survive loss of the volume |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
 | Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) → `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
@@ -272,6 +272,8 @@ Runtime state stays on the volume: sessions, cron jobs, skills Hermes writes, me
 | An agent says it is not logged in | Repeat step 3 for Codex or `gh`; check `claude-code/oauth_token` in 1Password for Claude. There is no fallback agent: Hermes stops and hands you the prompt |
 | The seed init container fails | `kubectl -n hermes logs deploy/hermes -c seed`. Clone and plugin failures only warn; a config copy failure stops the pod |
 | `hermes-data` stays `Pending` | Restore status and storage events. Never delete the PVC |
+| Agent tools fail with `[Errno 28] No space left on device` | `kubectl -n hermes exec deploy/hermes -- df -h /opt/data`. Coding agents keep whole Rust `target/` trees under `/opt/data/home/.local/share/agent-worktrees`; seven of them reached 79Gi in one hour and filled a 100Gi volume |
+| Readiness flaps while a build runs | `/api/status` is served by the same process that runs Cargo and Jest. The readiness probe allows 5 s; a shorter timeout removes the endpoint during heavy work |
 
 ## Backups and rollback
 

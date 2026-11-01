@@ -56,6 +56,11 @@ spec:
           value: "0"
         - name: PGID
           value: "0"
+        # Shared bgutil POT provider (my-apps/media/ytdlp-pot); TubeSync's built-in one needs deno, which this image lacks.
+        - name: TUBESYNC_POT_IPADDR
+          value: "10.96.0.44"
+        - name: TUBESYNC_POT_PORT
+          value: "4416"
         volumeMounts:
         - name: config
           mountPath: /config

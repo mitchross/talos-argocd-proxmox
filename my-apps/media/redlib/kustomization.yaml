@@ -6,6 +6,7 @@ resources:
 - deployment.yaml
 - externalsecret.yaml
 - anubis-policy-externalsecret.yaml
+- anubis-key-externalsecret.yaml
 - service.yaml
 - httproute.yaml
 - ns.yaml

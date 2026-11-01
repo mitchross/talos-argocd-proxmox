@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: metube
+spec:
+  selector:
+    app.kubernetes.io/name: metube
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
