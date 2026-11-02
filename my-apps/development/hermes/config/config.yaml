@@ -39,6 +39,16 @@ agent:
   max_turns: 500
   reasoning_effort: medium
 
+# When Claude rate-limits or errors, the chat moves to Codex (ChatGPT plan), then DeepSeek Flash.
+# A limit that resets within 2 minutes is waited out instead of switching.
+fallback_providers:
+  - provider: openai-codex
+    model: gpt-6.1-sol
+  - provider: litellm
+    model: deepseek-flash
+fallback:
+  min_switch_reset_seconds: 120
+
 # delegate_task uses the advanced-delegation plugin: the agent picks a route per subagent.
 # Untagged tasks use `balanced` (Sonnet), so nothing changes unless the agent asks for a route.
 # provider/model above are kept for when backend goes back to default.
@@ -62,6 +72,9 @@ delegation:
           description: "Everyday work (Claude Sonnet). Research, repo reading, normal edits. Use when unsure."
           provider: anthropic
           model: claude-sonnet-5-5
+          fallback_providers:
+            - provider: openai-codex
+              model: gpt-6.1-sol
         - name: codex
           description: "OpenAI GPT on the ChatGPT plan. Coding and an independent second opinion next to Claude."
           provider: openai-codex
@@ -71,6 +84,9 @@ delegation:
           provider: anthropic
           model: claude-opus-5-5
           reasoning_effort: high
+          fallback_providers:
+            - provider: openai-codex
+              model: gpt-6.1-sol
 
 # Small internal helper calls run on DeepSeek Flash (via LiteLLM) instead of Opus.
 # Compression and the approval classifier stay on the main model on purpose.
