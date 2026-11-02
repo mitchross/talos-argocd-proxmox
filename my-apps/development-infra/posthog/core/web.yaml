@@ -26,7 +26,7 @@ spec:
       containers:
       - name: web
         # Keep this aligned with the posthog-migrate hook in jobs.yaml.
-        image: posthog/posthog:latest@sha256:08f5b8b5461f0815e81ed58276113b7a3d71d8cd32e3bb4b1b7cecb45ef095f8
+        image: posthog/posthog:latest@sha256:0c1e822692883eb9da3b8a1e230d4fd9ff7389f5b6d9ff9b1aa9008ad8ccbe35
         command:
         - /bin/sh
         - -c
