@@ -41,7 +41,8 @@ metadata:
     argocd.argoproj.io/sync-wave: '0'
 spec:
   parentRefs:
-  - kind: Gateway
+  - group: gateway.networking.k8s.io
+    kind: Gateway
     name: gateway-internal-technitium
     namespace: gateway
   hostnames:
@@ -58,5 +59,8 @@ spec:
       request: 5m
       backendRequest: 5m
     backendRefs:
-    - name: langfuse-s3
+    - group: ""
+      kind: Service
+      name: langfuse-s3
       port: 9000
+      weight: 1

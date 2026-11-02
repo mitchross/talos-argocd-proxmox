@@ -5,15 +5,20 @@ metadata:
   namespace: immich
 spec:
   parentRefs:
-    - name: gateway-internal-technitium
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
       namespace: gateway
       sectionName: https
   hostnames:
     - "photos.vanillax.me"
   rules:
     - backendRefs:
-        - name: immich-server
+        - group: ""
+          kind: Service
+          name: immich-server
           port: 2283
+          weight: 1
       matches:
         - path:
             type: PathPrefix

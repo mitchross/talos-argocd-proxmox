@@ -21,3 +21,4 @@ spec:
       kind: Service
       name: presenton
       port: 80
+      weight: 1

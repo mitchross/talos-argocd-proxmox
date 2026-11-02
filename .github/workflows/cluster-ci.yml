@@ -229,6 +229,13 @@ jobs:
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
           python3 ./scripts/validate-kopiur-coverage.py /tmp/all-manifests.yaml
 
+      - name: Validate explicit CRD list defaults
+        # ArgoCD must not ignore paths inside CRD lists (argo-cd#26588), so HTTPRoute refs and SnapshotPolicy sources spell out their defaults.
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s scripts/tests -p test_explicit_list_defaults.py -v
+          python3 ./scripts/validate-explicit-list-defaults.py /tmp/all-manifests.yaml
+
       - name: Validate VPA policy safety and coverage
         # Uses the same aggregate render as schema validation so Helm-generated
         # workloads and operator CR targets are checked, not just raw YAML.

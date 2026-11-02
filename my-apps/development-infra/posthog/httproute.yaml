@@ -5,7 +5,9 @@ metadata:
   namespace: posthog
 spec:
   parentRefs:
-    - name: gateway-internal-technitium
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
       namespace: gateway
       sectionName: https
   hostnames:
@@ -26,24 +28,33 @@ spec:
             type: PathPrefix
             value: /batch
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8001
+          weight: 1
     # LLM analytics capture (Rust) — longest-prefix-match beats /i/v0 above
     - matches:
         - path:
             type: PathPrefix
             value: /i/v0/ai
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8002
+          weight: 1
     # Session replay capture (Rust)
     - matches:
         - path:
             type: PathPrefix
             value: /s
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8003
+          weight: 1
     # Feature flags + /decide (Rust) — required for session replay config
     - matches:
         - path:
@@ -53,16 +64,22 @@ spec:
             type: PathPrefix
             value: /flags
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8004
+          weight: 1
     # SDK remote config — session replay never starts when /array falls through to Django.
     - matches:
         - path:
             type: PathPrefix
             value: /array
       backendRefs:
-        - name: hypercache-server
+        - group: ""
+          kind: Service
+          name: hypercache-server
           port: 3002
+          weight: 1
     # CDP webhooks
     - matches:
         - path:
@@ -72,16 +89,22 @@ spec:
             type: PathPrefix
             value: /public/m
       backendRefs:
-        - name: plugins
+        - group: ""
+          kind: Service
+          name: plugins
           port: 6738
+          weight: 1
     # Default - Django web UI/API
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: web
+        - group: ""
+          kind: Service
+          name: web
           port: 8000
+          weight: 1
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -94,7 +117,9 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "vanillax.me"
 spec:
   parentRefs:
-    - name: gateway-external
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
       namespace: gateway
       sectionName: https
   hostnames:
@@ -114,23 +139,32 @@ spec:
             type: PathPrefix
             value: /batch
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8001
+          weight: 1
     # LLM analytics capture (Rust) — longest-prefix-match beats /i/v0 above
     - matches:
         - path:
             type: PathPrefix
             value: /i/v0/ai
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8002
+          weight: 1
     - matches:
         - path:
             type: PathPrefix
             value: /s
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8003
+          weight: 1
     # Feature flags + /decide (Rust) — required for session replay config
     - matches:
         - path:
@@ -140,21 +174,30 @@ spec:
             type: PathPrefix
             value: /flags
       backendRefs:
-        - name: ingest-sanitizer
+        - group: ""
+          kind: Service
+          name: ingest-sanitizer
           port: 8004
+          weight: 1
     # SDK remote config — session replay never starts when /array falls through to Django.
     - matches:
         - path:
             type: PathPrefix
             value: /array
       backendRefs:
-        - name: hypercache-server
+        - group: ""
+          kind: Service
+          name: hypercache-server
           port: 3002
+          weight: 1
     # SDK and recorder assets only; unmatched paths must not expose the Django UI/API.
     - matches:
         - path:
             type: PathPrefix
             value: /static
       backendRefs:
-        - name: web
+        - group: ""
+          kind: Service
+          name: web
           port: 8000
+          weight: 1

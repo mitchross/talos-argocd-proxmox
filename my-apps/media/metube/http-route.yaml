@@ -13,5 +13,8 @@ spec:
     - metube.vanillax.me
   rules:
     - backendRefs:
-        - name: metube
+        - group: ""
+          kind: Service
+          name: metube
           port: 8081
+          weight: 1
