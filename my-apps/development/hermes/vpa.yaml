@@ -24,3 +24,5 @@ spec:
           memory: 14Gi
       - containerName: seed
         mode: "Off"
+      - containerName: worktree-gc
+        mode: "Off"

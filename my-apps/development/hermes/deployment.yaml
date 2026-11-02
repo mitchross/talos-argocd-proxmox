@@ -155,6 +155,32 @@ spec:
             - name: cluster-config
               mountPath: /etc/hermes/cluster
               readOnly: true
+        # Agent worktrees keep full build trees on the volume; 79Gi of `target/` filled it on 2026-10-31.
+        # Shares the pod because the claim is ReadWriteOnce. Prunes build output only, never a worktree.
+        - name: worktree-gc
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:bf13164de7134e68ed80cfc86b51291d0ced74c9a05ac1facc06cb072af9c755
+          command: ["/bin/sh", "/etc/hermes-scripts/gc-worktrees.sh"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          env:
+            # A build that touched the tree inside this window is left alone.
+            - name: IDLE_HOURS
+              value: "6"
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+            - name: hermes-scripts
+              mountPath: /etc/hermes-scripts
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
