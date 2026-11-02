@@ -26,6 +26,7 @@ configMapGenerator:
   - name: hermes-scripts
     files:
       - seed.sh=scripts/seed.sh
+      - gc-worktrees.sh=scripts/gc-worktrees.sh
       - external-skills.txt=scripts/external-skills.txt
   - name: hermes-skills
     files:
