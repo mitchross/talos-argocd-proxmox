@@ -74,6 +74,24 @@ spec:
             type: Exact
             value: /api/assist/explain
           method: POST
+        # Public AI (quota-limited in the app): Ask, its follow-up answer,
+        # and the Lab import/plan for a visitor's own browser lab.
+        - path:
+            type: Exact
+            value: /api/ask
+          method: POST
+        - path:
+            type: Exact
+            value: /api/ask/answer
+          method: POST
+        - path:
+            type: Exact
+            value: /api/lab/ingest
+          method: POST
+        - path:
+            type: Exact
+            value: /api/lab/plan
+          method: POST
       filters:
         - type: RequestHeaderModifier
           requestHeaderModifier:
