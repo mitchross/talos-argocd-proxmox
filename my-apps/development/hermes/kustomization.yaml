@@ -11,6 +11,7 @@ resources:
   - service.yaml
   - httproute.yaml
   - vpa.yaml
+  - servicemonitor.yaml
   - kopiur/hermes-data.yaml
   - pi-egress.yaml
 configMapGenerator:
@@ -27,6 +28,7 @@ configMapGenerator:
     files:
       - seed.sh=scripts/seed.sh
       - gc-worktrees.sh=scripts/gc-worktrees.sh
+      - usage-exporter.py=scripts/usage-exporter.py
       - external-skills.txt=scripts/external-skills.txt
   - name: hermes-skills
     files:

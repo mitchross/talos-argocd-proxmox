@@ -13,6 +13,9 @@ configMapGenerator:
   - name: gpu-overview-dashboard
     files:
       - gpu-overview.json
+  - name: hermes-ai-split-dashboard
+    files:
+      - hermes-ai-split.json
   - name: pi-routing-dashboard
     files:
       - pi-routing.json
