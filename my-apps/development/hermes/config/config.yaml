@@ -103,6 +103,9 @@ auxiliary:
   triage_specifier:
     provider: litellm
     model: deepseek-flash
+  kanban_decomposer:
+    provider: litellm
+    model: deepseek-flash
 
 # Weekly skill review may also merge overlapping agent-made skills (archived, never deleted).
 curator:
