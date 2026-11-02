@@ -41,6 +41,7 @@ recorder:
   db_url: sqlite:////config/home-assistant_v2.db
   exclude:
     entity_globs:
+      - sensor.*_last_ce_day
       - sensor.*_rssi
       - sensor.*_lqi
       # Derived power/cost sensors recompute on every plug report (~24 writes/s): they filled the DB. Prometheus still exports them.
@@ -60,6 +61,7 @@ prometheus:
   requires_auth: false
   filter:
     include_entity_globs:
+      - sensor.*_last_ce_day
       - sensor.threadripper_*
       - sensor.nas_psu_*
       - sensor.truenas_*
@@ -1069,6 +1071,52 @@ utility_meter:
 # Template sensors: live all-in rate, tariff window, group totals, per-device cost-rate and share.
 template:
   - !include power-insights.yaml
+  # Holds the last matched day while the next CE reading is pending; state survives restarts.
+  - triggers:
+      - trigger: state
+        entity_id: binary_sensor.power_bill_data_current
+        to: "on"
+    sensor:
+      - name: "Homelab Share Last CE Day"
+        unique_id: homelab_share_last_ce_day
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:home-percent
+        state: >
+          {% set house = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
+          {{ (states('sensor.homelab_total_energy_yesterday') | float(0) / house * 100) | round(1) if house > 0 else this.state }}
+        attributes:
+          day: "{{ states('sensor.consumers_energy_last_reading') }}"
+      - name: "Combined Share Last CE Day"
+        unique_id: combined_share_last_ce_day
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:home-percent
+        state: >
+          {% set house = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
+          {{ (states('sensor.combined_total_energy_yesterday') | float(0) / house * 100) | round(1) if house > 0 else this.state }}
+        attributes:
+          day: "{{ states('sensor.consumers_energy_last_reading') }}"
+      - name: "AC Share Last CE Day"
+        unique_id: ac_share_last_ce_day
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:home-percent
+        state: >
+          {% set house = states('sensor.consumers_energy_cost_yesterday') | float(0) %}
+          {{ (states('sensor.ac_cooling_cost_yesterday') | float(0) / house * 100) | round(1) if house > 0 else this.state }}
+        attributes:
+          day: "{{ states('sensor.consumers_energy_last_reading') }}"
+      - name: "CE Charged Rate Last CE Day"
+        unique_id: ce_charged_rate_last_ce_day
+        unit_of_measurement: "USD/kWh"
+        state_class: measurement
+        icon: mdi:cash-check
+        state: >
+          {% set kwh = states('sensor.consumers_energy_kwh_yesterday') | float(0) %}
+          {{ (states('sensor.consumers_energy_cost_yesterday') | float(0) / kwh) | round(5) if kwh > 0 else this.state }}
+        attributes:
+          day: "{{ states('sensor.consumers_energy_last_reading') }}"
   # Gaming = plug draw above the threshold; 5 min of quiet ends the session (menus, loading).
   - binary_sensor:
       - name: "Gaming PC Gaming"

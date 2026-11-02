@@ -368,21 +368,21 @@ views:
           - type: markdown
             content: |
               {% if not is_state('binary_sensor.power_bill_data_current', 'on') %}
-              **Waiting for matching utility data.** Latest CE day: {{ states('sensor.consumers_energy_last_reading') }}. House shares appear when CE reaches yesterday.
+              **The next CE reading is pending.** House shares show {{ state_attr('sensor.homelab_share_last_ce_day', 'day') }} until the 13:17 sync.
               {% else %}
               CE date: **{{ states('sensor.consumers_energy_last_reading') }}**. Shares below compare kWh.
               {% endif %}
             grid_options:
               columns: full
           - type: tile
-            entity: sensor.homelab_share_of_house
+            entity: sensor.homelab_share_last_ce_day
             name: Homelab
             grid_options:
               columns: 6
               rows: 1
             color: blue
           - type: tile
-            entity: sensor.combined_share_of_house
+            entity: sensor.combined_share_last_ce_day
             name: Homelab + office
             grid_options:
               columns: 6
@@ -409,7 +409,7 @@ views:
   - !include lovelace-power-findings.yaml
   - title: Daily spend
     path: daily-spend
-    icon: mdi:calendar-compare
+    icon: mdi:calendar-month
     type: sections
     max_columns: 4
     sections:
@@ -993,7 +993,7 @@ views:
               columns: full
           - type: markdown
             content: |
-              Summer rates run June–September; non-summer rates run October–May. Oct 16–17 readings are unusually low, so that dip is not a saving.
+              Summer rates run June–September; non-summer rates run October–May. Plug data has gaps on Oct 16–17, Oct 27 and Oct 30, so those dips are not savings. The daily-sync lines start Sep 23, so September is partial. Live lines end with today so far.
             grid_options:
               columns: full
       - type: grid
@@ -1379,7 +1379,7 @@ views:
             content: |
               CE data through **{{ states('sensor.consumers_energy_last_reading') }}**. House comparisons use yesterday's completed day.
               {% if not is_state('binary_sensor.power_bill_data_current', 'on') %}
-              **Waiting for matching utility data; house shares are unavailable.**
+              **The next CE reading is pending.** House shares show {{ state_attr('sensor.homelab_share_last_ce_day', 'day') }} until the 13:17 sync.
               {% endif %}
       - type: grid
         cards:
@@ -1446,7 +1446,7 @@ views:
             heading: Is the model right?
             heading_style: title
           - type: tile
-            entity: sensor.consumers_energy_effective_rate
+            entity: sensor.ce_charged_rate_last_ce_day
             name: CE charged (per kWh)
             grid_options:
               columns: 6
@@ -1460,21 +1460,21 @@ views:
               rows: 1
             color: amber
           - type: tile
-            entity: sensor.homelab_share_of_house
+            entity: sensor.homelab_share_last_ce_day
             name: Homelab share
             grid_options:
               columns: 6
               rows: 1
             color: blue
           - type: tile
-            entity: sensor.combined_share_of_house
+            entity: sensor.combined_share_last_ce_day
             name: Homelab + office
             grid_options:
               columns: 6
               rows: 1
             color: amber
           - type: tile
-            entity: sensor.ac_share_of_house_yesterday
+            entity: sensor.ac_share_last_ce_day
             name: AC bill share
             grid_options:
               columns: 6
@@ -1951,7 +1951,7 @@ views:
             content: |
               CE data through **{{ states('sensor.consumers_energy_last_reading') }}**. House comparisons use yesterday's completed day.
               {% if not is_state('binary_sensor.power_bill_data_current', 'on') %}
-              **Waiting for matching utility data; house shares are unavailable.**
+              **The next CE reading is pending.** House shares show {{ state_attr('sensor.homelab_share_last_ce_day', 'day') }} until the 13:17 sync.
               {% endif %}
       - type: grid
         cards:
@@ -2051,7 +2051,7 @@ views:
             heading: Share of the house
             heading_style: title
           - type: tile
-            entity: sensor.ac_share_of_house_yesterday
+            entity: sensor.ac_share_last_ce_day
             name: Est. bill share · yesterday
             grid_options:
               columns: 6
@@ -2076,7 +2076,7 @@ views:
                 entity: binary_sensor.power_bill_data_current
                 state: on
           - type: tile
-            entity: sensor.consumers_energy_effective_rate
+            entity: sensor.ce_charged_rate_last_ce_day
             name: CE charged (per kWh)
             grid_options:
               columns: 6
