@@ -1763,7 +1763,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "A **session** is the plug drawing more than the threshold (350 W; idle is ~200 W, gaming 450-600 W) until five quiet minutes pass. **Idle tax** is everything the PC costs outside sessions: sitting on at 200 W is about 1.4 kWh a day. The threshold is `input_number.gaming_pc_active_threshold_w` in Home Assistant (Settings view); input helpers are not exported, so the dashed line here is fixed at 350 W."
+        "content": "A **session** is the plug drawing more than the threshold (350 W; the measured idle floor is about 92 W) until five quiet minutes pass. **Idle tax** is everything the PC costs outside sessions: the whole PC averaged about 2.5 kWh a day in late October. The threshold is `input_number.gaming_pc_active_threshold_w` in Home Assistant (Settings view); input helpers are not exported, so the dashed line here is fixed at 350 W."
       }
     },
     {

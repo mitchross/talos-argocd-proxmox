@@ -404,7 +404,17 @@
               }
             ]
           },
-          "noValue": "No cooling in 7 days"
+          "noValue": "No cooling in 7 days",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "No recent cooling"
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -437,7 +447,7 @@
           "range": false
         }
       ],
-      "description": "The input_number.ac_cooling_wattage the model used in the last 7 days (helpers are not exported)."
+      "description": "The input_number.ac_cooling_wattage the model used in the last 7 days (helpers are not exported). Reads No recent cooling when the AC did not run."
     },
     {
       "type": "row",
