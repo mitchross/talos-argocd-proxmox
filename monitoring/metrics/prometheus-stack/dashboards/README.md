@@ -19,7 +19,7 @@ JSON file into a ConfigMap and stamps two things on it:
 |-----------|----------------|------------------|
 | `start-here/` | Start Here | Cockpit (Grafana home page), Homelab now (what is broken right now), Why Is This App Slow, Capacity |
 | `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear (+ kopiur from its chart) |
-| `ai/` | AI | GPU, vLLM, AI gateway (LiteLLM), Pi auto-routing |
+| `ai/` | AI | GPU, vLLM, AI gateway (LiteLLM), Pi auto-routing, Hermes AI split |
 | `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate, Public Edge (Cloudflare tunnel, Anubis, redlib, per-site hits) |
 | `logs/` | Logs | Logs Explorer, node crash logs |
 | `home-energy/` | Home & Energy | Power & cost, solar, gaming PC, cooling, AirCube |
@@ -87,6 +87,11 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
   starts new series. Use `increase([$__range])` for window totals, not
   `max_over_time`. `requested_model` is what the app asked for;
   `litellm_model_name` is the backend that answered.
+- **Hermes AI split:** the `hermes_model_*` totals come from Hermes's
+  `state.db` (`usage-exporter` sidecar in `my-apps/development/hermes/`), so
+  history before the sidecar started shows as 0, and a model's very first call
+  on a new surface or task only counts from its second call. Codex
+  (subscription) and local Qwen cost $0.
 - **PostHog:** the `django_http_responses_*` per-view series only appear after
   real UI/API traffic, so they're empty when PostHog is idle.
 - **radar-ng:** don't `clamp_min(denominator, 1)` on low-traffic ratios; it

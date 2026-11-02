@@ -26,3 +26,5 @@ spec:
         mode: "Off"
       - containerName: worktree-gc
         mode: "Off"
+      - containerName: usage-exporter
+        mode: "Off"

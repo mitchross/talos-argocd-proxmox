@@ -181,6 +181,31 @@ spec:
             - name: hermes-scripts
               mountPath: /etc/hermes-scripts
               readOnly: true
+        # Reads state.db (read-only) and serves model usage for Prometheus; see scripts/usage-exporter.py.
+        - name: usage-exporter
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:412227ba10703bc628e2313972b70f60d90d9170e9221079c50f03d819363ac3
+          command: ["python3", "/etc/hermes-scripts/usage-exporter.py"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+          ports:
+            - name: metrics
+              containerPort: 9464
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+            - name: hermes-scripts
+              mountPath: /etc/hermes-scripts
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
