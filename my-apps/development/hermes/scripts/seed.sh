@@ -38,10 +38,11 @@ rm -rf /tmp/skills-*
 rm -f "$HERMES_HOME/.local/bin/kubectl"  # pre-image leftover; it shadowed /usr/local/bin/kubectl
 chown 10000:10000 "$HERMES_HOME" "$HERMES_HOME/hindsight" "$HERMES_HOME/workspace" "$HERMES_HOME/skills" "$HERMES_HOME/skills/devops" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight"
 
-for plugin in hindsight homeassistant; do
+for plugin in hindsight homeassistant advanced-delegation; do
   if [ ! -d "$HERMES_HOME/plugins/$plugin" ]; then
     echo "[seed] installing plugin $plugin"
-    as_hermes /opt/hermes/bin/hermes plugins install "$plugin" --enable --yes-deps
+    # A failed install (e.g. GitHub down) must not stop the pod; the next start retries.
+    as_hermes /opt/hermes/bin/hermes plugins install "$plugin" --enable --yes-deps || echo "[seed] plugin install failed: $plugin"
   fi
 done
 if ! grep -qs '"homelab-digest"' "$HERMES_HOME/cron/jobs.json"; then
