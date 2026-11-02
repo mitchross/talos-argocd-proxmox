@@ -23,7 +23,7 @@ spec:
           containers:
             - name: gc
               # NOT registry.k8s.io/kubectl: it is distroless (no bash), so this script dies with StartError.
-              image: docker.io/alpine/k8s:1.37.1@sha256:712dc5385d1c1a3f83b747fa9e40f64d433a97f72ff42f9755ff7dd1f62846e4
+              image: docker.io/alpine/k8s:1.37.2@sha256:dcb7185e112a453aa72f426754849a97357727ef8f40168fb208c8cf59952042
               command: [/bin/bash, -euo, pipefail, -c]
               args:
                 - /opt/repo-scripts/run-garbage-collection.sh
