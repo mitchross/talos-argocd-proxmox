@@ -32,7 +32,7 @@ spec:
               mountPath: /shared
       containers:
         - name: plugins
-          image: ghcr.io/posthog/posthog-node:master@sha256:663e12d64858488d6634c04bff8b244c91091136df7a6926da80bad4ec757bee
+          image: ghcr.io/posthog/posthog-node:master@sha256:4a923d171e981bd6e80ac97adae91b49757c6fc4735bcef620c1d34bdcb20cbe
           command:
             - node
             - nodejs/dist/index.js
