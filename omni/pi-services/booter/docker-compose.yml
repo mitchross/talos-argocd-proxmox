@@ -1,6 +1,6 @@
 services:
   booter:
-    image: ghcr.io/siderolabs/booter:v0.4.0@sha256:360c4bc65a9153683d6eb947c958033b435159a23fed51e08f8726421a4a438d
+    image: ghcr.io/siderolabs/booter:v0.4.1@sha256:f2ee41daabd2e698184c0a6dc29fe9321aabc829fd18046be54c7da923b0cea3
     container_name: booter
     restart: unless-stopped
     # Proxy-DHCP (UDP 67/4011) and TFTP (UDP 69) need the LAN broadcast domain, not a bridge.
