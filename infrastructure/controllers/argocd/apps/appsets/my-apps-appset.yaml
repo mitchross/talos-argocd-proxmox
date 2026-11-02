@@ -100,7 +100,7 @@ spec:
             factor: 2
             maxDuration: 10m
       ignoreDifferences:
-      # HTTPRoute, ExternalSecret, and PVC restore diff noise is ignored globally.
+      # PVC restore diff noise is ignored globally; HTTPRoute/ExternalSecret list defaults live in Git.
       # App-level PVC ignores are still required because
       # RespectIgnoreDifferences=true only strips app ignore rules during sync;
       # otherwise immutable restore fields keep retrying forever on Bound PVCs.
@@ -120,14 +120,14 @@ spec:
         - .spec.volumeClaimTemplates[].kind
       # kopiur controller defaults these spec fields after apply → cosmetic
       # OutOfSync on every backed-up app. Ignore only the defaulted fields.
+      # Never ignore a path inside a list (`.spec.sources[].*`): with
+      # RespectIgnoreDifferences Argo 3.6 swaps Git's whole list for live's
+      # (argo-cd#26588). sourcePathStrategy/readOnly are set in my-apps/common/kopiur-backup.
       - group: kopiur.home-operations.com
         kind: SnapshotPolicy
         jsonPointers:
         - /spec/defaultDeletionPolicy
         - /spec/groupBy
-        jqPathExpressions:
-        - .spec.sources[].sourcePathStrategy
-        - .spec.sources[].readOnly
 
       info:
       - name: 'Description'

@@ -24,6 +24,14 @@ patches:
         value:
           kind: ClusterRepository
           name: cluster-kopia
+      # Defaulted by kopiur on every source; spelled out because ArgoCD must not ignore list paths (argo-cd#26588).
+      # Every stub has exactly one source (scripts/validate-explicit-list-defaults.py checks it).
+      - op: add
+        path: /spec/sources/0/sourcePathStrategy
+        value: PvcName
+      - op: add
+        path: /spec/sources/0/readOnly
+        value: true
       # Retain is upstream's default but pin it: an unowned default flipping to Delete would let an ArgoCD prune cascade-delete backup history.
       - op: add
         path: /spec/deletion

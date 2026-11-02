@@ -9,7 +9,8 @@ metadata:
     external-dns.alpha.kubernetes.io/target: vanillax.me
 spec:
   parentRefs:
-    - kind: Gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
       name: gateway-external
       namespace: gateway
       sectionName: https
@@ -17,8 +18,11 @@ spec:
     - "worldmonitor.vanillax.me"
   rules:
     - backendRefs:
-        - name: worldmonitor
+        - group: ""
+          kind: Service
+          name: worldmonitor
           port: 8080
+          weight: 1
       matches:
         - path:
             type: PathPrefix
