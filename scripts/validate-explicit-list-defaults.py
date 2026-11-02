@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate that API-server-defaulted fields inside CRD lists are spelled out in Git.
 
-Argo CD 3.6 with `RespectIgnoreDifferences=true` swaps Git's whole CRD list for the
+Argo CD (known bug since at least v3.4) with `RespectIgnoreDifferences=true` swaps Git's whole CRD list for the
 live one when an ignoreDifferences path points inside that list (CRD lists have no
 patch merge key; argo-cd#26588). So we never ignore list paths, and instead write the
 defaults in Git. Runs on the RENDERED stream so Helm and kustomize patches count.

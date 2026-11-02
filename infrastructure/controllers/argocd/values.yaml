@@ -141,12 +141,12 @@ configs:
     #
     # HTTPRoute: NO ignoreDifferences here on purpose. Never ignore a path inside a
     # CRD list (`.spec.rules[].backendRefs[].weight`, `.spec.parentRefs[].kind`, ...).
-    # Argo CD 3.6 + `RespectIgnoreDifferences=true` builds a merge patch of the ignored
+    # Argo CD (known bug since at least v3.4) with `RespectIgnoreDifferences=true` builds a merge patch of the ignored
     # fields from the live object and applies it onto the target. CRD lists have no
     # patch merge key, so the patch carries the WHOLE live list and Argo applies live's
     # `rules` instead of Git's: in-place edits never reach the cluster, the app stays
     # OutOfSync and selfHeal loops on `serverside-applied`
-    # (https://github.com/argoproj/argo-cd/issues/26588).
+    # (https://github.com/argoproj/argo-cd/issues/26588, #25284; seen in prod on v3.4.5).
     # Instead every HTTPRoute spells out the API-server defaults in Git:
     # parentRefs `group: gateway.networking.k8s.io` + `kind: Gateway`, backendRefs
     # `group: ""` + `kind: Service` + `weight: 1`.

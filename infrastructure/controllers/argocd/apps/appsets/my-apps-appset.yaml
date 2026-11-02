@@ -121,8 +121,8 @@ spec:
       # kopiur controller defaults these spec fields after apply → cosmetic
       # OutOfSync on every backed-up app. Ignore only the defaulted fields.
       # Never ignore a path inside a list (`.spec.sources[].*`): with
-      # RespectIgnoreDifferences Argo 3.6 swaps Git's whole list for live's
-      # (argo-cd#26588). sourcePathStrategy/readOnly are set in my-apps/common/kopiur-backup.
+      # RespectIgnoreDifferences Argo CD (since at least v3.4) swaps Git's whole list for live's
+      # (argo-cd#26588, #25284). sourcePathStrategy/readOnly are set in my-apps/common/kopiur-backup.
       - group: kopiur.home-operations.com
         kind: SnapshotPolicy
         jsonPointers:
