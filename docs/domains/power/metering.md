@@ -157,6 +157,7 @@ into Home Assistant. Source and image: `github.com/mitchross/consumers-energy-sy
 | `sensor.consumers_energy_kwh_yesterday`, `_kwh_7d`, `_kwh_month`, `_kwh_last_month` and the `_cost_*` twins | Homelab Power dashboard, Grafana via the Prometheus exporter |
 | `sensor.homelab_share_of_house`, `sensor.combined_share_of_house` | Homelab kWh yesterday as a share of the house |
 | `sensor.consumers_energy_effective_rate` | CE cost / kWh yesterday, next to the modelled rate |
+| `sensor.*_last_ce_day` | Share and CE rate for the last matched day. Updates when `binary_sensor.power_bill_data_current` turns on, and holds between syncs |
 
 The importer sets nine live sensors through the REST API, including
 `sensor.consumers_energy_last_reading`. Those states normally disappear on an
@@ -179,7 +180,7 @@ database backend.
 ```bash
 # local checkout: node --env-file=.env index.mjs [--download-only|--import-only|--dry-run]
 docker run --rm --user 1001:1001 --env-file .env -v ce-data:/data \
-  ghcr.io/mitchross/consumers-energy-sync:v0.1.5
+  ghcr.io/mitchross/consumers-energy-sync:v0.1.6
 ```
 
 `/data` holds the Playwright cookie jar (a credential) and the CSVs; keep it

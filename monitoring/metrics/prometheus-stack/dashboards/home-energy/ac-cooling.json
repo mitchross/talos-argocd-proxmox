@@ -1303,7 +1303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.ac_share_of_house_yesterday\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.ac_share_last_ce_day\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
@@ -1434,7 +1434,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.consumers_energy_effective_rate\"})",
+          "expr": "max by (entity) ({__name__=~\"homeassistant_sensor_.+\", entity=\"sensor.ce_charged_rate_last_ce_day\"})",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
