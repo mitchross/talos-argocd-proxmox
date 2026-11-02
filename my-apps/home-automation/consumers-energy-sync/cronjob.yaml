@@ -29,7 +29,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: sync
-              image: ghcr.io/mitchross/consumers-energy-sync:v0.1.6@sha256:fe5adf252eab4150ebfc26acd8be628ffff09435beba1865fc590717ef5130fb
+              image: ghcr.io/mitchross/consumers-energy-sync:v0.1.7@sha256:ea270ff8704b4f861df6da142f2400e3d0c23f06f3e11ecd8fab31e7a63ba07e
               envFrom:
                 - secretRef:
                     name: consumers-energy-sync
