@@ -118,8 +118,10 @@ jobs:
           platforms: linux/amd64
           push: ${{ steps.meta.outputs.publish == 'true' }}
           tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          # source must be this repo: GHCR links the package to it, and GITHUB_TOKEN can't write to Niko1221/Strata.
           labels: |
-            org.opencontainers.image.source=https://github.com/Niko1221/Strata
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.url=https://github.com/Niko1221/Strata
             org.opencontainers.image.revision=${{ steps.meta.outputs.source_ref }}
           build-args: |
             CUDA_ARCHITECTURES=86
