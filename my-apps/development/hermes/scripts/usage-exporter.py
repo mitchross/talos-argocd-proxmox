@@ -3,6 +3,12 @@
 Each scrape sums the session_model_usage table (the same rows `hermes insights`
 reads) by model, provider, task and session source. Values are running totals
 over the history Hermes keeps, so read them with increase() in Grafana.
+
+Prometheus's increase() treats a series' first sample as its starting point, so a
+model's first call on a new surface or task was never counted (a single local Qwen
+subagent call never showed). A label set that appears after startup is therefore
+served as 0 for HOLD_SECONDS first, so Prometheus scrapes the zero and then counts
+the real value. Label sets present at startup are history and are served as-is.
 """
 
 import os
@@ -14,6 +20,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 DB_PATH = os.environ.get("HERMES_STATE_DB", "/opt/data/state.db")
 PORT = int(os.environ.get("PORT", "9464"))
 CACHE_SECONDS = 30
+# Two 60 s scrapes plus the cache, so at least one scrape sees the zero.
+HOLD_SECONDS = 180
+_first_seen = {}  # label set -> monotonic time first served; None = present at startup
+_baseline = {"done": False}
 
 QUERY = """
 SELECT u.model,
@@ -62,15 +72,22 @@ def render():
             conn.close()
     except sqlite3.Error:
         rows, up = [], 0
+    now = time.monotonic()
     for model, provider, task, source, calls, *rest in rows:
         tokens, cost, sessions = rest[:5], rest[5], rest[6]
         labels = (f'model="{_label(model)}",provider="{_label(provider)}",'
                   f'task="{_label(task)}",source="{_label(source)}"')
+        # Label sets in the first successful read are history; later new ones start at 0.
+        first = _first_seen.setdefault(labels, now if _baseline["done"] else None)
+        if first is not None and now - first < HOLD_SECONDS:
+            calls, tokens, cost = 0, [0] * len(tokens), 0
         lines.append(f"hermes_model_api_calls_total{{{labels}}} {int(calls or 0)}")
         for kind, value in zip(TOKEN_TYPES, tokens):
             lines.append(f'hermes_model_tokens_total{{{labels},type="{kind}"}} {int(value or 0)}')
         lines.append(f"hermes_model_cost_usd_total{{{labels}}} {float(cost or 0):.6f}")
         lines.append(f"hermes_model_sessions{{{labels}}} {int(sessions or 0)}")
+    if up:
+        _baseline["done"] = True
     lines += [
         "# HELP hermes_usage_exporter_up 1 when state.db was read on this scrape.",
         "# TYPE hermes_usage_exporter_up gauge",
