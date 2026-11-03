@@ -12,10 +12,11 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND = re.compile(r'https?://(?:vllm-service(?:\.vllm(?:\.svc(?:\.cluster\.local)?)?)?|'
                      r'llama-cpp-service(?:\.llama-cpp(?:\.svc(?:\.cluster\.local)?)?)?|'
+                     r'strata-service(?:\.strata(?:\.svc(?:\.cluster\.local)?)?)?|'
                      r'(?:vllm|llama)\.vanillax\.me)(?=[:/\s\"\x27]|$)')
 SUFFIXES = {'.yaml', '.yml', '.json', '.env'}
 ALLOWED = {'my-apps/ai/litellm/config.yaml'}
-BACKEND_DIRS = ('my-apps/ai/vllm/',)
+BACKEND_DIRS = ('my-apps/ai/vllm/', 'my-apps/ai/strata/')
 
 
 def violations(paths):
@@ -43,7 +44,7 @@ def main():
         print(failure)
     if failures:
         raise SystemExit(1)
-    print('No direct vLLM/legacy URLs found in application configuration.')
+    print('No direct vLLM/Strata/legacy URLs found in application configuration.')
 
 
 if __name__ == '__main__':

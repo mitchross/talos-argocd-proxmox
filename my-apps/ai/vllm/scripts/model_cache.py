@@ -59,6 +59,8 @@ class ModelCache:
             destination = directory / artifact['name']
             if self.valid(destination, artifact):
                 continue
+            if self.spec.get('repo') is None and source_url is None:
+                raise ValueError(f"Local checkpoint has no upstream; restore {artifact['name']} to the archive")
             part = destination.with_name(destination.name + '.part')
             offset = part.stat().st_size if part.exists() else 0
             if offset >= artifact['size']:
@@ -101,14 +103,34 @@ class ModelCache:
         self.finish(target)
 
 
+def describe(source, directory):
+    """Manifest for a checkpoint with no upstream pin (a local quantization); repo null blocks re-download."""
+    files = []
+    for path in sorted((Path(source) / directory).iterdir()):
+        if path.name.startswith('.') or path.name.endswith('.part'):
+            continue
+        if not path.is_file():
+            raise ValueError(f'Expected a flat checkpoint: {path.name} is not a file')
+        with path.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+        files.append({'name': path.name, 'size': path.stat().st_size, 'sha256': digest})
+    if not files:
+        raise ValueError(f'No checkpoint files under {directory}')
+    return {'repo': None, 'revision': None, 'directory': directory, 'files': files}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['download', 'sync', 'wait'])
+    parser.add_argument('action', choices=['download', 'sync', 'wait', 'describe'])
     parser.add_argument('--manifest', default='/opt/repo-scripts/model-manifest.json')
     parser.add_argument('--source', default='/src')
     parser.add_argument('--target', default='/models')
     parser.add_argument('--timeout', type=int, default=21600)
+    parser.add_argument('--directory', help='describe: checkpoint folder under --source')
     args = parser.parse_args()
+    if args.action == 'describe':
+        print(json.dumps(describe(args.source, args.directory), indent=2))
+        return
     model = ModelCache(args.manifest)
     if args.action == 'download':
         model.download(args.target)

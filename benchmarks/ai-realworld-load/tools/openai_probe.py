@@ -50,6 +50,78 @@ def data_uri(path: str) -> str:
         return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
+def stream_chat(base_url: str, body: dict, api_key: str = "benchmark", timeout: int = 1800) -> dict:
+    """POST one streamed chat completion; time it and keep the full reasoning and answer text."""
+    req = urllib.request.Request(
+        base_url.rstrip("/") + "/chat/completions",
+        data=json.dumps(body).encode(),
+        headers={"Content-Type": "application/json",
+                 "Authorization": f"Bearer {api_key}"},
+    )
+
+    out = {"base_url": base_url, "model": body.get("model"), "status": None,
+           "ttft_s": None, "decode_tps": None, "e2e_s": None, "usage": None,
+           "finish_reason": None, "tool_calls": [], "reasoning_chars": 0,
+           "content_chars": 0, "text_head": "", "needle_found": None, "error": None}
+
+    t0 = time.monotonic()
+    t_first = t_last = None
+    text_out, reasoning_out = [], []
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            out["status"] = resp.status
+            for raw in resp:
+                line = raw.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                payload = line[5:].strip()
+                if payload == "[DONE]":
+                    break
+                try:
+                    obj = json.loads(payload)
+                except json.JSONDecodeError:
+                    continue
+                if obj.get("usage") and not obj.get("choices"):
+                    out["usage"] = obj["usage"]
+                    continue
+                for ch in obj.get("choices", []):
+                    d = ch.get("delta", {})
+                    got = False
+                    reasoning = d.get("reasoning_content") or d.get("reasoning")
+                    if reasoning:
+                        reasoning_out.append(reasoning); got = True
+                    if d.get("content"):
+                        text_out.append(d["content"]); got = True
+                    if d.get("tool_calls"):
+                        out["tool_calls"].append(d["tool_calls"]); got = True
+                    if got:
+                        now = time.monotonic()
+                        if t_first is None:
+                            t_first = now
+                        t_last = now
+                    if ch.get("finish_reason"):
+                        out["finish_reason"] = ch["finish_reason"]
+                    # some engines put usage on the last choices chunk
+                    if obj.get("usage"):
+                        out["usage"] = obj["usage"]
+    except Exception as e:  # noqa: BLE001 — report, don't crash the harness
+        out["error"] = f"{type(e).__name__}: {e}"
+
+    t_end = time.monotonic()
+    full = "".join(text_out)
+    out["e2e_s"] = round(t_end - t0, 3)
+    out["ttft_s"] = round(t_first - t0, 3) if t_first else None
+    out["reasoning_chars"] = sum(len(r) for r in reasoning_out)
+    out["content_chars"] = len(full)
+    out["text_head"] = full[:200]
+    out["content"] = full
+    out["reasoning"] = "".join(reasoning_out)
+    comp = (out["usage"] or {}).get("completion_tokens")
+    if comp and t_first and t_last and t_last > t_first:
+        out["decode_tps"] = round(comp / (t_last - t_first), 2)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base-url", required=True)
@@ -107,70 +179,9 @@ def main():
         body["messages"] = [{"role": "user",
                              "content": "What's the weather in Rotterdam right now?"}]
 
-    req = urllib.request.Request(
-        args.base_url.rstrip("/") + "/chat/completions",
-        data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json",
-                 "Authorization": f"Bearer {args.api_key}"},
-    )
-
-    out = {"base_url": args.base_url, "model": args.model, "status": None,
-           "ttft_s": None, "decode_tps": None, "e2e_s": None, "usage": None,
-           "finish_reason": None, "tool_calls": [], "reasoning_chars": 0,
-           "content_chars": 0, "text_head": "", "needle_found": None, "error": None}
-
-    t0 = time.monotonic()
-    t_first = t_last = None
-    text_out, reasoning_len = [], 0
-    try:
-        with urllib.request.urlopen(req, timeout=args.timeout) as resp:
-            out["status"] = resp.status
-            for raw in resp:
-                line = raw.decode("utf-8", "replace").strip()
-                if not line.startswith("data:"):
-                    continue
-                payload = line[5:].strip()
-                if payload == "[DONE]":
-                    break
-                try:
-                    obj = json.loads(payload)
-                except json.JSONDecodeError:
-                    continue
-                if obj.get("usage") and not obj.get("choices"):
-                    out["usage"] = obj["usage"]
-                    continue
-                for ch in obj.get("choices", []):
-                    d = ch.get("delta", {})
-                    got = False
-                    if d.get("reasoning_content"):
-                        reasoning_len += len(d["reasoning_content"]); got = True
-                    if d.get("content"):
-                        text_out.append(d["content"]); got = True
-                    if d.get("tool_calls"):
-                        out["tool_calls"].append(d["tool_calls"]); got = True
-                    if got:
-                        now = time.monotonic()
-                        if t_first is None:
-                            t_first = now
-                        t_last = now
-                    if ch.get("finish_reason"):
-                        out["finish_reason"] = ch["finish_reason"]
-                    # some engines put usage on the last choices chunk
-                    if obj.get("usage"):
-                        out["usage"] = obj["usage"]
-    except Exception as e:  # noqa: BLE001 — report, don't crash the harness
-        out["error"] = f"{type(e).__name__}: {e}"
-
-    t_end = time.monotonic()
-    full = "".join(text_out)
-    out["e2e_s"] = round(t_end - t0, 3)
-    out["ttft_s"] = round(t_first - t0, 3) if t_first else None
-    out["reasoning_chars"] = reasoning_len
-    out["content_chars"] = len(full)
-    out["text_head"] = full[:200]
-    comp = (out["usage"] or {}).get("completion_tokens")
-    if comp and t_first and t_last and t_last > t_first:
-        out["decode_tps"] = round(comp / (t_last - t_first), 2)
+    out = stream_chat(args.base_url, body, args.api_key, args.timeout)
+    full = out.pop("content")
+    out.pop("reasoning")
     if args.synthetic_tokens:
         out["needle_found"] = "JADE-4471" in full
     print(json.dumps(out, indent=2))

@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strata-server
+  namespace: strata
+  labels:
+    app: strata-server
+spec:
+  # One whole RTX 3090; vLLM holds the other. Strata serves one request at a time (FIFO).
+  replicas: 1
+  strategy:
+    type: Recreate            # whole-card GPU workload on an RWO local volume
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: strata-server
+  template:
+    metadata:
+      labels:
+        app: strata-server
+    spec:
+      enableServiceLinks: false
+      runtimeClassName: nvidia
+      # Never evicts other pods to find its ~54 GiB; it stays Pending until the node has room.
+      priorityClassName: gpu-workload-no-preempt
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      # No fsGroup: the local volume also holds vLLM's files, and fsGroup would chown all of it.
+      initContainers:
+        # First start only: pinned GGUF shards + MTP layer download (~92 GB), pack build, install config.
+        - name: prepare
+          image: ghcr.io/mitchross/strata:0.1.40.3-d5ea713-sm86
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - /opt/repo-scripts/prepare.sh
+          envFrom:
+            - configMapRef:
+                name: strata-settings
+          resources:
+            # Same as the server so the init step adds nothing to the pod's scheduling request.
+            requests:
+              nvidia.com/gpu: "1"
+              cpu: "4"
+              memory: 54Gi
+            limits:
+              nvidia.com/gpu: "1"
+              memory: 64Gi
+          volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+            - name: data
+              mountPath: /data
+              subPath: strata
+      containers:
+        - name: strata
+          # Built from Niko1221/Strata's own Dockerfile at the pinned commit: .github/workflows/strata-image.yml.
+          image: ghcr.io/mitchross/strata:0.1.40.3-d5ea713-sm86
+          imagePullPolicy: IfNotPresent
+          # The image entrypoint links /data/config/strata-iq3_s.json and execs the OpenAI-compatible server.
+          envFrom:
+            - configMapRef:
+                name: strata-settings
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          # The port opens only after the experts are copied into RAM.
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 180
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            # Low-RAM off: ~47 GiB expert arena + streamed KV + server; the GGUF page cache is reclaimable.
+            # ~15 cores busy during decode (CPU-side experts).
+            requests:
+              nvidia.com/gpu: "1"
+              cpu: "12"
+              memory: 54Gi
+            limits:
+              nvidia.com/gpu: "1"
+              memory: 64Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              subPath: strata
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: repo-scripts
+          configMap:
+            name: strata-scripts
+            defaultMode: 0555
+        - name: data
+          persistentVolumeClaim:
+            claimName: ai-model-cache-strata
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi

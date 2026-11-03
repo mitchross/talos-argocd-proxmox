@@ -223,6 +223,11 @@ class AIObservabilityTests(unittest.TestCase):
         })
         self.assertEqual(routes['qwen3.8-27b']['litellm_params']['api_base'],
                          'http://vllm-service.vllm.svc.cluster.local:8080/v1')
+        # The second card's model is local-only: no paid fallback reaches it either.
+        self.assertEqual(routes['qwen3.8-flash-next']['litellm_params']['api_base'],
+                         'http://strata-service.strata.svc.cluster.local:8080/v1')
+        for rule in settings['fallbacks'] + settings['context_window_fallbacks']:
+            self.assertNotIn('qwen3.8-flash-next', rule)
         deepseek = routes['deepseek-flash']
         self.assertEqual(deepseek['litellm_params']['model'],
                          'openrouter/~deepseek/deepseek-flash-latest')

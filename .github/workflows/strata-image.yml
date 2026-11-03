@@ -1,0 +1,139 @@
+name: Strata CUDA image
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/strata-image.yml'
+      - 'my-apps/ai/strata/image/**'
+      - 'my-apps/ai/strata/deployment.yaml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/strata-image.yml'
+      - 'my-apps/ai/strata/image/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: strata-image-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/strata
+  IMAGE_DIR: my-apps/ai/strata/image
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate immutable inputs
+        id: meta
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+          version="$(<"$IMAGE_DIR/VERSION")"
+          source_ref="$(<"$IMAGE_DIR/SOURCE_REF")"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7}-sm86$ ]]
+          [[ "$source_ref" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$version" == *"-${source_ref:0:7}-sm86" ]]
+          [[ "$(grep -c "image: $IMAGE:$version" my-apps/ai/strata/deployment.yaml)" -eq 2 ]]
+          publish=false
+          if [[ "$EVENT_NAME" != "pull_request" || "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]]; then
+            publish=true
+          fi
+          printf 'publish=%s\nsource_ref=%s\ntag=%s\n' "$publish" "$source_ref" "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Check immutable tag
+        id: exists
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if docker buildx imagetools inspect "$IMAGE:$TAG" > /tmp/image-manifest 2>/dev/null; then
+            digest="$(awk '$1 == "Digest:" { print $2; exit }' /tmp/image-manifest)"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            printf 'digest=%s\nexists=true\n' "$digest" >> "$GITHUB_OUTPUT"
+          else
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Free runner disk for the CUDA devel base
+        if: steps.exists.outputs.exists != 'true'
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - name: Checkout Strata at the pinned commit
+        if: steps.exists.outputs.exists != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Niko1221/Strata
+          ref: ${{ steps.meta.outputs.source_ref }}
+          path: strata-src
+          persist-credentials: false
+
+      - name: Build for an AVX2 CPU, not the runner's
+        if: steps.exists.outputs.exists != 'true'
+        env:
+          SOURCE_REF: ${{ steps.meta.outputs.source_ref }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          [[ "$(git -C strata-src rev-parse HEAD)" == "$SOURCE_REF" ]]
+          grep -q "project(strata VERSION ${TAG%%-*} " strata-src/CMakeLists.txt
+          # Strata's Dockerfile builds ggml-cpu with -march=native for the build host; the GPU node is a
+          # Zen+ Threadripper (AVX2, no AVX-512). STRATA_PORTABLE is upstream's own AVX2 release build.
+          needle='["-DSTRATA_ENABLE_CUDA=ON", "-DSTRATA_BUILD_TESTS=OFF",'
+          [[ "$(grep -cF "$needle" strata-src/Dockerfile)" -eq 1 ]]
+          sed -i 's/\["-DSTRATA_ENABLE_CUDA=ON", "-DSTRATA_BUILD_TESTS=OFF",/["-DSTRATA_ENABLE_CUDA=ON", "-DSTRATA_BUILD_TESTS=OFF", "-DSTRATA_PORTABLE=ON",/' strata-src/Dockerfile
+          grep -qF '"-DSTRATA_PORTABLE=ON"' strata-src/Dockerfile
+          git -C strata-src diff --stat
+
+      - name: Login to GHCR
+        if: steps.meta.outputs.publish == 'true' && steps.exists.outputs.exists != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish server image
+        if: steps.exists.outputs.exists != 'true'
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: strata-src
+          file: strata-src/Dockerfile
+          platforms: linux/amd64
+          push: ${{ steps.meta.outputs.publish == 'true' }}
+          tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Niko1221/Strata
+            org.opencontainers.image.revision=${{ steps.meta.outputs.source_ref }}
+          build-args: |
+            CUDA_ARCHITECTURES=86
+            BUILD_VISION=0
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report image digest
+        env:
+          BUILT_DIGEST: ${{ steps.build.outputs.digest }}
+          EXISTING_DIGEST: ${{ steps.exists.outputs.digest }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          digest="${BUILT_DIGEST:-$EXISTING_DIGEST}"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          printf '### Strata CUDA image\n\n`%s:%s@%s`\n' "$IMAGE" "$TAG" "$digest" >> "$GITHUB_STEP_SUMMARY"

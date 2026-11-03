@@ -17,7 +17,7 @@ resources:
   - httproute.yaml
   - servicemonitor.yaml
 
-# vLLM owns both RTX 3090s; it is the only GPU inference backend.
+# vLLM owns one RTX 3090; Strata (my-apps/ai/strata) owns the other.
 replicas:
   - name: vllm-server
     count: 1

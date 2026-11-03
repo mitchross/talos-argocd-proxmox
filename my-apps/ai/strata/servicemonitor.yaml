@@ -1,0 +1,17 @@
+# Strata answers /metrics in Prometheus text (vLLM metric names) when the scraper asks for text/plain.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: strata
+  namespace: strata
+  labels:
+    app: strata-server
+spec:
+  selector:
+    matchLabels:
+      app: strata-server
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
