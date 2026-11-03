@@ -6,7 +6,7 @@ metadata:
   labels:
     app: strata-server
 spec:
-  # One whole RTX 3090; vLLM holds the other. Strata serves one request at a time (FIFO).
+  # Both RTX 3090s (layer split, vLLM parked). Strata serves one request at a time (FIFO).
   replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload on an RWO local volume
@@ -46,11 +46,11 @@ spec:
           resources:
             # Same as the server so the init step adds nothing to the pod's scheduling request.
             requests:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               cpu: "4"
               memory: 54Gi
             limits:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               memory: 64Gi
           volumeMounts:
             - name: repo-scripts
@@ -92,11 +92,11 @@ spec:
             # Low-RAM off: ~47 GiB expert arena + streamed KV + server; the GGUF page cache is reclaimable.
             # ~15 cores busy during decode (CPU-side experts).
             requests:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               cpu: "12"
               memory: 54Gi
             limits:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               memory: 64Gi
           volumeMounts:
             - name: data

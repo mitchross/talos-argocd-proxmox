@@ -1,6 +1,6 @@
 # AI model catalog
 
-**Three models. Two local, one paid.** Everything else is wiring.
+**Two models. One local, one paid.** Everything else is wiring.
 
 This page lists each model, where it runs, what it costs, and how the `pi-auto`
 router picks between them.
@@ -9,10 +9,15 @@ New to the stack? Read [Local AI starter kit](index.md) first.
 
 | Model | Where it runs | Cost | Reached as |
 |---|---|---|---|
-| `qwen3.8-27b` | RTX 3090 #1 (vLLM) | free | `qwen3.8-27b` |
-| `qwen3.8-flash-next` | RTX 3090 #2 (Strata), experts in host RAM | free | `qwen3.8-flash-next` |
+| `qwen3.8-27b` | your two RTX 3090s | free | `qwen3.8-27b` |
 | `deepseek-flash` | OpenRouter, external | paid | `deepseek-flash` |
 | `pi-auto` | picks between the two | mixed | `pi-auto` |
+| `qwen3.8-flash-next` | both RTX 3090s via Strata, **test only** | free | `qwen3.8-flash-next` |
+
+!!! warning "Strata test (temporary)"
+    vLLM is parked at 0 replicas and Strata holds both cards. LiteLLM sends
+    `qwen3.8-27b` to `deepseek-flash` (paid, prompts leave home)
+    until the test PR is reverted. Runbook: `my-apps/ai/strata/README.md`.
 
 !!! tip "In 10 seconds"
     - **Qwen**: local, free, private. The default for every app.
@@ -26,30 +31,31 @@ other two per request.
 
 | Backend | Replicas | Cards | Model | Status |
 |---|---:|---:|---|---|
-| vLLM | `1` | 1 | `qwen3.8-27b` | production |
-| Strata | `1` | 1 | `qwen3.8-flash-next` | new; one request at a time ([runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/strata/README.md)) |
+| vLLM | `0` (test) | **2** | `qwen3.8-27b` | production, parked for the Strata test |
+| Strata | `1` (test) | 2 | `qwen3.8-flash-next` | test; one request at a time |
 | NInfer | n/a | 1 | `qwen3.8-ninfer` | archived (`my-apps/ai/_archive/ninfer/`) |
 | ComfyUI / SwarmUI | `0` | 1 | image generation | parked |
 
-vLLM and Strata hold one card each. Other GPU workloads stay parked.
+Both cards belong to vLLM. Other GPU workloads stay parked.
 [GPU scale-swap](gpu-scale-swap.md) owns the procedure.
 
-## Local: Qwen3.8-27B
+## Local: Qwen3.8-27B FP8
 
 | Property | Value |
 |---|---|
 | Engine | stock vLLM, pinned image digest |
-| Weights | local W4A16 AutoRound checkpoint, INT8 `lm_head`, pinned by SHA-256 |
-| Placement | TP=1, one RTX 3090, no CPU offload |
+| Weights | official `Qwen/Qwen3.8-27B-FP8`, pinned revision |
+| Placement | TP=2, two RTX 3090s, no CPU offload |
 | KV / recurrent state | FP8 E4M3 / float16 |
-| Context ceiling | 65,536 tokens |
-| Concurrency | up to three sequences sharing the KV pool |
+| Context ceiling | 262,144 tokens |
+| Concurrency | up to eight sequences sharing the KV pool |
 | Vision | one image per request, video disabled |
 | Reasoning | off / low / medium / xhigh; **xhigh** default |
-| Speculation | MTP, 2 draft tokens |
+| Speculation | disabled |
 | Power | 220 W per card |
 
-65,536 tokens covers prompt plus output. Use `xhigh` by default for the accuracy-first policy; select `medium`
+262K is a server ceiling, not a promise of two simultaneous full-length
+sessions. Use `xhigh` by default for the accuracy-first policy; select `medium`
 or `low` for less reasoning, or explicitly turn thinking off. More reasoning
 can consume more time and tokens; a quality improvement is not guaranteed.
 
@@ -117,7 +123,7 @@ sequenceDiagram
 
 | Tier | Model | Effort | Runs on |
 |---|---|---|---|
-| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: xhigh | RTX 3090 #1 (vLLM), free |
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: xhigh | the two RTX 3090s, free |
 | `COMPLEX` | `deepseek-flash` | `high` | OpenRouter, paid |
 | `REASONING` | `deepseek-flash` | `max` | OpenRouter, paid |
 | classifier failed | `deepseek-flash` | as above | OpenRouter, paid |

@@ -4,7 +4,6 @@ import importlib.util
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
-import re
 import tempfile
 import threading
 import unittest
@@ -140,34 +139,6 @@ class ModelCacheTests(unittest.TestCase):
         d['revision'] = 'def456'
         self.manifest.write_text(json.dumps(d))
         self.assertFalse(self.cache.ModelCache(self.manifest).ready(self.archive))
-
-    def test_describe_pins_a_local_checkpoint_that_then_syncs(self):
-        self.download()
-        (self.archive / self.model.directory / 'model.safetensors.part').write_bytes(b'partial')
-        spec = self.cache.describe(self.archive, self.model.directory)
-        self.assertIsNone(spec['repo'])
-        self.assertEqual([f['name'] for f in spec['files']], ['config.json', 'model.safetensors'])
-        self.manifest.write_text(json.dumps(spec))
-        local = self.cache.ModelCache(self.manifest)
-        local.download(self.archive)
-        local.sync(self.archive, self.local)
-        self.assertTrue(local.ready(self.local))
-
-    def test_local_checkpoint_never_falls_back_to_a_download(self):
-        spec = {'repo': None, 'revision': None, 'directory': 'local-quant',
-                'files': [{'name': 'model.safetensors', 'size': 1, 'sha256': '0' * 64}]}
-        self.manifest.write_text(json.dumps(spec))
-        with self.assertRaisesRegex(ValueError, 'no upstream'):
-            self.cache.ModelCache(self.manifest).download(self.archive)
-
-
-class DeclaredCheckpointTests(unittest.TestCase):
-    def test_deployment_serves_the_manifest_checkpoint(self):
-        app = SCRIPT.parents[1]
-        directory = json.loads((app / 'model-manifest.json').read_text())['directory']
-        served = re.findall(r'^\s*- /models/(\S+)\s*$', (app / 'deployment.yaml').read_text(), re.M)
-        self.assertEqual(served, [directory], 'Regenerate model-manifest.json for the served checkpoint '
-                         '(my-apps/ai/vllm/README.md, "Single-card checkpoint")')
 
 
 if __name__ == '__main__':

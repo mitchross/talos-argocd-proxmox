@@ -25,7 +25,8 @@ Two things make this safe:
 
 | App | Cards | `replicas` in git | File |
 |---|---:|---:|---|
-| **vLLM** (Qwen3.8-27B FP8) | **2** | `1` | `my-apps/ai/vllm/deployment.yaml` |
+| **vLLM** (Qwen3.8-27B FP8) | **2** | `0` during the Strata test, else `1` | `my-apps/ai/vllm/kustomization.yaml` |
+| Strata (Qwen3.8-Flash-Next, test) | 2 | `1` | `my-apps/ai/strata/deployment.yaml` |
 | NInfer-3090 (archived, not deployed) | 1 | n/a | `my-apps/ai/_archive/ninfer/deployment.yaml` |
 | ComfyUI | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | SwarmUI | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |

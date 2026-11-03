@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "run_id": "20261103T233254Z",
+    "base_url": "http://litellm-service.litellm.svc.cluster.local:4000/v1",
+    "models": [
+      "qwen3.8-27b"
+    ],
+    "thinking": "off",
+    "repeats": 1,
+    "seed": 1234,
+    "started": "2026-11-03 23:32:54Z",
+    "prompts_file": "compare-prompts.json",
+    "prompt_ids": [
+      "short-chat",
+      "prefill-8k",
+      "coding",
+      "reverse-engineering"
+    ],
+    "needle": "The maintenance access code for rack seven is JADE-4471."
+  },
+  "summary": [
+    {
+      "prompt_id": "short-chat",
+      "model": "qwen3.8-27b",
+      "runs": 1,
+      "errors": 0,
+      "ttft_s": 0.35,
+      "prefill_tps": 217.8,
+      "decode_tps": 41.84,
+      "total_s": 3.52,
+      "prompt_tokens": 76,
+      "completion_tokens": 131,
+      "finish": "stop",
+      "expect_found": null
+    },
+    {
+      "prompt_id": "prefill-8k",
+      "model": "qwen3.8-27b",
+      "runs": 1,
+      "errors": 0,
+      "ttft_s": 6.38,
+      "prefill_tps": 976.2,
+      "decode_tps": 58.35,
+      "total_s": 6.55,
+      "prompt_tokens": 6227,
+      "completion_tokens": 8,
+      "finish": "stop",
+      "expect_found": true
+    },
+    {
+      "prompt_id": "coding",
+      "model": "qwen3.8-27b",
+      "runs": 1,
+      "errors": 0,
+      "ttft_s": 0.25,
+      "prefill_tps": 573.1,
+      "decode_tps": 41.35,
+      "total_s": 25.03,
+      "prompt_tokens": 145,
+      "completion_tokens": 1021,
+      "finish": "stop",
+      "expect_found": null
+    },
+    {
+      "prompt_id": "reverse-engineering",
+      "model": "qwen3.8-27b",
+      "runs": 1,
+      "errors": 0,
+      "ttft_s": 0.43,
+      "prefill_tps": 546.9,
+      "decode_tps": 40.62,
+      "total_s": 30.29,
+      "prompt_tokens": 233,
+      "completion_tokens": 1209,
+      "finish": "stop",
+      "expect_found": null
+    }
+  ],
+  "side_by_side": {
+    "short-chat": {
+      "qwen3.8-27b": {
+        "prompt_id": "short-chat",
+        "model": "qwen3.8-27b",
+        "repeat": 0,
+        "status": 200,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_tokens": 76,
+        "completion_tokens": 131,
+        "ttft_s": 0.349,
+        "decode_tps": 41.84,
+        "total_s": 3.515,
+        "prefill_tps": 217.8,
+        "content": "A Kubernetes Deployment manages a set of identical, stateless Pods where each instance is interchangeable and can be scaled or replaced independently, making it ideal for web servers or microservices that do not require persistent data or unique identities. In contrast, a StatefulSet provides stable network identifiers (unique names and DNS records) and ordered deployment or scaling guarantees, ensuring that specific Pod instances always bind to the same persistent storage volumes. You should choose a Deployment for scalable, stateless applications like APIs or frontends, while reserving StatefulSets for stateful workloads such as databases, message queues, or distributed systems that rely on consistent identity and data persistence.",
+        "reasoning": ""
+      }
+    },
+    "prefill-8k": {
+      "qwen3.8-27b": {
+        "prompt_id": "prefill-8k",
+        "model": "qwen3.8-27b",
+        "repeat": 0,
+        "status": 200,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_tokens": 6227,
+        "completion_tokens": 8,
+        "ttft_s": 6.379,
+        "decode_tps": 58.35,
+        "total_s": 6.554,
+        "prefill_tps": 976.2,
+        "content": "JADE-4471",
+        "reasoning": "",
+        "expect_found": true
+      }
+    },
+    "coding": {
+      "qwen3.8-27b": {
+        "prompt_id": "coding",
+        "model": "qwen3.8-27b",
+        "repeat": 0,
+        "status": 200,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_tokens": 145,
+        "completion_tokens": 1021,
+        "ttft_s": 0.253,
+        "decode_tps": 41.35,
+        "total_s": 25.03,
+        "prefill_tps": 573.1,
+        "content": "```python\nimport unittest\n\n\ndef parse_quantity(s: str) -> float:\n    \"\"\"Convert Kubernetes resource quantity to a plain number.\"\"\"\n    if not isinstance(s, str):\n        raise ValueError(\"Input must be a string\")\n\n    s = s.strip()\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    # Define suffix multipliers\n    binary_suffixes = {\n        'Ki': 1024 ** 1,\n        'Mi': 1024 ** 2,\n        'Gi': 1024 ** 3,\n        'Ti': 1024 ** 4,\n        'Pi': 1024 ** 5,\n        'Ei': 1024 ** 6,\n    }\n\n    decimal_suffixes = {\n        'n': 1e-9,\n        'u': 1e-6,\n        'm': 1e-3,\n        'k': 1e3,\n        'M': 1e6,\n        'G': 1e9,\n        'T': 1e12,\n        'P': 1e15,\n        'E': 1e18,\n    }\n\n    # Check for binary suffixes first (two chars)\n    multiplier = 1.0\n    numeric_part = s\n\n    found_suffix = False\n    for suffix in ['Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei']:\n        if s.endswith(suffix):\n            numeric_part = s[:-len(suffix)]\n            multiplier = binary_suffixes[suffix]\n            found_suffix = True\n            break\n\n    if not found_suffix:\n        # Check for decimal suffixes (one char)\n        for suffix in ['n', 'u', 'm', 'k', 'M', 'G', 'T', 'P', 'E']:\n            if s.endswith(suffix):\n                numeric_part = s[:-len(suffix)]\n                multiplier = decimal_suffixes[suffix]\n                found_suffix = True\n                break\n\n    # Parse the numeric part\n    numeric_part = numeric_part.strip()\n    if not numeric_part:\n        raise ValueError(f\"Invalid quantity: '{s}'\")\n\n    try:\n        value = float(numeric_part)\n    except ValueError:\n        raise ValueError(f\"Invalid numeric part: '{numeric_part}' in quantity '{s}'\")\n\n    return value * multiplier\n\n\nclass TestParseQuantity(unittest.TestCase):\n    def test_binary_suffixes(self):\n        self.assertEqual(parse_quantity('1Ki'), 1024.0)\n        self.assertEqual(parse_quantity('2Mi'), 2 * 1024 ** 2)\n        self.assertEqual(parse_quantity('3Gi'), 3 * 1024 ** 3)\n        self.assertEqual(parse_quantity('4Ti'), 4 * 1024 ** 4)\n        self.assertEqual(parse_quantity('5Pi'), 5 * 1024 ** 5)\n        self.assertEqual(parse_quantity('6Ei'), 6 * 1024 ** 6)\n\n    def test_decimal_suffixes(self):\n        self.assertAlmostEqual(parse_quantity('1n'), 1e-9)\n        self.assertAlmostEqual(parse_quantity('2u'), 2e-6)\n        self.assertAlmostEqual(parse_quantity('3m'), 3e-3)\n        self.assertAlmostEqual(parse_quantity('4k'), 4e3)\n        self.assertAlmostEqual(parse_quantity('5M'), 5e6)\n        self.assertAlmostEqual(parse_quantity('6G'), 6e9)\n        self.assertAlmostEqual(parse_quantity('7T'), 7e12)\n        self.assertAlmostEqual(parse_quantity('8P'), 8e15)\n        self.assertAlmostEqual(parse_quantity('9E'), 9e18)\n\n    def test_plain_integers_and_decimals(self):\n        self.assertEqual(parse_quantity('123'), 123.0)\n        self.assertAlmostEqual(parse_quantity('1.5'), 1.5)\n        self.assertAlmostEqual(parse_quantity('0.001'), 0.001)\n\n    def test_exponent_form(self):\n        self.assertAlmostEqual(parse_quantity('2e3'), 2000.0)\n        self.assertAlmostEqual(parse_quantity('1.5e2'), 150.0)\n        self.assertAlmostEqual(parse_quantity('3e-2'), 0.03)\n\n    def test_invalid_inputs(self):\n        with self.assertRaises(ValueError):\n            parse_quantity('abc')\n        with self.assertRaises(ValueError):\n            parse_quantity('12X')\n\n\nif __name__ == '__main__':\n    unittest.main()\n```",
+        "reasoning": ""
+      }
+    },
+    "reverse-engineering": {
+      "qwen3.8-27b": {
+        "prompt_id": "reverse-engineering",
+        "model": "qwen3.8-27b",
+        "repeat": 0,
+        "status": 200,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_tokens": 233,
+        "completion_tokens": 1209,
+        "ttft_s": 0.426,
+        "decode_tps": 40.62,
+        "total_s": 30.294,
+        "prefill_tps": 546.9,
+        "content": "Here is the analysis of the provided x86-64 assembly function.\n\n### 1. C Prototype with Argument Roles\n\n```c\nvoid decode(uint8_t *buffer, size_t length, const uint8_t *key_table);\n```\n\n*   **`rdi` (`buffer`)**: Pointer to the data buffer to be modified in-place.\n*   **`rsi` (`length`)**: The number of bytes in the buffer to process.\n*   **`rdx` (`key_table`)**: Pointer to an 8-byte lookup table used for decryption.\n\n---\n\n### 2. Equivalent C Code\n\nThe assembly implements a byte-wise decryption loop. For each byte in the buffer:\n1.  It reads the current byte.\n2.  It calculates an index into the key table using the lower 3 bits of the current byte position (i.e., `position % 8`).\n3.  It XORs the byte with the corresponding key byte.\n4.  It rotates the result left by 3 bits.\n5.  It stores the result back into the buffer.\n\n```c\n#include <stdint.h>\n#include <stddef.h>\n\nvoid decode(uint8_t *buffer, size_t length, const uint8_t *key_table) {\n    if (length == 0) return; // test rsi, rsi / je .done\n\n    for (size_t i = 0; i < length; i++) {\n        uint8_t val = buffer[i];\n        \n        // Index into the 8-byte key table using the lower 3 bits of the index\n        uint8_t key_byte = key_table[i & 7];\n        \n        // XOR with key\n        val ^= key_byte;\n        \n        // Rotate Left by 3 bits\n        // Note: ROL on a byte wraps around. \n        // In C: ((val << 3) | (val >> 5)) & 0xFF\n        val = (val << 3) | (val >> 5);\n        \n        buffer[i] = val;\n    }\n}\n```\n\n---\n\n### 3. What is the 8-byte table at `rdx` for?\n\nThe 8-byte table at `rdx` is a **repeating XOR key** (also known as a Vigen\u00e8re cipher key or keystream).\n\n*   The instruction `and r8d, 7` masks the loop counter (`rax`) with `7` (binary `111`). This effectively computes `i % 8`.\n*   This means the key repeats every 8 bytes. The first byte of the buffer is XORed with `key_table[0]`, the second with `key_table[1]`, ..., the eighth with `key_table[7]`, and the ninth again with `key_table[0]`.\n*   This is a common technique in simple ciphers to avoid using a single repeating byte, providing slightly more diffusion than a monoalphabetic substitution while remaining computationally cheap.\n\n---\n\n### 4. Function that Undoes the Transformation (Encryption/Inverse)\n\nTo reverse the transformation, we must apply the inverse operations in reverse order.\n\n**Original Operation per byte:**\n1.  `val = buffer[i]`\n2.  `val = val ^ key[i%8]`\n3.  `val = ROL(val, 3)`\n4.  `buffer[i] = val`\n\n**Inverse Operation per byte:**\n1.  `val = buffer[i]` (which is the encrypted value)\n2.  `val = ROR(val, 3)` (Inverse of ROL 3 is ROR 3)\n3.  `val = val ^ key[i%8]` (XOR is its own inverse)\n4.  `buffer[i] = val`\n\n#### C Code for the Inverse Function (`encode`):\n\n```c\n#include <stdint.h>\n#include <stddef.h>\n\nvoid encode(uint8_t *buffer, size_t length, const uint8_t *key_table) {\n    if (length == 0) return;\n\n    for (size_t i = 0; i < length; i++) {\n        uint8_t val = buffer[i];\n        \n        // Step 1: Reverse the rotation (Rotate Right by 3)\n        // ROR 3: (val >> 3) | (val << 5)\n        val = (val >> 3) | (val << 5);\n        \n        // Step 2: XOR with the same key byte (XOR is symmetric)\n        val ^= key_table[i & 7];\n        \n        buffer[i] = val;\n    }\n}\n```\n\n#### Assembly for the Inverse Function (Optional, for completeness):\n\nIf you wanted to write the inverse in assembly similar to the original:\n\n```asm\nencode:\n    test    rsi, rsi\n    je      .done_enc\n.loop_enc:\n    movzx   ecx, byte ptr [rdi+rax]\n    \n    ; ROR cl, 3\n    rol     cl, 5       ; ROL 5 is equivalent to ROR 3 for 8-bit values\n    \n    ; XOR with key\n    mov     r8d, eax\n    and     r8d, 7\n    xor     cl, byte ptr [rdx+r8]\n    \n    mov     byte ptr [rdi+rax], cl\n    inc     rax\n    cmp     rax, rsi\n    jne     .loop_enc\n.done_enc:\n    ret\n```",
+        "reasoning": ""
+      }
+    }
+  },
+  "results": [
+    {
+      "prompt_id": "short-chat",
+      "model": "qwen3.8-27b",
+      "repeat": 0,
+      "status": 200,
+      "error": null,
+      "finish_reason": "stop",
+      "prompt_tokens": 76,
+      "completion_tokens": 131,
+      "ttft_s": 0.349,
+      "decode_tps": 41.84,
+      "total_s": 3.515,
+      "prefill_tps": 217.8,
+      "content": "A Kubernetes Deployment manages a set of identical, stateless Pods where each instance is interchangeable and can be scaled or replaced independently, making it ideal for web servers or microservices that do not require persistent data or unique identities. In contrast, a StatefulSet provides stable network identifiers (unique names and DNS records) and ordered deployment or scaling guarantees, ensuring that specific Pod instances always bind to the same persistent storage volumes. You should choose a Deployment for scalable, stateless applications like APIs or frontends, while reserving StatefulSets for stateful workloads such as databases, message queues, or distributed systems that rely on consistent identity and data persistence.",
+      "reasoning": ""
+    },
+    {
+      "prompt_id": "prefill-8k",
+      "model": "qwen3.8-27b",
+      "repeat": 0,
+      "status": 200,
+      "error": null,
+      "finish_reason": "stop",
+      "prompt_tokens": 6227,
+      "completion_tokens": 8,
+      "ttft_s": 6.379,
+      "decode_tps": 58.35,
+      "total_s": 6.554,
+      "prefill_tps": 976.2,
+      "content": "JADE-4471",
+      "reasoning": "",
+      "expect_found": true
+    },
+    {
+      "prompt_id": "coding",
+      "model": "qwen3.8-27b",
+      "repeat": 0,
+      "status": 200,
+      "error": null,
+      "finish_reason": "stop",
+      "prompt_tokens": 145,
+      "completion_tokens": 1021,
+      "ttft_s": 0.253,
+      "decode_tps": 41.35,
+      "total_s": 25.03,
+      "prefill_tps": 573.1,
+      "content": "```python\nimport unittest\n\n\ndef parse_quantity(s: str) -> float:\n    \"\"\"Convert Kubernetes resource quantity to a plain number.\"\"\"\n    if not isinstance(s, str):\n        raise ValueError(\"Input must be a string\")\n\n    s = s.strip()\n    if not s:\n        raise ValueError(\"Empty string\")\n\n    # Define suffix multipliers\n    binary_suffixes = {\n        'Ki': 1024 ** 1,\n        'Mi': 1024 ** 2,\n        'Gi': 1024 ** 3,\n        'Ti': 1024 ** 4,\n        'Pi': 1024 ** 5,\n        'Ei': 1024 ** 6,\n    }\n\n    decimal_suffixes = {\n        'n': 1e-9,\n        'u': 1e-6,\n        'm': 1e-3,\n        'k': 1e3,\n        'M': 1e6,\n        'G': 1e9,\n        'T': 1e12,\n        'P': 1e15,\n        'E': 1e18,\n    }\n\n    # Check for binary suffixes first (two chars)\n    multiplier = 1.0\n    numeric_part = s\n\n    found_suffix = False\n    for suffix in ['Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei']:\n        if s.endswith(suffix):\n            numeric_part = s[:-len(suffix)]\n            multiplier = binary_suffixes[suffix]\n            found_suffix = True\n            break\n\n    if not found_suffix:\n        # Check for decimal suffixes (one char)\n        for suffix in ['n', 'u', 'm', 'k', 'M', 'G', 'T', 'P', 'E']:\n            if s.endswith(suffix):\n                numeric_part = s[:-len(suffix)]\n                multiplier = decimal_suffixes[suffix]\n                found_suffix = True\n                break\n\n    # Parse the numeric part\n    numeric_part = numeric_part.strip()\n    if not numeric_part:\n        raise ValueError(f\"Invalid quantity: '{s}'\")\n\n    try:\n        value = float(numeric_part)\n    except ValueError:\n        raise ValueError(f\"Invalid numeric part: '{numeric_part}' in quantity '{s}'\")\n\n    return value * multiplier\n\n\nclass TestParseQuantity(unittest.TestCase):\n    def test_binary_suffixes(self):\n        self.assertEqual(parse_quantity('1Ki'), 1024.0)\n        self.assertEqual(parse_quantity('2Mi'), 2 * 1024 ** 2)\n        self.assertEqual(parse_quantity('3Gi'), 3 * 1024 ** 3)\n        self.assertEqual(parse_quantity('4Ti'), 4 * 1024 ** 4)\n        self.assertEqual(parse_quantity('5Pi'), 5 * 1024 ** 5)\n        self.assertEqual(parse_quantity('6Ei'), 6 * 1024 ** 6)\n\n    def test_decimal_suffixes(self):\n        self.assertAlmostEqual(parse_quantity('1n'), 1e-9)\n        self.assertAlmostEqual(parse_quantity('2u'), 2e-6)\n        self.assertAlmostEqual(parse_quantity('3m'), 3e-3)\n        self.assertAlmostEqual(parse_quantity('4k'), 4e3)\n        self.assertAlmostEqual(parse_quantity('5M'), 5e6)\n        self.assertAlmostEqual(parse_quantity('6G'), 6e9)\n        self.assertAlmostEqual(parse_quantity('7T'), 7e12)\n        self.assertAlmostEqual(parse_quantity('8P'), 8e15)\n        self.assertAlmostEqual(parse_quantity('9E'), 9e18)\n\n    def test_plain_integers_and_decimals(self):\n        self.assertEqual(parse_quantity('123'), 123.0)\n        self.assertAlmostEqual(parse_quantity('1.5'), 1.5)\n        self.assertAlmostEqual(parse_quantity('0.001'), 0.001)\n\n    def test_exponent_form(self):\n        self.assertAlmostEqual(parse_quantity('2e3'), 2000.0)\n        self.assertAlmostEqual(parse_quantity('1.5e2'), 150.0)\n        self.assertAlmostEqual(parse_quantity('3e-2'), 0.03)\n\n    def test_invalid_inputs(self):\n        with self.assertRaises(ValueError):\n            parse_quantity('abc')\n        with self.assertRaises(ValueError):\n            parse_quantity('12X')\n\n\nif __name__ == '__main__':\n    unittest.main()\n```",
+      "reasoning": ""
+    },
+    {
+      "prompt_id": "reverse-engineering",
+      "model": "qwen3.8-27b",
+      "repeat": 0,
+      "status": 200,
+      "error": null,
+      "finish_reason": "stop",
+      "prompt_tokens": 233,
+      "completion_tokens": 1209,
+      "ttft_s": 0.426,
+      "decode_tps": 40.62,
+      "total_s": 30.294,
+      "prefill_tps": 546.9,
+      "content": "Here is the analysis of the provided x86-64 assembly function.\n\n### 1. C Prototype with Argument Roles\n\n```c\nvoid decode(uint8_t *buffer, size_t length, const uint8_t *key_table);\n```\n\n*   **`rdi` (`buffer`)**: Pointer to the data buffer to be modified in-place.\n*   **`rsi` (`length`)**: The number of bytes in the buffer to process.\n*   **`rdx` (`key_table`)**: Pointer to an 8-byte lookup table used for decryption.\n\n---\n\n### 2. Equivalent C Code\n\nThe assembly implements a byte-wise decryption loop. For each byte in the buffer:\n1.  It reads the current byte.\n2.  It calculates an index into the key table using the lower 3 bits of the current byte position (i.e., `position % 8`).\n3.  It XORs the byte with the corresponding key byte.\n4.  It rotates the result left by 3 bits.\n5.  It stores the result back into the buffer.\n\n```c\n#include <stdint.h>\n#include <stddef.h>\n\nvoid decode(uint8_t *buffer, size_t length, const uint8_t *key_table) {\n    if (length == 0) return; // test rsi, rsi / je .done\n\n    for (size_t i = 0; i < length; i++) {\n        uint8_t val = buffer[i];\n        \n        // Index into the 8-byte key table using the lower 3 bits of the index\n        uint8_t key_byte = key_table[i & 7];\n        \n        // XOR with key\n        val ^= key_byte;\n        \n        // Rotate Left by 3 bits\n        // Note: ROL on a byte wraps around. \n        // In C: ((val << 3) | (val >> 5)) & 0xFF\n        val = (val << 3) | (val >> 5);\n        \n        buffer[i] = val;\n    }\n}\n```\n\n---\n\n### 3. What is the 8-byte table at `rdx` for?\n\nThe 8-byte table at `rdx` is a **repeating XOR key** (also known as a Vigen\u00e8re cipher key or keystream).\n\n*   The instruction `and r8d, 7` masks the loop counter (`rax`) with `7` (binary `111`). This effectively computes `i % 8`.\n*   This means the key repeats every 8 bytes. The first byte of the buffer is XORed with `key_table[0]`, the second with `key_table[1]`, ..., the eighth with `key_table[7]`, and the ninth again with `key_table[0]`.\n*   This is a common technique in simple ciphers to avoid using a single repeating byte, providing slightly more diffusion than a monoalphabetic substitution while remaining computationally cheap.\n\n---\n\n### 4. Function that Undoes the Transformation (Encryption/Inverse)\n\nTo reverse the transformation, we must apply the inverse operations in reverse order.\n\n**Original Operation per byte:**\n1.  `val = buffer[i]`\n2.  `val = val ^ key[i%8]`\n3.  `val = ROL(val, 3)`\n4.  `buffer[i] = val`\n\n**Inverse Operation per byte:**\n1.  `val = buffer[i]` (which is the encrypted value)\n2.  `val = ROR(val, 3)` (Inverse of ROL 3 is ROR 3)\n3.  `val = val ^ key[i%8]` (XOR is its own inverse)\n4.  `buffer[i] = val`\n\n#### C Code for the Inverse Function (`encode`):\n\n```c\n#include <stdint.h>\n#include <stddef.h>\n\nvoid encode(uint8_t *buffer, size_t length, const uint8_t *key_table) {\n    if (length == 0) return;\n\n    for (size_t i = 0; i < length; i++) {\n        uint8_t val = buffer[i];\n        \n        // Step 1: Reverse the rotation (Rotate Right by 3)\n        // ROR 3: (val >> 3) | (val << 5)\n        val = (val >> 3) | (val << 5);\n        \n        // Step 2: XOR with the same key byte (XOR is symmetric)\n        val ^= key_table[i & 7];\n        \n        buffer[i] = val;\n    }\n}\n```\n\n#### Assembly for the Inverse Function (Optional, for completeness):\n\nIf you wanted to write the inverse in assembly similar to the original:\n\n```asm\nencode:\n    test    rsi, rsi\n    je      .done_enc\n.loop_enc:\n    movzx   ecx, byte ptr [rdi+rax]\n    \n    ; ROR cl, 3\n    rol     cl, 5       ; ROL 5 is equivalent to ROR 3 for 8-bit values\n    \n    ; XOR with key\n    mov     r8d, eax\n    and     r8d, 7\n    xor     cl, byte ptr [rdx+r8]\n    \n    mov     byte ptr [rdi+rax], cl\n    inc     rax\n    cmp     rax, rsi\n    jne     .loop_enc\n.done_enc:\n    ret\n```",
+      "reasoning": ""
+    }
+  ]
+}

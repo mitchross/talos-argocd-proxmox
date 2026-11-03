@@ -8,8 +8,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"    # after the wave-0 cache-sync hook
 spec:
-  # One whole card; the other belongs to Strata (my-apps/ai/strata).
-  replicas: 1
+  # Parked (0) while Strata tests both cards (my-apps/ai/strata/); 1 gives it both cards back.
+  replicas: 0
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1
@@ -63,22 +63,26 @@ spec:
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
-            # FP8 weights (28.8 GiB) do not fit one 24 GiB card; this is the single-card W4A16 + INT8 lm_head checkpoint.
-            - /models/Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead
+            - /models/Qwen3.8-27B-FP8-017b9c7af6b5
             - --served-model-name
             - qwen3.8-27b
+            - --quantization
+            - fp8
             - --dtype
             - bfloat16
             - --tensor-parallel-size
-            - "1"
-            # 0.90 left 1.9 GiB KV with MTP, short of the 2.45 GiB one 65,536-token request needs (v0.28 boot log).
+            - "2"
+            - --distributed-executor-backend
+            - mp
+            # Guest topology reports no peer access; use NCCL host transport.
+            - --disable-custom-all-reduce
             - --gpu-memory-utilization
-            - "0.93"
+            - "0.92"
             - --max-model-len
-            - "65536"
-            # Slot count only; the KV pool (boot log "GPU KV cache size") bounds what runs.
+            - "262144"
+            # Slot count only; the KV pool (boot log "GPU KV cache size") bounds what runs. Two slots queued Hindsight retries 50 deep.
             - --max-num-seqs
-            - "3"
+            - "8"
             - --limit-mm-per-prompt
             - '{"image":1,"video":0}'
             - --async-scheduling
@@ -105,12 +109,13 @@ spec:
             - --prefix-match-unit
             - "16"
             - --enable-chunked-prefill
-            # 8192 inflates the profiled activation peak and shrinks a single card's KV pool.
+            # 8192 tokens per step across up to two requests; the 4096 threshold caps each request's prefill chunk.
+            # Benchmark latency and KV headroom before changing either.
             - --max-num-batched-tokens
-            - "2048"
-            # Single-card config from git history (#2102). GDN spec-decode fix vllm#50021 is still open: drop this if long sessions fault.
-            - --speculative-config
-            - '{"method":"mtp","num_speculative_tokens":2}'
+            - "8192"
+            - --long-prefill-token-threshold
+            - "4096"
+            # Speculation stays off until the GDN long-session faults are fixed.
             # Sampler is a community-reported mitigation (QwenLM/Qwen3.8#216), not an upstream default; keep WebUI/Pi thinking=1.05, off=1.0 in sync.
             - --override-generation-config
             - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.05}'
@@ -128,6 +133,12 @@ spec:
               value: "1"
             - name: VLLM_NO_USAGE_STATS
               value: "1"
+            - name: VLLM_WORKER_MULTIPROC_METHOD
+              value: spawn
+            - name: NCCL_P2P_DISABLE
+              value: "1"
+            - name: NCCL_CUMEM_ENABLE
+              value: "0"
             - name: OMP_NUM_THREADS
               value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
@@ -141,7 +152,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 360        # a cold load plus torch.compile can take minutes
+            failureThreshold: 360        # TP load of a 27B can take minutes
           livenessProbe:
             httpGet: { path: /health, port: http }
             initialDelaySeconds: 60
@@ -155,13 +166,14 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
+            # Host RAM includes loading and shared-memory transport between GPUs.
             requests:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               cpu: "1"
               # Keep loading headroom without reserving another full model in RAM.
               memory: 8Gi
             limits:
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               memory: 64Gi
           volumeMounts:
             - name: models

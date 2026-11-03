@@ -1,6 +1,8 @@
-# vLLM — Qwen3.8-27B on one RTX 3090
+# vLLM — official Qwen3.8-27B FP8 on two RTX 3090s
 
-The node's other 3090 runs Strata (Qwen3.8-Flash-Next, [`../strata/`](../strata/README.md)).
+> **Parked (`replicas: 0`) during the Strata two-card test** ([`../strata/`](../strata/README.md)).
+> The settings below are unchanged; `qwen3.8-27b` falls back to `deepseek-flash` in LiteLLM meanwhile.
+> Revert the test PR to bring this server back on both cards.
 
 **Git-declared backend and operating policy.** The
 [2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
@@ -10,25 +12,28 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 
 | Setting | Value |
 |---|---|
-| Model | `Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead`: local W4A16 AutoRound of Qwen3.8-27B, INT8 `lm_head`, BF16 `embed_tokens` |
+| Model | Official `Qwen/Qwen3.8-27B-FP8`, no Unsloth/GGUF conversion |
+| Revision | `017b9c7af6b5689d5dd426a76e0bc077eb5ca20a` |
 | Runtime | stock vLLM, pinned immutable image digest |
-| GPUs | 1 × RTX 3090, tensor parallel 1 |
-| Context ceiling | 65,536 tokens (prompt plus output) |
-| Concurrency | up to three sequences sharing one KV pool; the pool, not the slot count, bounds what runs |
+| GPUs | 2 × RTX 3090, tensor parallel 2, multiprocessing executor |
+| Interconnect | no custom all-reduce; NCCL P2P disabled; shared host transport |
+| Context ceiling | 262,144 tokens, native model limit, no RoPE extrapolation |
+| Concurrency | up to eight sequences sharing one KV pool; the pool, not the slot count, bounds what runs |
 | Attention | FlashInfer explicitly selected for Ampere FP8 KV |
 | KV / recurrent state | `fp8_e4m3` / float16 |
-| GPU utilization budget | 0.93 (0.90 left too little KV for one 65,536-token request) |
-| Prefill | 2,048-token budget per step |
+| GPU utilization budget | 0.92 per GPU |
+| Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
 | Reasoning | on, explicit `xhigh` default; `low` and `medium` per request |
-| Speculation | MTP, 2 draft tokens |
+| Speculation | **off**; no MTP or external drafter |
 | Power | existing 220 W per card |
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
 
-The official FP8 checkpoint is 28.77 GiB and does not fit one 24 GiB card, so
-the single card serves the W4A16 checkpoint it ran before the dual-card setup
-(#2102). The FP8 files stay on the NFS archive and the node cache for a return
-to two cards.
+FP8 weights use an Ampere-compatible weight-only path; a 3090 does not gain
+native FP8 arithmetic. The official checkpoint is roughly 30.89 GB (28.77
+GiB), shared across both cards. The retained AutoRound INT4 checkpoint is for
+a later controlled speed comparison, not the active choice.
+[Official checkpoint](https://huggingface.co/Qwen/Qwen3.8-27B-FP8)
 
 FlashInfer is explicitly selected: vLLM 0.28.0's Triton backend rejects FP8
 KV on SM86. The official checkpoint does not contain calibrated K/V scales;
@@ -39,9 +44,10 @@ checks part of acceptance, not just throughput checks. No unsupported legacy
 [Triton architecture guard](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/v1/attention/backends/triton_attn.py),
 [KV scale handling](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/model_executor/layers/quantization/kv_cache.py).
 
-MTP with two draft tokens is back on, as in the earlier single-card setup.
-The upstream GDN spec-decode fix is still open; if long sessions fault, remove
-the two `--speculative-config` lines first.
+Speculation remains disabled pending validation of the GDN/Mamba long-session
+fault fixes. No community kernel patches, W4A8 overlays, or experimental
+speculative backports are installed. Revisit MTP only against a fixed runtime
+and a long-session regression test.
 [Upstream fault/fix discussion](https://github.com/vllm-project/vllm/pull/50021)
 
 ## Endpoints and client compatibility
@@ -113,9 +119,13 @@ does not replace weights or claim a universal cure for thinking loops.
 
 ## Tuning policy and evidence limits
 
-`--max-num-batched-tokens 2048` is the per-step scheduling budget. A larger
-budget raises the profiled activation peak and takes VRAM from the KV pool,
-which one card cannot spare.
+`--max-num-batched-tokens 8192` is the aggregate scheduling budget;
+`--long-prefill-token-threshold 4096` caps the prefill chunk of each request.
+That cap is active even at two sequence slots. A single long prompt therefore
+does not receive 8,192-token chunks. Alignment, available tokens, vision and
+other scheduler constraints can reduce chunks further. This is an intentional
+8192/4096 profile, not a claim of four times fewer steps or a measured speedup.
+[Versioned scheduler](https://github.com/vllm-project/vllm/blob/v0.29.0/vllm/v1/core/sched/scheduler.py).
 
 `align` and `prefix-match-unit=16` explicitly pin cache behavior; the latter is
 matching granularity, not a recurrent-state checkpoint every 16 tokens.
@@ -206,37 +216,17 @@ a failure; empty content accompanying a valid tool call is normal. Stop on
 loops, malformed tool output or lost history and inspect payloads before
 changing runtime flags.
 
-## Single-card checkpoint
-
-The W4A16 checkpoint was quantized locally and has no Hugging Face revision.
-`model-manifest.json` pins it with `"repo": null`, so the download Job only
-verifies the archive copy and never fetches anything. Generate the manifest
-from the NFS archive once, before merging a checkpoint change:
-
-```bash
-kubectl -n vllm create configmap vllm-describe-checkpoint \
-  --from-file=model_cache.py=my-apps/ai/vllm/scripts/model_cache.py
-kubectl apply -f my-apps/ai/vllm/manual/describe-checkpoint-job.yaml
-kubectl -n vllm wait --for=condition=complete job/vllm-describe-checkpoint --timeout=2h
-kubectl -n vllm logs job/vllm-describe-checkpoint > my-apps/ai/vllm/model-manifest.json
-kubectl -n vllm delete job/vllm-describe-checkpoint configmap/vllm-describe-checkpoint
-```
-
-Expected: a JSON file with `"repo": null`, the checkpoint directory and one
-size and SHA-256 per file. `test_vllm_model_cache.py` fails until the manifest
-names the directory the Deployment serves.
-
 ## Reproducible staging
 
-`model-manifest.json` pins every checkpoint file by exact byte count and
-SHA-256 (and by revision when the checkpoint has an upstream).
+`model-manifest.json` pins 77 necessary checkpoint/tokenizer/vision files by
+revision, exact byte count and SHA-256 (30,889,980,352 bytes total, including
+the checkpoint's MTP file even though speculation is disabled).
 
 1. Wave -3 creates the namespace; wave -2 creates the scripts ConfigMap and
    dedicated NFS writer PV/PVC. The existing archive reader PVC is unchanged.
 2. Wave -1 `vllm-download-qwen38-fp8` downloads into a revision-named directory
    on `192.168.10.133:/mnt/ai-pool/vllm`. Interrupted downloads retain `.part`
    files; every completed file is hash/size verified before atomic rename.
-   A `"repo": null` checkpoint is only verified there, never downloaded.
 3. Wave 0 `vllm-cache-sync` verifies the archive, copies to local NVMe and
    verifies the destination. Only then does it publish `.verified-manifest`.
 4. Wave 1 Deployment waits for the matching manifest marker and complete file
@@ -247,15 +237,17 @@ valid cache. A manifest change invalidates old readiness. Failed copies never
 publish readiness, and incomplete artifacts never replace verified files.
 The wait container uses a small pinned Python image; it does not need CUDA.
 
-Prerequisites: the checkpoint is complete on the NFS archive and the local
-NVMe has room for it. No private model token is required.
+Prerequisites: the NFS export permits the download Job to write and has at
+least 31 GB free; local NVMe has at least that much free as well. The earlier
+approximately 123 GiB local free-space check is historical; re-check storage
+and export permissions before restaging. No private model token is required.
 Existing AutoRound, GGUF and compile-cache files are retained; no pruning is performed.
 
 ## Verification after the user merges
 
 ArgoCD applies the changed arguments through the existing `Recreate` deployment.
-There will be an inference interruption while the cache sync copies the W4A16
-files to the node and the model loads. The node cache has 440 GB free (Nov 3).
+There will be an inference interruption while the model loads. This default
+change does not alter the checkpoint, cache precision, memory budget or GPU ownership.
 
 From the workstation:
 
@@ -278,21 +270,28 @@ curl -fsS http://127.0.0.1:18000/v1/chat/completions \
   -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"What is 19 + 23?"}],"max_tokens":64,"temperature":0.7,"top_p":0.8,"top_k":20,"min_p":0.0,"presence_penalty":1.5,"repetition_penalty":1.0,"chat_template_kwargs":{"enable_thinking":false,"preserve_thinking":false}}'
 ```
 
-Expected: both staging hooks complete, vLLM Ready, one GPU visible to vLLM,
+Expected: both staging hooks complete, vLLM Ready, two GPUs visible to vLLM,
 health OK, the expected model ID and answer 42. Also verify both LAN hostnames,
 one image, a tool call, and every reasoning mode.
 
-**Read the allocated KV capacity from startup logs.** It must hold at least one
-65,536-token request. To compare against Strata on the other card, run
-[`compare_models.py`](../../../benchmarks/ai-realworld-load/tools/README.md). Run the existing
+**Read the allocated KV capacity from startup logs.** 262K is the configured
+server ceiling, not a claim that two full 262K requests fit concurrently, or
+that near-ceiling vision is verified. Run the existing
 `benchmarks/ai-realworld-load/` harness after smoke checks; record TTFT,
 prefill/decode, cache preemptions, GPU peaks, and a sustained multi-turn soak.
-Prefix caching makes warm prompts cheaper; unique-prefix tests are needed for
-genuine prefill. Prefix-hit counters alone do not establish correctness or a
-latency improvement.
+Test a context ladder before claiming 262K usability. Prefix caching makes
+warm prompts cheaper; unique-prefix tests are needed for genuine prefill.
+Compare the prior 2,048-token budget against the 8,192 aggregate / 4,096
+per-request profile using the same prompts, output budgets and sampler. Test
+one fresh long prompt, two fresh prompts, and a long prefill arriving during
+decode. Record time to first token, inter-token latency, preemptions, available
+KV capacity and peak memory. Do not reuse the September 6 pool measurements
+as proof of capacity after changing prefill workspace. Prefix-hit counters
+alone do not establish correctness or a latency improvement.
 
 Stop on staging/hash failure, insufficient KV pool, OOM/Xid, broken tool or
-vision output, or repeated preemptions. Preparation checks cover manifests, file integrity behavior and
+vision output, or repeated preemptions. Do not enable MTP to rescue a failing
+baseline. Preparation checks cover manifests, file integrity behavior and
 routing configuration; they do not establish new runtime performance.
 
 ## Rollback
@@ -307,6 +306,7 @@ vLLM is the only GPU inference backend; there is no second backend to fall back
 to. A bad checkpoint or runtime change is rolled back by reverting its commit and
 letting the staging hooks re-run against the retained cache.
 
-To return to two cards, revert this change: the FP8 checkpoint, its manifest
-and the TP=2 flags come back together, and Strata's Deployment must go to zero
-replicas first.
+The old AutoRound files are retained under
+`Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead`. A later INT4/W4A8 A/B must pin its
+own artifact manifest and demonstrate TP=2/Marlin compatibility; do not assume
+its single-card history proves the dual-card speed path.

@@ -24,8 +24,8 @@ configMapGenerator:
       - KV=int8
       - LOW_RAM=off
       - KV_STREAMING=on
-      # The only card the device plugin hands this pod is index 0 inside it.
-      - GPU=0
+      # Layer split over the two cards the device plugin hands this pod (indices 0,1 inside it).
+      - GPUS=0,1
       - HOST=0.0.0.0
       - PORT=8080
   - name: strata-scripts

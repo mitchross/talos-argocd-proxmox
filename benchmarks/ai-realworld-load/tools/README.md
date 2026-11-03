@@ -2,7 +2,8 @@
 
 `compare_models.py` sends the same fixed prompts to each LiteLLM model and
 saves the timings and answers side by side. By default it compares
-`qwen3.8-27b` (vLLM, GPU 0) with `qwen3.8-flash-next` (Strata, GPU 1).
+`qwen3.8-27b` (vLLM) with `qwen3.8-flash-next` (Strata). With `--baseline` it
+puts a saved run next to a live one, for a model that is no longer served.
 
 The prompts are in `../workloads/compare-prompts.json`:
 
@@ -33,11 +34,36 @@ python3 benchmarks/ai-realworld-load/tools/compare_models.py --only short-chat -
 python3 benchmarks/ai-realworld-load/tools/compare_models.py --thinking medium     # default: thinking off
 ```
 
+## Compare with a saved baseline (vLLM parked)
+
+During the Strata two-card test vLLM runs at 0 replicas, and `qwen3.8-27b`
+falls back to `deepseek-flash`, so a live `qwen3.8-27b` run would measure the
+wrong model. Compare Strata with the FP8 TP=2 vLLM runs saved before the test
+(2026-11-03, thinking off, all four prompts, nothing else running):
+
+| Folder in `../baselines/` | Repeats |
+|---|---:|
+| `2026-11-03-qwen3.8-27b-fp8-tp2/` | 1 |
+| `2026-11-03-qwen3.8-27b-fp8-tp2-r3/` | 3 (medians) |
+
+```bash
+cd benchmarks/ai-realworld-load
+python3 tools/compare_models.py --models qwen3.8-flash-next --repeats 3 \
+  --baseline baselines/2026-11-03-qwen3.8-27b-fp8-tp2-r3/results.json
+```
+
+The baseline's rows show as `qwen3.8-27b (baseline)` and are not re-run;
+`results.json` keeps them under `baseline_results`. The script warns when the
+baseline used other settings (repeats, seed, prompt file or prompt texts) and
+stops on a different `--thinking`. `--baseline` can be given more than once.
+
+## Output
+
 Results go to `benchmarks/ai-realworld-load/runs/<UTC time>_compare/`
 (git-ignored), or to `--out <dir>`:
 
 - `results.md`: one table row per prompt and model, then the answers in a
-  two-column table.
+  table with one column per model.
 - `results.json`: run settings, the summary table, the answers keyed by
   prompt and model (`side_by_side`), and every raw run.
 

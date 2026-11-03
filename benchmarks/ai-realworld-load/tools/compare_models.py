@@ -16,8 +16,12 @@ Examples:
   LITELLM_API_KEY=... compare_models.py --base-url https://litellm.vanillax.me/v1
   compare_models.py --models qwen3.8-27b,qwen3.8-flash-next --repeats 3 --thinking medium
   compare_models.py --models qwen3.8-27b --only short-chat        # quick check of one model
+  compare_models.py --models qwen3.8-flash-next --baseline runs/<old>/results.json   # vs a saved run
+
+--baseline adds a saved results.json as extra columns, so a model that is no longer served (vLLM parked)
+still gets a side-by-side table. Its rows are labelled '<model> (baseline)' and are not re-run.
 """
-import argparse, html, json, os, statistics, sys, time
+import argparse, hashlib, html, json, os, statistics, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -72,6 +76,44 @@ def run_one(args, run_id, spec, model, repeat):
     return row
 
 
+def prompts_digest(prompts):
+    return hashlib.sha256(json.dumps(prompts, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def load_baselines(paths, prompts, meta):
+    """Rows from saved results.json files, relabelled '<model> (baseline)' (or '(<run_id>)' with several)."""
+    rows, labels, info = [], [], []
+    wanted = {p["id"] for p in prompts}
+    for path in paths:
+        doc = json.loads(Path(path).read_text())
+        bmeta = doc.get("meta", {})
+        suffix = "baseline" if len(paths) == 1 else bmeta.get("run_id", Path(path).parent.name)
+        problems = [f"{k}: baseline {bmeta.get(k)!r}, this run {meta[k]!r}"
+                    for k in ("thinking", "prompts_file", "needle", "repeats", "seed")
+                    if k in bmeta and bmeta.get(k) != meta[k]]
+        if bmeta.get("prompts_sha256") and bmeta["prompts_sha256"] != meta["prompts_sha256"]:
+            problems.append("prompt texts differ from the baseline's")
+        missing = sorted(wanted - set(bmeta.get("prompt_ids", wanted)))
+        if missing:
+            problems.append(f"baseline has no run of: {', '.join(missing)}")
+        for line in problems:
+            print(f"warning: {path}: {line}", file=sys.stderr, flush=True)
+        if bmeta.get("thinking") not in (None, meta["thinking"]):
+            raise SystemExit(f"{path}: baseline thinking={bmeta['thinking']!r}, this run {meta['thinking']!r}: "
+                             "pass the same --thinking")
+        for r in doc.get("results", []):
+            if r["prompt_id"] not in wanted:
+                continue
+            label = f"{r['model']} ({suffix})"
+            if label not in labels:
+                labels.append(label)
+            rows.append({**r, "model": label, "baseline": str(path)})
+        info.append({"path": str(path), **{k: bmeta.get(k) for k in
+                                            ("run_id", "started", "base_url", "models", "thinking", "repeats")},
+                     "problems": problems})
+    return rows, labels, info
+
+
 def median(rows, key):
     vals = [r[key] for r in rows if isinstance(r.get(key), (int, float))]
     return round(statistics.median(vals), 2) if vals else None
@@ -99,7 +141,11 @@ def cell(v):
 def markdown(meta, table, results, prompts, models):
     out = [f"# LLM comparison {meta['run_id']}", "",
            f"Gateway `{meta['base_url']}` · thinking `{meta['thinking']}` · repeats {meta['repeats']} · "
-           f"started {meta['started']}", "",
+           f"started {meta['started']}", ""]
+    for b in meta.get("baselines", []):
+        out += [f"Baseline `{b['path']}`: run {b['run_id']}, started {b['started']}, repeats {b['repeats']}, "
+                f"not re-run." + (" **Warnings:** " + "; ".join(b["problems"]) if b["problems"] else ""), ""]
+    out += [
            "Client-side timings through LiteLLM; medians over repeats. prefill tok/s = prompt tokens / TTFT.", "",
            "| Prompt | Model | TTFT s | Prefill tok/s | Decode tok/s | Total s | Prompt tok | Output tok | "
            "Finish | Errors |", "|---|---|---:|---:|---:|---:|---:|---:|---|---:|"]
@@ -136,6 +182,8 @@ def main():
     ap.add_argument("--no-warmup", action="store_true", help="skip the untimed one-line request per model")
     ap.add_argument("--out", help="output folder (default: runs/<UTC time>_compare next to tools/)")
     ap.add_argument("--print", action="store_true", help="also print results.md and results.json to stdout")
+    ap.add_argument("--baseline", action="append", default=[], metavar="RESULTS_JSON",
+                    help="a saved results.json to show beside this run (repeatable); its models are not re-run")
     args = ap.parse_args()
     if not args.api_key:
         ap.error("set LITELLM_API_KEY (or pass --api-key)")
@@ -153,7 +201,11 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = {"run_id": run_id, "base_url": args.base_url, "models": models, "thinking": args.thinking,
             "repeats": args.repeats, "seed": args.seed, "started": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()),
-            "prompts_file": Path(args.prompts).name, "prompt_ids": [p["id"] for p in prompts], "needle": NEEDLE}
+            "prompts_file": Path(args.prompts).name, "prompt_ids": [p["id"] for p in prompts], "needle": NEEDLE,
+            "prompts_sha256": prompts_digest(prompts)}
+    base_rows, base_labels, meta["baselines"] = load_baselines(args.baseline, prompts, meta)
+    if not meta["baselines"]:
+        del meta["baselines"]
 
     if not args.no_warmup:
         for model in models:
@@ -171,19 +223,21 @@ def main():
                       f"total={row['total_s']} err={row['error']}", file=sys.stderr, flush=True)
                 (out_dir / "results.json").write_text(json.dumps({"meta": meta, "results": results}, indent=2))
 
-    table = summarize(results, prompts, models)
+    live_results = results
+    results, shown = base_rows + live_results, base_labels + models
+    table = summarize(results, prompts, shown)
     doc = {"meta": meta, "summary": table,
            "side_by_side": {spec["id"]: {r["model"]: r for r in results if r["prompt_id"] == spec["id"]
                                          and r["repeat"] == 0} for spec in prompts},
-           "results": results}
+           "results": live_results, "baseline_results": base_rows}
     (out_dir / "results.json").write_text(json.dumps(doc, indent=2))
-    md = markdown(meta, table, results, prompts, models)
+    md = markdown(meta, table, results, prompts, shown)
     (out_dir / "results.md").write_text(md)
     print(f"wrote {out_dir}/results.json and results.md", file=sys.stderr)
     if args.print:
         print("=== results.md ===\n" + md + "=== end results.md ===")
         print("=== results.json ===\n" + json.dumps(doc) + "\n=== end results.json ===")
-    sys.exit(1 if any(r["error"] for r in results) else 0)
+    sys.exit(1 if any(r["error"] for r in live_results) else 0)
 
 
 if __name__ == "__main__":
