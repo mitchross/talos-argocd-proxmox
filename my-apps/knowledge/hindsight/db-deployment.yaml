@@ -18,6 +18,8 @@ spec:
       labels:
         app: hindsight-db
     spec:
+      nodeSelector:
+        node.vanillax.dev/pool: general
       enableServiceLinks: false
       terminationGracePeriodSeconds: 60
       securityContext:

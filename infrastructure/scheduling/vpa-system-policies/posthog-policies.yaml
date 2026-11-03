@@ -19,7 +19,7 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "4"
-          memory: 8Gi
+          memory: 3Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -110,7 +110,7 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "2"
-          memory: 16Gi
+          memory: 5376Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -132,7 +132,7 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "2"
-          memory: 8Gi
+          memory: 5632Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler

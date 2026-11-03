@@ -58,8 +58,8 @@ configMapGenerator:
 components:
   - ../../common/kopiur-backup
 
-# Zone `house` IS the Threadripper box, so this pins every workload to its two
-# workers — the AVX2 selector alone also matches the smaller Dell and HP nodes.
+# Keeps PostHog off the GPU node (vLLM needs its memory); all `general` workers report AVX2.
+# Longhorn volumes stay on the GPU node's `flash` disk and are served remotely.
 patches:
   - target:
       kind: Deployment
@@ -72,7 +72,7 @@ patches:
         template:
           spec:
             nodeSelector:
-              topology.kubernetes.io/zone: house
+              node.vanillax.dev/pool: general
   - target:
       kind: Job
     patch: |-
@@ -84,4 +84,4 @@ patches:
         template:
           spec:
             nodeSelector:
-              topology.kubernetes.io/zone: house
+              node.vanillax.dev/pool: general

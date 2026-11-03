@@ -23,6 +23,8 @@ spec:
       labels:
         app: hindsight
     spec:
+      nodeSelector:
+        node.vanillax.dev/pool: general
       enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
