@@ -14,6 +14,8 @@ spec:
       labels:
         app: karakeep-chrome
     spec:
+      nodeSelector:
+        node.vanillax.dev/pool: general
       containers:
         - name: chrome
           image: ghcr.io/karakeep-app/karakeep-chrome:156.0.8078.47-r1@sha256:4ad61127638dd27bfe685222787c5780dd1d083d23a7658c39af657775814c44

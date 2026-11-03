@@ -18,6 +18,8 @@ spec:
       labels:
         app: langfuse-clickhouse
     spec:
+      nodeSelector:
+        node.vanillax.dev/pool: general
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext:

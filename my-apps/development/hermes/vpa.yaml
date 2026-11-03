@@ -20,8 +20,8 @@ spec:
           memory: 1Gi
         maxAllowed:
           cpu: "8"
-          # Above the container limit the VPA just pins the request to the cap; keep it under the limit.
-          memory: 14Gi
+          # Request cap, not a limit: 7d peak 13.8Gi, p99 5.6Gi. The 16Gi limit still covers bursts.
+          memory: 8Gi
       - containerName: seed
         mode: "Off"
       - containerName: worktree-gc

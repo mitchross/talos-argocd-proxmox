@@ -13,6 +13,8 @@ spec:
       labels:
         app: tika
     spec:
+      nodeSelector:
+        node.vanillax.dev/pool: general
       containers:
         - name: tika
           image: apache/tika:latest@sha256:b99f19c4fd76237dafe7d22f719b9bddfa9a449da687c597a41e2f6d9a595418
