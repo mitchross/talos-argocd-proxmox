@@ -3,7 +3,7 @@
 Status: the live Talos 1.14.0 and Kubernetes 1.37.0 upgrades are complete.
 Fresh GPU provisioning still needs a disk-selection fix. No disks were moved.
 The September 5 physical inventory recorded the host and disk
-measurements (now replaced by the [fleet inventory](../inventory/2026-10-21-fleet-inventory.md)); the [interactive lab map](../lab.md) includes the verified versions.
+measurements (now replaced by the [fleet inventory](../inventory/2026-11-03-fleet-inventory.md)); the [interactive lab map](../lab.md) includes the verified versions.
 
 ## Verified upgrade results
 

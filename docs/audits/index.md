@@ -19,13 +19,12 @@ superseded where the newer measurements differ. A recommendation is not a deploy
 ## Past snapshots
 
 These pages record the lab at one point in time. Use the
-[fleet inventory](../inventory/2026-10-27-fleet-inventory.md) and
+[fleet inventory](../inventory/2026-11-03-fleet-inventory.md) and
 [disk map](../domains/storage/disk-map.md) for current state.
 
 | Snapshot | What it answers |
 | --- | --- |
-| [Fleet inventory — 22 October](../inventory/2026-10-22-fleet-inventory.md) | Machines, nodes and load after the bare-metal move, before the `proxmox-hp-elite` provider was removed. |
-| [Fleet inventory — 21 October](../inventory/2026-10-21-fleet-inventory.md) | Machines, nodes and load while the `.22` HP Elite was still a Proxmox host. |
+| [Fleet inventory — 27 October](../inventory/2026-10-27-fleet-inventory.md) | Per-node Longhorn disks and requests, before the 3 November inventory. |
 | [Full inventory — 15 October](../inventory/2026-10-15-full-inventory.md) | VM disk paths, Proxmox storage, physical drives with SMART status, and NAS pools. |
 | [etcd on the Intel S3610 — 11 October](../inventory/2026-10-11-etcd-on-s3610.md) | How much faster etcd is on an enterprise SSD, and what latency a new control plane should match. |
 | [Storage audit — 26 September](../inventory/2026-09-26-storage-audit.md) | Daily SSD writes, disks full on paper, and NAS risks. |
