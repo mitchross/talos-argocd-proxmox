@@ -89,8 +89,10 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
   `litellm_model_name` is the backend that answered.
 - **Hermes AI split:** the `hermes_model_*` totals come from Hermes's
   `state.db` (`usage-exporter` sidecar in `my-apps/development/hermes/`), so
-  history before the sidecar started shows as 0, and a model's very first call
-  on a new surface or task only counts from its second call. Codex
+  history before the sidecar started shows as 0. A model's first call on a new
+  surface or task shows up about 3 minutes late: the sidecar serves a new label
+  set as 0 first so `increase()` counts that call. Surface `local` is the Hermes
+  CLI/terminal session source, not the local model. Codex
   (subscription) and local Qwen cost $0.
 - **PostHog:** the `django_http_responses_*` per-view series only appear after
   real UI/API traffic, so they're empty when PostHog is idle.
