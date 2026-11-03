@@ -155,11 +155,6 @@ spec:
             - name: cluster-config
               mountPath: /etc/hermes/cluster
               readOnly: true
-            # Argo CD API token for the `hermes` account (read apps and diffs, start syncs).
-            # A file, not env: the terminal tool doesn't inherit the pod env.
-            - name: argocd-token
-              mountPath: /etc/hermes/argocd
-              readOnly: true
         # Agent worktrees keep full build trees on the volume; 79Gi of `target/` filled it on 2026-10-31.
         # Shares the pod because the claim is ReadWriteOnce. Prunes build output only, never a worktree.
         - name: worktree-gc
@@ -228,12 +223,6 @@ spec:
         - name: cluster-config
           configMap:
             name: cluster-config
-        # Optional so the pod starts before the 1Password field exists.
-        - name: argocd-token
-          secret:
-            secretName: hermes-argocd
-            optional: true
-            defaultMode: 0444
         - name: shm
           emptyDir:
             medium: Memory

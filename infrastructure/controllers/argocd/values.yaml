@@ -47,21 +47,8 @@ configs:
     #   argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
     # to also pipe through mutating admission webhooks (CNPG ships one).
     controller.diff.server.side: "true"
-  # Hermes may read apps, diffs and logs and start a sync of what is in Git.
-  # It can't create, edit or delete apps, override sources, or run resource actions.
-  rbac:
-    policy.csv: |
-      p, role:hermes, applications, get, */*, allow
-      p, role:hermes, applications, sync, */*, allow
-      p, role:hermes, logs, get, */*, allow
-      p, role:hermes, projects, get, *, allow
-      p, role:hermes, clusters, get, *, allow
-      p, role:hermes, repositories, get, *, allow
-      g, hermes, role:hermes
   cm:
     url: "https://argocd.vanillax.me"
-    # Hermes (in-cluster agent): API token only, no UI login. Rights in configs.rbac.
-    accounts.hermes: apiKey
     # Langfuse declares an EndpointSlice for RustFS; excluding it leaves S3 without a backend.
     resource.exclusions: |
       - apiGroups:
