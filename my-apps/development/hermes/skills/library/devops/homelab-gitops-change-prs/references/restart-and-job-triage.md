@@ -30,7 +30,12 @@ The fix in Git can only treat the symptom (a longer sync timeout). Name the phys
 - `kubectl -n <ns> get jobs --sort-by=.metadata.creationTimestamp -o custom-columns=N:.metadata.name,S:.status.succeeded,F:.status.failed,START:.status.startTime,REASON:.status.conditions[-1].reason`. If the newest run succeeded, the alert is stale history: use `ttlSecondsAfterFinished`, see the SKILL pitfall.
 - Loki keeps pod logs for only about 24 h (`{k8s_namespace_name="<ns>", k8s_pod_name=~"<job>.*"}`, header `X-Scope-OrgID: 1`). Read a failing Job's logs the same day, or say plainly that the reason is no longer recoverable.
 
-## 5. Throttling
+## 5. OOMKilled right after a rollout
+- Before blaming the new release, measure the old pods: `max_over_time(container_memory_working_set_bytes{namespace="<ns>",container="<c>"}[24h])/1048576` per pod, plus `kubectl get vpa -n <ns> -o jsonpath='{..containerRecommendations}'`. When earlier pods already peaked near the limit and the VPA target sits above it, startup work (cache warm, a scan's ingest) is tipping it over, not the new code. With `controlledValues: RequestsOnly`, VPA can't fix this, because the limit stays put.
+- Fix with a limit-only PR (keep VPA on the request) and say in the PR that each future restart risks the same OOM loop until it merges.
+- Find what ran at the OOM moment from Loki (`{k8s_namespace_name="<ns>", k8s_container_name="<c>"}` around `lastState.terminated.finishedAt`). A "listening" line with no "cache warmed" line before the kill means the warm itself peaked.
+
+## 6. Throttling
 - Fraction of CPU periods throttled: `rate(container_cpu_cfs_throttled_periods_total[30m]) / rate(container_cpu_cfs_periods_total[30m])`.
 - Compare usage with the limit: `quantile_over_time(0.95, ...[1d:2m])` and `max_over_time(...)` of `rate(container_cpu_usage_seconds_total[2m])`. A max at the limit together with steady throttling justifies raising the limit while keeping the request.
 - Temporal Worker Controller pools roll out a new worker version on any pod-template change. Name that in Merge danger.
