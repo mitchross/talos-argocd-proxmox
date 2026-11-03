@@ -123,7 +123,9 @@ These tools can change production. Act by risk:
 - `talosctl` reaches nodes through Omni with `~/.talos/config`. Start with `talosctl -n <node-ip> dmesg | tail -50` or `talosctl -n <node-ip> services`.
 - `ssh pi` opens a shell on the rpi5 (192.168.10.15) as `vanillax`, with Docker and passwordless sudo. It runs Omni, the Proxmox infra providers, booter and Technitium DNS. Start with `ssh pi docker ps`.
 - Never run `omnictl delete`, `omnictl cluster template sync`, `talosctl reset`, `talosctl upgrade` or `docker compose down` on the Pi without an explicit yes for that command.
-- Proxmox hosts are not reachable from this pod. Hand those steps to the user.
+- Proxmox hosts are not reachable from this pod (SSH port 22 times out). Hand those steps to the user.
+- `talosctl -n <ip> read /sys/...` and `talosctl get memorymodules` are read-only ways to get node hardware facts (PCIe link width, DIMMs) without exec. For purchase or sizing questions, use the `homelab-hardware-planning` skill.
+- RBAC can change: before planning around `kubectl exec` or creating a Job, run `kubectl auth can-i create pods/exec -n <ns>`; if it says no, use talosctl reads or hand the command to the user.
 
 ## When asked about one app
 
