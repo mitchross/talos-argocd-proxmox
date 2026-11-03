@@ -35,7 +35,6 @@ How it was collected, all on November 3:
 | HP Elite Mini 600 G9 | `.88` | i5-13500T · 20 threads | 16 GB (1× 16 GB) | Talos v1.14.5 bare metal | worker `hp-elite-gen13` |
 | HPE ProLiant DL360 Gen9 (TrueNAS) | `.133` | 1× Xeon E5-2680 v4 · 14 cores, 28 threads | 377.6 GiB (12× 32 GB) | TrueNAS 28.0 | NFS/SMB storage, kopiur repository |
 | Raspberry Pi 5 | `.15` | Cortex-A76 · 4 threads | 7.7 GiB | Ubuntu 26.04 | Omni v1.12.4, 3 Proxmox providers, booter (PXE), Technitium DNS, ProxCenter |
-| 2 new mini PCs (one HP, one Dell) | — | — | — | — | added, not yet joined, model unknown |
 
 The desktop (7800X3D, 64 GB DDR5, RX 6800) is not part of the cluster.
 
@@ -116,18 +115,19 @@ current all-in rate of $0.2135/kWh. Summer rates are $0.235–0.285.
 | MacBook + monitor | 31 | $6.6 |
 
 - **The homelab is about 32% of the house's kWh.** The house used 1,156 kWh ($247) last month.
-- **Not on any plug:** the Pi, switches, router and access points. The Dell Pro Micro and the Elite
-  600 G9 are also not on a known plug unless they share one.
+- **Not on any plug:** the Pi, switches, router and access points.
+- **The HP SFF + Optiplex plug covers three boxes:** the HP SFF host, the Dell Pro Micro and the
+  Elite Mini 600 G9.
 - **The Threadripper is the biggest item.** It averaged about 210–275 W over the month.
 - The DL360 has one 500 W power supply, reading 110 W; its second bay is empty, so the BMC reports
   "redundancy lost".
 - Live watts are not used for cost. They swing with load (the Threadripper plug read 401 W under load today).
 
-## New machines
+## Newest machines
 
-Two more mini PCs were added recently, one HP and one Dell. They are probably on the
-**HP SFF + Optiplex** plug. They are not in Omni or Prometheus yet, so their model, CPU, RAM and
-disks are unknown. The 59 kWh above probably predates them. Fill this section in once they join.
+The two newest mini PCs joined the cluster about 12 days ago: **hp-elite-gen13**
+(HP Elite Mini 600 G9, `.88`) and **mini-pc-dell-ultra-worker** (Dell Pro Micro, `.181`).
+Both are on the HP SFF + Optiplex plug, so last month's 59 kWh includes them.
 
 ## Kubernetes nodes
 
