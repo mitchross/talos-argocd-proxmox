@@ -13,6 +13,15 @@ metadata:
 
 You run inside the cluster. `kubectl` is on PATH and already authenticated. It reads workloads, nodes, storage and CRDs, but not Secrets or ConfigMaps (except `kube-system/cilium-config`), and can do day-to-day fixes: exec, port-forward, delete or evict pods, `rollout restart`, scale, run a Job, cordon/uncordon. It cannot create or edit app resources; config changes go through Git. Say what a restart or delete will do before you run it.
 
+It can also start an Argo CD sync of what's in Git, or force a hard refresh:
+
+```bash
+kubectl -n argocd patch application <app> --type merge -p '{"operation":{"initiatedBy":{"username":"hermes"},"sync":{"revision":"HEAD","prune":true,"syncOptions":["ServerSideApply=true"]}}}'
+kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite
+```
+
+Never edit an app's `spec` this way; change it through Git.
+
 ## Rules
 
 - Reads need no approval. `exec`, `port-forward`, `rollout restart`, deleting or evicting a pod, `scale`, running a Job, and `cordon`/`uncordon` are allowed for diagnosis and quick recovery; say what they do first.

@@ -63,6 +63,11 @@ rules:
   - apiGroups: [longhorn.io]
     resources: [volumes]
     verbs: [patch]
+  # Start an Argo CD sync of Git (`.operation`) or a hard refresh (annotation).
+  # Patch could also edit an app's spec, but the AppSets and root self-heal it back.
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
