@@ -6,7 +6,11 @@ control plane matter more than adding CPU. The Elite has the least host-memory
 headroom; the SFF worker/root SSD had the slowest flushed sequential write in
 this sample. Neither observation alone proves failing hardware.
 
-**Status:** measured September 20, 2026. Proxmox host probes, Kubernetes volume
+**Status:** historical, measured September 20, 2026. For current RAM, NVMe and PCIe measurements,
+use the [November 3 fleet inventory](2026-11-03-fleet-inventory.md).
+The numbers below describe the hardware as it was then.
+
+Original status: measured September 20, 2026. Proxmox host probes, Kubernetes volume
 probes and NAS pool probes are separate measurements. Recommendations below are
 proposals; no host migrations, resource changes or storage reconfiguration were
 performed.

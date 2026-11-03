@@ -25,7 +25,7 @@ renders; read-only Kubernetes/Prometheus queries; SSH inventory of five Proxmox
 hosts, TrueNAS, and the Omni/DNS Pi; relevant Mink incident records; owner-confirmed
 constraints. Runtime observations were taken on September 5 and are snapshots,
 not uptime guarantees. Its September 5 inventory page was removed on 2026-10-21; the
-[current fleet inventory](../inventory/2026-10-21-fleet-inventory.md) replaces it.
+[current fleet inventory](../inventory/2026-11-03-fleet-inventory.md) replaces it.
 
 For the consolidated engineering judgment, disk move priorities and proposed
 node pools, read the [hardware and placement review](2026-09-05-hardware-and-placement-review.md).

@@ -3,7 +3,7 @@
 **Purpose:** one page that answers "which physical disk is this data on?" for
 every machine in the lab, and "where should new data go?".
 **Status:** maintained layout, rechecked October 15, 2026. Update this page after disk changes.
-See the [full inventory](../../inventory/2026-10-15-full-inventory.md) for dated capacities and health observations.
+Machines and RAM: [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md). See the [full inventory](../../inventory/2026-10-15-full-inventory.md) for dated capacities and health observations.
 
 ## How the layers fit
 

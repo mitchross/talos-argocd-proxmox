@@ -1,15 +1,15 @@
 # Fleet inventory — October 27, 2026
 
 **Purpose:** list every machine in the lab, with what runs on it and how loaded it is.
-**Status:** dated, read-only snapshot. It replaces the [October 22 inventory](2026-10-22-fleet-inventory.md)
-as the current host list. Disks are maintained in the [disk map](../domains/storage/disk-map.md).
+**Status:** historical snapshot, replaced by the [November 3 inventory](2026-11-03-fleet-inventory.md).
+It kept the Kubernetes load, Longhorn disk and Argo CD tables that the newer page does not repeat. Disks are maintained in the [disk map](../domains/storage/disk-map.md).
 
 Collection: about 02:30 UTC, from the Kubernetes API (`kubectl get nodes`, `kubectl top nodes`,
 `kubectl describe nodes`, running pods), Longhorn objects and Omni `MachineStatus`. Queries ran
 separately, so this is not an atomic snapshot. CPU and memory use are point-in-time `kubectl top`
 values. Proxmox host RAM, CPU temperatures and NAS pools were not re-collected.
 
-## What changed since October 22
+## What changed since October 22 (the October 21 and 22 pages are deleted; see git history)
 
 - **The `proxmox-hp-elite` provider is gone.** It was still running on the Pi and registered in
   Omni until October 26. Its container, its Omni provider object and the `hp-elite-worker` machine

@@ -4,7 +4,11 @@
 The September 20 tests compare physical-disk reads, warm RAM-cache reads, and
 writes that request a final flush on all three data pools.
 
-**Status:** measured September 20, 2026. Historical network results and older
+**Status:** historical, measured September 20, 2026. The NAS RAM (12× 32 GB at 1600 MT/s) and
+its bandwidth were re-measured on November 3; see the
+[fleet inventory](inventory/2026-11-03-fleet-inventory.md).
+
+Original status: measured September 20, 2026. Historical network results and older
 permissions are labeled separately. Recommendations are not deployed changes.
 
 **Scope:** NAS-local tests on new disposable datasets. No raw devices, boot-pool
