@@ -158,7 +158,8 @@ class DeclaredPolicyTests(unittest.TestCase):
         for flag, value in expected.items():
             self.assertEqual(args[args.index(flag) + 1], value)
         self.assertNotIn('--long-prefill-token-threshold', args)
-        self.assertFalse(any(arg.startswith('--speculative-config') for arg in args))
+        self.assertEqual(json.loads(args[args.index('--speculative-config') + 1]),
+                         {'method': 'mtp', 'num_speculative_tokens': 2})
         self.assertEqual(container['resources']['limits']['nvidia.com/gpu'], '1')
         env = {entry['name']: entry.get('value') for entry in container['env']}
         self.assertEqual(env['PYTORCH_CUDA_ALLOC_CONF'], 'expandable_segments:True')

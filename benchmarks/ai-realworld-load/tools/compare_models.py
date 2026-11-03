@@ -15,6 +15,7 @@ Strata serves one request at a time: run this when nothing else uses the models.
 Examples:
   LITELLM_API_KEY=... compare_models.py --base-url https://litellm.vanillax.me/v1
   compare_models.py --models qwen3.8-27b,qwen3.8-flash-next --repeats 3 --thinking medium
+  compare_models.py --models qwen3.8-27b --only short-chat        # quick check of one model
 """
 import argparse, html, json, os, statistics, sys, time
 from pathlib import Path
@@ -127,6 +128,7 @@ def main():
     ap.add_argument("--api-key", default=os.environ.get("LITELLM_API_KEY") or os.environ.get("LITELLM_MASTER_KEY"))
     ap.add_argument("--models", default=DEFAULT_MODELS, help="comma-separated LiteLLM model names")
     ap.add_argument("--prompts", default=str(DEFAULT_PROMPTS))
+    ap.add_argument("--only", help="comma-separated prompt ids to run (default: all)")
     ap.add_argument("--thinking", default="off", choices=["off", "low", "medium", "xhigh"])
     ap.add_argument("--repeats", type=int, default=1)
     ap.add_argument("--seed", type=int, default=1234)
@@ -139,13 +141,19 @@ def main():
         ap.error("set LITELLM_API_KEY (or pass --api-key)")
 
     prompts = json.loads(Path(args.prompts).read_text())["prompts"]
+    if args.only:
+        wanted = {x.strip() for x in args.only.split(",") if x.strip()}
+        unknown = wanted - {p["id"] for p in prompts}
+        if unknown:
+            ap.error(f"unknown prompt id(s): {', '.join(sorted(unknown))}")
+        prompts = [p for p in prompts if p["id"] in wanted]
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     run_id = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     out_dir = Path(args.out or HERE.parent / "runs" / f"{run_id}_compare")
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = {"run_id": run_id, "base_url": args.base_url, "models": models, "thinking": args.thinking,
             "repeats": args.repeats, "seed": args.seed, "started": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()),
-            "prompts_file": Path(args.prompts).name, "needle": NEEDLE}
+            "prompts_file": Path(args.prompts).name, "prompt_ids": [p["id"] for p in prompts], "needle": NEEDLE}
 
     if not args.no_warmup:
         for model in models:

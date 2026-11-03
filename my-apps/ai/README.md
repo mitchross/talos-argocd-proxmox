@@ -1,8 +1,9 @@
 # AI Stack Guide
 
-Local AI inference uses official Qwen3.8-27B FP8 on stock vLLM (version pinned in `vllm/deployment.yaml`) with
-both RTX 3090s (TP=2), FP8 KV and native vision. GPU allocations are whole-card
-with time-slicing off. The server ceiling is 262,144 tokens; speculation is off.
+Local AI inference uses Qwen3.8-27B (W4A16) on stock vLLM (version pinned in `vllm/deployment.yaml`) on
+one RTX 3090 (TP=1), FP8 KV, native vision, a 65,536-token ceiling and MTP. The other
+3090 runs [Strata](strata/README.md) with `qwen3.8-flash-next`. GPU allocations are
+whole-card with time-slicing off.
 
 Local Qwen defaults to explicit xhigh reasoning with preservation enabled.
 Low and medium remain available for less reasoning, and explicit off requests
@@ -10,7 +11,7 @@ use their separate sampler. More reasoning can take longer and is not a
 measured accuracy improvement. See [the vLLM runbook](vllm/README.md) for the
 canonical runtime, source references and reasoning acceptance checks.
 
-ComfyUI and SwarmUI are parked while vLLM owns both cards. The API model is
+ComfyUI and SwarmUI are parked while vLLM and Strata hold the cards. The API model is
 `qwen3.8-27b`.
 
 For coding, follow the [Pi.dev setup guide](../../docs/domains/ai-gpu/pi-agent-local-dev.md).

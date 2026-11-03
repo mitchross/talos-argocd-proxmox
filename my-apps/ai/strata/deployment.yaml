@@ -33,7 +33,7 @@ spec:
           effect: "NoSchedule"
       # No fsGroup: the local volume also holds vLLM's files, and fsGroup would chown all of it.
       initContainers:
-        # First start only: pinned GGUF shards + MTP layer download (~92 GB), pack build, install config.
+        # First start or changed settings: pinned GGUF shards + MTP layer download (~92 GB), pack build, config.
         - name: prepare
           image: ghcr.io/mitchross/strata:0.1.40.3-d5ea713-sm86
           imagePullPolicy: IfNotPresent

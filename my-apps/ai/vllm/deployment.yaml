@@ -71,7 +71,7 @@ spec:
             - bfloat16
             - --tensor-parallel-size
             - "1"
-            # On v0.28 with MTP, 0.90 left 1.9 GiB KV, short of the 2.45 GiB one 65,536-token request needs; re-read the boot log.
+            # 0.90 left 1.9 GiB KV with MTP, short of the 2.45 GiB one 65,536-token request needs (v0.28 boot log).
             - --gpu-memory-utilization
             - "0.93"
             - --max-model-len
@@ -108,7 +108,9 @@ spec:
             # 8192 inflates the profiled activation peak and shrinks a single card's KV pool.
             - --max-num-batched-tokens
             - "2048"
-            # Speculation stays off until the GDN long-session faults are fixed.
+            # Single-card config from git history (#2102). GDN spec-decode fix vllm#50021 is still open: drop this if long sessions fault.
+            - --speculative-config
+            - '{"method":"mtp","num_speculative_tokens":2}'
             # Sampler is a community-reported mitigation (QwenLM/Qwen3.8#216), not an upstream default; keep WebUI/Pi thinking=1.05, off=1.0 in sync.
             - --override-generation-config
             - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.05}'

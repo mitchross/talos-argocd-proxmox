@@ -2,13 +2,15 @@
 
 ## LLM Backend
 
-The Git-declared production backend is **vLLM**, never Ollama. See
+The Git-declared production backend is **vLLM** (plus Strata on the second card), never Ollama. See
 [`vllm/README.md`](vllm/README.md) for the pinned official FP8 checkpoint,
 staging order, runtime flags, reasoning/sampling controls and rollback.
 
 - Model ID: `qwen3.8-27b`; official `Qwen/Qwen3.8-27B-FP8`.
-- vLLM (version: `my-apps/ai/vllm/deployment.yaml`), two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
-- **MTP/speculation stays off** pending the long-session fixes and validation.
+- vLLM (version: `my-apps/ai/vllm/deployment.yaml`), one RTX 3090, TP=1, W4A16 checkpoint, FP8 KV, vision,
+  65,536-token ceiling, MTP 2 draft tokens (drop it first if long sessions fault; vllm#50021).
+- Second card: [Strata](strata/README.md) serves `qwen3.8-flash-next` (IQ3_S GGUF, experts in host RAM,
+  131,072 tokens, one request at a time). Local-only: no paid fallback reaches it.
 - Explicit thinking levels: `low`, `medium`, `xhigh`; coding/server default
   is `xhigh`, preservation true. Lower effort is opt-in; WebUI's generic high maps to xhigh.
 - Off requests use `enable_thinking=false`, `preserve_thinking=false`, and
@@ -29,8 +31,8 @@ its classifier stays thinking-off and its DeepSeek high/max routes are unchanged
 
 ## GPU Topology
 
-Whole-card allocations, time-slicing disabled, `Recreate` strategy. vLLM
-requests both RTX 3090s; ComfyUI and SwarmUI remain at zero replicas.
+Whole-card allocations, time-slicing disabled, `Recreate` strategy. vLLM and
+Strata each request one RTX 3090; ComfyUI and SwarmUI remain at zero replicas.
 Use committed replica counts and the
 [scale-swap runbook](../../docs/domains/ai-gpu/gpu-scale-swap.md).
 
@@ -68,7 +70,8 @@ spec:
 **Large CPU-offloaded LLMs need reserved RAM.** The GPU node also hosts
 unrelated workloads and storage; do not assume it is isolated. The declared
 vLLM container requests 8 GiB and limits memory to 64 GiB. That limit is not
-reserved or free host RAM. Re-check guest allocatable memory, other pod
+reserved or free host RAM. Strata requests 54 GiB (its experts live in RAM) with
+`preemptionPolicy: Never`, so it waits Pending rather than evicting other pods. Re-check guest allocatable memory, other pod
 requests and steady-state usage before any large-model cutover; historical
 node measurements are not a current capacity guarantee.
 

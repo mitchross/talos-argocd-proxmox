@@ -10,17 +10,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a production-grade GitOps Kubernetes cluster running on **Talos OS** with **self-managing ArgoCD**. The key differentiator is that ArgoCD manages its own configuration and automatically discovers applications through directory structure - no manual Application manifests needed.
 
-**AI/LLM Backend**: **vLLM** is the only GPU inference backend; never Ollama.
+**AI/LLM Backend**: **vLLM** serves the stable model; Strata serves the second card's MoE model; never Ollama.
 
 - Stable API model: `qwen3.8-27b`. Apps use authenticated LiteLLM at
   `http://litellm-service.litellm.svc.cluster.local:4000/v1` for Langfuse telemetry. Direct diagnostic / gateway upstream service:
   `http://vllm-service.vllm.svc.cluster.local:8080/v1`. Both
   `llama.vanillax.me` and `vllm.vanillax.me` route to vLLM directly.
 
-Both cards use whole-card allocations (`Recreate`, time-slicing disabled),
-with the existing 220 W per-card limit. Image generation must remain parked
-while vLLM requests both cards. Runtime, flags, staging and rollback:
-`my-apps/ai/vllm/README.md`; app wiring: `docs/domains/ai-gpu/model-catalog.md`.
+Whole-card allocations (`Recreate`, time-slicing disabled), 220 W per card:
+vLLM serves `qwen3.8-27b` on one 3090, Strata serves `qwen3.8-flash-next` on the
+other (`my-apps/ai/strata/`). Image generation stays parked. Runtime, flags,
+staging and rollback: `my-apps/ai/vllm/README.md`; app wiring: `docs/domains/ai-gpu/model-catalog.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
