@@ -17,6 +17,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | MCP servers | talos | `config.yaml` `mcp_servers`; tokens come from `hermes-secrets` as `${env:NAME}` (Cloudflare: `cloudflared-proxmox/api-token`) |
 | Omni, Talos, Pi | talos | 1Password `hermes-omni-sa` (Operator role) in `externalsecret.yaml`; `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` |
 | Cluster access | talos | `rbac.yaml` (`hermes-viewer` reads, `hermes-operator` does day-to-day fixes), `config/kube-in-cluster.yaml`; `kubectl` ships in the image |
+| Argo CD access | talos | Argo account `hermes` (`infrastructure/controllers/argocd/values.yaml` `accounts.hermes`, `configs.rbac`): read apps, diffs and logs, start a sync. Token from 1Password `hermes/argocd_token` → ExternalSecret `hermes-argocd` → file `/etc/hermes/argocd/token` |
 | Image | homelab-images | `images/hermes-dev/` (official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`); talos pins the digest in `deployment.yaml` and `image-prepull.yaml`; bump both together |
 | Secret values | 1Password `homelab-prod` | items `hermes` (`dashboard_password`, `dashboard_secret`), `hermes-omni-sa`, `litellm`, `hindsight`, `home-assistant`, `claude-code` (`oauth_token`) |
 | Coding agents | talos | `skills/homelab-ops/SKILL.md` runs `claude -p` or `codex exec` in this pod; there is no fallback (Paseo is off, #3072) |

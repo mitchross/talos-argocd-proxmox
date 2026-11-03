@@ -46,6 +46,7 @@ flowchart LR
 | Coding agents' models | `ANTHROPIC_MODEL=claude-opus-5-5` + `--effort high`; `.codex/config.toml` `gpt-6.1-sol` + `high` | The skill passes `--model` on every run: Sonnet 5.5 for spelled-out fixes, Opus 5.5 or GPT-6.1-sol for investigation and design. It reports model and effort on every hand-off |
 | Claude login | 1Password `claude-code/oauth_token` → `CLAUDE_CODE_OAUTH_TOKEN` | From `claude setup-token` on the Max plan; no browser login in the pod |
 | Gitea login | 1Password `gitea/git_token` → `GITEA_TOKEN` | Git credential helper for `https://gitea.vanillax.me`; clone and push work, no `tea` CLI |
+| Argo CD login | 1Password `hermes/argocd_token` → Secret `hermes-argocd` → `/etc/hermes/argocd/token` | Make it once after the `hermes` account exists: `argocd account generate-token --account hermes`, save it to that field, then restart the pod. Lets Hermes read diffs and start syncs; it can't edit apps |
 | Dashboard login | 1Password `hermes/dashboard_password` and `dashboard_secret` → Secret `hermes-secrets` | Username `vanillax`. The secret signs sessions, so logins survive restarts |
 | Memory | Hindsight in-cluster, bank `hermes`; plugin settings in `config/hindsight-hermes.json`, copied to `hindsight/config.json` by the seed | Key from 1Password `hindsight/tenant_api_key` |
 | Home Assistant | 1Password `home-assistant/ha-longlived-token` → `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
