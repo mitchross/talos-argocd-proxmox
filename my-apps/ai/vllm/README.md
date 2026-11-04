@@ -229,6 +229,10 @@ the checkpoint's MTP file even though speculation is disabled).
    files; every completed file is hash/size verified before atomic rename.
 3. Wave 0 `vllm-cache-sync` verifies the archive, copies to local NVMe and
    verifies the destination. Only then does it publish `.verified-manifest`.
+   Later syncs skip the full re-hash when `.verified-manifest` matches the
+   current manifest and every file size matches, so a routine sync takes seconds.
+   A manifest change or a size mismatch re-verifies everything. To force a full
+   check, delete `.verified-manifest` and sync.
 4. Wave 1 Deployment waits for the matching manifest marker and complete file
    inventory. Serving is offline from the local cache.
 

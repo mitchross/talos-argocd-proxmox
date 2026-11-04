@@ -28,6 +28,11 @@ configMapGenerator:
       - GPUS=0,1
       - HOST=0.0.0.0
       - PORT=8080
+      # Batch slots (upstream docs/BATCHING.md): up to 2 requests decode together, more wait for a free slot.
+      # prepare.sh writes it into the config as "parallel"; it is not in the settings stamp, so a change
+      # restarts the pod but never reruns setup. 1 = one request at a time. LiteLLM's max_parallel_requests
+      # on the qwen3.8-27b route must match it.
+      - PARALLEL=2
   - name: strata-scripts
     files:
       - scripts/prepare.sh

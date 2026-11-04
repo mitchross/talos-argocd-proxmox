@@ -68,6 +68,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: strata-settings
+          env:
+            # Strata rejects unknown Host headers (DNS-rebinding guard). Allow the in-cluster Service names LiteLLM uses.
+            - name: STRATA_ALLOWED_HOSTS
+              value: strata-service,strata-service.strata,strata-service.strata.svc,strata-service.strata.svc.cluster.local
           ports:
             - name: http
               containerPort: 8080
