@@ -5,13 +5,15 @@ model:
   provider: anthropic
   default: claude-opus-5-5
 
-# Qwen stays in the model picker as a free local option.
+# Local models in the picker. qwen3.8-flash-next = Strata only (no cloud fallback);
+# qwen3.8-27b = Strata with DeepSeek overflow when busy.
 providers:
   litellm:
     name: litellm
     base_url: http://litellm-service.litellm.svc.cluster.local:4000/v1
     api_key: ${LITELLM_API_KEY}
     models:
+      - qwen3.8-flash-next
       - qwen3.8-27b
 
 terminal:
@@ -61,9 +63,9 @@ delegation:
       default: balanced
       options:
         - name: local
-          description: "Free and private, on the homelab GPU (Qwen 3.8 27B). Slower. Bulk reading, summaries, private data."
+          description: "Free and private, on the homelab GPUs (Qwen3.8 Flash-Next on Strata, never leaves the house). One request at a time. Bulk reading, summaries, private data."
           provider: litellm
-          model: qwen3.8-27b
+          model: qwen3.8-flash-next
         - name: fast
           description: "Cheap, quick cloud model (DeepSeek Flash). Lookups, simple summaries, first-pass triage."
           provider: litellm
