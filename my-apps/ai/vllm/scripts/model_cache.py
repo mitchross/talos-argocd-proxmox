@@ -53,6 +53,10 @@ class ModelCache:
         print(f'Verified checkpoint: {marker.parent}', flush=True)
 
     def download(self, root, source_url=None):
+        if self.ready(root):
+            # Already verified for this exact manifest: skip the full re-hash.
+            print(f'Checkpoint already verified: {self.marker(root).parent}', flush=True)
+            return
         directory = self.begin(root)
         base = source_url or f"https://huggingface.co/{self.spec['repo']}/resolve/{self.spec['revision']}"
         for artifact in self.spec['files']:
@@ -81,6 +85,10 @@ class ModelCache:
         self.finish(root)
 
     def sync(self, source, target):
+        if self.ready(target):
+            # Already verified for this exact manifest: skip the full re-hash.
+            print(f'Checkpoint already verified: {self.marker(target).parent}', flush=True)
+            return
         directory = self.begin(target)
         if not self.ready(source):
             raise ValueError('Archive is not complete for this manifest')
