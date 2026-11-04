@@ -64,7 +64,7 @@ vLLM is off during the test, so compare against the saved FP8 TP=2 baseline
 
 Bump `image/SOURCE_REF` and `image/VERSION` together (VERSION must end in the
 first seven characters of the commit), and both `image:` lines in
-`deployment.yaml`. The workflow refuses mismatches and never overwrites an
+`deployment.yaml` (then pin `tag@digest` from the run's summary). The workflow refuses mismatches and never overwrites an
 existing tag.
 
 ## Rollback
