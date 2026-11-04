@@ -17,7 +17,7 @@ How it was collected, all on November 3:
 
 - **Talos is v1.14.5** on all 7 nodes (was v1.14.4). Kubernetes is still v1.37.1.
 - **Two more mini PCs were added** (one HP, one Dell). They are not in Omni or Prometheus yet. See
-  [New machines](#new-machines).
+  [New machines](#newest-machines).
 - **New measurements:** DIMM layout and speed, PCIe link widths, NVMe `fio`, RAM bandwidth and
   power per plug are on this page for the first time.
 - **`hp-elite-gen13` shows a second NVMe**, a WDC SN530 256 GB, next to the Intel 660p. Its role
