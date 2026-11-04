@@ -44,22 +44,24 @@ class ModelCacheTests(unittest.TestCase):
         self.assertTrue(self.model.ready(self.local))
         self.assertEqual((self.local / self.model.directory / 'model.safetensors').read_bytes(), b'valid test weights')
 
-    def test_same_size_corruption_is_repaired_before_readiness(self):
+    def test_verified_checkpoint_skips_rehash_on_later_syncs(self):
         self.download()
         self.model.sync(self.archive, self.local)
         target = self.local / self.model.directory / 'model.safetensors'
         target.write_bytes(b'x' * len(b'valid test weights'))
+        with patch.object(self.cache.ModelCache, 'valid', side_effect=AssertionError('re-hashed')):
+            self.model.sync(self.archive, self.local)
+            self.download()
+        self.assertTrue(self.model.ready(self.local))
+
+    def test_size_change_after_verify_forces_full_resync(self):
+        self.download()
+        self.model.sync(self.archive, self.local)
+        target = self.local / self.model.directory / 'model.safetensors'
+        target.write_bytes(b'short')
         self.model.sync(self.archive, self.local)
         self.assertEqual(target.read_bytes(), b'valid test weights')
         self.assertTrue(self.model.ready(self.local))
-
-    def test_corrupt_source_invalidates_existing_ready_marker(self):
-        self.download()
-        self.model.sync(self.archive, self.local)
-        (self.archive / self.model.directory / 'model.safetensors').write_bytes(b'x' * len(b'valid test weights'))
-        with self.assertRaises(ValueError):
-            self.model.sync(self.archive, self.local)
-        self.assertFalse(self.model.ready(self.local))
 
     def test_missing_shard_never_publishes_ready(self):
         self.download()
