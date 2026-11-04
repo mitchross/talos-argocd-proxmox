@@ -14,8 +14,8 @@ v0.1.26, 32K prompt): auto split K=24, prompt 749 tok/s, decode 106 tok/s median
 
 | Setting | Value |
 |---|---|
-| Source | `Niko1221/Strata` at `image/SOURCE_REF` (v0.1.40.3), built by `.github/workflows/strata-image.yml` |
-| Image | `ghcr.io/mitchross/strata:<image/VERSION>`: CUDA 13.0, sm_86 only, AVX2 CPU build, no vision encoder |
+| Source | `Niko1221/Strata` at the commit pinned in [homelab-images `images/strata`](https://github.com/mitchross/homelab-images/tree/main/images/strata) (v0.1.40.3) |
+| Image | `ghcr.io/mitchross/strata:<VERSION>`: CUDA 13.0, sm_86 only, AVX2 CPU build, no vision encoder |
 | Model | ISTA-DASLab GSQ-RCO **IQ3_S** GGUF (revision pinned in Strata's `setup.py`) |
 | Setup flags | `--family qwen --model IQ3_S --context 131072 --vision no --kv int8 --low-ram off --kv-streaming on --gpus 0,1` |
 | API | OpenAI-compatible, `http://strata-service.strata.svc.cluster.local:8080/v1`, no key |
@@ -62,10 +62,9 @@ vLLM is off during the test, so compare against the saved FP8 TP=2 baseline
 
 ## Image updates
 
-Bump `image/SOURCE_REF` and `image/VERSION` together (VERSION must end in the
-first seven characters of the commit), and both `image:` lines in
-`deployment.yaml` (then pin `tag@digest` from the run's summary). The workflow refuses mismatches and never overwrites an
-existing tag.
+The image is built in [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/strata),
+not here. Bump `SOURCE_REF` and `VERSION` there, then update both `image:` lines
+in `deployment.yaml` to the new `tag@digest` from that run's summary.
 
 ## Rollback
 

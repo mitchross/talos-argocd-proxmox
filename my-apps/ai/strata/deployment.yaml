@@ -61,7 +61,7 @@ spec:
               subPath: strata
       containers:
         - name: strata
-          # Built from Niko1221/Strata's own Dockerfile at the pinned commit: .github/workflows/strata-image.yml.
+          # Built from Niko1221/Strata's own Dockerfile at a pinned commit by mitchross/homelab-images (images/strata).
           image: ghcr.io/mitchross/strata:0.1.40.3-d5ea713-sm86@sha256:c0e0c5a3f99d170fe1b526f557ebb0fabc4ff5649789621d54d174a978f72ad6
           imagePullPolicy: IfNotPresent
           # The image entrypoint links /data/config/strata-iq3_s.json and execs the OpenAI-compatible server.
