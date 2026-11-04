@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - external-secret.yaml
+  - rbac.yaml
+  - daemonset.yaml
+  - vpa.yaml
+  - test/namespace.yaml
+  - test/egress-probe.yaml
+  # Phase 2 (separate PR): replace the next line with policies/cluster-wide.yaml.
+  - policies/test.yaml
+
+configMapGenerator:
+  # Hash suffix rolls the DaemonSet when the script changes.
+  - name: vpn-gateway-scripts
+    namespace: vpn-egress
+    files:
+      - scripts/gateway.sh

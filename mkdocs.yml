@@ -132,6 +132,7 @@ nav:
       - Networking:
           - Topology: domains/networking/topology.md
           - Cilium policies: domains/networking/policy.md
+          - VPN egress for pods: domains/networking/vpn-egress.md
           - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
       - Physical hosts:
           - Ansible host management: domains/hosts/physical-hosts-ansible.md

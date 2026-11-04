@@ -1,0 +1,46 @@
+# Phase 1: only the vpn-egress-test namespace leaves through the Proton gateways.
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: vpn-egress-test
+  annotations:
+    # The Cilium operator creates this CRD only after egressGateway.enabled rolls out.
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  selectors:
+    - podSelector:
+        matchLabels:
+          io.kubernetes.pod.namespace: vpn-egress-test
+  destinationCIDRs:
+    - 0.0.0.0/0
+  # LAN, cluster and Proton-internal ranges never go to the tunnel.
+  excludedCIDRs:
+    - 10.0.0.0/8
+    - 100.64.0.0/10
+    - 169.254.0.0/16
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+  # Required by the CRD; ignored because egressGateways is set.
+  egressGateway:
+    nodeSelector:
+      matchLabels:
+        kubernetes.io/hostname: hp-elite-gen13
+        egress.vanillax.dev/vpn-ready: "true"
+    interface: wg-proton
+  # A gateway counts only while its pod sets vpn-ready. With none ready, Cilium drops the traffic.
+  egressGateways:
+    - nodeSelector:
+        matchLabels:
+          kubernetes.io/hostname: hp-elite-gen13
+          egress.vanillax.dev/vpn-ready: "true"
+      interface: wg-proton
+    - nodeSelector:
+        matchLabels:
+          kubernetes.io/hostname: mini-pc-dell-ultra-worker
+          egress.vanillax.dev/vpn-ready: "true"
+      interface: wg-proton
+    - nodeSelector:
+        matchLabels:
+          kubernetes.io/hostname: hp-elite-gen12
+          egress.vanillax.dev/vpn-ready: "true"
+      interface: wg-proton

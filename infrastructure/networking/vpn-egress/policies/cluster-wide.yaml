@@ -1,0 +1,54 @@
+# Phase 2: every pod leaves through the Proton gateways, except the namespaces below.
+# Keep this list in sync with the exemption table in docs/domains/networking/vpn-egress.md.
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: vpn-egress-cluster
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  selectors:
+    - podSelector:
+        matchExpressions:
+          - key: io.kubernetes.pod.namespace
+            operator: NotIn
+            values:
+              - kube-system
+              - argocd
+              - 1passwordconnect
+              - external-secrets
+              - vpn-egress
+              - cloudflared
+              - consumers-energy-sync
+              - vllm
+              - comfyui
+  destinationCIDRs:
+    - 0.0.0.0/0
+  excludedCIDRs:
+    - 10.0.0.0/8
+    - 100.64.0.0/10
+    - 169.254.0.0/16
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+  egressGateway:
+    nodeSelector:
+      matchLabels:
+        kubernetes.io/hostname: hp-elite-gen13
+        egress.vanillax.dev/vpn-ready: "true"
+    interface: wg-proton
+  egressGateways:
+    - nodeSelector:
+        matchLabels:
+          kubernetes.io/hostname: hp-elite-gen13
+          egress.vanillax.dev/vpn-ready: "true"
+      interface: wg-proton
+    - nodeSelector:
+        matchLabels:
+          kubernetes.io/hostname: mini-pc-dell-ultra-worker
+          egress.vanillax.dev/vpn-ready: "true"
+      interface: wg-proton
+    - nodeSelector:
+        matchLabels:
+          kubernetes.io/hostname: hp-elite-gen12
+          egress.vanillax.dev/vpn-ready: "true"
+      interface: wg-proton

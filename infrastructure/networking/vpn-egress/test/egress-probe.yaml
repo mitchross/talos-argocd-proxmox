@@ -1,0 +1,32 @@
+# Idle shell for manual checks: exit IP, speed test, kill switch. Exec in; it does nothing on its own.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: egress-probe
+  namespace: vpn-egress-test
+  labels:
+    app: egress-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: egress-probe
+  template:
+    metadata:
+      labels:
+        app: egress-probe
+    spec:
+      containers:
+        - name: probe
+          image: ghcr.io/nicolaka/netshoot:v0.16@sha256:b09d9b21381f47a79b3cbcb30da25266dc17186ea00ae65e99fdc51396f48e70
+          command: ["sleep", "infinity"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 512Mi

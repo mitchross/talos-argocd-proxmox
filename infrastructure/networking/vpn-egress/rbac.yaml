@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vpn-gateway
+  namespace: vpn-egress
+---
+# Patch lets the gateway set its ready label and clear it on dead peers. It also allows other
+# edits to these three Node objects; nothing else is reachable.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vpn-gateway-node-label
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    resourceNames:
+      - hp-elite-gen13
+      - mini-pc-dell-ultra-worker
+      - hp-elite-gen12
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vpn-gateway-node-label
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vpn-gateway-node-label
+subjects:
+  - kind: ServiceAccount
+    name: vpn-gateway
+    namespace: vpn-egress

@@ -9,6 +9,11 @@ coverageExemptions:
     reason: "Image cache only: a pause container with fixed 1m/8Mi requests."
   - apiVersion: apps/v1
     kind: Deployment
+    namespace: vpn-egress-test
+    name: egress-probe
+    reason: "Idle sleep shell for manual VPN egress tests; it uses resources only during a test."
+  - apiVersion: apps/v1
+    kind: Deployment
     namespace: comfyui
     name: comfyui
     reason: "Scale-swap GPU workload is intentionally kept at replicas=0."

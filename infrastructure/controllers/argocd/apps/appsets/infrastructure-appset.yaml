@@ -42,6 +42,7 @@ spec:
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/posthog-injector
       - path: infrastructure/networking/gateway
+      - path: infrastructure/networking/vpn-egress
       - path: infrastructure/gpu/gpu-priority-classes
       # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
       # (in nvidia-gpu-operator) now owns the device plugin on top of the
