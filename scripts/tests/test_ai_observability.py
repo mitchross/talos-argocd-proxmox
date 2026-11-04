@@ -210,19 +210,30 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(params['complexity_router_default_model'], 'deepseek-flash')
         # vLLM being down must not fail the request.
         settings = config['router_settings']
-        self.assertEqual(settings['fallbacks'], [{'qwen3.8-27b-auto': ['deepseek-flash']}])
+        # Strata test window: vLLM is parked (replicas 0), so bare qwen3.8-27b falls back to
+        # deepseek-flash too. Outside the test only pi-auto's route may divert to a paid provider.
+        vllm_kustomization = read('my-apps/ai/vllm/kustomization.yaml')
+        vllm_parked = vllm_kustomization['replicas'][0]['count'] == 0
+        expected = [{'qwen3.8-27b-auto': ['deepseek-flash']}]
+        if vllm_parked:
+            expected.append({'qwen3.8-27b': ['deepseek-flash']})
+        self.assertEqual(settings['fallbacks'], expected)
         self.assertEqual(settings['context_window_fallbacks'],
                          [{'qwen3.8-27b-auto': ['deepseek-flash']}])
-        # A vLLM outage must never divert bare `pi`, Open WebUI or the other
-        # gateway clients to a paid external provider.
-        for rule in settings['fallbacks'] + settings['context_window_fallbacks']:
-            self.assertNotIn('qwen3.8-27b', rule)
+        if not vllm_parked:
+            for rule in settings['fallbacks'] + settings['context_window_fallbacks']:
+                self.assertNotIn('qwen3.8-27b', rule)
         self.assertEqual(auto['model_info'], {
             'max_input_tokens': 229376,
             'max_output_tokens': 32768,
         })
         self.assertEqual(routes['qwen3.8-27b']['litellm_params']['api_base'],
                          'http://vllm-service.vllm.svc.cluster.local:8080/v1')
+        # The second card's model is local-only: no paid fallback reaches it either.
+        self.assertEqual(routes['qwen3.8-flash-next']['litellm_params']['api_base'],
+                         'http://strata-service.strata.svc.cluster.local:8080/v1')
+        for rule in settings['fallbacks'] + settings['context_window_fallbacks']:
+            self.assertNotIn('qwen3.8-flash-next', rule)
         deepseek = routes['deepseek-flash']
         self.assertEqual(deepseek['litellm_params']['model'],
                          'openrouter/~deepseek/deepseek-flash-latest')

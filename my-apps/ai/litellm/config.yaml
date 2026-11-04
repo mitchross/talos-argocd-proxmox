@@ -9,6 +9,17 @@ model_list:
       # Self-hosted — pin explicitly rather than rely on LiteLLM's cost map.
       input_cost_per_token: 0
       output_cost_per_token: 0
+  # Qwen3.8-Flash-Next (MoE, experts in host RAM) on Strata, both 3090s; one request at a time.
+  - model_name: qwen3.8-flash-next
+    litellm_params:
+      model: openai/qwen3.8-flash-next-iq3_s
+      api_base: http://strata-service.strata.svc.cluster.local:8080/v1
+      api_key: "strata-no-key-required"
+      timeout: 1800
+    model_info:
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      max_input_tokens: 131072
   # Same backend as qwen3.8-27b, separate name so the DeepSeek failover below
   # reaches only pi-auto and never bare `pi`, Open WebUI or the other apps.
   - model_name: qwen3.8-27b-auto
@@ -128,10 +139,11 @@ litellm_settings:
   drop_params: true
 
 router_settings:
-  # Keyed on the pi-auto-only route: a vLLM outage must not silently bill and
-  # de-localise every other gateway client.
+  # Keyed on pi-auto's route so a vLLM outage bills no other client. The bare qwen3.8-27b
+  # rule is the Strata test's (vLLM parked, paid fallback) and leaves with it.
   fallbacks:
     - qwen3.8-27b-auto: ["deepseek-flash"]
+    - qwen3.8-27b: ["deepseek-flash"]
   context_window_fallbacks:
     - qwen3.8-27b-auto: ["deepseek-flash"]
 

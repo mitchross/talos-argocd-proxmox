@@ -8,8 +8,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"    # after the wave-0 cache-sync hook
 spec:
-  # Both cards belong to this server; no other GPU workload may run alongside it.
-  replicas: 1
+  # Parked (0) while Strata tests both cards (my-apps/ai/strata/); 1 gives it both cards back.
+  replicas: 0
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1

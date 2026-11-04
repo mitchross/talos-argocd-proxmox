@@ -1,5 +1,9 @@
 # vLLM — official Qwen3.8-27B FP8 on two RTX 3090s
 
+> **Parked (`replicas: 0`) during the Strata two-card test** ([`../strata/`](../strata/README.md)).
+> The settings below are unchanged; `qwen3.8-27b` falls back to `deepseek-flash` in LiteLLM meanwhile.
+> Revert the test PR to bring this server back on both cards.
+
 **Git-declared backend and operating policy.** The
 [2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
 records measurements of the earlier v0.28.0 deployment, with medium sent

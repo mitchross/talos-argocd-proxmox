@@ -13,6 +13,10 @@ canonical runtime, source references and reasoning acceptance checks.
 ComfyUI and SwarmUI are parked while vLLM owns both cards. The API model is
 `qwen3.8-27b`.
 
+**Strata test (temporary):** vLLM is parked and [Strata](strata/README.md) runs
+`qwen3.8-flash-next` on both cards; `qwen3.8-27b` falls back to `deepseek-flash`
+(paid) in LiteLLM. Revert the test PR to end it.
+
 For coding, follow the [Pi.dev setup guide](../../docs/domains/ai-gpu/pi-agent-local-dev.md).
 Pi's local defaults and launcher also need the companion dotfiles update;
 ArgoCD does not update workstation settings. The

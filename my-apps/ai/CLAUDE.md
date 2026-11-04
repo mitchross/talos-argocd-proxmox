@@ -21,6 +21,9 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
 - Historical capacity and current client guidance: `docs/domains/ai-gpu/3090-llm-optimization.md`.
   A configured ceiling is not proof of concurrent near-ceiling vision capacity.
 - AutoRound is a later speed A/B only.
+- **Strata test (temporary):** vLLM is parked (`replicas: 0`); [Strata](strata/README.md) holds both 3090s
+  as `qwen3.8-flash-next` (IQ3_S, layer split, one request at a time). LiteLLM falls back
+  `qwen3.8-27b` -> `deepseek-flash` (paid, prompts leave home) until the test PR is reverted.
 
 Pi's direct-Qwen settings and launcher are managed in `mitchross/dotfiles`;
 keep them aligned with this default. Explicit low/medium/off still win.
@@ -30,7 +33,8 @@ its classifier stays thinking-off and its DeepSeek high/max routes are unchanged
 ## GPU Topology
 
 Whole-card allocations, time-slicing disabled, `Recreate` strategy. vLLM
-requests both RTX 3090s; ComfyUI and SwarmUI remain at zero replicas.
+requests both RTX 3090s (during the Strata test Strata does, and vLLM is at 0);
+ComfyUI and SwarmUI remain at zero replicas.
 Use committed replica counts and the
 [scale-swap runbook](../../docs/domains/ai-gpu/gpu-scale-swap.md).
 

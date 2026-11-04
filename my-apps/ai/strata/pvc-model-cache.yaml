@@ -1,0 +1,43 @@
+# Same node-local NVMe as vLLM's cache (/var/mnt/ai-model-cache); Strata writes only its strata/ subPath.
+# A local PV binds one claim, so each namespace gets its own PV for the same path.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ai-model-cache-strata-local
+spec:
+  # Informational only for a local PV; the real ceiling is the shared 450G volume (~92 GB used here).
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ai-model-cache-local
+  volumeMode: Filesystem
+  local:
+    path: /var/mnt/ai-model-cache
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: gpu-worker
+              operator: In
+              values:
+                - "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-model-cache-strata
+  namespace: strata
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Node-local GGUF, pack and MTP layer; re-created from the revisions pinned in Strata's setup.py"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: ai-model-cache-local
+  volumeName: ai-model-cache-strata-local

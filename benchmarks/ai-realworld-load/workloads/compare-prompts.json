@@ -1,0 +1,30 @@
+{
+  "description": "Fixed prompt set for qwen3.8-27b (vLLM) vs qwen3.8-flash-next (Strata). Change it only with a new results baseline.",
+  "prompts": [
+    {
+      "id": "short-chat",
+      "title": "Short chat",
+      "max_tokens": 256,
+      "prompt": "In three sentences, explain the difference between a Kubernetes Deployment and a StatefulSet, and say when you would pick each."
+    },
+    {
+      "id": "prefill-8k",
+      "title": "8K-context prefill (needle recall)",
+      "max_tokens": 64,
+      "synthetic_tokens": 8000,
+      "expect": "JADE-4471"
+    },
+    {
+      "id": "coding",
+      "title": "Coding task",
+      "max_tokens": 1536,
+      "prompt": "Write a Python 3 function parse_quantity(s: str) -> float that converts Kubernetes resource quantities to a plain number: binary suffixes Ki Mi Gi Ti Pi Ei, decimal suffixes n u m k M G T P E, plain integers and decimals, and exponent forms such as 2e3. Raise ValueError on bad input. Then write a compact unittest.TestCase covering every suffix family, the exponent form and two invalid inputs. Return only one Python code block."
+    },
+    {
+      "id": "reverse-engineering",
+      "title": "Reverse-engineering explanation",
+      "max_tokens": 1536,
+      "prompt": "Explain what this x86-64 function (System V ABI, Intel syntax) does. Give: the C prototype with argument roles, equivalent C code, what the 8-byte table at rdx is for, and a function that undoes the transformation.\n\ndecode:\n    test    rsi, rsi\n    je      .done\n    xor     eax, eax\n.loop:\n    movzx   ecx, byte ptr [rdi+rax]\n    mov     r8d, eax\n    and     r8d, 7\n    xor     cl, byte ptr [rdx+r8]\n    rol     cl, 3\n    mov     byte ptr [rdi+rax], cl\n    inc     rax\n    cmp     rax, rsi\n    jne     .loop\n.done:\n    ret"
+    }
+  ]
+}

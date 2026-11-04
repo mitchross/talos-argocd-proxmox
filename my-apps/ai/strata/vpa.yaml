@@ -1,0 +1,19 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: strata-server
+  namespace: strata
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: strata-server
+  updatePolicy:
+    # Whole-card, RAM-sized GPU server: learn recommendations without resizing it.
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly

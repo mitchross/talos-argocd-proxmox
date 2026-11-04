@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: strata
+
+# List EVERY file here: unlisted YAML is never deployed.
+resources:
+  - namespace.yaml
+  - pvc-model-cache.yaml
+  - deployment.yaml
+  - service.yaml
+  - servicemonitor.yaml
+  - vpa.yaml
+
+configMapGenerator:
+  # docker-entrypoint.sh and scripts/prepare.sh read the same settings (Strata's setup flags as env vars).
+  - name: strata-settings
+    literals:
+      - STRATA_DATA=/data
+      - FAMILY=qwen
+      - MODEL=IQ3_S
+      - CONTEXT=131072
+      - VISION=no
+      - KV=int8
+      - LOW_RAM=off
+      - KV_STREAMING=on
+      # Layer split over the two cards the device plugin hands this pod (indices 0,1 inside it).
+      - GPUS=0,1
+      - HOST=0.0.0.0
+      - PORT=8080
+  - name: strata-scripts
+    files:
+      - scripts/prepare.sh

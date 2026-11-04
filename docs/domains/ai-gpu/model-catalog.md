@@ -12,6 +12,12 @@ New to the stack? Read [Local AI starter kit](index.md) first.
 | `qwen3.8-27b` | your two RTX 3090s | free | `qwen3.8-27b` |
 | `deepseek-flash` | OpenRouter, external | paid | `deepseek-flash` |
 | `pi-auto` | picks between the two | mixed | `pi-auto` |
+| `qwen3.8-flash-next` | both RTX 3090s via Strata, **test only** | free | `qwen3.8-flash-next` |
+
+!!! warning "Strata test (temporary)"
+    vLLM is parked at 0 replicas and Strata holds both cards. LiteLLM sends
+    `qwen3.8-27b` to `deepseek-flash` (paid, prompts leave home)
+    until the test PR is reverted. Runbook: `my-apps/ai/strata/README.md`.
 
 !!! tip "In 10 seconds"
     - **Qwen**: local, free, private. The default for every app.
@@ -25,7 +31,8 @@ other two per request.
 
 | Backend | Replicas | Cards | Model | Status |
 |---|---:|---:|---|---|
-| vLLM | `1` | **2** | `qwen3.8-27b` | production |
+| vLLM | `0` (test) | **2** | `qwen3.8-27b` | production, parked for the Strata test |
+| Strata | `1` (test) | 2 | `qwen3.8-flash-next` | test; one request at a time |
 | NInfer | n/a | 1 | `qwen3.8-ninfer` | archived (`my-apps/ai/_archive/ninfer/`) |
 | ComfyUI / SwarmUI | `0` | 1 | image generation | parked |
 

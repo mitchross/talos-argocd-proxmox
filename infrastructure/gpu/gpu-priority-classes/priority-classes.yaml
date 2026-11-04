@@ -25,3 +25,13 @@ metadata:
 value: 50
 globalDefault: false
 preemptionPolicy: PreemptLowerPriority
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-workload-no-preempt
+  annotations:
+    description: "Large host-RAM AI workloads (Strata): wait Pending instead of evicting pods on the GPU node"
+value: 50
+globalDefault: false
+preemptionPolicy: Never
