@@ -46,11 +46,11 @@ spec:
           resources:
             # Same as the server so the init step adds nothing to the pod's scheduling request.
             requests:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               cpu: "4"
               memory: 54Gi
             limits:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               memory: 64Gi
           volumeMounts:
             - name: repo-scripts
@@ -96,11 +96,11 @@ spec:
             # Low-RAM off: ~47 GiB expert arena + streamed KV + server; the GGUF page cache is reclaimable.
             # ~15 cores busy during decode (CPU-side experts).
             requests:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               cpu: "12"
               memory: 54Gi
             limits:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               memory: 64Gi
           volumeMounts:
             - name: data
