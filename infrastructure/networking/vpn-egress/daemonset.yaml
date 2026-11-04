@@ -46,8 +46,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            - name: GATEWAY_NODES
-              value: "hp-elite-gen13 mini-pc-dell-ultra-worker hp-elite-gen12"
           securityContext:
             runAsUser: 0
             allowPrivilegeEscalation: false

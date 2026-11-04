@@ -6,15 +6,26 @@ resources:
   - external-secret.yaml
   - rbac.yaml
   - daemonset.yaml
+  - controller.yaml
+  - httproute.yaml
+  - servicemonitor.yaml
   - vpa.yaml
   - test/namespace.yaml
   - test/egress-probe.yaml
-  # Phase 2 (separate PR): replace the next line with policies/cluster-wide.yaml.
-  - policies/test.yaml
+  # No CiliumEgressGatewayPolicy here: the controller creates and deletes it (on/off and fallback).
 
 configMapGenerator:
-  # Hash suffix rolls the DaemonSet when the script changes.
+  # Hash suffixes roll the pods when a script or setting changes.
   - name: vpn-gateway-scripts
     namespace: vpn-egress
     files:
       - scripts/gateway.sh
+  - name: vpn-egress-controller-app
+    namespace: vpn-egress
+    files:
+      - scripts/controller.py
+      - scripts/index.html
+  - name: vpn-egress-config
+    namespace: vpn-egress
+    envs:
+      - config.env

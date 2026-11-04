@@ -20,3 +20,25 @@ spec:
         maxAllowed:
           cpu: 200m
           memory: 128Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpn-egress-controller
+  namespace: vpn-egress
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vpn-egress-controller
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: controller
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 200m
+          memory: 128Mi
