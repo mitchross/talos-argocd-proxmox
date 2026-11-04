@@ -20,9 +20,9 @@ for f in claude-code codex; do
   chown 10000:10000 "$HERMES_HOME/.hindsight/$f.json"; chmod 0600 "$HERMES_HOME/.hindsight/$f.json"
 done
 # Third-party skills pinned by commit in external-skills.txt; a changed sha reinstalls that skill.
-grep -v '^#' /etc/hermes-scripts/external-skills.txt | while read -r repo sha path category; do
+grep -v '^#' /etc/hermes-scripts/external-skills.txt | while read -r repo sha path category name; do
   [ -n "$repo" ] || continue
-  dest="$HERMES_HOME/skills/$category/$(basename "$path")"
+  dest="$HERMES_HOME/skills/$category/${name:-$(basename "$path")}"
   [ "$(cat "$dest/.source-sha" 2>/dev/null)" = "$sha" ] && continue
   src="/tmp/skills-$(echo "$repo" | tr / -)-$sha"
   if [ ! -d "$src" ]; then
@@ -31,7 +31,8 @@ grep -v '^#' /etc/hermes-scripts/external-skills.txt | while read -r repo sha pa
       || { echo "[seed] skill fetch failed: $repo"; rm -rf "$src"; continue; }
   fi
   rm -rf "$dest"; mkdir -p "$(dirname "$dest")"
-  cp -R "$src/$path" "$dest" && echo "$sha" > "$dest/.source-sha" && echo "[seed] installed skill $(basename "$path")"
+  cp -R "$src/$path" "$dest" && echo "$sha" > "$dest/.source-sha" && echo "[seed] installed skill $(basename "$dest")"
+  [ -z "$name" ] || sed -i "0,/^name: .*/s//name: $name/" "$dest/SKILL.md"
   chown -R 10000:10000 "$HERMES_HOME/skills/$category"
 done
 rm -rf /tmp/skills-*
