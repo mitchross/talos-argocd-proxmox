@@ -83,3 +83,17 @@ These are client-side numbers through the gateway, so compare the two models
 with each other, not with server-side figures from vLLM's `/metrics`. One run
 per prompt is noisy; use `--repeats 3` before drawing conclusions. If you
 change the prompt file, old results are no longer comparable.
+
+## Several requests at once (`concurrency_probe.py`)
+
+`concurrency_probe.py` sends C different requests at the same moment and
+reports total tok/s, per-request decode tok/s and TTFT (which includes the time
+a request waits in the server's queue). Use it to size an engine's parallel
+slots. Strata with one slot:
+[`baselines/2026-11-03-strata-concurrency-parallel1`](../baselines/2026-11-03-strata-concurrency-parallel1/results.md).
+
+```bash
+kubectl -n strata port-forward deploy/strata-server 18080:8080
+python3 benchmarks/ai-realworld-load/tools/concurrency_probe.py --base-url http://127.0.0.1:18080/v1 \
+    --model qwen3.8-flash-next-iq3_s --levels 1,2,4,8 --rounds 2 --max-tokens 256
+```

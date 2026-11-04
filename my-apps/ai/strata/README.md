@@ -60,6 +60,30 @@ vLLM is off during the test, so compare against the saved FP8 TP=2 baseline
 (`--baseline <results.json>`):
 [`benchmarks/ai-realworld-load/tools/README.md`](../../../benchmarks/ai-realworld-load/tools/README.md).
 
+## Batch slots and the gateway
+
+`PARALLEL` in the `strata-settings` ConfigMap is Strata's `"parallel"` (upstream
+[`docs/BATCHING.md`](https://github.com/Niko1221/Strata/blob/d5ea7133741e67743c0e886bb426c0ce8d69cf6c/docs/BATCHING.md)):
+up to N requests decode together, more wait. `prepare.sh` writes it into
+`/data/config/strata-iq3_s.json` on every start. It is not part of the settings
+stamp, so changing it restarts the pod (experts reload into RAM, a few minutes)
+but never reruns setup. `GET /v1/status` -> `concurrency.serving` shows what the
+engine actually runs (it drops slots that don't fit in VRAM).
+
+It is **2**: each slot takes ~0.6 GB of the 18.45 GB expert cache (upstream's
+formula at 32K resident KV, int8) and ~1.6 GB of pinned RAM (128K streamed KV),
+so 2 slots keep the pod near 57 of its 64 GiB limit; 4 would need the limit
+raised. Upstream measured a request alone 11 % (2 slots) to 24 % (4 slots)
+slower where most experts run on the CPU (12 GB card). On a 4-GPU split two
+requests together ran 57 tok/s each (113 total vs 120 alone) and four 205
+total. This 2-card split is in between and unmeasured. The slots buy waiting time: with one slot,
+measured here, 4 requests at once wait up to 11 s for their first token and 8
+up to 23 s ([baseline](../../../benchmarks/ai-realworld-load/baselines/2026-11-03-strata-concurrency-parallel1/results.md)).
+
+LiteLLM's `qwen3.8-27b` (every app's model name) is capped at the same number
+with `max_parallel_requests`; one more gets LiteLLM's 429 and falls back to
+`deepseek-flash`. `qwen3.8-flash-next` stays local-only and queues here.
+
 ## Image updates
 
 The image is built in [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/strata),
