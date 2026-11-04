@@ -181,3 +181,12 @@ mcp_servers:
     enabled: true
     timeout: 300
     connect_timeout: 300
+
+# Repo-local skills (.agents/skills, .hermes/skills) load in sessions started inside these checkouts.
+skills:
+  trusted_project_dirs:
+    - /opt/data/workspace/talos-argocd-proxmox
+    - /opt/data/workspace/radar-ng
+    - /opt/data/workspace/deal-scout
+    - /opt/data/workspace/news-reader
+    - /opt/data/workspace/mobichan-ng
