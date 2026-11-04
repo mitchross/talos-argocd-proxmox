@@ -39,6 +39,9 @@ spec:
                   key: LITELLM_API_KEY
             - name: DATA_DIR
               value: /data
+            # All-in $/kWh from the Consumers Energy bill (non-summer); drives every power-cost figure.
+            - name: KWH_RATE
+              value: "0.2135"
             # eBay Partner Network campaign; public in every affiliate link, so not a secret.
             - name: EPN_CAMPAIGN_ID
               value: "5339215873"
