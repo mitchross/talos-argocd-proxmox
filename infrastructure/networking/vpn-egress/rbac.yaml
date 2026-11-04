@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vpn-gateway
+  namespace: vpn-egress
+---
+# Gateways write their health to ConfigMaps vpn-gateway-<node>. Server-side apply creates the
+# ConfigMap on first run, so create is granted without names; it reaches only this namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vpn-gateway-status
+  namespace: vpn-egress
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames:
+      - vpn-gateway-hp-elite-gen13
+      - vpn-gateway-mini-pc-dell-ultra-worker
+      - vpn-gateway-hp-elite-gen12
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vpn-gateway-status
+  namespace: vpn-egress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vpn-gateway-status
+subjects:
+  - kind: ServiceAccount
+    name: vpn-gateway
+    namespace: vpn-egress
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vpn-egress-controller
+  namespace: vpn-egress
+---
+# The controller owns one CiliumEgressGatewayPolicy (vpn-egress) and reads nodes and namespace
+# names. create can't be limited by name, so it could create other egress policies; nothing else.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vpn-egress-controller
+rules:
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumegressgatewaypolicies"]
+    verbs: ["create"]
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumegressgatewaypolicies"]
+    resourceNames: ["vpn-egress"]
+    verbs: ["get", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["nodes", "namespaces"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vpn-egress-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vpn-egress-controller
+subjects:
+  - kind: ServiceAccount
+    name: vpn-egress-controller
+    namespace: vpn-egress
+---
+# Reads the gateway status ConfigMaps and keeps the on/off state in vpn-egress-state.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vpn-egress-controller
+  namespace: vpn-egress
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["vpn-egress-state"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vpn-egress-controller
+  namespace: vpn-egress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vpn-egress-controller
+subjects:
+  - kind: ServiceAccount
+    name: vpn-egress-controller
+    namespace: vpn-egress

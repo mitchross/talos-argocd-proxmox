@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VPN egress</title>
+<style>
+  :root {
+    --bg: #0f1216; --card: #171b21; --line: #262c35; --text: #e6e9ee; --muted: #8b94a3;
+    --green: #2fbf71; --red: #e5484d; --amber: #f5a524; --blue: #4c8dff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 16px; font-weight: 650; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  .banner { border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; display: none; }
+  .banner.red { display: block; background: rgba(229,72,77,.15); border: 1px solid var(--red); color: #ff8a8d; }
+  .banner.amber { display: block; background: rgba(245,165,36,.12); border: 1px solid var(--amber); color: #ffc766; }
+  .banner.grey { display: block; background: rgba(139,148,163,.12); border: 1px solid var(--line); color: var(--muted); }
+  .hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .state { display: flex; align-items: center; gap: 14px; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 4px rgba(139,148,163,.15); }
+  .dot.on { background: var(--green); box-shadow: 0 0 0 4px rgba(47,191,113,.2); }
+  .dot.fallback { background: var(--red); box-shadow: 0 0 0 4px rgba(229,72,77,.2); }
+  .dot.off { background: var(--amber); box-shadow: 0 0 0 4px rgba(245,165,36,.2); }
+  .big { font-size: 24px; font-weight: 700; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .switch { position: relative; width: 74px; height: 40px; border-radius: 20px; border: 0; cursor: pointer; background: #3a414c; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 32px; height: 32px; border-radius: 50%; background: #fff; transition: transform .15s; }
+  .switch.on { background: var(--green); }
+  .switch.on::after { transform: translateX(34px); }
+  .switch:disabled { opacity: .5; cursor: wait; }
+  table { width: 100%; border-collapse: collapse; }
+  .scroll { overflow-x: auto; }
+  th, td { text-align: left; padding: 9px 7px; border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 14px; }
+  td .why { white-space: normal; max-width: 170px; font-size: 12px; color: var(--muted); margin-top: 3px; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.up { background: rgba(47,191,113,.15); color: var(--green); }
+  .pill.down { background: rgba(229,72,77,.15); color: #ff8a8d; }
+  .pill.wait { background: rgba(245,165,36,.15); color: var(--amber); }
+  .pill.muted { background: rgba(139,148,163,.15); color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: #20262e; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-size: 12px; font-family: ui-monospace, monospace; }
+  .chip.cov { border-color: rgba(76,141,255,.5); color: #a9c6ff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .err { color: #ff8a8d; font-size: 13px; margin-top: 8px; }
+  footer { color: var(--muted); font-size: 12px; }
+  code { font-family: ui-monospace, monospace; font-size: 12px; color: #c5ccd6; }
+</style>
+</head>
+<body>
+<main>
+  <h1>VPN egress</h1>
+  <div id="banner" class="banner"></div>
+
+  <section class="card hero">
+    <div class="state">
+      <div id="dot" class="dot"></div>
+      <div>
+        <div id="headline" class="big">Loading…</div>
+        <div id="subline" class="sub"></div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <button id="toggle" class="switch" aria-label="Turn VPN on or off" disabled></button>
+      <div class="sub" id="toggleHint">Toggling resets open outbound connections.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Gateways</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>Node</th><th>Tunnel</th><th>In policy</th><th>Exit IP</th><th>Proton endpoint</th>
+          <th>Handshake</th><th>Down</th><th>Up</th><th>Total down / up</th>
+        </tr></thead>
+        <tbody id="gateways"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Covered namespaces <span id="covCount"></span></h2>
+      <div class="sub" id="covMode" style="margin-bottom:10px"></div>
+      <div id="covered" class="chips"></div>
+    </section>
+    <section class="card">
+      <h2>Exempt namespaces <span id="exCount"></span></h2>
+      <div class="sub" style="margin-bottom:10px">These always use the home IP.</div>
+      <div id="exempt" class="chips"></div>
+    </section>
+  </div>
+
+  <footer id="footer"></footer>
+  <div id="errors" class="err"></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let current = null;
+
+function bytes(n) {
+  if (n == null) return "–";
+  const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0;
+  while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+  return n.toFixed(i ? 1 : 0) + " " + u[i];
+}
+function mbps(bps) { return bps == null ? "–" : (bps * 8 / 1e6).toFixed(bps * 8 < 1e7 ? 2 : 0) + " Mb/s"; }
+function age(s) {
+  if (s == null) return "never";
+  if (s < 90) return Math.round(s) + " s ago";
+  if (s < 5400) return Math.round(s / 60) + " min ago";
+  return Math.round(s / 3600) + " h ago";
+}
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function chips(list, cls) {
+  return list.length ? list.map((n) => `<span class="chip ${cls}">${esc(n)}</span>`).join("") : '<span class="sub">none</span>';
+}
+
+function render(s) {
+  current = s;
+  if (!s.ready) { $("headline").textContent = "Starting…"; return; }
+  const up = s.gateways.filter((g) => g.up).length;
+  const used = s.gateways.filter((g) => g.inPolicy).length;
+  const banner = $("banner");
+  banner.className = "banner";
+  $("dot").className = "dot " + s.mode;
+  if (s.mode === "on") {
+    $("headline").textContent = "VPN on";
+    $("subline").textContent = `Covered pods leave through Proton on ${used} of ${s.gateways.length} gateways.`;
+  } else if (s.mode === "fallback") {
+    $("headline").textContent = "VPN down";
+    $("subline").textContent = "No healthy gateway. Pods fall back to the home IP until a tunnel recovers.";
+    banner.className = "banner red";
+    banner.textContent = "VPN down — traffic on home IP";
+  } else {
+    $("headline").textContent = "VPN off";
+    $("subline").textContent = `Turned off${s.state.changedBy ? " by " + s.state.changedBy : ""}${s.state.changedAt ? " at " + s.state.changedAt : ""}. Tunnels stay up: ${up} of ${s.gateways.length} healthy.`;
+    banner.className = "banner amber";
+    banner.textContent = "VPN off — pods use the home IP";
+  }
+  const t = $("toggle");
+  t.disabled = false;
+  t.className = "switch" + (s.enabled ? " on" : "");
+  t.setAttribute("aria-pressed", s.enabled ? "true" : "false");
+
+  $("gateways").innerHTML = s.gateways.map((g) => {
+    const tunnel = g.up ? '<span class="pill up">up</span>'
+      : `<span class="pill down">down</span><div class="why">${esc(g.reason)}</div>`;
+    const pol = g.inPolicy ? '<span class="pill up">yes</span>'
+      : (g.up && s.enabled ? '<span class="pill wait">joining</span>' : '<span class="pill muted">no</span>');
+    return `<tr>
+      <td><code>${esc(g.name)}</code></td><td>${tunnel}</td><td>${pol}</td>
+      <td><code>${esc(g.exitIP) || "–"}</code></td><td><code>${esc(g.endpoint) || "–"}</code></td>
+      <td>${age(g.handshakeAge)}</td>
+      <td class="num">${mbps(g.rxRate)}</td><td class="num">${mbps(g.txRate)}</td>
+      <td class="num">${bytes(g.rxBytes)} / ${bytes(g.txBytes)}</td></tr>`;
+  }).join("");
+
+  const ns = s.namespaces;
+  $("covMode").textContent = "Mode: " + ns.mode;
+  $("covered").innerHTML = chips(ns.covered, "cov");
+  $("exempt").innerHTML = chips(ns.exempt, "");
+  $("covCount").textContent = `(${ns.covered.length})`;
+  $("exCount").textContent = `(${ns.exempt.length})`;
+  $("footer").innerHTML = `Policy <code>${esc(s.policyName)}</code> ${s.policyActive ? "applied" : "not applied"} · ` +
+    `last check ${new Date(s.lastReconcile * 1000).toLocaleTimeString()} · <a href="/metrics" style="color:inherit">metrics</a>`;
+  $("errors").textContent = (s.errors || []).join(" · ");
+}
+
+async function refresh() {
+  try {
+    const r = await fetch("/api/status", { cache: "no-store" });
+    render(await r.json());
+  } catch (e) {
+    $("errors").textContent = "Controller unreachable: " + e;
+  }
+}
+
+$("toggle").addEventListener("click", async () => {
+  if (!current) return;
+  const next = !current.enabled;
+  if (!next && !confirm("Turn the VPN off? Covered pods will use the home IP until you turn it back on.")) return;
+  $("toggle").disabled = true;
+  try {
+    const r = await fetch("/api/enabled", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-VPN-Toggle": "1", "X-VPN-Client": "web UI" },
+      body: JSON.stringify({ enabled: next }),
+    });
+    if (!r.ok) throw new Error((await r.json()).error || r.status);
+    setTimeout(refresh, 800);
+  } catch (e) {
+    $("errors").textContent = "Toggle failed: " + e.message;
+    $("toggle").disabled = false;
+  }
+});
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

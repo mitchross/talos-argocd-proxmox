@@ -51,6 +51,11 @@ MTU: 1500
 ipam:
   mode: kubernetes
 
+# Proton VPN egress through gateway nodes (infrastructure/networking/vpn-egress). Agents need a manual
+# rollout restart to load it; the operator rolls on its own and then creates the CiliumEgressGatewayPolicy CRD.
+egressGateway:
+  enabled: true
+
 # Enable Socket-level Load Balancing (critical for pod-to-service connectivity)
 socketLB:
   enabled: true

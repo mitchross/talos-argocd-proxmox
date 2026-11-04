@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - external-secret.yaml
+  - rbac.yaml
+  - daemonset.yaml
+  - controller.yaml
+  - httproute.yaml
+  - servicemonitor.yaml
+  - vpa.yaml
+  - test/namespace.yaml
+  - test/egress-probe.yaml
+  # No CiliumEgressGatewayPolicy here: the controller creates and deletes it (on/off and fallback).
+
+configMapGenerator:
+  # Hash suffixes roll the pods when a script or setting changes.
+  - name: vpn-gateway-scripts
+    namespace: vpn-egress
+    files:
+      - scripts/gateway.sh
+  - name: vpn-egress-controller-app
+    namespace: vpn-egress
+    files:
+      - scripts/controller.py
+      - scripts/index.html
+  - name: vpn-egress-config
+    namespace: vpn-egress
+    envs:
+      - config.env

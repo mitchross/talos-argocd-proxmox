@@ -1,0 +1,13 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vpn-egress-controller
+  namespace: vpn-egress
+spec:
+  selector:
+    matchLabels:
+      app: vpn-egress-controller
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
