@@ -38,7 +38,7 @@ Invoke every command through the `terminal` tool. Edit the worktree copy of `my-
 1. Inventory the models. Read the provider cache and the LiteLLM model list. Check in the LiteLLM config which models are local (vLLM) and which go through OpenRouter: `deepseek-flash` is cloud, not local.
 2. Install the plugin on the volume so validation can import it: `hermes plugins install advanced-delegation`. It stays inert until the restart.
 3. Write the routes in the worktree config. Keep the descriptions to one line, because they are the only thing the agent reads when it picks a route. The current set:
-   - `local`: `litellm` / `qwen3.8-27b`
+   - `local`: `litellm` / `qwen3.8-flash-next` (Strata only, no cloud fallback)
    - `fast`: `litellm` / `deepseek-flash`
    - `balanced`: `anthropic` / `claude-sonnet-5-5` (this is the default)
    - `codex`: `openai-codex` / `gpt-6.1-sol`
