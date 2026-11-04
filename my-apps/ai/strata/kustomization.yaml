@@ -24,8 +24,8 @@ configMapGenerator:
       - KV=int8
       - LOW_RAM=off
       - KV_STREAMING=on
-      # TEMPORARY 1x3090 benchmark: one card (index 0 inside the pod). Revert this PR to go back to GPUS=0,1.
-      - GPU=0
+      # Layer split over the two cards the device plugin hands this pod (indices 0,1 inside it).
+      - GPUS=0,1
       - HOST=0.0.0.0
       - PORT=8080
       # Batch slots (upstream docs/BATCHING.md). 1 slot: a 2nd slot measured no extra total speed
