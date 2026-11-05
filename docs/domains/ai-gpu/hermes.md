@@ -247,7 +247,56 @@ curl -s https://hermes.vanillax.me/api/status | jq '{version, gateway_state}'
 kubectl -n hermes get snapshot
 ```
 
-Expect `Synced` and `Healthy`, one `1/1 Running` pod, `hermes-data` `Bound`, both ExternalSecrets `SecretSynced`, `[seed] done`, `"gateway_state": "running"`, and a Kopiur snapshot `Succeeded` within the last 6 hours.
+Expect `Synced` and `Healthy`, one `3/3 Running` Hermes pod, `hermes-data` `Bound`, both ExternalSecrets `SecretSynced`, and `[seed] done`.
+Expect `"gateway_state": "running"` and a kopiur `Snapshot` that reached `Succeeded` within the last six hours.
+
+### Runtime reliability and task recovery
+
+The [Hermes settings](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/config.yaml) limit Kanban to four workers across profiles.
+The default would scale with node RAM (eight today); the fixed cap bounds background database writes.
+Interactive chats and coding subprocesses can still run concurrently.
+Hermes searches through the cluster's SearXNG service and extracts pages through Parallel's anonymous free tier.
+Extraction remains subject to that tier's availability and rate limits.
+
+Hindsight uses `/health/live` for liveness and `/health/ready` for readiness.
+A database outage removes traffic without restarting memory work.
+Native inference uses two threads per pool, with one embedding call and one reranking call at a time.
+The [Hindsight Deployment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/knowledge/hindsight/deployment.yaml) caps recalls and background tasks separately.
+Hermes waits up to 120 seconds for saved memories before its background prefetch continues.
+These limits reduce contention; they do not guarantee that every save becomes immediately visible.
+
+At startup, [Kanban recovery](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/scripts/reconcile-kanban.py) checks ready tasks whose latest worker crashed.
+It uses Hermes's own PR guard and blocks guarded tasks through the supported CLI.
+It preserves task history and PR links.
+An expired guard or an explicit handoff keeps the task eligible for dispatch.
+
+For a blocked task, open the Hermes dashboard terminal and run:
+
+```bash
+hermes kanban show <task-id>
+hermes kanban diagnostics --task <task-id>
+```
+
+Inspect the linked PR and the worker's last result.
+Verify prerequisite deployments live before continuing dependent work.
+Use the dashboard review workflow when the existing implementation is ready for review.
+Use an explicit handoff to the intended reviewer or implementer when further work is required.
+Reassigning to the same profile does not clear the PR guard.
+Keep tasks blocked while they need Mitch's review or a prerequisite deployment.
+
+Hermes v0.22.7 hard-codes a 20-second worker receipt deadline.
+Database stalls can still end turns with `worker_receipt_timeout` despite these contention limits.
+Track [upstream issue 147839](https://github.com/NousResearch/hermes-agent/issues/147839) before treating persistence failures as resolved.
+Retest persistence and concurrent compression after an upstream fix reaches the pinned image.
+
+The Hermes backup staging deadline is one hour; the shared storage class and six-hour schedule stay unchanged.
+The next scheduled run retries a failed backup.
+Check the resulting `Snapshot` and mover logs; a longer deadline cannot repair unavailable storage.
+
+After merge, check task diagnostics, both Hindsight probe endpoints, and the next backup.
+Confirm that new logs contain no persistence failures during concurrent chat and compression.
+If reliability regresses, revert the PR through Git and inspect current task status before resuming work.
+Configuration rollback does not unblock tasks parked by startup recovery.
 
 ## Change Hermes
 

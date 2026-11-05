@@ -3,5 +3,6 @@
   "api_url": "http://hindsight-service.hindsight.svc.cluster.local:8888",
   "bank_id": "hermes",
   "recall_budget": "mid",
-  "recall_types": "observation,world,experience"
+  "recall_types": "observation,world,experience",
+  "prefetch_retain_drain_timeout": 120
 }

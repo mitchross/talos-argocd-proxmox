@@ -25,6 +25,10 @@ terminal:
   cwd: /opt/data/workspace
   timeout: 180
 
+web:
+  search_backend: searxng
+  extract_backend: parallel
+
 memory:
   provider: hindsight
   hindsight:
@@ -34,6 +38,8 @@ memory:
     recall_budget: mid
   memory_enabled: true
   user_profile_enabled: true
+  memory_char_limit: 3300
+  user_char_limit: 2200
 
 dashboard:
   public_url: https://hermes.vanillax.me
@@ -44,6 +50,11 @@ timezone: "America/Detroit"
 agent:
   max_turns: 500
   reasoning_effort: medium
+
+# Bound background writers independently of the node's RAM-derived worker count.
+kanban:
+  max_in_progress: 4
+  max_in_progress_per_profile: 4
 
 # Opus has a 1M window and the default ratio (0.50) only compacts at ~500k, so long chats replayed
 # ~250k tokens on every call. Compact at 200k instead (the lower of ratio and this cap wins).
@@ -164,9 +175,8 @@ plugins:
     - advanced-delegation
   disabled: []
 
-# Written by the config migrator. Pinning it here stops the 0 -> 51 migration from running on
-# every start and re-creating the plugin bookkeeping keys below.
-_config_version: 51
+# Match the image's config schema so each start does not repeat migration.
+_config_version: 52
 
 _left_core_installed:
   - homeassistant
