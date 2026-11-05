@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:1.31-alpine@sha256:a46f57e097e8effc26192437d2e715adf74bcbea836117651ee436c27983fa41
+          image: nginx:1.31-alpine@sha256:9a5daf7abdc9d051d81c92e5a2553fec2747f59d1b72f75513192bdd29d3d9d7
           # Bypasses docker-entrypoint.d, which rewrites /etc/nginx on a read-only rootfs.
           command: ["nginx", "-g", "daemon off;"]
           ports:
