@@ -67,6 +67,7 @@ for d in .codex .claude .hindsight .claude.json .gitconfig .ssh; do
   [ -L "$TERM_HOME/$d" ] || { rm -rf "${TERM_HOME:?}/$d"; ln -s "$HERMES_HOME/$d" "$TERM_HOME/$d"; }
 done
 [ -L "$TERM_HOME/.config/gh" ] || { rm -rf "${TERM_HOME:?}/.config/gh"; ln -s "$HERMES_HOME/.config/gh" "$TERM_HOME/.config/gh"; }
+# shellcheck disable=SC2016 # Preserve $PATH for the terminal's login shell.
 printf '%s\n' 'export PATH=/opt/agents/bin:/opt/rust/cargo/bin:/usr/local/go/bin:$PATH' \
   'export RUSTUP_HOME=/opt/data/tools/rustup RUSTUP_AUTO_INSTALL=1 CARGO_HOME=/opt/data/.cargo' > "$TERM_HOME/.profile"
 # The image's Rust is read-only; a volume RUSTUP_HOME defaults to it via a link and installs repo-pinned toolchains once.
@@ -138,4 +139,6 @@ if [ -e "$REPO_DIR/.git" ]; then
     done
   fi
 fi
+as_hermes /opt/hermes/.venv/bin/python /etc/hermes-scripts/reconcile-kanban.py \
+  || echo "[seed] Kanban reconciliation failed; inspect task diagnostics"
 echo "[seed] done"

@@ -29,6 +29,7 @@ configMapGenerator:
       - seed.sh=scripts/seed.sh
       - gc-worktrees.sh=scripts/gc-worktrees.sh
       - usage-exporter.py=scripts/usage-exporter.py
+      - reconcile-kanban.py=scripts/reconcile-kanban.py
       - external-skills.txt=scripts/external-skills.txt
   - name: hermes-skills
     files:
@@ -38,3 +39,12 @@ configMapGenerator:
       - kubeconfig=config/kube-in-cluster.yaml
 components:
   - ../../common/kopiur-backup
+patches:
+  - target:
+      group: kopiur.home-operations.com
+      kind: SnapshotPolicy
+      name: hermes-data
+    patch: |-
+      - op: add
+        path: /spec/staging/timeout
+        value: 1h

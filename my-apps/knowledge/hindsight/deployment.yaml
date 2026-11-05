@@ -64,6 +64,21 @@ spec:
               value: "1"
             - name: HINDSIGHT_API_LLM_MAX_CONCURRENT
               value: "4"
+            # Bound native inference and database work on the shared CPU nodes.
+            - name: OMP_NUM_THREADS
+              value: "2"
+            - name: MKL_NUM_THREADS
+              value: "2"
+            - name: HINDSIGHT_API_EMBEDDINGS_LOCAL_MAX_CONCURRENT
+              value: "1"
+            - name: HINDSIGHT_API_RERANKER_LOCAL_MAX_CONCURRENT
+              value: "1"
+            - name: HINDSIGHT_API_RECALL_MAX_CONCURRENT
+              value: "4"
+            - name: HINDSIGHT_API_WORKER_MAX_SLOTS
+              value: "4"
+            - name: HINDSIGHT_API_LOOP_WATCHDOG_ENABLED
+              value: "true"
             # Stable id so a new pod reclaims the old pod's in-flight jobs on start. The default
             # (pod hostname) strands them in 'processing' and blocks consolidation (upstream #1719).
             - name: HINDSIGHT_API_WORKER_ID
@@ -89,13 +104,14 @@ spec:
             failureThreshold: 60 # first boot loads embedding models
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: http
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /health
+              # Database stalls must remove traffic without restarting memory work.
+              path: /health/live
               port: http
             periodSeconds: 30
             timeoutSeconds: 5
