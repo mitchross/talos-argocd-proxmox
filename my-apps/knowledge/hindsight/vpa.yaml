@@ -17,7 +17,7 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         minAllowed:
-          cpu: 250m
+          cpu: 500m
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler

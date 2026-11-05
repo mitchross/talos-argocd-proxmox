@@ -77,8 +77,6 @@ spec:
               value: "4"
             - name: HINDSIGHT_API_WORKER_MAX_SLOTS
               value: "4"
-            - name: HINDSIGHT_API_LOOP_WATCHDOG_ENABLED
-              value: "true"
             # Stable id so a new pod reclaims the old pod's in-flight jobs on start. The default
             # (pod hostname) strands them in 'processing' and blocks consolidation (upstream #1719).
             - name: HINDSIGHT_API_WORKER_ID

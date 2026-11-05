@@ -38,6 +38,7 @@ memory:
     recall_budget: mid
   memory_enabled: true
   user_profile_enabled: true
+  memory_char_limit: 3300
   user_char_limit: 2200
 
 dashboard:
@@ -52,8 +53,8 @@ agent:
 
 # Bound background writers independently of the node's RAM-derived worker count.
 kanban:
-  max_in_progress: 1
-  max_in_progress_per_profile: 1
+  max_in_progress: 4
+  max_in_progress_per_profile: 4
 
 # When Claude rate-limits or errors, the chat moves to Codex (ChatGPT plan), then DeepSeek Flash.
 # A limit that resets within 2 minutes is waited out instead of switching.

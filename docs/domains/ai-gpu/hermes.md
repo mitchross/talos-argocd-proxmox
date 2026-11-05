@@ -252,8 +252,9 @@ Expect `"gateway_state": "running"` and a kopiur `Snapshot` that reached `Succee
 
 ### Runtime reliability and task recovery
 
-The [Hermes settings](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/config.yaml) limit Kanban to one worker across profiles.
-This reduces background database writes; interactive chats and coding subprocesses can still run concurrently.
+The [Hermes settings](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/config.yaml) limit Kanban to four workers across profiles.
+The default would scale with node RAM (eight today); the fixed cap bounds background database writes.
+Interactive chats and coding subprocesses can still run concurrently.
 Hermes searches through the cluster's SearXNG service and extracts pages through Parallel's anonymous free tier.
 Extraction remains subject to that tier's availability and rate limits.
 

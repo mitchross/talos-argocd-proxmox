@@ -42,7 +42,9 @@ def reconcile(db_path, check_guard, run=subprocess.run):
 def main():
     # The bundled interpreter needs the launcher's source path and .pth dependency paths.
     sys.path.insert(0, "/opt/hermes")
-    site.addsitedir("/opt/hermes/.venv/lib/python3.14/site-packages")
+    # Glob the version so an image's Python bump does not break recovery.
+    for packages in sorted(Path("/opt/hermes/.venv/lib").glob("python3*/site-packages")):
+        site.addsitedir(str(packages))
     try:
         from hermes_cli.kanban_db_dispatch import check_respawn_guard
 
