@@ -252,7 +252,7 @@ Expect `"gateway_state": "running"` and a kopiur `Snapshot` that reached `Succee
 
 ### Runtime reliability and task recovery
 
-The [Hermes settings](../../../my-apps/development/hermes/config/config.yaml) limit Kanban to one worker across profiles.
+The [Hermes settings](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/config.yaml) limit Kanban to one worker across profiles.
 This reduces background database writes; interactive chats and coding subprocesses can still run concurrently.
 Hermes searches through the cluster's SearXNG service and extracts pages through Parallel's anonymous free tier.
 Extraction remains subject to that tier's availability and rate limits.
@@ -260,11 +260,11 @@ Extraction remains subject to that tier's availability and rate limits.
 Hindsight uses `/health/live` for liveness and `/health/ready` for readiness.
 A database outage removes traffic without restarting memory work.
 Native inference uses two threads per pool, with one embedding call and one reranking call at a time.
-The [Hindsight Deployment](../../../my-apps/knowledge/hindsight/deployment.yaml) caps recalls and background tasks separately.
+The [Hindsight Deployment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/knowledge/hindsight/deployment.yaml) caps recalls and background tasks separately.
 Hermes waits up to 120 seconds for saved memories before its background prefetch continues.
 These limits reduce contention; they do not guarantee that every save becomes immediately visible.
 
-At startup, [Kanban recovery](../../../my-apps/development/hermes/scripts/reconcile-kanban.py) checks ready tasks whose latest worker crashed.
+At startup, [Kanban recovery](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/scripts/reconcile-kanban.py) checks ready tasks whose latest worker crashed.
 It uses Hermes's own PR guard and blocks guarded tasks through the supported CLI.
 It preserves task history and PR links.
 An expired guard or an explicit handoff keeps the task eligible for dispatch.
