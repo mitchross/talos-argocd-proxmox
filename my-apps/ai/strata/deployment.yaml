@@ -23,7 +23,8 @@ spec:
       runtimeClassName: nvidia
       # Never evicts other pods to find its ~54 GiB; it stays Pending until the node has room.
       priorityClassName: gpu-workload-no-preempt
-      terminationGracePeriodSeconds: 60
+      # Upstream gives the model two minutes to unload (docs/DOCKER.md, --stop-timeout 120).
+      terminationGracePeriodSeconds: 120
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
         gpu-worker: "true"
@@ -33,38 +34,44 @@ spec:
           effect: "NoSchedule"
       # No fsGroup: the local volume also holds vLLM's files, and fsGroup would chown all of it.
       initContainers:
-        # First start or changed settings: pinned GGUF shards + MTP layer download (~92 GB), pack build, config.
-        - name: prepare
-          image: ghcr.io/mitchross/strata:0.1.40.3.1-d5ea713-sm86@sha256:ec2234c6b9e519d8cb5cb67f0f704f9d41e8f54c6ecd9ce3b5ab648fe57db42d
+        # 0.2.x keeps models, packs and the MTP layer in /data/Strata-data, and its entrypoint renames the 0.1.x
+        # folders there. Do the same rename here and leave links at the old places, so a revert to 0.1.x still
+        # finds its files (no ~92 GB download). The 0.2.x entrypoint skips names that already exist and its
+        # old-files check does not follow the links.
+        - name: keep-old-paths
+          image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:DIGEST_PENDING
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
-            - /opt/repo-scripts/prepare.sh
-          envFrom:
-            - configMapRef:
-                name: strata-settings
+            - -c
+            - |
+              set -eu
+              mkdir -p /data/Strata-data
+              for d in models packs mtp; do
+                if [ -d "/data/$d" ] && [ ! -L "/data/$d" ] && [ ! -e "/data/Strata-data/$d" ]; then
+                  mv "/data/$d" "/data/Strata-data/$d" && echo "moved /data/$d -> /data/Strata-data/$d"
+                fi
+                if [ -d "/data/Strata-data/$d" ] && [ ! -e "/data/$d" ]; then
+                  ln -s "Strata-data/$d" "/data/$d" && echo "linked /data/$d -> Strata-data/$d"
+                fi
+              done
           resources:
-            # Same as the server so the init step adds nothing to the pod's scheduling request.
             requests:
-              nvidia.com/gpu: "2"
-              cpu: "4"
-              memory: 54Gi
+              cpu: 10m
+              memory: 16Mi
             limits:
-              nvidia.com/gpu: "2"
-              memory: 64Gi
+              memory: 64Mi
           volumeMounts:
-            - name: repo-scripts
-              mountPath: /opt/repo-scripts
-              readOnly: true
             - name: data
               mountPath: /data
               subPath: strata
       containers:
         - name: strata
           # Built from Niko1221/Strata's own Dockerfile at a pinned commit by mitchross/homelab-images (images/strata).
-          image: ghcr.io/mitchross/strata:0.1.40.3.1-d5ea713-sm86@sha256:ec2234c6b9e519d8cb5cb67f0f704f9d41e8f54c6ecd9ce3b5ab648fe57db42d
+          # The entrypoint runs `strata launch --no-tui` with the strata-settings variables: a first start or changed
+          # settings run setup (download, pack, run settings), then it serves. Finished steps are not repeated.
+          image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:DIGEST_PENDING
           imagePullPolicy: IfNotPresent
-          # The image entrypoint links /data/config/strata-iq3_s.json and execs the OpenAI-compatible server.
           envFrom:
             - configMapRef:
                 name: strata-settings
@@ -76,12 +83,13 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-          # The port opens only after the experts are copied into RAM.
+          # The port opens only after setup and the expert load. Setup now runs in this container, and the first
+          # 0.2.x start checks the files and writes new run settings, so allow 60 minutes.
           startupProbe:
             httpGet: { path: /health, port: http }
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 180
+            failureThreshold: 360
           livenessProbe:
             httpGet: { path: /health, port: http }
             periodSeconds: 30
@@ -109,10 +117,6 @@ spec:
             - name: dshm
               mountPath: /dev/shm
       volumes:
-        - name: repo-scripts
-          configMap:
-            name: strata-scripts
-            defaultMode: 0555
         - name: data
           persistentVolumeClaim:
             claimName: ai-model-cache-strata

@@ -13,30 +13,26 @@ resources:
   - vpa.yaml
 
 configMapGenerator:
-  # docker-entrypoint.sh and scripts/prepare.sh read the same settings (Strata's setup flags as env vars).
+  # The image entrypoint (upstream docker/entrypoint.sh) turns these into `strata launch --no-tui` flags and saves
+  # them as the "docker" preset in /data/state. A change restarts the pod; setup reruns only for what it changes.
+  # 0.1.x's LOW_RAM, KV_STREAMING, HOST and STRATA_DATA are gone (ignored with a warning); setup's defaults (auto)
+  # choose from the node's RAM. Check the run settings in /data/install after a start for what it picked.
   - name: strata-settings
     literals:
-      - STRATA_DATA=/data
       - FAMILY=qwen
       - MODEL=IQ3_S
       - CONTEXT=131072
-      # Images: yes = the CUDA image encoder (needs an image built with BUILD_VISION=1). It is in the settings
-      # stamp, so a change reruns setup: the GGUFs and pack are reused, only the ~0.9 GB mmproj is downloaded.
-      # The engine keeps ~700 MiB free for it (setup.py VISION reserve_mib), taken from the expert cache.
+      # Images: yes = the CUDA image encoder (needs an image built with BUILD_VISION=1). A change reruns setup:
+      # the GGUFs and pack are reused, only the ~0.9 GB mmproj is downloaded.
       - VISION=yes
       - KV=int8
-      - LOW_RAM=off
-      - KV_STREAMING=on
       # Layer split over the two cards the device plugin hands this pod (indices 0,1 inside it).
       - GPUS=0,1
-      - HOST=0.0.0.0
       - PORT=8080
-      # Batch slots (upstream docs/BATCHING.md). 1 slot: a 2nd slot measured no extra total speed
-      # (51 vs 50 tok/s) and halved per-request decode, so overflow goes to deepseek-flash instead.
-      # prepare.sh writes it into the config as "parallel"; it is not in the settings stamp, so a change
-      # restarts the pod but never reruns setup. 1 = one request at a time. LiteLLM's max_parallel_requests
-      # on the qwen3.8-27b route must match it.
+      # 0.2.x serves beyond loopback only with a key, and makes one when none is set. "none" serves without a key
+      # on purpose, as 0.1.x did: only cluster pods reach the Service, and LiteLLM sends a dummy key.
+      - API_KEY=none
+      # Batch slots (upstream docs/BATCHING.md), `launch --parallel`; 0.2.x's default is 8 fitted to the card.
+      # 1 slot: a 2nd slot measured no extra total speed (51 vs 50 tok/s) and halved per-request decode, so
+      # overflow goes to deepseek-flash instead. LiteLLM's max_parallel_requests on the qwen3.8-27b route must match.
       - PARALLEL=1
-  - name: strata-scripts
-    files:
-      - scripts/prepare.sh
