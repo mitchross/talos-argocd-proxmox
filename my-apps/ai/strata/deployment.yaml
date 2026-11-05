@@ -23,7 +23,8 @@ spec:
       runtimeClassName: nvidia
       # Never evicts other pods to find its ~54 GiB; it stays Pending until the node has room.
       priorityClassName: gpu-workload-no-preempt
-      terminationGracePeriodSeconds: 60
+      # Upstream gives the model two minutes to unload (docs/DOCKER.md, --stop-timeout 120).
+      terminationGracePeriodSeconds: 120
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
         gpu-worker: "true"
@@ -33,25 +34,22 @@ spec:
           effect: "NoSchedule"
       # No fsGroup: the local volume also holds vLLM's files, and fsGroup would chown all of it.
       initContainers:
-        # First start or changed settings: pinned GGUF shards + MTP layer download (~92 GB), pack build, config.
-        - name: prepare
+        # 0.2.x keeps models, packs and the MTP layer in /data/Strata-data, and its entrypoint renames the 0.1.x
+        # folders there. Do the same rename here and leave links at the old places, so a revert to 0.1.x still
+        # finds its files (no ~92 GB download). The 0.2.x entrypoint skips names that already exist and its
+        # old-files check does not follow the links.
+        - name: keep-old-paths
           image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:254cff36099a22d0736ac8a457a644a3a7c1cb52407abf9e1f0e49b4cfc9c8b9
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
-            - /opt/repo-scripts/prepare.sh
-          envFrom:
-            - configMapRef:
-                name: strata-settings
+            - /opt/repo-scripts/keep-old-paths.sh
           resources:
-            # Same as the server so the init step adds nothing to the pod's scheduling request.
             requests:
-              nvidia.com/gpu: "2"
-              cpu: "4"
-              memory: 54Gi
+              cpu: 10m
+              memory: 16Mi
             limits:
-              nvidia.com/gpu: "2"
-              memory: 64Gi
+              memory: 64Mi
           volumeMounts:
             - name: repo-scripts
               mountPath: /opt/repo-scripts
@@ -62,9 +60,10 @@ spec:
       containers:
         - name: strata
           # Built from Niko1221/Strata's own Dockerfile at a pinned commit by mitchross/homelab-images (images/strata).
+          # The entrypoint runs `strata launch --no-tui` with the strata-settings variables: a first start or changed
+          # settings run setup (download, pack, run settings), then it serves. Finished steps are not repeated.
           image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:254cff36099a22d0736ac8a457a644a3a7c1cb52407abf9e1f0e49b4cfc9c8b9
           imagePullPolicy: IfNotPresent
-          # The image entrypoint links /data/config/strata-iq3_s.json and execs the OpenAI-compatible server.
           envFrom:
             - configMapRef:
                 name: strata-settings
@@ -76,12 +75,13 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-          # The port opens only after the experts are copied into RAM.
+          # The port opens only after setup and the expert load. Setup now runs in this container, and the first
+          # 0.2.x start checks the files and writes new run settings, so allow 60 minutes.
           startupProbe:
             httpGet: { path: /health, port: http }
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 180
+            failureThreshold: 360
           livenessProbe:
             httpGet: { path: /health, port: http }
             periodSeconds: 30
