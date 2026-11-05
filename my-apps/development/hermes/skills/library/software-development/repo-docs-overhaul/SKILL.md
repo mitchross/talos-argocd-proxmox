@@ -22,6 +22,9 @@ which is how the owner really runs things).
 - "Make the docs clear / easy to set up / ready for people to fork"
 - Moving or archiving docs, adding a docs index, deduping setup guides
 - Refreshing agent-facing text (`AGENTS.md`, `CLAUDE.md`, `llms.txt`, repo skills) after a stack change
+- Running `unslop` or a plain-English pass over a whole repo's docs, or over its code comments:
+  follow `references/style-pass-at-scale.md` (scope exclusions, fan-out brief, invariant check,
+  comments-only proof, PR split)
 - Replacing one component's docs with its successor's ("replace my X docs with Y"), or documenting how
   a self-built image is built and rolled out: see `references/retire-and-replace-component-docs.md`
 
@@ -36,7 +39,9 @@ which is how the owner really runs things).
    user guide / developer guide / reference / *dated or historical* (QA passes, audits, task lists,
    migration plans) → `archive/`.
    - Check whether "historical-looking" files are still referenced as contracts (e.g. crate READMEs
-     saying "JSON shapes follow spec-api.md"). Those stay live (e.g. `develop/specs/`), never archive.
+     saying "JSON shapes follow spec-api.md"). Those stay live while the port or rewrite they
+     describe is in progress. Once the owner confirms it is finished, move them under
+     `archive/<migration>/` and relabel the citing links as design history.
    - Grep **non-markdown** files for doc paths too (code comments, scripts, `.env.*`, `llms.txt`,
      CI path filters): `grep -rIn -E 'docs/[A-Za-z0-9_./-]+\.md|GETTING_STARTED|ARCHITECTURE' --exclude-dir={node_modules,.git,target} .`
    - Look for external consumers of blob URLs (App Store privacy-policy URL, other repos). If any
@@ -171,6 +176,9 @@ which is how the owner really runs things).
   invent them, confirm the kube context, and refuse to apply to GitOps-managed clusters.
 - **Removed-language sweep** (e.g. after a Python → Rust port): besides docs, check Renovate
   `enabledManagers`/`packageRules` (drop managers whose files are gone), `.gitignore` and CI path filters.
+  Crate/package READMEs get rewritten in present tense (drop "former module" columns, turn
+  "deviations from the old code" into behavior notes, keep fixture-regeneration steps). Code comments
+  follow the comment-pass rules in `references/style-pass-at-scale.md`.
   History mentions (handoff docs, behavioural specs, "recorded from the old code" fixtures) stay. CLI
   flag names that still carry the old language are a code change: leave them and list a follow-up.
 - Before committing a skill or AGENTS.md, check every path, crate, test name, service and section heading
@@ -182,6 +190,16 @@ which is how the owner really runs things).
 ## Scripts
 
 - `scripts/move_docs.py <map.json> [--dry]`: git-mv plus link/mention rewrite.
+- `scripts/scan_prose_tells.py <repo>`: before a style pass, per-file words and AI tells (JSON),
+  with agent files, archives and dated records already excluded.
+- `scripts/check_prose_invariants.py [--base REF] [repo]`: after a wording-only pass, flags changed
+  fences, links, inline code, lost numbers and leftover em dashes per changed `*.md`.
+- `scripts/check_comments_only.py <repo> [--base REF]`: after a comment-only pass, proves no code,
+  string or doctest changed in `.rs/.ts/.tsx/.js` files.
 - `scripts/check_links.py [repo]`: relative-link and `<img src>` checker for tracked `*.md` (skips fenced code).
 - `templates/ci-check-links.py`: committable CI version (set `REPO`/`BRANCH`). It also checks `llms.txt`
   GitHub URLs for any owner, so forks pass. Pair it with a `docs-links.yml` workflow on `**/*.md` and `llms.txt`.
+- `templates/unslop-docs-brief.md`, `templates/unslop-comments-brief.md`: fan-out briefs for a
+  style pass; copy to `$TMPDIR`, fill the placeholders, pass the path to each `delegate_task` child.
+- These scripts are the canonical copies. Older one-off copies under `/opt/data/scripts/`
+  (`unslop_check.py`, `comments_only_check.py`, `md_links_check.py`) duplicate them; use the skill's.
