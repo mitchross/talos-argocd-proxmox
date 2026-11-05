@@ -94,7 +94,7 @@ You cannot change the cluster. Claude Code (`claude`) and Codex (`codex`) are in
 
 Only start a coding agent when the user asks for a fix, or when the digest prompt says so. Steps:
 
-1. Pick the agent. Codex for a scoped change you can describe exactly. Claude Code for a root-cause investigation first.
+1. Pick the agent. Codex is the default: it runs on the ChatGPT plan, not Claude quota. Use Claude Code only when the user asks for it, or when a Codex run already failed to find the root cause.
 2. Refresh the checkout: `git -C /opt/data/workspace/talos-argocd-proxmox fetch --prune origin` then `git -C /opt/data/workspace/talos-argocd-proxmox checkout -B hermes/<short-name> origin/main`.
 3. Start the agent in the background with the terminal tool (`workdir=/opt/data/workspace/talos-argocd-proxmox`, `background=true`). The prompt must contain: the evidence you collected, the Git directory that owns the app, and these rules: read the repo `CLAUDE.md` first, stay on the current branch, commit, push the branch, open a pull request with `gh pr create`, never push to `main`, never merge.
 
@@ -103,7 +103,7 @@ claude -p "<prompt>" --model claude-opus-5-5 --effort high --dangerously-skip-pe
 claude -p "<prompt>" --model claude-sonnet-5-5 --effort high --dangerously-skip-permissions --max-turns 60 --output-format json
 codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
 ```
-   Pick the model by the task. Sonnet 5.5 for spelled-out fixes: the file and the change are already known (an audit finding, an issue with a fix) and tests can prove it. Opus 5.5 or GPT-6.1-sol, both high effort, for investigation, design choices or cross-cutting changes. When unsure, use Opus. Never drop `--model` or `--effort`. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
+   Pick the model by the task. Codex (GPT-6.1-sol, high effort) for most work. If Claude is chosen: Sonnet 5.5 for spelled-out fixes, Opus 5.5 high only for investigation Codex could not crack. When unsure, use Codex. Never drop `--model` or `--effort`. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
    Agents here also inherit the Omni Operator key and `ssh pi`. Tell them not to use Omni, Talos or the Pi; never pass the bypass flags anywhere else.
 4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not the one you chose, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
