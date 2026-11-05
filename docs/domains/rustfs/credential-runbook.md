@@ -1,4 +1,4 @@
-# RustFS Credential Runbook
+# RustFS credential runbook
 
 RustFS uses two credential classes:
 
@@ -7,7 +7,7 @@ RustFS uses two credential classes:
 
 Do not point Kubernetes workloads at the TrueNAS app/root credential.
 
-## 1Password Item
+## 1Password item
 
 The shared item is `rustfs` in vault `homelab-prod`.
 
@@ -41,26 +41,27 @@ configured with a broad allow policy:
 }
 ```
 
-Scope is intentionally broad (homelab single-tenant). Per-bucket IAM scoping
-would duplicate Kubernetes RBAC's namespace separation without adding meaningful
-protection in a single-operator homelab — a compromised cluster would mean a
-compromised key either way. Broad policy also means new buckets work immediately
-without a forgotten-IAM failure mode when adding a new logging/metrics/backup
-destination. The workload key is kept distinct from `root-access-key` so the
-cluster cannot invoke RustFS admin operations (bucket create/delete, user
-mgmt — those use root via console).
+The scope is broad on purpose (homelab, single tenant). Per-bucket IAM scoping
+would duplicate the namespace separation Kubernetes RBAC already gives, and it
+adds little protection with a single operator. A compromised cluster means a
+compromised key either way. A broad policy also means new buckets work at once,
+so a new logging, metrics, or backup destination can't fail on a forgotten IAM
+rule. The workload key stays separate from `root-access-key`, so the
+cluster cannot run RustFS admin operations. Bucket create/delete and user
+management use root via the console.
 
-When to tighten:
-- If multiple operators/people gain cluster access and the homelab becomes shared.
-- If a specific app misbehaves with the bucket — scope ITS key, not the shared one.
-- If running an audit/compliance exercise that requires least-privilege docs.
+Tighten the policy when:
+
+- Multiple operators or people gain cluster access and the homelab becomes shared.
+- A specific app misbehaves with the bucket. Scope that app's key, not the shared one.
+- An audit or compliance exercise requires least-privilege docs.
 
 Captured in mink:
 `rustfs-workload-key-policy-full-s3-on-all-buckets-homelab-single-tenant-decision.md`
 
 ## Update 1Password
 
-Use these commands when rotating the RustFS workload key. Replace the placeholder values manually.
+To rotate the RustFS workload key, run these commands. Replace the placeholder values by hand.
 
 ```bash
 op item edit rustfs \
@@ -86,7 +87,7 @@ op item get rustfs \
   --fields rustfs-workload-access-key,rustfs-workload-secret-key,kopia_password,endpoint,S3_ENDPOINT
 ```
 
-## ESO Consumers
+## ESO consumers
 
 These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rustfs-workload-secret-key`:
 
@@ -96,9 +97,9 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 | `monitoring/tempo-s3-credentials` | `tempo-s3-credentials` |
 | `posthog/posthog-secrets` | `posthog-secrets` |
 | `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
-| `kopiur/kopiur-rustfs` (ClusterExternalSecret → every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
+| `kopiur/kopiur-rustfs` (ClusterExternalSecret to every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
 
-Per-PVC backup credentials are delivered by the single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/backup/kopiur/externalsecret.yaml`), which fans the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`.
+The single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/backup/kopiur/externalsecret.yaml`) delivers per-PVC backup credentials. It copies the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`.
 
 Force ESO refresh after changing 1Password:
 
@@ -127,6 +128,6 @@ kubectl rollout restart deploy/db deploy/feature-flags deploy/plugins deploy/web
                        -n posthog
 ```
 
-kopiur mover Jobs read the namespace `kopiur-rustfs` Secret at Job creation time, so the next scheduled (or manually triggered) Snapshot picks up rotated credentials automatically — no operator restart needed.
-The RustFS lifecycle Job is spawned by its CronJob — the next scheduled run
+kopiur mover Jobs read the namespace `kopiur-rustfs` Secret when the Job is created. The next scheduled or manually triggered Snapshot picks up rotated credentials automatically, with no operator restart.
+The RustFS lifecycle CronJob spawns its Job, so the next scheduled run
 uses the refreshed Secret.

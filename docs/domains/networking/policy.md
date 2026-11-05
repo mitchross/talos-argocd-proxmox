@@ -1,7 +1,7 @@
 # Cilium network policy boundaries
 
 **Status:** current policy behavior, reviewed 2026-09-05. This page describes
-what the manifests allow and where stronger isolation still needs work.
+what the manifests allow and where isolation is still weak.
 
 The shared policy limits ordinary pod egress to unlisted private LAN addresses.
 It also permits broad cluster traffic, internet access, and shared exceptions.
@@ -12,7 +12,7 @@ The owning manifest is
 ## Effective shared policy
 
 `endpointSelector: {}` selects all Cilium-managed endpoints. Host-network and
-host-firewall behavior must be assessed separately; this is not a host firewall.
+host-firewall behavior needs separate assessment. This is not a host firewall.
 
 | Direction | Allowed by the shared policy |
 | --- | --- |
@@ -22,10 +22,10 @@ host-firewall behavior must be assessed separately; this is not a host firewall.
 | Egress to LoadBalancer pool | All ports in `192.168.10.32/27` |
 | Other private destinations | Only if another applicable allow or exception permits them |
 
-An exposed application can therefore reach other cluster endpoints and the
-shared storage exceptions after compromise. Cloudflare Tunnel transports public
-requests to the external Gateway. Cloudflare Access is not configured; application
-authentication remains an application concern. Private routes use the internal
+A compromised exposed application can therefore reach other cluster endpoints and the
+shared storage exceptions. Cloudflare Tunnel carries public
+requests to the external Gateway. Cloudflare Access is not configured, so application
+authentication stays with each application. Private routes use the internal
 Gateway and Technitium DNS.
 
 ## Explicit private-network exceptions
@@ -43,23 +43,22 @@ These are grants in the shared policy, not a list of all effective access:
 
 The LoadBalancer exception overlaps the Wyze address. The separate 8554 grant
 does not restrict that address to 8554 while the broader subnet grant applies.
-The router `192.168.10.1` has no explicit allow. Avoid equating a failed ICMP
-probe with proof that every TCP path is denied.
+The router `192.168.10.1` has no explicit allow. A failed ICMP
+probe does not prove that every TCP path is denied.
 
 ## Allow policies add together
 
 A namespace NetworkPolicy that lists only DNS and an inference backend cannot
 remove internet or cluster access granted by this shared policy. Allow policies
-combine. Cilium explicit deny rules take precedence over allows, but an overly
-broad deny can also block required DNS, API, gateway, backup, or storage traffic.
+combine. Cilium explicit deny rules take precedence over allows, but a broad deny can also block required DNS, API, gateway, backup, or storage traffic.
 See [Kubernetes policy semantics](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
 and [Cilium deny policies](https://docs.cilium.io/en/stable/security/policy/language/#deny-policies).
 
 The [architecture audit](../../audits/2026-09-05-architecture-audit.md) proposes
-an opt-in namespace boundary: exclude opted-in endpoints from the shared allow,
-then declare their actual ingress/egress dependencies. This is proposed work,
-not an isolation guarantee already provided by the manifests. Start with a
-canary and observe both allowed and rejected flows before changing real apps.
+an opt-in namespace boundary. Exclude opted-in endpoints from the shared allow,
+then declare their actual ingress and egress dependencies. This is proposed work,
+not an isolation guarantee the manifests already provide. Start with a
+canary. Observe both allowed and rejected flows before changing real apps.
 
 ## Verify a change
 
@@ -80,9 +79,9 @@ hubble observe --pod <namespace>/<pod> --verdict DROPPED
 Test each required connection and an intentionally denied TCP destination from
 the selected endpoint. Use policy verdicts to distinguish denial from a missing
 route, DNS failure, refused connection, or unavailable server. A policy object
-existing is not evidence that the intended endpoint was selected.
+that exists does not prove it selected the intended endpoint.
 
 Make policy changes through Git. If a change breaks required traffic, revert
-that policy commit and verify the original flows recover. Preserve the Cilium
-VXLAN configuration needed by the shed media bridge; transport and policy are
+that policy commit and verify the original flows recover. Keep the Cilium
+VXLAN configuration the shed media bridge needs. Transport and policy are
 separate controls. The [topology guide](topology.md) owns the physical network.

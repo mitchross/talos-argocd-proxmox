@@ -28,12 +28,12 @@ flowchart LR
 
 | Tool | Answers |
 |---|---|
-| Grafana `/d/pi-routing` — Pi Auto-Routing | local vs paid ratio, classifier health, spend |
-| Grafana `/d/ai-gateway-analytics` — AI Gateway and Analytics | all gateway requests, tokens, latency, failures, Langfuse health |
-| Grafana `/d/llm-engines` — Local LLM Engines | vLLM and Strata side by side: state, speed, latency, history per engine |
-| Grafana `/d/vllm-inference` — vLLM Inference | vLLM queue depth, decode/prefill speed, latency, KV cache use |
-| Grafana `/d/strata-inference` — Strata Inference | Strata live state, decode/prefill speed, latency, expert/prompt caches, MTP |
-| Grafana `/d/gpu-overview` — GPU Overview | GPU power, memory, temperature, utilisation |
+| Grafana `/d/pi-routing`, Pi Auto-Routing | local vs paid ratio, classifier health, spend |
+| Grafana `/d/ai-gateway-analytics`, AI Gateway and Analytics | all gateway requests, tokens, latency, failures, Langfuse health |
+| Grafana `/d/llm-engines`, Local LLM Engines | vLLM and Strata side by side: state, speed, latency, history per engine |
+| Grafana `/d/vllm-inference`, vLLM Inference | vLLM queue depth, decode/prefill speed, latency, KV cache use |
+| Grafana `/d/strata-inference`, Strata Inference | Strata live state, decode/prefill speed, latency, expert/prompt caches, MTP |
+| Grafana `/d/gpu-overview`, GPU Overview | GPU power, memory, temperature, utilisation |
 | Langfuse | one trace per request: input, output, tokens, session, routing reason |
 
 Grafana shows totals and trends. Langfuse shows single requests. Start in
@@ -56,7 +56,7 @@ flowchart LR
 | `requested_model` | the route LiteLLM counted | `qwen3.8-27b-auto` | `pi-auto` |
 | `litellm_model_name` | what actually ran | `qwen3.8-27b` | `~deepseek/deepseek-flash-latest` |
 
-**Gotcha:** LiteLLM counts a local turn under the tier route
+**Gotcha.** LiteLLM counts a local turn under the tier route
 `qwen3.8-27b-auto`, not under `pi-auto`. A query that filters on
 `requested_model="pi-auto"` alone shows 0% local. Match both names:
 `requested_model=~"pi-auto|qwen3.8-27b-auto"`. Only `pi-auto` can reach
@@ -92,7 +92,7 @@ recreate them in the UI, or with `dashboardWidgets.create` plus
 
 Grafana dashboards live in Git under
 [`monitoring/metrics/prometheus-stack/dashboards/ai/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/monitoring/metrics/prometheus-stack/dashboards/ai).
-Edit the JSON through a PR; ArgoCD reloads them.
+Edit the JSON through a PR, and ArgoCD reloads them.
 
 ## Routes and credentials
 
@@ -105,15 +105,15 @@ Every URL, key and auth path is listed once, in
 |---|---|---|
 | PostgreSQL | identity, projects, configuration | kopiur, restore-before-bind |
 | ClickHouse | AI observations | kopiur, restore-before-bind |
-| Valkey | queue | **exempt** — losing it loses in-flight observations |
+| Valkey | queue | **exempt**. Losing it loses in-flight observations. |
 | RustFS | event payloads, media, exports | separate bucket lifecycle |
 
 The Langfuse chart's bundled stores are disabled. The app owns PostgreSQL,
 ClickHouse and Valkey, so no database operator is needed. A Sync hook creates
 the RustFS bucket before web and worker start.
 
-Do not describe this as lossless messaging. Keep all stores consistent when
-planning a restore, and test recovery with synthetic observations first.
+This is not lossless messaging. Keep all stores consistent when planning a
+restore, and test recovery with synthetic observations first.
 
 Langfuse v4 uses a new observations data model. The LiteLLM image ships the
 legacy Langfuse SDK, so the plain `langfuse` callback does not work.
@@ -123,12 +123,12 @@ return 404 on a fresh v4 install.
 
 ## Verify a deployment
 
-Roughly 15 minutes.
+This takes about 15 minutes.
 
 1. Confirm `my-apps-langfuse`, `my-apps-litellm`, `my-apps-open-webui` and
    `monitoring-prometheus-stack` are Synced/Healthy.
 2. Sign into Langfuse and open **Homelab AI**. An empty chart means nothing
-   until you have confirmed the project exists.
+   until you confirm the project exists.
 3. Send synthetic traffic:
    ```bash
    kubectl -n litellm exec -i deploy/litellm -- python - < scripts/smoke-litellm.py
@@ -139,7 +139,7 @@ Roughly 15 minutes.
 4. In Langfuse Observations, filter by that `session_id` and clear the
    root-only filter. Expect at least five generations with model, input/output,
    positive token usage and latency. **Intake HTTP success alone proves
-   nothing** — only stored observations do.
+   nothing.** Only stored observations do.
 5. Check backups:
    ```bash
    kubectl -n langfuse get secret kopiur-rustfs
@@ -168,13 +168,13 @@ second. The hard request costs a fraction of a cent. Both then show on
 
 ## Check the adapter before a LiteLLM bump
 
-Check the adapter before you deploy a LiteLLM bump:
+Run this before you deploy a LiteLLM bump:
 
 ```bash
 kubectl -n litellm exec -i deploy/litellm -- python - < scripts/verify-litellm-langfuse.py
 ```
 
-This uses synthetic in-memory spans, makes no model requests, and catches a
+It uses synthetic in-memory spans, makes no model requests, and catches a
 pinned-adapter incompatibility before it reaches the cluster.
 
 ## When telemetry breaks

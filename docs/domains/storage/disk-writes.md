@@ -20,11 +20,11 @@ persistent storage. Each rule below closes one of those.
 | Deleted blocks | Longhorn `fstrim-daily` trims every volume in the `default` group, so clones and replicas stop copying freed blocks. | `infrastructure/storage/longhorn/recurringjob-fstrim.yaml` |
 | Scratch caches | Put throwaway caches on a memory `emptyDir` (`medium: Memory`, with a size limit), not a PVC or node disk. Example: Frigate `/tmp/cache`. | `my-apps/home-automation/frigate/deployment.yaml` |
 | App history databases | Exclude high-churn derived sensors from history. Example: Home Assistant's recorder skips computed power/cost sensors (Prometheus still has them). | `my-apps/home-automation/home-assistant/configuration.yaml` |
-| Pod moves | Longhorn `dataLocality` is `disabled` on the default class: best-effort locality copies the whole volume whenever its pod lands on another node, so every reboot or drain became a copy storm. | `infrastructure/storage/longhorn/storageclass-default.yaml` |
+| Pod moves | Longhorn `dataLocality` is `disabled` on the default class: best-effort locality copies the whole volume whenever its pod lands on another node, so every reboot or drain triggered a full volume copy. | `infrastructure/storage/longhorn/storageclass-default.yaml` |
 | Duplicate telemetry | One observability stack: Prometheus, Loki, Tempo, Grafana. Don't add tools that keep their own copy of metrics/logs (e.g. an eBPF APM with its own ClickHouse) or in-cluster scanners that spawn a pod per image. | `monitoring/` |
 | Bulk files | Bulk, read-mostly data (photo libraries, downloads) lives on the NAS (`truenas-nfs`), and its kopiur policy uses `copyMethod: Direct`, so no Longhorn clone is made. | [disk map](disk-map.md#where-should-new-data-go) |
 | Right-sized volumes | Request what the app uses plus headroom. Longhorn books the full request, so oversized volumes fill the clone disk on paper and block backups. | [disk map](disk-map.md#where-should-new-data-go) |
-| Node volume trim | Talos trims every `EPHEMERAL`, `STATE`, `ETCD` and user volume once a week by itself, so freed blocks reach the SSD and the Proxmox thin pools. A new user volume is included automatically. Check with `talosctl -n <node> get volumetrimschedules`. | Talos 1.14 default `FilesystemTrimConfig` (168h) |
+| Node volume trim | Talos trims every `EPHEMERAL`, `STATE`, `ETCD` and user volume once a week by itself, so freed blocks reach the SSD and the Proxmox thin pools. Talos includes a new user volume automatically. Check with `talosctl -n <node> get volumetrimschedules`. | Talos 1.14 default `FilesystemTrimConfig` (168h) |
 | Rebalancing | The descheduler never evicts pods with PVCs; moving one would copy its Longhorn replica. | [descheduler](../scheduling/descheduler.md) |
 
 When adding an app, ask the same questions: does it log about itself to disk,
@@ -33,8 +33,7 @@ a backup?
 
 ## Measure
 
-The **Storage & SSD wear** Grafana dashboard (Cluster folder) shows all of this at a
-glance: TB written per day, writes per drive, SSD wear, top writing and reading
+The Storage & SSD wear Grafana dashboard (Cluster folder) shows all of this: TB written per day, writes per drive, SSD wear, top writing and reading
 pods, Longhorn space booked per node, and hours since each backup succeeded. The
 raw queries are below for Grafana Explore.
 
@@ -55,6 +54,6 @@ sum(increase(node_disk_written_bytes_total{job="physical-node",disk!~"dm-.*|md.*
 smartctl_device_percentage_used
 ```
 
-Expected: the fleet total stays around 1.5 TB/day or less, no single pod dominates the first query for long, and the per-disk
+Expected: the fleet total stays around 1.5 TB/day or less. No single pod dominates the first query for long. The per-disk
 daily total stays roughly flat week to week. A sudden jump usually points at
-one new pod — find it with the first query, then apply the matching rule.
+one new pod. Find it with the first query, then apply the matching rule.

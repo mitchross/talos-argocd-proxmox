@@ -4,24 +4,24 @@
 
 > Production-grade GitOps Kubernetes cluster on Talos OS with self-managing ArgoCD, Cilium, and zero-touch PVC backup/restore.
 
-A GitOps-driven Kubernetes cluster on **Talos OS** (secure, immutable Linux for K8s) with **ArgoCD** and **Cilium**, running on Proxmox. Nodes are provisioned and managed through **[Omni](https://github.com/siderolabs/omni)** (Sidero's Talos platform) with the **[Proxmox Infrastructure Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)** — no SSH, no manual node config.
+A GitOps-driven Kubernetes cluster on **Talos OS** (secure, immutable Linux for K8s) with **ArgoCD** and **Cilium**, running on Proxmox. Nodes are provisioned and managed through **[Omni](https://github.com/siderolabs/omni)** (Sidero's Talos platform) with the **[Proxmox Infrastructure Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)**. There is no SSH and no manual node config.
 
 The cluster rebuild follows one ordered runbook below. Omni provisions Talos,
 then the one-time bootstrap seeds Gateway API CRDs, Cilium, 1Password
 credentials, and ArgoCD. ArgoCD takes over and deploys everything else from
 this repo.
 
-## Key Features
+## Key features
 
-- **Self-Managing ArgoCD** — ArgoCD manages its own install, upgrades, and ApplicationSets from Git
-- **Directory = Application** — apps are discovered by directory path; no hand-written `Application` manifests
-- **Sync Wave Ordering** — health-gated core dependencies, followed by independently reconciled applications
-- **Zero-Touch Backups** — label a namespace + drop a per-PVC stub, get automatic [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) backups to RustFS/S3 with restore-before-bind DR
-- **Gateway API** — modern ingress via Cilium Gateway API (not legacy Ingress)
-- **GPU Support** — full NVIDIA GPU support via Talos system extensions + GPU Operator
-- **Zero SSH** — all node management via Omni UI or the Talos API
+- **Self-managing ArgoCD.** ArgoCD manages its own install, upgrades, and ApplicationSets from Git
+- **Directory = Application.** ArgoCD discovers apps by directory path. There are no hand-written `Application` manifests.
+- **Sync wave ordering.** Core dependencies are health-gated. Applications then reconcile independently.
+- **Zero-touch backups.** Label a namespace and drop in a per-PVC stub to get automatic [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) backups to RustFS/S3 with restore-before-bind DR
+- **Gateway API.** Ingress uses Cilium Gateway API, not legacy Ingress.
+- **GPU support.** NVIDIA GPU support comes from Talos system extensions and the GPU Operator.
+- **Zero SSH.** All node management goes through the Omni UI or the Talos API.
 
-## Repositories & Resources
+## Repositories & resources
 
 | Resource | Description |
 |----------|-------------|
@@ -30,14 +30,14 @@ this repo.
 | [Starter Repo](https://github.com/mitchross/sidero-omni-talos-proxmox-starter) | Full config & automation for Sidero Omni + Talos + Proxmox |
 | [Reference Guide](https://www.virtualizationhowto.com/2025/08/how-to-install-talos-omni-on-prem-for-effortless-kubernetes-management/) | VirtualizationHowTo guide for Talos Omni on-prem setup |
 
-## How It Works
+## How it works
 
 ![Argo CD bootstrap and dependency-gated sync waves](docs/assets/argocd-sync-waves.svg)
 
 *Waves order resources within an Application; generated applications reconcile independently.
 [Open the Argo CD flow full size](docs/assets/argocd-sync-waves.svg).*
 
-**The core idea: a directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application` automatically. No manual `Application` resources.
+**A directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application`. No manual `Application` resources.
 
 ```
 my-apps/ai/comfyui/                  → ArgoCD Application "my-apps-comfyui"
@@ -47,11 +47,11 @@ monitoring/metrics/prometheus-stack/ → ArgoCD Application "monitoring-promethe
 
 The middle folder (`ai/`, `media/`, `metrics/`…) is a category for people; the app name comes from the last folder. Apps under a `_archive/` folder are not deployed, and their backups are kept.
 
-### Sync Wave Architecture
+### Sync wave architecture
 
 The root Application orders its direct children using these waves. Lua health
 checks gate direct child Applications. Creating an ApplicationSet does **not**
-wait for all the Applications it generates; those reconcile independently. See
+wait for all the Applications it generates. Those reconcile independently. See
 [the wave scope and restore behavior](docs/domains/argocd/argocd.md#how-argo-cd-sync-waves-and-waiting-work).
 
 | Wave | Component | Purpose |
@@ -60,16 +60,16 @@ wait for all the Applications it generates; those reconcile independently. See
 | **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller |
 | **2** | kopiur operator | Kopia-native backup operator (CRDs + controller + webhook); serves the volume populator for restore-before-bind |
 | **3** | kopiur config | kopiur `ClusterRepository` + credential fanout + `VolumeSnapshotClass` |
-| **4** | Infrastructure AppSet + custom entrypoints + Database AppSet | cert-manager extras, GPU Operators, Gateway, KEDA, VPA, Temporal Worker Controller; Database AppSet (Redis + shared DB support) fully auto-syncs |
+| **4** | Infrastructure AppSet + custom entrypoints + Database AppSet | cert-manager extras, GPU Operators, Gateway, KEDA, VPA, Temporal Worker Controller; Database AppSet (Redis + shared DB support) auto-syncs |
 | **5** | Monitoring AppSet | Prometheus, Grafana, Loki |
 | **6** | OTEL Operator + Observability overlays + My-Apps AppSet | OpenTelemetry Operator, KEDA/OTEL ServiceMonitors (after monitoring CRDs exist) and `my-apps/*/*` user apps |
 
-> The backup stack is **kopiur** (since 2026-06-27). The retired pvc-plumber + VolSync stack is gone — if you see those names in old docs or git history, ignore them. See [Backup System](#backup-system).
+> The backup stack is **kopiur** (since 2026-06-27). The retired pvc-plumber + VolSync stack is gone. If you see those names in old docs or git history, ignore them. See [backup system](#backup-system).
 
 ## Prerequisites
 
-1. **Omni + the Proxmox provider are running** and reachable — see [Omni Setup Guide](omni/omni/README.md) and [proxmox-providers/](omni/proxmox-providers/)
-2. **An Omni service-account key** stored in 1Password (item `talos-prod-sa`) — see [Cluster Access](#cluster-access-omni-service-account) to create one
+1. **Omni + the Proxmox provider are running** and reachable. See [Omni Setup Guide](omni/omni/README.md) and [proxmox-providers/](omni/proxmox-providers/)
+2. **An Omni service-account key** stored in 1Password (item `talos-prod-sa`). See [cluster access](#cluster-access-omni-service-account) to create one
 3. **Local tools**: `omnictl`, `talosctl`, `kubectl`, `kustomize`, Cilium CLI (`cilium` or `cilium-cli`), 1Password CLI (`op`), and `helm`
 
 ### Version pins
@@ -84,18 +84,18 @@ wait for all the Applications it generates; those reconcile independently. See
 | ArgoCD Helm chart | `10.12.1` + Argo CD `v3.6.1` image/CRDs | `infrastructure/controllers/argocd/` |
 | Proxmox provider | `v0.3.0@sha256:ff59ae…` | `omni/proxmox-providers/docker-compose.yml` |
 
-Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
+Keep the Omni server and local `omnictl` on the **same** release. Mismatched versions fail with obscure gRPC errors.
 
-> **Keep the Gateway API CRDs on the version Cilium declares support for.** Cilium 1.20 supports Gateway API `v1.6.1`. Bumping the CRDs ahead of Cilium breaks route reconciliation — check the Cilium release's Gateway API docs before moving either one.
+> **Keep the Gateway API CRDs on the version Cilium declares support for.** Cilium 1.20 supports Gateway API `v1.6.1`. Bumping the CRDs ahead of Cilium breaks route reconciliation. Check the Cilium release's Gateway API docs before moving either one.
 
 ---
 
-## Rebuild and Bootstrap
+## Rebuild and bootstrap
 
 > **The active cluster is `talos-prod-cluster-v2`**, defined by
-> `omni/cluster-template/cluster-template-prod-v2.yaml`. Machine classes: `hp-sff-control-plane.yaml` +
-> `hp-sff-worker.yaml` + `threadripper-gpu-worker.yaml` + `hp-micro-worker.yaml`.
-> Topology: HP SFF (house, wired): 1 CP + 1 worker; Threadripper: 1 GPU worker; HP micro (shed, wifi): 1 worker; 3 bare-metal mini workers (PXE via booter).
+> `omni/cluster-template/cluster-template-prod-v2.yaml`. Machine classes: `hp-sff-control-plane.yaml`,
+> `hp-sff-worker.yaml`, `threadripper-gpu-worker.yaml`, and `hp-micro-worker.yaml`.
+> Topology: HP SFF (house, wired) has 1 control plane and 1 worker. Threadripper has 1 GPU worker. HP micro (shed, wifi) has 1 worker. 3 bare-metal mini workers PXE-boot via booter.
 
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
 100 GiB GPU VM; the shed HP hosts one worker. Three bare-metal minis
@@ -106,7 +106,7 @@ existing VM settings. See the [fleet inventory](docs/inventory/2026-11-03-fleet-
 for measured capacity.
 
 This is the only rebuild procedure in this README. Run it from the repository
-root, in order. Every required command is shown in full; there are no
+root, in order. Every required command is shown in full. There are no
 placeholder commands or omitted flags.
 
 Before deleting, complete the [backup checklist](docs/disaster-recovery.md#pre-nuke-checklist)
@@ -130,7 +130,7 @@ disappear from Proxmox.
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
 Apply all four classes before syncing the template; template sync owns the
-MachineSets. Applying a class does not mutate an existing VM: CPU, RAM, disks,
+MachineSets. Applying a class does not mutate an existing VM. CPU, RAM, disks,
 and the visible machine identity change only when Omni provisions a replacement
 from that class.
 
@@ -156,12 +156,12 @@ Stop the watch with `Ctrl-C` after all four requests show
 `Provision Complete`. The bare-metal minis make no machine requests. They join
 when booter on the Pi PXE-boots them; check them with `omnictl get machines`.
 Reused data disks on them need a wipe before Longhorn can use them; see
-[bare-metal Talos workers](docs/domains/hosts/bare-metal-talos.md). Do not use `cluster template status --wait` here: the
+[bare-metal Talos workers](docs/domains/hosts/bare-metal-talos.md). Do not use `cluster template status --wait` here. The
 cluster cannot become healthy until Cilium is installed in step 5.
 
 > **Sync this template, not a stale working copy.** A 2026-06-11 rebuild used
-> a stale template snapshot and produced the wrong disk layout plus a
-> mid-bootstrap Talos upgrade, forcing another reprovision.
+> a stale template snapshot and produced the wrong disk layout and a
+> mid-bootstrap Talos upgrade. That forced another reprovision.
 
 ### 3. Authenticate and get cluster access
 
@@ -183,13 +183,13 @@ omnictl talosconfig --cluster talos-prod-cluster-v2
 kubectl get nodes -o wide
 ```
 
-> **`OMNI_ENDPOINT` is mandatory whenever `OMNI_SERVICE_ACCOUNT_KEY` is set.** With the key exported, omnictl ignores config-file contexts entirely; forgetting the endpoint fails with the cryptic `delegating_resolver: invalid target address "": missing address`.
+> **`OMNI_ENDPOINT` is mandatory whenever `OMNI_SERVICE_ACCOUNT_KEY` is set.** With the key exported, omnictl ignores config-file contexts. A missing endpoint fails with the cryptic `delegating_resolver: invalid target address "": missing address`.
 
 The nodes are expected to be `NotReady` until Cilium is installed in step 5.
 The explicit `talosctl config remove` prevents `omnictl talosconfig` from
-creating a suffixed duplicate context after a rebuild. First time on a fresh
-Omni? Create the service account first — see
-[Cluster Access](#cluster-access-omni-service-account).
+creating a suffixed duplicate context after a rebuild. On a fresh
+Omni, create the service account first. See
+[cluster access](#cluster-access-omni-service-account).
 
 ### 4. Install Gateway API CRDs
 
@@ -199,14 +199,14 @@ Install the complete standard channel before enabling Cilium Gateway API support
 kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
 ```
 
-Do not apply the full experimental bundle afterward: Gateway API v1.6.1's
+Do not apply the full experimental bundle afterward. Gateway API v1.6.1's
 safe-upgrades policy rejects mixing the two channels. This cluster does not use
 experimental `TLSRoute` resources.
 
 ### 5. Install Cilium (CNI)
 
 Omni provisions Talos without a CNI. This one-time seed gives ArgoCD enough
-pod networking to start; ArgoCD assumes management of the same Cilium release
+pod networking to start. ArgoCD assumes management of the same Cilium release
 at Wave 0.
 
 ```bash
@@ -240,17 +240,17 @@ kubectl get nodes
 
 All nodes must become `Ready` before continuing. These settings must match
 what ArgoCD renders at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0
-will immediately reconfigure the seed install:
+will reconfigure the seed install:
 
-> - **Routing mode matches by default**: the CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
-> - **`--version 1.20.1`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
-> - **`--set envoy.xdsMode=split`** must match `values.yaml`. Seeding without it leaves envoy on the ADS default while Wave 0 flips the agents to split — envoy then holds zero listeners (every Gateway VIP refuses TCP) until `cilium-envoy` is restarted (2026-08-24 rebuild outage).
-> - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Run without it and certs are issued for `default`/`kind-kind` → TLS failures.
-> - **Hubble stays disabled at bootstrap on purpose** — ArgoCD enables it at Wave 0 so it's the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
+> - **Routing mode matches by default.** The CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
+> - **`--version 1.20.1`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, That regenerates some Hubble certs but not others, and `x509: certificate signed by unknown authority` blocks every later wave.
+> - **`--set envoy.xdsMode=split`** must match `values.yaml`. Seeding without it leaves envoy on the ADS default while Wave 0 flips the agents to split. Envoy then holds zero listeners (every Gateway VIP refuses TCP) until `cilium-envoy` is restarted (2026-08-24 rebuild outage).
+> - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Without it, certs are issued for `default`/`kind-kind`, which causes TLS failures.
+> - **Hubble stays disabled at bootstrap on purpose.** ArgoCD enables it at Wave 0, so ArgoCD is the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
 
 ### 6. Pre-seed 1Password secrets
 
-These secrets bootstrap 1Password Connect + External Secrets, which then sync
+These secrets bootstrap 1Password Connect and External Secrets, which then sync
 every other secret from the vault. The dry-run/apply form makes the commands
 safe to rerun.
 
@@ -285,17 +285,18 @@ kubectl create secret generic 1passwordconnect \
 ./scripts/bootstrap-argocd.sh
 ```
 
-The script pre-flights Cilium, installs ArgoCD via Helm, seeds the `argocd-redis` auth secret (so a fresh cluster doesn't wedge), and applies `root.yaml` to hand control to GitOps self-management.
+The script checks Cilium, installs ArgoCD via Helm, seeds the `argocd-redis` auth secret (so a fresh cluster doesn't hang), and applies `root.yaml` to hand control to GitOps self-management.
 
 ### 8. Verify
 
-There are no database-specific recovery steps: every database is a plain
+There are no database-specific recovery steps. Every database is a plain
 Postgres Deployment whose PVC restores via kopiur restore-before-bind at
-Wave 6, exactly like every other backed-up PVC (CNPG and its guarded
+Wave 6, like every other backed-up PVC (CNPG and its guarded
 recovery script were retired 2026-08-13). Backed-up PVCs sit `Pending`
-while they hydrate — that is the restore working, not a fault. Once apps
-are up, confirm each database's first post-rebuild snapshot succeeds:
-`kubectl -n <ns> get snapshot` → newest `Succeeded` with non-zero files.
+while they restore. That is the restore working, not a fault. Once apps
+are up, confirm each database's first post-rebuild snapshot succeeds.
+Run `kubectl -n <ns> get snapshot`. The newest `Snapshot` should be
+`Succeeded` with non-zero files.
 
 ```bash
 omnictl cluster template status \
@@ -316,13 +317,13 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 # open https://localhost:8080
 ```
 
-## What Happens After Bootstrap
+## What happens after bootstrap
 
-ArgoCD takes over and deploys everything from Git in the order shown in the [Sync Wave Architecture](#sync-wave-architecture) table — Wave 0 (Cilium, secrets) through Wave 6 (user apps). There are **zero manual storage steps**: Longhorn registers the filesystem disks declared by each node template (for example the GPU worker's `/var/mnt/longhorn-ssd-flash`; see [disk placement](docs/storage-architecture.md#disk-placement-follows-drive-endurance)), the kopiur operator comes up at Wave 2, and any restore-before-bind PVCs populate unattended.
+ArgoCD takes over and deploys everything from Git in the order shown in the [Sync wave architecture](#sync-wave-architecture) table, from Wave 0 (Cilium, secrets) through Wave 6 (user apps). There are **zero manual storage steps**. Longhorn registers the filesystem disks declared by each node template (for example the GPU worker's `/var/mnt/longhorn-ssd-flash`; see [disk placement](docs/storage-architecture.md#disk-placement-follows-drive-endurance)), the kopiur operator comes up at Wave 2, and any restore-before-bind PVCs populate unattended.
 
-From here, new applications are discovered automatically — add a directory with a `kustomization.yaml` and push to Git.
+From here, new applications are discovered automatically. Add a directory with a `kustomization.yaml` and push to Git.
 
-> **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
+> **Multi-node prod only.** Confirm storage nodes were created with the expected layout. This catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap:
 >
 > ```bash
 > kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node on the pinned Talos version
@@ -332,12 +333,12 @@ From here, new applications are discovered automatically — add a directory wit
 
 ### Mass-restore stability notes
 
-- **Replica rebuilds are throttled to 2/node in Git** (`infrastructure/storage/longhorn/node-failure-settings.yaml`). Full-cluster restores overload any engine on this hardware — don't raise the limit mid-bootstrap.
-- A mover pod stuck >15 min on `MountVolume … hasn't been attached yet` with an old VolumeAttachment = stale CSI state — delete the mover pod (its Job recreates it, forcing a fresh attach).
-- Pods crashlooping on `read-only file system` after a storage disruption: the volume must FULLY detach (or the pod must land on another node) to drop the stale ro mount — scale to 0, wait for the Longhorn volume to show `detached`, scale back (databases: scale the postgres Deployment).
-- History: the Longhorn V2/SPDK engine was tried and retired here (2026-06-12, open Longhorn bugs #13315/#13314). Do not re-enable V2 without a fixed release and a passed DR drill — short version in [docs/disaster-recovery.md](docs/disaster-recovery.md).
+- **Replica rebuilds are throttled to 2/node in Git** (`infrastructure/storage/longhorn/node-failure-settings.yaml`). Full-cluster restores overload any engine on this hardware. Do not raise the limit mid-bootstrap.
+- A mover pod stuck for more than 15 minutes on `MountVolume … hasn't been attached yet` with an old VolumeAttachment means stale CSI state. Delete the mover pod. Its Job recreates it and forces a fresh attach.
+- Pods crashlooping on `read-only file system` after a storage disruption need the volume to FULLY detach (or the pod to land on another node) to drop the stale ro mount. Scale to 0, wait for the Longhorn volume to show `detached`, then scale back. For databases, scale the postgres Deployment.
+- History: this repo tried and retired the Longhorn V2/SPDK engine (2026-06-12, open Longhorn bugs #13315/#13314). Do not re-enable V2 without a fixed release and a passed DR drill. The short version is in [docs/disaster-recovery.md](docs/disaster-recovery.md).
 
-## Cluster Access (Omni Service Account)
+## Cluster access (Omni service account)
 
 The default `omnictl kubeconfig` uses OIDC exec auth, which expires and needs a browser login. For long-lived access, create a **service account** with a bearer token.
 
@@ -360,7 +361,7 @@ kubectl get nodes
 
 **talosctl without a browser.** talosctl reads the same `OMNI_SERVICE_ACCOUNT_KEY`. Without it, talosctl opens a browser login, and that fails for a service-account identity.
 
-The dotfiles (`mitchross/dotfiles`, `dot_zshrc.tmpl`) wrap `talosctl` to do this automatically: the first call in a shell reads the key from 1Password, and later calls reuse it. Without the wrapper, run the exports by hand:
+The dotfiles (`mitchross/dotfiles`, `dot_zshrc.tmpl`) wrap `talosctl` to do this. The first call in a shell reads the key from 1Password, and later calls reuse it. Without the wrapper, run the exports by hand:
 
 ```bash
 # Run once per shell, before any talosctl command.
@@ -374,8 +375,8 @@ omnictl talosconfig --cluster talos-prod-cluster-v2
 talosctl -n <node-ip> version --short
 ```
 
-- `Could not authenticate: key expired` plus a browser link means talosctl has no key: `op` is signed out, or the wrapper is missing. Run `eval "$(op signin)"` and try again. Do not click **Grant Access**.
-- Each browser grant registers an extra 4-hour key on `talos-prod-sa`. `omnictl serviceaccount list` shows them; they expire on their own.
+- `Could not authenticate: key expired` plus a browser link means talosctl has no key. Either `op` is signed out or the wrapper is missing. Run `eval "$(op signin)"` and try again. Do not click **Grant Access**.
+- Each browser grant registers an extra 4-hour key on `talos-prod-sa`. `omnictl serviceaccount list` shows them. They expire on their own.
 - Keep the key in 1Password only. Do not write it to dotfiles.
 
 **Renewal** (expires after 1 year):
@@ -387,44 +388,44 @@ omnictl serviceaccount create talos-prod-sa --use-user-role
 ```
 
 **Gotchas**
-- Create via **CLI** — UI keys fail with `gopenpgp: EdDSA verification failure`.
-- `--service-account` is what gives you a bearer token; without it you get OIDC exec (the thing that expires).
+- Create via **CLI**. UI keys fail with `gopenpgp: EdDSA verification failure`.
+- `--service-account` gives you a bearer token. Without it you get OIDC exec, which expires.
 - If the key fails with signature errors, write it to a file and use `$(cat /tmp/key.txt)` instead of inline quoting.
-- Node management (upgrades, config, patches) is done through the Omni web UI.
+- Manage nodes (upgrades, config, patches) through the Omni web UI.
 
-## Backup System
+## Backup system
 
-Normal application PVC backups use **[kopiur](https://github.com/home-operations/kopiur)** — a Kopia-native Kubernetes operator — to the RustFS/S3 repository. It replaced the retired pvc-plumber + VolSync stack on 2026-06-27.
+Normal application PVC backups use **[kopiur](https://github.com/home-operations/kopiur)**, a Kopia-native Kubernetes operator, and go to the RustFS/S3 repository. It replaced the retired pvc-plumber + VolSync stack on 2026-06-27.
 
-- **How a PVC opts in**: label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy` + `SnapshotSchedule` + `Restore`) via the shared `my-apps/common/kopiur-backup` Kustomize component, and point the PVC's `dataSourceRef` at `<pvc>-restore`. See [`.claude/commands/add-backup.md`](.claude/commands/add-backup.md).
-- **Restore-before-bind DR**: a restore against an **unreachable** repo leaves the PVC `Pending` (never binds an empty volume); a brand-new PVC against a **reachable** repo with no snapshot binds empty and backs up forward (`onMissingSnapshot: Continue` = deploy-or-restore).
-- **Mover permissions**: the mover runs as the **data owner's uid:gid**, not root — under baseline Pod Security, root can't read non-root data. See [docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md).
-- **Databases included**: every Postgres is a plain Deployment on the same kopiur pipeline (daily by default, every 6 hours for data that can't be re-created). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
-- **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md) (the database operator guide).
+- **How a PVC opts in.** Label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy`, `SnapshotSchedule`, and `Restore`) via the shared `my-apps/common/kopiur-backup` Kustomize component, and point the PVC's `dataSourceRef` at `<pvc>-restore`. See [`.claude/commands/add-backup.md`](.claude/commands/add-backup.md).
+- **Restore-before-bind DR.** A restore against an **unreachable** Kopia repository leaves the PVC `Pending` (never binds an empty volume). A brand-new PVC against a **reachable** Kopia repository with no snapshot binds empty and backs up forward (`onMissingSnapshot: Continue` is deploy-or-restore).
+- **Mover permissions.** The mover runs as the **data owner's uid:gid**, not root. Under baseline Pod Security, root can't read non-root data. See [docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md).
+- **Databases included.** Every Postgres is a plain Deployment on the same kopiur pipeline (daily by default, every 6 hours for data that can't be re-created). Redis and PostHog's ClickHouse/Kafka are backup-exempt and disposable.
+- **Read first.** [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md) (the database operator guide).
 
-## Cluster Upgrades & Talos 1.14 Notes
+## Cluster upgrades & Talos 1.14 notes
 
-The prod template pins Talos **1.14.4** and Kubernetes **1.37.1**; the kopiur
+The prod template pins Talos **1.14.4** and Kubernetes **1.37.1**. The kopiur
 rendering target and Cluster CI schema stay at 1.37.0. `kubectl get nodes -o wide` shows what
-each node actually runs, since Omni rolls an upgrade out one node at a time.
+each node runs, since Omni rolls an upgrade out one node at a time.
 
 The [upgrade results and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
 record the Longhorn fix and recovery checks. Merging a version change still
-does not upgrade the machines; Omni performs that rollout separately. The
+does not upgrade the machines. Omni performs that rollout separately. The
 replacement disk layout below takes effect when new VMs are provisioned.
 
 ### Fresh GPU disk layout
 
 The GPU gets a 16 GiB boot disk and 434 GiB `/var` disk on NVMe0, plus its
 existing 450 GiB model and 440 GiB flash allocations. The smallest disk is now
-the boot disk, matching Omni's default selection. Physical drives stay put;
-see [sizing](omni/docs/threadripper-gpu-cluster.md#sizing).
+the boot disk, which matches Omni's default selection. Physical drives stay put.
+See [sizing](omni/docs/threadripper-gpu-cluster.md#sizing).
 
 ### Kubernetes compatibility and upgrade order
 
 Talos 1.14 ships Kubernetes 1.37, but the shipped version is not the only
 compatible version. Check Omni's `talosversion` resource for the supported
-pairs. Keep the current Kubernetes version while upgrading Talos first; once
+pairs. Keep the current Kubernetes version while upgrading Talos first. Once
 Talos and its extensions are healthy, advance Kubernetes. The committed
 template records the final target, so review the template diff before syncing
 it during either stage.
@@ -433,25 +434,25 @@ Keep both cluster templates, the kopiur chart's `kubeVersion`, and Cluster CI's
 `KUBERNETES_VERSION` aligned with the intended Kubernetes target. Configure the
 kubelet only through `KubeletConfig` documents (`config:`), never `.machine.kubelet`.
 Omni's Kubernetes upgrade adds a `KubeletConfig`, and Talos 1.14 rejects both together.
-The kubelet image follows `kubernetes.version`; Kubernetes 1.37 rejects removed
+The kubelet image follows `kubernetes.version`. Kubernetes 1.37 rejects removed
 cAdvisor command-line flags.
 
 ### A stalled upgrade is not a reason to delete the control plane
 
 This cluster has **one** control-plane machine. Rebooting it temporarily stops
-the Kubernetes API; deleting it removes the only etcd member. There is no
+the Kubernetes API. Deleting it removes the only etcd member. There is no
 remaining quorum. Keep it intact while diagnosing an upgrade failure, and
 follow the [recovery runbook](docs/disaster-recovery.md) if recovery is required.
-Worker replacement also needs a storage recovery plan: most Longhorn volumes
+Worker replacement also needs a storage recovery plan, because most Longhorn volumes
 still have only one replica.
 
 ### Upgrading Omni / omnictl
 
 Run Omni and `omnictl` **on the same release** (currently `v1.12.4`, pinned in `omni/omni/omni.env.example`). When upgrading:
 
-1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
+1. Take an Omni etcd snapshot (`omni/omni/README.md`, Backup/Recovery section).
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.
-3. Upgrade `omnictl` on your workstation to match — mismatched versions fail with obscure gRPC errors.
+3. Upgrade `omnictl` on your workstation to match. Mismatched versions fail with obscure gRPC errors.
 4. Regenerate the service-account kubeconfig if it's older than ~30 days (token rotation lags server upgrades).
 
 ## Hardware
@@ -482,7 +483,7 @@ Network
 
 The bare-metal minis PXE-boot into Omni through booter on the Pi; see
 [omni/pi-services/booter/](omni/pi-services/booter/README.md). Wall-plug
-power and cost for every host are metered — see
+power and cost for every host are metered. See
 [docs/domains/power/metering.md](docs/domains/power/metering.md).
 
 ## Troubleshooting
@@ -492,7 +493,7 @@ power and cost for every host are metered — see
 | **ArgoCD not syncing** | `kubectl get applicationsets -n argocd` · `kubectl describe applicationset infrastructure -n argocd` · check for stale operations before reverting Git: `kubectl get application argocd -n argocd -o yaml` |
 | **Cilium issues** | `cilium status` · `kubectl logs -n kube-system -l k8s-app=cilium` · `cilium connectivity test` |
 | **Storage issues** | `kubectl get pvc -A` · `kubectl get pods -n longhorn-system` |
-| **Longhorn manager crashlooping on the webhook / every PVC Pending** | Check cross-node pod networking first: `kubectl exec -n kube-system <cilium-pod> -c cilium-agent -- cilium-health status`. `Node 1/1` with `Endpoints 0/1` means the pod overlay is broken to that node, not Longhorn — see [nodes Ready but pods cannot cross nodes](docs/domains/networking/topology.md#nodes-are-ready-but-pods-cannot-cross-nodes) |
+| **Longhorn manager crashlooping on the webhook / every PVC Pending** | Check cross-node pod networking first: `kubectl exec -n kube-system <cilium-pod> -c cilium-agent -- cilium-health status`. `Node 1/1` with `Endpoints 0/1` means the pod overlay is broken to that node, not Longhorn. See [nodes Ready but pods cannot cross nodes](docs/domains/networking/topology.md#nodes-are-ready-but-pods-cannot-cross-nodes) |
 | **Secrets not syncing** | `kubectl get externalsecret -A` · `kubectl get pods -n 1passwordconnect` · `kubectl describe clustersecretstore 1password` |
 | **GPU issues** | `kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true` · `kubectl get pods -n gpu-operator` |
 | **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Succeeded` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |
@@ -509,14 +510,14 @@ kubectl delete applications --all -n argocd
 
 ## Documentation
 
-- **[CLAUDE.md](CLAUDE.md)** — full development guide and patterns for this repo
-- **[docs/index.md](docs/index.md)** — documentation landing page + doc map
-- **[docs/easy-guide.md](docs/easy-guide.md)** — the whole system explained from zero (GitOps → sync waves → components → kopiur → DR) — the doc to share
-- **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — kopiur backup/restore architecture (start here for backups)
-- **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook
-- **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** · **[entrypoints.md](docs/domains/argocd/entrypoints.md)** — ArgoCD patterns, root entrypoints, and waves
-- **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** · **[policy.md](docs/domains/networking/policy.md)** — network architecture and Cilium policies
-- **[omni/](omni/)** — Omni deployment configs, machine classes, and cluster templates ([Omni setup](omni/omni/README.md))
+- **[CLAUDE.md](CLAUDE.md)** is the full development guide and patterns for this repo.
+- **[docs/index.md](docs/index.md)** is the documentation landing page and doc map.
+- **[docs/easy-guide.md](docs/easy-guide.md)** explains the whole system from zero: GitOps, sync waves, components, kopiur, DR. This is the doc to share.
+- **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** covers kopiur backup/restore architecture. Start here for backups.
+- **[docs/disaster-recovery.md](docs/disaster-recovery.md)** is the full-cluster destroy/rebuild runbook.
+- **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** · **[entrypoints.md](docs/domains/argocd/entrypoints.md)** cover ArgoCD patterns, root entrypoints, and waves.
+- **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** · **[policy.md](docs/domains/networking/policy.md)** cover network architecture and Cilium policies.
+- **[omni/](omni/)** holds Omni deployment configs, machine classes, and cluster templates ([Omni setup](omni/omni/README.md)).
 
 ## Contributing
 

@@ -10,7 +10,7 @@ New to the stack? Read [Local AI starter kit](index.md) first.
 
 An *agent* is an LLM that can also run tools: read files, run commands, edit
 code. This homelab has two. Both send their LLM requests to the same LiteLLM
-gateway, so both show up in Grafana and Langfuse.
+gateway, so both appear in Grafana and Langfuse.
 
 | | Pi | Hermes |
 |---|---|---|
@@ -37,7 +37,7 @@ flowchart LR
 Hermes does not run Pi and does not use `pi-auto`. Its LiteLLM provider lists
 only `qwen3.8-27b`. To add a model to the Hermes picker, add it under
 `providers.litellm.models` in its `config.yaml` through a PR. Login, coding
-agents and troubleshooting: [Hermes in the cluster](hermes.md).
+agents and troubleshooting live in [Hermes in the cluster](hermes.md).
 
 The rest of this page sets up Pi on a workstation.
 
@@ -46,7 +46,7 @@ The rest of this page sets up Pi on a workstation.
     no longer checks them. Compare them with this page before you turn Paseo on.
 
 `apiKey` in Pi takes a literal, `$NAME`/`${NAME}` for an environment variable, or
-`!command`. A bare `LITELLM_API_KEY` is a literal: LiteLLM sees an unknown key,
+`!command`. A bare `LITELLM_API_KEY` is a literal. LiteLLM sees an unknown key,
 looks for a key database it does not have, and returns `400 No connected db`.
 
 The OpenRouter credential lives only inside LiteLLM, except for the
@@ -67,7 +67,7 @@ The OpenRouter credential lives only inside LiteLLM, except for the
 
 Direct Qwen (`pi`, `pi-qwen-only`) defaults to **xhigh** reasoning with
 preserved thinking. Pick medium, low or off per session when you want less.
-Xhigh uses more time and output tokens; it does not promise better answers.
+Xhigh uses more time and output tokens. It does not promise better answers.
 
 `pi-auto` shows `medium` in Pi but sends no effort to Qwen. Auto-routed Qwen
 uses the server default, xhigh; DeepSeek uses high or max by tier. Do not change
@@ -110,7 +110,7 @@ unset QWEN FLASH AUTO
 ```
 
 Ctrl+P does not pick the backend under `pi-withflash`. Pi always asks for
-`pi-auto`; LiteLLM decides behind that alias. To override, use a different
+`pi-auto`, and LiteLLM decides behind that alias. To override, use a different
 launcher.
 
 A later message can move the same session from Qwen to OpenRouter. Start `/new`
@@ -127,10 +127,10 @@ server-side, so they need no Pi reinstall.
 
 ## Which model answered?
 
-Pi always displays `pi-auto`. It will not tell you.
+Pi always displays `pi-auto`, so it does not tell you.
 
-1. Grafana `/d/pi-routing` — the ratio, the escalation count, the spend
-2. Langfuse `langfuse.vanillax.me` — per trace, filter tag `pi`, read `providedModelName`
+1. Grafana `/d/pi-routing` shows the ratio, the escalation count and the spend.
+2. Langfuse `langfuse.vanillax.me` shows each trace. Filter tag `pi`, then read `providedModelName`.
 
 How to read both: [AI gateway and analytics](ai-observability.md).
 
@@ -151,7 +151,7 @@ they cost nothing. Trust the dashboards.
 
 ## Tools Pi can use
 
-Pi ships `read`, `bash`, `edit` and `write`. Packages add the rest:
+Pi ships `read`, `bash`, `edit` and `write`. Packages add more:
 
 | Package | Adds |
 |---|---|
@@ -166,12 +166,12 @@ Pi ships `read`, `bash`, `edit` and `write`. Packages add the rest:
 | `@narumitw/pi-statusline` | replaces the footer with a detailed status line |
 
 Install one with `pi install npm:<package>`. Pi adds it to `settings.json`.
-Every tool call runs on the workstation; only the model request goes to LiteLLM.
+Every tool call runs on the workstation. Only the model request goes to LiteLLM.
 
 ## Keep the sampler current
 
-The hook is a chezmoi **external** with a 168-hour refresh, so a machine can
-serve a week-old copy and miss a fix.
+The hook is a chezmoi external with a 168-hour refresh, so a machine can
+use a week-old copy and miss a fix.
 
 ```bash
 chezmoi --refresh-externals apply ~/.pi/agent/extensions/qwen-sampling.ts
@@ -182,8 +182,8 @@ command diff -u ~/.pi/agent/extensions/qwen-sampling.ts \
 No output from `diff` means current. Running Pi sessions need `/reload`.
 The xhigh-default change does not modify the sampler extension itself.
 
-The hook does three things: keeps only the newest image for local Qwen and
-`pi-auto`, attaches the Langfuse session id and `pi` tag, and applies Qwen's
+The hook does three things. It keeps only the newest image for local Qwen and
+`pi-auto`. It attaches the Langfuse session id and `pi` tag. It applies Qwen's
 sampling to direct `vanillax-vllm` requests. Auto-routed Qwen uses the matching
 vLLM server defaults instead.
 
@@ -197,14 +197,14 @@ The hook does, for direct Qwen only:
 | on | 1.0 | 0.95 | 0.0 | 1.05 |
 | off | 0.7 | 0.8 | 1.5 | 1.0 |
 
-Both keep `top_k: 20` and `min_p: 0.0`. Never set `temperature: 0` here — greedy
+Both keep `top_k: 20` and `min_p: 0.0`. Never set `temperature: 0` here, because greedy
 decoding makes Qwen repeat itself. That rule is for the classifier, not for
 generation.
 
 ## Images
 
 Local Qwen accepts one image per request. The hook keeps the newest and replaces
-older ones with a text marker, so a second screenshot cannot wedge a session.
+older ones with a text marker, so a second screenshot cannot hang a session.
 Comparing two images at once needs an explicit cloud route.
 
 ## Subagents
@@ -223,13 +223,13 @@ billed by OpenRouter.
 alias pi-direct-openrouter='pi --model vanillax-direct-openrouter/~deepseek/deepseek-flash-latest --thinking high --models vanillax-direct-openrouter/~deepseek/deepseek-flash-latest'
 ```
 
-Provider definition lives in
+The provider definition is in
 [`scripts/pi/direct-openrouter.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/pi/direct-openrouter.json).
-The sampler deliberately leaves these requests untouched.
+The sampler leaves these requests untouched on purpose.
 
 ## Credentials
 
-Provision once, outside chezmoi. Both files are in `.chezmoiignore`.
+Create these files once, outside chezmoi. Both are in `.chezmoiignore`.
 
 ```bash
 (umask 077; op read 'op://homelab-prod/litellm/master_key' > ~/.pi/agent/litellm-api-key)
@@ -255,11 +255,11 @@ Check outgoing request kwargs, not answer length: direct Qwen should send
 by default. Repeat with explicit medium, low and off. The
 [vLLM acceptance matrix](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#reasoning-acceptance-checks)
 covers tools, images and multi-turn history. A run that exhausts its output
-budget is inconclusive; xhigh does not expand the 32K allowance.
+budget is inconclusive. Xhigh does not expand the 32K allowance.
 
 ## Rollback
 
-To reduce reasoning immediately, select medium on direct Qwen or launch:
+To reduce reasoning now, select medium on direct Qwen or launch:
 
 ```bash
 pi --model vanillax-vllm/qwen3.8-27b --thinking medium --models vanillax-vllm/qwen3.8-27b
@@ -275,8 +275,8 @@ a PR to `my-apps/ai/litellm/config.yaml`.
 
 ## Reference: `~/.pi/agent/models.json`
 
-Three providers, all pointing at the authenticated gateway. The workstation copy
-is tracked in `mitchross/dotfiles`; this block is the repo's copy and CI checks
+Three providers, all pointing at the authenticated gateway. `mitchross/dotfiles` tracks the
+workstation copy. This block is the repo's copy, and CI checks
 it against `litellm/config.yaml`, so keep them in step.
 
 ```json
@@ -411,7 +411,7 @@ launchers.
 
 ## Reference: `~/.pi/agent/settings.json`
 
-Defaults and Ctrl+P scope. CI checks `defaultThinkingLevel` and the per-model
+These are the defaults and Ctrl+P scope. CI checks `defaultThinkingLevel` and the per-model
 thinking levels, so keep this in step with the workstation copy.
 
 ```json
@@ -435,4 +435,4 @@ thinking levels, so keep this in step with the workstation copy.
 ```
 
 `compaction.reserveTokens` holds back 49,152 tokens so a long session compacts
-rather than overflowing.
+instead of overflowing.

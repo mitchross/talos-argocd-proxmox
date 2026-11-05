@@ -1,12 +1,12 @@
 # VPA policy ownership and scheduling
 
 **Purpose:** explain how this cluster sizes pod requests with Vertical Pod
-Autoscaler (VPA), where each policy belongs, and how request resizing interacts
-with horizontal scaling and topology.
+Autoscaler (VPA), where each policy belongs, and how request resizing affects
+horizontal scaling and topology.
 
 **Status:** current architecture and operator runbook.
 
-**Scope:** VPA request recommendations/actuation, topology spread,
+**Scope:** VPA request recommendations and actuation, topology spread,
 disruption budgets, and the descheduler that rebalances stateless pods.
 
 ## Mental model
@@ -17,15 +17,14 @@ VPA is three separate runtime actions:
 2. The updater applies `InPlaceOrRecreate` recommendations to existing pods.
 3. The admission controller applies recommendations when new pods are created.
 
-Stopping only the updater is therefore **not** a cluster-wide off switch. New
-pods can still be changed by admission. To stop all actuation while preserving
-learning, disable both `updater.enabled` and `admissionController.enabled` in
+Stopping only the updater is therefore **not** a cluster-wide off switch. Admission
+can still change new pods. To stop all actuation and keep learning, disable both `updater.enabled` and `admissionController.enabled` in
 `infrastructure/scheduling/vertical-pod-autoscaler/values.yaml`; leave the
 recommender enabled.
 
 VPA changes requests, not placement. The scheduler evaluates topology spread
-only when a pod is scheduled, and an in-place resize intentionally does not move
-the pod. A balanced workload can therefore become imbalanced as requests grow.
+only when it schedules a pod, and an in-place resize does not move the pod. A
+balanced workload can therefore become imbalanced as requests grow.
 
 ## Repository layout
 
@@ -33,7 +32,7 @@ the pod. A balanced workload can therefore become imbalanced as requests grow.
 |---|---|---|
 | User application | `my-apps/<category>/<app>/vpa.yaml` | App deletion prunes its policy; target and sizing review happen together |
 | Monitoring application | `monitoring/<app>/vpa.yaml` | Same ownership rule, including Helm-rendered and operator CR targets |
-| Bootstrap/system workload | `infrastructure/scheduling/vpa-system-policies/` | Explicit exception for workloads whose owner reconciles at the VPA CRD wave or otherwise cannot safely own the policy after CRD bootstrap |
+| Bootstrap/system workload | `infrastructure/scheduling/vpa-system-policies/` | Exception for workloads whose owner reconciles at the VPA CRD wave or otherwise cannot safely own the policy after CRD bootstrap |
 | VPA controller | `infrastructure/scheduling/vertical-pod-autoscaler/` | Recommender, updater, admission controller, and CRDs at wave 4 |
 | VPA monitoring | `infrastructure/scheduling/vertical-pod-autoscaler-observability/` | Optional PodMonitor and alerts at wave 6, after Prometheus CRDs |
 
@@ -41,16 +40,16 @@ The policy object identity is its namespace and name. Keep both unchanged when
 moving a policy between Argo applications. The recommender's checkpoints and
 in-memory aggregate histories can then reattach after the ownership handoff.
 During the one-PR migration, the historical central Application reconciles at
-wave 4 and prunes moved policies before monitoring owners at wave 5 and user
-application owners at wave 6 adopt them. PostHog is a temporary exception:
-because its migration hook currently blocks sync, its policies stay central
-until that Application is sync-healthy. Two rendered policies targeting the
-same workload are never permitted.
+wave 4 and prunes moved policies. Monitoring owners at wave 5 and user
+application owners at wave 6 then adopt them. PostHog is a temporary exception.
+Its migration hook currently blocks sync, so its policies stay central until
+that Application is sync-healthy. Never render two policies that target the
+same workload.
 
-The system-policy entrypoint intentionally retains the historical Argo
-Application name `vpa-recommendations`. Its file and source path describe the
-new responsibility; preserving the Application identity prevents a cascading
-delete of every existing VPA. It carries `SkipDryRunOnMissingResource=true` and
+The system-policy entrypoint keeps the historical Argo Application name
+`vpa-recommendations`. Its file and source path describe the new responsibility.
+Keeping the Application identity prevents a cascading delete of every existing
+VPA. It carries `SkipDryRunOnMissingResource=true` and
 retry settings because it shares wave 4 with the VPA controller on a cold
 bootstrap. Infrastructure applications at that same wave remain central unless
 they gain an explicitly ordered post-CRD owner.
@@ -73,7 +72,7 @@ resourcePolicy:
         memory: 4Gi
 ```
 
-The rules behind that shape are:
+These rules explain that shape:
 
 - `RequestsOnly` leaves Git-declared limits as the hard runtime boundary.
 - `minReplicas: 1` is required because this cluster is mostly single replica.
@@ -89,7 +88,7 @@ The rendered-manifest check in `scripts/validate-vpa-policies.py` rejects
 missing targets, duplicate targets, unsupported modes, unsafe CPU HPA overlap,
 and active policies without the safety fields. It warns about uncovered
 workloads and wildcard ceilings. Reviewed exclusions live in
-`scripts/vpa-exemptions.yaml`; prose-only exclusions are not policy.
+`scripts/vpa-exemptions.yaml`. Prose-only exclusions are not policy.
 
 ## Topology and disruption
 
@@ -108,8 +107,8 @@ Cloudflared uses required `DoNotSchedule` spread across eligible
 `topology.kubernetes.io/zone` domains, with `nodeTaintsPolicy: Honor` and
 rollout-scoped `matchLabelKeys`. Two VMs on the SFF count as one physical host.
 Preferred anti-affinity and node affinity favor separate hosts in the `general`
-pool. Other eligible workers remain usable when the HPs lack room, and several
-tunnel pods can share a surviving host. Verify actual placement; spread does not
+pool. Other eligible workers stay usable when the HPs lack room, and several
+tunnel pods can share a surviving host. Verify actual placement. Spread does not
 guarantee a different chassis per replica when fewer zones are eligible.
 
 The OpenTelemetry gateway runs two replicas with a required zone spread
@@ -124,7 +123,7 @@ kubectl get nodes -L topology.kubernetes.io/zone,node.vanillax.dev/pool
 
 Match each pod's node to its zone. With at least two eligible zones and enough
 capacity, expect two Ready pods on different zones. Reverting the manifest
-returns it to one replica; no data moves.
+returns it to one replica. No data moves.
 
 ### What each worker is for
 
@@ -136,14 +135,14 @@ The Omni template declares a separate `node.vanillax.dev/pool` label:
 | Threadripper | `gpu` | GPU workloads and selected heavy jobs |
 | Shed HP Micro | `edge` | Attached devices and permitted edge jobs |
 
-These labels describe intent; existing apps and Longhorn replicas are not moved
-by a label alone. Cloudflared and
-the OpenTelemetry gateway consume the label as a soft preference. No new taints,
-storage tags or control-plane scheduling changes accompany these labels.
+These labels describe intent. A label alone does not move existing apps or
+Longhorn replicas. Cloudflared and the OpenTelemetry gateway use the label as a
+soft preference. These labels add no new taints, storage tags or control-plane
+scheduling changes.
 
-Check live labels after syncing the Omni template; merging Git does not itself
-change allocated machines. Finish the active Talos upgrade before applying another
-template change. Confirm the Omni sync preview contains the expected label changes
+Check live labels after syncing the Omni template. Merging Git does not change
+allocated machines. Finish the active Talos upgrade before applying another
+template change. Confirm the Omni sync preview shows the expected label changes
 without machine replacement, then check:
 
 ```sh
@@ -151,26 +150,26 @@ kubectl get nodes -L node.vanillax.dev/pool,topology.kubernetes.io/zone
 kubectl -n cloudflared get pods -o wide
 ```
 
-Expected labels match the table, and all three tunnel replicas become Ready after
+Expect labels that match the table, and all three tunnel replicas Ready after
 the ordinary Deployment rollout. If the labels are not applied yet, preferred
-affinity still allows the tunnel pods to schedule. Rolling back the Deployment
-preference is independent of reverting the Omni labels. A label change is not a
-request to drain workers or re-provision disks.
+affinity still lets the tunnel pods schedule. Rolling back the Deployment
+preference is independent of reverting the Omni labels. A label change does not
+drain workers or re-provision disks.
 
-Replicated critical workloads should pair spread with a
-`PodDisruptionBudget` using `maxUnavailable: 1` and
+Pair spread with a
+`PodDisruptionBudget` on replicated critical workloads, using `maxUnavailable: 1` and
 `unhealthyPodEvictionPolicy: AlwaysAllow`. Do not add `minAvailable: 1` to a
 single-replica controller: it blocks voluntary Talos drains. The VPA controller
-currently runs one replica per component, so its PDBs intentionally remain off.
+currently runs one replica per component, so its PDBs stay off on purpose.
 
-Topology spread is not a rebalance loop. If request growth repeatedly fills one
-node, first correct ceilings and placement constraints.
+Topology spread does not rebalance running pods. If request growth repeatedly
+fills one node, first correct ceilings and placement constraints.
 
 ### Descheduler: rebalancing stateless pods
 
-The scheduler places a pod once; the descheduler moves stateless pods later so
-reboots don't leave some nodes overloaded and others idle. Pods with PVCs are
-never moved. What it does, why it matters and how to read a run:
+The scheduler places a pod once. The descheduler moves stateless pods later, so
+reboots don't leave some nodes overloaded and others idle. It never moves pods
+with PVCs. For what it does and how to read a run, see
 [descheduler](descheduler.md).
 
 The [hardware and placement review](../../audits/2026-09-05-hardware-and-placement-review.md)
@@ -188,8 +187,8 @@ kustomize build infrastructure/scheduling/vertical-pod-autoscaler-observability
 python3 scripts/validate-vpa-policies.py /tmp/all-manifests.yaml
 ```
 
-The last command expects the aggregate render produced by Cluster CI. Success
-reports one unique target per VPA and zero errors. Coverage warnings require
+The last command expects the aggregate render that Cluster CI produces. Success
+reports one unique target per VPA and zero errors. Each coverage warning needs
 either a new co-located policy or a reasoned machine-readable exemption.
 
 After Argo syncs, verify:
@@ -202,26 +201,25 @@ kubectl get pods -n cloudflared -o wide
 kubectl get pdb -n cloudflared
 ```
 
-Expected results are active policies in `InPlaceOrRecreate`, the learn-only
-policy in `Off`, zone values matching the table after the Omni template is synced,
-cloudflared replicas spread when nodes are available, and a PDB allowing at
-most one voluntary disruption. A blank zone means the Omni template has not
-yet been applied to that machine set; do not assume the Git edit labels a live
-Talos node by itself.
+Expect active policies in `InPlaceOrRecreate`, the learn-only policy in `Off`,
+zone values that match the table after the Omni template syncs, cloudflared
+replicas spread when nodes are available, and a PDB allowing at most one
+voluntary disruption. A blank zone means the Omni template has not yet reached
+that machine set. A Git edit does not label a live Talos node by itself.
 
 ## Failure and rollback
 
 - If a moved policy is `SharedResource`, confirm the central wave-4 owner has
-  pruned it before allowing a later-wave owner to retry. Stop if two policies
+  pruned it before a later-wave owner retries. Stop if two policies
   target the same workload.
-- If recommendations disappear, confirm the target kind/name/namespace and
+- If recommendations disappear, confirm the target kind, name and namespace, and
   inspect recommender logs. Do not rename the VPA as a first response.
 - If resizing threatens scheduler headroom, disable both updater and admission
-  in Git. The recommender continues learning while the change rolls out.
+  in Git. The recommender keeps learning while the change rolls out.
 - Roll back a policy move by restoring its previous owner while preserving its
   namespace/name. Do not delete checkpoints manually.
 
-Sources of truth are the controller
+The sources of truth are the controller
 [`values.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/scheduling/vertical-pod-autoscaler/values.yaml),
 the rendered-policy validator
 [`validate-vpa-policies.py`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/validate-vpa-policies.py),

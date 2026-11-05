@@ -39,26 +39,26 @@ flowchart LR
 | Image | `ghcr.io/mitchross/hermes-dev` from [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev), pinned by digest in `deployment.yaml` | Official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`; one container runs the gateway and the dashboard under s6-overlay |
 | Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000. Init container `seed` runs `scripts/seed.sh` first. Limits 8 CPU / 12 GiB: the CPU limit caps how many workers Jest and cargo start; VPA sets the requests |
 | Rust toolchains | `scripts/seed.sh` | `RUSTUP_HOME=/opt/data/tools/rustup` on the volume. The image's toolchain is linked as default `hermes-image`; a repo's `rust-toolchain.toml` version installs once on first use (`RUSTUP_AUTO_INSTALL=1`) |
-| Settings | `config/config.yaml` → ConfigMap → copied to `/opt/data/config.yaml` by `scripts/seed.sh` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
+| Settings | `config/config.yaml` becomes a ConfigMap, and `scripts/seed.sh` copies it to `/opt/data/config.yaml` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
 | Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
 | Coding agents | `scripts/seed.sh`, `skills/homelab-ops/SKILL.md` | Seed clones the talos repo into `/opt/data/workspace`, writes the Hindsight hook configs, installs the Claude Code and Codex hooks. The skill runs `claude -p` or `codex exec` in the background |
 | Brain | `claude-opus-5-5`, medium reasoning effort, through the Claude Code token (`config.yaml`) | Qwen (`providers.litellm`, free, local) and GitHub Copilot (`gh` login) stay selectable per session |
 | Coding agents' models | `ANTHROPIC_MODEL=claude-opus-5-5` + `--effort high`; `.codex/config.toml` `gpt-6.1-sol` + `high` | The skill passes `--model` on every run: Sonnet 5.5 for spelled-out fixes, Opus 5.5 or GPT-6.1-sol for investigation and design. It reports model and effort on every hand-off |
-| Claude login | 1Password `claude-code/oauth_token` → `CLAUDE_CODE_OAUTH_TOKEN` | From `claude setup-token` on the Max plan; no browser login in the pod |
-| Gitea login | 1Password `gitea/git_token` → `GITEA_TOKEN` | Git credential helper for `https://gitea.vanillax.me`; clone and push work, no `tea` CLI |
-| Dashboard login | 1Password `hermes/dashboard_password` and `dashboard_secret` → Secret `hermes-secrets` | Username `vanillax`. The secret signs sessions, so logins survive restarts |
+| Claude login | 1Password `claude-code/oauth_token` feeds `CLAUDE_CODE_OAUTH_TOKEN` | From `claude setup-token` on the Max plan; no browser login in the pod |
+| Gitea login | 1Password `gitea/git_token` feeds `GITEA_TOKEN` | Git credential helper for `https://gitea.vanillax.me`; clone and push work, no `tea` CLI |
+| Dashboard login | 1Password `hermes/dashboard_password` and `dashboard_secret` feed Secret `hermes-secrets` | Username `vanillax`. The secret signs sessions, so logins survive restarts |
 | Memory | Hindsight in-cluster, bank `hermes`; plugin settings in `config/hindsight-hermes.json`, copied to `hindsight/config.json` by the seed | Key from 1Password `hindsight/tenant_api_key` |
-| Home Assistant | 1Password `home-assistant/ha-longlived-token` → `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
+| Home Assistant | 1Password `home-assistant/ha-longlived-token` feeds `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Volume | `pvc.yaml` | `hermes-data`, 200Gi Longhorn, restore-before-bind |
 | Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28; keeps 8 hourly, 14 daily, 6 weekly, 3 monthly. Mover runs as 10000:10000. Longhorn also keeps 24 hourly snapshots on the volume; they do not survive loss of the volume |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
-| Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) → `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
+| Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) feed `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
 | Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`: OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated; its public half is in the Pi's `authorized_keys` |
-| Personality | `config/SOUL.md` → `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
+| Personality | `config/SOUL.md` is copied to `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
 | Third-party skills | `scripts/external-skills.txt` | i-have-adhd, Ponytail, Matt Pocock's, Vercel (React) and Expo skills, pinned by commit. Change the sha to update one |
 | Hermes-made skills | `skills/library/<category>/<name>/` | Skills Hermes wrote itself. The seed copies one in only when the volume lacks it, so the live copy keeps its edits; refresh Git through a PR |
-| Cloudflare | `config.yaml` `mcp_servers.cloudflare` → `https://mcp.cloudflare.com/mcp`; 1Password `cloudflared-proxmox/api-token` → `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
+| Cloudflare | `config.yaml` `mcp_servers.cloudflare` → `https://mcp.cloudflare.com/mcp`; 1Password `cloudflared-proxmox/api-token` feeds `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi; copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
 
@@ -183,7 +183,7 @@ Do each once from the dashboard terminal (bottom bar, terminal icon):
 
 **It worked when** `codex login status` and `gh auth status` both report a signed-in account.
 Then ask Hermes in a chat: "run `command -v claude codex; gh auth status; codex login status` in the terminal".
-Hermes's terminal uses its own home (`/opt/data/home`); the seed links the logins into it, and this chat check proves Hermes itself can see them.
+Hermes's terminal uses its own home (`/opt/data/home`). The seed links the logins into it, and this chat check proves Hermes itself can see them.
 
 The seed reruns `gh auth setup-git` on every start. A restored volume keeps both logins.
 
@@ -268,7 +268,7 @@ Runtime state stays on the volume: sessions, cron jobs, skills Hermes writes, me
 | `CreateContainerConfigError` | `kubectl -n hermes describe externalsecret hermes-secrets`; a 1Password field is missing |
 | Dashboard login loops back to the sign-in page | `HERMES_DASHBOARD_PUBLIC_URL` must equal the route hostname |
 | Status shows the gateway registered but down | `HERMES_GATEWAY_BOOTSTRAP_STATE=running` in `deployment.yaml` |
-| Hermes says `claude` or `codex` is not found | Restart the pod; the seed relinks the tools into `/opt/data/home`. Test through Hermes's terminal, not only `kubectl exec` |
+| Hermes says `claude` or `codex` is not found | Restart the pod. The seed relinks the tools into `/opt/data/home`. Test through Hermes's terminal, not only `kubectl exec` |
 | An agent says it is not logged in | Repeat step 3 for Codex or `gh`; check `claude-code/oauth_token` in 1Password for Claude. There is no fallback agent: Hermes stops and hands you the prompt |
 | The seed init container fails | `kubectl -n hermes logs deploy/hermes -c seed`. Clone and plugin failures only warn; a config copy failure stops the pod |
 | `hermes-data` stays `Pending` | Restore status and storage events. Never delete the PVC |
@@ -285,7 +285,7 @@ Snapshots must reach `Succeeded` with nonzero files before you rely on a restore
 See the [kopiur backup architecture](../storage/kopiur-backup-architecture.md).
 
 Roll back by reverting the PR. Argo CD recreates the pod from the previous image; the volume keeps sessions and memories.
-Never delete the app directory as a rollback: Argo CD can prune the volume.
+Never delete the app directory as a rollback. Argo CD can prune the volume.
 
 ## Known limits
 

@@ -1,6 +1,6 @@
-# Argo CD Entrypoints
+# Argo CD entrypoints
 
-The review map for everything directly rendered by the root Application from `infrastructure/controllers/argocd/apps/`.
+This is the review map for everything the root Application renders directly from `infrastructure/controllers/argocd/apps/`.
 
 `root.yaml` is the manual seed and is not self-managed. Once it exists, Argo CD manages this entrypoint tree, including file moves inside `apps/`, ApplicationSet edits, and AppProject edits.
 
@@ -13,7 +13,7 @@ The review map for everything directly rendered by the root Application from `in
 | `custom-entrypoints/` | Intentional standalone apps kept out of AppSets for ordering or render behavior |
 | `appsets/` | Broad directory discovery for infrastructure, databases, monitoring, and user apps |
 
-## Entrypoint Table
+## Entrypoint table
 
 | Entrypoint | Type | Wave | Reason | Can move to AppSet? |
 |------------|------|------|--------|---------------------|
@@ -43,67 +43,67 @@ The review map for everything directly rendered by the root Application from `in
 Generated Application identities are domain-prefixed:
 `infrastructure-<component>`, `database-<database>`, `monitoring-<component>`,
 and `my-apps-<app>`. Namespaces still use the leaf directory name. The prefix
-prevents operationally dangerous UI ambiguity such as confusing the Temporal
-database Application with the Temporal server/schema Application.
+keeps the UI unambiguous. Without it, the Temporal database Application
+could look like the Temporal server/schema Application.
 
-ApplicationSet waves order creation of the generator objects, not the health
-of their generated Applications. Those children reconcile independently. See
+ApplicationSet waves order the creation of the generator objects, not the health
+of their generated Applications. Those children reconcile independently. Read
 [wave scope](argocd.md#how-argo-cd-sync-waves-and-waiting-work) before treating an
 AppSet wave as a dependency barrier.
 
-## Bootstrap guardrail — observability is not a core dependency
+## Bootstrap guardrail: observability is not a core dependency
 
-**A bootstrap-critical app must render successfully without `monitoring.coreos.com` CRDs.** Argo's Helm chart conditionally renders its monitors only when the installed API capability exists. Other
+**A bootstrap-critical app must render successfully without `monitoring.coreos.com` CRDs.** Argo's Helm chart renders its monitors only when the installed API capability exists. Other
 monitoring resources belong in optional observability overlays. Those CRDs do not exist until
-kube-prometheus-stack (Wave 5); an earlier-wave app shipping them fails dry-run and deadlocks the
-App-of-Apps wave gate. Put observability CRs in a **separate optional app that syncs after Wave 5**
-(e.g. `keda-observability` at Wave 6, split out of KEDA's Wave-4 core). Do **not** install Prometheus
-Operator CRDs early — `SkipDryRunOnMissingResource` is an escape hatch / observability-app option only,
-never a core fix. `cert-manager` is at **Wave 1** (not 4) so early cert-dependent apps can start
+kube-prometheus-stack (Wave 5). An earlier-wave app that ships them fails dry-run and deadlocks the
+App-of-Apps wave gate. Put observability CRs in a separate optional app that syncs after Wave 5
+(e.g. `keda-observability` at Wave 6, split out of KEDA's Wave-4 core). **Do not install Prometheus
+Operator CRDs early.** `SkipDryRunOnMissingResource` is an escape hatch and an observability-app option only,
+never a core fix. `cert-manager` is at Wave 1 (not 4) so early cert-dependent apps can start
 (historically the Wave-3 cnpg-barman-plugin; the deadlock lesson stands even though that app is
 retired). Full detail: [cluster DR nuke restore runbook](../../disaster-recovery.md).
 
-## Bootstrap guardrail — Application health does not prove webhook reachability
+## Bootstrap guardrail: Application health does not prove webhook reachability
 
-Waves gate on Argo CD Application health. For a webhook Deployment that means
-**ready replicas == desired** — and kubelet decides readiness by probing the pod
-**locally, on its own node**. Neither signal involves the API server. A webhook
+Waves gate on Argo CD Application health. For a webhook Deployment, that means
+ready replicas equal desired replicas. Kubelet decides readiness by probing the pod
+locally, on its own node. Neither signal involves the API server. A webhook
 pod can therefore be `Running`, `Ready`, and its Application `Healthy`, while the
 API server cannot reach it across the pod network. Every later wave then proceeds
 into a webhook that cannot be called.
 
-The blast radius is set by `failurePolicy`, not by the size of the component. A
+`failurePolicy` sets the blast radius, not the size of the component. A
 cluster-scoped `failurePolicy: Fail` webhook rejects **every** matching write in
 the cluster while unreachable, and a sync can fail after applying only part of its resources. Unrelated apps
-can stall waiting for Secrets or other objects rejected by admission.
+can stall waiting for Secrets or other objects that admission rejects.
 
 Two rules follow:
 
-- **Fail-closed cluster-scoped webhooks are pinned to the control plane**
+- **Pin fail-closed cluster-scoped webhooks to the control plane**
   (`nodeSelector: node-role.kubernetes.io/control-plane` plus the matching
   `NoSchedule` toleration). The API server calls them node-locally, so no
   pod-network fault on any other node can break admission. This applies to
-  `cert-manager`. Availability is then coupled
-  to the API server's own availability, which is the correct coupling: if the
+  `cert-manager`. Webhook availability then follows the API server's own availability.
+  That is the right coupling: if the
   control plane is down, admission is moot.
-- **Do not add a custom Lua health check to probe webhook reachability.** Argo CD
-  configuration stays simple; the reachability signal belongs in alerting
+- **Do not add a custom Lua health check to probe webhook reachability.** Keep the Argo CD
+  configuration simple. The reachability signal belongs in alerting
   (`monitoring/metrics/prometheus-stack/admission-webhook-alerts.yaml`, which reads the
   API server's own `apiserver_admission_webhook_*` metrics), not in the wave gate.
 
 ## Notes
 
-- `my-apps/common/*` is **excluded** from the my-apps generator: those directories are shared Kustomize Components (`kind: Component`), which kustomize builds as an *empty* render — without the exclude the AppSet generates a phantom zero-resource Application. `validate-argocd-apps.sh` Check 8 fails CI if a Component dir ever becomes discoverable again.
-- Category folders are for people only. Application names and namespaces come from the last folder, so moving an app between categories (for example `my-apps/media/x` → `my-apps/utility/x`) only changes its source path. Renaming the last folder creates a new Application and namespace.
-- The **infrastructure** and **monitoring** ApplicationSets set `preserveResourcesOnDeletion: true`, so their generated Applications carry no `resources-finalizer`. If a path briefly stops matching (a folder move, a typo, the AppSet spec and repo updating out of order), Argo CD removes only the Application object and recreates it on the next generation; workloads, namespaces and PVCs keep running. The trade-off: **removing** an infra or monitoring component from git leaves its resources on the cluster. Delete them by hand after the Application is gone; they still carry the `argocd.argoproj.io/tracking-id: <app>:…` annotation, and `kubectl delete -k` against the path at the previous commit removes them. Re-adding the finalizer does not work because the AppSet controller rewrites finalizers on every update. The my-apps and database ApplicationSets keep the finalizer because `_archive/` relies on the cascade.
-- Change an ApplicationSet's paths and move the folders it matches in **separate** PRs: first list the new paths alongside the old ones, then move the folders, then drop the old paths. Doing both in one commit let the controller read the new folders with the old spec. Wait for each step to be **live**, not just merged: root walks the sync waves and can take ~20 minutes to apply an AppSet change. Use the [read-only live prerequisite gate](live-prerequisite-gate.md): require `operationState.phase: Succeeded` with `operationState.syncResult.revision` at the merged commit, then verify the exact live AppSet fields, generated Application ownership/finalizers and preserved resource UIDs. `status.sync.revision` alone is comparison evidence, not proof that the safety change applied. The user must explicitly authorize each specific PR merge.
+- `my-apps/common/*` is excluded from the my-apps generator. Those directories are shared Kustomize Components (`kind: Component`), which kustomize builds as an empty render. Without the exclude, the AppSet generates a phantom zero-resource Application. `validate-argocd-apps.sh` Check 8 fails CI if a Component dir ever becomes discoverable again.
+- Category folders are for people only. Application names and namespaces come from the last folder, so moving an app between categories (for example `my-apps/media/x` to `my-apps/utility/x`) only changes its source path. Renaming the last folder creates a new Application and namespace.
+- The infrastructure and monitoring ApplicationSets set `preserveResourcesOnDeletion: true`, so their generated Applications carry no `resources-finalizer`. If a path briefly stops matching (a folder move, a typo, the AppSet spec and repo updating out of order), Argo CD removes only the Application object and recreates it on the next generation; workloads, namespaces and PVCs keep running. The trade-off: **removing** an infra or monitoring component from git leaves its resources on the cluster. Delete them by hand after the Application is gone; they still carry the `argocd.argoproj.io/tracking-id: <app>:…` annotation, and `kubectl delete -k` against the path at the previous commit removes them. Re-adding the finalizer does not work because the AppSet controller rewrites finalizers on every update. The my-apps and database ApplicationSets keep the finalizer because `_archive/` relies on the cascade.
+- Change an ApplicationSet's paths and move the folders it matches in **separate** PRs. First list the new paths alongside the old ones, then move the folders, then drop the old paths. Doing both in one commit let the controller read the new folders with the old spec. Wait for each step to be live, not just merged: root walks the sync waves and can take ~20 minutes to apply an AppSet change. Use the [read-only live prerequisite gate](live-prerequisite-gate.md). Require `operationState.phase: Succeeded` with `operationState.syncResult.revision` at the merged commit. Then verify the exact live AppSet fields, generated Application ownership/finalizers and preserved resource UIDs. `status.sync.revision` alone is comparison evidence, not proof that the safety change applied. The user must explicitly authorize each specific PR merge.
 - All four ApplicationSets use strict Go templates (`missingkey=error`). Git
   directory fields are objects in Go-template mode. The leading `.` means
   "the current generator result"; `path` is the Git generator's directory
   object, and the remaining names select fields from it. Therefore use
   `{{ .path.path }}` / `{{ .path.basename }}` rather than the deprecated
   fasttemplate forms `{{ path }}` / `{{ path.basename }}`. Strict missing-key
-  handling deliberately fails generation instead of silently producing an
+  handling fails generation on purpose, instead of silently producing an
   Application with an empty name, source path, or namespace. The render CI
   also rejects any non-Component kustomization that produces zero Kubernetes
   objects.
@@ -113,7 +113,7 @@ Two rules follow:
   merge-after-destruction step is not part of a normal rebuild.
 - `rustfs-lifecycle` is not a standalone Argo entrypoint. It is generated by `appsets/infrastructure-appset.yaml` from `infrastructure/backup/rustfs-lifecycle` at wave 4.
 - Global ignore rules for HTTPRoute, ExternalSecret, and PVC restore fields live in `infrastructure/controllers/argocd/values.yaml`; AppSets should only carry app-specific ignore rules.
-- AppProjects are intentionally permissive for a single-operator homelab. They are labels and UI grouping, not hard tenant guardrails.
+- AppProjects are permissive on purpose for a single-operator homelab. They are labels and UI grouping, not hard tenant guardrails.
 - Hook Jobs are acceptable when they are idempotent, bounded, and documented. The RustFS lifecycle Job is a PostSync hook because S3 lifecycle PUTs are idempotent and Kubernetes Jobs are immutable.
 
 ## Archived apps
@@ -123,7 +123,7 @@ A retired app moves into its category's `_archive/` folder, for example
 my-apps and monitoring ApplicationSets exclude `*/_archive`, so nothing there
 is deployed.
 
-**Archive an app**
+Archive an app:
 
 1. Confirm the latest backup succeeded: `kubectl -n <ns> get snapshot`.
 2. `git mv my-apps/<category>/<app> my-apps/<category>/_archive/<app>` and merge.
@@ -136,7 +136,7 @@ in the repository with `onNamespaceDelete: Orphan` (the current ClusterRepositor
 CRD default); do not change that setting, or archiving an app
 deletes its backup history.
 
-**Bring an app back (rollback)**
+Bring an app back (rollback):
 
 `git mv` the folder back up one level and merge. The Application is recreated
 and restore-before-bind fills each PVC from its latest snapshot, the same path

@@ -1,6 +1,6 @@
 # talos-argocd-proxmox
 
-A GitOps Kubernetes homelab on **Talos Linux** with **self-managing ArgoCD**.
+A GitOps Kubernetes homelab on Talos Linux with self-managing ArgoCD.
 ApplicationSets discover app directories. Per-PVC Kopiur resources declare
 backup and restore behavior. After the operator rebuilds Talos and seeds Argo,
 protected volumes restore automatically from the off-cluster repository.
@@ -15,25 +15,25 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 
 !!! tip "The point"
     The whole cluster can be destroyed and rebuilt with every protected volume
-    restored automatically from the off-cluster Kopia repository — no manual storage
+    restored automatically from the off-cluster Kopia repository, with no manual storage
     steps. See [disaster recovery](disaster-recovery.md).
 
 ## Stack
 
-- **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
-- **CNI**: Cilium with Gateway API + LoadBalancer
-- **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn V1, placed by drive endurance; two replicas by default,
-  one on the flash tier. NAS provides bulk files and
+- OS: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
+- CNI: Cilium with Gateway API + LoadBalancer
+- GitOps: ArgoCD (self-managing) + ApplicationSets for auto-discovery
+- Storage: Longhorn V1, placed by drive endurance. It keeps two replicas by default
+  and one on the flash tier. The NAS holds bulk files and
   off-cluster backups. [Current machines and capacity](inventory/2026-11-03-fleet-inventory.md).
-- **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
-- **Database**: plain Postgres Deployments backed up by kopiur — daily snapshots (every 6 hours for data that can't be re-created), restore-before-bind
-- **Hosts**: Proxmox and Pi operating-system settings applied with Ansible from `host-monitoring/` ([guide](domains/hosts/physical-hosts-ansible.md))
-- **Secrets**: 1Password Connect + External Secrets Operator
-- **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
-- **AI**: the production backend serves official `qwen3.8-27b` FP8 through vLLM
+- Backup: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) to RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
+- Database: plain Postgres Deployments backed up by kopiur. Snapshots run daily, or every 6 hours for data that can't be re-created, with restore-before-bind
+- Hosts: Ansible applies Proxmox and Pi operating-system settings from `host-monitoring/` ([guide](domains/hosts/physical-hosts-ansible.md))
+- Secrets: 1Password Connect + External Secrets Operator
+- Observability: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
+- AI: the production backend serves official `qwen3.8-27b` FP8 through vLLM
   on both RTX 3090s. The [local AI starter kit](domains/ai-gpu/index.md) lists the parts and the build order. The [model catalog](domains/ai-gpu/model-catalog.md)
-  owns the local backend and Pi's optional OpenRouter DeepSeek Flash route; use the
+  owns the local backend and Pi's optional OpenRouter DeepSeek Flash route. Use the
   [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
   [Hermes](domains/ai-gpu/hermes.md) is the always-on agent with cron, memory, chat platforms, and
   in-pod Claude Code and Codex for pull requests. It replaced Paseo, which is off.
@@ -41,8 +41,8 @@ reconstructs protected data. [Open the full-size platform map](assets/platform-o
 ## Reading order
 
 Start with [the easy guide](easy-guide.md), then follow the sidebar from top to
-bottom: understand the platform, learn how to operate it, explore the hardware,
-review its measured performance, and consider future changes.
+bottom. The order is platform, operation, hardware, measured performance, then
+future changes.
 
 | Sidebar section | Use it for | Start here |
 |---|---|---|
@@ -57,37 +57,35 @@ For current upgrade priorities, jump to the
 
 The [fleet inventory](inventory/2026-11-03-fleet-inventory.md) is the current machine list;
 the [full inventory](inventory/2026-10-15-full-inventory.md) and explorer were last refreshed on October 15.
-Historical benchmarks retain their collection dates. An inventory is not a live dashboard,
+Historical benchmarks keep their collection dates. An inventory is not a live dashboard,
 and a research proposal is not a deployed change.
 
 ## Frequent tasks
 
-1. **Find a machine or its disks:** the [disk map](domains/storage/disk-map.md) shows
+1. Find a machine or its disks. The [disk map](domains/storage/disk-map.md) shows
    every physical disk, what it holds, and where new data should go.
    [Explore the lab](lab.md) and the [hardware diagnostics report](diagnostics.md)
    hold the dated hardware snapshots.
-2. **Understand NAS speeds and RAM:** [NAS performance](nas-performance.md)
+2. Understand NAS speeds and RAM. [NAS performance](nas-performance.md)
    separates physical-disk reads, RAM-cache reads, and flushed writes.
-3. **Add or troubleshoot backups:** start with the
+3. Add or troubleshoot backups. Start with the
    [kopiur architecture](domains/storage/kopiur-backup-architecture.md), then
    [mover permissions](domains/storage/kopiur-mover-permissions.md).
-4. **Recover the platform:** use the [disaster recovery runbook](disaster-recovery.md).
-   The [backup simulator](kopiur-playground.md) provides a safe browser-only walkthrough.
-5. **Release a worker:** use the
+4. Recover the platform. Use the [disaster recovery runbook](disaster-recovery.md).
+   The [backup simulator](kopiur-playground.md) is a safe browser-only walkthrough.
+5. Release a worker. Use the
    [Temporal safe deployment runbook](domains/temporal/safe-deployments.md).
-6. **Keep SSD wear down:** follow the [disk-write rules](domains/storage/disk-writes.md)
+6. Keep SSD wear down. Follow the [disk-write rules](domains/storage/disk-writes.md)
    and check the top writers there.
-7. **Change a Proxmox host or the Pi:** those machines are configured with
-   Ansible, not Argo CD. Use [physical hosts with Ansible](domains/hosts/physical-hosts-ansible.md).
+7. Change a Proxmox host or the Pi. Ansible configures those machines, not Argo CD. Use [physical hosts with Ansible](domains/hosts/physical-hosts-ansible.md).
 
 Every page follows the [documentation reader contract](documentation-standard.md):
-state the current posture, explain unfamiliar choices, provide verifiable steps,
-and include failure/rollback guidance for risky operations.
+state the current posture, explain unfamiliar choices, give verifiable steps,
+and include failure and rollback guidance for risky operations.
 
 ## Adopting any of this
 
-This is one operator's homelab, not a product. The patterns are portable —
-the label-driven backup contract, the off-cluster repository, the
-restore-canary idea, the sync-wave bootstrap — but the image tags, hostnames,
+This is one operator's homelab, not a product. The patterns are portable: the label-driven backup contract, the off-cluster repository, the
+restore-canary idea, and the sync-wave bootstrap. The image tags, hostnames,
 and 1Password item names are not. Start with
 [storage-architecture.md](storage-architecture.md).
