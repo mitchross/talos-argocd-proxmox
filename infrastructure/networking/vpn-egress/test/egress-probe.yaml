@@ -7,7 +7,7 @@ metadata:
   labels:
     app: egress-probe
 spec:
-  replicas: 0  # paused with the VPN
+  replicas: 1
   selector:
     matchLabels:
       app: egress-probe

@@ -22,9 +22,6 @@ spec:
       serviceAccountName: vpn-gateway
       # The WireGuard link must live in the node's namespace, where Cilium can use it as an egress device.
       hostNetwork: true
-      # Paused: no node has this label, so no gateway pods run. Delete to resume.
-      nodeSelector:
-        node.vanillax.dev/vpn-gateway: paused
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
       terminationGracePeriodSeconds: 15
@@ -37,8 +34,6 @@ spec:
                     operator: In
                     values:
                       - hp-elite-gen13
-                      - mini-pc-dell-ultra-worker
-                      - hp-elite-gen12
       containers:
         - name: gateway
           image: ghcr.io/linuxserver/wireguard:1.0.20260223-r0-ls129@sha256:236f9a9a89c701bc83f6d41007157dc77361114d14e56a08e846bb4499622e97

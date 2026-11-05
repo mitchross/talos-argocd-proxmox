@@ -19,8 +19,6 @@ rules:
     resources: ["configmaps"]
     resourceNames:
       - vpn-gateway-hp-elite-gen13
-      - vpn-gateway-mini-pc-dell-ultra-worker
-      - vpn-gateway-hp-elite-gen12
     verbs: ["get", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
