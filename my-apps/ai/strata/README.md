@@ -15,9 +15,9 @@ v0.1.26, 32K prompt): auto split K=24, prompt 749 tok/s, decode 106 tok/s median
 | Setting | Value |
 |---|---|
 | Source | `Niko1221/Strata` at the commit pinned in [homelab-images `images/strata`](https://github.com/mitchross/homelab-images/tree/main/images/strata) (v0.1.40.3) |
-| Image | `ghcr.io/mitchross/strata:<VERSION>`: CUDA 13.0, sm_86 only, AVX2 CPU build, no vision encoder |
+| Image | `ghcr.io/mitchross/strata:<VERSION>`: CUDA 13.0, sm_86 only, AVX2 CPU build, CUDA image encoder (`strata-vision`) |
 | Model | ISTA-DASLab GSQ-RCO **IQ3_S** GGUF (revision pinned in Strata's `setup.py`) |
-| Setup flags | `--family qwen --model IQ3_S --context 131072 --vision no --kv int8 --low-ram off --kv-streaming on --gpus 0,1` |
+| Setup flags | `--family qwen --model IQ3_S --context 131072 --vision yes --kv int8 --low-ram off --kv-streaming on --gpus 0,1` |
 | API | OpenAI-compatible, `http://strata-service.strata.svc.cluster.local:8080/v1`, no key |
 | Gateway | LiteLLM model `qwen3.8-flash-next`; no fallback to or from it |
 | GPUs | 2 × RTX 3090 (`nvidia.com/gpu: 2`), layer split `auto` |
@@ -44,6 +44,35 @@ pod, and `prepare` runs setup again because the saved settings
 The pod uses `gpu-workload-no-preempt`: if the node lacks 54 GiB of
 unrequested memory it stays `Pending` instead of evicting other pods. Check
 with `kubectl describe node <gpu node>` (Allocated resources, memory).
+
+## Images (vision)
+
+`VISION=yes` runs Strata's image encoder on the GPU, so `qwen3.8-flash-next`
+reads screenshots and photos itself. It needs an image built with
+`BUILD_VISION=1` (`0.1.40.3.1` and later). Without the encoder Strata answers
+an image with `400 ... started without the vision encoder`.
+
+- Setup downloads `mmproj-Qwen3.8-Flash-Next-BF16.gguf` (~0.9 GB) from the
+  same pinned ISTA revision as the GGUFs. Turning it on reruns setup once; the
+  shards, pack and MTP layer are reused, so the first start is the mmproj
+  download plus the usual expert load (minutes, not the ~92 GB download).
+- The engine keeps ~700 MiB of VRAM free for the encoder (`setup.py`
+  `VISION["gpu"]["reserve_mib"]`), taken from the expert cache. A picture
+  becomes at most 1024 image tokens.
+- Hermes sends images natively only to models marked `supports_vision: true`
+  under `providers.litellm.models` in
+  [`config/config.yaml`](../../development/hermes/config/config.yaml). LiteLLM's
+  Strata routes carry the same flag in `model_info`.
+
+```bash
+# quick check through LiteLLM (any small PNG)
+b64=$(base64 -w0 test.png)
+curl -fsS http://litellm-service.litellm.svc.cluster.local:4000/v1/chat/completions \
+  -H "Authorization: Bearer $LITELLM_API_KEY" -H 'Content-Type: application/json' \
+  -d "{\"model\":\"qwen3.8-flash-next\",\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"What does this image show?\"},{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/png;base64,$b64\"}}]}]}"
+```
+
+Rollback: `VISION=no` (setup reruns, nothing is downloaded).
 
 ## Checks
 

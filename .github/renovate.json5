@@ -308,9 +308,9 @@
       enabled: false,
     },
     {
-      description: 'Strata is built in homelab-images; tags are <strata>.<n>-<sha7>-sm86. Review each bump: a new Strata may rerun model setup on start.',
+      description: 'Strata is built in homelab-images; tags are <strata x.y.z.n>[.<image revision>]-<sha7>-sm86. Review each bump: a new Strata may rerun model setup on start.',
       matchPackageNames: ['ghcr.io/mitchross/strata'],
-      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-[0-9a-f]{7}-(?<compatibility>sm\\d+)$',
+      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)(?:\\.(?<revision>\\d+))?-[0-9a-f]{7}-(?<compatibility>sm\\d+)$',
       groupName: 'strata image',
       automerge: false,
     },

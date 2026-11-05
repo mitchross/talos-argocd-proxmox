@@ -22,7 +22,7 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
   A configured ceiling is not proof of concurrent near-ceiling vision capacity.
 - AutoRound is a later speed A/B only.
 - **Strata test (temporary):** vLLM is parked (`replicas: 0`); [Strata](strata/README.md) holds both 3090s
-  as `qwen3.8-flash-next` (IQ3_S, layer split, `PARALLEL` batch slots). LiteLLM's default name
+  as `qwen3.8-flash-next` (IQ3_S, layer split, `PARALLEL` batch slots, image encoder on: `VISION=yes`). LiteLLM's default name
   `qwen3.8-27b` (and Pi's `qwen3.8-27b-auto` / `pi-classifier`) now points at Strata with
   `max_parallel_requests` = the slots; a request beyond them gets LiteLLM's 429 and falls back to
   `deepseek-flash` (paid, prompts leave home) instead of queueing. Change `PARALLEL` and the
