@@ -16,7 +16,7 @@ for wt in "$@"; do
   r=ok
   cargo fmt --all --check > "$L/fmt.log" 2>&1 || r=fmt
   [ $r = ok ] && { cargo clippy --workspace --all-targets --locked -- -D warnings > "$L/clippy.log" 2>&1 || r=clippy; }
-  [ $r = ok ] && { cargo test --workspace --locked > "$L/test.log" 2>&1 || r=test; }
+  [ $r = ok ] && { cargo test --workspace --locked > "$L/test.log" 2>&1 || r="test"; }
   [ $r = ok ] && { node --test dashboard/static/*.test.cjs > "$L/node.log" 2>&1 || r=node; }
   t=$(grep -E "^test result" "$L/test.log" 2>/dev/null | awk '{p+=$4;f+=$6} END {print p"/"f}')
   n=$(grep -oE "pass [0-9]+" "$L/node.log" 2>/dev/null | tail -1)
