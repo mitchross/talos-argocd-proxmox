@@ -35,7 +35,7 @@ spec:
       initContainers:
         # First start or changed settings: pinned GGUF shards + MTP layer download (~92 GB), pack build, config.
         - name: prepare
-          image: ghcr.io/mitchross/strata:0.1.40.3.1-d5ea713-sm86
+          image: ghcr.io/mitchross/strata:0.1.40.3.1-d5ea713-sm86@sha256:ec2234c6b9e519d8cb5cb67f0f704f9d41e8f54c6ecd9ce3b5ab648fe57db42d
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -62,7 +62,7 @@ spec:
       containers:
         - name: strata
           # Built from Niko1221/Strata's own Dockerfile at a pinned commit by mitchross/homelab-images (images/strata).
-          image: ghcr.io/mitchross/strata:0.1.40.3.1-d5ea713-sm86
+          image: ghcr.io/mitchross/strata:0.1.40.3.1-d5ea713-sm86@sha256:ec2234c6b9e519d8cb5cb67f0f704f9d41e8f54c6ecd9ce3b5ab648fe57db42d
           imagePullPolicy: IfNotPresent
           # The image entrypoint links /data/config/strata-iq3_s.json and execs the OpenAI-compatible server.
           envFrom:
