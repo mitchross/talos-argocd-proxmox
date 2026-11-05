@@ -61,8 +61,10 @@ Upgrade procedure: `UPGRADE.md` (this directory).
    tombstone columns absent from Django-managed tables.
 10. **Replay playback needs internal API authentication.** Django and Node
     services share `INTERNAL_API_SECRET` from `posthog-internal-api-secret` in
-    the ExternalSecret. The pinned Node image supports the shared header, not
-    recording JWTs. Verify both snapshot sources and block retrieval after upgrades;
+    the ExternalSecret. Since the 2026-11 images, recording-api also requires
+    `RECORDING_API_JWT_SECRET` and crash-loops without it. web, worker and
+    temporal-django-worker sign with the same derived key (`recording-api-jwt-secret`).
+    Verify both snapshot sources and block retrieval after upgrades;
     a working recording list does not prove playback works.
 
 ## DR model (why only Postgres is backed up)

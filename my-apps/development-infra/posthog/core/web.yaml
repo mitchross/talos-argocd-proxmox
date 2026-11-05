@@ -40,6 +40,12 @@ spec:
             secretKeyRef:
               name: posthog-secrets
               key: posthog-internal-api-secret
+        # Signs (Django) and verifies (recording-api) the team-scoped recording-api JWT.
+        - name: RECORDING_API_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: recording-api-jwt-secret
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:
