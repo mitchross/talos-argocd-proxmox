@@ -20,13 +20,14 @@ pod ──(VXLAN)──> gateway node ──wg-proton (kernel WireGuard)──> 
                      │
                      └─ Cilium Egress Gateway SNATs the pod to 10.2.0.2 and sends it out wg-proton
 
-vpn-gateway (DaemonSet, 1 node)  ──writes health──>  ConfigMap vpn-gateway-<node>
+vpn-gateway (DaemonSet, 3 nodes)  ──writes health──>  ConfigMap vpn-gateway-<node>
 vpn-egress-controller (1 pod)     ──reads health + on/off──>  creates or deletes CiliumEgressGatewayPolicy vpn-egress
 UI vpn.vanillax.me / Home Assistant ──POST /api/enabled──>  ConfigMap vpn-egress-state
 ```
 
-- One gateway node, `hp-elite-gen13`, with one Proton config for the whole cluster.
-  A WireGuard key works in one place only, so each extra gateway would need its own config. See [Add a gateway](#add-a-gateway).
+- Three gateway nodes: `hp-elite-gen13`, `mini-pc-dell-ultra-worker` and `hp-elite-gen12`.
+  Each needs its own Proton config, because a WireGuard key works in one place only.
+  All three live in one 1Password item, `talos-cluster-global-vpn-config`, as fields `config-1`, `config-2` and `config-3` (in that node order).
 - The `vpn-gateway` DaemonSet runs in the host network of those nodes.
   It creates the kernel WireGuard link `wg-proton` from the node's Proton config.
   Every 15 s it probes through the tunnel and writes health, exit IP, handshake time and byte counters to ConfigMap `vpn-gateway-<node>`.
@@ -90,12 +91,12 @@ The UI lists the live covered and exempt namespaces.
 
 | Exempt namespace | Why |
 |---|---|
-| `kube-system` | CoreDNS and Cilium must keep working when the tunnel is down. |
-| `vpn-egress` | The gateway and the controller. |
+| `kube-system` | CoreDNS and Cilium must keep working when every tunnel is down. |
+| `vpn-egress` | The gateways and the controller. |
 | `consumers-energy-sync` | Okta asks for step-up MFA from datacenter VPN IPs. |
 
 Everything else uses the VPN, including Argo CD, External Secrets, 1Password Connect, cloudflared and the model downloaders.
-They still work when the tunnel dies, because the controller then deletes the policy (fallback).
+They still work when every tunnel dies, because the controller then deletes the policy (fallback).
 If the controller itself is down while the policy points at a dead tunnel, those namespaces lose internet too. Fix: `kubectl delete ciliumegressgatewaypolicy vpn-egress`.
 
 ### Known gaps
@@ -109,8 +110,7 @@ If the controller itself is down while the policy points at a dead tunnel, those
   While the Firewalla VPN rule stays on, that traffic still goes through the Firewalla tunnel.
 - **Toggling and gateway changes reset connections.** Turning the VPN on or off changes the source IP of open connections.
   Adding or removing a gateway re-hashes pods across gateways ([cilium/cilium#39245](https://github.com/cilium/cilium/issues/39245)). Apps reconnect.
-- **One gateway, no spare.** When `hp-elite-gen13` reboots, pods fall back to the normal path until it is back.
-- **Up to ~55 s of drops when the tunnel dies:** 45 s of failed probes plus one controller loop, before the fallback.
+- **Up to ~55 s of drops when the last tunnel dies:** 45 s of failed probes plus one controller loop, before the fallback.
 - **IPv6:** pods are IPv4-only (`enable-ipv6: false`), and the gateway never configures an IPv6 address.
 - **MTU:** pods send up to 1450-byte packets; `wg-proton` uses 1420. Large uploads may fragment the outer packets. Check upload speed in phase 1.
 - **The UI has no login.** It is on the internal Gateway only (LAN and Tailscale), like Longhorn and Headlamp.
@@ -122,9 +122,9 @@ If the controller itself is down while the policy points at a dead tunnel, those
 - Each gateway links at 1 Gb/s. Checked live on 2026-11-03 with node-exporter `node_network_speed_bytes`:
   `hp-elite-gen12` `eno1`, `hp-elite-gen13` `eno1` and `mini-pc-dell-ultra-worker` `enp128s31f6` all report 1000 Mb/s, and none has a second NIC.
   Earlier notes said 2.5 GbE. If a NIC is 2.5G-capable, the cable or switch port holds it at 1 Gb/s today.
-- One gateway tops out near 940 Mbps (its 1 GbE port), above today's 670 Mbps Firewalla cap. That is the cluster total for now.
-- WireGuard crypto runs in kernel softirq on the gateway node. Expect about 1-2 cores at full speed; `hp-elite-gen13` has 20.
-- For more, add gateways with their own configs (see below). Pods then spread across them.
+- One gateway tops out near 940 Mbps (its 1 GbE port). A single pod uses one gateway, so it also peaks near 940 Mbps, above today's 670 Mbps cap.
+- Many pods spread across three gateways, so the cluster total can reach the 2 Gb line.
+- WireGuard crypto runs in kernel softirq on the gateway node. Expect about 1-2 cores per gateway at full speed.
 
 ## Turn it on and off
 
@@ -198,21 +198,22 @@ The controller exposes `/metrics` (ServiceMonitor `vpn-egress-controller`):
 
 Owner steps are marked **(Mitch)**. Hermes can open the phase 2 PR.
 
-1. **(Mitch) Create one Proton WireGuard config.** Go to <https://account.protonvpn.com/downloads>, section WireGuard.
-   Name it `talos-cluster-global-vpn-config` and pick a nearby server. Turn NetShield, Moderate NAT and NAT-PMP off.
-   Download the `.conf`.
-2. **(Mitch) Store it in 1Password** (desktop, zsh):
+1. **(Mitch) Create three Proton WireGuard configs**, each on a different low-load server in Chicago.
+   Go to <https://account.protonvpn.com/downloads>, section WireGuard.
+   Name them `talos-cluster-global-vpn-config-1`, `-2` and `-3`. Turn NetShield, Moderate NAT and NAT-PMP off. Download each `.conf`.
+2. **(Mitch) Store them in 1Password** (desktop, zsh, in the download folder):
 
     ```bash
     op item create --vault homelab-prod --category password --title talos-cluster-global-vpn-config \
-      "config[password]=$(base64 -w0 < talos-cluster-global-vpn-config.conf)"
-    rm talos-cluster-global-vpn-config.conf
+      "config-1[password]=$(base64 -w0 < talos-cluster-global-vpn-config-1.conf)" \
+      "config-2[password]=$(base64 -w0 < talos-cluster-global-vpn-config-2.conf)" \
+      "config-3[password]=$(base64 -w0 < talos-cluster-global-vpn-config-3.conf)"
+    rm talos-cluster-global-vpn-config-{1,2,3}.conf
     ```
 
-3. **(Mitch) Firewalla: send the Proton endpoint IP to the WAN, not the VPN.**
-   Add a route rule for the cluster nodes with the config's `Endpoint` IP as the target and "Internet" as the route.
-   Give it priority over the existing VPN rule. Without it, the new tunnel runs inside the Firewalla tunnel and the router stays the bottleneck.
-   Phase 3 removes the need for this rule.
+3. **(Mitch) Firewalla: send the three Proton endpoint IPs to the WAN, not the VPN.**
+   Add a route rule for the cluster nodes with each config's `Endpoint` IP as the target and "Internet" as the route.
+   Give it priority over the existing VPN rule. Without it, the new tunnels run inside the Firewalla tunnel and the router stays the bottleneck.
 4. **Merge the PR.** Argo enables Egress Gateway in Cilium, rolls the operator and deploys `vpn-egress`.
 5. **(Mitch) Restart the Cilium agents**, one node at a time:
 
@@ -224,10 +225,10 @@ Owner steps are marked **(Mitch)**. Hermes can open the phase 2 PR.
 
     Until then the UI shows `policy update failed: 404`. That is expected.
 
-6. **Check phase 1.** Open <https://vpn.vanillax.me>: the gateway is up with a Proton exit IP, VPN on. Then:
+6. **Check phase 1.** Open <https://vpn.vanillax.me>: 3 gateways up with Proton exit IPs, VPN on. Then:
 
     ```bash
-    kubectl -n vpn-egress get cm -l app.kubernetes.io/component=gateway-status          # 1 ConfigMap
+    kubectl -n vpn-egress get cm -l app.kubernetes.io/component=gateway-status          # 3 ConfigMaps
     kubectl get ciliumegressgatewaypolicy vpn-egress                                     # exists
     kubectl -n kube-system exec ds/cilium -- cilium-dbg bpf egress list                  # probe pod IP -> 10.2.0.2
     kubectl -n vpn-egress-test exec deploy/egress-probe -- curl -s https://ipinfo.io/ip  # a Proton IP
@@ -236,7 +237,7 @@ Owner steps are marked **(Mitch)**. Hermes can open the phase 2 PR.
 
     Toggle test: flip the switch off, run the `ipinfo` line again (Firewalla's Proton IP until phase 3), flip it back on.
 
-    Fallback test: remove the Proton peer on the gateway, wait about a minute, check, then restart the gateway pods to restore it.
+    Fallback test: remove the Proton peer on all three gateways, wait about a minute, check, then restart the gateway pods to restore it.
 
     ```bash
     for p in $(kubectl -n vpn-egress get pod -l app=vpn-gateway -o name); do
@@ -263,9 +264,9 @@ Owner steps are marked **(Mitch)**. Hermes can open the phase 2 PR.
 ## Add a gateway
 
 Each gateway needs its own Proton config: two nodes sharing one key knock each other offline.
-Add a field to the 1Password item first (for example `config-2`), then change in one PR:
+Add a field to the 1Password item first (for example `config-4`), then change in one PR:
 `daemonset.yaml` (affinity), `config.env` (`GATEWAY_NODES`), `rbac.yaml` (status ConfigMap names) and `external-secret.yaml` (one entry per node, `secretKey` = node name).
-To move the single gateway to another node, change the same four files; the tunnel drops (fallback) during the swap.
+Keep at least two gateways up during a change.
 
 ## Follow-ups
 
