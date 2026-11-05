@@ -30,10 +30,14 @@ class KanbanReconciliationTests(unittest.TestCase):
                 INSERT INTO tasks VALUES ('healthy', 'ready', NULL, NULL);
                 INSERT INTO tasks VALUES ('running', 'running', 'claim', 3);
                 INSERT INTO tasks VALUES ('blocked', 'blocked', NULL, NULL);
+                INSERT INTO tasks VALUES ('claimed-ready', 'ready', 'claim', NULL);
+                INSERT INTO tasks VALUES ('owned-ready', 'ready', NULL, 6);
                 INSERT INTO task_runs VALUES (1, 'crashed', 1, 2, 'crashed', 'crashed');
                 INSERT INTO task_runs VALUES (2, 'healthy', 1, 2, 'done', 'completed');
                 INSERT INTO task_runs VALUES (3, 'running', 1, NULL, 'running', NULL);
                 INSERT INTO task_runs VALUES (4, 'blocked', 1, 2, 'crashed', 'crashed');
+                INSERT INTO task_runs VALUES (5, 'claimed-ready', 1, 2, 'crashed', 'crashed');
+                INSERT INTO task_runs VALUES (6, 'owned-ready', 1, 2, 'crashed', 'crashed');
             """)
 
     def test_only_crashed_ready_guarded_task_uses_supported_block_command(self):
@@ -52,7 +56,7 @@ class KanbanReconciliationTests(unittest.TestCase):
 
     def test_new_successful_run_supersedes_old_crash(self):
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("INSERT INTO task_runs VALUES (5, 'crashed', 3, 4, 'done', 'completed')")
+            conn.execute("INSERT INTO task_runs VALUES (7, 'crashed', 3, 4, 'done', 'completed')")
         run = Mock()
         self.assertEqual(recovery.reconcile(self.db_path, Mock(return_value="active_pr"), run), [])
         run.assert_not_called()

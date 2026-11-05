@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import closing
 import os
 from pathlib import Path
 import site
@@ -13,7 +14,7 @@ import sys
 def reconcile(db_path, check_guard, run=subprocess.run):
     if not db_path.exists():
         return []
-    with sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True, timeout=5) as conn:
+    with closing(sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True, timeout=5)) as conn:
         conn.row_factory = sqlite3.Row
         tasks = conn.execute("""
             SELECT t.id FROM tasks t
