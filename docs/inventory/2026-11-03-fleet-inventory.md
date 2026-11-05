@@ -5,6 +5,9 @@ they cost to run, and what runs on them.
 **Status:** dated, read-only snapshot. It replaces the [October 27 inventory](2026-10-27-fleet-inventory.md)
 as the current page. Disks are maintained in the [disk map](../domains/storage/disk-map.md).
 
+> **Update, November 5:** `hp-elite-gen13` moved to `.141`, and the minis' DIMMs and M.2 slots are
+> now read. See [Minis, RAM and M.2 slots](2026-11-05-minis-and-slots.md).
+
 How it was collected, all on November 3:
 
 - **Cluster, RAM, NVMe models:** the Kubernetes API, Omni `MachineStatus` and Prometheus. These

@@ -159,6 +159,7 @@ nav:
   - Inventory:
       - Inventory overview: inventory/index.md
       - Fleet inventory — 3 November (current): inventory/2026-11-03-fleet-inventory.md
+      - Minis, RAM and M.2 slots — 5 November: inventory/2026-11-05-minis-and-slots.md
       - Explore the lab: lab.md
   - Audits:
       - Audits overview: audits/index.md
