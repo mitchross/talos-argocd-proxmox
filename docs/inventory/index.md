@@ -6,6 +6,7 @@ under [History](#history).
 | Page | What it answers |
 | --- | --- |
 | [Fleet inventory — 3 November](2026-11-03-fleet-inventory.md) | **Current.** Which machines exist, their RAM and PCIe links, NVMe and RAM speed, power per plug, and how loaded the nodes are. |
+| [Minis, RAM and M.2 slots — 5 November](2026-11-05-minis-and-slots.md) | **New.** What is inside each office mini, which M.2 slots are free across the fleet, and the buy list. |
 | [Explore the lab](../lab.md) | What is inside each machine, as an interactive map. Its data predates the bare-metal minis. |
 | [Disk map](../domains/storage/disk-map.md) | Which physical disk holds which data, and where new data should go. |
 
