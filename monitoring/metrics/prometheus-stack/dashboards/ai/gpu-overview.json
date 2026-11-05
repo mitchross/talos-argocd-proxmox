@@ -27,9 +27,31 @@
   },
   "links": [
     {
+      "title": "Local LLM Engines",
+      "type": "link",
+      "url": "/d/llm-engines",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": false,
+      "asDropdown": false,
+      "tags": []
+    },
+    {
       "title": "vLLM Inference",
       "type": "link",
       "url": "/d/vllm-inference",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": false,
+      "asDropdown": false,
+      "tags": []
+    },
+    {
+      "title": "Strata Inference",
+      "type": "link",
+      "url": "/d/strata-inference",
       "icon": "dashboard",
       "targetBlank": false,
       "keepTime": true,
@@ -119,7 +141,7 @@
         "wideLayout": true,
         "showPercentChange": false
       },
-      "description": "Pods with a GPU assigned right now. vLLM holds both cards.",
+      "description": "Pods with a GPU assigned right now. Normally one LLM engine (vLLM or Strata) holds both cards.",
       "id": 2,
       "gridPos": {
         "x": 0,
@@ -184,7 +206,7 @@
         "wideLayout": true,
         "showPercentChange": false
       },
-      "description": "vLLM pre-allocates ~92% of each 24 GB card at start, so this sits high by design.",
+      "description": "The LLM engine fills the cards on purpose (vLLM pre-allocates ~92%; Strata's expert cache takes what is left), so this sits high by design.",
       "id": 3,
       "gridPos": {
         "x": 4,

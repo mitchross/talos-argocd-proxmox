@@ -158,7 +158,7 @@ Grafana dashboards. Do this before step 5, so the first paid request is visible.
 | Question | Tool |
 |---|---|
 | How many requests? How fast? Any errors? | Grafana `/d/ai-gateway-analytics` |
-| Is the model server busy? | Grafana `/d/vllm-inference` |
+| Is the model server busy? | Grafana `/d/llm-engines` |
 | Are the cards hot or at full power? | Grafana `/d/gpu-overview` |
 | What did one request say, and why did it go where it did? | Langfuse |
 

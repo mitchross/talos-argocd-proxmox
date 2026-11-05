@@ -2,7 +2,7 @@
   "id": null,
   "uid": "vllm-inference",
   "title": "vLLM Inference",
-  "description": "The local LLM server: qwen3.8-27b on vLLM, tensor-parallel across both RTX 3090s. Throughput, latency, queue and cache.",
+  "description": "vLLM only (namespace vllm): engine state, throughput, decode and prefill speed, latency, queue, KV cache and its GPUs. Parked (0 replicas) is a normal state when another engine has the cards.",
   "tags": [
     "ai",
     "vllm",
@@ -15,7 +15,7 @@
   "liveNow": false,
   "schemaVersion": 42,
   "time": {
-    "from": "now-3h",
+    "from": "now-6h",
     "to": "now"
   },
   "refresh": "30s",
@@ -23,9 +23,62 @@
     "list": []
   },
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "model",
+        "label": "Model",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(vllm:generation_tokens_total{namespace=\"vllm\"}, model_name)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "definition": "label_values(vllm:generation_tokens_total{namespace=\"vllm\"}, model_name)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "sort": 1,
+        "hide": 0
+      }
+    ]
   },
   "links": [
+    {
+      "title": "Local LLM Engines",
+      "type": "link",
+      "url": "/d/llm-engines",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": false,
+      "asDropdown": false,
+      "tags": []
+    },
+    {
+      "title": "Strata Inference",
+      "type": "link",
+      "url": "/d/strata-inference",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": false,
+      "asDropdown": false,
+      "tags": []
+    },
     {
       "title": "GPU Overview",
       "type": "link",
@@ -55,25 +108,24 @@
       "title": "",
       "options": {
         "mode": "markdown",
-        "content": "**qwen3.8-27b** (Qwen3.8-27B FP8) runs as one vLLM engine split across **both RTX 3090s** (tensor parallel 2). At most **2 requests** decode at once, 262K-token context, FP8 KV cache, prefix caching on, no speculative decoding. Apps reach it through the LiteLLM gateway.",
+        "content": "**vLLM only.** Every query here is pinned to `namespace=\"vllm\"`. Strata exports the same `vllm:` metric names from its own namespace and has its own board, so nothing here mixes engines. When the engine tile says **Parked**, vLLM is at 0 replicas on purpose and empty panels are expected: widen the time range to see earlier runs. Model, flags and staging: `my-apps/ai/vllm/README.md`. Engines side by side: **Local LLM Engines**.",
         "code": {
           "language": "plaintext",
           "showLineNumbers": false,
           "showMiniMap": false
         }
       },
-      "id": 1,
       "gridPos": {
         "x": 0,
         "y": 0,
         "w": 24,
         "h": 3
-      }
+      },
+      "id": 1
     },
     {
-      "id": 2,
       "type": "row",
-      "title": "At a glance",
+      "title": "Now",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -81,11 +133,12 @@
         "y": 3,
         "w": 24,
         "h": 1
-      }
+      },
+      "id": 2
     },
     {
       "type": "stat",
-      "title": "Engine",
+      "title": "vLLM engine",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -97,7 +150,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "max(vllm:engine_sleep_state{sleep_state=\"awake\"})",
+          "expr": "max(absent(kube_deployment_spec_replicas{namespace=\"vllm\", deployment=\"vllm-server\"})) * 4\n  or (max(kube_deployment_spec_replicas{namespace=\"vllm\", deployment=\"vllm-server\"}) == 0) * 0 + 0\n  or (max(up{namespace=\"vllm\", job=\"vllm-service\"}) == 0) * 0 + 1\n  or (max(vllm:engine_sleep_state{namespace=\"vllm\", sleep_state=\"awake\"}) == 0) * 0 + 3\n  or (max(up{namespace=\"vllm\", job=\"vllm-service\"}) == 1) * 0 + 2\n  or vector(1)",
           "legendFormat": "__auto",
           "instant": true,
           "range": false
@@ -110,30 +163,42 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "text",
                 "value": null
               }
             ]
+          },
+          "color": {
+            "mode": "thresholds"
           },
           "mappings": [
             {
               "type": "value",
               "options": {
                 "0": {
+                  "text": "Parked (0 replicas)",
+                  "color": "blue"
+                },
+                "1": {
+                  "text": "Not serving",
+                  "color": "red"
+                },
+                "2": {
+                  "text": "Serving",
+                  "color": "green"
+                },
+                "3": {
                   "text": "Asleep",
                   "color": "orange"
                 },
-                "1": {
-                  "text": "Awake",
-                  "color": "green"
+                "4": {
+                  "text": "Not deployed",
+                  "color": "text"
                 }
               }
             }
           ],
-          "color": {
-            "mode": "thresholds"
-          },
-          "noValue": "Down"
+          "noValue": "Unknown"
         },
         "overrides": []
       },
@@ -153,13 +218,14 @@
         "wideLayout": true,
         "showPercentChange": false
       },
-      "id": 3,
+      "description": "From Git replicas, the vLLM scrape target and its own state. Parked means 0 replicas on purpose (the other engine has the cards), not an outage.",
       "gridPos": {
         "x": 0,
         "y": 4,
         "w": 4,
         "h": 4
-      }
+      },
+      "id": 3
     },
     {
       "type": "stat",
@@ -175,282 +241,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "sum(vllm:num_requests_running)",
-          "legendFormat": "__auto",
-          "instant": false,
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "mappings": [],
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false
-      },
-      "description": "Hard limit is 2 (max-num-seqs).",
-      "id": 4,
-      "gridPos": {
-        "x": 4,
-        "y": 4,
-        "w": 4,
-        "h": 4
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Requests waiting",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "refId": "A",
-          "expr": "sum(vllm:num_requests_waiting)",
-          "legendFormat": "__auto",
-          "instant": false,
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 3
-              }
-            ]
-          },
-          "mappings": [],
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false
-      },
-      "description": "Queued because both slots are busy or the KV cache is full.",
-      "id": 5,
-      "gridPos": {
-        "x": 8,
-        "y": 4,
-        "w": 4,
-        "h": 4
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Generation speed",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "refId": "A",
-          "expr": "sum(rate(vllm:generation_tokens_total[$__rate_interval]))",
-          "legendFormat": "__auto",
-          "instant": false,
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "tok/s",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "mappings": [],
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "green"
-          },
-          "decimals": 1
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false
-      },
-      "id": 6,
-      "gridPos": {
-        "x": 12,
-        "y": 4,
-        "w": 4,
-        "h": 4
-      }
-    },
-    {
-      "type": "stat",
-      "title": "KV cache used",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "refId": "A",
-          "expr": "max(vllm:kv_cache_usage_perc) * 100",
-          "legendFormat": "__auto",
-          "instant": false,
-          "range": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 80
-              },
-              {
-                "color": "red",
-                "value": 95
-              }
-            ]
-          },
-          "mappings": [],
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false
-      },
-      "id": 7,
-      "gridPos": {
-        "x": 16,
-        "y": 4,
-        "w": 4,
-        "h": 4
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Prefix cache hit rate (time range)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "refId": "A",
-          "expr": "100 * sum(increase(vllm:prefix_cache_hits_total[$__range])) / sum(increase(vllm:prefix_cache_queries_total[$__range]))",
+          "expr": "sum by (model_name) (vllm:num_requests_running{namespace=\"vllm\", model_name=~\"$model\"})",
           "legendFormat": "__auto",
           "instant": true,
           "range": false
@@ -458,26 +249,21 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "orange",
+                "color": "text",
                 "value": null
-              },
-              {
-                "color": "green",
-                "value": 50
               }
             ]
           },
-          "mappings": [],
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 1,
-          "noValue": "No traffic"
+          "mappings": [],
+          "noValue": "Engine not running"
         },
         "overrides": []
       },
@@ -497,31 +283,17 @@
         "wideLayout": true,
         "showPercentChange": false
       },
-      "description": "Share of prompt tokens served from cache instead of recomputed.",
-      "id": 8,
       "gridPos": {
-        "x": 20,
+        "x": 4,
         "y": 4,
-        "w": 4,
+        "w": 3,
         "h": 4
-      }
+      },
+      "id": 4
     },
     {
-      "id": 9,
-      "type": "row",
-      "title": "Throughput",
-      "collapsed": false,
-      "panels": [],
-      "gridPos": {
-        "x": 0,
-        "y": 8,
-        "w": 24,
-        "h": 1
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Tokens per second",
+      "type": "stat",
+      "title": "Requests waiting",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -533,7 +305,638 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "sum(rate(vllm:generation_tokens_total[$__rate_interval]))",
+          "expr": "sum by (model_name) (vllm:num_requests_waiting{namespace=\"vllm\", model_name=~\"$model\"})",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "Engine not running"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "gridPos": {
+        "x": 7,
+        "y": 4,
+        "w": 3,
+        "h": 4
+      },
+      "id": 5
+    },
+    {
+      "type": "stat",
+      "title": "Generated tokens/s now",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (rate(vllm:generation_tokens_total{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval]))",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "tok/s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 1,
+          "noValue": "Engine not running"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "description": "Wall clock across all running requests: idle time counts, so it reads 0 between requests.",
+      "gridPos": {
+        "x": 10,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "id": 6
+    },
+    {
+      "type": "stat",
+      "title": "KV cache used",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max by (model_name) (vllm:kv_cache_usage_perc{namespace=\"vllm\", model_name=~\"$model\"})",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.8
+              },
+              {
+                "color": "red",
+                "value": 0.95
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 1,
+          "noValue": "Engine not running",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "description": "Share of vLLM's GPU KV block pool in use (1 = full); a full pool queues or preempts.",
+      "gridPos": {
+        "x": 14,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "id": 7
+    },
+    {
+      "type": "stat",
+      "title": "Prefix cache hit (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (increase(vllm:prefix_cache_hits_total{namespace=\"vllm\", model_name=~\"$model\"}[$__range])) / sum by (model_name) (increase(vllm:prefix_cache_queries_total{namespace=\"vllm\", model_name=~\"$model\"}[$__range]))",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 1,
+          "noValue": "No prompts in range"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "description": "Prompt tokens served from the GPU prefix cache instead of recomputed.",
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 3,
+        "h": 4
+      },
+      "id": 8
+    },
+    {
+      "type": "stat",
+      "title": "Requests finished (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (increase(vllm:request_success_total{namespace=\"vllm\", model_name=~\"$model\"}[$__range]))",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 0,
+          "noValue": "None in range"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "gridPos": {
+        "x": 21,
+        "y": 4,
+        "w": 3,
+        "h": 4
+      },
+      "id": 9
+    },
+    {
+      "type": "row",
+      "title": "Speed over the selected range",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 1
+      },
+      "id": 10
+    },
+    {
+      "type": "stat",
+      "title": "Per-stream decode speed (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (increase(vllm:request_generation_tokens_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__range])) / sum by (model_name) (increase(vllm:request_decode_time_seconds_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__range]))",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "tok/s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 1,
+          "noValue": "No finished requests"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "description": "Generated tokens ÷ summed per-request decode time. Concurrent requests each count their own time, so this is the speed one stream sees, not the batch total.",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "id": 11
+    },
+    {
+      "type": "stat",
+      "title": "Per-stream speed, 1 ÷ mean inter-token latency (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (increase(vllm:inter_token_latency_seconds_count{namespace=\"vllm\", model_name=~\"$model\"}[$__range])) / sum by (model_name) (increase(vllm:inter_token_latency_seconds_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__range]))",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "tok/s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 1,
+          "noValue": "No finished requests"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "description": "Token-weighted across every stream in the range; long answers dominate. Not one request.",
+      "gridPos": {
+        "x": 6,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "id": 12
+    },
+    {
+      "type": "stat",
+      "title": "Prefill speed (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (increase(vllm:prompt_tokens_by_source_total{namespace=\"vllm\", model_name=~\"$model\", source=\"local_compute\"}[$__range])) / sum by (model_name) (increase(vllm:request_prefill_time_seconds_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__range]))",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "tok/s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 0,
+          "noValue": "No finished requests"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "description": "Computed (not cached) prompt tokens ÷ summed per-request prefill time.",
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "id": 13
+    },
+    {
+      "type": "stat",
+      "title": "Wall-clock generation throughput (range)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (increase(vllm:generation_tokens_total{namespace=\"vllm\", model_name=~\"$model\"}[$__range])) / $__range_s",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "tok/s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "decimals": 2,
+          "noValue": "No tokens in range"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "description": "All generated tokens ÷ the whole range, idle time included: a busy-ness number, not speed.",
+      "gridPos": {
+        "x": 18,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "id": 14
+    },
+    {
+      "type": "row",
+      "title": "Throughput",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
+      "id": 15
+    },
+    {
+      "type": "timeseries",
+      "title": "Tokens per second (wall clock)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (rate(vllm:generation_tokens_total{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval]))",
           "legendFormat": "generated",
           "instant": false,
           "range": true
@@ -544,7 +947,7 @@
             "uid": "prometheus"
           },
           "refId": "B",
-          "expr": "sum(rate(vllm:prompt_tokens_by_source_total{source=\"local_compute\"}[$__rate_interval]))",
+          "expr": "sum by (model_name) (rate(vllm:prompt_tokens_by_source_total{namespace=\"vllm\", model_name=~\"$model\", source=\"local_compute\"}[$__rate_interval]))",
           "legendFormat": "prompt: computed",
           "instant": false,
           "range": true
@@ -555,7 +958,7 @@
             "uid": "prometheus"
           },
           "refId": "C",
-          "expr": "sum(rate(vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}[$__rate_interval]))",
+          "expr": "sum by (model_name) (rate(vllm:prompt_tokens_by_source_total{namespace=\"vllm\", model_name=~\"$model\", source=\"local_cache_hit\"}[$__rate_interval]))",
           "legendFormat": "prompt: from cache",
           "instant": false,
           "range": true
@@ -594,7 +997,8 @@
             ]
           },
           "min": 0,
-          "decimals": 1
+          "decimals": 1,
+          "noValue": "No traffic in this range"
         },
         "overrides": []
       },
@@ -609,18 +1013,18 @@
           "sort": "desc"
         }
       },
-      "description": "Prompt tokens split into freshly computed (prefill work) and reused from the prefix cache.",
-      "id": 10,
+      "description": "Idle time counts as 0. Prompt tokens split into computed (prefill work) and prefix-cache hits.",
       "gridPos": {
         "x": 0,
-        "y": 9,
-        "w": 12,
+        "y": 14,
+        "w": 8,
         "h": 8
-      }
+      },
+      "id": 16
     },
     {
       "type": "timeseries",
-      "title": "Single-request decode speed",
+      "title": "Per-stream decode speed",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -632,8 +1036,19 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "1 / (sum(rate(vllm:inter_token_latency_seconds_sum[$__rate_interval])) / sum(rate(vllm:inter_token_latency_seconds_count[$__rate_interval])))",
-          "legendFormat": "tokens/s per request",
+          "expr": "sum by (model_name) (rate(vllm:request_generation_tokens_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])) / sum by (model_name) (rate(vllm:request_decode_time_seconds_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval]))",
+          "legendFormat": "tokens ÷ decode time",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "B",
+          "expr": "sum by (model_name) (rate(vllm:inter_token_latency_seconds_count{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])) / sum by (model_name) (rate(vllm:inter_token_latency_seconds_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval]))",
+          "legendFormat": "1 ÷ mean inter-token latency",
           "instant": false,
           "range": true
         }
@@ -645,7 +1060,7 @@
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 10,
-            "showPoints": "auto",
+            "showPoints": "never",
             "pointSize": 4,
             "spanNulls": false,
             "lineInterpolation": "linear",
@@ -671,7 +1086,8 @@
             ]
           },
           "min": 0,
-          "decimals": 1
+          "decimals": 1,
+          "noValue": "No finished requests in this range"
         },
         "overrides": []
       },
@@ -686,27 +1102,104 @@
           "sort": "desc"
         }
       },
-      "description": "1 / mean time between output tokens: how fast one answer streams.",
-      "id": 11,
+      "description": "Speed one stream sees while generating, averaged over every stream in the window.",
       "gridPos": {
-        "x": 12,
-        "y": 9,
-        "w": 12,
+        "x": 8,
+        "y": 14,
+        "w": 8,
         "h": 8
-      }
+      },
+      "id": 17
     },
     {
-      "id": 12,
+      "type": "timeseries",
+      "title": "Prefill speed",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (rate(vllm:prompt_tokens_by_source_total{namespace=\"vllm\", model_name=~\"$model\", source=\"local_compute\"}[$__rate_interval])) / sum by (model_name) (rate(vllm:request_prefill_time_seconds_sum{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval]))",
+          "legendFormat": "computed prompt tokens ÷ prefill time",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "tok/s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "decimals": 0,
+          "noValue": "No finished requests in this range"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 14,
+        "w": 8,
+        "h": 8
+      },
+      "id": 18
+    },
+    {
       "type": "row",
-      "title": "Latency",
+      "title": "Latency (finished requests)",
       "collapsed": false,
       "panels": [],
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 22,
         "w": 24,
         "h": 1
-      }
+      },
+      "id": 19
     },
     {
       "type": "timeseries",
@@ -722,7 +1215,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.50, sum by (le, model_name) (rate(vllm:time_to_first_token_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
           "legendFormat": "p50",
           "instant": false,
           "range": true
@@ -733,8 +1226,19 @@
             "uid": "prometheus"
           },
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le, model_name) (rate(vllm:time_to_first_token_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
           "legendFormat": "p95",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, model_name) (rate(vllm:time_to_first_token_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "p99",
           "instant": false,
           "range": true
         }
@@ -746,7 +1250,7 @@
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 10,
-            "showPoints": "auto",
+            "showPoints": "never",
             "pointSize": 4,
             "spanNulls": false,
             "lineInterpolation": "linear",
@@ -771,7 +1275,9 @@
               }
             ]
           },
-          "min": 0
+          "min": 0,
+          "decimals": 2,
+          "noValue": "No finished requests in this range"
         },
         "overrides": []
       },
@@ -786,14 +1292,14 @@
           "sort": "desc"
         }
       },
-      "description": "Includes queue wait and prefill; long prompts dominate.",
-      "id": 13,
+      "description": "Includes queue wait and prefill.",
       "gridPos": {
         "x": 0,
-        "y": 18,
-        "w": 8,
+        "y": 23,
+        "w": 6,
         "h": 8
-      }
+      },
+      "id": 20
     },
     {
       "type": "timeseries",
@@ -809,7 +1315,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.50, sum by (le, model_name) (rate(vllm:e2e_request_latency_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
           "legendFormat": "p50",
           "instant": false,
           "range": true
@@ -820,8 +1326,19 @@
             "uid": "prometheus"
           },
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le, model_name) (rate(vllm:e2e_request_latency_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
           "legendFormat": "p95",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, model_name) (rate(vllm:e2e_request_latency_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "p99",
           "instant": false,
           "range": true
         }
@@ -833,7 +1350,7 @@
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 10,
-            "showPoints": "auto",
+            "showPoints": "never",
             "pointSize": 4,
             "spanNulls": false,
             "lineInterpolation": "linear",
@@ -858,7 +1375,9 @@
               }
             ]
           },
-          "min": 0
+          "min": 0,
+          "decimals": 2,
+          "noValue": "No finished requests in this range"
         },
         "overrides": []
       },
@@ -874,17 +1393,17 @@
         }
       },
       "description": "Reasoning is on by default, so long answers are normal.",
-      "id": 14,
       "gridPos": {
-        "x": 8,
-        "y": 18,
-        "w": 8,
+        "x": 6,
+        "y": 23,
+        "w": 6,
         "h": 8
-      }
+      },
+      "id": 21
     },
     {
       "type": "timeseries",
-      "title": "Queue wait",
+      "title": "Inter-token latency",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -896,8 +1415,30 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:request_queue_time_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.50, sum by (le, model_name) (rate(vllm:inter_token_latency_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "p50",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, model_name) (rate(vllm:inter_token_latency_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
           "legendFormat": "p95",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, model_name) (rate(vllm:inter_token_latency_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "p99",
           "instant": false,
           "range": true
         }
@@ -909,7 +1450,7 @@
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 10,
-            "showPoints": "auto",
+            "showPoints": "never",
             "pointSize": 4,
             "spanNulls": false,
             "lineInterpolation": "linear",
@@ -934,7 +1475,9 @@
               }
             ]
           },
-          "min": 0
+          "min": 0,
+          "decimals": 2,
+          "noValue": "No finished requests in this range"
         },
         "overrides": []
       },
@@ -949,27 +1492,116 @@
           "sort": "desc"
         }
       },
-      "description": "Time spent waiting for one of the 2 slots before prefill starts.",
-      "id": 15,
+      "description": "Gap between two output tokens of one stream.",
       "gridPos": {
-        "x": 16,
-        "y": 18,
-        "w": 8,
+        "x": 12,
+        "y": 23,
+        "w": 6,
         "h": 8
-      }
+      },
+      "id": 22
     },
     {
-      "id": 16,
+      "type": "timeseries",
+      "title": "Queue wait",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le, model_name) (rate(vllm:request_queue_time_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "p50",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, model_name) (rate(vllm:request_queue_time_seconds_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "p95",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "decimals": 2,
+          "noValue": "No finished requests in this range"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "description": "Waiting for a batch slot or KV room before prefill starts.",
+      "gridPos": {
+        "x": 18,
+        "y": 23,
+        "w": 6,
+        "h": 8
+      },
+      "id": 23
+    },
+    {
       "type": "row",
       "title": "Capacity and outcomes",
       "collapsed": false,
       "panels": [],
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 31,
         "w": 24,
         "h": 1
-      }
+      },
+      "id": 24
     },
     {
       "type": "timeseries",
@@ -985,7 +1617,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "max(vllm:kv_cache_usage_perc) * 100",
+          "expr": "max by (model_name) (vllm:kv_cache_usage_perc{namespace=\"vllm\", model_name=~\"$model\"})",
           "legendFormat": "KV cache used",
           "instant": false,
           "range": true
@@ -993,7 +1625,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "unit": "percentunit",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
@@ -1008,7 +1640,7 @@
               "group": "A"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "off"
             }
           },
           "color": {
@@ -1020,15 +1652,13 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 95
               }
             ]
           },
           "min": 0,
-          "max": 100
+          "decimals": 1,
+          "noValue": "Engine not running",
+          "max": 1
         },
         "overrides": []
       },
@@ -1043,14 +1673,13 @@
           "sort": "desc"
         }
       },
-      "description": "One shared KV pool across both cards (~341K tokens).",
-      "id": 17,
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 32,
         "w": 8,
         "h": 8
-      }
+      },
+      "id": 25
     },
     {
       "type": "timeseries",
@@ -1066,7 +1695,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "sum(vllm:num_requests_running)",
+          "expr": "sum by (model_name) (vllm:num_requests_running{namespace=\"vllm\", model_name=~\"$model\"})",
           "legendFormat": "running",
           "instant": false,
           "range": true
@@ -1077,7 +1706,7 @@
             "uid": "prometheus"
           },
           "refId": "B",
-          "expr": "sum by (reason) (vllm:num_requests_waiting_by_reason)",
+          "expr": "sum by (model_name, reason) (vllm:num_requests_waiting_by_reason{namespace=\"vllm\", model_name=~\"$model\"})",
           "legendFormat": "waiting: {{reason}}",
           "instant": false,
           "range": true
@@ -1116,7 +1745,8 @@
             ]
           },
           "min": 0,
-          "decimals": 0
+          "decimals": 0,
+          "noValue": "Engine not running"
         },
         "overrides": []
       },
@@ -1131,13 +1761,13 @@
           "sort": "desc"
         }
       },
-      "id": 18,
       "gridPos": {
         "x": 8,
-        "y": 27,
+        "y": 32,
         "w": 8,
         "h": 8
-      }
+      },
+      "id": 26
     },
     {
       "type": "timeseries",
@@ -1153,7 +1783,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "sum by (finished_reason) (increase(vllm:request_success_total[$__interval])) > 0",
+          "expr": "sum by (model_name, finished_reason) (increase(vllm:request_success_total{namespace=\"vllm\", model_name=~\"$model\"}[$__interval])) > 0",
           "legendFormat": "{{finished_reason}}",
           "instant": false,
           "range": true
@@ -1164,15 +1794,15 @@
           "unit": "short",
           "custom": {
             "drawStyle": "bars",
-            "lineWidth": 1,
-            "fillOpacity": 80,
+            "lineWidth": 2,
+            "fillOpacity": 60,
             "showPoints": "never",
             "pointSize": 4,
             "spanNulls": false,
             "lineInterpolation": "linear",
             "axisSoftMin": 0,
             "stacking": {
-              "mode": "normal",
+              "mode": "none",
               "group": "A"
             },
             "thresholdsStyle": {
@@ -1192,70 +1822,10 @@
             ]
           },
           "min": 0,
-          "decimals": 0
+          "decimals": 0,
+          "noValue": "None in this range"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "stop"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "green"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "length"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "yellow"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "abort"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "orange"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "error"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "red"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "legend": {
@@ -1269,14 +1839,690 @@
         }
       },
       "description": "stop = normal finish, length = hit the max-token limit, abort = client went away.",
-      "interval": "15m",
-      "id": 19,
       "gridPos": {
         "x": 16,
-        "y": 27,
+        "y": 32,
         "w": 8,
         "h": 8
-      }
+      },
+      "id": 27
+    },
+    {
+      "type": "timeseries",
+      "title": "Request size (finished requests)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le, model_name) (rate(vllm:request_prompt_tokens_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "prompt p50",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, model_name) (rate(vllm:request_prompt_tokens_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "prompt p95",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.50, sum by (le, model_name) (rate(vllm:request_generation_tokens_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "generated p50",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "D",
+          "expr": "histogram_quantile(0.95, sum by (le, model_name) (rate(vllm:request_generation_tokens_bucket{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])))",
+          "legendFormat": "generated p95",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "decimals": 0,
+          "noValue": "No finished requests in this range"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "description": "Tokens per request; bigger prompts and answers change every speed and latency number.",
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "id": 28
+    },
+    {
+      "type": "timeseries",
+      "title": "Speculative decoding (MTP) acceptance",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (model_name) (rate(vllm:spec_decode_num_accepted_tokens_total{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval])) / sum by (model_name) (rate(vllm:spec_decode_num_draft_tokens_total{namespace=\"vllm\", model_name=~\"$model\"}[$__rate_interval]))",
+          "legendFormat": "accepted ÷ drafted",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "decimals": 1,
+          "noValue": "No spec-decode series: MTP is off on vLLM",
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "description": "Only exists when vLLM runs with speculative decoding.",
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "id": 29
+    },
+    {
+      "type": "row",
+      "title": "Hardware (cards held by vLLM)",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 24,
+        "h": 1
+      },
+      "id": 30
+    },
+    {
+      "type": "timeseries",
+      "title": "GPU utilization (DCGM)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max by (gpu) (DCGM_FI_DEV_GPU_UTIL{exported_namespace=\"vllm\"})",
+          "legendFormat": "GPU {{gpu}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "noValue": "No GPU held by this engine",
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 49,
+        "w": 6,
+        "h": 8
+      },
+      "id": 31
+    },
+    {
+      "type": "timeseries",
+      "title": "GPU power (DCGM)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max by (gpu) (DCGM_FI_DEV_POWER_USAGE{exported_namespace=\"vllm\"})",
+          "legendFormat": "GPU {{gpu}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 220
+              }
+            ]
+          },
+          "min": 0,
+          "noValue": "No GPU held by this engine"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "description": "Red line = the 220 W per-card cap set on the host.",
+      "gridPos": {
+        "x": 6,
+        "y": 49,
+        "w": 6,
+        "h": 8
+      },
+      "id": 32
+    },
+    {
+      "type": "timeseries",
+      "title": "GPU memory used (DCGM)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max by (gpu) (DCGM_FI_DEV_FB_USED{exported_namespace=\"vllm\"}) * 1024 * 1024",
+          "legendFormat": "GPU {{gpu}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "noValue": "No GPU held by this engine"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 49,
+        "w": 6,
+        "h": 8
+      },
+      "id": 33
+    },
+    {
+      "type": "timeseries",
+      "title": "GPU core temperature (DCGM)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "max by (gpu) (DCGM_FI_DEV_GPU_TEMP{exported_namespace=\"vllm\"})",
+          "legendFormat": "GPU {{gpu}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "noValue": "No GPU held by this engine"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 49,
+        "w": 6,
+        "h": 8
+      },
+      "id": 34
+    },
+    {
+      "type": "timeseries",
+      "title": "Pod CPU (cores)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"vllm\", container=\"vllm-server\"}[$__rate_interval]))",
+          "legendFormat": "{{pod}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "decimals": 1,
+          "noValue": "No pod running"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 57,
+        "w": 12,
+        "h": 7
+      },
+      "id": 35
+    },
+    {
+      "type": "timeseries",
+      "title": "Pod memory vs limit",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"vllm\", container=\"vllm-server\"})",
+          "legendFormat": "working set {{pod}}",
+          "instant": false,
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "B",
+          "expr": "max by (pod) (kube_pod_container_resource_limits{namespace=\"vllm\", container=\"vllm-server\", resource=\"memory\"})",
+          "legendFormat": "limit {{pod}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "lineInterpolation": "linear",
+            "axisSoftMin": 0,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "noValue": "No pod running"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 57,
+        "w": 12,
+        "h": 7
+      },
+      "id": 36
     }
   ]
 }
