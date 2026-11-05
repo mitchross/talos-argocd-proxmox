@@ -3,7 +3,7 @@
 Runbook for the ARM64 Pi at `192.168.10.15`. Omni, its Proxmox providers,
 Technitium DNS, ProxCenter and booter run here in Docker, outside Talos and Argo CD.
 Deploy configuration from a merged PR over SSH. Existing secret files and
-persistent storage stay on the Pi; do not copy them into Git.
+persistent storage stay on the Pi. Do not copy them into Git.
 
 ## Version choices
 
@@ -29,8 +29,8 @@ Do not run its installer or pull its frontend image on this Pi.
 The [build script](proxcenter/build-arm64.sh) downloads that immutable source
 into a temporary directory and pins an ARM64 Node base image. Its 5120 MiB
 build heap preserves the Pi workaround without changing `/opt/proxcenter-src`
-or enlarging the application's runtime heap. The resulting tag is local only:
-keep `pull_policy: never`, retain the previous image, and never use a registry
+or enlarging the application's runtime heap. The resulting tag is local only.
+Keep `pull_policy: never`, retain the previous image, and never use a registry
 digest for the custom frontend tag. `APP_VERSION` and `GIT_SHA` are set at build
 time so the rebuilt image identifies its application source.
 
@@ -53,7 +53,7 @@ installation procedure.
    -d proxcenter -Fc`; keep PostgreSQL running while the frontend is stopped.
 3. Archive `/etc/etcd`, `/etc/omni/sqlite`, Omni's encryption key, the Compose
    files, local env/config/secret files for all projects, Technitium's config,
-   and the `proxcenter_data` volume. This backup contains secrets: do not print,
+   and the `proxcenter_data` volume. This backup contains secrets. Do not print,
    publish or make it world-readable. Validate the archive with `gzip -t` and
    `tar -tzf`, and the database dump with `pg_restore --list`. Retain checksums.
 4. Start the stopped containers and verify DNS and ProxCenter's `/api/health`
@@ -143,12 +143,12 @@ connections remain. Preserve the previous frontend image and all data volumes.
 
 ## Failure path
 
-Stop at the first failed service check; inspect that service's logs before
+Stop at the first failed service check. Inspect that service's logs before
 updating the next one. Restore its previous Compose/env file from the private
-backup and recreate only that service. Keep previous images; do not prune
+backup and recreate only that service. Keep previous images. Do not prune
 images or delete volumes during maintenance.
 
-An Omni schema migration prevents a blind image downgrade: follow
+An Omni schema migration prevents a blind image downgrade. Follow
 [Omni's update guidance](../omni/README.md#updating-omni) and use a coordinated
 state/config/key restore if necessary. A database restore overwrites live
 state and requires explicit authorization. Never run PostgreSQL 17 or later

@@ -15,7 +15,7 @@ cluster template does that. For the full add-or-convert procedure, see
 2. The Firewalla (`192.168.10.1`) answers with the IP address, as it does for
    every client. It also sends option 66 (`192.168.10.15`) and option 67
    (`snp.efi`), for firmware that ignores proxy-DHCP.
-3. booter answers **only PXE clients**, with boot-file information
+3. booter answers only PXE clients, with boot-file information
    (proxy-DHCP). It never hands out addresses, so normal clients are unaffected.
 4. The machine fetches iPXE from booter over TFTP. iPXE then loads the Talos
    kernel from Image Factory, with the Omni join arguments from `booter.env`.
@@ -65,7 +65,7 @@ Power on a machine that has an empty disk and network boot enabled. Then run
 request. The machine then appears in **Omni → Machines**.
 
 Some UEFI firmware ignores proxy-DHCP offers. The Firewalla options 66 and 67
-cover that case. If a machine never gets a boot response, check its BIOS
+handle that case. If a machine never gets a boot response, check its BIOS
 network-boot settings and those two options.
 
 ## Change the Talos version

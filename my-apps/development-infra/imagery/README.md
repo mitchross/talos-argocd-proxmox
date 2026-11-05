@@ -1,4 +1,4 @@
-# Imagery — self-hosted satellite tiles at maps.vanillax.me/imagery
+# Imagery: self-hosted satellite tiles at maps.vanillax.me/imagery
 
 A caching proxy for public-domain USGS aerial imagery. It gives the home stack a satellite basemap
 with no API key. No client ever contacts a third party: phones ask `maps.vanillax.me`, and this pod
@@ -18,8 +18,7 @@ fetches each tile from USGS once and then serves it from disk.
   nginx.
 
 Cached tiles are kept 30 days before nginx revalidates them. While USGS is unreachable, nginx
-serves the stale copy, so the basemap keeps working through upstream outages once an area has been
-viewed.
+serves the stale copy. Once someone has viewed an area, the basemap keeps working through upstream outages.
 
 ## Check it
 

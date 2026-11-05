@@ -15,7 +15,7 @@ The [NOMAD knowledge catalog](https://github.com/Crosstalk-Solutions/project-nom
 This configuration includes all six categories and all three tiers, with 59 selected archives plus full English Wikipedia, totaling 200.05 GiB.
 The full Wikibooks archive replaces the duplicate no-picture edition. Full Wikipedia is also pinned so a fresh NAS library can rebuild all 60 archives.
 Wikipedia Medicine and Bash use October 2026 releases because NOMAD's pinned URLs returned 404.
-All archive URLs, sizes, and published SHA-256 checksums were verified on October 16, 2026 UTC.
+I verified all archive URLs, sizes, and published SHA-256 checksums on October 16, 2026 UTC.
 
 The FDA drug dataset is not a ZIM archive. It requires a separate reader and is excluded.
 NOMAD creator packs and its specialized remedies/conditions interfaces are not Kiwix libraries and are excluded.
@@ -26,9 +26,9 @@ This is a pinned library, not an automatic upstream update subscription.
 `collections.tsv` pins each archive URL, byte count, and SHA-256 checksum.
 The CronJob checks for missing archives every 15 minutes and downloads into `.downloads/` on the existing `kiwix-data` SMB PVC.
 `concurrencyPolicy: Forbid` prevents overlapping runs. Each run can last up to 48 hours.
-Kubernetes creates the download Jobs independently of Argo CD’s 30-minute sync timeout.
+Kubernetes creates the download Jobs independently of Argo CD's 30-minute sync timeout.
 Interrupted downloads resume. Only verified archives move into the top-level library directory.
-Completed archives are skipped using their recorded checksum and file size.
+The Job skips completed archives using their recorded checksum and file size.
 After a replacement verifies, the Job removes older dated archives of the same series and their partial downloads.
 Unrelated archives and newer local versions remain. A failed replacement preserves the previous archive.
 File-size checks use metadata rather than reading entire archives.
@@ -47,7 +47,7 @@ A full download is not required for the existing Wikipedia archive to become rea
 
 List download Jobs with `kubectl -n kiwix get jobs --sort-by=.metadata.creationTimestamp`.
 Inspect the newest Job with `kubectl -n kiwix logs job/<job-name>`.
-Expect a successful Job and 60 catalog entries: 60 pinned archives.
+Expect a successful Job and 60 catalog entries, one per pinned archive.
 If a run fails, inspect its logs. The next scheduled run resumes partial downloads and skips verified archives.
 Inspect catalog updates with `kubectl -n kiwix logs deployment/kiwix -c library-indexer`.
 Check status with `kubectl -n kiwix get cronjobs,jobs,pods,pvc`.
@@ -56,14 +56,14 @@ Check status with `kubectl -n kiwix get cronjobs,jobs,pods,pvc`.
 
 Update the pinned URLs, byte counts, and published checksums in `collections.tsv` through a PR.
 The ConfigMap hash changes. New scheduled Jobs use the updated collection list after sync.
-An active Job continues with its mounted configuration; the following run checks the updated list.
-Old versions are removed only after a verified replacement is available. Rollback may require downloading the previous version again.
+An active Job continues with its mounted configuration. The following run checks the updated list.
+The Job removes old versions only after a verified replacement is available. Rollback may require downloading the previous version again.
 The SMB library is backup-exempt and can be downloaded again from these pinned sources while they remain available.
 
 Revert the Kiwix runtime changes through a PR to return to serving top-level ZIM files directly.
 Keep NOMAD's duplicate Kiwix route removed; restoring it reintroduces the failing backend.
 Downloaded archives remain on SMB through a runtime rollback.
-Do not restore the Sync hook: Argo CD terminates long downloads at its 30-minute operation timeout.
+Do not restore the Sync hook. Argo CD terminates long downloads at its 30-minute operation timeout.
 
 ## Pinned archives
 

@@ -1,16 +1,16 @@
-# Network Architecture
+# Network architecture
 
 ## Overview
 
-This cluster uses a modern, high-performance networking stack:
+The cluster networking stack has five parts:
 
-- **Cilium** - CNI with kube-proxy replacement
-- **KubePrism** - Control plane load balancer (Talos built-in)
-- **Gateway API** - Modern ingress (replaces Ingress resources)
-- **L2 Announcements** - LoadBalancer IP management
-- **Sidero Omni** - Cluster management via SideroLink
+- Cilium: CNI with kube-proxy replacement
+- KubePrism: control plane load balancer (Talos built-in)
+- Gateway API: ingress (replaces Ingress resources)
+- L2 Announcements: LoadBalancer IP management
+- Sidero Omni: cluster management via SideroLink
 
-## Architecture Diagram
+## Architecture diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -52,23 +52,23 @@ This cluster uses a modern, high-performance networking stack:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Critical Configuration: kube-proxy MUST be Disabled
+## Critical configuration: kube-proxy must be disabled
 
 ### Why?
 
 Cilium is configured with `kubeProxyReplacement: true` (see `cilium/values.yaml:12`).
 
-When kube-proxy is also running:
-- ❌ Both try to manage LoadBalancer health check ports
-- ❌ Gateway services fail with "address already in use"
-- ❌ ArgoCD, Longhorn, other services become unreachable
-- ❌ Random connection resets and 503 errors
+When kube-proxy also runs:
+- Both try to manage LoadBalancer health check ports.
+- Gateway services fail with "address already in use".
+- ArgoCD, Longhorn, and other services become unreachable.
+- Connections reset at random and return 503 errors.
 
 ### The Fix
 
-**File**: `../../omni/disable-kube-proxy.yaml`
+File: `../../omni/disable-kube-proxy.yaml`
 
-This **MUST** be applied as a config patch to all machines in Omni UI.
+Apply it as a config patch to all machines in the Omni UI. This is **required**.
 
 ```yaml
 cluster:
@@ -76,41 +76,41 @@ cluster:
     disabled: true
 ```
 
-See `../../omni/README.md` for complete instructions.
+See `../../omni/README.md` for full instructions.
 
-## Component Responsibilities
+## Component responsibilities
 
 ### Sidero Omni (Management)
 
-**What it handles:**
+What it handles:
 - Machine provisioning and lifecycle
 - Cluster configuration
 - Metrics and logs collection
 - Remote cluster access
 
-**What it does NOT use:**
-- Kubernetes Services ❌
-- kube-proxy ❌
-- Cilium ❌
+What it does not use:
+- Kubernetes Services
+- kube-proxy
+- Cilium
 
-**Communication:**
+Communication:
 - Direct WireGuard tunnels (SideroLink)
 - gRPC on dedicated ports (8090-8092)
 
 ### KubePrism (Control Plane HA)
 
-**What it handles:**
+What it handles:
 - Load balancing to Kubernetes API servers
 - HA failover if control plane nodes fail
 - Local endpoint on each node (localhost:7445)
 
-**Used by:**
+Used by:
 - kubelet (node → API server)
 - Cilium agent (CNI → API server)
 - kubectl (when connecting via Omni)
 - Other system components
 
-**Configuration:**
+Configuration:
 ```yaml
 # In Cilium values.yaml
 k8sServiceHost: localhost
@@ -126,50 +126,50 @@ machine:
 
 ### Cilium (Data Plane)
 
-**What it handles:**
-1. **CNI** - Pod networking
+What it handles:
+1. CNI: pod networking
    - IPAM (IP address management)
    - Pod-to-pod communication
    - Network policies
 
-2. **Service Load Balancing** (replaces kube-proxy)
+2. Service load balancing (replaces kube-proxy)
    - ClusterIP services
    - NodePort services
    - LoadBalancer services
    - Session affinity
 
-3. **Gateway API**
-   - HTTPRoute (modern Ingress)
+3. Gateway API
+   - HTTPRoute (replaces Ingress)
    - TLS termination
    - HTTP/gRPC routing
 
-4. **L2 Announcements**
+4. L2 Announcements
    - LoadBalancer IP advertisement
    - ARP/NDP for local network
 
-**Configuration:**
+Configuration:
 - Primary: `cilium/values.yaml`
 - L2 Policy: `cilium/l2-policy.yaml`
 - IP Pools: `cilium/ip-pool.yaml`
 
 ### Gateway API
 
-**What it provides:**
-- Modern replacement for Ingress
-- Better routing capabilities
+What it provides:
+- A replacement for Ingress
+- More routing options
 - Cross-namespace routing
-- More expressive API
+- A more expressive API
 
-**Resources in this cluster:**
+Resources in this cluster:
 - `gateway/gateway-internal-technitium.yaml` - Internal services, split-DNS (192.168.10.52)
 - `gateway/gateway-external.yaml` - External services (192.168.10.49)
 
-**HTTPRoutes:**
+HTTPRoutes:
 - ArgoCD: `argocd.vanillax.me`
 - Longhorn: `longhorn.vanillax.me`
 - Many others...
 
-## Network Flow Examples
+## Network flow examples
 
 ### User → ArgoCD Web UI
 
@@ -208,17 +208,17 @@ API Server (one of 3 control plane nodes)
 
 ### Gateway services failing
 
-**Symptoms:**
+Symptoms:
 ```
 Warning FailedToStartServiceHealthcheck
 node X failed to start healthcheck on port 31245: bind: address already in use
 ```
 
-**Cause:** kube-proxy is running (conflicts with Cilium)
+Cause: kube-proxy is running and conflicts with Cilium.
 
-**Fix:** Apply `../../omni/disable-kube-proxy.yaml` to all machines in Omni
+Fix: Apply `../../omni/disable-kube-proxy.yaml` to all machines in Omni.
 
-**Verify fix:**
+Verify the fix:
 ```bash
 # Should return NO pods
 kubectl get pods -n kube-system -l k8s-app=kube-proxy
@@ -229,7 +229,7 @@ kubectl get events -n gateway --field-selector type=Warning
 
 ### Services not accessible
 
-**Check Cilium:**
+Check Cilium:
 ```bash
 # All pods should be Running
 kubectl get pods -n kube-system -l k8s-app=cilium
@@ -241,7 +241,7 @@ kubectl exec -n kube-system ds/cilium -- cilium status
 kubectl exec -n kube-system ds/cilium -- cilium connectivity test
 ```
 
-**Check Gateway:**
+Check Gateway:
 ```bash
 # Gateways should show PROGRAMMED=True
 kubectl get gateway -A
@@ -252,90 +252,89 @@ kubectl get httproute -A
 
 ### L2 Announcements not working
 
-**Check L2 policy:**
+Check L2 policy:
 ```bash
 kubectl get ciliuml2announcementpolicy -A
 kubectl get ciliumloadbalancerippool -A
 ```
 
-**Check ARP announcements:**
+Check ARP announcements:
 ```bash
 # From external host on same network
 ping 192.168.10.52
 arp -a | grep 192.168.10.52
 ```
 
-## Performance Tuning
+## Performance tuning
 
-### Socket-level Load Balancing
+### Socket-level load balancing
 
-Enabled in Cilium for better pod-to-service performance:
+Cilium enables it for pod-to-service traffic:
 ```yaml
 socketLB:
   enabled: true
   hostNamespaceOnly: false
 ```
 
-### Bandwidth Manager
+### Bandwidth manager
 
-BBR congestion control for better TCP throughput:
+BBR congestion control raises TCP throughput:
 ```yaml
 bandwidthManager:
   enabled: true
   bbr: true
 ```
 
-### Connection Tracking
+### Connection tracking
 
-Optimized timeouts for long-lived connections:
+Long timeouts keep long-lived connections open:
 ```yaml
 bpf:
   ctTcpTimeout: 21600  # 6 hours
   ctAnyTimeout: 3600   # 1 hour
 ```
 
-### Gateway Session Affinity
+### Gateway session affinity
 
-Sticky sessions for 3 hours:
+Sessions stay sticky for 3 hours:
 ```yaml
 gatewayAPI:
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800
 ```
 
-## IP Address Allocation
+## IP address allocation
 
-### Pod Network
+### Pod network
 - CIDR: `10.244.0.0/16`
 - Managed by: Cilium IPAM
 
-### Service Network
+### Service network
 - CIDR: `10.96.0.0/12`
 - Managed by: Kubernetes API + Cilium
 
 ### LoadBalancer IPs
 - Pool: `192.168.10.32/27` → `192.168.10.32` – `192.168.10.63` (32 addresses, configured in `cilium/ip-pool.yaml`)
-- `allowFirstLastIPs: "No"` — `.32` and `.63` are reserved for network/broadcast, not used
+- `allowFirstLastIPs: "No"`: `.32` and `.63` are reserved for network and broadcast, so they are not used
 - Current assignments:
-  - `192.168.10.49` — `gateway-external`
-  - `192.168.10.50` — free
-  - `192.168.10.51` — `project-zomboid` (UDP game server; archived, IP kept for its return)
-  - `192.168.10.52` — `gateway-internal-technitium`
+  - `192.168.10.49`: `gateway-external`
+  - `192.168.10.50`: free
+  - `192.168.10.51`: `project-zomboid` (UDP game server; archived, IP kept for its return)
+  - `192.168.10.52`: `gateway-internal-technitium`
 - Managed by: Cilium L2 announcements (`cilium/l2-policy.yaml`)
 
 ### Adding a new LoadBalancer IP
 
-Most apps should use Gateway API (HTTPRoute on `gateway-external` for public
-routes or `gateway-internal-technitium` for private routes) rather than claim
-a fresh LB IP — it's one IP per gateway, not per app. Reserve direct `LoadBalancer`
-Services for protocols Gateway API can't carry (UDP, TCP non-HTTP,
-custom).
+Most apps should use Gateway API instead of claiming a new LB IP. Use an HTTPRoute
+on `gateway-external` for public routes or `gateway-internal-technitium` for
+private routes. Each gateway takes one IP, not each app. Use direct `LoadBalancer`
+Services only for protocols Gateway API can't carry (UDP, non-HTTP TCP, custom).
 
-1. **Pick an IP in the pool range.** Anything in `192.168.10.33` –
-   `192.168.10.62` that isn't already listed above. `kubectl get svc -A -o wide`
-   will show assigned LBs.
-2. **Pin the IP explicitly** on the Service (so it survives a cluster
-   rebuild without re-shuffling):
+1. **Pick an IP in the pool range.** Use any IP in `192.168.10.33` –
+   `192.168.10.62` not listed above. `kubectl get svc -A -o wide`
+   shows assigned LBs.
+2. **Pin the IP explicitly** on the Service, so it survives a cluster
+   rebuild without changing:
    ```yaml
    apiVersion: v1
    kind: Service
@@ -347,50 +346,49 @@ custom).
      type: LoadBalancer
      ports: [...]
    ```
-3. **Update this README's assignment table** and the comment block in
+3. **Update this README's assignment list** and the comment block in
    `cilium/ip-pool.yaml` so the next person knows the IP is taken.
 4. **Expand the pool if you run out.** Edit `cilium/ip-pool.yaml` and
-   add another `cidr:` block — e.g., `192.168.10.64/27` for another 32
+   add another `cidr:` block, for example `192.168.10.64/27` for another 32
    addresses. Make sure the range is free in the Firewalla DHCP config
-   before expanding, or you'll fight with DHCP leases.
+   first, or DHCP leases will conflict.
 5. **If the IP must be LAN-reachable from outside the cluster subnet,**
-   also check `cilium/l2-policy.yaml` — the L2 announcement policy
+   also check `cilium/l2-policy.yaml`. The L2 announcement policy
    selects which interfaces advertise which pools. By default every
    node's primary interface announces the whole pool.
 
 ### Why a `/27` and not the whole /24?
 
-The Firewalla DHCP pool covers most of `192.168.10.0/24`. Carving out a
-dedicated `/27` for LoadBalancer IPs prevents DHCP from ever handing
-`192.168.10.49` to a random IoT device. If you expand, pick another
-DHCP-excluded block — don't just enlarge the CIDR.
+The Firewalla DHCP pool covers most of `192.168.10.0/24`. A dedicated `/27` for
+LoadBalancer IPs stops DHCP from handing `192.168.10.49` to a random IoT device.
+If you expand, pick another DHCP-excluded block. Don't just enlarge the CIDR.
 
-### Node Network
+### Node network
 - CIDR: `192.168.10.0/24`
 - Static IPs configured in Omni machine configs
 
 ## Talos 1.13 compatibility notes
 
-The cluster runs Talos 1.13 (migrated from 1.12 in April 2026). Key
-networking-adjacent gotchas for that migration:
+The cluster runs Talos 1.13 (migrated from 1.12 in April 2026). These
+networking-adjacent gotchas came with that migration:
 
 - **KubePrism port (`7445`) is unchanged** across 1.12 → 1.13. Existing
   Cilium values (`k8sServiceHost: localhost`, `k8sServicePort: 7445`)
-  don't need touching.
+  need no change.
 - **Cilium 1.19.x** is the tested pairing with Talos 1.13 in this repo
   (`infrastructure/networking/cilium/kustomization.yaml` pins 1.19.3).
-  Older Cilium 1.17/1.18 may boot, but Hubble TLS behavior changed
-  enough that mixing versions during a rolling upgrade caused cert
-  issues — don't cross-version unless you plan to reinstall Cilium.
+  Older Cilium 1.17/1.18 may boot, but Hubble TLS behavior changed.
+  Mixing versions during a rolling upgrade caused cert issues. Don't
+  cross-version unless you plan to reinstall Cilium.
 - **`machine.install.disk`** is now mandatory on 1.13 (new
-  LifecycleService API). This is networking-adjacent only because a
-  missing disk patch keeps the LoadBalancer unhealthy forever —
-  symptoms look like "L2 isn't announcing" when the real cause is that
-  nodes never made it out of `UPGRADING`. See the root README for the
-  fix (already applied in `omni/cluster-template/cluster-template-prod-v2.yaml`).
+  LifecycleService API). It matters here because a missing disk patch keeps
+  the LoadBalancer unhealthy forever. The symptoms look like "L2 isn't
+  announcing", but the real cause is that nodes never left `UPGRADING`.
+  See the root README for the fix (already applied in
+  `omni/cluster-template/cluster-template-prod-v2.yaml`).
 - **NVIDIA OSS driver migration** (in progress) changes the GPU
-  worker's extension set but doesn't change its networking posture —
-  node IP, L2 membership, and Cilium pod CIDR are unaffected.
+  worker's extension set. It does not change networking: node IP, L2
+  membership, and Cilium pod CIDR are unaffected.
 
 ## References
 

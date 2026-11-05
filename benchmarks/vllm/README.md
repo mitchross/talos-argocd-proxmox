@@ -10,11 +10,11 @@ Use [the real-workload harness](../ai-realworld-load/README.md) and the
 `qwen3.8-27b` backend. The [dual-3090 capacity audit](../../docs/domains/ai-gpu/3090-llm-optimization.md)
 records the measured pool, context tests, and their limitations.
 
-If reviving this synthetic throughput sweep, first update and verify its
-client version, model ID, tokenizer path, explicit reasoning/sampling, and
+To revive this synthetic throughput sweep, first update and verify its
+client version, model ID, tokenizer path, explicit reasoning and sampling, and
 result handling in a separate PR. Fixed-length random prompts with ignored
 EOS measure throughput, not answer quality. Concurrency above two queues on
-the current server; two slots do not provide two full 262K contexts.
+the current server. Two slots do not provide two full 262K contexts.
 
 Historical commands and observations remain in Git history. No benchmark Job
-was submitted as part of the September reasoning/client audit.
+was submitted during the September reasoning and client audit.

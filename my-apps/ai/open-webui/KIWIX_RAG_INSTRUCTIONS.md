@@ -1,23 +1,23 @@
-# Kiwix RAG Setup Instructions
+# Kiwix RAG setup instructions
 
-Your Kiwix RAG (Retrieval-Augmented Generation) setup is configured using the Model Context Protocol (MCP).
+The Kiwix RAG (Retrieval-Augmented Generation) setup uses the Model Context Protocol (MCP).
 
 ## Components
-1.  **Kiwix Server**: Hosting your ZIM files (e.g., Wikipedia).
-2.  **MCP Kiwix Bridge (`mcpo-kiwix`)**: A service that exposes a `fetch` tool to the LLM, allowing it to query the Kiwix server.
-3.  **Open WebUI**: Configured to see `mcpo-kiwix` as an external tool provider.
+1.  **Kiwix server.** Hosts your ZIM files, such as Wikipedia.
+2.  **MCP Kiwix bridge (`mcpo-kiwix`).** Exposes a `fetch` tool that the LLM uses to query the Kiwix server.
+3.  **Open WebUI.** Uses `mcpo-kiwix` as an external tool provider.
 
 ## Prerequisites
-*   **ZIM Files**: Ensure you have downloaded `.zim` files (like Wikipedia) into the `kiwix-data` PVC mounted by the Kiwix deployment.
-    *   The Kiwix server is accessible at: `http://kiwix.kiwix.svc.cluster.local:8080`
+*   **ZIM files.** Download `.zim` files (like Wikipedia) into the `kiwix-data` PVC mounted by the Kiwix deployment.
+    *   The Kiwix server URL is: `http://kiwix.kiwix.svc.cluster.local:8080`
 
 ## Usage in Open WebUI
 
-To enable the LLM to use Kiwix effectively, you should use a **System Prompt** that instructs it on how to search and navigate the offline encyclopedia.
+Give the LLM a system prompt that tells it how to search and navigate the offline encyclopedia.
 
-### Recommended System Prompt
+### Recommended system prompt
 
-Copy and paste this into your Model settings or System Prompt configuration in Open WebUI:
+Paste this into the model settings or system prompt configuration in Open WebUI:
 
 ```text
 You have access to an offline encyclopedia (Kiwix) via the 'fetch' tool.
@@ -39,6 +39,6 @@ CITE your sources by referencing the article title.
 4.  You should see the model use the `fetch` tool to query Kiwix and then retrieve the answer.
 
 ## Troubleshooting
-*   **No Tools Used**: Ensure `ENABLE_TOOLS` is True in Open WebUI settings and the model you are using supports tool calling (e.g., Llama 3.1, GPT-4o-mini).
-*   **Fetch Error**: Check if the Kiwix service is running and if the URL is correct.
-*   **Empty Results**: Verify ZIM files are loaded in the Kiwix server.
+*   **No tools used.** Ensure `ENABLE_TOOLS` is True in Open WebUI settings and the model you are using supports tool calling (e.g., Llama 3.1, GPT-4o-mini).
+*   **Fetch error.** Check if the Kiwix service is running and if the URL is correct.
+*   **Empty results.** Verify ZIM files are loaded in the Kiwix server.

@@ -1,10 +1,10 @@
 # Architecture
 
-This document explains how all the components work together in the Omni + Talos + Proxmox stack.
+This document explains how the components of the Omni + Talos + Proxmox stack work together.
 
-## Component Overview
+## Component overview
 
-### Omni (Self-Hosted)
+### Omni (self-hosted)
 - **Purpose**: Central management platform for Talos clusters
 - **Components**:
   - Web UI for cluster management
@@ -13,9 +13,9 @@ This document explains how all the components work together in the Omni + Talos 
   - SideroLink for secure node communication
   - Etcd for state storage
 - **Location**: Ubuntu host (Docker container)
-- **Port Requirements**: 443, 8090, 8100, 8091, 50180/udp
+- **Port requirements**: 443, 8090, 8100, 8091, 50180/udp
 
-### Proxmox Infrastructure Provider
+### Proxmox infrastructure provider
 - **Purpose**: Bridge between Omni and Proxmox
 - **Function**: Automatically provisions VMs based on Omni machine requests
 - **Location**: Ubuntu host (Docker container, can be same as Omni)
@@ -37,9 +37,9 @@ This document explains how all the components work together in the Omni + Talos 
   - Declarative configuration
   - Rolling updates
 
-## Communication Flow
+## Communication flow
 
-### Initial Setup Flow
+### Initial setup flow
 
 ```
 1. Admin → Omni UI
@@ -81,9 +81,9 @@ This document explains how all the components work together in the Omni + Talos 
    └─ Accesses cluster via Kubernetes proxy
 ```
 
-## Network Architecture
+## Network architecture
 
-### Network Design (10G Switch)
+### Network design (10G switch)
 
 All traffic uses a single network via 10G switch:
 
@@ -113,7 +113,7 @@ All traffic uses a single network via 10G switch:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Ports and Services
+### Ports and services
 
 **Omni Server**:
 ```
@@ -137,7 +137,7 @@ Outbound 50180  - To Omni WireGuard
 6443 (TCP)      - Kubernetes API (exposed via Omni)
 ```
 
-### Network Flows
+### Network flows
 
 ```
 ┌─────────────┐
@@ -180,9 +180,9 @@ Outbound 50180  - To Omni WireGuard
 └────────────────┘      └─────────────────────┘
 ```
 
-## Data Flow
+## Data flow
 
-### Cluster Creation
+### Cluster creation
 
 ```
 User → Omni UI: "Create cluster with 3 control plane, 3 workers"
@@ -224,9 +224,9 @@ Omni: Cluster ready
     └─ User can access via Kubernetes proxy
 ```
 
-## Storage Architecture
+## Storage architecture
 
-### Omni Storage
+### Omni storage
 
 ```
 /etc/etcd/
@@ -245,7 +245,7 @@ Omni: Cluster ready
 └── GPG encryption key
 ```
 
-### Talos Storage (per node)
+### Talos storage (per node)
 
 ```
 /dev/sda (or equivalent)
@@ -258,9 +258,9 @@ Optional additional disks:
 └── Persistent storage (e.g., Longhorn volumes)
 ```
 
-## Security Architecture
+## Security architecture
 
-### Authentication & Authorization
+### Authentication and authorization
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -291,7 +291,7 @@ Optional additional disks:
 - Omni etcd: GPG encryption (user-provided key)
 - Talos STATE: Optional disk encryption (configured per cluster)
 
-### Access Control
+### Access control
 
 **Omni**:
 - No direct shell access
@@ -311,7 +311,7 @@ Optional additional disks:
 
 ## Scalability
 
-### Horizontal Scaling
+### Horizontal scaling
 
 **Omni**:
 - Single instance (etcd embedded)
@@ -329,7 +329,7 @@ Optional additional disks:
 - Workers: Unlimited (practical limit ~1000 per cluster)
 - Multiple clusters per Omni instance
 
-### Resource Requirements
+### Resource requirements
 
 **Omni Server**:
 - Minimum: 2 CPU, 4GB RAM, 50GB disk
@@ -348,14 +348,14 @@ Optional additional disks:
 - Varies by workload
 - Minimum: 2 CPU, 4GB RAM, 50GB disk
 
-## High Availability
+## High availability
 
-### Omni HA (Not covered in this starter kit)
+### Omni HA (not covered in this starter kit)
 - Requires external etcd cluster
 - Multiple Omni instances behind load balancer
 - Shared state via external etcd
 
-### Talos Cluster HA (Included)
+### Talos cluster HA (included)
 - Odd number of control plane nodes (3 or 5)
 - Etcd quorum maintained
 - API server load balanced via SideroLink
@@ -366,48 +366,48 @@ Optional additional disks:
 - Proxmox cluster with HA features
 - Shared storage for VM resilience
 
-## Extension Points
+## Extension points
 
-### Custom Machine Classes
+### Custom machine classes
 - Define templates for different workload types
 - GPU nodes, storage nodes, compute nodes
 - Different CPU/RAM/disk configurations
 
-### Talos Extensions
+### Talos extensions
 - NVIDIA drivers
 - Custom kernel modules
 - Additional system packages
 - Network plugins
 
-### Machine Config Patches
+### Machine config patches
 - Custom sysctl settings
 - Additional mounts
 - Network configuration
 - Volume management
 
-## Monitoring & Observability
+## Monitoring and observability
 
-### Omni Metrics
+### Omni metrics
 - Cluster health status
 - Node status
 - Update progress
 - Infrastructure provider status
 
-### Talos Metrics
+### Talos metrics
 - Exported via node metrics API
 - Scraped by Prometheus in cluster
 - System resources (CPU, RAM, disk)
 - Kubernetes metrics
 
-### Proxmox Metrics
+### Proxmox metrics
 - VM resource utilization
 - Storage usage
 - Network traffic
 - Available via Proxmox API
 
-## Backup & Recovery
+## Backup and recovery
 
-### Omni Backup
+### Omni backup
 ```
 Critical data:
 - /etc/etcd/ (cluster state)
@@ -420,7 +420,7 @@ Recovery:
 - Restart Omni
 ```
 
-### Talos Backup
+### Talos backup
 ```
 Cluster state stored in:
 - Omni (primary source of truth)
@@ -431,9 +431,9 @@ Recovery:
 - Kubernetes etcd can be restored from backups
 ```
 
-## Update Process
+## Update process
 
-### Omni Updates
+### Omni updates
 ```
 1. Stop Omni container
 2. Update OMNI_IMG_TAG in omni.env
@@ -442,7 +442,7 @@ Recovery:
 5. Verify functionality
 ```
 
-### Talos Updates
+### Talos updates
 ```
 Managed through Omni:
 1. Select cluster
@@ -453,16 +453,16 @@ Managed through Omni:
 6. Control plane first, then workers
 ```
 
-### Proxmox Provider Updates
+### Proxmox provider updates
 ```
 1. Pull latest provider image
 2. Restart provider container
 3. No downtime (VMs continue running)
 ```
 
-## Decision Points
+## Decision points
 
-### When to Use This Stack
+### When to use this stack
 
 **Good fit**:
 - Self-hosted infrastructure preference
@@ -476,7 +476,7 @@ Managed through Omni:
 - Managed cloud preference (use cloud provider)
 - Need for OS-level customization (use traditional Linux)
 
-### Architecture Alternatives
+### Architecture alternatives
 
 **Alternative 1**: Omni SaaS + Proxmox Provider
 - Use hosted Omni instead of self-hosted

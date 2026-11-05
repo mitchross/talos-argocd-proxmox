@@ -48,7 +48,7 @@ operator-owned global model catalog:
 - Model: `qwen3.8-27b`
 - Config: `global_llm_config.yaml`, mounted at `/app/app/config/global_llm_config.yaml`
 - Context budget: 48,000 input + 16,384 output (application budget retained; vLLM server ceiling is 262,144)
-- Billing tier: `free` — this is local infrastructure, not a metered provider
+- Billing tier: `free`. This is local infrastructure, not a metered provider
 
 The catalog is rendered by External Secrets using `litellm/master_key`, then mounted as a Secret. SurfSense does not expand environment placeholders in this file. API, worker, beat, and migrations share that rendered catalog; the existing global model ID stays `-1` so saved model selections continue working.
 
@@ -104,8 +104,8 @@ files, and files outside `wiki/` are excluded.
 The uploader waits for a **new worker task log to complete**, including the final
 batch; an idle folder flag alone can mean the worker has not started. It fails on
 partial indexing errors, ambiguous concurrent folder-upload logs, authentication
-errors, and timeouts. Avoid other folder uploads in this workspace during a run:
-SurfSense 0.0.39 does not return the worker task ID from this endpoint. HTTP reads
+errors, and timeouts. Avoid other folder uploads in this workspace during a run,
+because SurfSense 0.0.39 does not return the worker task ID from this endpoint. HTTP reads
 retry transient failures; uploads and failed Jobs do not automatically retry because
 the server may already have accepted the request. Inspect SurfSense task logs and
 wait for any outstanding worker before the next run.

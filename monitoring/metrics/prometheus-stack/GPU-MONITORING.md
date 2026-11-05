@@ -1,22 +1,20 @@
-# GPU Monitoring with DCGM Exporter
+# GPU monitoring with DCGM Exporter
 
 ## Overview
-GPU monitoring is integrated into the Prometheus/Grafana stack using NVIDIA's DCGM Exporter.
 
-## Components Added
+NVIDIA's DCGM Exporter feeds GPU metrics into the Prometheus/Grafana stack.
+
+## Components added
 
 ### 1. DCGM Exporter (`dcgm-exporter.yaml`)
-- **Namespace**: `prometheus-stack`
-- **Type**: DaemonSet (runs on GPU nodes only)
-- **Port**: 9400
-- **Metrics**: Full GPU telemetry (utilization, memory, temperature, power, etc.)
+
+A DaemonSet in the `prometheus-stack` namespace. It runs on GPU nodes only and listens on port 9400. It exports GPU utilization, memory, temperature, power and related metrics.
 
 ### 2. ServiceMonitor (`custom-servicemonitors.yaml`)
-- **Name**: `dcgm-exporter-metrics`
-- **Scrape Interval**: 15s
-- **Target**: DCGM Exporter service
 
-### 3. GPU Alerts (`gpu-alerts.yaml`)
+`dcgm-exporter-metrics` scrapes the DCGM Exporter service every 15s.
+
+### 3. GPU alerts (`gpu-alerts.yaml`)
 - High/Critical GPU utilization (90%/95%)
 - High/Critical memory usage (85%/95%)
 - High/Critical temperature (80°C/90°C)
@@ -24,12 +22,12 @@ GPU monitoring is integrated into the Prometheus/Grafana stack using NVIDIA's DC
 - GPU down/unavailable alerts
 - Low clock speed warnings
 
-### 4. Grafana Dashboard (`dashboards/ai/gpu-overview.json`)
-- **Dashboard UID**: `gpu-overview` (Grafana folder **AI**)
-- Per-card utilization, VRAM, temperature, power vs the 220 W cap, clocks,
-  PCIe link retries, and which pod holds each card.
+### 4. Grafana dashboard (`dashboards/ai/gpu-overview.json`)
 
-## Key Metrics
+Dashboard UID `gpu-overview`, in the Grafana folder AI. It shows per-card utilization, VRAM, temperature, power against the 220 W cap, clocks,
+PCIe link retries, and which pod holds each card.
+
+## Key metrics
 
 | Metric | Description |
 |--------|-------------|
@@ -41,9 +39,9 @@ GPU monitoring is integrated into the Prometheus/Grafana stack using NVIDIA's DC
 | `DCGM_FI_DEV_SM_CLOCK` | Streaming Multiprocessor clock (MHz) |
 | `DCGM_FI_DEV_MEM_CLOCK` | Memory clock (MHz) |
 
-## Quick Commands
+## Quick commands
 
-### Check GPU Metrics
+### Check GPU metrics
 ```bash
 # Port forward to DCGM exporter
 kubectl port-forward -n prometheus-stack svc/dcgm-exporter 9400:9400
@@ -52,13 +50,13 @@ kubectl port-forward -n prometheus-stack svc/dcgm-exporter 9400:9400
 curl localhost:9400/metrics | grep DCGM_FI_DEV
 ```
 
-### Access Grafana Dashboard
+### Access Grafana dashboard
 1. Open Grafana
 2. Navigate to **Dashboards**
-3. Open the **AI** folder → **GPU Overview**
-4. Or use direct URL: `/d/gpu-overview`
+3. Open the AI folder, then GPU Overview
+4. Or use the direct URL: `/d/gpu-overview`
 
-### Deploy Changes
+### Deploy changes
 ```bash
 # Deploy monitoring stack with GPU monitoring
 kubectl apply -k monitoring/metrics/prometheus-stack/
@@ -78,8 +76,8 @@ kubectl exec -n prometheus-stack deployment/kube-prometheus-stack-prometheus -- 
 ```
 
 ## Notes
-- DCGM requires privileged containers and GPU nodes (the `prometheus-stack` namespace has been configured for this).
-- Metrics are collected every 15 seconds
-- Dashboard auto-refreshes every 30 seconds
-- Alerts are configured for typical GPU workload thresholds
-- Compatible with NVIDIA GPUs only 
+- DCGM requires privileged containers and GPU nodes. The `prometheus-stack` namespace is already set up for this.
+- Prometheus scrapes metrics every 15 seconds.
+- The dashboard refreshes every 30 seconds.
+- Alert thresholds suit typical GPU workloads.
+- DCGM supports NVIDIA GPUs only. 

@@ -1,14 +1,14 @@
-# Strata — Qwen3.8-Flash-Next on both RTX 3090s (test)
+# Strata: Qwen3.8-Flash-Next on both RTX 3090s (test)
 
 [Strata](https://github.com/Niko1221/Strata) serves Qwen3.8-Flash-Next (a MoE
 model): dense layers, KV and a cache of hot experts on the GPUs, all experts in
-host RAM. For this test it gets **both** cards and vLLM (`../vllm/`) is parked
-at `replicas: 0`; meanwhile LiteLLM sends `qwen3.8-27b` to `deepseek-flash`.
+host RAM. For this test it gets both cards. vLLM (`../vllm/`) is parked at `replicas: 0`,
+and LiteLLM sends `qwen3.8-27b` to `deepseek-flash`.
 
 With two cards Strata splits the model by layers ([upstream
 `docs/MULTI_GPU.md`](https://github.com/Niko1221/Strata/blob/d5ea7133741e67743c0e886bb426c0ce8d69cf6c/docs/MULTI_GPU.md)):
 each card runs a contiguous layer range and caches the experts of its own
-layers, so together they hold about twice as many. No NVLink or P2P is needed.
+layers, so together they hold about twice as many. It needs no NVLink or P2P.
 Upstream measured IQ3_S on 2x RTX 3090 + EPYC 7453 (`bench/results/2026-09-29-rtx3090-epyc-milan`,
 v0.1.26, 32K prompt): auto split K=24, prompt 749 tok/s, decode 106 tok/s median, needles 3/3.
 
@@ -25,14 +25,14 @@ v0.1.26, 32K prompt): auto split K=24, prompt 749 tok/s, decode 106 tok/s median
 | Host RAM | 54 GiB request, 64 GiB limit (~47 GiB expert arena) |
 | Disk | ~92 GB under `strata/` on the node-local NVMe `/var/mnt/ai-model-cache` |
 
-The settings live in the `strata-settings` ConfigMap (`kustomization.yaml`);
-the image's `docker-entrypoint.sh` and `scripts/prepare.sh` read the same
+The settings live in the `strata-settings` ConfigMap (`kustomization.yaml`).
+The image's `docker-entrypoint.sh` and `scripts/prepare.sh` read the same
 variables.
 
 ## First start
 
 1. The `prepare` init container runs Strata's `setup.py --setup --no-start`:
-   it downloads the GGUF shards and the MTP layer (~92 GB), builds the pack and
+   it downloads the GGUF shards and the MTP layer (~92 GB), builds the pack, and
    writes `/data/config/strata-iq3_s.json`. This takes as long as the download.
 2. The server container links that config and starts. `/health` answers only
    after the experts are in RAM (a few minutes); the startup probe allows 30.
@@ -96,21 +96,20 @@ vLLM is off during the test, so compare against the saved FP8 TP=2 baseline
 up to N requests decode together, more wait. `prepare.sh` writes it into
 `/data/config/strata-iq3_s.json` on every start. It is not part of the settings
 stamp, so changing it restarts the pod (experts reload into RAM, a few minutes)
-but never reruns setup. `GET /v1/status` -> `concurrency.serving` shows what the
-engine actually runs (it drops slots that don't fit in VRAM).
+but never reruns setup. `GET /v1/status` returns `concurrency.serving`, which shows what the
+engine runs. The engine drops slots that don't fit in VRAM.
 
-It is **2**: each slot takes ~0.6 GB of the 18.45 GB expert cache (upstream's
+The value is 2. Each slot takes ~0.6 GB of the 18.45 GB expert cache (upstream's
 formula at 32K resident KV, int8) and ~1.6 GB of pinned RAM (128K streamed KV),
-so 2 slots keep the pod near 57 of its 64 GiB limit; 4 would need the limit
-raised. Upstream measured a request alone 11 % (2 slots) to 24 % (4 slots)
+so 2 slots keep the pod near 57 of its 64 GiB limit. 4 slots need a higher limit. Upstream measured a request alone 11 % (2 slots) to 24 % (4 slots)
 slower where most experts run on the CPU (12 GB card). On a 4-GPU split two
 requests together ran 57 tok/s each (113 total vs 120 alone) and four 205
-total. This 2-card split is in between and unmeasured. The slots buy waiting time: with one slot,
+total. This 2-card split is in between and unmeasured. The slots cut waiting time. With one slot,
 measured here, 4 requests at once wait up to 11 s for their first token and 8
 up to 23 s ([baseline](../../../benchmarks/ai-realworld-load/baselines/2026-11-03-strata-concurrency-parallel1/results.md)).
 
 LiteLLM's `qwen3.8-27b` (every app's model name) is capped at the same number
-with `max_parallel_requests`; one more gets LiteLLM's 429 and falls back to
+with `max_parallel_requests`. One more request gets LiteLLM's 429 and falls back to
 `deepseek-flash`. `qwen3.8-flash-next` stays local-only and queues here.
 
 ## Image updates
@@ -121,6 +120,6 @@ in `deployment.yaml` to the new `tag@digest` from that run's summary.
 
 ## Rollback
 
-Revert the test PR: vLLM gets both cards back, the `qwen3.8-27b` fallback goes
-away and Strata is removed (its PV is `Retain`, so the ~92 GB under `strata/`
-on the NVMe stays until deleted by hand).
+Revert the test PR. vLLM gets both cards back, the `qwen3.8-27b` fallback goes
+away, and Strata is removed. Its PV is `Retain`, so the ~92 GB under `strata/`
+on the NVMe stays until you delete it by hand.

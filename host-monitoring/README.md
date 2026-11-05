@@ -13,7 +13,7 @@ Prerequisites and the safe-run steps:
 
 ## Host metrics
 
-This configuration supplies continuous physical disk, CPU, memory and I/O
+This configuration sends continuous physical disk, CPU, memory and I/O
 metrics to the existing Prometheus/Grafana stack.
 
 [inventory.yaml](inventory.yaml) identifies the five Proxmox hosts, Pi and
@@ -40,7 +40,7 @@ The node container reads host `/proc`, `/sys` and udev through the recursive
 read-only root mount and joins the host PID/network namespaces. Its 256 MiB
 ceiling, and the SMART container's separate 256 MiB ceiling, leave substantial
 headroom over the temporary container probes (about 24 and 23 MiB respectively).
-The pinned images successfully read the NAS host identity, RAM, disks and ARC
+The pinned images read the NAS host identity, RAM, disks and ARC
 through these mounts. Verify budgets and collector success after deployment;
 temporary containers do not validate the TrueNAS app manager or persistence.
 
@@ -49,7 +49,7 @@ temporary containers do not validate the TrueNAS app manager or persistence.
 Prerequisites: an Ansible control machine, existing SSH access, sudo access on
 the Pi, TrueNAS Apps administration, and the existing Prometheus stack.
 Credentials stay outside this inventory. Bindings are LAN-only, not an
-authentication boundary; allow these ports only from the monitoring network
+authentication boundary. Allow these ports only from the monitoring network
 and do not publish them through an external HTTPRoute.
 
 From the repository root, install the pinned upstream collection and inspect
@@ -61,7 +61,7 @@ ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/playbook.yaml
 ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/playbook.yaml --check --diff --limit gpu
 ```
 
-Check mode previews the roles; it does not prove that uninstalled binaries can
+Check mode previews the roles. It does not prove that uninstalled binaries can
 collect metrics. After review, apply to one host first:
 
 ```sh
@@ -75,9 +75,9 @@ collector success and the Grafana host row before proceeding:
 ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/playbook.yaml --limit sff,pi
 ```
 
-The Pi needs the `smartmontools` package; the Proxmox hosts already have it. Interpret Shed availability using its
-[expected power/sleep behavior](../docs/domains/networking/topology.md#expected-shed-node-downtime);
-apply with `--limit shed` when it is powered and reachable. Missing metrics must show
+The Pi needs the `smartmontools` package. The Proxmox hosts already have it. Interpret Shed availability using its
+[expected power/sleep behavior](../docs/domains/networking/topology.md#expected-shed-node-downtime).
+Apply with `--limit shed` when it is powered and reachable. Missing metrics must show
 unknown/unreachable rather than an old healthy value.
 
 In TrueNAS **Apps → Discover Apps → Install via YAML**, create a Custom App
@@ -91,7 +91,7 @@ generated appliance configuration is not part of this deployment.
 - Prometheus jobs `physical-node` and `physical-smartctl` must be up for each
   reachable host. Check `node_scrape_collector_success` for CPU, meminfo,
   diskstats, filesystem and ZFS where applicable. Optional collectors for
-  absent hardware can fail; an HTTP 200 alone does not establish collection.
+  absent hardware can fail. An HTTP 200 alone does not establish collection.
 - Join drive metrics using the normalized physical host/device labels. Native
   SMART discovery reports NVMe controllers such as `nvme0`; node_exporter I/O
   reports namespaces such as `nvme0n1`. Verify persistent identity privately:
@@ -105,7 +105,7 @@ generated appliance configuration is not part of this deployment.
 - SMART exit status is a bitmask. The live HPE SATA drives returned 4 for a
   failed/unsupported optional command while reporting SMART OK. A nonzero
   exit status alone is not a failed-drive verdict.
-- **Upstream freshness limitation:** version 0.14.0 retains its previous JSON
+- **Upstream freshness limitation.** Version 0.14.0 retains its previous JSON
   after a failed SMART read and does not expose the last successful read
   timestamp. Its exit-status metric can also be cached. A new Prometheus
   scrape timestamp is not proof of a new successful disk read. Gate display
