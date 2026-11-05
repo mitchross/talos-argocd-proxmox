@@ -5,6 +5,11 @@
 global:
   image:
     tag: "v3.6.1"
+  # Argo must always get scheduled. Without a priority class the controller
+  # sat Pending ("Insufficient memory", no preemption victims) when worker
+  # memory requests hit ~99%, so nothing synced. system-cluster-critical lets
+  # the scheduler evict lower-priority app pods to make room.
+  priorityClassName: system-cluster-critical
 
 # The chart bundles older v3.5.x CRDs. v3.6 changed the Application,
 # ApplicationSet, and AppProject schemas, so the matching v3.6.1 CRDs are
