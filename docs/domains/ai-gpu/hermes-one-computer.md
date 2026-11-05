@@ -1,32 +1,18 @@
-# Run Hermes without a cluster
+# Run Hermes on your PC
 
-**Purpose:** set up Hermes Agent with OpenRouter for models and Hindsight for long-term memory.
-**Status:** guide. It copies the useful parts of [this cluster's Hermes](hermes.md) without Kubernetes.
-**Scope:** one OpenRouter key and one computer. You need no GPU, LiteLLM or 1Password.
+**Purpose:** install Hermes Agent on your own computer, then use skills to build things with it.
+**Status:** guide. It copies the useful parts of [this cluster's Hermes](hermes.md) without the cluster.
+**Scope:** one computer and one OpenRouter key. You need no GPU, server or Kubernetes.
 **Have a cluster?** Use [Run Hermes on another cluster](hermes-other-clusters.md) instead.
 
-## Pick a path
-
-| | Path A: your own computer | Path B: a spare PC with Docker |
-|---|---|---|
-| Good for | Trying Hermes. Chat when you sit at the computer. | An always-on agent: cron jobs, chat bots, use from any device. |
-| Runs on | Linux, macOS (Apple Silicon), Windows, WSL2 | Any Linux box with Docker: old PC, mini PC, NAS, Pi 5 (amd64 or arm64) |
-| Memory | Hindsight inside Hermes (`local_embedded`) | Hindsight in its own container (`local_external`) |
-| You talk to it from | The same computer | Hermes Desktop or a browser on your laptop |
-
-Both paths need an [OpenRouter](https://openrouter.ai) account with some credit and an API key.
-Copy model ids from [openrouter.ai/models](https://openrouter.ai/models).
-
-| This cluster | Without a cluster |
+| This cluster | Your PC |
 |---|---|
-| Hermes in a Kubernetes pod | Hermes installed in `~/.hermes`, or one Docker container |
+| Hermes in a Kubernetes pod | Hermes installed in `~/.hermes` |
 | Claude, Codex and local GPUs through LiteLLM | OpenRouter only |
-| Hindsight server in the cluster | Hindsight embedded, or one Docker container |
-| Config and skills seeded from Git | Set once with `hermes` commands |
+| Hindsight server in the cluster | Built-in memory, or Hindsight in Docker Compose |
+| Skills seeded from Git | Skills you install, or Hermes writes |
 
-## Path A: your own computer
-
-### A1. Install Hermes
+## 1. Install Hermes
 
 On Linux, macOS or WSL2, run:
 
@@ -34,165 +20,99 @@ On Linux, macOS or WSL2, run:
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 ```
 
-On Windows or macOS, you can install the desktop package from the
+On Windows or macOS, you can install the desktop app from the
 [Hermes website](https://hermes-agent.nousresearch.com/) instead.
 Other platforms: [Installation](https://hermes-agent.nousresearch.com/docs/getting-started/installation).
 
 **Expected result:** `hermes --version` prints a version.
 
-### A2. Connect OpenRouter
+## 2. Connect OpenRouter
 
-1. Run `hermes model`.
-2. Pick **OpenRouter** and paste your API key.
-3. Pick your main model. This model does the real work, so pick a strong one.
+1. Create an [OpenRouter](https://openrouter.ai) account, add some credit and make an API key.
+2. Run `hermes model`.
+3. Pick **OpenRouter** and paste the key.
+4. Pick your main model. This model does the real work, so pick a strong one.
 
 Hermes saves the key in `~/.hermes/.env`. Never put keys in `config.yaml`.
+Model ids are listed at [openrouter.ai/models](https://openrouter.ai/models).
 
 **Expected result:** `hermes chat -q "say hi"` answers.
 
-### A3. Turn on memory with Hindsight
+Hermes makes small helper calls, for example to name chats. Point them at a cheap model to save money:
 
-Hindsight remembers facts across chats, for example your name, your projects and past decisions.
+```bash
+hermes config set auxiliary.title_generation.provider openrouter
+hermes config set auxiliary.title_generation.model <cheap-model-id>
+hermes config set auxiliary.skills_hub.provider openrouter
+hermes config set auxiliary.skills_hub.model <cheap-model-id>
+hermes fallback add   # optional backup model for when the main one is down
+```
 
-1. Run `hermes plugins install hindsight`. Answer **yes** to "Use 'hindsight' as the memory provider now?".
-2. Run `hermes memory setup` and pick **hindsight**.
-3. Pick mode `local_embedded`. Memory stays on your computer and costs nothing extra.
-4. Set the LLM provider to `openrouter` and pick a cheap, fast model.
-   Hindsight uses this model only to pull facts out of chats.
-   Embeddings and reranking run locally, so you need no other key.
+## 3. Pick a memory
 
-On a small or slow computer, pick mode `cloud` instead.
-Get a key at [ui.hindsight.vectorize.io](https://ui.hindsight.vectorize.io).
+| Option | What you get | Setup |
+|---|---|---|
+| **Built-in (start here)** | Two small notes files: facts about you and about your setup | Nothing. It is on by default. |
+| **Hindsight in Docker** | Long-term memory of every chat, with search across all of them | About 5 minutes, below |
+
+Start with built-in memory. Add Hindsight later if Hermes forgets things you want it to keep.
+
+### Optional: Hindsight in Docker Compose
+
+1. Make a folder and save this as `~/hindsight/compose.yaml`:
+
+    ```yaml
+    services:
+      hindsight:
+        image: ghcr.io/vectorize-io/hindsight:latest   # pin a version tag once it works
+        restart: unless-stopped
+        shm_size: 1g
+        stop_grace_period: 75s
+        ports:
+          - "127.0.0.1:8888:8888"   # API, for Hermes on this PC only
+          - "127.0.0.1:9999:9999"   # web UI, optional
+        environment:
+          HINDSIGHT_API_LLM_PROVIDER: openrouter
+          HINDSIGHT_API_LLM_API_KEY: ${OPENROUTER_API_KEY}
+          HINDSIGHT_API_LLM_MODEL: ${HINDSIGHT_MODEL}
+        volumes:
+          - hindsight-data:/home/hindsight/.pg0
+
+    volumes:
+      hindsight-data:
+    ```
+
+2. Save `~/hindsight/.env` with your key and a cheap model. Hindsight uses the model only to pull facts out of chats.
+
+    ```bash
+    OPENROUTER_API_KEY=<your OpenRouter key>
+    HINDSIGHT_MODEL=<cheap-model-id>
+    ```
+
+3. Start it with `cd ~/hindsight && docker compose up -d`.
+4. Run `hermes plugins install hindsight`. Answer **yes** to "Use 'hindsight' as the memory provider now?".
+5. Run `hermes memory setup`, pick **hindsight**, pick mode `local_external` and enter `http://localhost:8888`.
 
 **Expected result:** `hermes memory status` shows `hindsight` as active.
+Tell Hermes a fact, start a new chat with `/new`, and ask about the fact.
 
-Next: [Set up both paths](#set-up-both-paths).
+No Docker? Pick mode `local_embedded` in step 5 instead. Hermes then runs Hindsight itself.
+To undo, run `hermes memory off`. Hermes goes back to built-in memory.
 
-## Path B: a spare PC with Docker
+## 4. Skills
 
-You run two containers on the spare PC: Hermes and Hindsight.
-You then connect to Hermes from your laptop.
+Skills are the main reason to use Hermes. A skill is a Markdown how-to file (`SKILL.md`).
+Hermes sees every skill's name and description, and loads the full file only when a task matches.
 
-### B1. Make the folder and secrets
+### Use a skill
 
-On the spare PC, run:
+- `/skills` lists your skills. `/skills browse` shows the official optional ones.
+- Every skill is also a slash command: `/tdd add a login form`.
+- Or ask in plain words: "use the grill-me skill on my plan".
 
-```bash
-mkdir -p ~/hermes/data/hindsight && cd ~/hermes
-openssl rand -base64 32   # dashboard password
-openssl rand -base64 32   # session secret
-```
+### Install skills other people wrote
 
-Save this as `~/hermes/.env` and fill in your values:
-
-```bash
-OPENROUTER_API_KEY=<your OpenRouter key>
-HINDSIGHT_MODEL=<cheap OpenRouter model id>
-DASHBOARD_PASSWORD=<first secret>
-DASHBOARD_SECRET=<second secret>
-SERVER_IP=<spare PC IP, for example 192.168.1.50>
-```
-
-Docker Compose reads this file. Keep it out of Git.
-
-### B2. Write the compose file
-
-Save this as `~/hermes/compose.yaml`:
-
-```yaml
-services:
-  hermes:
-    image: nousresearch/hermes-agent:latest   # pin a version tag once it works
-    command: ["gateway", "run"]
-    restart: unless-stopped
-    depends_on: [hindsight]
-    ports:
-      - "9119:9119"   # dashboard; Hermes Desktop connects here
-    environment:
-      HERMES_UID: "1000"   # your user id (`id -u`), so you can edit files in ./data
-      HERMES_GID: "1000"   # your group id (`id -g`)
-      HERMES_DASHBOARD: "1"
-      HERMES_DASHBOARD_PUBLIC_URL: http://${SERVER_IP}:9119
-      HERMES_DASHBOARD_BASIC_AUTH_USERNAME: admin
-      HERMES_DASHBOARD_BASIC_AUTH_PASSWORD: ${DASHBOARD_PASSWORD}
-      HERMES_DASHBOARD_BASIC_AUTH_SECRET: ${DASHBOARD_SECRET}
-      HERMES_GATEWAY_BOOTSTRAP_STATE: running
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-    volumes:
-      - ./data:/opt/data
-
-  hindsight:
-    image: ghcr.io/vectorize-io/hindsight:latest   # pin a version tag once it works
-    restart: unless-stopped
-    shm_size: 1g
-    stop_grace_period: 75s
-    ports:
-      - "9999:9999"   # Hindsight web UI, optional
-    environment:
-      HINDSIGHT_API_LLM_PROVIDER: openrouter
-      HINDSIGHT_API_LLM_API_KEY: ${OPENROUTER_API_KEY}
-      HINDSIGHT_API_LLM_MODEL: ${HINDSIGHT_MODEL}
-    volumes:
-      - hindsight-data:/home/hindsight/.pg0
-
-volumes:
-  hindsight-data:
-```
-
-Inside Docker, Hermes reaches Hindsight at `http://hindsight:8888`.
-Port 8888 stays closed to your network.
-
-### B3. Point Hermes at Hindsight
-
-Save this as `~/hermes/data/hindsight/config.json`:
-
-```json
-{
-  "mode": "local_external",
-  "api_url": "http://hindsight:8888",
-  "bank_id": "hermes",
-  "recall_budget": "mid"
-}
-```
-
-Hindsight reads this file. It ignores a `memory.hindsight` section in `config.yaml`.
-
-### B4. Start it
-
-```bash
-docker compose up -d
-docker compose exec -u hermes hermes hermes plugins install hindsight
-docker compose exec -u hermes hermes hermes model
-```
-
-1. Answer **yes** when the plugin install asks to use Hindsight as the memory provider.
-2. In `hermes model`, pick **OpenRouter** and your main model. Paste the key if it asks.
-
-**Expected result:** `docker compose exec -u hermes hermes hermes memory status` shows `hindsight` as active.
-
-### B5. Connect from your laptop
-
-1. Install Hermes Desktop on your laptop from the [Hermes website](https://hermes-agent.nousresearch.com/).
-2. Open **Settings → Gateways → Add → Remote gateway**.
-3. Enter `http://<spare PC IP>:9119`, user `admin` and the dashboard password.
-
-A browser at `http://<spare PC IP>:9119` works too.
-
-!!! warning "Keep it off the internet"
-    Hermes can run commands on the spare PC. Do not forward port 9119 on your router.
-    To reach it away from home, use a VPN such as Tailscale.
-
-## Set up both paths
-
-On Path B, put `docker compose exec -u hermes hermes` in front of each `hermes` command below.
-
-### 1. Add skills
-
-Skills are Markdown how-to files. Hermes loads a skill when a task matches it.
-This cluster pins its skill list in
-[`external-skills.txt`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/scripts/external-skills.txt).
-
-Install skills one at a time with `owner/repo/path`:
+Install one skill at a time with `owner/repo/path`. These are good first picks:
 
 ```bash
 hermes skills install mattpocock/skills/skills/engineering/tdd --category matt-pocock --yes
@@ -202,20 +122,73 @@ hermes skills install backnotprop/pstack/skills/unslop --category pstack --yes
 hermes skills install DietrichGebert/ponytail/skills/ponytail --category ponytail --yes
 ```
 
+This cluster's full list is in
+[`external-skills.txt`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/scripts/external-skills.txt).
+Skip the homelab skills (`homelab-ops`, `homelab-triage` and similar). They only work with this cluster.
+
 !!! warning "Start small"
     Every installed skill adds its name and description to every message.
     On OpenRouter you pay for that text on every turn.
     Start with 10–20 skills. Turn off the ones you do not use with `hermes skills config`.
 
-Skip the homelab skills (`homelab-ops`, `homelab-triage` and similar). They only work with this cluster.
+### Let Hermes write skills
 
-**Expected result:** `hermes skills list` shows the new skills.
+Hermes learns. After a hard task, it offers to save what worked as a skill.
+You can also ask: "save what we just did as a skill".
+The next time a similar task comes up, Hermes loads that skill first.
 
-### 2. Route subagents to cheap and strong models
+When a skill gets a step wrong, say so: "update the skill so it does X".
+Hermes fixes the skill, not only the current chat.
 
-Hermes can hand work to subagents. The `advanced-delegation` plugin gives each subagent a named route.
-Easy work goes to a cheap model, and hard work goes to a strong one.
-With OpenRouter, one key covers every route.
+### Write your own skill
+
+Make `~/.hermes/skills/<category>/<name>/SKILL.md`:
+
+```markdown
+---
+name: deploy-blog
+description: Use when publishing the blog. Builds and uploads it.
+---
+
+# Deploy the blog
+
+## Procedure
+1. Run `npm run build` in `~/code/blog`.
+2. Upload `dist/` with `rsync -av dist/ me@host:/var/www/blog/`.
+
+## Pitfalls
+- The build fails on Node older than 20. Run `node -v` first.
+```
+
+Keep the description short and start it with "Use when". Hermes picks skills by their descriptions.
+Start a new chat with `/new` to load a new skill.
+
+### Share skills
+
+A skill is a folder. Copy it to a friend, or keep `~/.hermes/skills` in a Git repo.
+To publish one, push it to GitHub. Others install it with `hermes skills install <owner>/<repo>/<path>`.
+
+## 5. Build things
+
+### Work in a project
+
+1. Open a terminal in your project folder and run `hermes`.
+2. Add an `AGENTS.md` at the repo root. Write the build command, the test command and your rules in it.
+   Hermes reads it at the start of every chat in that repo. It also reads `CLAUDE.md` when there is no `AGENTS.md`.
+3. Ask for a change: "add a dark mode toggle, then run the tests".
+
+### Stay safe while it edits
+
+- Run `hermes -w` to work in a separate Git worktree. Your main checkout stays clean.
+  Use it whenever two chats work on the same repo.
+- Run `hermes config set checkpoints.enabled true` to snapshot files before risky edits.
+  Then `/rollback` undoes the last change.
+
+### Route subagents to cheap and strong models
+
+Hermes can hand parts of a task to subagents.
+The `advanced-delegation` plugin gives each subagent a named route,
+so easy work goes to a cheap model and hard work goes to a strong one.
 
 1. Run `hermes plugins install advanced-delegation --enable`.
 2. Run `hermes delegation config`, pick the model map mode, and add three routes with provider `openrouter`:
@@ -245,50 +218,32 @@ delegation:
 Hermes shows the main agent only the names and descriptions.
 
 **Expected result:** `hermes delegation config --show` lists the three routes.
+Ask "use a fast subagent to summarise this folder". The result names the `fast` route.
 
-### 3. Save money on helper calls
+## 6. Give it a personality (optional)
 
-Hermes makes small helper calls, for example to name chats. By default they use your main model.
-Point them at the cheap model:
-
-```bash
-hermes config set auxiliary.title_generation.provider openrouter
-hermes config set auxiliary.title_generation.model <cheap-model-id>
-hermes config set auxiliary.skills_hub.provider openrouter
-hermes config set auxiliary.skills_hub.model <cheap-model-id>
-```
-
-Add a backup model for when the main model is rate-limited or down:
-
-```bash
-hermes fallback add
-```
-
-### 4. Give it a personality (optional)
-
-`SOUL.md` in the Hermes home sets how Hermes talks and works.
-The home is `~/.hermes` on Path A and `~/hermes/data` on Path B.
+`~/.hermes/SOUL.md` sets how Hermes talks and works in every chat.
 Copy [this cluster's SOUL.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/SOUL.md)
 as a start. Delete the homelab rules and keep the style rules you like.
 
 ## Verify
 
 1. Run `hermes doctor`. Fix anything it marks as failed.
-2. Run `hermes memory status`. Hindsight is active.
-3. Tell Hermes a fact, start a new chat with `/new`, and ask about the fact.
-4. Ask: "use a fast subagent to summarise this folder". The result names the `fast` route.
+2. Run `hermes skills list`. Your skills are there.
+3. In a project, ask Hermes to run the tests. It finds the command in `AGENTS.md`.
 
 ## Update, undo and back up
 
-| Task | Path A | Path B |
-|---|---|---|
-| Update Hermes | `hermes update` | `docker compose pull && docker compose up -d` |
-| Memory back to built-in only | `hermes memory off` | the same command, inside the container |
-| Subagents back to the main model | `hermes config set delegation.backend default` | the same command, inside the container |
-| Back up | copy `~/.hermes` and `~/.hindsight` | copy `~/hermes/data` and the `hindsight-data` volume |
+| Task | Command |
+|---|---|
+| Update Hermes | `hermes update` |
+| Update Hindsight | `cd ~/hindsight && docker compose pull && docker compose up -d` |
+| Back to built-in memory | `hermes memory off` |
+| Subagents back to the main model | `hermes config set delegation.backend default` |
+| Back up | copy `~/.hermes`, plus the `hindsight-data` Docker volume if you use it |
 
 ## What this setup leaves out
 
 This cluster also runs local GPUs behind LiteLLM, Omni and Talos access, SSH to other machines,
-Kopiur backups and a hosted HTTPS address for the desktop apps.
+Kopiur backups and a hosted address for the desktop apps.
 Those parts exist only because Hermes runs in a cluster. You do not need them to start.
