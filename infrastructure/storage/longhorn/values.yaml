@@ -49,6 +49,23 @@ defaultSettings:
   offlineReplicaRebuilding: "true"
   # ext4 fsfreeze before each snapshot instead of a best-effort sync (needs kernel >= 5.17; Talos is 6.x).
   freezeFilesystemForSnapshot: "true"
+  # Requests make the CSI pods Burstable. Talos's OOM controller kills BestEffort pods first,
+  # and these were its first victims on 2026-11-05. Requests only: a limit adds container OOM risk.
+  # Changing this restarts the CSI components; mounted volumes keep working.
+  systemManagedCSIComponentsResourceLimits: >-
+    {"longhorn-csi-plugin": {"requests": {"cpu": "10m", "memory": "32Mi"}},
+    "csi-attacher": {"requests": {"cpu": "5m", "memory": "16Mi"}},
+    "csi-provisioner": {"requests": {"cpu": "5m", "memory": "16Mi"}},
+    "csi-resizer": {"requests": {"cpu": "5m", "memory": "16Mi"}},
+    "csi-snapshotter": {"requests": {"cpu": "5m", "memory": "16Mi"}}}
+# Same reason as the CSI requests above: a BestEffort manager is Talos's first OOM victim.
+# Live use is 160-310 MiB. Requests stay small because hp-elite-gen13 has ~350 MiB of
+# unrequested memory; the request only needs to change the QoS class. Requests only, no limit.
+longhornManager:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
