@@ -157,6 +157,7 @@ nav:
           - Hermes in the cluster: domains/ai-gpu/hermes.md
           - Hermes on another cluster: domains/ai-gpu/hermes-other-clusters.md
           - Hermes on your PC: domains/ai-gpu/hermes-one-computer.md
+          - How I use Hermes (what to copy): domains/ai-gpu/hermes-how-i-work.md
   - Inventory:
       - Inventory overview: inventory/index.md
       - Fleet inventory — 3 November (current): inventory/2026-11-03-fleet-inventory.md
