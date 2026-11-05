@@ -1,9 +1,9 @@
-# Power & Cost Metering
+# Power & cost metering
 
 Every always-on box and both office workstations sit behind a TP-Link Tapo P115
 smart plug. Home Assistant reads watts from each plug, integrates them into kWh,
 prices that against the live time-of-use electricity rate, and exposes the
-result to Grafana. This page is the map of what is metered, how it is grouped,
+result to Grafana. This page lists what is metered, how it is grouped,
 what it costs, and how to add a plug.
 
 ## What is metered
@@ -19,10 +19,10 @@ what it costs, and how to add a plug.
 | MacBook + Monitor | `macbook_*` | office | Office desk |
 | Shed Lab (solar) | `shed_lab_*` | none | HP micro in the shed (`.20`), solar-fed |
 
-**Shed Lab** runs off the shed's own solar and battery bank, so it has watts and
-kWh (with the daily/weekly/monthly/yearly meters) but no cost entities, and it is
+Shed Lab runs off the shed's own solar and battery bank. It has watts and
+kWh (with the daily, weekly, monthly and yearly meters) but no cost entities. It is
 not in any group or in the house-share numbers. Its supply side (MPPT yield,
-battery bank voltage and state of charge) lives in the Grafana **Solar**
+battery bank voltage and state of charge) is in the Grafana **Solar**
 dashboard (`shed-solar`).
 
 Household plugs (dryer, TV, office lamps, the garage fridge) exist in Home
@@ -34,7 +34,7 @@ the prefixes above.
 | Group | Members | Use it for |
 |---|---|---|
 | `homelab_*` | The five always-on servers | The number to compare against the bill |
-| `office_*` | Gaming PC + MacBook | Workstations. Metered and priced, but not locked on, so expected to swing to zero |
+| `office_*` | Gaming PC + MacBook | Workstations. Metered and priced, but not locked on, so they can drop to zero |
 | `combined_*` | Everything | Total household draw from metered plugs |
 
 Each group has `<group>_total_power`, `<group>_total_energy` (with
@@ -50,7 +50,7 @@ device watts ──integration──▶ kWh ──utility_meter──▶ daily /
 ```
 
 The all-in marginal rate is `(energy + delivery riders) × (1 + sales tax)`. The
-energy component steps between three windows:
+energy component changes between three windows:
 
 | Window | When | All-in rate |
 |---|---|---|
@@ -58,7 +58,7 @@ energy component steps between three windows:
 | Summer off-peak | June–September, all other hours | ~$0.235 |
 | Non-summer | October–May | ~$0.214 |
 
-The October 2026 bill confirms the season boundary: it bills September 15–30 at
+The October 2026 bill confirms the season boundary. It bills September 15–30 at
 summer rates and October 1–14 at the non-summer rate. Per-kWh riders on that bill
 total $0.122290, and sales tax is 4%.
 
@@ -68,19 +68,18 @@ sync CronJob adds the other per-kWh charges and tax through
 a rider. Imported cost excludes fixed fees.
 
 Rates live in `my-apps/home-automation/home-assistant/configuration.yaml` under
-`input_number:`. **Git is the source of truth**: the `initial:` values reset the
-UI sliders on every Home Assistant restart, so a permanent rate change goes in
+`input_number:`. **Git is the source of truth.** The `initial:` values reset the
+UI sliders on every Home Assistant restart, so make a permanent rate change in
 the file, not the dashboard.
 
-Cost integrates a live USD/hour rate rather than applying a flat tariff after
-the fact, so a workload that runs only during on-peak hours is priced at on-peak
+Cost integrates a live USD/hour rate instead of applying a flat tariff afterward.
+A workload that runs only during on-peak hours is therefore priced at on-peak
 rates.
 
 ### Finished periods
 
-The `*_monthly` sensors are month-to-date and reset on the 1st, so they are the
-wrong thing to compare against a bill. Home Assistant's `utility_meter` keeps the
-previous cycle in a `last_period` attribute, and template sensors surface it:
+The `*_monthly` sensors are month-to-date and reset on the 1st, so do not compare them against a bill. Home Assistant's `utility_meter` keeps the
+previous cycle in a `last_period` attribute, and template sensors expose it:
 
 | Sensor | What it holds |
 |---|---|
@@ -90,13 +89,13 @@ previous cycle in a `last_period` attribute, and template sensors surface it:
 | `sensor.<prefix>_cost_last_month` | Per-device, last month |
 | `sensor.<prefix>_energy_last_month` | Per-device, last month |
 
-These stop moving once the cycle closes. Compare today-so-far with yesterday
-only as partial versus complete totals. Missing previous-period data is shown
-as unavailable. A smaller partial-day total does not establish a saving.
+These stop changing once the cycle closes. Treat today-so-far versus yesterday
+as a partial total against a complete one. Missing previous-period data shows
+as unavailable. A smaller partial-day total does not prove a saving.
 
 ## Where to look
 
-| Surface | What it is |
+| Dashboard | What it is |
 |---|---|
 | Grafana **Power & Cost** (`homelab-power-cost`, folder Home & Energy) | Mirrors HA's Overview/Devices/House views: draw, cost today/month/year, per-device table, 14-day trends, and per-plug volts/amps in a collapsed row |
 | Grafana **Gaming PC** (`gaming-pc`) and **Cooling** (`ac-cooling`) | Mirror HA's Gaming and Cooling views, with 14-day per-day history |
@@ -105,50 +104,50 @@ as unavailable. A smaller partial-day total does not establish a saving.
 
 ### How Grafana names a plug
 
-The dashboards do not carry a device list. Every query selects the entity IDs
-for its group and derives the display name from the metric's `friendly_name`
+The dashboards have no device list. Every query selects the entity IDs
+for its group. It derives the display name from the metric's `friendly_name`
 label by stripping the trailing metric words (`Power`, `Energy`, `Cost`,
 `Voltage`, `Current`, `Share`). That is why `customize.yaml` sets every
 friendly name to `<Device> <Metric ...>`, and why a device display name must
-not itself contain one of those words.
+not contain one of those words.
 
 ### Reading the numbers
 
-**The idle floor is the bill.** Peak draw is brief; the 24-hour minimum runs
+**The idle floor is the bill.** Peak draw is brief, but the 24-hour minimum runs
 8,760 hours a year. When the *Baseline Cost / Year* panel accounts for most of
 *Cost This Year*, workload tuning will not move the number. Only removing or
 consolidating hardware does.
 
 **Run-rate panels are what-ifs, not forecasts.** *Run-Rate / Year* and *Cost /
 Year If Left At This Draw* annualise the current instant to answer "what does
-leaving this on cost me?". Use *Cost This Month* or *Cost Last Month* for a bill
+leaving this on cost me?" Use *Cost This Month* or *Cost Last Month* for a bill
 estimate.
 
 **The HP SFF plug cannot be attributed.** It feeds two hosts. Split the outlet
-before concluding which of the two to retire.
+before you decide which of the two to retire.
 
 ## Rate and season charts
 
 Grafana **Power & Cost** has a *Rates and GPU cost* row with the live rate, burn
 rate, GPU draw, and the same load priced at each rate. Gaming PC and Cooling have
-rate and burn-rate charts. These charts cover 15 days because Prometheus retention
-applies to all metrics. GPU values use board power, not wall power.
+rate and burn-rate charts. These charts cover 15 days because the Prometheus retention
+of 15 days applies to all metrics. GPU values use board power, not wall power.
 
-Home Assistant **Rates & savings** holds the long-term charts. Bill and repriced
+Home Assistant **Rates & savings** holds the long-term charts. The bill and repriced
 series are `consumers_energy:bill_*` and `consumers_energy:recalc_*` statistics.
 Import them with `scripts/import-history.mjs` in `consumers-energy-sync`. The
 import does not rewrite recorded `*_cost` meters.
 
-`consumers_energy:recalc_*` ends October 30, 2026; live `*_cost` statistics
+`consumers_energy:recalc_*` ends October 30, 2026. Live `*_cost` statistics
 continue the trend. `consumers_energy:grid_*` updates with each daily sync. Bill
 series update only when you import new bills.
 
 ## House-level data from Consumers Energy
 
-The plugs only see the homelab. The whole-house number comes from the utility:
-a daily CronJob (`my-apps/home-automation/consumers-energy-sync/`) drives a headless
-Chromium through the Consumers Energy portal, downloads the *Share data → CSV*
-export (one row per day, trailing 30 days, with CE's own cost), and pushes it
+The plugs only see the homelab. The whole-house number comes from the utility.
+A daily CronJob (`my-apps/home-automation/consumers-energy-sync/`) drives a headless
+Chromium through the Consumers Energy portal and downloads the *Share data → CSV*
+export (one row per day, trailing 30 days, with CE's own cost). It then pushes the data
 into Home Assistant. Source and image: `github.com/mitchross/consumers-energy-sync`.
 
 | What lands | Where it shows |
@@ -161,17 +160,17 @@ into Home Assistant. Source and image: `github.com/mitchross/consumers-energy-sy
 
 The importer sets nine live sensors through the REST API, including
 `sensor.consumers_energy_last_reading`. Those states normally disappear on an
-HA restart even though recorder history and statistics persist. The local
+HA restart, though recorder history and statistics persist. The local
 `consumers_energy_restore` integration restores the last recorded values after
-HA starts. Its source lives in `scripts/consumers-energy-restore/` and the config
+HA starts. Its source is in `scripts/consumers-energy-restore/`, and the config
 copier installs it under `/config/custom_components/consumers_energy_restore`.
 
-Recovery reads the SQLite recorder in a worker thread and preserves the original
-reading date. It requires all nine recorded states and skips recovery if a newer
+Recovery reads the SQLite recorder in a worker thread and keeps the original
+reading date. It requires all nine recorded states. It skips recovery if a newer
 import has already populated any of them. Missing or invalid history leaves the
 comparisons unavailable until the next successful daily import at 13:17. Derived
 rates and shares recompute from the restored inputs. This integration assumes
-the current local SQLite recorder; revisit it if the recorder moves to another
+the current local SQLite recorder. Revisit it if the recorder moves to another
 database backend.
 
 **Running it elsewhere.** The same image runs anywhere with the same env vars
@@ -183,13 +182,13 @@ docker run --rm --user 1001:1001 --env-file .env -v ce-data:/data \
   ghcr.io/mitchross/consumers-energy-sync:v0.1.7
 ```
 
-`/data` holds the Playwright cookie jar (a credential) and the CSVs; keep it
+`/data` holds the Playwright cookie jar (a credential) and the CSVs. Keep it
 private. The first run logs in with the password; later runs reuse the cookie
 jar. A failed run leaves a full-page screenshot in `/data`.
 
 **Cumulative sums.** Each import bases its running total on what HA already
 holds just before the export window, so overlapping trailing windows stay
-consistent. Importing data *older* than what HA has breaks that: clear both
+consistent. Importing data *older* than what HA has breaks that. Clear both
 statistics first (`recorder.clear_statistics`) and import oldest-first.
 
 **Releasing a new image.** Tag the sync repo (`git tag v0.x.y && git push --tags`);
@@ -200,16 +199,16 @@ The base image version must equal the `playwright` version in `package.json`.
 
 The `Homelab plug power-off lockout` automation turns any homelab plug back on
 if it is switched off and raises a persistent notification. It covers the five
-homelab plugs. The office plugs are deliberately excluded: those machines are
+homelab plugs. It excludes the office plugs on purpose, because those machines are
 meant to be powered down.
 
-Hiding a switch via `customize.yaml` is cosmetic only; the automation is the
+Hiding a switch in `customize.yaml` is cosmetic only. The automation is the
 real enforcement. **To intentionally power-cycle a plug, disable the automation
 first.**
 
 > The automation triggers on switch entity IDs (`switch.threadripper`,
-> `switch.hp_sff`, …). A typo there fails silently: the automation loads fine
-> and simply never fires. Verify a change against
+> `switch.hp_sff`, …). A typo there fails silently. The automation loads fine
+> and never fires. Verify a change against
 > **Developer Tools → States** before trusting it.
 
 ## Adding a plug
@@ -217,7 +216,7 @@ first.**
 1. Adopt the plug in the Tapo app, then add it to Home Assistant through the
    TP-Link integration. Rename the device in HA to the display name you want,
    then rename its entities so they share one short prefix (`sensor.<prefix>_current_consumption`,
-   `switch.<prefix>`, …). The prefix is permanent: renaming it later orphans
+   `switch.<prefix>`, …). The prefix is permanent. Renaming it later orphans
    every statistic recorded under it.
 2. In `my-apps/home-automation/home-assistant/configuration.yaml`, add
    `sensor.<prefix>_*` to `prometheus.filter.include_entity_globs`, then add its
@@ -230,20 +229,20 @@ first.**
 4. Add it to `lovelace-homelab-power.yaml`, and to the entity regex of the
    per-plug queries in both Grafana dashboards under
    `monitoring/metrics/prometheus-stack/dashboards/`. Those are plain `.json` files
-   assembled into ConfigMaps by `configMapGenerator`; edit the `.json`, never a
+   that `configMapGenerator` assembles into ConfigMaps. Edit the `.json`, never a
    rendered manifest.
 5. Add `sensor.<prefix>_energy` as an Individual device on the HA Energy dashboard.
 
 > **The `name:` slug must equal the entity prefix.** Home Assistant derives the
 > entity ID from `name:`, so `name: "HP SFF Energy"` produces
 > `sensor.hp_sff_energy`. If the slug drifts, every template and dashboard
-> reference silently reads nothing: no error, just empty panels.
+> reference silently reads nothing. There is no error, only empty panels.
 
 Changes reach the pod through hashed ConfigMaps and an initContainer that
 copies files onto the PVC. A merged PR changes the pod's ConfigMap references,
-so ArgoCD automatically performs a `Recreate` rollout. This briefly interrupts
-Home Assistant. Do not copy config into the live PVC or manually restart the
-Deployment to publish changes. Revert dashboard/config changes through a PR.
+so ArgoCD performs a `Recreate` rollout automatically. This briefly interrupts
+Home Assistant. Do not copy config into the live PVC or restart the
+Deployment manually to publish changes. Revert dashboard and config changes through a PR.
 
 Verify afterwards:
 
@@ -253,15 +252,15 @@ kubectl exec -n home-assistant deploy/home-assistant -c home-assistant -- \
   sh -c 'wget -q -O- http://127.0.0.1:8123/api/prometheus | grep <prefix>_energy_daily'
 ```
 
-Newly created integrations and utility meters start at zero. Totals only fill in
-as data accumulates; an empty panel on day one is expected, not a bug.
+Newly created integrations and utility meters start at zero. Totals fill in
+as data accumulates. An empty panel on day one is expected, not a bug.
 
 ## Daily comparisons and bill allocation
 
-**Daily spend** puts group and per-plug dollars and kWh beside yesterday's
+**Daily spend** shows group and per-plug dollars and kWh beside yesterday's
 completed totals. Previous-day values come from each daily utility meter's
 `last_period`, checked against its local `last_reset` date. Segmented bars show
-how the tracked loads contribute to cost; the Devices view does the same for
+how the tracked loads contribute to cost. The Devices view does the same for
 watts. The graph cards fill their sections on desktop and collapse on phones.
 
 **Bill breakdown** separates energy share from estimated cost share. Its
@@ -269,18 +268,18 @@ non-overlapping buckets are homelab, office, modeled cooling, and the remainder.
 Gaming is already in office. The solar shed is never included. Cost remainder
 also contains the difference between the configured marginal rate and CE's
 reported cost; it is not a measured appliance load. Negative remainders stay
-visible so a model mismatch cannot masquerade as perfect attribution.
+visible, so a model mismatch cannot pass as perfect attribution.
 
-`power-insights.yaml` holds these derived sensors. House comparisons are only
-available when `consumers_energy_last_reading` equals yesterday's local date
-and both utility totals exist. A late report or missing recovery history produces
-unavailable comparisons, not zero consumption. Startup recovery preserves the
+`power-insights.yaml` holds these derived sensors. House comparisons exist only
+when `consumers_energy_last_reading` equals yesterday's local date
+and both utility totals exist. A late report or missing recovery history makes
+comparisons unavailable, not zero consumption. Startup recovery keeps the
 report date, so an old report cannot pass the freshness check.
 
-**Rates & savings** translates a constant load into dollars/day and dollars/30
+**Rates & savings** converts a constant load into dollars/day and dollars/30
 days at the configured current rate. These are what-if calculations, not bill
 forecasts or newly verified utility tariffs. Fixed monthly fees are excluded.
-The three rate windows and permanent GitOps rate settings remain unchanged.
+The three rate windows and permanent GitOps rate settings are unchanged.
 
 ## Local AI power brief
 
@@ -288,26 +287,26 @@ The Overview includes hourly AI summaries for today so far, yesterday, month
 to date, and recent completed days. `sensor.power_ai_summary` sends only
 allowlisted power meters and the read-only completed-day analysis to
 `qwen3.8-27b` on vLLM through authenticated LiteLLM. These are generated
-interpretations; the measured tiles and deterministic Findings remain the
-source of truth. No HA actions or equipment controls are exposed to the model.
+interpretations. The measured tiles and deterministic Findings remain the
+source of truth. The model gets no HA actions or equipment controls.
 
-The owning implementation is `scripts/power-analysis/summary.py` plus
+The implementation is `scripts/power-analysis/summary.py` plus
 `sensor.py` in the Home Assistant app. Daily meter values require a local
 `last_reset` of today; yesterday comes from that meter's `last_period`.
 Month meters must belong to the current month. Missing data stays null.
-Consumers Energy yesterday values are withheld unless the reading date
-matches yesterday; month figures retain their separate reporting cutoff.
+The sensor withholds Consumers Energy yesterday values unless the reading date
+matches yesterday. Month figures keep their separate reporting cutoff.
 
-The existing 1Password `litellm/master_key` is projected by
-`litellm-externalsecret.yaml` into an optional, read-only Secret volume.
-The integration rereads the file each hour, allowing late secret creation or
-rotation without restarting HA. Missing credentials produce `not_configured`;
-timeouts, HTTP failures, or invalid model output produce `error` and clear the
+`litellm-externalsecret.yaml` projects the existing 1Password `litellm/master_key`
+into an optional, read-only Secret volume.
+The integration rereads the file each hour, so a late secret creation or
+rotation needs no HA restart. Missing credentials produce `not_configured`.
+Timeouts, HTTP failures, or invalid model output produce `error` and clear the
 old text. Requests time out after 60 seconds and retry at the next hourly
 poll. The dashboard hides summaries from a different local date or more than
 two hours old. Summary text is excluded from recorder history.
 
-After merging and the normal GitOps rollout, verify the ExternalSecret is
+After merging and the normal GitOps rollout, verify that the ExternalSecret is
 Ready and `sensor.power_ai_summary` becomes `ready`, with `today`, `yesterday`,
 `month`, `trends`, `as_of`, and `generated_at` attributes. An unavailable
 recorder report should affect only the trend evidence; live meter summaries
@@ -315,8 +314,8 @@ can still generate. For `not_configured`, inspect ExternalSecret status; for
 `error`, check HA and LiteLLM logs and backend health. Never print the Secret.
 The model's response format follows the
 [vLLM chat-completion API](https://docs.vllm.ai/en/latest/api/vllm/entrypoints/openai/chat_completion/protocol/).
-Rollback uses a revert PR and the same ConfigMap-driven rollout described
-above; no meter data or statistics need to be changed.
+To roll back, use a revert PR and the same ConfigMap-driven rollout described
+above. No meter data or statistics need to change.
 
 ## Retired completed-period statistics
 
@@ -328,14 +327,14 @@ caused 33 **"no longer has a state class"** repair warnings.
 The `retire-period-statistics` init container runs after configuration copying
 and the September 24 continuity repair, before Home Assistant starts. Its
 source is `my-apps/home-automation/home-assistant/scripts/retire-period-statistics.py`.
-It checks the exact 33 templates still lack a state class, archives their
+It checks that the exact 33 templates still lack a state class. It archives their
 statistics metadata plus long- and short-term statistics, then removes only
 those retired series in one SQLite transaction. The archive must be durable
 before any deletion can commit. A missing database or previously completed
-cleanup is a no-op; unexpected configuration, source, or archive content stops
+cleanup is a no-op. Unexpected configuration, source, or archive content stops
 the init container without deleting data.
 
-Raw recorder states, active power/energy/cost meters, Consumers Energy
+Raw recorder states, active power, energy and cost meters, Consumers Energy
 statistics, and current template values are unchanged. Historical statistics
 for these 33 display sensors move out of the recorder into
 `/config/statistics-repairs/retired-period-summaries-2026-09-29.json`, on the
@@ -344,8 +343,7 @@ long-term and 76,791 short-term rows; the archive was about 9 MB.
 
 **Rollout:** merge the PR and let ArgoCD reconcile the hashed scripts ConfigMap.
 The existing `Recreate` strategy briefly stops HA while the init container
-archives the retired statistics. No live SQL or manual repair dismissal is
-needed. Before merging, verify the config PVC has a successful recent kopiur
+archives the retired statistics. You need no live SQL or manual repair dismissal. Before merging, verify the config PVC has a successful recent kopiur
 snapshot. After rollout, check:
 
 ```bash
@@ -353,35 +351,35 @@ kubectl -n home-assistant logs deployment/home-assistant -c retire-period-statis
 kubectl -n home-assistant rollout status deployment/home-assistant
 ```
 
-The first run reports 33 metadata entries and the archived row counts;
-subsequent starts report zero. After HA's statistics validation runs, the 33
-state-class warnings should disappear. Verify the Homelab Power dashboard
-still displays current and completed-period values. If initialization fails,
-inspect its error and preserve the archive; do not overwrite it to force a run.
+The first run reports 33 metadata entries and the archived row counts.
+Later starts report zero. After HA's statistics validation runs, the 33
+state-class warnings should disappear. Verify that the Homelab Power dashboard
+still shows current and completed-period values. If initialization fails,
+inspect its error and keep the archive. Do not overwrite it to force a run.
 
 **Rollback:** reverting the deployment change stops future cleanup but does not
-restore archived statistics. To restore them, use a separate GitOps PR changing
+restore archived statistics. To restore them, use a separate GitOps PR that changes
 this init container's command to
 `["python", "/opt/repo-scripts/retire-period-statistics.py", "--apply", "--restore"]`.
 On the next Recreate rollout it restores the archive with HA stopped, assigning
 new row IDs where necessary. It is idempotent and refuses schema changes or
 conflicting existing statistics. Verify its success log, then remove the
-retirement init container in Git. The original warnings return unless the
-sensor configuration is also intentionally changed. Never run either apply
-mode inside the running HA container.
+retirement init container in Git. The original warnings return unless you also
+change the sensor configuration on purpose. **Never run either apply
+mode inside the running HA container.**
 
 ## September 24 statistics repair
 
-The recorder contains a verified discontinuity: hourly power statistics stop
+The recorder contains a verified discontinuity. Hourly power statistics stop
 at **2026-09-24 14:00 UTC** and resume at **23:00 UTC** with their cumulative
-`sum` near zero, while meter `state` values continue increasing. For example,
+`sum` near zero, while meter `state` values keep increasing. For example,
 homelab energy goes from 247.005 to 252.296 kWh while its statistical sum drops
 from 104.892 to 0.309. This explains the negative daily bars and understated
 monthly graph. The first retained homelab cost statistic is September 16, so
 even after repair its September chart covers less time than the monthly meter
-tile. The dashboard labels this partial history. The available evidence
-establishes the statistics discontinuity;
-it does not establish which maintenance operation caused it.
+tile. The dashboard labels this partial history. The evidence
+proves the statistics discontinuity.
+It does not show which maintenance operation caused it.
 
 The repo-owned `scripts/repair-power-statistics.py` initContainer runs while HA
 is stopped under the Deployment's `Recreate` strategy. It only considers the
@@ -389,16 +387,16 @@ explicit power-entity pattern and the two exact hourly boundary timestamps.
 The offset is `previous.sum + (next.state - previous.state) - next.sum`.
 Both timestamps are on the same local day, with no daily, weekly, monthly or
 yearly cycle boundary between them. It adds that offset to subsequent long-
-and short-term sums; meter states, CE imports, and unrelated statistics stay
+and short-term sums. Meter states, CE imports, and unrelated statistics stay
 unchanged. Surviving cumulative readings recover the day's total across the
-gap, but do not reconstruct when during those missing hours energy was used.
+gap, but do not show when during those missing hours energy was used.
 
 Before writing, it saves affected row IDs, timestamps and original sums in
 `/config/statistics-repairs/power-2026-09-24.json`, then updates in one SQLite
 transaction. Unexpected boundary data aborts the initContainer. A fresh
 installation or repaired database is a no-op. The September 27 read-only
-export yielded 130 repairable series; a local replay and repeat run verified
-the offsets and idempotence. No production database was changed during review.
+export yielded 130 repairable series. A local replay and repeat run verified
+the offsets and idempotence. Review did not change any production database.
 
 After merge, verify the GitOps rollout and init logs:
 
@@ -407,13 +405,13 @@ kubectl -n home-assistant rollout status deployment/home-assistant
 kubectl -n home-assistant logs deployment/home-assistant -c repair-power-statistics
 ```
 
-Expected: a repair list and saved journal on the first rollout, then an empty
+Expect a repair list and saved journal on the first rollout, then an empty
 repair list on later starts. Check the September 24 daily bars, monthly cost
 graph, and new dashboard tabs. CE comparison sensors may remain unavailable
 until the next successful utility import.
 
-For a failure, retain the journal and inspect the init log. Do not delete the
-recorder database or zero the meters. A code revert does not undo a committed
+If the repair fails, keep the journal and inspect the init log. **Do not delete the
+recorder database or zero the meters.** A code revert does not undo a committed
 statistics repair. To undo, first use a PR to remove the repair initContainer
 and stop HA through GitOps (`replicas: 0`). With the PVC mounted by an approved
 maintenance workload and HA stopped, run the same repository script:
@@ -424,12 +422,12 @@ python /opt/repo-scripts/repair-power-statistics.py --apply --undo
 
 This reverses the recorded offsets, including later rows that inherited the
 corrected baseline. It restores the original graph discontinuity. Restore
-`replicas: 1` through a PR after checking the result. The journal is retained
+`replicas: 1` through a PR after checking the result. The journal stays
 on the backed-up config PVC for inspection.
 
 ## Resetting the history
 
-Home Assistant keeps three kinds of state, and a "start fresh" has to clear all
+Home Assistant keeps three kinds of state. A "start fresh" must clear all
 three or the old totals come back:
 
 | State | Where | How to clear |
@@ -438,8 +436,7 @@ three or the old totals come back:
 | Running totals of every `integration` and `utility_meter` sensor | `/config/.storage/core.restore_state` | Delete the file with HA stopped. HA rewrites it on every clean shutdown, so a `kill -9` of the `homeassistant` process after deleting is what makes it stick |
 | Grafana history | Prometheus, 15-day retention | Nothing to do; old series age out |
 
-Renaming an entity prefix is the same operation from Home Assistant's point of
-view: the new prefix starts at zero and the old one is orphaned.
+Home Assistant treats renaming an entity prefix the same way. The new prefix starts at zero and the old one is orphaned.
 
 ## Shed solar
 
@@ -458,26 +455,26 @@ the guarded LOAD automation, and serves two feeds:
 | `:8080/metrics` (`epever_*`, `epsolar_*`, `solar_buffer_*`) | cluster Prometheus, job `epever-solar` (`monitoring/metrics/prometheus-stack/values.yaml`) |
 | `:8080/api/v1/status` (JSON) | Home Assistant `rest:` sensors `sensor.solar_*` / `binary_sensor.solar_*` (30 s) |
 
-Grafana: **Solar** (`dashboards/home-energy/shed-solar.json`), which mirrors
+Grafana has the **Solar** dashboard (`dashboards/home-energy/shed-solar.json`), which mirrors
 HA's Solar view and keeps the epsolar controller internals in a collapsed row.
-Home Assistant: the **Solar** view of the
-Homelab Power dashboard. kWh counters are the controller's own lifetime
+Home Assistant has the **Solar** view of the
+Homelab Power dashboard. The kWh counters are the controller's own lifetime
 totals.
 
-The shed is off-grid, so keep it **out of the HA Energy dashboard**: that page
-models one house where solar feeds "Home", so adding `solar_generated_total`
+The shed is off-grid, so keep it **out of the HA Energy dashboard**. That page
+models one house where solar feeds "Home". Adding `solar_generated_total`
 as a solar source or `shed_lab_energy` as a device inflates home consumption
-and shows 100 % self-sufficiency. The Energy dashboard is grid-only; the shed
-lives on the Solar view and the Grafana solar pages.
+and shows 100 % self-sufficiency. The Energy dashboard is grid-only. The shed
+appears on the Solar view and the Grafana solar pages.
 
 If the Pi is down every `solar_*` sensor goes unavailable and the Prometheus
-target shows `up == 0`; nothing on the grid side is affected.
+target shows `up == 0`. Nothing on the grid side is affected.
 
 ## Gaming sessions
 
 `binary_sensor.gaming_pc_gaming` is on while the Gaming PC plug draws more than
 `input_number.gaming_pc_active_threshold_w` (350 W; idle is ~200 W, gaming
-gaming is 450–600 W) and turns off after five quiet minutes. Three template
+is 450–600 W) and turns off after five quiet minutes. Three template
 feeds are integrated only while it is on:
 
 | Sensor | Meaning |
@@ -487,16 +484,16 @@ feeds are integrated only while it is on:
 | `sensor.gaming_pc_idle_cost_daily` / `_monthly` | the rest of the PC's cost: total minus gaming |
 
 Grafana **Gaming PC** (`gaming-pc.json`) and the **Gaming** view of the Homelab
-Power dashboard read these. The threshold is a slider so it can be tuned without
-a deploy; a permanent change goes in `configuration.yaml`.
+Power dashboard read these. The threshold is a slider, so you can tune it without
+a deploy. Make a permanent change in `configuration.yaml`.
 
 ## AC cooling (modeled)
 
-The central AC has no plug meter, so its cost is **modeled**, not measured:
+The central AC has no plug meter, so its cost is **modeled**, not measured.
 `binary_sensor.ac_cooling` is on while the Google Nest (`climate.hallway_hallway`)
 reports `hvac_action: cooling` (fan-only runs read `fan` and are not counted),
 and the runtime is priced at `input_number.ac_cooling_wattage` (placeholder 3500 W)
-× the live TOU rate — the same integration pipeline as the gaming sessions.
+× the live TOU rate. This uses the same integration pipeline as the gaming sessions.
 
 | Sensor | What it holds |
 |---|---|
@@ -504,20 +501,20 @@ and the runtime is priced at `input_number.ac_cooling_wattage` (placeholder 3500
 | `sensor.ac_cooling_cost_yesterday` / `_cost_last_month`, `_hours_*`, `_energy_last_month` | Finished periods, from `last_period` |
 | `sensor.ac_cost_per_cooling_hour` | Month-to-date USD per cooling hour |
 | `sensor.ac_share_of_house_yesterday` | AC cost as a % of the CE-billed house cost yesterday |
-| `sensor.ac_implied_watts_yesterday` | **Calibration gauge**: (CE house kWh − metered plugs − `input_number.ac_house_baseline_kwh`) ÷ cooling hours |
+| `sensor.ac_implied_watts_yesterday` | **Calibration gauge.** (CE house kWh − metered plugs − `input_number.ac_house_baseline_kwh`) ÷ cooling hours |
 
-**Calibration loop:** on 2–3 hot days with no dryer/oven/EV, compare
-`ac_implied_watts_yesterday` to `ac_cooling_wattage`; nudge the slider toward the
-median implied value, then commit it as `initial:` in `configuration.yaml`
-(Git is source of truth; the UI slider resets on HA restart). Month-end check:
+**Calibration loop:** on 2–3 hot days with no dryer, oven or EV, compare
+`ac_implied_watts_yesterday` to `ac_cooling_wattage`. Nudge the slider toward the
+median implied value, then commit it as `initial:` in `configuration.yaml`.
+Git is the source of truth, and the UI slider resets on HA restart. Month-end check:
 `ac_cooling_cost_last_month` + `combined_*` + baseline should land within ~10–15%
-of the CE bill; the wattage is an estimate (±20 % on a variable-speed unit).
-CE data is one day late, so every house comparison is yesterday-vs-yesterday.
-Because the 3 min `delay_off` over-counts runtime on short cycles, implied watts
-reads low on those days — calibrate from long, sustained cooling days.
+of the CE bill. The wattage is an estimate (±20 % on a variable-speed unit).
+CE data is one day late, so every house comparison is yesterday versus yesterday.
+The 3 min `delay_off` over-counts runtime on short cycles, so implied watts
+read low on those days. Calibrate from long, sustained cooling days.
 
 Dashboards: the **Cooling** view of the Homelab Power dashboard and the AC tile
-on its House view; `sensor.ac_*` / `binary_sensor.ac_cooling` are in the
+on its House view. `sensor.ac_*` and `binary_sensor.ac_cooling` are in the
 Prometheus filter globs, so Grafana can read them.
 
 ## Rolling findings and hardware comparisons
@@ -525,65 +522,62 @@ Prometheus filter globs, so Grafana can read them.
 The **Findings** view uses `sensor.power_spending_analysis`, a local integration
 whose source is `scripts/power-analysis/`. It refreshes hourly after HA starts,
 reads the SQLite recorder in an executor thread, and is excluded from recorder
-history itself. The view is in `lovelace-power-findings.yaml`; the existing
+history itself. The view is in `lovelace-power-findings.yaml`. The existing
 Overview remains the landing page.
 
 The analysis uses the preceding 14 local days, excludes today, and requires a
 common set of complete hourly readings across the seven plug-energy series,
-homelab/office groups, detected gaming energy, and cooling hours. It needs the
-previous hourly boundary and matching CE daily energy/cost records. Missing
-hours, nonfinite values, counter discontinuities, and impossible gaming/runtime
+homelab and office groups, detected gaming energy, and cooling hours. It needs the
+previous hourly boundary and matching CE daily energy and cost records. Missing
+hours, nonfinite values, counter discontinuities, and impossible gaming or runtime
 values exclude the day. Local-day length handles daylight saving transitions.
-This establishes recorded coverage; it cannot prove every physical sensor was
+This shows recorded coverage. It cannot prove every physical sensor was
 accurate or responsive throughout the day.
 
 Device ranking shows average watts and 720-hour projections at the current
 configured rate. Neither is an idle-only measurement or a full-month bill.
 Cooling correlation needs at least seven matched days and one hour of runtime
-variation. A fit against house energy minus computer energy is shown for
-investigation only. Its largest positive residual identifies a day to review;
-it cannot identify an appliance. The report does not change assumed AC wattage.
+variation. The report shows a fit against house energy minus computer energy
+for investigation only. Its largest positive residual marks a day to review.
+It cannot identify an appliance. The report does not change assumed AC wattage.
 
 Use the `power-analysis` agent skill (shared procedure:
 `.claude/commands/power-analysis.md`) for repeatable analysis and safe accounting.
-The CLI emits the same report read-only; omit `--rate` to leave projections
+The CLI emits the same report read-only. Omit `--rate` to leave projections
 unpriced when the live configured rate is unknown.
 
 ### Reassessing Threadripper vs the spare DL360
 
-The owner's confirmed arrangement retains both RTX 3090s, using an external
-GPU PSU and PCIe risers with the DL360. Physical feasibility was established by
-prior use. Mink's historical compute inventory lists two E5-2680 v4 CPUs and
+The owner's confirmed arrangement keeps both RTX 3090s, using an external
+GPU PSU and PCIe risers with the DL360. Prior use established physical feasibility. Mink's historical compute inventory lists two E5-2680 v4 CPUs and
 conflicting RAM totals (736 GB, 724.24 GiB OS-visible, and approximately
-768 GB physical claims); current installed CPUs and DIMMs still need verification. The separate NAS has one E5-2680 v4 and 384 GB, per the September
+768 GB physical claims). Current installed CPUs and DIMMs still need verification. The separate NAS has one E5-2680 v4 and 384 GB, per the September
 20 inspection. Do not substitute its power reading for the spare GPU server.
 
 On September 27, a read-only trailing-24-hour Prometheus sample showed about
 222.4 W at the Threadripper outlet (1,437 samples across HA pod changes) and
 48.4 W combined GPU board power (5,760 samples per GPU). GPU utilization averaged
 about 0.3% per GPU across those samples. These clocks and measurement boundaries
-are close but different: the roughly 174 W difference includes CPU/RAM/drives,
+are close but different. The roughly 174 W difference includes CPU, RAM and drives,
 other host work, fans, and PSU losses. It is not a measured CPU-only idle figure
 or guaranteed removable overhead. The earlier 246.6 W average covers a different,
 eight-day cohort.
 
 The first local Mink search found only an empty comparison note. The owner
-subsequently supplied historical chat extracts on September 27 with numerical
-readings. These are owner-reported historical observations; raw meter exports
-were not independently recovered. They support the earlier Threadripper move
+later supplied historical chat extracts with numerical
+readings on September 27. These are owner-reported historical observations. Nobody recovered the raw meter exports independently. They support the earlier Threadripper move
 for the old dual-CPU DL360 configuration. A changed single-CPU arrangement still
 needs a new measurement. A matched comparison should include:
 
 - the same two GPUs, power caps, model, context, concurrency, and completed work;
 - all wall outlets including the external GPU supply;
 - both idle energy and Wh per inference workload, with tokens/sec and latency;
-- PCIe link width/speed under load and one-vs-two CPU memory/slot dependencies.
+- PCIe link width and speed under load, and one-CPU versus two-CPU memory and slot dependencies.
 
 At $0.21328/kWh, saving 25/50/100 W continuously is $3.84/$7.68/$15.36 per 30 days.
 A low-power single-Xeon trial is a plausible candidate, not an established winner.
-More RAM helps when the workload needs it; the NAS has demonstrated ARC read
-benefits, while sustained and durable writes remain bounded by storage/network
-behavior. See [NAS measurements](../../nas-performance.md),
+More RAM helps when the workload needs it. The NAS has shown ARC read
+benefits, while storage and network behavior still limit sustained and durable writes. See [NAS measurements](../../nas-performance.md),
 [HPE DL360 Gen9 platform features](https://support.hpe.com/hpesc/public/docDisplay?docId=c04442953&docLocale=en_US&page=GUID-A8ED5EBD-51AB-4EDC-AEAA-FA318CF1B483.html),
 and [TrueNAS caching and write behavior](https://www.truenas.com/docs/references/zilandslog/).
 
@@ -617,16 +611,15 @@ Another June 18 account reported host-only 334 W for DL360 and 135 W for
 Threadripper, plus a separate GPU feed at ~60 W settled or 230–450 W active.
 Adding those gives 394 versus 195 W settled, 564 versus 365 W at the lower GPU
 load, and 784 versus 585 W at the higher load. These are calculated alternatives
-for the SAME GPUs, not synchronized whole-system tests, and are not the same
+for the same GPUs. They are not synchronized whole-system tests, and they are not the same
 observation as the later 259/66/246 W averages.
 
 The May allocation (205 W host, 125 W GPUs/supply, 110 W NAS/drives, 30 W network,
 15 W fan) approximately reconciles the 484 W rack meter. Those allocations do
-not establish individually measured component watts or a universal 15% iLO
+not show individually measured component watts or a universal 15% iLO
 error. The external PSU's 1,000 W rating is capacity, not draw.
 
-Old summaries calling Threadripper retired or inferring a return to DL360 from
-stale August memory are superseded by the verified September Threadripper
-configuration. Likewise, historical "unmeasured desktop/mini" labels do not
+The verified September Threadripper configuration supersedes old summaries that call Threadripper retired or infer a return to DL360 from
+stale August memory. Likewise, historical "unmeasured desktop/mini" labels do not
 override their current HA plug readings. Keep the old NAS CPU/RAM configuration
 separate from today's E5-2680 v4 / 384 GB evidence.

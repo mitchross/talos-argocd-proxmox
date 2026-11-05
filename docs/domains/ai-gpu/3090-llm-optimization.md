@@ -10,7 +10,7 @@ room for the others.
 New to the stack? Read [Local AI starter kit](index.md) first.
 
 Baseline: official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
-vision, speculation off. Exact flags and rollback live in the
+vision, speculation off. Exact flags and rollback are in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).
 
 !!! tip "In 10 seconds"
@@ -23,7 +23,7 @@ vision, speculation off. Exact flags and rollback live in the
 The September 6 audit measured an earlier vLLM release with medium
 reasoning explicitly requested. These values are not a measurement of the
 current prefill settings or the xhigh default. Re-check the running engine after
-rollout; do not relabel the historical pool as current capacity.
+rollout. Do not relabel the historical pool as current capacity.
 
 | Observation | Value |
 |---|---|
@@ -49,12 +49,12 @@ Two cards give 48 GiB aggregate through tensor parallelism, as separate per-card
 allocations. Host RAM helps loading and transport; it does **not** enlarge the
 GPU-resident KV pool.
 
-The 3090 stores FP8 weights compactly using an Ampere-compatible weight-only
-kernel. It does not gain native FP8 tensor arithmetic.
+The 3090 stores FP8 weights compactly with an Ampere-compatible weight-only
+kernel. It gets no native FP8 tensor arithmetic.
 
 ## Why 262K is the ceiling
 
-Three different limits exist: the model's supported window, the configured
+Three limits exist: the model's supported window, the configured
 per-request ceiling, and the runtime's allocated memory. **Raising a flag moves
 only the second one.**
 
@@ -74,9 +74,9 @@ Raising `--max-model-len` therefore adds **no** capacity: the pool is one shared
 token budget, and the flag only raises the per-request ceiling. Each
 `--max-num-seqs` slot also reserves a fixed recurrent-state set from that pool.
 
-524K exceeds the historical allocation and, with 14.46 GiB of weights per card,
-leaves inadequate workspace at the 0.92 memory budget. The measured engine pool
-is the authority, not this arithmetic.
+524K exceeds the historical allocation. With 14.46 GiB of weights per card,
+it also leaves too little workspace at the 0.92 memory budget. Trust the measured engine pool,
+not this arithmetic.
 
 Going past the native window needs a separate RoPE and quality evaluation.
 
@@ -97,8 +97,8 @@ latency, not usable context. *Prefill* is the model reading the prompt;
 | Decode mean | 0.036 s | 0.038 s |
 | Power | ~236 W | 196 W |
 
-Dropping a card removes 36% of the KV pool, but the workload still fits because
-the pool reached only ~76% at peak. Decode barely moves.
+Dropping a card removes 36% of the KV pool. The workload still fits because
+the pool reached only ~76% at peak. Decode barely changes.
 
 This used a text-only profile at `--max-num-seqs 3`. It does not cover vision
 (the single-card run dropped the ~2.7 GB vision tower), sustained load above
@@ -121,7 +121,7 @@ This used a text-only profile at `--max-num-seqs 3`. It does not cover vision
 
 | Do | Why |
 |---|---|
-| Use **xhigh** reasoning by default | accuracy-first policy; choose medium/low explicitly for less reasoning |
+| Use **xhigh** reasoning by default | accuracy-first policy. Choose medium or low explicitly for less reasoning |
 | Keep one image in submitted history | a second retained screenshot exceeds the one-image limit |
 | Keep tool outputs bounded | dumping unrelated files burns context and triggers expensive prefill |
 | Run one long session near the ceiling | a second full-length request causes waiting or preemption |
@@ -131,15 +131,15 @@ Prefer browser DOM/text output over screenshots. Keep preserved reasoning on for
 agents; stateless chats can disable it. Thinking-off needs Qwen's separate
 non-thinking sampler, which the WebUI policy and the Pi hook select by mode.
 
-Pi is configured for the 262K window, a 32K output budget, and automatic
-compaction reserving 49,152 tokens. Xhigh can use more of that output allowance;
-it does not expand context or guarantee better answers. See the
+Pi uses the 262K window, a 32K output budget, and automatic
+compaction that reserves 49,152 tokens. Xhigh can use more of that output allowance.
+It does not expand context or guarantee better answers. See the
 [Pi and Hermes guide](pi-agent-local-dev.md).
 
 ## Re-check capacity
 
-These commands inspect the cluster and establish a local diagnostic tunnel;
-they do not change the deployment.
+These commands inspect the cluster and open a local diagnostic tunnel.
+They do not change the deployment.
 
 ```bash
 kubectl -n vllm get deploy vllm-server

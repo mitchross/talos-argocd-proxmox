@@ -2,7 +2,7 @@
 
 This part explains how the deployed platform works and how to operate it.
 Read [the easy guide](../easy-guide.md) first, then work through the chapters
-below. Each runbook carries its own prerequisites, checks, and recovery steps.
+below. Each runbook lists its own prerequisites, checks, and recovery steps.
 
 | Chapter | What you will learn | Start here |
 | --- | --- | --- |
@@ -17,6 +17,6 @@ below. Each runbook carries its own prerequisites, checks, and recovery steps.
 | Local AI | The parts of self-hosted AI, how models are served, GPU capacity | [Local AI starter kit](../domains/ai-gpu/index.md) |
 | Reference & ops | Scheduling policy, observability, and maintenance | [VPA and topology](../domains/scheduling/vpa-and-topology.md) |
 
-Next, explore the machines that run these services in [Inventory](../inventory/index.md).
-Then use [Audits](../audits/index.md) to understand their measured limits, and
-[Ongoing research](../research/index.md) for possible future changes.
+The machines that run these services are in [Inventory](../inventory/index.md).
+[Audits](../audits/index.md) record their measured limits.
+[Ongoing research](../research/index.md) covers possible future changes.

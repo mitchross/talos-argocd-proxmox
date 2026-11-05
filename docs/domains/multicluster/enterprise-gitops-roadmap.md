@@ -7,24 +7,24 @@
 
 ## Purpose
 
-Keep the current homelab simple while providing a deliberate path toward the
-operating model used by larger Kubernetes platforms: explicit ownership,
-repeatable deploy targets, environment promotion, multi-cluster discovery,
-policy tests, and incident-ready runbooks.
+Keep the current homelab simple, and give it a path toward the operating model
+of larger Kubernetes platforms: explicit ownership, repeatable deploy targets,
+environment promotion, multi-cluster discovery, policy tests, and
+incident-ready runbooks.
 
 The goal is not to imitate organizational complexity. A pattern belongs here
-only when it improves one of these properties:
+only if it improves one of these properties:
 
 - a change has a clear owner and review boundary;
 - desired state can be rendered and validated before merge;
-- the same application can target more than one cluster without copy/paste;
+- the same application can target more than one cluster without copy and paste;
 - promotion is visible in Git and reversible by PR;
 - cluster, environment, and backup identities cannot be confused;
 - an alert leads to a tested recovery action.
 
 ## Current strengths to preserve
 
-The existing repository already has several enterprise-quality controls:
+The repository already has these controls:
 
 - self-managed Argo CD with explicit bootstrap and sync waves;
 - strict ApplicationSet Go templates with `missingkey=error`;
@@ -38,8 +38,8 @@ The existing repository already has several enterprise-quality controls:
 - kopiur restore-before-bind coverage checks and database-native backup paths;
 - explicit documentation of the current physical failure domain.
 
-Multi-cluster expansion must extend these controls, not replace them with a larger
-but weaker directory tree.
+Multi-cluster expansion must extend these controls. It must not replace them
+with a larger but weaker directory tree.
 
 ## Decision table
 
@@ -58,7 +58,7 @@ but weaker directory tree.
 
 ## Target ownership model
 
-Use responsibility boundaries even if everything remains in one repository:
+Use responsibility boundaries even if everything stays in one repository:
 
 | Layer | Owns | Must not own |
 |---|---|---|
@@ -68,13 +68,13 @@ Use responsibility boundaries even if everything remains in one repository:
 | Workload | Namespace, Deployment/StatefulSet, Service, HTTPRoute, application CRs, backup intent | Cluster-wide operators or Argo control-plane policy |
 | Governance | ApplicationSets, AppProjects, target contract, CI/policy tests | Application credentials |
 
-The Strimzi/Kafka split is the reference: infrastructure owns the operator;
-the Kafka app owns its namespace, Kafka resources, topic, and backup contract.
+The Strimzi/Kafka split is the reference. Infrastructure owns the operator.
+The Kafka app owns its namespace, Kafka resources, topic, and backup contract.
 
 ## Proposed multi-cluster shape
 
 Do not perform a big-bang repository move. Introduce this shape additively for
-the first shared application, then decide whether older single-cluster apps
+the first shared application. Then decide whether older single-cluster apps
 benefit from migration.
 
 ```text
@@ -109,7 +109,7 @@ The exact folders may change during implementation. The contracts matter more:
 ### Minimal deploy-target contract
 
 Avoid duplicating values already encoded in the path. A future descriptor
-should contain only metadata the generator cannot safely derive, for example:
+should contain only metadata the generator cannot safely derive. For example:
 
 ```json
 {
@@ -123,7 +123,7 @@ should contain only metadata the generator cannot safely derive, for example:
 CI must validate:
 
 - the referenced overlay exists and renders non-empty;
-- cluster/environment values are from an allow-list;
+- cluster and environment values come from an allow-list;
 - the generated Application name, project, destination, and path are unique;
 - path-derived and file-derived identity cannot disagree;
 - every image is immutable or explicitly exempted;
@@ -132,7 +132,7 @@ CI must validate:
 ## Promotion model
 
 Do not use long-lived Git branches as environments. Keep all environment intent
-visible together and promote with a reviewed change to an overlay.
+visible together, and promote with a reviewed change to an overlay.
 
 Recommended progression:
 
@@ -142,14 +142,14 @@ Recommended progression:
 4. A later PR copies the same digest into cert/prod.
 5. Reverting the promotion PR restores the prior desired digest.
 
-Git tags/releases are useful only if Argo or the promotion workflow consumes
+Git tags and releases help only if Argo or the promotion workflow consumes
 them. Creating release tags while every Application tracks `main` is version
 bookkeeping, not a deployment control.
 
-Automated sync can remain enabled in every environment when merge permissions,
+Automated sync can stay enabled in every environment when merge permissions,
 required checks, and promotion PRs are the approval gate. A conditional
-`templatePatch` that disables prod automation is optional, not an automatic
-enterprise improvement.
+`templatePatch` that disables prod automation is optional. It is not an
+automatic improvement.
 
 ## Kustomize guidance
 
@@ -165,21 +165,21 @@ enterprise improvement.
 ### Use a Component when
 
 - the feature is optional and cross-cutting;
-- multiple unrelated apps consume the same resource/patch contract;
+- multiple unrelated apps consume the same resource or patch contract;
 - the Component is safe when rendered through every supported app shape;
 - CI renders both with and without the Component.
 
 Good candidates: backup wiring, environment alert routing, standard labels, or
 a narrowly defined trust bundle. Avoid a universal Component that mutates every
-container, probe, or security context; admission/CI policy is clearer for those
-contracts.
+container, probe, or security context. Admission or CI policy is clearer for
+those contracts.
 
 ### Keep an app single-cluster when
 
 - no second target exists;
 - storage, hardware, or networking makes it intentionally cluster-specific;
 - extracting a base would create placeholders and patches with no consumer;
-- the app is a learning experiment whose value is in its local implementation.
+- the app is a learning experiment whose value is its local implementation.
 
 ## Multi-cluster ApplicationSet strategy
 
@@ -211,21 +211,21 @@ permit every namespace and cluster-scoped kind.
 
 Adopt controls in this order:
 
-1. **Ownership documentation:** declare which layer owns each resource.
-2. **CI semantic checks:** selectors match pod labels, routes use approved
+1. Ownership documentation: declare which layer owns each resource.
+2. CI semantic checks: selectors match pod labels, routes use approved
    Gateways, namespaces are unique, backups have restore contracts, and
    privileged fields require explicit exceptions.
-3. **AppProject restrictions:** allow only the required source paths/repos,
+3. AppProject restrictions: allow only the required source paths/repos,
    generated destination namespaces, and resource kinds.
-4. **Runtime policy:** only after rules have unit tests, audit-mode evidence,
+4. Runtime policy: only after rules have unit tests, audit-mode evidence,
    documented exemptions, and a bootstrap/recovery bypass.
 
-Policy-as-code tests are valuable before a runtime admission controller is.
-They teach the same contract design without risking a blocked rebuild.
+Policy-as-code tests pay off before a runtime admission controller does.
+They exercise the same contract design without risking a blocked rebuild.
 
 ## Observability and incident readiness
 
-Enterprise alerting means an actionable ownership chain, not merely more rules:
+Enterprise alerting means an actionable ownership chain, not more rules:
 
 ```text
 metric → focused alert → owner/severity/environment → runbook → tested action
@@ -234,11 +234,12 @@ metric → focused alert → owner/severity/environment → runbook → tested a
 Future improvements:
 
 - add repository `runbook_url` links to Argo CD and kopiur alerts;
-- add `cluster` and `environment` labels to every metric/log/trace pipeline;
+- add `cluster` and `environment` labels to every metric, log and trace pipeline;
 - route dev warnings differently from production-critical alerts;
 - test alert expressions with `promtool` and test receiver routing separately;
-- retain an internal/null receiver until a real destination is deliberately
-  selected—never use placeholder webhooks that silently discard notifications.
+- keep an internal or null receiver until you deliberately select a real
+  destination, and never use placeholder webhooks that silently discard
+  notifications.
 
 ## Stateful multi-cluster safety
 
@@ -247,7 +248,7 @@ This is the highest-risk part of expansion.
 ### Backup identity isolation
 
 Two clusters must never write indistinguishable backup identities to the same
-repository. Today a kopiur identity commonly derives from application/PVC and
+repository. Today a kopiur identity commonly derives from the application, PVC and
 namespace. Deploying the same app and namespace in a second cluster could make
 "latest" select the other cluster's snapshot.
 
@@ -255,7 +256,7 @@ Before the first stateful shared app, choose and test one approach:
 
 - include `cluster-id` in kopiur hostname/username identity;
 - use a distinct repository/bucket/prefix per cluster;
-- or replicate between repositories with explicit source/destination identity.
+- or replicate between repositories with explicit source and destination identity.
 
 CI should fail duplicate `(repository, hostname, username, sourcePath)` tuples
 across cluster targets. Restore drills must prove each cluster restores its own
@@ -277,7 +278,7 @@ one unqualified KRaft identity.
 
 ## Phased plan
 
-### Phase 0 — workflow polish (safe anytime)
+### Phase 0: workflow polish (safe anytime)
 
 - [ ] Add a concise GitOps PR template.
 - [ ] Add runbook links to the highest-value Argo CD and kopiur alerts.
@@ -285,7 +286,7 @@ one unqualified KRaft identity.
       cluster-scoped ownership.
 - [ ] Document the operator-versus-workload ownership convention.
 
-### Phase 1 — second-cluster identity
+### Phase 1: second-cluster identity
 
 - [ ] Assign an immutable `cluster-id`, platform, environment, region, and
       failure-domain description.
@@ -293,7 +294,7 @@ one unqualified KRaft identity.
 - [ ] Ensure observability signals include `cluster-id`.
 - [ ] Render platform foundations independently before any shared app.
 
-### Phase 2 — stateless shared-app pilot
+### Phase 2: stateless shared-app pilot
 
 - [ ] Select one disposable HTTP application.
 - [ ] Extract a portable base and two cluster overlays.
@@ -301,7 +302,7 @@ one unqualified KRaft identity.
 - [ ] Generate Applications through a new isolated matrix ApplicationSet.
 - [ ] Prove stable names, independent rendering, Gateway routing, and rollback.
 
-### Phase 3 — environment promotion
+### Phase 3: environment promotion
 
 - [ ] Introduce dev/cert/prod only when each has a real operational meaning.
 - [ ] Promote one immutable image digest through overlay PRs.
@@ -309,14 +310,14 @@ one unqualified KRaft identity.
 - [ ] Decide whether automated prod sync remains enabled based on the approval
       model, not on convention alone.
 
-### Phase 4 — tenancy and policy
+### Phase 4: tenancy and policy
 
 - [ ] Restrict AppProject sources and destinations to generated targets.
 - [ ] Add tested resource-kind limits.
 - [ ] Run policy checks in CI, then audit mode in-cluster.
 - [ ] Enable deny enforcement only with recovery bypass documentation.
 
-### Phase 5 — stateful pilot
+### Phase 5: stateful pilot
 
 - [ ] Define cluster-qualified kopiur and database backup identities.
 - [ ] Select one non-critical single-PVC app.
@@ -324,7 +325,7 @@ one unqualified KRaft identity.
 - [ ] Confirm one cluster cannot accidentally restore the other's latest data.
 - [ ] Document RPO/RTO and storage/failure-domain assumptions.
 
-### Phase 6 — optional repository boundaries
+### Phase 6: optional repository boundaries
 
 - [ ] Split repositories only if separate owners, credentials, release cadence,
       or blast-radius controls justify it.

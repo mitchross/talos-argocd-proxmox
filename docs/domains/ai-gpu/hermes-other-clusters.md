@@ -36,7 +36,7 @@ Review every command the agent proposes before it runs.
 - A DNS name for Hermes, for example `hermes.example.com`.
 - One model: a Claude Max/Pro token from `claude setup-token` on your PC, or an OpenAI-compatible server (vLLM, llama.cpp, Ollama, LiteLLM).
 
-The image is public at `ghcr.io/mitchross/hermes-dev`. Pin a digest; the `main` tag moves with each build:
+The image is public at `ghcr.io/mitchross/hermes-dev`. Pin a digest, because the `main` tag moves with each build:
 
 ```bash
 docker buildx imagetools inspect ghcr.io/mitchross/hermes-dev:main | grep Digest
@@ -142,7 +142,7 @@ configMapGenerator:
       - config.yaml
 ```
 
-`namespace.yaml`. `baseline`, not `restricted`: the container starts as root.
+`namespace.yaml`. Use `baseline`, not `restricted`, because the container starts as root.
 
 ```yaml
 apiVersion: v1

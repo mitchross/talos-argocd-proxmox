@@ -1,6 +1,6 @@
 # AI model catalog
 
-**Two models. One local, one paid.** Everything else is wiring.
+Two models: one local, one paid. Everything else is wiring.
 
 This page lists each model, where it runs, what it costs, and how the `pi-auto`
 router picks between them.
@@ -20,9 +20,9 @@ New to the stack? Read [Local AI starter kit](index.md) first.
     until the test PR is reverted. Runbook: `my-apps/ai/strata/README.md`.
 
 !!! tip "In 10 seconds"
-    - **Qwen**: local, free, private. The default for every app.
-    - **DeepSeek Flash**: cloud, paid, prompts leave home.
-    - **`pi-auto`**: picks one of the two for each request.
+    - Qwen is local, free, and private. It is the default for every app.
+    - DeepSeek Flash is cloud and paid. Prompts leave home.
+    - `pi-auto` picks one of the two for each request.
 
 `pi-auto` is not a third model. It is a LiteLLM router that chooses one of the
 other two per request.
@@ -57,7 +57,7 @@ Both cards belong to vLLM. Other GPU workloads stay parked.
 262K is a server ceiling, not a promise of two simultaneous full-length
 sessions. Use `xhigh` by default for the accuracy-first policy; select `medium`
 or `low` for less reasoning, or explicitly turn thinking off. More reasoning
-can consume more time and tokens; a quality improvement is not guaranteed.
+can use more time and tokens. A quality improvement is not guaranteed.
 
 Exact flags, rollout checks and rollback live in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).

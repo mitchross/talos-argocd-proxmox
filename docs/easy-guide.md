@@ -1,10 +1,10 @@
-# The easy guide — explain this cluster to anyone
+# The easy guide: explain this cluster to anyone
 
-> The whole system — GitOps, sync waves, Kustomize components, kopiur backups,
-> restore-before-bind DR — explained from zero, in order, with the real YAML.
+> The whole system explained from zero, in order, with the real YAML. It covers
+> GitOps, sync waves, Kustomize components, kopiur backups, and restore-before-bind DR.
 >
 > Deep-dive companions: [storage architecture](storage-architecture.md) (the
-> operator's reference — design decisions, ops, troubleshooting),
+> operator's reference for design decisions, ops, and troubleshooting),
 > [kopiur backup architecture](domains/storage/kopiur-backup-architecture.md) (the mechanism),
 > [disaster recovery](disaster-recovery.md) (the runbook).
 
@@ -17,37 +17,36 @@ reconstructs protected data. [Open the platform map full size](assets/platform-o
 
 ## The 30-second pitch
 
-> Destroy the entire Kubernetes cluster — every node, every disk, every app —
-> and rebuild it with **one bootstrap script and a coffee**. Every application
+> Destroy the entire Kubernetes cluster, including every node, disk, and app.
+> Rebuild it with **one bootstrap script and a coffee**. Every application
 > comes back, **with its data**, in the right order, unattended. No restore
 > scripts. No snapshot IDs. No "wait, which volume was that?"
 
 Three ideas make that true, and they stack:
 
-1. **GitOps** — the entire cluster is a Git repo. A directory *is* an application.
-2. **Sync waves** — ArgoCD gates direct core dependencies, so the backup machinery
+1. **GitOps.** The entire cluster is a Git repo. A directory *is* an application.
+2. **Sync waves.** ArgoCD gates direct core dependencies, so the backup machinery
    exists before anything that needs it.
-3. **Restore-before-bind** — every important volume is recreated *pre-filled
+3. **Restore-before-bind.** Every important volume is recreated *pre-filled
    with its backed-up data* before its app is allowed to start.
 
 The rest of this page walks each idea from zero.
 
-!!! question "Here because someone said *“dude, you gotta try kopiur”*?"
+!!! question "Here because someone said *dude, you gotta try kopiur*?"
     You do **not** need the sync waves, ArgoCD, namespace labels, or Kustomize
-    components to back up your PVCs. Those are the scaffolding *this* cluster
-    uses at scale — kopiur's minimum is one operator and ~30 lines of YAML on
+    components to back up your PVCs. Those are what *this* cluster
+    uses at scale. kopiur's minimum is one operator and ~30 lines of YAML on
     any cluster with CSI snapshots. Jump straight to
     [the adoption ladder](#part-8-i-just-want-to-try-kopiur-the-adoption-ladder)
     and climb only as far as you need.
 
 ---
 
-## Part 0 — What has to exist first
+## Part 0. What has to exist first
 
 This guide starts the moment you have a working Kubernetes cluster. Getting
-*to* that moment is a separate job, and it is worth being honest about it:
-there are three layers underneath everything below, and each one has to be
-standing before the next makes sense.
+*to* that moment is a separate job. Three layers sit underneath everything
+below. Each one must be standing before the next makes sense.
 
 ```
 Proxmox        the hypervisor — actual machines with CPUs and disks
@@ -61,45 +60,43 @@ Talos          minimal Linux that runs only Kubernetes — no SSH, no shell
 
 | Layer | What it is | Where it is set up |
 | --- | --- | --- |
-| **Proxmox** | Your hypervisor. Two hosts here, but one is fine. | Your own hardware |
-| **Omni** | Sidero's control plane. Provisions Talos, manages upgrades, hands you a kubeconfig. Runs as **one Docker container** — a Raspberry Pi 5 with an NVMe is plenty. | [Omni setup guide](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/omni/README.md) |
-| **Proxmox infrastructure provider** | The add-on that lets Omni *create* VMs for you instead of you building them by hand. One container per Proxmox host, one compose project. | [proxmox-providers/](https://github.com/mitchross/talos-argocd-proxmox/tree/main/omni/proxmox-providers) |
-| **Talos** | The OS on the nodes. You never log into it — Omni and `talosctl` drive it through an API. | Provisioned by Omni |
+| Proxmox | Your hypervisor. Two hosts here, but one is fine. | Your own hardware |
+| Omni | Sidero's control plane. Provisions Talos, manages upgrades, hands you a kubeconfig. Runs as one Docker container. A Raspberry Pi 5 with an NVMe is plenty. | [Omni setup guide](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/omni/README.md) |
+| Proxmox infrastructure provider | The add-on that lets Omni *create* VMs for you instead of you building them by hand. One container per Proxmox host, one compose project. | [proxmox-providers/](https://github.com/mitchross/talos-argocd-proxmox/tree/main/omni/proxmox-providers) |
+| Talos | The OS on the nodes. You never log into it. Omni and `talosctl` drive it through an API. | Provisioned by Omni |
 
 !!! question "Do I need all of this to use the ideas on this page?"
     **No.** GitOps, sync waves, and kopiur are not Talos-specific or
-    Omni-specific — they work on any Kubernetes cluster with CSI snapshot
+    Omni-specific. They work on any Kubernetes cluster with CSI snapshot
     support. If you already have a cluster, skip straight to
     [Part 1](#part-1-gitops-a-directory-is-an-application) and ignore the
-    Proxmox/Omni layers entirely. They are simply *how this particular cluster
-    gets built*, and they are what make "destroy everything and rebuild"
+    Proxmox/Omni layers entirely. They are *how this particular cluster
+    gets built*, and they make "destroy everything and rebuild"
     a ten-minute operation rather than a weekend.
 
 ### The three things that bite people
 
-If you *are* building the Omni layer, these are the ones worth knowing before
-you start rather than after:
+If you *are* building the Omni layer, know these three before you start:
 
 1. **Omni has no login of its own.** There is no admin account and no password
-   file — it authenticates entirely against an external identity provider
-   (Auth0, SAML, or OIDC). Sort that out first; it is the step most likely to
+   file. It authenticates entirely against an external identity provider
+   (Auth0, SAML, or OIDC). Sort that out first. It is the step most likely to
    block you.
 2. **Put etcd on an SSD or NVMe.** Omni runs an embedded etcd that fsyncs
    constantly. An SD card or USB stick will work for a while, then produce
    `apply entries took too long`, then corrupt itself. This is the single most
    common way to end up with a broken Omni.
-3. **Back up `omni.asc` off the box, immediately.** It is the GPG key that
+3. **Back up `omni.asc` off the box now.** It is the GPG key that
    decrypts Omni's etcd. Lose it and every cluster Omni manages becomes
-   unrecoverable — no reset, no support ticket. It is the one genuinely
+   unrecoverable. There is no reset and no support ticket. It is the one
    irreplaceable file in the whole stack.
 
-The full walkthrough — certificates, GPG, config, first login, provider keys —
-is in the [Omni setup guide](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/omni/README.md), written for someone who
-has never done it before.
+The [Omni setup guide](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/omni/README.md) has the full walkthrough: certificates, GPG, config, first login, and provider keys.
+It is written for someone who has never done it before.
 
 ---
 
-## Part 1 — GitOps: a directory *is* an application
+## Part 1. GitOps: a directory *is* an application
 
 There are no hand-written ArgoCD `Application` manifests for apps in this
 cluster. **ApplicationSets** scan the repo's directory structure and generate
@@ -112,8 +109,8 @@ infrastructure/networking/gateway/   →  ArgoCD Application "infrastructure-gat
 monitoring/metrics/prometheus-stack/ →  ArgoCD Application "monitoring-prometheus-stack"
 ```
 
-Deploying a new app = `mkdir`, add a `kustomization.yaml`, `git push`. That's
-the entire deployment pipeline.
+To deploy a new app, run `mkdir`, add a `kustomization.yaml`, and `git push`.
+That is the entire deployment pipeline.
 
 The chain that makes it self-managing:
 
@@ -134,22 +131,22 @@ auto-discovered apps  (my-apps/*/* etc.)
 ```
 
 The one manual act is applying `root.yaml`. From then on ArgoCD manages
-*everything* — including its own Helm values and the ApplicationSets that
-discover everything else. Git is the cluster; the cluster is a cache.
+*everything*, including its own Helm values and the ApplicationSets that
+discover everything else. Git is the cluster. The cluster is a cache.
 
 ---
 
-## Part 2 — How Argo waits (sync waves)
+## Part 2. How Argo waits (sync waves)
 
 ![Argo CD sync waves turn repository dependencies into a gated rebuild sequence](assets/argocd-sync-waves.svg){ loading=lazy }
 
-*Wave numbers order resources; health checks make each dependency gate wait.
+*Wave numbers order resources. Health checks make each dependency gate wait.
 [Open the sync-wave sequence full size](assets/argocd-sync-waves.svg).*
 
-A cluster rebuild has a brutal ordering problem: apps need volumes, volumes
+A cluster rebuild has an ordering problem. Apps need volumes, volumes
 need the backup operator, the operator needs credentials, credentials need the
 secrets machinery, and everything needs a network. Deploy it all at once and
-you get retry soup.
+you get a pile of failing retries.
 
 ArgoCD solves this with one annotation:
 
@@ -161,27 +158,27 @@ metadata:
 
 Within one Application sync, lower waves must become Synced and Healthy before
 later waves proceed. The root orders direct child Applications this way.
-ApplicationSets generate independent Applications; creating an AppSet does not
+ApplicationSets generate independent Applications. Creating an AppSet does not
 wait for every generated workload to become healthy.
 
 This cluster's waves, and *why* each sits where it does:
 
 | Wave | What | Why it must precede the next wave |
 |---|---|---|
-| **0** | Cilium (CNI), ArgoCD itself, 1Password Connect, External Secrets | No network → nothing schedules. No secrets engine → no credentials for anyone. |
-| **1** | cert-manager, Longhorn, Snapshot Controller | Storage + the `VolumeSnapshot` CRDs the backup system snapshots with. |
-| **2** | **kopiur operator** (CRDs + controller + webhook) | The volume populator must exist before any PVC references a `Restore`. |
-| **3** | **kopiur config** (`ClusterRepository`, credential fanout, `VolumeSnapshotClass`) | The repo definition + S3 creds must be live before movers run. |
-| **4** | Infrastructure + database AppSets, KEDA, VPA, Temporal worker | The platform layer. Databases are ordinary apps — their PVCs restore like any other. |
+| **0** | Cilium (CNI), ArgoCD itself, 1Password Connect, External Secrets | With no network, nothing schedules. With no secrets engine, nobody gets credentials. |
+| **1** | cert-manager, Longhorn, Snapshot Controller | Storage and the `VolumeSnapshot` CRDs the backup system snapshots with. |
+| **2** | kopiur operator (CRDs + controller + webhook) | The volume populator must exist before any PVC references a `Restore`. |
+| **3** | kopiur config (`ClusterRepository`, credential fanout, `VolumeSnapshotClass`) | The repo definition and S3 creds must be live before movers run. |
+| **4** | Infrastructure + database AppSets, KEDA, VPA, Temporal worker | The platform layer. Databases are ordinary apps. Their PVCs restore like any other. |
 | **5** | Monitoring AppSet (kube-prometheus-stack) | Observability is deliberately **not** a core dependency. |
-| **6** | OTEL operator, **my-apps AppSet** — every user app + its per-PVC backup CRs | By now, everything a restoring PVC needs already exists. |
+| **6** | OTEL operator and my-apps AppSet, which holds every user app and its per-PVC backup CRs | By now, everything a restoring PVC needs already exists. |
 
-Two implementation details make this actually work — both bite people who copy
+Two implementation details make this work. Both bite people who copy
 the pattern without them:
 
 **1. The Application health check.** ArgoCD does not assess the health of
 `Application` resources by default, which silently breaks wave-gating in
-app-of-apps setups — parent apps consider children "healthy" the moment they
+app-of-apps setups. Parent apps consider children "healthy" the moment they
 exist. Re-enable it in the ArgoCD values
 (`infrastructure/controllers/argocd/values.yaml`):
 
@@ -228,16 +225,16 @@ Application: Healthy — Argo's sync completes
 
 ---
 
-## Part 3 — Kustomize components (shared build-time patches)
+## Part 3. Kustomize components (shared build-time patches)
 
 ![An application opts into a Kustomize Component, which patches matching resources before Argo applies the rendered YAML](assets/kustomize-component-mixin.svg){ loading=lazy }
 
 *The app explicitly opts in, Kustomize patches matching objects during build,
 and Argo receives the complete rendered output. [Open the Kustomize Component flow full size](assets/kustomize-component-mixin.svg).*
 
-Classic Kustomize is **base → overlay**: an overlay inherits one base and
+Classic Kustomize uses a base and an overlay. An overlay inherits one base and
 patches it. That model breaks when you want to share one cross-cutting
-*feature* — "make this thing backed up" — across 20 unrelated apps that share
+*feature*, such as "make this thing backed up", across 20 unrelated apps that share
 no base.
 
 A **Component** is an optional Kustomize package containing reusable resources
@@ -267,7 +264,7 @@ The division of labor is the whole design:
 - **The component** (one shared file, `my-apps/common/kopiur-backup/`)
   injects everything that's *identical* for every backup in the cluster.
 
-The component is small enough to read in full — it's just JSON patches
+The component is small enough to read in full. It is just JSON patches
 targeted by resource `kind`:
 
 ```yaml
@@ -297,21 +294,21 @@ once, in one file, and every backup in the cluster follows.
 
 **Why doesn't the component set the mover UID too?** A component patches *all*
 resources of a kind identically, and the mover UID must match each PVC's data
-owner — which differs app to app (and even within one namespace). Uniform
-things go in the component; varying things stay in the stub. That line is the
-entire design discipline.
+owner, which differs app to app and even within one namespace. Uniform
+things go in the component. Varying things stay in the stub. That line is the
+entire design rule.
 
 ---
 
-## Part 4 — kopiur: the backup operator
+## Part 4. kopiur: the backup operator
 
 ![Kopiur configuration is assembled at Kustomize build time, while backup and restore happen later inside Kubernetes](assets/kopiur-kustomize-flow.svg){ loading=lazy }
 
-*Build time declares the recovery contract; runtime moves the data and enforces
+*Build time declares the recovery contract. Runtime moves the data and enforces
 restore-before-bind. [Open the complete Kopiur flow full size](assets/kopiur-kustomize-flow.svg).*
 
 [kopiur](https://github.com/home-operations/kopiur) is a Kopia-native Kubernetes
-operator (Rust). You declare small CRs; it runs Jobs; [Kopia](https://kopia.io)
+operator (Rust). You declare small CRs and it runs Jobs. [Kopia](https://kopia.io)
 encrypts, deduplicates, and ships bytes to S3. The cast:
 
 | CR | Scope | One-line job description |
@@ -319,10 +316,10 @@ encrypts, deduplicates, and ships bytes to S3. The cast:
 | `ClusterRepository` | cluster | "The Kopia repo lives at RustFS `s3://kopiur`; namespaces with *this label* may use it." |
 | `SnapshotPolicy` | per PVC | "Back up *this PVC*, under *this identity*, keep *this much* history, run the mover as *this user*." |
 | `SnapshotSchedule` | per PVC | "Fire the policy on *this cron*." |
-| `Snapshot` | created per run | One backup execution; ends `Succeeded` with file/byte counts. |
-| `Restore` | per PVC | "I can rebuild this volume from the repo" — the thing a PVC's `dataSourceRef` points at. |
+| `Snapshot` | created per run | One backup execution. It ends `Succeeded` with file and byte counts. |
+| `Restore` | per PVC | "I can rebuild this volume from the repo." A PVC's `dataSourceRef` points at it. |
 
-Plus one non-CR trick: the **credential fanout**. A single
+Plus one non-CR piece: the credential fanout. A single
 `ClusterExternalSecret` copies the repo credentials (from 1Password, via
 External Secrets) into every namespace labeled
 `kopiur.home-operations.com/repo: cluster-kopia`. The **same label** is the
@@ -354,12 +351,12 @@ near-zero new space, across *all* apps sharing the one repo.
 
 ### The complete real example (open-webui)
 
-This is the **entire** backup configuration for a production volume — four
-small touches, all in Git (click through the tabs):
+This is the **entire** backup configuration for a production volume. It is four
+small touches, all in Git. Click through the tabs:
 
 === "1 · namespace.yaml"
 
-    One label opts the namespace in — it drives **both** the credential fanout
+    One label opts the namespace in. It drives **both** the credential fanout
     and the repo's tenancy allow-list:
 
     ```yaml
@@ -370,7 +367,7 @@ small touches, all in Git (click through the tabs):
 
 === "2 · pvc.yaml"
 
-    The restore pointer (Part 5 explains why this one stanza is the magic):
+    The restore pointer (Part 5 explains why this one stanza matters):
 
     ```yaml
     spec:
@@ -383,7 +380,7 @@ small touches, all in Git (click through the tabs):
 
 === "3 · kopiur/storage.yaml (the stub)"
 
-    Only the varying bits — the component injects everything uniform:
+    Only the varying bits. The component injects everything uniform:
 
     ```yaml
     apiVersion: kopiur.home-operations.com/v1alpha1
@@ -432,27 +429,26 @@ kubectl -n open-webui get secret kopiur-rustfs   # creds arrived via the fanout
 
 ---
 
-## Part 5 — Restore-before-bind (the DR magic)
+## Part 5. Restore-before-bind (the DR magic)
 
-This is the load-bearing idea of the whole system, and the part worth slowing
-down for in any talk.
+This is the central idea of the whole system. Slow down here in any talk.
 
-**The problem with every "normal" backup tool:** restore is a *separate step
-after* the app starts. On a rebuild, the PVC is recreated **empty**, the app
-boots on the empty volume, and now you're racing it:
+**The problem with every "normal" backup tool** is that restore is a *separate step
+after* the app starts. On a rebuild, the PVC is recreated **empty** and the app
+boots on the empty volume. Now you're racing it:
 
-- The app's *own* next scheduled backup snapshots the empty state — and
+- The app's *own* next scheduled backup snapshots the empty state, and
   retention can age out your real data.
-- The app writes new state to the blank volume — restoring the old data now
+- The app writes new state to the blank volume. Restoring the old data now
   loses the new writes *and* desyncs from external systems.
-- Auth-bearing apps lock you out: the credential you'd log in with lived in
+- Auth-bearing apps lock you out. The credential you'd log in with lived in
   the data you lost.
 
-Sharpest version: a **game-server world save**. Fresh world boots, players
-join, and the "backup" system dutifully backs up the fresh world over your
+The worst case is a game-server world save. A fresh world boots, players
+join, and the backup system backs up the fresh world over your
 real one.
 
-**The fix is a first-class Kubernetes contract** — the *volume populator*.
+**The fix is a Kubernetes contract called the *volume populator*.**
 A PVC whose `dataSourceRef` points at a populator CR is **withheld from
 binding** until the populator fills it:
 
@@ -464,52 +460,52 @@ spec:
     name: storage-restore
 ```
 
-That one stanza changes the failure mode completely. When the PVC is created —
-first install, rebuild, or "oops, I deleted it" — exactly one of three things
+That one stanza changes the failure mode. When the PVC is created, whether on
+first install, rebuild, or "oops, I deleted it", exactly one of three things
 happens:
 
 | Repo state | Outcome |
 |---|---|
-| ✅ Reachable, snapshot exists | Mover restores the latest snapshot → PVC binds **with data** → app starts. |
-| ⚪ Reachable, **no** snapshot yet | `onMissingSnapshot: Continue` → binds **empty**, starts backing up forward. Day-zero and disaster-day are the same code path. |
-| 🛑 **Unreachable** | Populator errors and retries → PVC stays `Pending`. **It never binds empty over a dead backend.** |
+| Reachable, snapshot exists | The mover restores the latest snapshot, the PVC binds **with data**, and the app starts. |
+| Reachable, **no** snapshot yet | `onMissingSnapshot: Continue` binds the PVC **empty**, and backups start from there. Day-zero and disaster-day are the same code path. |
+| **Unreachable** | The populator errors and retries. The PVC stays `Pending`. **It never binds empty over a dead backend.** |
 
-That last row is the safety property everything else is built around: an
+That last row is the safety property everything else is built around. An
 outage can delay recovery, but it can never silently hand your app a blank
 volume that then gets backed up as if it were real.
 
 !!! example "Try it yourself, no cluster needed"
-    The [**kopiur playground**](kopiur-playground.md) is an interactive
-    simulation of exactly this state machine — delete the PVC, take S3
+    The [kopiur playground](kopiur-playground.md) is an interactive
+    simulation of exactly this state machine. Delete the PVC, take S3
     offline, nuke the cluster, and watch all three outcomes play out.
 
-The honest fine print: a PVC **without** the `dataSourceRef` recreates empty —
-the backup exists, but nothing tells Kubernetes to use it. CI
+The fine print: a PVC **without** the `dataSourceRef` recreates empty.
+The backup exists, but nothing tells Kubernetes to use it. CI
 (`validate-kopiur-coverage.py`) hard-fails a PR where a backed-up PVC is
-missing its `dataSourceRef`, and volumes that are *deliberately* unprotected
-carry a `backup-exempt` label with a written reason. Everything is a recorded
+missing its `dataSourceRef`. Volumes that are *deliberately* unprotected
+carry a `backup-exempt` label with a written reason. Every exception is a recorded
 decision.
 
 > Among Kubernetes backup tools, only populator-based tools implement this
-> populator-hold. Velero, K8up, Stash & co. back up fine — but restore as a
+> populator-hold. Velero, K8up, Stash & co. back up fine, but they restore as a
 > separate imperative step, which reintroduces the exact race above. That's
 > why this cluster runs kopiur. ([Full comparison](domains/storage/kopiur-evaluation.md).)
 
 ---
 
-## Part 6 — The one gotcha: the mover runs as the data owner
+## Part 6. The one gotcha: the mover runs as the data owner
 
-If you teach one operational lesson, teach this one — it's the #1 way a
+If you teach one operational lesson, teach this one. It is the most common way a
 first backup fails on a hardened cluster.
 
 The mover pod runs under **Pod Security "baseline"**, which drops all Linux
-capabilities — including the two (`CAP_DAC_READ_SEARCH`/`CAP_DAC_OVERRIDE`)
+capabilities, including the two (`CAP_DAC_READ_SEARCH`/`CAP_DAC_OVERRIDE`)
 that let root ignore file permissions. So a root mover on this cluster is a
-**declawed root**: uid 0, no master key. Point it at files owned by uid 568
+declawed root. It has uid 0 but no override powers. Point it at files owned by uid 568
 with mode `600` and it gets `PermissionDenied`, every time.
 
-The fix isn't to give the key back; it's to **send the right user**: run the
-mover *as the uid:gid that owns the data*.
+The fix is to run the mover *as the uid:gid that owns the data*, not to give
+the capabilities back.
 
 ```bash
 # find the owner
@@ -523,23 +519,22 @@ mover:
   podSecurityContext: { fsGroup: 568, supplementalGroups: [568] }
 ```
 
-This is also exactly *why* the UID lives in the per-PVC stub and not the
-shared component: it's the one field that genuinely varies per volume.
-Full detail, including the daemon-drop (mysql `999:568`) and root-owned
-(uid `0` + the `privileged-movers` namespace annotation) cases:
-[mover permissions](domains/storage/kopiur-mover-permissions.md).
+This is also *why* the UID lives in the per-PVC stub and not the
+shared component. It is the one field that varies per volume.
+[Mover permissions](domains/storage/kopiur-mover-permissions.md) has full detail, including the daemon-drop (mysql `999:568`) and root-owned
+(uid `0` plus the `privileged-movers` namespace annotation) cases.
 
 ---
 
-## Part 7 — Putting it together: the full DR story
+## Part 7. Putting it together: the full DR story
 
 ![The disaster-recovery sequence from surviving sources of truth through Talos provisioning, Argo reconciliation, data restoration, and proof](assets/disaster-recovery-sequence.svg){ loading=lazy }
 
 *Recovery finishes only when desired state, credentials, protected data, and
 runtime health all converge. [Open the disaster-recovery sequence full size](assets/disaster-recovery-sequence.svg).*
 
-Everything above composes into one sentence: **the off-cluster pieces are the
-pets; the cluster is cattle.**
+Everything above comes down to one rule: protect the off-cluster pieces,
+and treat the cluster as disposable.
 
 ```text
 Dies with the cluster:
@@ -560,33 +555,33 @@ The rebuild, end to end:
 
 1. Run the procedure in [disaster-recovery.md](disaster-recovery.md). It includes
    the two manual seeds (Cilium and 1Password) that `bootstrap-argocd.sh`
-   assumes; skipping them leaves no CNI and no External Secrets.
-2. Waves 0–3 walk: network → secrets → storage → kopiur operator → repo config.
-3. App PVCs (databases included) hold `Pending` while kopiur hydrates them;
-   apps start on restored data in parallel.
+   assumes. Skipping them leaves no CNI and no External Secrets.
+2. Waves 0 to 3 run in order: network, secrets, storage, kopiur operator, repo config.
+3. App PVCs, databases included, hold `Pending` while kopiur hydrates them.
+   Apps start on restored data in parallel.
 4. You drink the coffee.
 
 A [restore canary](disaster-recovery.md#the-restore-canary) takes daily backups
 and runs weekly quick verification. Its isolated test PVC is where an operator
-can safely re-run the destructive delete→recreate→populate→byte-verify drill.
+can safely re-run the destructive delete, recreate, populate, byte-verify drill.
 
-The honest boundaries:
+The limits:
 
-- **Database recovery is an explicit RPO choice** — plain single-instance
+- **Database recovery is an explicit RPO choice.** Plain single-instance
   Postgres uses a single-volume crash-consistent kopiur snapshot (daily, or every 6 hours for irreplaceable data)
-  and WAL crash recovery. There is **no point-in-time recovery**; the last
+  and WAL crash recovery. There is **no point-in-time recovery**. The last
   snapshot is the only stop. That trade was accepted when CNPG was retired
   (2026-08-13).
-- **One repo copy, on-LAN** — this is not 3-2-1; a NAS-level disaster loses
+- **One repo copy, on-LAN.** This is not 3-2-1. A NAS-level disaster loses
   the backups. Known, accepted, documented.
-- **RPO = the cron cadence.** You lose at most one interval of data.
-- **kopiur is pre-1.0** — the chart is pinned; CRD fields can churn.
+- **RPO equals the cron cadence.** You lose at most one interval of data.
+- **kopiur is pre-1.0.** The chart is pinned. CRD fields can change.
 
 ---
 
-## Part 8 — "I just want to try kopiur" (the adoption ladder)
+## Part 8. "I just want to try kopiur" (the adoption ladder)
 
-The honest version of the colleague conversation:
+The colleague conversation, as it usually goes:
 
 > **"Dude, you gotta try kopiur."**
 > "OK… but to back up my PVCs I need your sync waves? ArgoCD? Namespace
@@ -595,17 +590,17 @@ The honest version of the colleague conversation:
 > kopiur itself is an afternoon."**
 
 Everything in this repo is one of these rungs. Climb only as far as your
-problem actually demands:
+problem demands:
 
 | Rung | You add | It buys you | You need it when |
 |---|---|---|---|
-| **0 — backups** | kopiur operator (Helm) + `ClusterRepository` + a plain Secret + one `SnapshotPolicy`/`SnapshotSchedule` | Scheduled, encrypted, deduped PVC backups. `kubectl` only. | You have ≥1 PVC you'd cry about. |
-| **1 — self-restoring PVCs** | a `Restore` CR + `dataSourceRef` on the PVC | Restore-before-bind: a recreated PVC comes back **with data**, never silently empty. | The first time you delete a PVC on purpose or by accident. |
-| **2 — GitOps** | ArgoCD/Flux owning the manifests | *Unattended* recreate: delete the app, the namespace, whatever — Git puts it back and the restore fires itself. | You stop wanting to type `kubectl apply` during incidents. |
-| **3 — credential fanout** | the namespace label + `ClusterExternalSecret` (or any secret sync) | New namespace = one label; repo creds appear, tenancy granted. No per-app secret plumbing. | Backed-up apps live in more than ~3 namespaces. |
-| **4 — the component** | `common/kopiur-backup` Kustomize component | Per-PVC config shrinks to a ~20-line stub; cluster-wide backup policy changes in one file. | You're copy-pasting the same CR fields a 5th time. |
-| **5 — sync waves** | wave annotations + the Application health Lua | A **whole-cluster rebuild** that orders itself: storage → operator → repo → apps, restores gating each app's start. | You want "nuke it and re-bootstrap" as a supported operation. |
-| **6 — trust at scale** | CI coverage check + the restore canary | A PR can't ship a backed-up PVC missing its `dataSourceRef`; backup verification is scheduled and destructive restore drills have an isolated target. | The system must stay correct *without risking production data*. |
+| **0. Backups** | kopiur operator (Helm) + `ClusterRepository` + a plain Secret + one `SnapshotPolicy`/`SnapshotSchedule` | Scheduled, encrypted, deduped PVC backups. `kubectl` only. | You have at least one PVC you'd cry about. |
+| **1. Self-restoring PVCs** | a `Restore` CR + `dataSourceRef` on the PVC | Restore-before-bind: a recreated PVC comes back **with data**, never silently empty. | The first time you delete a PVC on purpose or by accident. |
+| **2. GitOps** | ArgoCD/Flux owning the manifests | *Unattended* recreate. Delete the app or the namespace and Git puts it back. The restore fires itself. | You stop wanting to type `kubectl apply` during incidents. |
+| **3. Credential fanout** | the namespace label + `ClusterExternalSecret` (or any secret sync) | A new namespace needs one label. Repo creds appear and tenancy is granted. No per-app secret plumbing. | Backed-up apps live in more than ~3 namespaces. |
+| **4. The component** | `common/kopiur-backup` Kustomize component | Per-PVC config shrinks to a ~20-line stub. Cluster-wide backup policy changes in one file. | You're copy-pasting the same CR fields a 5th time. |
+| **5. Sync waves** | wave annotations + the Application health Lua | A **whole-cluster rebuild** that orders itself: storage, operator, repo, then apps, with restores gating each app's start. | You want "nuke it and re-bootstrap" as a supported operation. |
+| **6. Trust at scale** | CI coverage check + the restore canary | A PR can't ship a backed-up PVC missing its `dataSourceRef`. Backup verification is scheduled. Destructive restore drills have an isolated target. | The system must stay correct *without risking production data*. |
 
 ### Rung 0–1 on YOUR cluster, concretely
 
@@ -613,30 +608,30 @@ Prerequisites: any CSI with VolumeSnapshot support (`kubectl get
 volumesnapshotclass` returns something) and any S3 endpoint (MinIO, Garage,
 B2, TrueNAS…).
 
-1. Install the operator: the OCI Helm chart
-   `oci://ghcr.io/home-operations/charts/kopiur` (pin the version — it's
-   pre-1.0).
+1. Install the operator from the OCI Helm chart
+   `oci://ghcr.io/home-operations/charts/kopiur`. Pin the version, because it's
+   pre-1.0.
 2. Create a `kopiur-system` Secret with `AWS_ACCESS_KEY_ID`,
-   `AWS_SECRET_ACCESS_KEY`, `KOPIA_PASSWORD` — plain `kubectl create secret`
-   is fine; ESO is a rung-3 luxury.
+   `AWS_SECRET_ACCESS_KEY`, `KOPIA_PASSWORD`. Plain `kubectl create secret`
+   is fine. ESO is a rung-3 luxury.
 3. Declare the repo: a `ClusterRepository` pointing at your bucket
    (bare `host:port` endpoint, `tls.disableTls: true` for plain HTTP), with
    `allowedNamespaces` matching a label of your choosing. Copy the shape from
    [backup-repository-setup.md](backup-repository-setup.md#3-the-repository-cr-in-git-already-done).
 4. Label your app's namespace, copy the same Secret into it, and drop in the
-   three CRs from [Part 4's tab 3](#the-complete-real-example-open-webui) —
-   remembering the **one real gotcha**: the mover's UID must be the data
+   three CRs from [Part 4's tab 3](#the-complete-real-example-open-webui).
+   Remember the **one real gotcha**: the mover's UID must be the data
    owner's (Part 6).
 5. Watch `kubectl -n <ns> get snapshot` reach `Completed`. That's rung 0.
 6. Add the `Restore` + `dataSourceRef` (tabs 2–3), then drill it: scale to
    zero, delete the PVC, recreate it, watch it hold `Pending` and bind **with
-   your data**. That's rung 1 — and the moment the whole idea clicks.
+   your data**. That's rung 1, and the moment the whole idea clicks.
 
 !!! tip "What's genuinely *this repo* vs. genuinely *kopiur*"
     kopiur gives you rungs 0–1 (the CRs, the populator, the mover). Rungs 2–6
-    are ordinary Kubernetes/GitOps building blocks — ArgoCD, ESO, Kustomize,
-    CI — arranged so the backup system needs **zero human choreography**. None
-    of them are required to start; all of them are why the full-cluster-nuke
+    are ordinary Kubernetes and GitOps building blocks: ArgoCD, ESO, Kustomize,
+    and CI. They are arranged so the backup system needs **zero human choreography**. None
+    are required to start. All are why the full-cluster-nuke
     story works unattended.
 
 ---
@@ -644,42 +639,42 @@ B2, TrueNAS…).
 ## FAQ (the questions colleagues actually ask)
 
 **Why not Velero?**
-Velero restores as a separate step after the PVC exists — which reintroduces
+Velero restores as a separate step after the PVC exists, which reintroduces
 the blank-volume race from Part 5. Only populator-based tools can hold the PVC
-hostage until the data is back.
+until the data is back.
 
 **Why kopiur?**
-Kopia-native with first-class CRs (`ClusterRepository` instead of hand-rolled
+Kopia-native with dedicated CRs (`ClusterRepository` instead of hand-rolled
 secrets-per-namespace), a lean mover, the volume-populator contract for
 restore-before-bind, and an active home-operations community.
 ([Evaluation record](domains/storage/kopiur-evaluation.md).)
 
 **Why explicit per-PVC CRs instead of "just label the PVC"?**
-`dataSourceRef` is immutable and must exist *at PVC create time* — a
-controller reacting to a label is too late (the PVC already bound empty).
-So the wiring must live in Git at render time; the Kustomize component keeps
+`dataSourceRef` is immutable and must exist *at PVC create time*. A
+controller reacting to a label is too late, because the PVC already bound empty.
+So the wiring must live in Git at render time. The Kustomize component keeps
 that from becoming boilerplate.
 
-**One shared repo for all apps — isn't that risky?**
+**One shared repo for all apps: isn't that risky?**
 One encryption password is a single blast radius, accepted for a single-operator
 LAN-only homelab. In exchange, Kopia dedups across *all* apps. Snapshots are
 namespaced by each policy's `identity` (`hostname`/`username`), so apps never
 collide.
 
 **What happens if the S3 box is down during a rebuild?**
-Restores error and retry; PVCs stay `Pending`. Nothing binds empty. Recovery
+Restores error and retry. PVCs stay `Pending`. Nothing binds empty. Recovery
 is delayed, never corrupted. (Row 3 of the table in Part 5.)
 
 **What about the databases?**
 Same flow. Every database is a plain Postgres Deployment whose PVC follows
-the exact same restore-before-bind path as every other PVC (CNPG was retired
-2026-08-13 — [pattern](domains/cnpg/run-postgres-plain-english.md#the-pattern)).
+the exact same restore-before-bind path as every other PVC. CNPG was retired
+2026-08-13. See the [pattern](domains/cnpg/run-postgres-plain-english.md#the-pattern).
 The operator's guide is
 [run-postgres-plain-english.md](domains/cnpg/run-postgres-plain-english.md).
 
 **How do I add a backup to a new app?**
-Six steps, ~5 minutes: find the data owner's uid:gid → label the namespace →
-write the stub → add the `dataSourceRef` → wire the component → verify.
+Six steps, about 5 minutes: find the data owner's uid:gid, label the namespace,
+write the stub, add the `dataSourceRef`, wire the component, verify.
 [The checklist](domains/storage/kopiur-backup-architecture.md#5-to-add-a-backup-checklist).
 
 ---

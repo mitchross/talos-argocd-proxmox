@@ -1,17 +1,17 @@
 # Move a kopiur-backed PVC to another StorageClass
 
-**Purpose:** change the StorageClass of an existing PVC (for example `longhorn` →
+**Purpose:** change the StorageClass of an existing PVC (for example `longhorn` to
 `longhorn-wired-ha`) without losing data.
 **Status:** runbook, current truth.
 **Scope:** one PVC and its `Restore` CR. Nothing else in the Application changes.
 Kubernetes treats `spec.storageClassName` as immutable, so the only path is the
-same restore-before-bind flow the cluster already uses for disaster recovery:
-snapshot → delete PVC + `Restore` → let Argo CD recreate both → kopiur hydrates
-the new volume from the snapshot.
+same restore-before-bind flow the cluster uses for disaster recovery. Take a
+snapshot, delete the PVC and `Restore`, and let Argo CD recreate both. Kopiur then
+hydrates the new volume from the snapshot.
 
 ## Prerequisites
 
-- The target class provisions and places replicas the way you expect. Prove it
+- The target class provisions and places replicas as you expect. Prove it
   with a disposable PVC first (see "Canary" below).
 - The PVC is on the `kopiur-backup` component: `SnapshotPolicy`, `SnapshotSchedule`,
   `Restore`, and a `dataSourceRef` pointing at the `Restore`.
@@ -19,7 +19,7 @@ the new volume from the snapshot.
 - The workload is a single writer you can pause (a Postgres Deployment qualifies).
 - A merged Git change that sets the new `storageClassName` on the PVC. Until the
   PVC is recreated, Argo CD reports that resource as failing to sync
-  ("field is immutable"). That is expected; run the cutover right after merge.
+  ("field is immutable"). That is expected. Run the cutover right after the merge.
 
 ## Canary
 
@@ -54,12 +54,12 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
 1. **The fallback is the pinned cutover snapshot, not the old volume.** Do not
    patch the old PV to `Retain`. The class's `Delete` reclaim policy lets
    Kubernetes and Longhorn garbage-collect the old volume the moment the claim
-   is gone, with nothing to clean up by hand. Step 3 pins the kopia snapshot
+   is gone, so nothing needs hand cleanup. Step 3 pins the kopia snapshot
    that holds the exact pre-cutover bytes off-cluster.
 
 2. **Stop writers without touching the pod.** Use a Cilium `ingressDeny`
    policy. A plain Kubernetes NetworkPolicy with no ingress rules does **not**
-   block here: the cluster's existing Cilium allow rules still admit the
+   block here. The cluster's existing Cilium allow rules still admit the
    traffic, and clients reconnect within seconds. Deny rules win over allows.
    Terminating open sessions forces every client to reconnect into the block.
    Argo CD does not manage this object, so it will not remove it for you.
@@ -82,12 +82,12 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
 
    Expected: the count is `0` and stays `0` on a second run ten seconds later.
    The metrics sidecar's loopback session is exempt (`client_addr IS NULL`) and
-   is expected to remain. Temporal services log persistence errors while
-   blocked; that is the point.
+   should remain. Temporal services log persistence errors while
+   blocked. That is the point.
 
 3. **Take the cutover snapshot.** Manual `Snapshot` CRs reuse the policy (hooks,
-   identity, mover uid). `Retain` keeps the kopia snapshot if the CR is later
-   deleted; `pin` exempts it from retention.
+   identity, mover uid). `Retain` keeps the kopia snapshot if someone later deletes the CR.
+   `pin` exempts it from retention.
 
    ```sh
    kubectl -n <ns> apply -f - <<'YAML'
@@ -105,12 +105,12 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    Expected: `Succeeded <kopia-id>` within a few minutes. Write the id down.
 
 4. **Make Argo CD see the new class, then recreate the claim.** Argo CD can
-   hold a stale render for minutes after a merge and will happily recreate the
+   hold a stale render for minutes after a merge and will recreate the
    PVC on the **old** class from it. Hard-refresh and wait until the PVC shows
    `OutOfSync` (the desired state now differs from the live claim) before
-   deleting anything. Delete the `Restore` first: it pins its snapshot at
+   deleting anything. Delete the `Restore` first. It pins its snapshot at
    admission and never re-resolves, so a leftover `Restore` would hydrate an old
-   snapshot. The pod must go too, or PVC protection keeps the claim alive.
+   snapshot. Delete the pod too, or PVC protection keeps the claim alive.
 
    ```sh
    kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite
@@ -132,8 +132,8 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    ```
 
    Expected: the kopia id from step 3, a `pinnedAt` newer than it, and the PVC
-   moving `Pending → Bound` on the new class. A PVC that binds instantly never
-   ran the populator; stop and inspect the `Restore` conditions.
+   moving from `Pending` to `Bound` on the new class. A PVC that binds instantly never
+   ran the populator. Stop and inspect the `Restore` conditions.
 
 6. **Verify the volume and the database.**
 
@@ -157,8 +157,8 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    ```
 
    A schedule whose `NextRunTime` is in the past after a restore has lost its
-   timer (the scheduler workflow shows no pending timer and only reacts to
-   signals). Re-arm it without touching the spec or the DLQ:
+   timer. The scheduler workflow shows no pending timer and reacts only to
+   signals. Re-arm it without touching the spec or the DLQ:
 
    ```sh
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule toggle --schedule-id <id> --namespace default --pause --reason "re-arm timer"
@@ -166,8 +166,7 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule describe --schedule-id <id> --namespace default -o json | jq '.info.futureActionTimes[0]'   # in the future
    ```
 
-8. **Confirm the new volume backs up.** Nothing to retire; the old volume was
-   garbage-collected in step 4.
+8. **Confirm the new volume backs up.** Nothing to retire. Step 4 garbage-collected the old volume.
 
    ```sh
    kubectl -n <ns> get snapshot --sort-by=.metadata.creationTimestamp | tail -2   # newest: Succeeded
@@ -176,14 +175,14 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
 ## Failure path
 
 - **PVC stuck `Pending`, `Restore` shows `Stalled`:** the repository is
-  unreachable or the mover cannot read. Fix the cause; kopiur retries. Nothing
-  binds empty (restore-before-bind fails closed).
-- **Wrong snapshot pinned:** delete the `Restore` and the PVC again; the next
+  unreachable or the mover cannot read. Fix the cause and kopiur retries. Nothing
+  binds empty, because restore-before-bind fails closed.
+- **Wrong snapshot pinned:** delete the `Restore` and the PVC again. The next
   admission pins the newest snapshot.
 - **Roll back the class:** revert the Git change, then repeat step 4. The
-  cutover snapshot restores equally well onto the old class.
+  cutover snapshot restores onto the old class just as well.
 - **Last resort:** the pinned cutover `Snapshot` holds the exact pre-cutover
-  bytes; a fresh `Restore` + PVC hydrates from it on any class.
+  bytes. A fresh `Restore` and PVC hydrate from it on any class.
 
 ## Source of truth
 

@@ -95,7 +95,7 @@ The UI lists the live covered and exempt namespaces.
 | `vpn-egress` | The gateways and the controller. |
 | `cloudflared` | The Cloudflare tunnel stays on the home connection by design. |
 | `consumers-energy-sync` | Okta asks for step-up MFA from datacenter VPN IPs. |
-| `vllm`, `comfyui` | Large public model downloads from huggingface.co; the VPN adds no privacy there and costs speed. |
+| `vllm`, `comfyui` | Large public model downloads from huggingface.co. The VPN adds no privacy there and costs speed. |
 
 ### Known gaps
 
@@ -117,10 +117,10 @@ The UI lists the live covered and exempt namespaces.
 
 ## Throughput (expected, not measured)
 
-- Each gateway links at **1 Gb/s**. Checked live on 2026-11-03 with node-exporter `node_network_speed_bytes`:
+- Each gateway links at 1 Gb/s. Checked live on 2026-11-03 with node-exporter `node_network_speed_bytes`:
   `hp-elite-gen12` `eno1`, `hp-elite-gen13` `eno1` and `mini-pc-dell-ultra-worker` `enp128s31f6` all report 1000 Mb/s, and none has a second NIC.
-  Earlier notes said 2.5 GbE; if a NIC is 2.5G-capable, the cable or switch port holds it at 1 Gb/s today.
-- So one gateway tops out near 940 Mbps, and a single pod (one gateway) peaks near 940 Mbps, above today's 670 Mbps cap.
+  Earlier notes said 2.5 GbE. If a NIC is 2.5G-capable, the cable or switch port holds it at 1 Gb/s today.
+- One gateway tops out near 940 Mbps. A single pod uses one gateway, so it also peaks near 940 Mbps, above today's 670 Mbps cap.
 - Many pods spread across three gateways, so the cluster total can reach the 2 Gb line.
 - WireGuard crypto runs in kernel softirq on the gateway node. Expect about 1-2 cores per gateway at full speed.
 
@@ -163,7 +163,7 @@ The UI lists the live covered and exempt namespaces.
     ```
 
 `mode` is `on` (pods use Proton), `off` (toggle off) or `fallback` (toggle on, no healthy gateway).
-The state survives controller restarts; it lives in ConfigMap `vpn-egress-state`.
+The state survives controller restarts. It lives in ConfigMap `vpn-egress-state`.
 `DEFAULT_ENABLED` in `config.env` applies only when that ConfigMap doesn't exist yet.
 
 ## Metrics
