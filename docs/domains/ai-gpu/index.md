@@ -193,7 +193,8 @@ nobody watches. Humans merge every PR. Side-by-side comparison:
 **Done when:** Pi answers "what does this repo do?" and Hermes's Status page
 shows the gateway running.
 Setup: [Pi](pi-agent-local-dev.md#pi-in-five-minutes), [Hermes in the cluster](hermes.md),
-[Hermes on another cluster](hermes-other-clusters.md).
+[Hermes on another cluster](hermes-other-clusters.md),
+[Hermes on one computer](hermes-one-computer.md).
 
 ### 7. Run it day to day
 
