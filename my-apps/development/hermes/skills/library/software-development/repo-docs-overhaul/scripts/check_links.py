@@ -4,8 +4,8 @@ Stage new files first (git add -A): only tracked files are scanned. Exit 1 if an
 import os, posixpath, re, subprocess, sys
 
 os.chdir(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
-files = [f for f in subprocess.run(["git", "ls-files", "*.md"], capture_output=True, text=True).stdout.split()
-         if "node_modules" not in f]
+files = [f for f in subprocess.run(["git", "ls-files", "-z", "*.md"], capture_output=True, text=True).stdout.split("\0")
+         if f and "node_modules" not in f]
 bad = 0
 for f in files:
     t = re.sub(r"```.*?```", "", open(f, encoding="utf-8").read(), flags=re.S)
