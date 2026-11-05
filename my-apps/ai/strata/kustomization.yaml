@@ -20,7 +20,10 @@ configMapGenerator:
       - FAMILY=qwen
       - MODEL=IQ3_S
       - CONTEXT=131072
-      - VISION=no
+      # Images: yes = the CUDA image encoder (needs an image built with BUILD_VISION=1). It is in the settings
+      # stamp, so a change reruns setup: the GGUFs and pack are reused, only the ~0.9 GB mmproj is downloaded.
+      # The engine keeps ~700 MiB free for it (setup.py VISION reserve_mib), taken from the expert cache.
+      - VISION=yes
       - KV=int8
       - LOW_RAM=off
       - KV_STREAMING=on

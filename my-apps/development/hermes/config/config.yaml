@@ -7,14 +7,18 @@ model:
 
 # Local models in the picker. qwen3.8-flash-next = Strata only (no cloud fallback);
 # qwen3.8-27b = Strata with DeepSeek overflow when busy.
+# supports_vision: Hermes reads it here (agent/image_routing.py, providers.<p>.models.<model>) to send
+# images natively; without it a litellm model counts as text-only. Strata runs with VISION=yes.
 providers:
   litellm:
     name: litellm
     base_url: http://litellm-service.litellm.svc.cluster.local:4000/v1
     api_key: ${LITELLM_API_KEY}
     models:
-      - qwen3.8-flash-next
-      - qwen3.8-27b
+      qwen3.8-flash-next:
+        supports_vision: true
+      qwen3.8-27b:
+        supports_vision: true
 
 terminal:
   backend: local

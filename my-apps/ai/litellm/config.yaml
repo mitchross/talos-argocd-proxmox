@@ -18,6 +18,9 @@ model_list:
       # Strata's context (vLLM had 262K). A longer prompt gets Strata's 400; LiteLLM's regular fallbacks
       # don't exclude 400s, so it should reach deepseek-flash too (read from the v1.106.6 router, not tested).
       max_input_tokens: 131072
+      # Strata runs the image encoder (VISION=yes in my-apps/ai/strata). The overflow, deepseek-flash, takes images
+      # too (OpenRouter lists ~deepseek/deepseek-flash-latest with text+image input).
+      supports_vision: true
   # Strata only, never the cloud: no limit and no fallback, so a busy Strata queues these (one per free slot).
   - model_name: qwen3.8-flash-next
     litellm_params:
@@ -29,6 +32,7 @@ model_list:
       input_cost_per_token: 0
       output_cost_per_token: 0
       max_input_tokens: 131072
+      supports_vision: true
   # Same backend as qwen3.8-27b under Pi's own names. One slot each: Pi's traffic overflows to DeepSeek
   # (the -auto fallback, or the classifier's default_model) rather than taking Strata's slots from the apps.
   - model_name: qwen3.8-27b-auto
@@ -43,6 +47,7 @@ model_list:
       output_cost_per_token: 0
       # pi-auto's context-window escalation reads the tier model's window.
       max_input_tokens: 131072
+      supports_vision: true
   - model_name: pi-classifier
     litellm_params:
       model: openai/qwen3.8-flash-next-iq3_s
