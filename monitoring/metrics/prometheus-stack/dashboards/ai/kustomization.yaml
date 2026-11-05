@@ -16,9 +16,15 @@ configMapGenerator:
   - name: hermes-ai-split-dashboard
     files:
       - hermes-ai-split.json
+  - name: llm-engines-dashboard
+    files:
+      - llm-engines.json
   - name: pi-routing-dashboard
     files:
       - pi-routing.json
+  - name: strata-inference-dashboard
+    files:
+      - strata-inference.json
   - name: vllm-inference-dashboard
     files:
       - vllm-inference.json

@@ -1,0 +1,34 @@
+name: Inference Dashboard Tests
+on:
+  pull_request:
+    paths:
+      - 'monitoring/metrics/prometheus-stack/dashboards/ai/**'
+      - 'scripts/generate-inference-dashboards.py'
+      - 'scripts/tests/test_inference_dashboards.py'
+      - '.github/workflows/inference-dashboard-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'monitoring/metrics/prometheus-stack/dashboards/ai/**'
+      - 'scripts/generate-inference-dashboards.py'
+      - 'scripts/tests/test_inference_dashboards.py'
+      - '.github/workflows/inference-dashboard-tests.yml'
+permissions:
+  contents: read
+jobs:
+  inference-dashboards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Generated JSON is current
+        run: python scripts/generate-inference-dashboards.py --check
+      - name: Isolation, health, unit and navigation tests
+        run: python -m unittest discover -s scripts/tests -p test_inference_dashboards.py -v
+      - name: Evaluate engine-status PromQL against synthetic series
+        run: |
+          set -euo pipefail
+          python scripts/generate-inference-dashboards.py --promtool-tests /tmp/inference-status
+          docker run --rm --entrypoint promtool -v /tmp/inference-status:/work:ro -w /work prom/prometheus:v3.5.0 test rules inference-status.test.yaml

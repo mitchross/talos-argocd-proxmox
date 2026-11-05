@@ -30,7 +30,9 @@ flowchart LR
 |---|---|
 | Grafana `/d/pi-routing` — Pi Auto-Routing | local vs paid ratio, classifier health, spend |
 | Grafana `/d/ai-gateway-analytics` — AI Gateway and Analytics | all gateway requests, tokens, latency, failures, Langfuse health |
-| Grafana `/d/vllm-inference` — vLLM Inference | Qwen queue depth, throughput, time to first token, KV cache use |
+| Grafana `/d/llm-engines` — Local LLM Engines | vLLM and Strata side by side: state, speed, latency, history per engine |
+| Grafana `/d/vllm-inference` — vLLM Inference | vLLM queue depth, decode/prefill speed, latency, KV cache use |
+| Grafana `/d/strata-inference` — Strata Inference | Strata live state, decode/prefill speed, latency, expert/prompt caches, MTP |
 | Grafana `/d/gpu-overview` — GPU Overview | GPU power, memory, temperature, utilisation |
 | Langfuse | one trace per request: input, output, tokens, session, routing reason |
 

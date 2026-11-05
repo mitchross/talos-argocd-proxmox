@@ -19,7 +19,7 @@ JSON file into a ConfigMap and stamps two things on it:
 |-----------|----------------|------------------|
 | `start-here/` | Start Here | Cockpit (Grafana home page), Homelab now (what is broken right now), Why Is This App Slow, Capacity |
 | `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear, VPN egress (+ kopiur from its chart) |
-| `ai/` | AI | GPU, vLLM, AI gateway (LiteLLM), Pi auto-routing, Hermes AI split |
+| `ai/` | AI | GPU, local LLM engines (overview, vLLM, Strata), AI gateway (LiteLLM), Pi auto-routing, Hermes AI split |
 | `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate, Public Edge (Cloudflare tunnel, Anubis, redlib, per-site hits) |
 | `logs/` | Logs | Logs Explorer, node crash logs |
 | `home-energy/` | Home & Energy | Power & cost, solar, gaming PC, cooling, AirCube |
@@ -48,6 +48,12 @@ page.
    - sets `"id": null` and `"editable": false`.
 
    Edits made in the Grafana UI are lost on the next sync.
+
+The three inference boards (`ai/llm-engines.json`, `ai/vllm-inference.json`,
+`ai/strata-inference.json`) are generated. Edit
+`scripts/generate-inference-dashboards.py` and run it; CI fails if the JSON
+differs. `scripts/validate-inference-dashboard-queries.py --report <file>` runs
+every query against the live Prometheus (read-only).
 
 A Helm chart that ships its own dashboard only needs the same label and
 annotation. See `monitoring.dashboards` in
@@ -81,8 +87,16 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
 - **GPU:** DCGM's `pod`/`namespace` are the exporter itself. Use
   `exported_pod`/`exported_namespace`. There is no power-limit or XID metric,
   and memory temperature reads 0 on 3090s.
+- **vLLM and Strata:** both export `vllm:*` names, so pin `namespace` (`vllm`
+  or `strata`) and keep `namespace`/`model_name` in every `by`. Strata's
+  `vllm:kv_cache_usage_perc` is the running request's share of its context, not
+  KV memory. Its counters and histograms move only when a request finishes, its
+  TTFT starts after its queue, and it has no queue-time histogram. Its ITL
+  histogram holds each request's mean gap. `strata:cpu`/`strata:ram_*` are the
+  whole node. `strata:live_slots` exists only with `PARALLEL` > 1.
 - **vLLM:** one engine (`engine="0"`) spans both cards. Speculative-decoding
-  metrics don't exist while MTP is off.
+  metrics don't exist while MTP is off. A parked engine (0 replicas) has no
+  target; the status tiles read Git replicas from kube-state-metrics first.
 - **AI gateway / Pi routing:** LiteLLM traffic is sparse and every pod restart
   starts new series. Use `increase([$__range])` for window totals, not
   `max_over_time`. `requested_model` is what the app asked for;

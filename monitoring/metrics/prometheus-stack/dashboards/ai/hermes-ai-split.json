@@ -69,9 +69,9 @@
       "tags": []
     },
     {
-      "title": "vLLM Inference",
+      "title": "Local LLM Engines",
       "type": "link",
-      "url": "/d/vllm-inference",
+      "url": "/d/llm-engines",
       "icon": "dashboard",
       "targetBlank": false,
       "keepTime": true,
