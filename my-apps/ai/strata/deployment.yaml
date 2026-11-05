@@ -71,6 +71,15 @@ spec:
             # Strata rejects unknown Host headers (DNS-rebinding guard). Allow the in-cluster Service names LiteLLM uses.
             - name: STRATA_ALLOWED_HOSTS
               value: strata-service,strata-service.strata,strata-service.strata.svc,strata-service.strata.svc.cluster.local
+            # TEMPORARY A/B (revert after the benchmark): 0.2.10's PCIe share rule for missed experts instead of
+            # 0.2.11's (fixed probe share on the layer split, k 1.85, ceiling 0.60). Read by the engine at start
+            # (include/strata/core/pcie_share_rule.hpp); not in the settings stamp, so setup does not rerun.
+            - name: STRATA_PCIE_AUTO_SPLIT
+              value: "0"
+            - name: STRATA_PCIE_K_RULE
+              value: "0"
+            - name: STRATA_PCIE_SHARE_MAX
+              value: "0.60"
           ports:
             - name: http
               containerPort: 8080
