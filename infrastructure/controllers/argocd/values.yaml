@@ -1,14 +1,13 @@
-# Argo CD v3.6 release-candidate evaluation.
-# Keep the Helm chart pin independent; this override moves every Argo CD
-# component to RC4 while retaining the currently tested chart templates.
-# RC1 has an open Server-Side Diff/SSA false-negative report (#29921), so keep
-# the existing hard-refresh/cache safeguards in this file while evaluating it.
+# Argo CD v3.6 GA. The chart pin moves independently (Renovate); this override
+# moves every Argo CD component to the pinned GA image.
+# The v3.6 Server-Side Diff/SSA false-negative report (#29921) is still open,
+# so keep the existing hard-refresh/cache safeguards in this file.
 global:
   image:
-    tag: "v3.6.0-rc4"
+    tag: "v3.6.1"
 
-# Chart 10.11.6 packages v3.5.x CRDs. RC1 changed the Application,
-# ApplicationSet, and AppProject schemas, so the matching v3.6.0-rc4 CRDs are
+# The chart bundles older v3.5.x CRDs. v3.6 changed the Application,
+# ApplicationSet, and AppProject schemas, so the matching v3.6.1 CRDs are
 # vendored under ./crds and rendered by Kustomize. Bootstrap uses the same files.
 crds:
   install: false
