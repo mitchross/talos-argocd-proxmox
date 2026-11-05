@@ -184,9 +184,9 @@ Secrets. No keys sit in ConfigMaps or workflow JSON. This is one shared gateway
 key, not a per-app budget or access control.
 
 Every declared LLM consumer uses LiteLLM: Open WebUI, Perplexica/Vane,
-Presenton, SurfSense, Hindsight, Hermes, Home Assistant, Karakeep,
+Presenton, Hindsight, Hermes, Home Assistant, Karakeep,
 ComfyUI's vision bridge, WorldMonitor, Deal Scout, News Reader and
-Radar-ng. Paseo uses it too when it is turned on. They all stay on local
+Radar-ng. They all stay on local
 Qwen unless their model is changed explicitly. Hindsight is the exception: it
 extracts facts with paid `deepseek-flash` (reasoning off), so memory saves keep
 working while vLLM is down.
