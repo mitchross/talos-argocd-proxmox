@@ -20,7 +20,7 @@ spec:
       initContainers:
       # SponsorBlock is a per-source DB setting with no env override; cuts force a full VP9 re-encode.
       - name: disable-sponsorblock
-        image: ghcr.io/meeb/tubesync:v0.18.5
+        image: ghcr.io/meeb/tubesync:v0.19.0
         imagePullPolicy: IfNotPresent
         workingDir: /app
         command:
@@ -45,7 +45,7 @@ spec:
             memory: 1Gi
       containers:
       - name: tubesync
-        image: ghcr.io/meeb/tubesync:v0.18.5
+        image: ghcr.io/meeb/tubesync:v0.19.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4848
