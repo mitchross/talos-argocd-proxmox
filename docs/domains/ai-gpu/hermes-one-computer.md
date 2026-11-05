@@ -247,3 +247,6 @@ as a start. Delete the homelab rules and keep the style rules you like.
 This cluster also runs local GPUs behind LiteLLM, Omni and Talos access, SSH to other machines,
 Kopiur backups and a hosted address for the desktop apps.
 Those parts exist only because Hermes runs in a cluster. You do not need them to start.
+
+For the skills, flows and habits that make this setup work, and what not to copy, read
+[How I use Hermes: what to copy](hermes-how-i-work.md).
