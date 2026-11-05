@@ -1,4 +1,4 @@
-# TrueNAS CSI NFS Canary
+# TrueNAS CSI NFS canary
 
 The canary is manual and excluded from the Argo CD application. Run it only
 after the `truenas-csi` Application is Healthy and 1Password item
@@ -19,7 +19,7 @@ kubectl get externalsecret,secret -n truenas-csi truenas-api-credentials
 
 The node DaemonSet must be Ready on every schedulable node before continuing.
 
-## Provision And Mount
+## Provision and mount
 
 ```bash
 kubectl apply -k infrastructure/storage/truenas-csi/canary
@@ -29,10 +29,10 @@ kubectl wait -n truenas-csi-canary \
 kubectl get pod,pvc -n truenas-csi-canary -o wide
 ```
 
-The three pods use required pod anti-affinity, so they should land on separate
+The three pods use required pod anti-affinity, so they land on separate
 nodes.
 
-## Ownership Gate
+## Ownership gate
 
 ```bash
 kubectl logs -n truenas-csi-canary truenas-nfs-root-writer
@@ -44,7 +44,7 @@ kubectl get pod -n truenas-csi-canary truenas-nfs-nonroot-writer \
 
 The non-root writer must remain `Running` and report ownership `1000:1000`.
 TrueNAS CSI v1.0.4 uses NFS `mapall` and may instead report `0:0`. Treat that
-as a failed compatibility gate for workloads that require UID/GID
+result as a failed compatibility gate for workloads that require UID/GID
 preservation. Do not normalize the result by running the application as root
 without explicitly accepting that security change.
 
@@ -60,7 +60,7 @@ kubectl wait -n truenas-csi-canary \
 
 Confirm the dataset refquota is 2 GiB in TrueNAS.
 
-## Snapshot And Clone
+## Snapshot and clone
 
 ```bash
 kubectl apply -f - <<'EOF'
@@ -106,7 +106,7 @@ EOF
 Mount the clone in a temporary pod and verify `root-writer.txt` and
 `nonroot-writer.txt` contain the expected data.
 
-## Cleanup And Retained PVs
+## Cleanup and retained PVs
 
 The StorageClass and snapshot class both use `Retain`. Deleting the namespace
 does not delete the TrueNAS datasets or snapshots.

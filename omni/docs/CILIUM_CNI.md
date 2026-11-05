@@ -1,35 +1,35 @@
 # Cilium CNI on Talos Linux
 
-Complete guide for deploying Cilium CNI on Talos Linux clusters managed by Omni.
+Guide for deploying Cilium CNI on Talos Linux clusters managed by Omni.
 
 ## Overview
 
 Cilium is an eBPF-based networking, observability, and security solution for Kubernetes. On Talos Linux, Cilium provides:
 
-- **High performance** networking with eBPF datapath
-- **kube-proxy replacement** for better load balancing
-- **Gateway API** support with ALPN and AppProtocol
-- **Advanced network policies** (L3-L7)
-- **Hubble** for network observability
-- **Service mesh** capabilities without sidecars
+- Networking with an eBPF datapath
+- kube-proxy replacement for load balancing
+- Gateway API support with ALPN and AppProtocol
+- Network policies (L3-L7)
+- Hubble for network observability
+- Service mesh capabilities without sidecars
 
 ## Why Cilium on Talos?
 
-### Performance Benefits
-- **10-40% better throughput** compared to traditional CNIs
-- **Lower CPU usage** thanks to eBPF kernel integration
-- **Reduced latency** for pod-to-pod communication
-- **No userspace processing** for network operations
+### Performance benefits
+- 10-40% better throughput than traditional CNIs
+- Lower CPU usage from eBPF kernel integration
+- Lower pod-to-pod latency
+- No userspace processing for network operations
 
-### Talos Integration
+### Talos integration
 - Native support in Talos Linux
 - Optimized eBPF programs for minimal kernel
 - Automatic cgroup configuration
 - Direct API server integration
 
-### Enterprise Features
+### Enterprise features
 - CNCF Graduated project
-- Production-proven at scale (Google, AWS, Adobe, etc.)
+- Used in production at scale (Google, AWS, Adobe, etc.)
 - Active community and regular updates
 - Commercial support available
 
@@ -37,14 +37,14 @@ Cilium is an eBPF-based networking, observability, and security solution for Kub
 
 Before installing Cilium:
 
-1. **Talos cluster deployed** via Omni
-2. **kube-proxy disabled** in cluster configuration
-3. **kubeconfig downloaded** from Omni
-4. **cilium CLI installed** on your workstation
+1. Talos cluster deployed via Omni
+2. kube-proxy disabled in cluster configuration
+3. kubeconfig downloaded from Omni
+4. cilium CLI installed on your workstation
 
-## Disable kube-proxy (Required)
+## Disable kube-proxy (required)
 
-**Critical**: You MUST disable kube-proxy before creating the cluster.
+**Critical:** You MUST disable kube-proxy before creating the cluster.
 
 ### Via Omni UI
 
@@ -56,7 +56,7 @@ cluster:
     disabled: true
 ```
 
-### Via Machine Config
+### Via machine config
 
 If patching machines directly:
 
@@ -71,7 +71,7 @@ machine:
       - kube-system
 ```
 
-**Important**: This must be done **before** cluster creation. You cannot easily disable kube-proxy after cluster creation.
+**Important:** Do this **before** cluster creation. You cannot easily disable kube-proxy afterward.
 
 ## Install Cilium CLI
 
@@ -105,9 +105,9 @@ Verify:
 cilium version --client
 ```
 
-## Installation Options
+## Installation options
 
-### Option 1: Basic Cilium (No Gateway API)
+### Option 1: Basic Cilium (no Gateway API)
 
 Simple installation without Gateway API support:
 
@@ -125,7 +125,7 @@ cilium install \
     --set k8sServicePort=7445
 ```
 
-### Option 2: Cilium with Gateway API (Recommended)
+### Option 2: Cilium with Gateway API (recommended)
 
 Full installation with Gateway API support:
 
@@ -150,7 +150,7 @@ cilium install \
     --set gatewayAPI.enableAppProtocol=true
 ```
 
-### Option 3: Cilium with Hubble (Full Observability)
+### Option 3: Cilium with Hubble (full observability)
 
 Installation with Hubble for network observability:
 
@@ -177,7 +177,7 @@ cilium install \
     --set hubble.ui.enabled=true
 ```
 
-## Configuration Parameters Explained
+## Configuration parameters explained
 
 ### Required for Talos
 
@@ -191,40 +191,40 @@ Talos API server runs on localhost:7445 (not the standard 6443).
 --set cgroup.autoMount.enabled=false
 --set cgroup.hostRoot=/sys/fs/cgroup
 ```
-Talos manages cgroups itself; Cilium must use existing mount.
+Talos manages cgroups itself, so Cilium must use the existing mount.
 
 ```bash
 --set securityContext.capabilities.ciliumAgent="{...}"
 --set securityContext.capabilities.cleanCiliumState="{...}"
 ```
-Required Linux capabilities for Cilium to function on Talos's minimal kernel.
+Linux capabilities Cilium needs on Talos's minimal kernel.
 
-### kube-proxy Replacement
+### kube-proxy replacement
 
 ```bash
 --set kubeProxyReplacement=true
 ```
-Enable eBPF-based load balancing instead of iptables.
+Use eBPF-based load balancing instead of iptables.
 
-### IPAM Configuration
+### IPAM configuration
 
 ```bash
 --set ipam.mode=kubernetes
 ```
-Use Kubernetes for IP address management (standard mode).
+Use Kubernetes for IP address management (the standard mode).
 
-### Gateway API Features
+### Gateway API features
 
 ```bash
 --set gatewayAPI.enabled=true
 --set gatewayAPI.enableAlpn=true
 --set gatewayAPI.enableAppProtocol=true
 ```
-Enable Gateway API with ALPN (Application-Layer Protocol Negotiation) and AppProtocol support.
+Turn on Gateway API with ALPN (Application-Layer Protocol Negotiation) and AppProtocol support.
 
-## Verify Installation
+## Verify installation
 
-### Check Cilium Status
+### Check Cilium status
 
 ```bash
 cilium status --wait
@@ -246,7 +246,7 @@ Containers:            cilium             Running: 3
 Cluster Pods:          5/5 managed by Cilium
 ```
 
-### Check Node Status
+### Check node status
 
 ```bash
 kubectl get nodes
@@ -254,7 +254,7 @@ kubectl get nodes
 
 All nodes should show **Ready** status.
 
-### Check Cilium Pods
+### Check Cilium pods
 
 ```bash
 kubectl get pods -n kube-system -l k8s-app=cilium
@@ -262,17 +262,17 @@ kubectl get pods -n kube-system -l k8s-app=cilium
 
 Should show one Cilium pod per node, all Running.
 
-### Run Connectivity Test
+### Run connectivity test
 
 ```bash
 cilium connectivity test
 ```
 
-This runs a comprehensive suite of tests. Should complete with all tests passing.
+This runs a suite of tests. All tests should pass.
 
-## Gateway API Setup
+## Gateway API setup
 
-### Create Gateway Class
+### Create Gateway class
 
 ```bash
 kubectl apply -f - <<EOF
@@ -350,7 +350,7 @@ spec:
 EOF
 ```
 
-### TLS Certificate for Gateway
+### TLS certificate for Gateway
 
 ```bash
 # Create TLS secret
@@ -376,7 +376,7 @@ spec:
 EOF
 ```
 
-## Hubble Observability
+## Hubble observability
 
 ### Enable Hubble
 
@@ -425,9 +425,9 @@ hubble observe --to-pod my-pod
 hubble observe --verdict DROPPED
 ```
 
-## Network Policies
+## Network policies
 
-### Kubernetes Network Policy
+### Kubernetes network policy
 
 Cilium supports standard Kubernetes NetworkPolicy:
 
@@ -453,9 +453,9 @@ spec:
       port: 8080
 ```
 
-### Cilium Network Policy (L3-L4)
+### Cilium network policy (L3-L4)
 
-More powerful with Cilium-specific features:
+Cilium-specific policies add features beyond the standard resource:
 
 ```yaml
 apiVersion: cilium.io/v2
@@ -477,7 +477,7 @@ spec:
         protocol: TCP
 ```
 
-### Cilium L7 Policy (HTTP)
+### Cilium L7 policy (HTTP)
 
 Enforce HTTP-level rules:
 
@@ -507,7 +507,7 @@ spec:
           path: "/api/v1/users"
 ```
 
-### Cluster-Wide Policy
+### Cluster-wide policy
 
 Apply policy across all namespaces:
 
@@ -531,7 +531,7 @@ spec:
     - matchPattern: "*.internal.company.com"
 ```
 
-### DNS-based Policy
+### DNS-based policy
 
 Allow egress to specific domains:
 
@@ -562,9 +562,9 @@ spec:
         - matchPattern: "*"
 ```
 
-## Load Balancing
+## Load balancing
 
-### LoadBalancer IP Pool
+### LoadBalancer IP pool
 
 Define IP pool for LoadBalancer services:
 
@@ -598,7 +598,7 @@ spec:
 
 Cilium will assign an IP from the pool automatically.
 
-### Advanced Load Balancing
+### Advanced load balancing
 
 ```yaml
 apiVersion: v1
@@ -617,21 +617,21 @@ spec:
     targetPort: 8080
 ```
 
-## Performance Tuning
+## Performance tuning
 
-### Enable BBR Congestion Control
+### Enable BBR congestion control
 
 ```bash
 cilium config set enable-bbr true
 ```
 
-### Enable Bandwidth Manager
+### Enable bandwidth manager
 
 ```bash
 cilium config set enable-bandwidth-manager true
 ```
 
-### Native Routing Mode
+### Native routing mode
 
 For best performance with L2-adjacent nodes:
 
@@ -640,15 +640,15 @@ cilium config set tunnel disabled
 cilium config set ipv4-native-routing-cidr <pod-cidr>
 ```
 
-### eBPF Host Routing
+### eBPF host routing
 
 ```bash
 cilium config set enable-host-routing true
 ```
 
-## Monitoring and Metrics
+## Monitoring and metrics
 
-### Prometheus Integration
+### Prometheus integration
 
 Cilium exports Prometheus metrics:
 
@@ -659,16 +659,16 @@ cilium hubble enable --prometheus
 # Metrics available at: http://<cilium-agent>:9962/metrics
 ```
 
-### Grafana Dashboards
+### Grafana dashboards
 
 Import official Cilium dashboards:
-- **Cilium Metrics**: Dashboard ID 16611
-- **Hubble Metrics**: Dashboard ID 16612
-- **Cilium Operator**: Dashboard ID 16612
+- Cilium Metrics: Dashboard ID 16611
+- Hubble Metrics: Dashboard ID 16612
+- Cilium Operator: Dashboard ID 16612
 
 ## Upgrading Cilium
 
-### Check Current Version
+### Check current version
 
 ```bash
 cilium version
@@ -689,7 +689,7 @@ cilium status
 
 ## Troubleshooting
 
-### Cilium Pods Not Starting
+### Cilium pods not starting
 
 Check logs:
 ```bash
@@ -697,11 +697,11 @@ kubectl logs -n kube-system -l k8s-app=cilium
 ```
 
 Common issues:
-- Wrong k8sServiceHost/Port (must be localhost:7445)
+- Wrong k8sServiceHost or k8sServicePort (must be localhost:7445)
 - Missing capabilities in securityContext
 - Incorrect cgroup configuration
 
-### Connectivity Issues
+### Connectivity issues
 
 ```bash
 # Run connectivity test
@@ -715,7 +715,7 @@ cilium bpf lb list
 cilium bpf endpoint list
 ```
 
-### Gateway Not Working
+### Gateway not working
 
 ```bash
 # Check Gateway status
@@ -730,7 +730,7 @@ kubectl describe httproute <route-name>
 kubectl get pods -n kube-system -l k8s-app=cilium-envoy
 ```
 
-### Network Policy Debugging
+### Network policy debugging
 
 ```bash
 # Check policy status
@@ -743,7 +743,7 @@ cilium endpoint list
 hubble observe --verdict DROPPED --follow
 ```
 
-### Performance Issues
+### Performance issues
 
 ```bash
 # Check eBPF program stats
@@ -756,9 +756,9 @@ kubectl top pods -n kube-system -l k8s-app=cilium
 cilium status --all-nodes
 ```
 
-## Advanced Features
+## Advanced features
 
-### Cluster Mesh (Multi-Cluster)
+### Cluster mesh (multi-cluster)
 
 Connect multiple Kubernetes clusters:
 
@@ -770,7 +770,7 @@ cilium clustermesh enable
 cilium clustermesh connect --context cluster1 --destination-context cluster2
 ```
 
-### Transparent Encryption
+### Transparent encryption
 
 Enable WireGuard encryption:
 
@@ -779,11 +779,11 @@ cilium config set encryption-type wireguard
 cilium config set enable-wireguard true
 ```
 
-### Service Mesh
+### Service mesh
 
 Enable service mesh features:
 
-> **Note:** `ingressController.enabled=true` is an optional upstream Cilium feature shown here for completeness — **this cluster does NOT use it.** We standardize on Cilium Gateway API exclusively (not Ingress); do not enable the ingress controller thinking it's required.
+> **Note:** `ingressController.enabled=true` is an optional upstream Cilium feature shown here for completeness. **This cluster does NOT use it.** We use Cilium Gateway API exclusively, not Ingress. Do not enable the ingress controller thinking it's required.
 
 ```bash
 cilium install \
@@ -794,7 +794,7 @@ cilium install \
   --set envoy.enabled=true
 ```
 
-### BGP Support
+### BGP support
 
 Advertise service IPs via BGP:
 
@@ -817,16 +817,16 @@ spec:
 EOF
 ```
 
-## Best Practices
+## Best practices
 
-1. **Always disable kube-proxy** - Required for kube-proxy replacement
-2. **Use Gateway API** - More powerful than Ingress
-3. **Enable Hubble** - Essential for debugging and observability
-4. **Implement network policies** - Start with default deny
-5. **Monitor metrics** - Use Prometheus and Grafana
-6. **Test connectivity** - Run cilium connectivity test regularly
-7. **Keep updated** - Regular Cilium upgrades for features and fixes
-8. **Use L7 policies** - For fine-grained application control
+1. Always disable kube-proxy. Kube-proxy replacement requires it.
+2. Use Gateway API. It has more features than Ingress.
+3. Enable Hubble. It helps with debugging and observability.
+4. Implement network policies. Start with default deny.
+5. Monitor metrics with Prometheus and Grafana.
+6. Run `cilium connectivity test` regularly.
+7. Upgrade Cilium regularly for features and fixes.
+8. Use L7 policies for fine-grained application control.
 
 ## Resources
 
@@ -837,6 +837,6 @@ EOF
 - [Cilium Slack](https://cilium.io/slack)
 - [Cilium GitHub](https://github.com/cilium/cilium)
 
-## Example Configurations
+## Example configurations
 
-See the live [cluster-template/](../cluster-template/) and the cluster's Cilium config in [`infrastructure/networking/cilium/`](../../infrastructure/networking/cilium/) for a complete working configuration with Cilium, Gateway API, and all recommended settings.
+See the live [cluster-template/](../cluster-template/) and the cluster's Cilium config in [`infrastructure/networking/cilium/`](../../infrastructure/networking/cilium/) for a working configuration with Cilium, Gateway API, and all recommended settings.

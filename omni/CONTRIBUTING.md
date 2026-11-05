@@ -1,33 +1,32 @@
-# Contributing to Sidero Omni + Talos + Proxmox Starter Kit
+# Contributing to Sidero Omni + Talos + Proxmox starter kit
 
-Thank you for considering contributing to this project! This starter kit is community-driven and welcomes contributions of all kinds.
+This starter kit is community-driven. Contributions of any kind are welcome.
 
-## How to Contribute
+## How to contribute
 
-### Reporting Issues
+### Reporting issues
 
-Found a bug or have a suggestion? Please [open an issue](../../issues) with:
+Found a bug or have a suggestion? [Open an issue](../../issues) with:
 
-- **Clear title** - Describe the issue concisely
-- **Description** - Provide details about the problem or suggestion
-- **Environment** - Include versions (Omni, Talos, Proxmox)
-- **Steps to reproduce** - How can we recreate the issue?
-- **Expected behavior** - What should happen?
-- **Actual behavior** - What actually happens?
-- **Logs** - Relevant log excerpts (sanitize any secrets!)
+- A short, clear title
+- A description of the problem or suggestion
+- Versions of Omni, Talos, and Proxmox
+- Steps to reproduce the issue
+- The expected behavior and the actual behavior
+- Relevant log excerpts, with secrets removed
 
-### Suggesting Enhancements
+### Suggesting enhancements
 
-Have an idea to improve the starter kit? Great! Please:
+Have an idea to improve the starter kit? To suggest it:
 
-1. Check if a similar issue already exists
-2. Open a new issue with the "enhancement" label
-3. Describe your use case and proposed solution
-4. Be open to discussion and feedback
+1. Check whether a similar issue exists.
+2. Open a new issue with the "enhancement" label.
+3. Describe your use case and proposed solution.
+4. Be open to discussion and feedback.
 
-### Documentation Improvements
+### Documentation improvements
 
-Documentation is crucial! Contributions include:
+Documentation contributions include:
 
 - Fixing typos or unclear explanations
 - Adding examples or clarifications
@@ -35,92 +34,92 @@ Documentation is crucial! Contributions include:
 - Translating documentation
 - Adding diagrams or illustrations
 
-### Code Contributions
+### Code contributions
 
-#### Setting Up Development Environment
+#### Setting up development environment
 
-1. **Fork the repository**
-2. **Clone your fork**:
+1. Fork the repository.
+2. Clone your fork:
    ```bash
    git clone https://github.com/YOUR_USERNAME/sidero-omni-talos-proxmox-starter.git
    cd sidero-omni-talos-proxmox-starter
    ```
-3. **Create a branch**:
+3. Create a branch:
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-#### Making Changes
+#### Making changes
 
-**For documentation**:
-- Use clear, concise language
+For documentation:
+- Use clear, short sentences
 - Include code examples where helpful
 - Test commands and configurations
 - Update table of contents if adding sections
 
-**For configuration files**:
+For configuration files:
 - Use `.example` suffix for templates
 - Include inline comments explaining options
-- Provide sensible defaults
+- Provide defaults that work
 - Document any required vs optional fields
 
-**For scripts**:
+For scripts:
 - Add error handling
 - Include usage instructions
 - Use descriptive variable names
 - Add comments for complex logic
 
-#### Testing Your Changes
+#### Testing your changes
 
-Before submitting:
+Before you submit:
 
-1. **Test configurations**:
+1. Test configurations:
    - Verify example files have correct syntax
    - Test any scripts you've added or modified
-   - Ensure commands work as documented
+   - Confirm commands work as documented
 
-2. **Check documentation**:
+2. Check documentation:
    - Proofread for typos and clarity
    - Verify links work
    - Test code blocks in a clean environment
 
-3. **Validate against .gitignore**:
-   - Ensure no secrets are committed
+3. Validate against .gitignore:
+   - Confirm you did not commit secrets
    - Check that example files are included
 
-#### Submitting a Pull Request
+#### Submitting a pull request
 
-1. **Commit your changes**:
+1. Commit your changes:
    ```bash
    git add .
    git commit -m "feat: add support for X" # or "fix:", "docs:", etc.
    ```
 
-2. **Push to your fork**:
+2. Push to your fork:
    ```bash
    git push origin feature/your-feature-name
    ```
 
-3. **Open a Pull Request**:
+3. Open a pull request:
    - Go to the original repository
    - Click "New Pull Request"
    - Select your branch
    - Fill out the PR template
 
-4. **PR Guidelines**:
-   - **Title**: Use conventional commit format
+4. Follow the PR guidelines:
+   - Title: use conventional commit format
      - `feat:` for new features
      - `fix:` for bug fixes
      - `docs:` for documentation
      - `chore:` for maintenance
-   - **Description**: Explain what and why
-   - **Link issues**: Reference related issues
-   - **Testing**: Describe how you tested
-   - **Screenshots**: Include if relevant
+   - Description: explain what and why
+   - Link related issues
+   - Describe how you tested
+   - Include screenshots if relevant
 
-## Commit Message Conventions
+## Commit message conventions
 
-We use [Conventional Commits](https://www.conventionalcommits.org/):
+This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 type(scope): subject
@@ -130,7 +129,7 @@ body
 footer
 ```
 
-**Types**:
+Types:
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -139,7 +138,8 @@ footer
 - `test`: Adding tests
 - `chore`: Maintenance tasks
 
-**Examples**:
+Examples:
+
 ```
 feat(proxmox): add support for multiple disk configuration
 
@@ -163,9 +163,9 @@ The example pointed to wrong certificate location.
 Fixed to use standard Let's Encrypt path.
 ```
 
-## Code Style
+## Code style
 
-### Shell Scripts
+### Shell scripts
 - Use `#!/bin/bash` shebang
 - Enable error checking: `set -euo pipefail`
 - Use descriptive variable names
@@ -185,16 +185,16 @@ Fixed to use standard Let's Encrypt path.
 - Use relative links within repo
 - Keep line length reasonable (100-120 chars)
 
-## What We're Looking For
+## What we're looking for
 
-### High Priority
+### High priority
 - Bug fixes and corrections
 - Improved error messages
 - Additional troubleshooting scenarios
 - Real-world usage examples
 - Documentation improvements
 
-### Feature Ideas
+### Feature ideas
 - Alternative authentication providers (beyond Auth0)
 - Additional machine class examples
 - Monitoring/observability setup
@@ -203,29 +203,29 @@ Fixed to use standard Let's Encrypt path.
 - Multi-disk VM support (when available in provider)
 - Alternative DNS providers (beyond Cloudflare)
 
-### Future Considerations
+### Future considerations
 - Terraform modules for infrastructure
 - CI/CD pipeline examples
 - Cost optimization guides
 - Security hardening guides
 
-## Community Guidelines
+## Community guidelines
 
-### Be Respectful
+### Be respectful
 - Be welcoming to newcomers
 - Assume good intentions
 - Provide constructive feedback
 - Respect different perspectives
 - Keep discussions on-topic
 
-### Be Helpful
+### Be helpful
 - Answer questions when you can
 - Share your experience
 - Provide context for decisions
 - Link to relevant resources
 - Help test PRs and issues
 
-### Be Patient
+### Be patient
 - This is a community project
 - Maintainers are volunteers
 - Reviews take time
@@ -233,14 +233,11 @@ Fixed to use standard Let's Encrypt path.
 
 ## Recognition
 
-Contributors will be:
-- Listed in commit history
-- Mentioned in release notes (for significant contributions)
-- Part of a growing community improving Kubernetes infrastructure
+Contributors appear in the commit history. Significant contributions are also mentioned in release notes.
 
 ## Questions?
 
-Not sure about something? Have questions?
+Not sure about something?
 
 - Open an issue with the "question" label
 - Join [Sidero Labs Slack](https://slack.dev.talos-systems.io/)
@@ -249,17 +246,13 @@ Not sure about something? Have questions?
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the same license as the project (see LICENSE file).
+By contributing, you agree to license your contributions under the project license (see LICENSE file).
 
 ## Attribution
 
-This starter kit builds upon:
+This starter kit builds on:
 - [Sidero Omni](https://github.com/siderolabs/omni)
 - [Talos Linux](https://github.com/siderolabs/talos)
 - [Omni Proxmox Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)
 
-Special thanks to the Sidero Labs team for their support and excellent tooling.
-
----
-
-Thank you for contributing to making Kubernetes infrastructure management easier for everyone! 🚀
+Thanks to the Sidero Labs team for their support and tooling.

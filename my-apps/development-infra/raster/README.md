@@ -1,19 +1,19 @@
-# Map raster — the VersaTiles basemap as PNG
+# Map raster: the VersaTiles basemap as PNG
 
 [tileserver-gl](https://github.com/maptiler/tileserver-gl) renders the same `light` and `dark`
-styles the phone uses into PNG images. It serves clients that can't draw vector maps: Radar NG's
-Apple Watch app, its home-screen/CarPlay widget and, later, CarPlay. They previously used Apple
-MapKit; this keeps them on the home stack with no third-party map service.
+styles the phone uses into PNG images. It serves clients that can't draw vector maps. These are Radar NG's
+Apple Watch app, its home-screen and CarPlay widget, and later CarPlay itself. They previously used Apple
+MapKit. This keeps them on the home stack with no third-party map service.
 
 ## What runs
 
-- **Image:** `maptiler/tileserver-gl:v5.6.0`, pinned by digest, running as uid 1000.
-- **Styles:** `styles/light.json` and `styles/dark.json`. These are the in-cluster copies written by
-  `../versatiles/styles/generate.mjs`, reading tiles, glyphs and sprites straight from the
-  `versatiles` Service (no hairpin through Cloudflare). Don't edit them by hand; re-run the
+- **Image.** `maptiler/tileserver-gl:v5.6.0`, pinned by digest, running as uid 1000.
+- **Styles.** `styles/light.json` and `styles/dark.json`. These are the in-cluster copies written by
+  `../versatiles/styles/generate.mjs`, which reads tiles, glyphs and sprites straight from the
+  `versatiles` Service, with no hairpin through Cloudflare. Don't edit them by hand. Re-run the
   generator.
-- **URL:** `https://maps.vanillax.me/raster/`, with the prefix stripped by the HTTPRoute. No storage;
-  renders are on demand, typically under a second.
+- **URL.** `https://maps.vanillax.me/raster/`, with the prefix stripped by the HTTPRoute. There is no storage.
+  Renders happen on demand, typically in under a second.
 
 ## Endpoints
 

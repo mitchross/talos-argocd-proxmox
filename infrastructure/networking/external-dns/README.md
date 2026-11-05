@@ -6,13 +6,13 @@ This component deploys two isolated ExternalDNS instances:
 - `external-dns-technitium` manages private `vanillax.me` overrides in
   Technitium at `192.168.10.15:53`.
 
-Both instances use the same DNS suffix safely because their Gateway filters
+Both instances can share one DNS suffix because their Gateway filters
 do not overlap:
 
 - Cloudflare watches `gateway-external`.
 - Technitium watches `gateway-internal-technitium`.
 
-## Technitium Instance
+## Technitium instance
 
 The RFC2136 instance uses:
 
@@ -25,26 +25,26 @@ The RFC2136 instance uses:
 - TXT owner ID: `talos-prod-technitium`
 - TXT prefix: `external-dns-`
 
-Technitium-generated TSIG values are already Base64. The ExternalSecret trims
-and passes the value through unchanged. Do not apply `b64enc` again and never
+Technitium generates TSIG values already Base64-encoded. The ExternalSecret trims
+the value and passes it through unchanged. Do not apply `b64enc` again. Never
 store or print the secret.
 
 The `allow-technitium-dns` CiliumNetworkPolicy permits only this ExternalDNS
 pod to reach `192.168.10.15` on TCP/UDP port 53.
 
-`policy=upsert-only` remains intentional until the complete short-name
-migration and TXT ownership state have been observed. Do not enable `sync`
+`policy=upsert-only` is intentional until you have observed the complete short-name
+migration and the TXT ownership state. Do not enable `sync`
 without a separate review.
 
-The Conditional Forwarder zone keeps local private records while forwarding
-missing `vanillax.me` records to Cloudflare. A Primary zone must not be used
-because it would return NXDOMAIN instead of forwarding missing public names.
+The Conditional Forwarder zone keeps local private records and forwards
+missing `vanillax.me` records to Cloudflare. Do not use a Primary zone.
+It returns NXDOMAIN instead of forwarding missing public names.
 
-See the complete setup and cutover runbook:
+For the complete setup and cutover runbook, see:
 
 [`docs/domains/networking/technitium-vanillax-me-migration.md`](../../../docs/domains/networking/technitium-vanillax-me-migration.md)
 
-## Route Contract
+## Route contract
 
 Private HTTPRoutes attach to the labeled Technitium Gateway:
 
@@ -60,7 +60,7 @@ spec:
     - app.vanillax.me
 ```
 
-Public routes continue attaching to `gateway-external` and retain their
+Public routes keep attaching to `gateway-external` and keep their
 Cloudflare ExternalDNS label.
 
 ## Validation

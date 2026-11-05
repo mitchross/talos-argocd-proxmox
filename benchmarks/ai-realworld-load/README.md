@@ -1,15 +1,15 @@
 # Real-world AI load baseline (dual vs single RTX 3090)
 
-Answered one question: **can ONE RTX 3090 serve the real workload without
-materially losing usable context?** Context capacity was the criterion, not
-tokens/sec. **It can** — see Results below.
+This benchmark answered one question: **can one RTX 3090 serve the real workload without
+materially losing usable context?** The criterion was context capacity, not
+tokens/sec. **It can.** See Results below.
 
-The Deal Scout digest is excluded from both baselines: it 500s on an
-application bug, so it contributed no load and would have made the comparison
+Both baselines exclude the Deal Scout digest. It returns a 500 because of an
+application bug, so it added no load and would have made the comparison
 uneven.
 
-Not ArgoCD-managed — `benchmarks/` sits outside every AppSet glob. Nothing here
-deploys; the collector only reads. Runs land in `runs/` (git-ignored).
+ArgoCD does not manage this directory, because `benchmarks/` sits outside every AppSet glob. Nothing here
+deploys, and the collector only reads. Runs land in `runs/` (git-ignored).
 
 ## Baselines
 
@@ -18,12 +18,12 @@ deploys; the collector only reads. Runs land in `runs/` (git-ignored).
 | **A** | 2x RTX 3090, TP=2, PCIe/no NVLink | Qwen3.8-27B-**FP8** (Marlin weight-only) | measured |
 | **B** | 1x RTX 3090, TP=1 | Qwen3.8-27B W4A16 AutoRound, INT8 `lm_head`, BF16 `embed_tokens` | measured |
 
-Both used the **verbatim prompts in this file**. Any re-run must too, or the
+Both used the **verbatim prompts in this file**. Any re-run must use them too, or the
 comparison is void.
 
 ## Results
 
-| | A — 2x3090 | **B — 1x3090** |
+| | A: 2x3090 | **B: 1x3090** |
 |---|---:|---:|
 | KV pool | 313,367 | **200,826** |
 | Peak resident context | 160,468 (51.2%) | **152,867 (76.1%)** |
@@ -39,8 +39,8 @@ comparison is void.
 latency, not usable context. Full analysis and the rules that follow:
 [`docs/domains/ai-gpu/single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
 
-Caveat kept deliberately: the agent workload converged near 146K tokens of
-context in B, so the pool was measured to ~76% utilisation. Behaviour nearer the
+Caveat: the agent workload converged near 146K tokens of
+context in B, so the run measured the pool to ~76% utilisation. Behaviour nearer the
 ceiling is extrapolated.
 
 ### Baseline B configuration
@@ -79,28 +79,28 @@ Weights             : 14.46 GiB/GPU   KV: 4.99 GiB/GPU   CUDA graphs: 0.46 GiB/G
 **Do not change** gpu-memory-utilization, KV precision/scales, quantization, or
 any other vLLM tuning during Baseline A.
 
-### FP8 KV cache — stated accurately
+### FP8 KV cache, stated accurately
 
-> Uncalibrated FP8 KV; vLLM defaults to scale 1.0 when checkpoint scales are
-> unavailable; published vLLM accuracy work suggests this is often good,
+> Uncalibrated FP8 KV. vLLM defaults to scale 1.0 when checkpoint scales are
+> unavailable. Published vLLM accuracy work suggests this is often good,
 > including strong Qwen3.5-27B long-context results, but our exact RTX
 > 3090/SM86 Qwen3.8 path is not independently validated.
 
-Hence the retrieval sanity check in step 6. `--calculate-kv-scales` stays **off**.
+The retrieval sanity check in step 6 covers this. `--calculate-kv-scales` stays **off**.
 
-### Preemption is RECOMPUTE — verified in the running engine
+### Preemption is recompute, verified in the running engine
 
-Confirmed by reading `vllm/v1/core/sched/scheduler.py` inside the live pod, not
+I confirmed this by reading `vllm/v1/core/sched/scheduler.py` inside the live pod, not
 from docs. `_preempt_request()` calls `_free_request_blocks()` and sets
 `request.num_computed_tokens = 0`. There is no `PreemptionMode` and no
-`swap_out` anywhere under `vllm/v1/` — swap was removed in V1.
+`swap_out` anywhere under `vllm/v1/`. V1 removed swap.
 
 A preempted 262K request therefore **re-prefills from token 0** (32 chunks at
-`max-num-batched-tokens 8192`). Prefix caching can partially rescue it, but the
-blocks it would need are the ones evicted under the pressure that caused the
+`max-num-batched-tokens 8192`). Prefix caching can recover part of the work, but
+the blocks it needs are the ones evicted by the memory pressure that caused the
 preemption. At 1.20x concurrency this is the most likely source of a severe
-user-visible stall with no request technically failing — which is why
-`report.py` prints per-event forensics including KV% immediately before.
+user-visible stall with no request technically failing. That is why
+`report.py` prints per-event forensics, including KV% immediately before.
 
 ## What gets measured, and how honestly
 
@@ -115,9 +115,9 @@ user-visible stall with no request technically failing — which is why
 | VRAM / util / power / temp per card | `nvidia-smi` in the powerlimit DaemonSet | **MEASURED** |
 
 vLLM's `request_prompt_tokens` buckets are coarse (…20k, 50k, 100k, 200k, Inf),
-so server-side per-request sizes are **ranges**. Getting exact values would need
+so server-side per-request sizes are **ranges**. Exact values would need
 `--enable-log-requests` (a restart) or a logging proxy (changes production app
-behaviour) — both out of scope. Per-request counts are never invented from
+behaviour). Both are out of scope. The report never invents per-request counts from
 aggregate counters.
 
 ## Run sequence
@@ -126,12 +126,11 @@ Two traps that invalidate a run, both hit in practice:
 
 - **Restart vLLM first and verify the prefix cache is cold**
   (`prefix_cache_queries_total` and `hits` both 0). A warm cache contaminates
-  exactly the metric under test.
+  the metric under test.
 - **Drive long HTTP workloads from inside the cluster.** The external gateway
-  terminates connections at 300s, killing a research query mid-flight.
-  `kubectl port-forward` does not work for Perplexica — it binds the pod IP, so
-  forwarding to localhost is refused. A detached Job calling the service DNS is
-  immune to both.
+  terminates connections at 300s, which kills a research query mid-flight.
+  `kubectl port-forward` does not work for Perplexica. It binds the pod IP, so
+  forwarding to localhost is refused. A detached Job calling the service DNS avoids both.
 
 ```bash
 cd benchmarks/ai-realworld-load
@@ -143,26 +142,26 @@ cd benchmarks/ai-realworld-load
 ./tools/live.sh
 ```
 
-Then launch the three workloads **close together** — all three must genuinely
-overlap or the run does not test concurrency. `report.py` fails loudly if they
+Then launch the three workloads **close together**. All three must
+overlap or the run does not test concurrency. `report.py` fails with an error if they
 never do.
 
-3. **Workload A — Perplexica.** Open <https://perplexica.vanillax.me>, select
-   `Qwen 3.8 27B (vLLM, TP=2)`, paste the Workload A prompt below.
-4. **Within ~30s, Workload B — Pi.** In a clone of `mitchross/deal-scout`:
+3. **Workload A, Perplexica.** Open <https://perplexica.vanillax.me>, select
+   `Qwen 3.8 27B (vLLM, TP=2)`, and paste the Workload A prompt below.
+4. **Within ~30s, Workload B, Pi.** In a clone of `mitchross/deal-scout`:
    `pi --model qwen3.8-27b` then paste the Workload B prompt.
-5. **Workload C — Deal Scout digest**, once A and B are both generating:
+5. **Workload C, Deal Scout digest**, once A and B are both generating:
    ```bash
    curl -sS -X POST https://deals.vanillax.me/api/digest/generate | jq '.model, .note'
    ```
-   Read-only summarisation of existing rows; writes one `digests` row. It does
+   This summarises existing rows and writes one `digests` row. It does
    not mutate listings.
-6. **Retrieval sanity check**, while long contexts are resident — asks the model
-   to recall something only findable deep in Perplexica's own returned context:
-   in the same Perplexica thread, ask
+6. **Retrieval sanity check**, while long contexts are resident. This asks the model
+   to recall something findable only deep in Perplexica's own returned context.
+   In the same Perplexica thread, ask
    `Quote the exact sentence from your sources that gives the VRAM figure for the Ryzen AI Max+ 395, and name the source.`
    A confident answer citing nothing, or a number absent from the sources, is
-   the FP8-KV/long-context failure mode we are watching for.
+   the FP8-KV/long-context failure mode this check looks for.
 7. Tell me when all three are active. Leave the collector running until
    everything finishes.
 
@@ -174,7 +173,7 @@ never do.
 
 ---
 
-## Workload A — Perplexica (verbatim; reuse for Baseline B)
+## Workload A: Perplexica (verbatim; reuse for Baseline B)
 
 ```
 Research Qwen3.8-27B local inference as of August 2026. Determine the practical
@@ -218,10 +217,10 @@ best.
 Produce a detailed cited report.
 ```
 
-## Workload B — Pi in `mitchross/deal-scout` (verbatim; reuse for Baseline B)
+## Workload B: Pi in `mitchross/deal-scout` (verbatim; reuse for Baseline B)
 
-Let Pi read files naturally. Do **not** stuff files into the prompt — the point
-is watching context grow on its own.
+Let Pi read files on its own. Do **not** paste files into the prompt. The point
+is to watch context grow naturally.
 
 ```
 Perform a deep READ-ONLY architecture and correctness investigation of this
@@ -254,14 +253,14 @@ Return the five most important correctness/architecture findings with exact
 files/functions, evidence, and recommended follow-up tests.
 ```
 
-## Workload C — Deal Scout digest
+## Workload C: Deal Scout digest
 
 Real supported path, confirmed in source: `dashboard/app.py:834`
 `POST /api/digest/generate` -> `generate_digest(conn)`, driven in production by
 `worker/activities.js:82 generateDigest()`.
 
-`build_digest_facts()` is pure SQL and always renders; `narrate_digest()` is the
-optional LLM leg. It is **best-effort by design** — that is exactly why the dead
-`qwen3.6-27b` id produced no error for months, just silently factual digests. If
+`build_digest_facts()` is pure SQL and always renders. `narrate_digest()` is the
+optional LLM leg. It is **best-effort by design**, which is why the dead
+`qwen3.6-27b` id produced no error for months, only silently factual digests. If
 `.model` in the response is null, the LLM leg did not run and Workload C
 contributed no load.

@@ -1,18 +1,17 @@
-# temporal — server (cluster side)
+# temporal: server (cluster side)
 
 Self-hosted Temporal server for the cluster. This directory deploys the
-**server**; application workers (e.g. `news-reader-temporal-worker`,
+**server**. Application workers (e.g. `news-reader-temporal-worker`,
 `radar-ng`'s temporal worker) live in their own sibling dirs and connect
-in via `Connection` CRs from the
+through `Connection` CRs from the
 [Temporal Worker Controller](../../../infrastructure/platform/temporal-worker-controller/).
 
-Read this *with* `news-reader/temporal/README.md` (in the news-reader
-repo) — together they cover server side + app side of the same system.
+Read this together with `news-reader/temporal/README.md` (in the news-reader
+repo). Between them they cover the server side and the app side of the same system.
 
 ---
 
-Worker release gates, retained configuration and pinned-run recovery are covered
-by the [safe deployment runbook](../../../docs/domains/temporal/safe-deployments.md).
+The [safe deployment runbook](../../../docs/domains/temporal/safe-deployments.md) covers worker release gates, retained configuration and pinned-run recovery.
 
 ## What this dir deploys
 
@@ -49,11 +48,11 @@ flowchart LR
 | Component   | Role |
 |-------------|------|
 | `frontend`  | gRPC API the SDKs and `temporal` CLI talk to (port 7233). |
-| `history`   | Owns workflow history. Replays/persists events to PG. |
+| `history`   | Owns workflow history. Replays and persists events to PG. |
 | `matching`  | Owns task queues; long-poll endpoint workers connect to. |
-| `worker`    | **Internal** server worker — runs Temporal's own background workflows (archival, retention, schedule trigger). Distinct from *your* application workers. |
+| `worker`    | **Internal** server worker. Runs Temporal's own background workflows (archival, retention, schedule trigger). Distinct from *your* application workers. |
 | `web`       | UI at `temporal.vanillax.me`. |
-| `admintools`| Side-pod with `tctl` / `temporal` CLI shells out to. Handy via `kubectl exec`. |
+| `admintools`| Side-pod with `tctl` / `temporal` CLI shells out to. Use it through `kubectl exec`. |
 | schema Job  | Runs `temporal-sql-tool` migrations against PG before pods boot. |
 
 ---
@@ -78,8 +77,8 @@ scripts/
 
 ## How the bring-up sequence works
 
-ArgoCD applies this app in sync-wave order. The critical part: SQL schema
-migrations **must run before any temporal server Pod boots**, otherwise
+ArgoCD applies this app in sync-wave order. SQL schema
+migrations **must run before any temporal server Pod boots**. Otherwise
 `history` panics with "schema mismatch."
 
 ```mermaid
@@ -103,7 +102,7 @@ sequenceDiagram
     CLI->>Server: `temporal operator namespace create default`
 ```
 
-The JSON patch in `kustomization.yaml` is what makes this work:
+The JSON patch in `kustomization.yaml` enforces this order:
 
 ```yaml
 patches:
@@ -120,9 +119,9 @@ patches:
         value: BeforeHookCreation
 ```
 
-The selector is intentional — without it, the patch would also stomp our
+The selector is intentional. Without it, the patch would also overwrite our
 own `temporal-namespace-seed` Job (the `PostSync` namespace creator) and
-turn it into a pre-sync wave, which would deadlock because the seed Job
+move it to a pre-sync wave. That would deadlock, because the seed Job
 needs the server up.
 
 ---
@@ -154,14 +153,14 @@ with a full copy intact; kopiur is the independent restore path. Changing the
 StorageClass again is a restore-before-bind recreation, see
 [pvc-storageclass-migration.md](../../../docs/domains/storage/pvc-storageclass-migration.md).
 
-> 💡 **`numHistoryShards: 1`** is set in our values.yaml. This is
-> **permanent for this Temporal database** — changing it requires a new
+> **`numHistoryShards: 1`** is set in our values.yaml. This is
+> **permanent for this Temporal database**. Changing it requires a new
 > control plane and data migration. The shared cluster stays at one shard;
 > the dedicated Radar control plane is planned with 32 from its first boot.
 
 ---
 
-## Versions & upgrades
+## Versions and upgrades
 
 ```yaml
 # kustomization.yaml (excerpt)
@@ -178,16 +177,16 @@ server:
     tag: 1.31.2             # server version override — chart's default lags real releases
 ```
 
-The **chart** and the **server image** rev independently. The chart
-controls Helm templates (Deployments/Services/etc.); the image tag
+The chart and the server image version independently. The chart
+controls Helm templates (Deployments, Services, etc.). The image tag
 controls the actual `temporalio/server` binary. The chart's bundled
-default often lags Temporal's release cadence, so we pin the image
+default often lags Temporal's releases, so we pin the image
 explicitly.
 
 When bumping the server image:
 1. Read [Temporal server release notes](https://github.com/temporalio/temporal/releases).
-2. If the bump crosses a schema migration boundary, the schema Job will
-   run automatically (sync-wave -1). Watch its logs the first time.
+2. If the bump crosses a schema migration boundary, the schema Job
+   runs automatically (sync-wave -1). Watch its logs the first time.
 
 ---
 
@@ -197,11 +196,11 @@ When bumping the server image:
 https://temporal.vanillax.me   (Cloudflare tunnel → Cilium gateway-external)
 ```
 
-The HTTPRoute in `httproute.yaml` is what gets you there. UI is
-unauthenticated today — if you ever expose it externally to multiple
-people, gate it via Cloudflare Access on the tunnel.
+The HTTPRoute in `httproute.yaml` routes to the UI. The UI is
+unauthenticated today. If you expose it externally to multiple
+people, gate it with Cloudflare Access on the tunnel.
 
-For purely local access:
+For local access only:
 ```bash
 kubectl -n temporal port-forward svc/temporal-web 8080:8080
 # open http://localhost:8080
@@ -209,18 +208,18 @@ kubectl -n temporal port-forward svc/temporal-web 8080:8080
 
 ---
 
-## Server vs Worker Controller — two operator-style pieces
+## Server vs Worker Controller: two operator-style pieces
 
-Important distinction (this confuses everyone the first time):
+This distinction confuses everyone the first time:
 
 | Thing | Where | What it manages |
 |---|---|---|
-| **Temporal server** | `my-apps/development-infra/temporal/` (this dir) | The server itself — frontend, history, matching, web, server-worker. Deployed via the official Helm chart. |
+| **Temporal server** | `my-apps/development-infra/temporal/` (this dir) | The server itself: frontend, history, matching, web, server-worker. Deployed with the official Helm chart. |
 | **Temporal Worker Controller** | `infrastructure/platform/temporal-worker-controller/` | A *Kubernetes controller* (CRD-based). Watches your `WorkerDeployment` CRs and turns each into a versioned `apps/v1 Deployment`. Handles Worker Versioning rollouts. |
 
-You can run the server without the worker controller — workers would
-just be plain Deployments and you'd lose progressive rollouts. We use
-both because Worker Versioning is the whole point.
+You can run the server without the worker controller. Workers would
+be plain Deployments and you'd lose progressive rollouts. We use
+both because we want Worker Versioning.
 
 ---
 
@@ -234,7 +233,7 @@ both because Worker Versioning is the whole point.
 
 Each ships its own `Connection` CR pointing at
 `temporal-frontend.temporal.svc.cluster.local:7233` and its own
-`WorkerDeployment` CR. They're independent Apps in ArgoCD.
+`WorkerDeployment` CR. They are independent Apps in ArgoCD.
 
 ---
 
@@ -279,7 +278,7 @@ kubectl -n temporal exec deploy/temporal-admintools -- \
 
 For every message, identify the namespace, workflow ID, run ID, task type,
 and current workflow state. Coordinate with every affected application owner.
-DLQ merge uses prefix semantics, so a message cannot be skipped in the middle.
+DLQ merge uses prefix semantics, so you cannot skip a message in the middle.
 
 Only after the exact prefix is approved, re-enqueue it and watch the job:
 
@@ -293,14 +292,14 @@ kubectl -n temporal exec deploy/temporal-admintools -- \
 ```
 
 Then list the DLQ again and verify affected schedules fire naturally for at
-least two cadences. Do not treat manual triggers as proof. Never purge a DLQ,
+least two cadences. Manual triggers prove nothing. Never purge a DLQ,
 and do not delete or recreate schedules as an automatic recovery action.
 
 ---
 
 ## Further reading
 
-- [Tips for running Temporal on Kubernetes](https://temporal.io/blog/tips-for-running-temporal-on-kubernetes) — the article this setup follows
+- [Tips for running Temporal on Kubernetes](https://temporal.io/blog/tips-for-running-temporal-on-kubernetes): the article this setup follows
 - [Temporal Helm chart](https://github.com/temporalio/helm-charts)
 - [Temporal Worker Controller](https://github.com/temporalio/temporal-worker-controller)
-- [news-reader temporal worker README](https://gitea.vanillax.me/vanillax/news-reader/src/branch/main/temporal/README.md) — application side of the same system, full worker-versioning walkthrough
+- [news-reader temporal worker README](https://gitea.vanillax.me/vanillax/news-reader/src/branch/main/temporal/README.md): application side of the same system, full worker-versioning walkthrough

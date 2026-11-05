@@ -7,10 +7,10 @@ scanner worker does not call the LLM.
 
 Authentication used to be a source-patching init container here, because the
 pinned image had no setting for it. Deal Scout supports the key natively from
-v0.13.0, so the overlay is gone; do not reintroduce it.
+v0.13.0, so the overlay is gone. Do not reintroduce it.
 
-Without the key the digest silently renders a facts-only summary, so after an
+Without the key the digest renders a facts-only summary, so after an
 ArgoCD sync generate a dashboard digest and confirm it contains LLM prose, then
 verify the request reached LiteLLM/Langfuse. Rendering alone does not prove a
-successful inference. `DIGEST_LLM_URL` and the key must move together —
-pointing at LiteLLM without a key yields a permanent fallback, not an error.
+successful inference. `DIGEST_LLM_URL` and the key must move together.
+Pointing at LiteLLM without a key yields a permanent fallback, not an error.

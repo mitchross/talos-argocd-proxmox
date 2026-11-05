@@ -2,7 +2,7 @@
 
 Grafana Labs' official [MCP server](https://github.com/grafana/mcp-grafana).
 It lets an MCP client (Claude Code, Claude Desktop) query this cluster's
-Grafana — and through it, Prometheus — in plain language, instead of opening a
+Grafana, and through it Prometheus, in plain language instead of opening a
 dashboard.
 
 Every Tapo plug's power, energy and cost already lands in Prometheus as
@@ -20,8 +20,8 @@ start until both are there.
 | `grafana_service_account_token` | Grafana → Administration → Users and access → Service accounts. **Viewer** role is enough |
 | `server_token` | Any long random string you invent, e.g. `openssl rand -hex 32`. Callers must present it |
 
-Viewer is deliberate: the server also runs `--disable-write`, so the token
-cannot be used to change dashboards even if it leaks.
+Viewer is deliberate. The server also runs `--disable-write`, so the token
+cannot change dashboards even if it leaks.
 
 ## Connecting a client
 
@@ -31,7 +31,7 @@ claude mcp add --transport http mcp-grafana \
   --header "Authorization: Bearer $(op read 'op://homelab-prod/mcp-grafana/server_token')"
 ```
 
-The path matters: the server serves MCP at **`/mcp`**, not at the root. A bare
+The path matters. The server serves MCP at **`/mcp`**, not at the root. A bare
 hostname returns 404 and the client reports only that it could not connect.
 
 ## Why it is shaped this way
@@ -45,13 +45,13 @@ a pod accepts nothing. Without this flag the readiness probe never passes.
 
 **`command` is overridden.** The image bakes `--transport sse --address
 0.0.0.0:8000` into its ENTRYPOINT, so setting `args` alone appends a second,
-conflicting `--transport`. Owning the whole argv avoids relying on which
-duplicate flag Go's parser happens to keep.
+conflicting `--transport`. Owning the whole argv avoids depending on which
+duplicate flag Go's parser keeps.
 
 **`--allowed-hosts` is enumerated.** The server validates the `Host` header.
-Adding a new hostname for this service means adding it to that list too, or
-requests arrive and are rejected.
+When you add a hostname for this service, add it to that list too. Otherwise
+the server rejects the requests.
 
-**Origin validation is left at its default** (reject anything sending an
-`Origin` header). MCP clients are not browsers; if a browser-based client is
-ever needed, that is when `--allowed-origins` gets set.
+**Origin validation uses its default.** The server rejects anything sending an
+`Origin` header. MCP clients are not browsers. If you ever need a browser-based
+client, set `--allowed-origins` then.

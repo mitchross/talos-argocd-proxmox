@@ -1,16 +1,16 @@
 # Sidero Omni + Talos on Proxmox Starter Kit
 
-A complete, production-ready starter kit for deploying self-hosted Sidero Omni with the Proxmox infrastructure provider to automatically provision Talos Linux clusters.
+A starter kit for deploying self-hosted Sidero Omni with the Proxmox infrastructure provider. It provisions Talos Linux clusters automatically.
 
 ## What This Provides
 
-- **Self-hosted Omni deployment** - Run your own Omni instance on-premises
-- **Proxmox integration** - Automatically provision Talos VMs in your Proxmox cluster
-- **GPU support** (optional) - Configure NVIDIA GPU passthrough for AI/ML workloads
-- **Complete examples** - Working configurations you can customize
-- **Setup automation** - Scripts to streamline SSL and encryption setup
+- Self-hosted Omni deployment on your own hardware
+- Proxmox integration that provisions Talos VMs in your Proxmox cluster
+- Optional NVIDIA GPU passthrough for AI/ML workloads
+- Working example configurations you can customize
+- Scripts for SSL and encryption setup
 
-## Architecture Overview
+## Architecture overview
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -37,7 +37,7 @@ A complete, production-ready starter kit for deploying self-hosted Sidero Omni w
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+## Quick start
 
 1. **Prerequisites** - See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
 2. **Deploy Omni** - Follow [omni/README.md](omni/README.md)
@@ -49,9 +49,9 @@ A complete, production-ready starter kit for deploying self-hosted Sidero Omni w
 8. **Watch Provisioning** - `omnictl cluster template status -f omni/cluster-template/cluster-template-prod-v2.yaml --wait 30m`
 
 Run steps 4-8 from the repository root. Template sync creates the control
-plane and worker MachineSets; do not create MachineSets separately.
+plane and worker MachineSets. Do not create MachineSets separately.
 
-## Project Structure
+## Project structure
 
 ```
 .
@@ -73,72 +73,70 @@ plane and worker MachineSets; do not create MachineSets separately.
     └── CILIUM_CNI.md          # Cilium CNI deployment guide
 ```
 
-## Key Features
+## Key features
 
-### Automated Provisioning
-Define "machine classes" in Omni that specify CPU, RAM, and disk resources. The Proxmox provider watches for new machines and automatically creates VMs matching your specifications.
+### Automated provisioning
+Define "machine classes" in Omni that specify CPU, RAM, and disk resources. The Proxmox provider watches for new machines and creates VMs that match your specifications.
 
-### GPU Support (Optional)
-Include NVIDIA GPU support for AI/ML workloads. See the machine classes in [machine-classes/](machine-classes/) (e.g. `threadripper-gpu-worker.yaml`) and the patches in [cluster-template/patches/](cluster-template/patches/) for configuration details.
+### GPU support (optional)
+Add NVIDIA GPU support for AI/ML workloads. See the machine classes in [machine-classes/](machine-classes/) (for example `threadripper-gpu-worker.yaml`) and the patches in [cluster-template/patches/](cluster-template/patches/).
 
-### Production Ready
+### Production features
 - SSL/TLS encryption with Let's Encrypt
 - Etcd data encryption with GPG
 - Auth0, SAML, or OIDC authentication
 - High availability support
 
-## Deployment Examples
+## Deployment examples
 
-Choose the topology that best fits your use case. Build each from the machine
+Pick the topology that fits your use case. Build each from the machine
 classes in [machine-classes/](machine-classes/) and the
 [cluster-template/](cluster-template/):
 
-### 🏠 Simple Homelab
-Perfect for learning and home use:
-- **3 nodes** (1 control plane + 2 workers)
-- **Minimal resources** (12 cores, 24GB RAM total)
-- **Flannel CNI** (default, simple)
-- **Quick setup** (~10 minutes)
-- **Cost effective** for homelabs
+### Simple homelab
+For learning and home use:
+- 3 nodes (1 control plane + 2 workers)
+- 12 cores, 24GB RAM total
+- Flannel CNI (default)
+- About 10 minutes to set up
 
-**Best for**: Learning Kubernetes, home automation, media servers, development
+Best for learning Kubernetes, home automation, media servers, and development.
 
-### 🤖 GPU ML Cluster
-Optimized for AI/ML workloads:
-- **4 nodes** (1 control plane + 1 regular + 2 GPU workers)
-- **NVIDIA GPU support** with proprietary drivers
-- **TensorFlow/PyTorch ready**
-- **Jupyter notebooks**, LLM inference, Stable Diffusion
-- **24 cores, 88GB RAM total**
+### GPU ML cluster
+For AI/ML workloads:
+- 4 nodes (1 control plane + 1 regular + 2 GPU workers)
+- NVIDIA GPU support with proprietary drivers
+- Runs TensorFlow and PyTorch, Jupyter notebooks, LLM inference, and Stable Diffusion
+- 24 cores, 88GB RAM total
 
-**Best for**: Machine learning, AI inference, GPU compute, data science
+Best for machine learning, AI inference, GPU compute, and data science.
 
-### 🏭 Production HA with Cilium
-Enterprise-grade cluster:
-- **6+ nodes** (3 control plane + 3+ workers)
-- **High availability** with redundant control plane
-- **Cilium CNI** with eBPF for performance
-- **Gateway API** with ALPN and AppProtocol
-- **No kube-proxy** (Cilium replacement mode)
-- **Hubble observability**
+### Production HA with Cilium
+For production workloads:
+- 6+ nodes (3 control plane + 3+ workers)
+- Redundant control plane for high availability
+- Cilium CNI with eBPF
+- Gateway API with ALPN and AppProtocol
+- No kube-proxy (Cilium replacement mode)
+- Hubble observability
 
-**Best for**: Production workloads, enterprise applications, high-traffic services
+Best for production workloads, enterprise applications, and high-traffic services.
 
-## Advanced Networking
+## Advanced networking
 
 ### Cilium CNI
 
-For production deployments, we recommend Cilium CNI:
-- **10-40% better performance** vs traditional CNIs
-- **eBPF-based** load balancing (replaces kube-proxy)
-- **Gateway API** support with advanced routing
-- **L3-L7 network policies** for security
-- **Hubble** for deep network observability
-- **Service mesh** capabilities without sidecars
+For production deployments, use Cilium CNI:
+- 10-40% better performance than traditional CNIs
+- eBPF-based load balancing that replaces kube-proxy
+- Gateway API support with advanced routing
+- L3-L7 network policies
+- Hubble network observability
+- Service mesh capabilities without sidecars
 
 See the complete guide: [docs/CILIUM_CNI.md](docs/CILIUM_CNI.md)
 
-**Quick Install**:
+Quick install:
 ```bash
 # Disable kube-proxy in cluster config, then:
 kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
@@ -159,93 +157,91 @@ cilium-cli install \
     --set gatewayAPI.enableAppProtocol=true
 ```
 
-## Important Notes
+## Important notes
 
-⚠️ **Proxmox Provider Status**: The Proxmox infrastructure provider is
-currently in **beta**. Expect some limitations and potential bugs. Please
-report issues to the [upstream
+**Warning:** The Proxmox infrastructure provider is
+in **beta**. Expect limitations and bugs. Report issues to the [upstream
 repository](https://github.com/siderolabs/omni-infra-provider-proxmox).
 
 ### Proxmox provider and machine lifecycle
 
-These are things that hit me in practice — the generic "it's beta" line
+These hit me in practice. The generic "it's beta" line
 isn't enough to plan around.
 
 - **Multiple disks per VM are supported.** The provider creates a primary
   disk plus any `additional_disks` you declare in the machine class, and
-  provisions them all at VM creation — so extra data disks get recreated
-  with the VM rather than needing a manual Proxmox attach (see
+  provisions them all at VM creation. Extra data disks get recreated
+  with the VM, so no manual Proxmox attach is needed (see
   `omni/machine-classes/threadripper-gpu-worker.yaml`). The CPU-only workers
-  deliberately keep their boot disks off those pools so they do not consume
-  Longhorn capacity. You can still plan
+  keep their boot disks off those pools so they do not consume
+  Longhorn capacity. For stateful data, plan
   storage as Longhorn replicas or use external storage (NFS to TrueNAS,
-  RustFS S3) for stateful data.
+  RustFS S3).
 - **Manage extensions through the cluster template.** They belong to the
   Talos image, not a runtime package installation. Omni can update extensions
-  on an existing machine; a driver change does not inherently require deleting
+  on an existing machine, and a driver change does not require deleting
   its VM. Plan for the image rollout and check driver compatibility. See
   [Omni extension management](https://docs.siderolabs.com/omni/infrastructure-and-extensions/install-talos-linux-extensions).
 - **Omni 1.11 owns install-disk selection.** Legacy `machine.install.disk`
   patches no longer select it. An installed machine keeps its detected system
-  disk; fresh machines default to the smallest eligible disk. With this GPU
-  class that selects the 300 GB flash disk. Do not delete/reprovision the GPU VM
+  disk. Fresh machines default to the smallest eligible disk. With this GPU
+  class that selects the 300 GB flash disk. Do not delete or reprovision the GPU VM
   until selection is deterministic for a replacement UUID. The
   [upgrade and disk review](../docs/audits/2026-09-05-upgrade-and-disks.md)
   explains the resolver, machine-specific overrides and remaining fix.
 - **No VM migration on node failure.** If a Proxmox host dies, its VMs
-  don't auto-migrate to another host. You'll need Proxmox HA separately
-  (cluster-level, not Omni-level) for that.
-- **Cloud-init equivalent is… Talos machine config.** If you're used to
-  Proxmox cloud-init hooks, ignore them — all node customization goes
-  through Omni cluster-template patches, not Proxmox.
+  don't auto-migrate to another host. For that you need Proxmox HA separately
+  (cluster-level, not Omni-level).
+- **Talos machine config replaces cloud-init.** Ignore Proxmox cloud-init hooks.
+  All node customization goes through Omni cluster-template patches, not Proxmox.
 
-## Licensing — what "BSL" actually means for you
+## Licensing: what "BSL" means for you
 
-Omni uses the **Business Source License** (BSL). Practical impact:
+Omni uses the **Business Source License** (BSL). In practice:
 
-- ✅ **Free for non-production use** — homelabs, dev, staging, learning.
-  This repo's cluster falls squarely in this bucket.
-- ✅ **Free for production use up to a user/seat limit** set by Sidero
-  (check their current terms — they've adjusted this more than once).
-- 💰 **Paid license required** for production beyond that limit, or for
+- Free for non-production use: homelabs, dev, staging, learning.
+  This repo's cluster falls in this group.
+- Free for production use up to a user or seat limit set by Sidero.
+  Check their current terms, because they've adjusted this more than once.
+- A paid license is required for production beyond that limit, or for
   any commercial SaaS offering that incorporates Omni.
-- 🕰️ **Converts to MPL-2.0 after 4 years** per commit — old versions
+- Each commit converts to MPL-2.0 after 4 years. Old versions
   eventually become fully open source, but the current one isn't.
 
 Talos Linux itself is MPL-2.0 (fully open). The Proxmox provider is also
-MPL-2.0. Only Omni the control-plane is BSL-restricted.
+MPL-2.0. Only Omni, the control plane, is BSL-restricted.
 
-If you're running Omni **for a business**, read the actual license at
+If you run Omni **for a business**, read the actual license at
 https://github.com/siderolabs/omni/blob/main/LICENSE before assuming
 your use case is covered.
 
-## Use Cases
+## Use cases
 
-- **Homelab**: Self-hosted Kubernetes cluster management
-- **Edge Computing**: Manage distributed Talos clusters
-- **Development**: Rapid cluster provisioning for testing
-- **Production**: Enterprise-grade cluster lifecycle management
+- Homelab: self-hosted Kubernetes cluster management
+- Edge computing: manage distributed Talos clusters
+- Development: provision clusters quickly for testing
+- Production: cluster lifecycle management
 
 ## License
 
-This starter kit is provided as-is. See the **Licensing** section above
+This starter kit is provided as-is. See the Licensing section above
 for what BSL means in practice.
 
-- Omni: Business Source License (BSL) — free for non-prod / below seat cap
+- Omni: Business Source License (BSL), free for non-prod or below the seat cap
 - Talos Linux: MPL-2.0 (fully open)
 - Proxmox provider: MPL-2.0 (fully open)
 
 ## Contributing
 
-Found a bug? Have an enhancement? PRs welcome! This is a community-driven starter kit.
+Found a bug or want an improvement? Open a PR.
 
 ## Resources
 
-- [Omni Documentation](https://docs.siderolabs.com/omni/)
-- [Talos Documentation](https://docs.siderolabs.com/talos/)
+- [Omni documentation](https://docs.siderolabs.com/omni/)
+- [Talos documentation](https://docs.siderolabs.com/talos/)
 - [Proxmox Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)
 - [Sidero Labs Slack](https://slack.dev.talos-systems.io/)
 
 ## Credits
 
-Built by the community, for the community. Special thanks to the Sidero Labs team for their support and tooling.
+Thanks to the Sidero Labs team for Omni, Talos, and the Proxmox provider.

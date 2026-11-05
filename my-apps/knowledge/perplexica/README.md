@@ -1,12 +1,12 @@
 # Perplexica / Vane
 
-The OpenAI-compatible provider keeps its stable `llama-cpp-cluster` ID — a key,
-not a backend name — so saved selections keep working while `qwen3.8-27b` routes
+The OpenAI-compatible provider keeps its stable `llama-cpp-cluster` ID. This ID is a key,
+not a backend name, so saved selections keep working while `qwen3.8-27b` routes
 through LiteLLM.
 The bootstrap merges the Git-owned provider/search catalog into the persistent
-configuration, preserving user preferences and unrelated UI-added providers/search fields. Additional saved providers using either legacy local backend URL are also moved to LiteLLM. It injects the gateway credential
+configuration. It preserves user preferences and unrelated UI-added providers and search fields. It also moves additional saved providers that use either legacy local backend URL to LiteLLM. It injects the gateway credential
 from the namespace-local `perplexica-litellm` External Secret and writes the
-configuration with mode 0600. The committed seed intentionally has no credential.
+configuration with mode 0600. The committed seed has no credential.
 
 Vane reads the persisted provider configuration; changing only `OPENAI_BASE_URL`
 and `OPENAI_API_KEY` would leave the saved endpoint active. Rerunning the init
