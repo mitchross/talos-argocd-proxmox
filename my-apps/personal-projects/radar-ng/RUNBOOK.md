@@ -86,7 +86,7 @@ Each role owns its own queue: `radar-ng-mrms`, `radar-ng-nowcast`,
 run on `radar-ng-open-meteo`. The single-process `radar-ng` queue is retired.
 
 `USE_ISOLATED_TASK_QUEUES=1` in `temporal-workers/release-env-patch.yaml` makes seeding write
-each Schedule to its own role queue. Exactly one pool seeds: `aux` carries
+each Schedule to its own role queue. Exactly one pool seeds. The `aux` pool carries
 `SEED_SCHEDULES=1` and also runs the read-only stall observer. Every other pool
 keeps `SKIP_SCHEDULE_SEED=1`. Two seeders race each other, so never set
 `SEED_SCHEDULES` on a second pool.
@@ -102,9 +102,9 @@ for q in mrms nowcast hrrr aux alerts; do
 done
 ```
 
-Expected: each schedule names its role queue, and every role queue lists both
+Expect each schedule names its role queue, and every role queue lists both
 workflow and activity pollers. A queue with zero pollers leaves tasks waiting. Schedules can fire while
-executions make no progress, so queue latency and stale output must be monitored.
+executions make no progress, so monitor queue latency and stale output.
 
 Never point a Schedule at a queue before its poller exists. When adding a role,
 deploy the pool first, confirm its pollers, then let `aux` reseed.
@@ -116,7 +116,7 @@ in the past, no running action, and no natural fire. A manual trigger can make
 fresh application output while leaving the Schedule's durable timer stranded,
 so it is mitigation, not repair.
 
-The application observer deliberately does not trigger, update, delete,
+The application observer does not trigger, update, delete,
 recreate, terminate, or purge anything. Treat its critical overdue event as a
 Temporal control-plane incident. Inventory the timer DLQ and affected workflow
 histories using the [Temporal timer DLQ runbook](../temporal/README.md#timer-dlq-alert-runbook).

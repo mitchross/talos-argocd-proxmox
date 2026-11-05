@@ -1,7 +1,8 @@
 # Wyze Pan v4 receiver
 
-**Purpose:** Supply the Wyze camera `shed4k` (`HL_PAN4`) to Frigate through RTSP.
-**Status:** Deployment plan with local video verification; cluster video verification remains required after sync.
+This app supplies the Wyze camera `shed4k` (`HL_PAN4`) to Frigate through RTSP.
+
+Status: deployment plan with local video verification. You must still verify video on the cluster after sync.
 
 Wyze Bridge retains the existing web interface and developer API login.
 The native `wyze-lake` receiver uses an official Web View session and receives Lake/Agora video without Android.
@@ -46,7 +47,7 @@ It refreshes that session independently, so developer API login failures do not 
 ## Verified limits
 
 Local testing received H.265 video at `640x360`, without audio.
-The receiver requests this resolution; this setup does not provide 4K.
+The receiver requests this resolution. This setup does not provide 4K.
 Late RTSP joins can report missing H.265 references until the next keyframe.
 Occasional timestamp warnings can also occur during passthrough.
 A successful check must show sustained decoded frames after this initial period.
@@ -106,7 +107,7 @@ Inspect private state metadata without printing its contents.
 
 ## Cluster verification
 
-Prerequisites: Merge this deployment PR, wait for Argo CD sync, and use an authenticated `kubectl` context.
+Before you start, merge this deployment PR, wait for Argo CD sync, and use an authenticated `kubectl` context.
 These commands discard video and do not create recordings.
 
 Check both containers and the existing Secret integration:
@@ -130,7 +131,7 @@ kubectl -n wyze-bridge get snapshot
 ```
 
 The scheduled backup runs at 03:02 cluster time. Confirm its first `Snapshot` reaches `Succeeded` with non-zero files.
-A new volume without backup history binds empty; do not rely on recovery until the first backup succeeds.
+A new volume without backup history binds empty. Do not rely on recovery until the first backup succeeds.
 
 Check the native stream after initial publication:
 

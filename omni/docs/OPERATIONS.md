@@ -1,4 +1,4 @@
-# Operations Guide
+# Operations guide
 
 This guide explains how to use `omnictl` to manage machine classes and clusters in your Omni + Proxmox environment.
 
@@ -17,9 +17,9 @@ chmod +x omnictl
 sudo mv omnictl /usr/local/bin/
 ```
 
-### Configuration & Fresh Start Authentication
+### Configuration & fresh start authentication
 
-If you just performed a **Fresh Start**, your previously registered CLI keys will not work. You must generate a new configuration to register your local public key with the new Omni database:
+If you just performed a Fresh Start, your previously registered CLI keys will not work. Generate a new configuration to register your local public key with the new Omni database:
 
 ```bash
 # Generate a new config (it will trigger the OIDC flow)
@@ -28,7 +28,7 @@ omnictl config new --url https://omni.vanillax.me --insecure-skip-tls-verify > ~
 
 *Note: If you are using OIDC/Auth0, this will provide a link to open in your browser to complete the authentication.*
 
-### Using a Local Config (Optional)
+### Using a local config (optional)
 
 If you prefer to keep your config relative to the project:
 ```bash
@@ -39,11 +39,11 @@ export OMNICONFIG=$(pwd)/omni/omni.config
 omnictl config new --url https://omni.vanillax.me --insecure-skip-tls-verify > $OMNICONFIG
 ```
 
-## 2. Managing Machine Classes
+## 2. Managing machine classes
 
 Machine classes define the virtual hardware specifications for your Proxmox VMs.
 
-### Applying Machine Classes
+### Applying machine classes
 
 Apply each machine class individually using the `-f` flag:
 
@@ -54,17 +54,17 @@ omnictl apply -f machine-classes/hp-micro-worker.yaml
 omnictl apply -f machine-classes/threadripper-gpu-worker.yaml
 ```
 
-### Verifying Machine Classes
+### Verifying machine classes
 
-List applied classes to ensure they are registered:
+List applied classes to confirm they are registered:
 
 ```bash
 omnictl get machineclasses
 ```
 
-## 3. Managing Clusters
+## 3. Managing clusters
 
-### Syncing Cluster Template
+### Syncing cluster template
 
 The cluster template defines the high-level configuration for your Kubernetes clusters.
 
@@ -72,9 +72,9 @@ The cluster template defines the high-level configuration for your Kubernetes cl
 cd cluster-template && omnictl cluster template sync -v -f cluster-template-prod-v2.yaml
 ```
 
-### Creating a Cluster
+### Creating a cluster
 
-Once machine classes are applied, you can create a cluster through the Omni Web UI or via CLI:
+After you apply the machine classes, create a cluster through the Omni Web UI or the CLI:
 
 1. **Via UI**: 
    - Navigate to `Clusters` -> `Create New Cluster`
@@ -82,7 +82,7 @@ Once machine classes are applied, you can create a cluster through the Omni Web 
 2. **Via CLI**:
    Apply a cluster resource definition (see `cluster-template/` for templates).
 
-## 4. Troubleshooting Provisioning
+## 4. Troubleshooting provisioning
 
 If machines are not appearing in Proxmox:
 1. Check the Proxmox Infrastructure Provider logs:
@@ -92,7 +92,7 @@ If machines are not appearing in Proxmox:
 2. Ensure the `storage_selector` in your Machine Class matches a storage pool name in Proxmox.
 3. Verify that the Proxmox Provider has a valid Infrastructure Provider Key.
 
-## 5. Host Maintenance and Upgrade Rules
+## 5. Host maintenance and upgrade rules
 
 - **Reboot Proxmox hosts one at a time.** Most Longhorn volumes have one
   replica and there is one control plane, so two hosts down at once takes
@@ -170,5 +170,5 @@ kubectl -n longhorn-system get replicas.longhorn.io -o json \
 
 Expected result: `longhorn-flash` volumes move back to `ssd-flash` through
 best-effort data locality, and the rest move back when hp-sff drains.
-Do not leave the tags in place: `hp-sff-ssd` is a consumer drive, and the
+Do not leave the tags in place. `hp-sff-ssd` is a consumer drive, and the
 `flash` class holds the heavy writers.

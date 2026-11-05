@@ -1,44 +1,42 @@
-# Omni Self-Hosted Deployment
+# Omni self-hosted deployment
 
 Deploy your own [Sidero Omni](https://github.com/siderolabs/omni) instance to
 manage Talos Linux clusters, with full control over data and access.
 
-This is a **reference configuration**. Every value in `omni.env.example` is a
-placeholder — copy it to `omni.env` and fill in your own domain, IPs, and
+This is a reference configuration. Every value in `omni.env.example` is a
+placeholder. Copy it to `omni.env` and fill in your own domain, IPs, and
 credentials.
 
-Budget about an hour. Most of that is waiting on DNS propagation.
+Budget about an hour. Most of that is waiting for DNS propagation.
 
 ---
 
 ## Before you start, go get these three things
 
-You cannot finish without all three. Sort them out now rather than discovering
-them halfway through:
+You cannot finish without all three. Get them now, before you start:
 
-1. **A domain name you control**, with DNS hosted somewhere that has an API
+1. A domain name you control, with DNS hosted somewhere that has an API
    (Cloudflare here). You need `omni.yourdomain.com` to be yours.
-2. **An Auth0 account** (free tier is fine). Omni has no built-in login — see
+2. An Auth0 account (free tier is fine). Omni has no built-in login. See
    below.
-3. **A machine with an SSD or NVMe**, a static IP, and Docker installed.
+3. A machine with an SSD or NVMe, a static IP, and Docker installed.
 
 ### Words you will hit in this guide
 
 | Term | What it means here |
 | --- | --- |
-| **Talos** | A stripped-down Linux built only for running Kubernetes. No SSH, no shell — you configure it through an API. |
-| **Omni** | The control plane that manages Talos machines and clusters. This is what you are installing. |
-| **etcd** | The database Omni stores everything in. Runs *inside* the Omni container. |
-| **SideroLink** | A WireGuard VPN Omni builds to every machine it manages, so they can be anywhere. |
-| **DNS-01 challenge** | A way to prove you own a domain to Let's Encrypt using a DNS record instead of a public web server. Needed because your Omni is probably not internet-facing. |
-| **Infrastructure provider** | An add-on that lets Omni *create* machines for you (on Proxmox, libvirt, etc.) instead of you building them by hand. |
+| Talos | A stripped-down Linux built only for running Kubernetes. It has no SSH and no shell. You configure it through an API. |
+| Omni | The control plane that manages Talos machines and clusters. This is what you are installing. |
+| etcd | The database Omni stores everything in. It runs inside the Omni container. |
+| SideroLink | A WireGuard VPN Omni builds to every machine it manages, so they can be anywhere. |
+| DNS-01 challenge | A way to prove you own a domain to Let's Encrypt with a DNS record instead of a public web server. Needed because your Omni is probably not internet-facing. |
+| Infrastructure provider | An add-on that lets Omni create machines for you (on Proxmox, libvirt, etc.) instead of you building them by hand. |
 
 ---
 
 ## Overview
 
-Self-hosted Omni is a **single container** that carries a surprising amount of
-state:
+Self-hosted Omni is a single container that holds a lot of state:
 
 | Piece | Where it lives | Why it matters |
 | --- | --- | --- |
@@ -49,14 +47,14 @@ state:
 | Identity provider | Auth0 / SAML / OIDC | Omni has no local user database. |
 
 That last row surprises people. **Omni cannot run without an external identity
-provider.** There is no built-in admin account and no password file. Sort this
-out before you start — it is the step most likely to block you.
+provider.** There is no built-in admin account and no password file. Set this
+up before you start. It is the step most likely to block you.
 
 ### Version
 
-Pinned in `omni.env` via `OMNI_IMG_TAG` (currently `v1.12.4`). Always read the
-[release notes](https://github.com/siderolabs/omni/releases) before upgrading —
-Omni moves fast and deprecates flags between minors.
+`OMNI_IMG_TAG` in `omni.env` pins the version (currently `v1.12.4`). Read the
+[release notes](https://github.com/siderolabs/omni/releases) before you upgrade.
+Omni deprecates flags between minors.
 
 **Keep `omnictl` on the same release as the server.** Mismatched versions fail
 with obscure gRPC errors.
@@ -66,24 +64,24 @@ with obscure gRPC errors.
 ## Prerequisites
 
 - [Prerequisites](../docs/PREREQUISITES.md)
-- Docker Engine + Compose plugin
-- A **real domain name** you control. Omni bakes its advertised URLs into the
-  config handed to every managed machine; `localhost` will not work.
-- A **static IP** on the host — the WireGuard endpoint is a literal `ip:port`
+- Docker Engine and the Compose plugin
+- A real domain name you control. Omni writes its advertised URLs into the
+  config it hands to every managed machine, so `localhost` will not work.
+- A static IP on the host, because the WireGuard endpoint is a literal `ip:port`
 - A DNS provider with an API, for the Let's Encrypt DNS-01 challenge
 - An identity provider (Auth0 free tier is the least friction)
 
 ### Hardware
 
-Modest. A NUC, a small VM, or a Raspberry Pi 5 all work — official images ship
-both `amd64` and `arm64`.
+Hardware needs are modest. A NUC, a small VM, or a Raspberry Pi 5 all work.
+Official images ship for both `amd64` and `arm64`.
 
 **Storage is the one thing to get right.** Embedded etcd fsyncs constantly. Run
-it on SSD or NVMe; an SD card or USB stick will produce `apply entries took too
-long` warnings and eventually corrupt the store. This is the most common way to
+it on SSD or NVMe. An SD card or USB stick produces `apply entries took too
+long` warnings and eventually corrupts the store. This is the most common way to
 end up with a broken Omni.
 
-8 GB RAM is comfortable, 4 GB is tight.
+8 GB RAM is comfortable. 4 GB is tight.
 
 ### Ports
 
@@ -96,18 +94,18 @@ end up with a broken Omni.
 
 ---
 
-## Setup Steps
+## Setup steps
 
-### 1. SSL Certificate
+### 1. SSL certificate
 
-Certbot with DNS-01 validation. DNS-01 is required if Omni is not reachable
+Use Certbot with DNS-01 validation. DNS-01 is required if Omni is not reachable
 from the public internet, which is the normal homelab case.
 
 ```bash
 sudo apt install -y certbot python3-certbot-dns-cloudflare
 ```
 
-Create `cloudflare.ini` with a token scoped to **Zone:DNS:Edit**:
+Create `cloudflare.ini` with a token scoped to Zone:DNS:Edit:
 
 ```ini
 dns_cloudflare_api_token = your_token_here
@@ -127,8 +125,8 @@ sudo certbot certonly \
 
 `scripts/setup-ssl.sh` wraps this.
 
-**Set up renewal now**, while you remember. Omni reads the cert only at startup,
-so renewal alone is not enough — the container must be recreated:
+**Set up renewal now.** Omni reads the cert only at startup, so renewal alone is
+not enough. You must recreate the container:
 
 ```bash
 sudo install -m 755 scripts/restart-omni-after-renewal.sh \
@@ -138,18 +136,18 @@ sudo certbot renew --dry-run
 
 Edit `DOMAIN_NAME` and `COMPOSE_DIR` at the top of that script first.
 
-> **✅ Checkpoint** — do not continue until both work:
+> **Checkpoint.** Do not continue until both work:
 > ```bash
 > sudo ls /etc/letsencrypt/live/omni.example.com/   # 4 .pem files
 > sudo certbot renew --dry-run                      # "all simulated renewals succeeded"
 > ```
-> If the dry run fails, fix it now. A cert that cannot renew will take Omni
-> down in 90 days, and future-you will have forgotten all of this.
+> If the dry run fails, fix it now. A cert that cannot renew takes Omni
+> down in 90 days.
 
-### 2. GPG Encryption Key
+### 2. GPG encryption key
 
-Omni encrypts etcd at rest. It needs an **RSA-4096 primary key with an
-encryption subkey** and **no passphrase** — the container starts unattended and
+Omni encrypts etcd at rest. It needs an RSA-4096 primary key with an
+encryption subkey and no passphrase. The container starts unattended and
 cannot answer a prompt.
 
 Run `scripts/setup-gpg.sh` (interactive), or do it in batch:
@@ -168,7 +166,7 @@ gpg --batch --yes --export-secret-key --armor "$EMAIL" > omni.asc
 chmod 600 omni.asc
 ```
 
-Verify you have both a `[C]` primary and an `[E]` subkey — Omni will not start
+Verify you have both a `[C]` primary and an `[E]` subkey. Omni will not start
 with only the primary:
 
 ```bash
@@ -185,31 +183,30 @@ ssb   rsa4096 2026-08-13 [E]
 
 > ### Back up `omni.asc` right now
 >
-> Copy it somewhere off this machine — a password manager, an encrypted USB
-> stick, anywhere that is not the host you are configuring. Without this key
-> your etcd data is permanently unreadable. There is no recovery path, no
-> support ticket, no reset. It is the one irreplaceable file in the deployment.
+> Copy it somewhere off this machine, such as a password manager or an encrypted
+> USB stick. Without this key your etcd data is permanently unreadable. There is
+> no recovery path. It is the one irreplaceable file in the deployment.
 
-> **✅ Checkpoint** — `gpg -K` shows **both** a `[C]` line and an `ssb ... [E]`
+> **Checkpoint.** `gpg -K` shows both a `[C]` line and an `ssb ... [E]`
 > line, `omni.asc` exists and is `600`, and you have copied it somewhere off
-> this machine. If you only see `[C]`, the subkey step did not work — redo it,
-> because Omni will fail to start.
+> this machine. If you only see `[C]`, the subkey step failed. Redo it,
+> or Omni will fail to start.
 
-### 3. Prepare Storage
+### 3. Prepare storage
 
 ```bash
 sudo install -d -o "$USER" -g "$USER" -m 700 /etc/etcd
 sudo install -d -o "$USER" -g "$USER" -m 755 /etc/omni/sqlite
 ```
 
-Both are required. The SQLite path has been mandatory since Omni v1.4.0 —
-omitting it fails at startup with:
+Both are required. The SQLite path has been mandatory since Omni v1.4.0.
+Omitting it fails at startup with:
 
 ```
 config value ".storage.sqlite.path" or flag "--sqlite-storage-path": is required but was not set
 ```
 
-### 4. Configure Environment
+### 4. Configure environment
 
 ```bash
 cp omni.env.example omni.env
@@ -217,32 +214,32 @@ uuidgen                       # → OMNI_ACCOUNT_UUID
 chmod 600 omni.env
 ```
 
-Fill in your domain, IPs, cert paths, and Auth0 details. See the comments in
-`omni.env.example` — every required field is annotated.
+Fill in your domain, IPs, cert paths, and Auth0 details. The comments in
+`omni.env.example` annotate every required field.
 
 **Use absolute paths.** A relative bind-mount path makes Docker silently create
-an empty *directory* where a file belongs, and the resulting error does not
+an empty directory where a file belongs, and the resulting error does not
 point at the cause.
 
-### 5. Auth0 Setup
+### 5. Auth0 setup
 
 1. Create a free tenant at [auth0.com](https://auth0.com)
 2. **Applications → Create Application → Single Page Web Application**
 3. Configure:
-   - **Allowed Callback URLs**: `https://omni.example.com:443/oidc/callback`
-   - **Allowed Logout URLs**: `https://omni.example.com:443/`
-   - **Allowed Web Origins**: `https://omni.example.com:443`
-4. Copy **Domain** and **Client ID** into `omni.env`
+   - Allowed Callback URLs: `https://omni.example.com:443/oidc/callback`
+   - Allowed Logout URLs: `https://omni.example.com:443/`
+   - Allowed Web Origins: `https://omni.example.com:443`
+4. Copy Domain and Client ID into `omni.env`
 
-No client secret is needed — that is the point of the SPA app type. If you find
-yourself copying a secret, you picked the wrong one.
+The SPA app type needs no client secret. If you find yourself copying a secret,
+you picked the wrong app type.
 
-A new tenant ships with the `google-oauth2` social connection enabled, so
-"Continue with Google" works with no extra setup. Google is the *identity*;
-Auth0 is the *broker*. This is why nothing Google-specific appears in the config.
+A new tenant has the `google-oauth2` social connection enabled, so
+"Continue with Google" works with no extra setup. Google provides the identity
+and Auth0 brokers it. This is why nothing Google-specific appears in the config.
 
 > `--auth-auth0-enabled` **cannot be set back to false** once enabled. On a
-> fresh install this is a free choice; afterwards it is not.
+> fresh install you can choose freely. Afterwards you cannot.
 
 ### 6. Deploy
 
@@ -251,11 +248,11 @@ docker compose up -d
 docker compose logs -f omni
 ```
 
-First startup takes a minute or two — it initialises etcd and reconciles the
+First startup takes a minute or two. Omni initialises etcd and reconciles the
 catalogue of every known Talos version.
 
-Healthy startup is a wall of `reconcile succeeded` lines. You will also see
-warnings that are **normal and safe to ignore**, all from the embedded etcd:
+A healthy startup prints many `reconcile succeeded` lines. You also see
+warnings from the embedded etcd that are **normal and safe to ignore**:
 
 ```
 Running http and grpc server on single port. This is not recommended for production.
@@ -275,18 +272,18 @@ docker compose logs omni | grep -i '"level":"error"'
 Then open `https://omni.example.com` and sign in. Your account must match
 `INITIAL_USER_EMAILS`, which makes you admin automatically.
 
-> **✅ Checkpoint** — you are looking at the Omni dashboard in your browser,
-> logged in as yourself. **This is the finish line for installation.** If you
-> got here, the hard part is done and everything after this is configuration.
+> **Checkpoint.** You see the Omni dashboard in your browser, logged in as
+> yourself. **This finishes the installation.** Everything after this is
+> configuration.
 >
-> Not there yet? Work the Troubleshooting table below — the four failures
-> listed cover almost everything that goes wrong on a first install.
+> Not there yet? Use the Troubleshooting section below. Its failures cover almost
+> everything that goes wrong on a first install.
 
-### 8. Auto-Start on Reboot
+### 8. Auto-start on reboot
 
 Nothing to do. The compose file sets `restart: unless-stopped`, which survives
-reboots. (Do **not** add a `@reboot` crontab entry — it races with Docker's own
-restart handling.)
+reboots. Do **not** add a `@reboot` crontab entry. It races with Docker's own
+restart handling.
 
 ---
 
@@ -294,10 +291,10 @@ restart handling.)
 
 For the Pi alongside Technitium and the native ARM64 ProxCenter build, use
 [Pi service maintenance](../pi-services/README.md). These Docker services run
-outside Talos and are deployed from merged Git configuration over SSH.
+outside Talos. Merged Git configuration deploys them over SSH.
 
 1. **Read the release notes.** Flags get deprecated between minors.
-2. Back up first — downgrading is **not supported**, because Omni migrates its
+2. Back up first. **Downgrading is not supported**, because Omni migrates its
    etcd schema on first start of a new version:
    ```bash
    docker compose stop
@@ -324,7 +321,7 @@ outside Talos and are deployed from merged Git configuration over SSH.
 
 ---
 
-## Next Steps
+## Next steps
 
 1. [Set up the Proxmox providers](../proxmox-providers/)
 2. Create an infrastructure provider service account (see below)
@@ -340,16 +337,16 @@ omnictl infraprovider create proxmox-hp-sff      # infrastructure provider
 omnictl serviceaccount create talos-prod-sa --use-user-role   # cluster access
 ```
 
-Each prints an endpoint and a key **shown exactly once** — capture it
+Each prints an endpoint and a key **shown exactly once**. Capture it
 immediately and store it in your secret manager.
 
-> Provider IDs must be valid **DNS labels** as of v1.10 — lowercase letters,
+> As of v1.10, provider IDs must be valid DNS labels: lowercase letters,
 > digits, and dashes only. `proxmox-hp-sff` is fine; `Proxmox_HP_SFF` is rejected.
 
-The first `omnictl` command on a new machine triggers a browser auth flow: it
+The first `omnictl` command on a new machine triggers a browser auth flow. It
 generates a local keypair, prints a URL, and blocks until you approve. The
-approval window is short — if you get `rpc error: code = DeadlineExceeded`,
-just rerun for a fresh URL. The signed key caches in `~/.talos/keys/`.
+approval window is short. If you get `rpc error: code = DeadlineExceeded`,
+rerun the command for a fresh URL. The signed key caches in `~/.talos/keys/`.
 
 ---
 
@@ -360,11 +357,11 @@ A path in `omni.env` is relative or wrong, so Docker created a directory where a
 file should be. Check `ETCD_ENCRYPTION_KEY`, `TLS_CERT`, `TLS_KEY`.
 
 **`failed to validate config against JSON schema`**
-A required flag is missing — the message names it. Usually
+A required flag is missing, and the message names it. Usually
 `--sqlite-storage-path` or `--private-key-source`.
 
 **Login redirects back to the login page**
-Auth0 callback URLs do not match. They must include the scheme, host, *and*
+Auth0 callback URLs do not match. They must include the scheme, the host, and
 `:443` exactly as Omni advertises them.
 
 **Machines connect then immediately drop**
@@ -372,7 +369,7 @@ Auth0 callback URLs do not match. They must include the scheme, host, *and*
 literal IP the machines can route to, with UDP 50180 open.
 
 **etcd warnings about slow applies**
-Storage is too slow. See the hardware note — this is the SD-card failure mode,
+Storage is too slow. See the hardware note. This is the SD-card failure mode,
 and it worsens over time.
 
 **Certificate errors**
@@ -383,7 +380,7 @@ sudo openssl x509 -in /etc/letsencrypt/live/omni.example.com/fullchain.pem -noou
 
 ---
 
-## Backup and Recovery
+## Backup and recovery
 
 | What | Why |
 | --- | --- |
@@ -398,22 +395,22 @@ sudo tar czf omni-etcd-backup-$(date +%F).tar.gz -C /etc etcd
 docker compose up -d
 ```
 
-`SQLITE_STORAGE_PATH` holds logs and discovery state — large and regenerable.
-Skip it unless you want audit history.
+`SQLITE_STORAGE_PATH` holds logs and discovery state. It is large and
+regenerable. Skip it unless you want audit history.
 
 ---
 
-## Security Notes
+## Security notes
 
-- `omni.asc` is the master encryption key — treat it like a root credential
-- Enable MFA in your identity provider
-- Restrict access to Omni's ports with firewall rules
-- Certificates auto-renew via the deploy hook; verify with `certbot renew --dry-run`
-- Service account keys are shown once and default to a 1-year TTL
+- `omni.asc` is the master encryption key. Treat it like a root credential.
+- Enable MFA in your identity provider.
+- Restrict access to Omni's ports with firewall rules.
+- Certificates renew through the deploy hook. Verify with `certbot renew --dry-run`.
+- Service account keys are shown once and default to a 1-year TTL.
 
 ## Licensing
 
 Omni uses the Business Source License (BSL):
 
-- **Free** for non-production use
-- **Production** use requires a license — contact [sales@siderolabs.com](mailto:sales@siderolabs.com)
+- Free for non-production use
+- Production use requires a license. Contact [sales@siderolabs.com](mailto:sales@siderolabs.com)

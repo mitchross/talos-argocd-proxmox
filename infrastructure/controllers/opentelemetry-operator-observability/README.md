@@ -32,8 +32,8 @@ otelcol_exporter_queue_size{telemetry_stack="homelab"}
 otelcol_exporter_queue_capacity{telemetry_stack="homelab"}
 ```
 
-Collector and Loki pod logs are deliberately excluded from the Loki ingestion
-pipeline to avoid recursive failure storms. Use Kubernetes pod logs for these
+The Loki ingestion pipeline deliberately excludes Collector and Loki pod logs,
+to avoid recursive failure storms. Use Kubernetes pod logs for these
 components (including through a read-only investigation agent). Do not interpret
 an empty Loki query for them as "no errors".
 
@@ -41,13 +41,13 @@ an empty Loki query for them as "no errors".
 
 The workflow extracts `spec.groups` from the actual PrometheusRule and tests it
 with promtool. Tests cover a healthy pipeline, absent discovery, trace-export
-failures, legacy log counter names, full queues, and zero-capacity queues. No
-parallel manually maintained copy of the rules is used.
+failures, legacy log counter names, full queues, and zero-capacity queues. The
+workflow keeps no parallel, manually maintained copy of the rules.
 
 After sync, verify one gateway target and the expected agent targets exist. Use
 a disposable telemetry event to check end-to-end delivery. These rules cannot
 detect silent data loss inside an application SDK, prove trace completeness,
-prove zero event loss, or alert when Prometheus/the entire cluster is down.
+prove zero event loss, or alert when Prometheus or the entire cluster is down.
 That last case still requires an outside observer.
 
 Rollback is a Git revert of this overlay change. It changes observation only,

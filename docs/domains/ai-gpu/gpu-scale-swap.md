@@ -1,6 +1,6 @@
 # GPU scale-swap runbook
 
-**You do not deploy a GPU app. You swap which one holds the card**, by flipping
+**You do not deploy a GPU app. You swap which one holds the card.** Flip the
 committed replica counts in one commit.
 
 In plain words: each graphics card runs one app at a time. To give a card to a
@@ -10,16 +10,15 @@ New to the stack? Read [Local AI starter kit](index.md) first.
 
 ## The rule
 
-GPU workloads are mutually-exclusive whole-card: time-slicing off, every pod
-requests whole `nvidia.com/gpu` cards, every Deployment uses `strategy:
-Recreate`. **Never two pods on a card.**
+GPU workloads are mutually exclusive and own whole cards. Time-slicing is off,
+every pod requests whole `nvidia.com/gpu` cards, and every Deployment uses
+`strategy: Recreate`. **Never two pods on a card.**
 
 Two things make this safe:
 
 1. The scheduler enforces it. A scaled-up pod sits `Pending` until the outgoing
    pod releases its card. `Insufficient nvidia.com/gpu` during a swap is normal.
-2. ArgoCD selfHeal reverts `kubectl scale`. The committed value is the only real
-   switch.
+2. ArgoCD selfHeal reverts `kubectl scale`. Only the committed value switches a card.
 
 ## Card truth table
 
@@ -32,9 +31,9 @@ Two things make this safe:
 | SwarmUI | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
 | llmfit (archived, not deployed) | 1 | n/a | `my-apps/ai/_archive/llmfit/` |
 
-vLLM owns both cards, so **there is no spare GPU while it runs**. Sum
+vLLM owns both cards, so **no GPU is spare while it runs**. Sum
 `replicas × cards` across active workloads; the total must not exceed two.
-Replica overrides in each `kustomization.yaml` are authoritative.
+Replica overrides in each `kustomization.yaml` win.
 
 ## The procedure
 
@@ -48,7 +47,7 @@ flowchart LR
 
 1. Pick the target state from the truth table.
 2. Edit outgoing and incoming replica counts in **one commit**.
-3. Open a PR. Merge is the operator's call.
+3. Open a PR. The operator decides when to merge.
 4. Wait for the outgoing pod to release the card. Do not "fix" a `Pending`
    incoming pod.
 5. Verify:
@@ -76,14 +75,14 @@ alongside vLLM. Un-archived GPU jobs such as llmfit need the two-card server par
 
 ## Don'ts
 
-- Don't `kubectl scale` — selfHeal reverts it.
+- Don't `kubectl scale`. selfHeal reverts it.
 - Don't set `NVIDIA_VISIBLE_DEVICES` or `CUDA_VISIBLE_DEVICES` in workload pods.
   The `nvidia-powerlimit` DaemonSet is the intentional exception.
 - Don't switch a GPU Deployment to `RollingUpdate`. `Recreate` releases the
-  whole card cleanly and avoids RWO Multi-Attach.
+  whole card and avoids RWO Multi-Attach.
 - Don't raise the **220 W** cap to chase throughput. `POWER_LIMIT_WATTS` lives
   in `infrastructure/gpu/nvidia-gpu-operator/powerlimit-daemonset.yaml`;
   changing it is an electrical decision.
 
-Related: [model catalog](model-catalog.md) ·
+Related: [model catalog](model-catalog.md),
 [Context and speed on RTX 3090s](3090-llm-optimization.md)

@@ -1,6 +1,6 @@
 # Temporal worker versioning: from homelab to production
 
-**A deploy does not just replace pods. It replaces code that must keep finishing
+**A deploy replaces code that must keep finishing
 work it started hours or days ago.** This guide explains how Temporal worker
 versioning works on Kubernetes and Argo CD. It lists the failures this lab hit,
 and the checks that stop them in a production cluster.
@@ -64,9 +64,9 @@ prevent it.
 - **Cause:** the worker did not receive its deployment options, so it polled
   without a Build ID. A misspelled SDK option name does this silently in
   plain JavaScript. For example, `useVersioning` is the deprecated Build-ID
-  API; the current option is `useWorkerVersioning`.
+  API. The current option is `useWorkerVersioning`.
 - **Test:** after each release, confirm that the new Build ID polls the task
-  queue. Pass `--select-all-active`; without it, versioned pollers do not show.
+  queue. Pass `--select-all-active`. Without it, versioned pollers do not show.
 
     ```bash
     temporal task-queue describe --task-queue <queue> --select-all-active
@@ -116,11 +116,11 @@ prevent it.
 
 - **Symptom:** non-determinism errors after a release.
 - **Cause:** an auto-upgrade workflow replayed its history on code that takes a
-  different path. A short workflow is not automatically safe: retries can
+  different path. A short workflow is not automatically safe. Retries can
   outlast the ramp. Common code causes are reordered activities and timers that
   are not cancelled when another branch wins.
 - **Test:** store real histories as fixtures, with private data removed. Replay
-  every fixture in CI before an image is published. Add fixtures; never edit
+  every fixture in CI before an image is published. Add fixtures. Never edit
   old ones.
 - **Prevent:**
     - Put logic changes behind a patch marker, for example
@@ -154,7 +154,7 @@ prevent it.
     - Run exactly one controller replica. The chart key is top-level
       `replicas`.
     - Protect the controller namespace from pruning and deletion.
-    - Clear a stale identity with the CLI. Pass `--yes`; without it the
+    - Clear a stale identity with the CLI. Pass `--yes`. Without it the
       command stops at its prompt and changes nothing. Full steps are in
       [`radar-ng/RUNBOOK.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/radar-ng/RUNBOOK.md).
 

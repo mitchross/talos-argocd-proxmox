@@ -1,10 +1,10 @@
 # Ongoing research
 
-**Start with one decision below.** Each link opens the relevant section of the
-[20 September assessment](../audits/2026-09-20-homelab-report.html), including
-evidence, trial boundaries, and rollback considerations.
+Start with one decision below. Each link opens the relevant section of the
+[20 September assessment](../audits/2026-09-20-homelab-report.html), which has
+evidence, trial boundaries, and rollback notes.
 
-## Evaluated options — 20 September 2026
+## Evaluated options, 20 September 2026
 
 These are proposals from the assessment, not deployed migrations.
 
@@ -20,9 +20,8 @@ Candidate RAM sizes are not validated replacement specifications.
 
 ## Design studies
 
-These documents retain their original URLs and context. Listing them here does
-not make them active work; their assumptions were not revalidated by the
-September 20 assessment.
+These documents keep their original URLs and context. Listing them here does
+not make them active work. The September 20 assessment did not revalidate their assumptions.
 
 - [Tiered storage](../domains/storage/architecture-future.md): idea only, not implemented.
 - [Enterprise multi-cluster roadmap](../domains/multicluster/enterprise-gitops-roadmap.md)

@@ -13,7 +13,7 @@ PVC backups do not include that bucket.
 
 The `langfuse` 1Password item supplies stable application secrets and the initial
 owner/project credentials. Headless initialization creates missing resources;
-rotating those fields is not a password-reset or API-key rotation procedure for
+rotating those fields does not reset passwords or rotate API keys in
 an existing database. Keep the salt and encryption key with the backups.
 
 ArgoCD orders namespace/secrets at wave -1, data stores at 0, the bucket/CORS
@@ -28,7 +28,7 @@ presigned downloads use HTTPS so a browser can reach them without mixed-content
 errors; bucket CORS permits the Langfuse origin. Authentication still requires
 valid S3 signatures.
 
-The manifests are prepared for GitOps rollout. After merge, confirm both
+The manifests are ready for GitOps rollout. After merge, confirm both
 ExternalSecret readiness and the bucket hook before testing trace ingestion.
 See the canonical runbook for the end-to-end checks; rendering alone does not
 prove that a deployed request reaches ClickHouse or that recovery succeeds.

@@ -1,8 +1,8 @@
 # Documentation reader contract
 
 This repository is both a running platform and a learning environment. Its
-documentation should help a newcomer understand the design without pretending
-that cluster operations are risk-free or universally portable.
+documentation should help a newcomer understand the design. It must not imply
+that cluster operations are risk-free or portable to every setup.
 
 ## What every document should tell the reader
 
@@ -17,10 +17,10 @@ Start with the smallest useful context:
 7. **Failure path:** when to stop, how to inspect the problem, and how to roll back.
 8. **Source of truth:** links to the owning manifests and canonical deeper guide.
 
-Do not assume that a reader knows Argo CD, Kustomize, Kubernetes controllers,
-or repository-specific history. Define a term when misunderstanding it could
-cause a bad change. Explain why a non-obvious setting exists next to the setting
-itself, while keeping long background material in one canonical document.
+Do not assume the reader knows Argo CD, Kustomize, Kubernetes controllers,
+or repository-specific history. Define a term when a misreading could cause a
+bad change. Explain why a non-obvious setting exists next to the setting
+itself. Keep long background material in one canonical document.
 
 ## Write plain technical English
 
@@ -38,26 +38,26 @@ Write about 80% of the way to ASD-STE100 Simplified Technical English:
 |---|---|---|
 | Learn a concept | Guide with a small example and diagram where useful | Reader can explain the flow and locate its manifests |
 | Perform an operation | Numbered runbook | Preconditions, commands, expected output, rollback |
-| Diagnose a failure | Symptom → checks → causes → fixes | Each check distinguishes between at least two causes |
+| Diagnose a failure | Symptom, then checks, causes, and fixes | Each check distinguishes between at least two causes |
 | Review architecture | Current-state document plus explicit limitations | Links to live configuration and known trade-offs |
 | Consider a future change | Plan/PRD marked as not implemented | Adoption trigger, phases, acceptance checks, deferred items |
 | Understand a decision | Short decision record | Context, choice, alternatives, consequences |
 
 ## Make guides interactive safely
 
-Interactivity means the reader can confirm understanding and cluster state; it
+Interactivity means the reader can confirm understanding and cluster state. It
 does not mean every page needs JavaScript.
 
 - Prefer read-only discovery commands before mutation commands.
 - Put destructive commands behind a warning and a confirmation checkpoint.
 - Follow commands with a representative result or a precise success condition.
-- Use `<namespace>`, `<cluster-id>`, and similar obvious placeholders; never
+- Use `<namespace>`, `<cluster-id>`, and similar obvious placeholders. Never
   publish real credentials or silently reusable production identifiers.
 - Add small exercises, render previews, diagrams, or simulators when they make
   controller ordering and failure behavior easier to understand.
 - Provide a no-cluster path where practical, such as `kustomize build`, schema
   validation, or a sample object that lets the reader inspect the result.
-- End operational guides with verification and rollback, not merely deployment.
+- End operational guides with verification and rollback, not only deployment.
 
 ## Use a consistent visual language
 
@@ -66,15 +66,15 @@ when the reader would otherwise need to assemble a flow from several files or
 controllers. Runbooks only need a diagram when ordering, state transitions, or
 failure boundaries are difficult to express as numbered steps.
 
-Reader-facing diagrams are committed SVG assets under `docs/assets/`; the site
+Reader-facing diagrams are committed SVG assets under `docs/assets/`. The site
 does not render Mermaid in the browser. Operational flows use Mermaid sources
-under `docs/diagrams/` and are generated with the pinned CLI by running
-`npm run diagrams`. Do not edit those generated SVG files directly. The main
+under `docs/diagrams/`. Run `npm run diagrams` to generate the SVGs with the
+pinned CLI. Do not edit those generated SVG files directly. The main
 platform map and Kustomize Component mental model remain hand-authored SVGs
-because their teaching composition needs deliberate spatial grouping.
+because they need deliberate spatial grouping.
 
-This split keeps routine flows auto-laid out and diffable while preserving full
-control where the visual itself carries the explanation. Each committed SVG
+This split keeps routine flows auto-laid out and diffable. Hand-authored SVGs
+keep full control where the visual carries the explanation. Each committed SVG
 contains a source hash covering its Mermaid file, renderer lockfile, scripts,
 and configuration. CI verifies that hash, independently compiles every source
 to a temporary directory, and checks the resulting SVG structure. The
@@ -87,11 +87,11 @@ Every diagram should:
 - use numbered stages and directional arrows for ordered flows;
 - separate build time, runtime, and recovery when those phases differ;
 - keep box labels short and put detailed caveats in the surrounding prose;
-- route connectors through whitespace and enter a target from a clear edge;
-  connector paths must never cross headings, labels, or body text;
+- route connectors through whitespace, enter a target from a clear edge, and
+  never cross headings, labels, or body text;
 - use a `viewBox`, readable text at narrow widths, and descriptive `<title>` and
   `<desc>` elements;
-- include meaningful Markdown alt text and a caption that states the invariant
+- include Markdown alt text and a caption that states the invariant
   or trade-off the reader should remember;
 - avoid credentials, private identifiers, volatile version numbers, and details
   that cannot be verified from the owning manifests.
@@ -102,7 +102,7 @@ Markdown. Mermaid flow sources assign stable edge IDs and use `animation: fast`
 or `animation: slow`; shared configuration disables those animations under
 `prefers-reduced-motion: reduce`. Custom SVG connectors use a permanent solid
 path with a small open chevron plus a separate moving packet. Every diagram
-must remain fully understandable when animation is disabled.
+must remain understandable when animation is disabled.
 
 The custom-SVG implementation is ordinary, dependency-free SVG:
 
@@ -142,14 +142,14 @@ flowchart LR
 ```
 
 For custom SVG, `markerUnits="userSpaceOnUse"` keeps arrowheads independent of
-connector stroke width. Initial packet opacity keeps static renderers clean;
-browsers reveal the packet when animation begins. Negative `begin` values may
+connector stroke width. Initial packet opacity keeps static renderers clean.
+Browsers reveal the packet when animation begins. Negative `begin` values may
 stagger packets across a flow. Do not animate the connector's dash offset:
 short paths can appear detached, and static SVG renderers do not all freeze the
 same frame.
 This uses the same moving-flow idea as Draw.io's
 [Flow Animation](https://drawio-app.com/blog/connector-styles-and-animations-in-draw-io/),
-but preserves the line as the diagram's durable information layer.
+but keeps the line as the diagram's permanent content.
 
 Keep color meanings stable across the site:
 
@@ -169,7 +169,7 @@ Prefer these visual shapes:
 | What talks to what? | Left-to-right system map with trust/failure boundaries |
 | What happens next? | Numbered request or reconciliation flow |
 | Why is it waiting? | State machine with success and failure exits |
-| What does Git produce? | Inputs + shared defaults -> rendered output |
+| What does Git produce? | Inputs and shared defaults, then rendered output |
 | Which design should I choose? | Small decision tree or trade-off matrix |
 
 Diagrams summarize the canonical prose; they do not replace it. When behavior
@@ -187,8 +187,8 @@ Concept guides and presentation notes should use the same five-beat sequence:
    application behavior.
 5. **Boundary:** state what the design does not protect, automate, or guarantee.
 
-Do not open with a field-by-field YAML tour. A diagram explains relationships;
-the manifests prove desired state; runtime evidence proves behavior. Keep each
+Do not open with a field-by-field YAML tour. A diagram explains relationships.
+The manifests prove desired state. Runtime evidence proves behavior. Keep each
 diagram focused enough that a reader or presenter can reveal one path at a time.
 
 ## Keep one source of truth
@@ -220,5 +220,5 @@ Before publishing a documentation change, verify:
 - [ ] The page is reachable from the MkDocs navigation or a parent index.
 - [ ] `mkdocs build --strict` succeeds.
 
-Clarity is an operational control: if a setting cannot be explained, it is not
-ready to become a hidden dependency of cluster recovery.
+If a setting cannot be explained, it is not ready to become a hidden dependency
+of cluster recovery.

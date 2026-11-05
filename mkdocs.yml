@@ -156,9 +156,11 @@ nav:
           - Pi and Hermes — which to use: domains/ai-gpu/pi-agent-local-dev.md
           - Hermes in the cluster: domains/ai-gpu/hermes.md
           - Hermes on another cluster: domains/ai-gpu/hermes-other-clusters.md
+          - Hermes on your PC: domains/ai-gpu/hermes-one-computer.md
   - Inventory:
       - Inventory overview: inventory/index.md
       - Fleet inventory — 3 November (current): inventory/2026-11-03-fleet-inventory.md
+      - Minis, RAM and M.2 slots — 5 November: inventory/2026-11-05-minis-and-slots.md
       - Explore the lab: lab.md
   - Audits:
       - Audits overview: audits/index.md

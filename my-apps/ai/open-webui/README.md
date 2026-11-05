@@ -23,8 +23,8 @@ The canonical LLM connection is:
 - effective server context ceiling: `262144`, shared with reasoning/output
 
 `open-webui-configmap.env` is the source of truth. Persistent Open WebUI model
-configuration is disabled so GitOps values win over stale DB-stored connection
-settings.
+configuration is disabled, so GitOps values win over stale connection settings
+stored in the database.
 
 ## Current model profile
 
@@ -47,20 +47,20 @@ changing modes. Preservation defaults to true for thinking and false for
 off; stateless chats may explicitly disable preservation.
 
 This is an accuracy-first default, not a measured quality improvement. Longer
-reasoning can consume more time and output tokens. Explicit medium/low/off
-presets remain effective, including saved conversations; clear or change them
+reasoning can use more time and output tokens. Explicit medium/low/off
+presets remain effective, including in saved conversations. Clear or change them
 when checking the new default. Background tasks also inherit xhigh unless they
 explicitly opt down or off.
 
 The filter normalizes both top-level and `extra_body` forwarding shapes to
 matching chat-template kwargs and top-level effort (null for off). Keeping
-the top-level key prevents later WebUI model defaults from restoring stale
-effort; vLLM gives that top-level value precedence. Canonical
-kwargs take precedence over nested kwargs when both exist. For Qwen only, it
-applies the deployment's six mode-specific sampling values, including overriding
+the top-level key stops later WebUI model defaults from restoring stale
+effort, because vLLM gives that top-level value precedence. Canonical
+kwargs take precedence over nested kwargs when both exist. For Qwen only, the filter
+applies the deployment's six mode-specific sampling values and overrides
 stale per-chat sampler values. Thinking repetition penalty 1.05 is a local
-mitigation candidate, not the official default; it is unchanged by this rollout.
-Other models and messages/tools/images/history are untouched. See
+mitigation candidate, not the official default. This rollout does not change it.
+The filter leaves other models and messages/tools/images/history untouched. See
 [the canonical policy and acceptance matrix](../vllm/README.md#reasoning-acceptance-checks)
 for exact samplers and runtime tests.
 
@@ -73,28 +73,28 @@ function after sync, then test a fresh conversation and an existing one.
 ## Date/time grounding
 
 `DEFAULT_SYSTEM_PROMPT` injects `{{CURRENT_DATE}}`, `{{CURRENT_WEEKDAY}}`, and
-`{{CURRENT_TIMEZONE}}` so Qwen is not forced to guess the current date. Exact
+`{{CURRENT_TIMEZONE}}` so Qwen does not have to guess the current date. Exact
 current time, timezone conversion, and calendar arithmetic should use the
 `mcpo-time` tool.
 
 Do not add `{{CURRENT_TIME}}` or `{{CURRENT_DATETIME}}` to the persistent system
-prompt: Open WebUI resolves them on every request, changing the prompt prefix
-and hurting KV/prefix reuse on long conversations. The date-only variable
+prompt. Open WebUI resolves them on every request, which changes the prompt prefix
+and hurts KV/prefix reuse on long conversations. The date-only variable
 changes once per day.
 
 ## Features
 
-- **Web search**: SearXNG (`WEB_SEARCH_*`, `SEARXNG_QUERY_URL`).
-- **RAG**: local CPU embeddings, hybrid BM25/vector retrieval.
-- **Tools**: MCPO endpoints from `OPENAPI_API_ENDPOINTS`.
-- **Vision**: the same `qwen3.8-27b` model; no separate vision LLM.
-- **Image generation**: ComfyUI, separate from the chat model.
-- **Voice**: local Whisper STT; configured TTS remains OpenAI-compatible.
+- Web search: SearXNG (`WEB_SEARCH_*`, `SEARXNG_QUERY_URL`).
+- RAG: local CPU embeddings, hybrid BM25/vector retrieval.
+- Tools: MCPO endpoints from `OPENAPI_API_ENDPOINTS`.
+- Vision: the same `qwen3.8-27b` model; no separate vision LLM.
+- Image generation: ComfyUI, separate from the chat model.
+- Voice: local Whisper STT; configured TTS remains OpenAI-compatible.
 
 ## Important env settings
 
 - `ENABLE_PERSISTENT_CONFIG=False`: GitOps model/backend settings stay authoritative.
-- The obsolete `CONTEXT_WINDOW=65536` environment variable was removed: the
+- The obsolete `CONTEXT_WINDOW=65536` environment variable was removed. The
   audited installed Open WebUI Python backend does not read it. It was not a
   reliable client cap and did not change vLLM's 262144-token limit. Per-chat
   history and output budgets still need to fit that server ceiling.

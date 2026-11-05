@@ -1,10 +1,10 @@
-# Troubleshooting Guide
+# Troubleshooting guide
 
 Common issues and solutions for the Omni + Talos + Proxmox stack.
 
-## Omni Issues
+## Omni issues
 
-### Cannot Access Omni UI
+### Cannot access Omni UI
 
 **Symptom**: Browser cannot reach `https://omni.yourdomain.com`
 
@@ -27,11 +27,11 @@ curl -k https://omni.yourdomain.com
 ```
 
 **Solutions**:
-1. **Container not running**: `docker compose up -d`
-2. **Port conflict**: Another service using port 443
+1. Container not running: `docker compose up -d`
+2. Port conflict: another service using port 443
    - Check: `sudo lsof -i :443`
    - Stop conflicting service or change Omni port
-3. **Firewall blocking**:
+3. Firewall blocking:
    ```bash
    sudo ufw allow 443/tcp
    sudo ufw allow 8090/tcp
@@ -39,10 +39,10 @@ curl -k https://omni.yourdomain.com
    sudo ufw allow 8091/tcp
    sudo ufw allow 50180/udp
    ```
-4. **DNS not resolving**: Update DNS A record
-5. **Certificate issues**: Verify cert paths in `omni.env`
+4. DNS not resolving: update the DNS A record
+5. Certificate issues: verify cert paths in `omni.env`
 
-### Omni Won't Start
+### Omni won't start
 
 **Symptom**: Container exits immediately or restarts continuously
 
@@ -98,7 +98,7 @@ openssl x509 -in /etc/letsencrypt/live/omni.yourdomain.com/fullchain.pem -text -
 openssl x509 -in /etc/letsencrypt/live/omni.yourdomain.com/fullchain.pem -noout -dates
 ```
 
-### Authentication Fails
+### Authentication fails
 
 **Symptom**: Cannot log in via Auth0/SAML/OIDC
 
@@ -127,7 +127,7 @@ openssl x509 -in /etc/letsencrypt/live/omni.yourdomain.com/fullchain.pem -noout 
 - Verify certificates are valid
 - Check claim mappings (email, name, etc.)
 
-### Nodes Not Connecting
+### Nodes not connecting
 
 **Symptom**: Talos nodes not appearing in Omni or stuck in "Connecting"
 
@@ -161,13 +161,13 @@ talosctl -n <node-ip> get links
    ```
 
 **Network issues**:
-- Ensure VMs have network connectivity
+- Make sure VMs have network connectivity
 - Check Proxmox network bridge configuration
 - Verify DHCP is working (or configure static IPs)
 
-## Proxmox Provider Issues
+## Proxmox provider issues
 
-### Provider Won't Start
+### Provider won't start
 
 **Symptom**: Container exits or won't start
 
@@ -214,13 +214,12 @@ pvesh get /version --username root@pam
 ```
 
 **Wrong key type**:
-- Ensure you're using an **Infrastructure Provider Key**
-- NOT a service account key
+- Use an **Infrastructure Provider Key**, not a service account key.
 - Generate with the CLI: `omnictl infraprovider create <dns-label-name>`
-- Do NOT generate it in the Omni UI — UI PGP keys fail with
+- Do **not** generate it in the Omni UI. UI PGP keys fail with
   `gopenpgp: EdDSA verification failure`
 
-### VMs Not Being Created
+### VMs not being created
 
 **Symptom**: Cluster created but VMs don't appear in Proxmox
 
@@ -266,7 +265,7 @@ pvesh get /storage --enabled 1
 # Free up space or select different storage
 ```
 
-### VMs Created But Won't Boot
+### VMs created but won't boot
 
 **Symptom**: VMs exist but don't boot or get stuck
 
@@ -298,9 +297,9 @@ pvesh get /storage --enabled 1
 2. Verify Proxmox host has available resources
 3. Reduce VM specs if needed
 
-## Talos Cluster Issues
+## Talos cluster issues
 
-### Cluster Won't Bootstrap
+### Cluster won't bootstrap
 
 **Symptom**: Cluster stuck in "Bootstrapping" state
 
@@ -330,7 +329,7 @@ talosctl -n <control-plane-ip> get members
 - Check Proxmox network configuration
 - Verify no firewall blocking
 
-### Nodes Stuck "Installing"
+### Nodes stuck "Installing"
 
 **Symptom**: Nodes show "Installing" status indefinitely in Omni
 
@@ -348,7 +347,7 @@ talosctl -n <control-plane-ip> get members
 **Solutions**:
 
 **Extension download failing** (GPU extensions):
-- Nodes can't download extensions → check internet connectivity
+- If nodes can't download extensions, check internet connectivity
 - Try custom ISO with extensions pre-baked (see the GPU patches in `../cluster-template/patches/`)
 
 **Disk issues**:
@@ -361,7 +360,7 @@ talosctl -n <control-plane-ip> get members
 - Check DHCP is assigning IPs
 - Test internet connectivity from VM
 
-### Nodes Keep Rebooting
+### Nodes keep rebooting
 
 **Symptom**: Nodes repeatedly reboot and never stabilize
 
@@ -393,9 +392,9 @@ talosctl -n <control-plane-ip> get members
 - Check Talos GitHub issues for known problems
 - Report issue to Sidero Labs
 
-## GPU-Specific Issues
+## GPU-specific issues
 
-### Extensions Not Installing
+### Extensions not installing
 
 **Symptom**: Cluster stuck on "Installing" with GPU extensions
 
@@ -403,7 +402,7 @@ talosctl -n <control-plane-ip> get members
 
 **Solutions**:
 
-See the GPU machine classes in `../machine-classes/` and the patches in `../cluster-template/patches/` for the supported approach.
+The supported approach is in the GPU machine classes in `../machine-classes/` and the patches in `../cluster-template/patches/`.
 
 **Solution 1**: Use custom ISO with extensions pre-baked
 ```bash
@@ -415,7 +414,7 @@ docker run --rm -i \
 ```
 
 **Solution 2**: Check Proxmox console/tty settings
-- Some users report tty configuration issues prevent installation
+- Some users report that tty configuration issues block installation
 - Try different console settings in Proxmox VM config
 
 **Solution 3**: Verify network connectivity
@@ -423,7 +422,7 @@ docker run --rm -i \
 - Ensure VMs have internet access
 - Check for proxy/firewall blocking downloads
 
-### GPU Modules Not Loading
+### GPU modules not loading
 
 **Symptom**: Extensions installed but `nvidia-smi` fails or modules not in `/proc/modules`
 
@@ -439,8 +438,8 @@ talosctl -n <node-ip> read /proc/modules | grep nvidia
 **Solutions**:
 
 **Modules not loaded**:
-1. Extensions being present doesn't auto-load modules
-2. You must apply the machine config patch
+1. Installed extensions don't load modules automatically.
+2. Apply the machine config patch.
 3. See [cluster-template/patches/gpu-worker.yaml](../cluster-template/patches/gpu-worker.yaml)
 
 **Patch not applied**:
@@ -453,11 +452,11 @@ talosctl -n <node-ip> read /proc/modules | grep nvidia
 2. Example: Both should be 550.127.05
 3. Check extension compatibility with Talos version
 
-### GPU Not Passed Through
+### GPU not passed through
 
 **Symptom**: Modules load but GPU not visible in `nvidia-smi`
 
-**This is a Proxmox configuration issue**, not Talos.
+This is a Proxmox configuration issue, not a Talos issue.
 
 **Diagnosis**:
 ```bash
@@ -470,7 +469,7 @@ qm config <vmid> | grep hostpci
 
 **Solutions**:
 
-1. **Enable IOMMU** (if not already):
+1. Enable IOMMU (if not already enabled):
    ```bash
    # Edit /etc/default/grub
    # Intel: GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"
@@ -480,7 +479,7 @@ qm config <vmid> | grep hostpci
    reboot
    ```
 
-2. **Load VFIO modules**:
+2. Load VFIO modules:
    ```bash
    # Add to /etc/modules
    vfio
@@ -492,7 +491,7 @@ qm config <vmid> | grep hostpci
    reboot
    ```
 
-3. **Bind GPU to VFIO**:
+3. Bind the GPU to VFIO:
    ```bash
    # Find GPU PCI ID
    lspci -nn | grep -i nvidia
@@ -509,12 +508,12 @@ qm config <vmid> | grep hostpci
    reboot
    ```
 
-4. **Assign to VM**:
+4. Assign the GPU to the VM:
    ```bash
    qm set <vmid> -hostpci0 01:00,pcie=1,rombar=0
    ```
 
-### GPU Works in Talos But Not in Pods
+### GPU works in Talos but not in pods
 
 **Symptom**: `talosctl read /proc/driver/nvidia/version` works but pods can't access GPU
 
@@ -551,9 +550,9 @@ spec:
         nvidia.com/gpu: 1  # Add this
 ```
 
-## Performance Issues
+## Performance issues
 
-### Slow VM Creation
+### Slow VM creation
 
 **Symptom**: VMs take a long time to create in Proxmox
 
@@ -567,26 +566,26 @@ spec:
 - Cache Talos images locally in Proxmox
 - Reduce concurrent VM creations
 
-### Slow Cluster Operations
+### Slow cluster operations
 
 **Symptom**: Omni UI is slow, cluster operations take long time
 
 **Causes**:
-- Omni server under-resourced
+- Omni server has too few resources
 - Network latency
-- Large number of clusters/machines
+- Large number of clusters or machines
 
 **Solutions**:
 - Increase Omni server resources
 - Use SSD for etcd storage
-- Optimize network between Omni and nodes
+- Improve the network between Omni and nodes
 
-## Getting Help
+## Getting help
 
-### Before Asking for Help
+### Before asking for help
 
 Gather this information:
-1. **Version information**:
+1. Version information:
    ```bash
    # Omni version
    docker inspect omni | grep OMNI_IMG_TAG
@@ -598,7 +597,7 @@ Gather this information:
    docker inspect omni-infra-provider-proxmox | grep image
    ```
 
-2. **Logs**:
+2. Logs:
    ```bash
    # Omni logs
    docker compose logs omni > omni-logs.txt
@@ -609,27 +608,27 @@ Gather this information:
    # Talos logs (from Omni UI or talosctl)
    ```
 
-3. **Configuration** (sanitized):
+3. Configuration (sanitized):
    - omni.env (remove secrets)
    - config.yaml (remove credentials)
    - Machine class specs
 
-### Where to Get Help
+### Where to get help
 
-1. **Sidero Labs Slack**: [slack.dev.talos-systems.io](https://slack.dev.talos-systems.io/)
+1. Sidero Labs Slack: [slack.dev.talos-systems.io](https://slack.dev.talos-systems.io/)
    - #omni channel
    - #talos channel
 
-2. **GitHub Issues**:
+2. GitHub Issues:
    - [Omni Issues](https://github.com/siderolabs/omni/issues)
    - [Talos Issues](https://github.com/siderolabs/talos/issues)
    - [Provider Issues](https://github.com/siderolabs/omni-infra-provider-proxmox/issues)
 
-3. **Documentation**:
+3. Documentation:
    - [Omni Docs](https://docs.siderolabs.com/omni/)
    - [Talos Docs](https://docs.siderolabs.com/talos/)
 
-### Reporting Bugs
+### Reporting bugs
 
 When reporting bugs, include:
 - Clear description of issue
@@ -639,9 +638,9 @@ When reporting bugs, include:
 - Relevant logs
 - Configuration (sanitized)
 
-## Advanced Debugging
+## Advanced debugging
 
-### Enable Debug Logging
+### Enable debug logging
 
 **Omni**:
 Add to command in docker-compose.yml:
@@ -657,7 +656,7 @@ talosctl -n <node-ip> logs --follow kubelet
 talosctl -n <node-ip> logs --follow machined
 ```
 
-### Network Debugging
+### Network debugging
 
 ```bash
 # Test Omni API connectivity
@@ -676,7 +675,7 @@ traceroute omni.yourdomain.com
 sudo iptables -L -n -v
 ```
 
-### Container Debugging
+### Container debugging
 
 ```bash
 # Exec into Omni container

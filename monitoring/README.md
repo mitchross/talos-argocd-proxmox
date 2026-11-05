@@ -1,8 +1,7 @@
-# Monitoring & Observability Stack
+# Monitoring & observability stack
 
-Full three-pillar observability (metrics / logs / traces) for the cluster,
-fully self-hosted: metrics in Prometheus, logs in Loki, traces in Tempo,
-visualized in Grafana. No SaaS in the pipeline.
+Self-hosted metrics, logs, and traces for the cluster. Prometheus stores metrics,
+Loki stores logs, Tempo stores traces, and Grafana shows them. No SaaS is in the pipeline.
 
 ## Architecture
 
@@ -40,8 +39,8 @@ graph TB
 
 ## Design notes
 
-Everything is self-hosted — no SaaS in the pipeline. Each signal has one
-authoritative sink so there's never a "which one do I trust" question:
+Each signal has one authoritative sink, so there is never a question of which
+source to trust:
 
 | Signal  | Sink                            | Query in      |
 |---------|---------------------------------|---------------|
@@ -50,8 +49,8 @@ authoritative sink so there's never a "which one do I trust" question:
 | Traces  | Tempo (`tempo/`)                | Grafana Explore |
 | Alerts  | Alertmanager                    | alertmanager.vanillax.me |
 
-Retention: metrics 15d, logs 24h, traces 72h (see table near the bottom).
-For anything longer-term, export from Loki/Tempo to S3 before rotation.
+Retention: metrics 15d, logs 24h, traces 72h (see the Retention table below).
+To keep data longer, export from Loki/Tempo to S3 before rotation.
 
 ## Components
 
@@ -59,29 +58,29 @@ Apps live at `monitoring/<type>/<app>` (`metrics/`, `logs/`, `tracing/`, `ai-ops
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| **OTEL Operator** | `infrastructure/controllers/opentelemetry-operator/` | Manages the two Collectors |
-| **OTEL Agent** | Same (CRD: `collector-agent.yaml`) | DaemonSet, scrapes pod logs via filelog |
-| **OTEL Gateway** | Same (CRD: `collector-gateway.yaml`) | Enriches logs and routes logs/traces to their backends |
-| **Prometheus** | `monitoring/metrics/prometheus-stack/` | Metrics storage, alerting, Grafana |
-| **Loki** | `monitoring/logs/loki-stack/` | Log storage (S3 on RustFS) |
-| **Tempo** | `monitoring/tracing/tempo/` | Trace storage (S3 on RustFS) |
-| **Dozzle** | `monitoring/logs/dozzle/` | Live container log viewer |
-| **HolmesGPT** | `monitoring/ai-ops/_archive/holmesgpt/` | Archived, not deployed (AI cluster diagnostics) |
-| **pod-cleanup** | `my-apps/system/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
+| OTEL Operator | `infrastructure/controllers/opentelemetry-operator/` | Manages the two Collectors |
+| OTEL Agent | Same (CRD: `collector-agent.yaml`) | DaemonSet, scrapes pod logs via filelog |
+| OTEL Gateway | Same (CRD: `collector-gateway.yaml`) | Enriches logs and routes logs/traces to their backends |
+| Prometheus | `monitoring/metrics/prometheus-stack/` | Metrics storage, alerting, Grafana |
+| Loki | `monitoring/logs/loki-stack/` | Log storage (S3 on RustFS) |
+| Tempo | `monitoring/tracing/tempo/` | Trace storage (S3 on RustFS) |
+| Dozzle | `monitoring/logs/dozzle/` | Live container log viewer |
+| HolmesGPT | `monitoring/ai-ops/_archive/holmesgpt/` | Archived, not deployed (AI cluster diagnostics) |
+| pod-cleanup | `my-apps/system/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
 
 ## Telemetry scope
 
 The node agents collect container stdout/stderr only. Prometheus already
 collects Kubernetes and application metrics through kubelet, kube-state-metrics,
 ServiceMonitors, and PodMonitors, so OTEL does not duplicate those metrics.
-Application auto-injection is intentionally not deployed: the former blanket
-experiment added startup and runtime cost without a maintained trace consumer.
-The radar-ng mobile app remains the explicit exception and sends its own logs
-and traces directly to the public gateway.
+Application auto-injection is not deployed. The former blanket experiment added
+startup and runtime cost, and nothing maintained consumed the traces.
+The radar-ng mobile app is the exception. It sends its own logs and traces
+directly to the public gateway.
 
-## Kubernetes Metrics: Two Pipelines
+## Kubernetes metrics: two pipelines
 
-Two sources of Kubernetes metrics — they are NOT interchangeable:
+Kubernetes metrics come from two sources. They are **not** interchangeable:
 
 ```
                     kubelet :10250/metrics
@@ -93,17 +92,17 @@ Two sources of Kubernetes metrics — they are NOT interchangeable:
       Grafana, Alertmanager            HPA, kubectl top
 ```
 
-| | **Prometheus** | **metrics-server** |
+| | Prometheus | metrics-server |
 |---|---|---|
-| **What it stores** | Historical time-series (15-day retention) | Last ~30 seconds only, in-memory |
-| **Consumers** | Grafana, Alertmanager | HPA, `kubectl top` |
-| **Installed via** | `monitoring/metrics/prometheus-stack/` (Wave 5) | `infrastructure/scheduling/metrics-server/` (Wave 4) |
+| What it stores | Historical time-series (15-day retention) | Last ~30 seconds only, in-memory |
+| Consumers | Grafana, Alertmanager | HPA, `kubectl top` |
+| Installed via | `monitoring/metrics/prometheus-stack/` (Wave 5) | `infrastructure/scheduling/metrics-server/` (Wave 4) |
 
 If `kubectl top` works but Grafana dashboards are empty, metrics-server is
 fine and Prometheus is the problem. If HPA is stuck at "unknown" but
-Grafana has data, it's the reverse.
+Grafana has data, the reverse is true.
 
-## Storage Backends
+## Storage backends
 
 | Component | Storage | Location |
 |-----------|---------|----------|
@@ -113,8 +112,8 @@ Grafana has data, it's the reverse.
 | Loki | RustFS S3 (`loki` bucket) | TrueNAS 192.168.10.133:30293 |
 | Tempo | RustFS S3 (`tempo` bucket) | TrueNAS 192.168.10.133:30293 |
 
-> Loki/Tempo credentials go in via `extraEnvFrom: secretRef:` — do NOT
-> reference `${VAR}` inline in the Helm values; those don't expand and
+> Pass Loki/Tempo credentials with `extraEnvFrom: secretRef:`. Do **not**
+> reference `${VAR}` inline in the Helm values. Those don't expand, and
 > the pod silently runs with no creds. See `monitoring/CLAUDE.md`.
 
 ## Access
@@ -126,28 +125,25 @@ Grafana has data, it's the reverse.
 | Alertmanager | https://alertmanager.vanillax.me |
 | Loki | https://loki.vanillax.me |
 
-## Performance Triage
+## Performance triage
 
-Grafana opens on **START HERE — Cluster Performance**. This is the supported
-front door for performance incidents; do not begin by browsing dashboard
-folders.
+Grafana opens on **START HERE — Cluster Performance**. Start every performance
+incident there. Do not begin by browsing dashboard folders.
 
 1. Read the four red/yellow/green incident cards.
 2. Check whether node CPU, memory, disk, or kubelet pressure is red.
-3. Use the ranked workload panels to find the CPU/RAM consumer or the workload
+3. Use the ranked workload panels to find the top CPU/RAM consumer or the workload
    closest to a hard limit.
 4. Click the workload bar. Grafana opens **WHY IS THIS APP SLOW?** with the
    namespace and workload already selected.
 5. Match CPU throttling, memory growth, restarts, network/filesystem traffic,
    and the workload's Loki errors on the same time range.
 
-Only two selectors are exposed on the investigator: **Namespace** and
-**Workload**. The pod selector is derived automatically. Specialist dashboards
-remain available from the START HERE instructions for PostHog, Longhorn,
-Argo CD, Capacity, VPA, GPU, and logs.
+The investigator has two selectors: Namespace and Workload. It derives the pod
+selector. The START HERE instructions link to specialist dashboards for PostHog,
+Longhorn, Argo CD, Capacity, VPA, GPU, and logs.
 
-For PostHog, open **WHY IS POSTHOG SLOW?**. It deliberately keeps all of the
-following on one page:
+For PostHog, open **WHY IS POSTHOG SLOW?**. It keeps all of the following on one page:
 
 - Django web/API latency, 5xx rate, and the exact slow/failing view.
 - PostgreSQL connections, cache hit, deadlocks, long transactions, locks,
@@ -162,14 +158,14 @@ PostgreSQL uses a pinned `postgres_exporter` sidecar; Redpanda and ClickHouse
 use their built-in Prometheus endpoints. Query text is not placed in metric
 labels.
 
-The kube-prometheus-stack stock dashboard bundle is deliberately disabled; it
-duplicated the same signals across menus and obscured the incident workflow.
-Every dashboard is GitOps-managed JSON under
+The kube-prometheus-stack stock dashboard bundle is disabled. It duplicated the
+same signals across menus and hid the incident workflow.
+Every dashboard is JSON in Git under
 `monitoring/metrics/prometheus-stack/dashboards/`, one directory per Grafana folder.
 See [dashboards/README.md](prometheus-stack/dashboards/README.md) for the
 folder map, how to add a board, and per-board query gotchas.
 
-## Key Files
+## Key files
 
 - Custom ServiceMonitors: `monitoring/metrics/prometheus-stack/custom-servicemonitors.yaml`
 - Custom alerts: `monitoring/metrics/prometheus-stack/custom-alerts.yaml`
@@ -185,19 +181,20 @@ folder map, how to add a board, and per-board query gotchas.
 | Signal | Retention |
 |--------|-----------|
 | Metrics | 15 days (Prometheus) |
-| Logs | 24 hours (Loki — deliberately short; see loki-stack/values.yaml) |
+| Logs | 24 hours (Loki, deliberately short; see loki-stack/values.yaml) |
 | Traces | 72 hours (Tempo) |
 | Alerts | 72 hours (Alertmanager) |
 
 Alert evaluation and notification delivery are separate. Prometheus evaluates
-the rules and Grafana/Prometheus/Alertmanager show their state. Every alert
+the rules, and Grafana, Prometheus, and Alertmanager show their state. Every alert
 routes to the `null` receiver, so nothing is delivered outside the cluster and
-nothing pages; add a push receiver (for example ntfy) before relying on alerts. Argo CD Notifications is not needed for this metrics-based path.
+nothing pages. Add a push receiver (for example ntfy) before relying on alerts.
+This metrics-based path does not need Argo CD Notifications.
 
-Argo CD is already covered by component ServiceMonitors, Grafana dashboard
-14584, and dedicated alerts for component availability, reconcile stalls,
+Component ServiceMonitors already cover Argo CD, as do Grafana dashboard
+14584 and dedicated alerts for component availability, reconcile stalls,
 auto-sync drift, degraded apps, stuck progress, and failed syncs. Keep those
-rules in `argocd-sync-alerts.yaml`; do not duplicate broad Argo rules in
+rules in `argocd-sync-alerts.yaml`. Do not duplicate broad Argo rules in
 `custom-alerts.yaml`.
 
 ## Troubleshooting
@@ -228,12 +225,12 @@ kubectl logs -n opentelemetry deploy/collector-gateway  # gateway forwarded?
 
 ### Common pitfalls (see `monitoring/CLAUDE.md` for details)
 - Tempo/Loki S3 creds: use `extraEnvFrom: secretRef:`, not inline `${VAR}`.
-- ArgoCD metrics: must be per-component (`controller.metrics`, `server.metrics`, …) — top-level `metrics:` does nothing.
-- Longhorn ServiceMonitor: select `app: longhorn-manager` (NOT `app.kubernetes.io/name: …`).
+- ArgoCD metrics: set them per component (`controller.metrics`, `server.metrics`, …). Top-level `metrics:` does nothing.
+- Longhorn ServiceMonitor: select `app: longhorn-manager` (not `app.kubernetes.io/name: …`).
 - `ignoreDifferences`: use `jqPathExpressions`, not `jsonPointers` (RFC 6901 has no `*` wildcard).
 - PVC storage in `ignoreDifferences`: do not ignore `.spec.resources.requests.storage`
   globally. `RespectIgnoreDifferences=true` would also suppress legitimate
   Git-driven expansions. Keep Git at or above the live size and scope any
   legacy exception to the affected Application/PVC.
-- Loki tenant_id: multi-tenant mode requires `X-Scope-OrgID` header or `tenant_id` — 401 without it.
+- Loki tenant_id: multi-tenant mode requires the `X-Scope-OrgID` header or `tenant_id`. Without it you get a 401.
 - OTEL Collector CRD versions: `v1beta1` for `OpenTelemetryCollector`, `v1alpha1` for `Instrumentation`.

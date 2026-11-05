@@ -45,6 +45,11 @@ agent:
   max_turns: 500
   reasoning_effort: medium
 
+# Opus has a 1M window and the default ratio (0.50) only compacts at ~500k, so long chats replayed
+# ~250k tokens on every call. Compact at 200k instead (the lower of ratio and this cap wins).
+compression:
+  threshold_tokens: 200000
+
 # When Claude rate-limits or errors, the chat moves to Codex (ChatGPT plan), then DeepSeek Flash.
 # A limit that resets within 2 minutes is waited out instead of switching.
 fallback_providers:
@@ -56,7 +61,7 @@ fallback:
   min_switch_reset_seconds: 120
 
 # delegate_task uses the advanced-delegation plugin: the agent picks a route per subagent.
-# Untagged tasks use `balanced` (Sonnet), so nothing changes unless the agent asks for a route.
+# Untagged tasks use `codex` (ChatGPT plan) so routine subagent work stays off Claude quota.
 # provider/model above are kept for when backend goes back to default.
 delegation:
   provider: anthropic
@@ -64,7 +69,7 @@ delegation:
   backend: model_map
   backends:
     model_map:
-      default: balanced
+      default: codex
       options:
         - name: local
           description: "Free and private, on the homelab GPUs (Qwen3.8 Flash-Next on Strata, never leaves the house). One request at a time. Bulk reading, summaries, private data."
@@ -75,16 +80,19 @@ delegation:
           provider: litellm
           model: deepseek-flash
         - name: balanced
-          description: "Everyday work (Claude Sonnet). Research, repo reading, normal edits. Use when unsure."
+          description: "Claude Sonnet. Writing and judgment calls where Claude's style matters, or when Codex is rate-limited."
           provider: anthropic
           model: claude-sonnet-5-5
           fallback_providers:
             - provider: openai-codex
               model: gpt-6.1-sol
         - name: codex
-          description: "OpenAI GPT on the ChatGPT plan. Coding and an independent second opinion next to Claude."
+          description: "Default workhorse: GPT-6.1 Sol on the ChatGPT plan. Coding, research, repo reading, normal edits. Use when unsure."
           provider: openai-codex
           model: gpt-6.1-sol
+          fallback_providers:
+            - provider: anthropic
+              model: claude-sonnet-5-5
         - name: deep
           description: "Slow and careful (Claude Opus, high reasoning). Hard debugging, design, root causes."
           provider: anthropic
@@ -96,7 +104,11 @@ delegation:
 
 # Small internal helper calls run on DeepSeek Flash (via LiteLLM) instead of Opus.
 # Compression and the approval classifier stay on the main model on purpose.
+# background_review (the post-turn memory/skill review fork) runs on Codex: it was ~$75/week of Opus.
 auxiliary:
+  background_review:
+    provider: openai-codex
+    model: gpt-6.1-sol
   title_generation:
     provider: litellm
     model: deepseek-flash

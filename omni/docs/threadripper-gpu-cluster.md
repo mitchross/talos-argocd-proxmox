@@ -1,4 +1,4 @@
-# Cluster Topology
+# Cluster topology
 
 `talos-prod-cluster-v2` runs one control plane and three workers as VMs on three
 Proxmox hosts, plus three bare-metal workers (see
@@ -37,7 +37,7 @@ CPU-attached on this board works perfectly.
 Disks on the chipset controller read at **51-66 MB/s with zero ATA errors** on a
 `8GT/s x4` link that offers ~3.9 GB/s. A clean SATA link delivering a tenth of
 its rate means the corruption is above SATA, where retries never surface as ATA
-errors. **Throughput is the diagnostic that error counters miss.**
+errors. Error counters miss this fault. Measure throughput.
 
 ### Where the disks belong
 
@@ -51,8 +51,8 @@ chipset. Measured across the same three SSDs and the same cables:
 | Marvell 88SE9215 (PCIe card) | 5GT/s **x1** | 381 MB/s | 506 MB/s total |
 | **ASM1166 (M.2 adapter)** | 8GT/s **x2** | **482-516 MB/s** | **1,526 MB/s total** |
 
-Each disk holds ~510 MB/s while all three run — the SATA III link itself is now
-the limit, not the controller.
+Each disk holds ~510 MB/s while all three run. The SATA III link is now the
+limit, not the controller.
 
 Cheap 4-port PCIe SATA cards are hard-wired to PCIe 2.0 x1: `LnkCap` equals
 `LnkSta`, so no slot improves them. Roughly 500 MB/s shared across every port,
@@ -64,28 +64,27 @@ lspci -vv -s <bdf> | grep -E 'LnkCap:|LnkSta:'
 
 ### Cabling is a separate fault from the controller
 
-The boot SSD carries 442 SATA CRC errors — link-layer, so cable or connector,
-not flash. Replacing the cables stopped them accumulating and ended the NCQ
-timeouts, independently of which controller the disks were on. Both faults were
-real, and each needed its own fix. When two variables change together, swap one
-at a time and measure; the intermediate configuration that looks like a complete
-fix can easily be hiding a second fault.
+The boot SSD carries 442 SATA CRC errors. These are link-layer errors, so the
+fault is the cable or connector, not the flash. Replacing the cables stopped the
+errors accumulating and ended the NCQ timeouts, whichever controller the disks
+used. Both faults were real, and each needed its own fix. When two variables
+change together, swap one at a time and measure. A configuration that looks like
+a complete fix can hide a second fault.
 
 ## Why etcd is not on the Threadripper
 
-The Threadripper hard-locks — no panic, no oops, nothing written to disk, the
-journal simply stops mid-line. The boot disk sat on the failing X399 chipset
-described above, and when that link wedges the root filesystem disappears
-instantly, which is exactly that signature. Moving the disks off the chipset
-ended the ATA errors, but a board whose chipset latches fatal PCIe errors every
-boot has not earned back the cluster's only etcd member. That host must not
-carry etcd or any single-replica data that cannot be rebuilt.
+The Threadripper hard-locks. It logs no panic or oops, writes nothing to disk,
+and the journal stops mid-line. The boot disk sat on the failing X399 chipset
+described above. When that link wedges, the root filesystem disappears instantly,
+which matches this signature. Moving the disks off the chipset ended the ATA
+errors, but the chipset still latches fatal PCIe errors every boot. That host
+must not carry etcd or any single-replica data that cannot be rebuilt.
 
-It keeps the GPU worker because both RTX 3090s are physically in it, and because a
-GPU node is the cheapest thing to lose: the workloads are stateless inference
+It keeps the GPU worker because both RTX 3090s are physically in it. A GPU node
+is also the cheapest to lose, because its workloads are stateless inference
 services that reschedule.
 
-Set up remote kernel logging before trusting any diagnosis of that host — see
+Set up remote kernel logging before you trust any diagnosis of that host. See
 [Capturing a lockup](#capturing-a-lockup).
 
 ## Sizing
@@ -99,29 +98,29 @@ Set up remote kernel logging before trusting any diagnosis of that host — see
 
 The GPU's boot and EPHEMERAL disks total the existing 450 GiB NVMe0 allocation.
 The 800 GiB bulk disk lives on `tr-sda-vmstore`, thick LVM on the PNY boot SSD's
-`pve` volume group. Proxmox's installer puts a `local-lvm` thin pool there
-instead, so a reinstalled host needs that storage recreated first — see the
+`pve` volume group. The Proxmox installer puts a `local-lvm` thin pool there
+instead, so a reinstalled host needs that storage recreated first. See the
 [disk map rebuild prerequisites](../../docs/domains/storage/disk-map.md#rebuild-prerequisites).
 Measured `/var` usage was 253 GiB, leaving about 181 GiB before filesystem
 overhead. The control-plane template reserves 32 GiB ETCD and 64 GiB EPHEMERAL
-on its existing 100 GiB disk; this isolates capacity, with no promised I/O gain.
-These sizes apply to replacement VMs; rollback requires reprovisioning, not shrinking.
+on its existing 100 GiB disk. This isolates capacity, with no promised I/O gain.
+These sizes apply to replacement VMs. Rollback requires reprovisioning, not shrinking.
 
-Two ceilings are load-bearing:
+Two ceilings matter:
 
 - **The GPU VM stops at 100 GiB.** PCIe passthrough pins the entire guest
   allocation in host RAM. A 120 GiB guest on this 125 GiB host drove the
-  hypervisor into OOM and locked it up hard. Do not raise this.
+  hypervisor into OOM and hard-locked it. Do not raise this.
 - **The GPU VM stops at 30 of 32 threads.** At 32 it can starve the host itself.
 
 The control plane gets its own SSD on the HP SFF (`hp-sff-cp-vmstore`, thick
 LVM), deliberately not `hp-prodesk-vmstore`. That disk carries Proxmox root and
-around 27 Longhorn replicas, and etcd is fsync-latency-bound — it must not
+around 27 Longhorn replicas, and etcd is fsync-latency-bound, so it must not
 queue behind replica traffic. `hp-prodesk-vmstore` also has only single-digit
 GiB free, and its 690 GiB Longhorn LV is XFS, which cannot be shrunk in place.
 
 Keep that VG thick. An lvmthin pool's metadata commits collapse fsync
-throughput, which is precisely what etcd depends on.
+throughput, and etcd depends on fsync throughput.
 
 The `hp-elite-gen13` Longhorn disk is the 512 GB Intel 660p. SMART reported 74% wear
 when it was commissioned, with zero media/data-integrity errors; watch its wear
@@ -132,19 +131,19 @@ and error counters and replace it before exhaustion.
 The `threadripper-gpu-worker` MachineClass requests `gpu-1` and `gpu-2`.
 These are Proxmox PCI resource mapping names, not CUDA device indices. Each
 mapping must identify one NVIDIA GPU, including its audio function when using
-an all-functions PCI path. Never include the AMD root complex (`00:00`): it
+an all-functions PCI path. Never include the AMD root complex (`00:00`). It
 has no IOMMU group and blocks VM startup.
 
-Updating the class covers future allocations. Existing VM hardware is managed
-in Proxmox by the operator; preserve the VM and its disks. Talos already loads
+Updating the class covers future allocations. The operator manages existing VM
+hardware in Proxmox. Preserve the VM and its disks. Talos already loads
 all four NVIDIA modules and uses interface-independent DHCP, so a second card
 needs no extra module entry or pinned network-interface configuration.
 
 After the operator boots the VM, confirm the node is Ready and Kubernetes
 reports `nvidia.com/gpu: 2`. Check both cards through `nvidia-smi` in the
-`nvidia-powerlimit` DaemonSet; a one-card workload correctly sees only its own
+`nvidia-powerlimit` DaemonSet. A one-card workload correctly sees only its own
 allocated card. [3090 LLM optimization](../../docs/domains/ai-gpu/3090-llm-optimization.md)
-holds the capacity figures and the re-check commands.
+has the capacity figures and the re-check commands.
 
 ## Storage
 
@@ -153,70 +152,70 @@ does not mirror between them. Losing a worker's disk loses every volume whose
 only replica sat there, and recovery is from the off-host kopiur/Kopia backups
 described in `docs/disaster-recovery.md`.
 
-The practical consequence: **evict a node's Longhorn replicas before you delete
+**Evict a node's Longhorn replicas before you delete
 or rebuild its VM.** Set `allowScheduling: false` and `evictionRequested: true`
 on the disk in its `nodes.longhorn.io` resource, wait for the rebuilds to land
-elsewhere, and only then touch the VM. A detached volume cannot be evicted —
-Longhorn needs a running engine to rebuild — so attach it first or accept the
+elsewhere, and only then touch the VM. A detached volume cannot be evicted,
+because Longhorn needs a running engine to rebuild. Attach it first or accept the
 loss.
 
-The HP micro's 850 GiB disk is registered but left unschedulable on purpose: a
+The HP micro's 850 GiB disk is registered but left unschedulable on purpose. A
 replica there puts app data behind the shed's wireless bridge.
 
 ## Capturing a lockup
 
 A host that hard-locks writes nothing to its own disk, so local logs are
-useless after the fact. Three things must be in place *before* the next freeze:
+useless after the fact. Put these three things in place *before* the next freeze:
 
 - **Remote log forwarding** to the collector on the rpi5
   (`netconsole-receiver.service`, UDP 192.168.10.15:6666, writing to
   `/var/log/netconsole/`). On the Threadripper this is `journal-forward.service`,
   a journal-to-UDP streamer.
-- **`SyncIntervalSec=1s` in journald.** The 5-minute default discards up to five
+- **`SyncIntervalSec=1s` in journald.** The 5-minute default loses up to five
   minutes of local logs on a hard freeze.
 - **A hardware watchdog** (`sp5100_tco` plus systemd `RuntimeWatchdogSec=60`) so
   a wedged kernel resets itself in about a minute instead of sitting dead until
   someone walks over to the machine. Skip it if Proxmox HA's `watchdog-mux` is
-  running — it claims `/dev/watchdog` exclusively.
+  running, because it claims `/dev/watchdog` exclusively.
 
 **Kernel netconsole does not work on a Proxmox host with bridged VM networking.**
 netpoll refuses a bridge whose ports include the per-VM firewall veths
 (`fwprNNNp0`), and it refuses the physical NIC because it is a bridge slave.
-Both attempts abort with `Netpoll setup failed`. The only way to get true
-netconsole — which, unlike journal forwarding, keeps sending after userspace
-dies — is a NIC that belongs to no bridge. The Threadripper's ConnectX-3 has a
-free second port (`nic1`) reserved for exactly that; it needs a cable.
+Both attempts abort with `Netpoll setup failed`. True netconsole keeps sending
+after userspace dies, unlike journal forwarding. It needs a NIC that belongs to
+no bridge. The Threadripper's ConnectX-3 has a free second port (`nic1`)
+reserved for this. It needs a cable.
 
 ## Moving a machine between hosts
 
 Pointing a machine set at a different MachineClass does **not** move anything.
 Omni counts the running machine as satisfying the allocation
 (`machines: total 1, healthy 1, requested 1`, `ready: true`) and never
-replaces it. The class governs the *next* machine provisioned, nothing more.
+replaces it. The class only governs the *next* machine provisioned.
 
 To actually relocate a worker: scale its machine set to 0 and back to 1, or
-delete the machine. Evict its Longhorn replicas first — see [Storage](#storage).
+delete the machine. Evict its Longhorn replicas first. See [Storage](#storage).
 
-To relocate the **control plane**, never do that. With a single etcd member,
+**Never** relocate the control plane that way. With a single etcd member,
 removing it destroys cluster state. Instead:
 
 1. `talosctl -n <cp> etcd snapshot <file>` and copy it off the host.
 2. Point the `ControlPlane` block at the new MachineClass and sync. Nothing
-   happens yet — this only changes where the next machine comes from.
+   happens yet. This only changes where the next machine comes from.
 3. Raise `size` to 2 and sync. Omni provisions a second control plane from the
-   new class and joins it to etcd. Check the new host has RAM for it.
+   new class and joins it to etcd. Check that the new host has RAM for it.
 4. Wait for both members to be healthy before going further. etcd now needs
-   both to hold quorum, so this window is the risky part — keep it short.
+   both to hold quorum, so this window is the risky part. Keep it short.
 5. Remove the **old** machine explicitly rather than scaling back to 1 and
    trusting Omni to pick the right one.
 
 ## Versions
 
-Talos and Kubernetes are coupled: Omni validates the pair and refuses the sync
-outright with `invalid kubernetes version "X": is not compatible with talos
+Talos and Kubernetes are coupled. Omni validates the pair and refuses the sync
+with `invalid kubernetes version "X": is not compatible with talos
 version "Y"`. Talos 1.14 caps Kubernetes at 1.37.1, which is where this
-cluster sits — no headroom until the next Talos minor. Check what a Talos
-release actually allows before planning a bump:
+cluster sits, so there is no headroom until the next Talos minor. Check what a
+Talos release allows before you plan a bump:
 
 ```bash
 omnictl get talosversion <version> -o yaml   # lists every compatible k8s version
@@ -228,20 +227,20 @@ omnictl get talosversion <version> -o yaml   # lists every compatible k8s versio
   resize, rename, or replace an existing Omni machine.
 - To adopt new CPU/RAM values on a running VM, cold-resize it in Proxmox
   (`qm shutdown` / `qm set` / `qm start`). This preserves the provider-owned
-  Longhorn disks; a full replacement destroys them.
+  Longhorn disks. A full replacement destroys them.
 - Keep `siderolabs/nfs-utils` off GPU worker nodes. Use the CSI NFS path.
-- Additional Longhorn disks are attached at VM creation time by the provider.
-  They cannot be added to an existing machine without replacing it.
+- The provider attaches additional Longhorn disks at VM creation time.
+  You cannot add them to an existing machine without replacing it.
 - The Cilium L2 policy must allow the current control-plane node to announce
   VIPs.
 - USB devices come from the machine class `usb_devices:` list (Proxmox Resource
   Mappings). Each mapping must exist on the host that will run the VM.
 - Size a VM against the RAM its host has **now**. Moving DIMMs between machines
   leaves the guest config behind: a worker configured for more memory than its
-  host holds does not fail loudly, it starves the node until kubelet stops
+  host holds does not fail loudly. It starves the node until kubelet stops
   posting status, the Talos API stops answering, and CNI and CSI DaemonSets sit
   `Pending`.
 - `qm shutdown` needs the QEMU guest agent, which is not always running in these
   Talos guests. Prefer `talosctl -n <node> shutdown`. If the Talos API is also
-  down, drain the node first — a hard `qm stop` marks every Longhorn replica on
+  down, drain the node first. A hard `qm stop` marks every Longhorn replica on
   it failed, and single-replica volumes then need auto-salvage to recover.
