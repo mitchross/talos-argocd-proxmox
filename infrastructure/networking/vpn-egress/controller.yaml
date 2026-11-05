@@ -6,7 +6,7 @@ metadata:
   labels:
     app: vpn-egress-controller
 spec:
-  replicas: 1
+  replicas: 0  # paused; set back to 1 to resume
   # Never two controllers at once: the old one stops before the new one starts.
   strategy:
     type: RollingUpdate
