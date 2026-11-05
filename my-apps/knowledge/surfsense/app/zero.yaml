@@ -34,7 +34,7 @@ spec:
             limits: {memory: 32Mi}
       containers:
         - name: zero
-          image: rocicorp/zero:1.11.3
+          image: rocicorp/zero:1.11.4
           ports:
             - name: http
               containerPort: 4848
