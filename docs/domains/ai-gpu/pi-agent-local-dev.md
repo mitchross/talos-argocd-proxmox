@@ -41,10 +41,6 @@ agents and troubleshooting live in [Hermes in the cluster](hermes.md).
 
 The rest of this page sets up Pi on a workstation.
 
-!!! note "Paseo"
-    Paseo, the old cluster workspace for Pi, is off. Its files stay in Git, but CI
-    no longer checks them. Compare them with this page before you turn Paseo on.
-
 `apiKey` in Pi takes a literal, `$NAME`/`${NAME}` for an environment variable, or
 `!command`. A bare `LITELLM_API_KEY` is a literal. LiteLLM sees an unknown key,
 looks for a key database it does not have, and returns `400 No connected db`.

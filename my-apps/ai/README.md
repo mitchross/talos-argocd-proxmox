@@ -242,7 +242,7 @@ IMAGE_STEPS: 9  (Z-Image-Turbo optimal)
 | ComfyUI | `comfyui-service.comfyui.svc:8188` | `comfyui.vanillax.me` |
 | SearXNG | `searxng.searxng.svc:8080` | -- |
 
-Routes attach to `gateway-internal-technitium` (LAN only). Only surfsense uses `gateway-external`. LLM and Open WebUI routes have 30-minute timeouts.
+Routes attach to `gateway-internal-technitium` (LAN only). LLM and Open WebUI routes have 30-minute timeouts.
 
 ## Storage
 

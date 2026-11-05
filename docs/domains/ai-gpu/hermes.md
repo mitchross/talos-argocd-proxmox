@@ -18,8 +18,6 @@ Hermes is an agent that keeps running when nobody is at a keyboard. One pod in t
 It remembers across sessions through Hindsight and loads skills on demand.
 Hermes is the coordinator: it checks the cluster read-only, and runs Claude Code or Codex inside its own pod to open pull requests. You merge; Argo CD deploys.
 
-Hermes replaced Paseo, the old browser workspace for coding agents. Paseo is off; only its namespace and Git directory remain.
-
 ```mermaid
 flowchart LR
     Client[Browser or phone] --> TS[Tailscale via TrueNAS] --> GW[gateway-internal-technitium] --> Dash[Hermes dashboard :9119]

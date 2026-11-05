@@ -281,7 +281,7 @@ class AIObservabilityTests(unittest.TestCase):
 
 class AllLLMClientsTests(unittest.TestCase):
     APPS = [
-        'my-apps/ai/open-webui', 'my-apps/knowledge/hindsight', 'my-apps/knowledge/surfsense',
+        'my-apps/ai/open-webui', 'my-apps/knowledge/hindsight',
         'my-apps/knowledge/perplexica', 'my-apps/ai/presenton', 'my-apps/ai/comfyui',
         'my-apps/knowledge/karakeep', 'my-apps/personal-projects/worldmonitor',
         'my-apps/personal-projects/deal-scout', 'my-apps/personal-projects/news-reader',
