@@ -39,7 +39,7 @@ spec:
       initContainers:
         # Image from homelab-images/images/hermes-dev: official Hermes plus claude, codex, kubectl, gh, tmux.
         - name: seed
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:dc4b053cfbd0cd21127a0c61e4aba5b8f9eb3887cfe7895b9aec3c5079c5b5d1
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:a56b059603f491f5e8bff75d6d2c582e3173890badbb2fa27c5eff2a597a7e0f
           command: ["/bin/sh", "/etc/hermes-scripts/seed.sh"]
           envFrom:
             - secretRef:
@@ -68,7 +68,7 @@ spec:
               readOnly: true
       containers:
         - name: hermes
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:dc4b053cfbd0cd21127a0c61e4aba5b8f9eb3887cfe7895b9aec3c5079c5b5d1
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:a56b059603f491f5e8bff75d6d2c582e3173890badbb2fa27c5eff2a597a7e0f
           args: ["gateway", "run"]
           # s6-overlay must start as root; it drops the gateway and dashboard to uid 10000 itself.
           securityContext:
@@ -160,7 +160,7 @@ spec:
         # Agent worktrees keep full build trees on the volume; 79Gi of `target/` filled it on 2026-10-31.
         # Shares the pod because the claim is ReadWriteOnce. Prunes build output only, never a worktree.
         - name: worktree-gc
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:dc4b053cfbd0cd21127a0c61e4aba5b8f9eb3887cfe7895b9aec3c5079c5b5d1
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:a56b059603f491f5e8bff75d6d2c582e3173890badbb2fa27c5eff2a597a7e0f
           command: ["/bin/sh", "/etc/hermes-scripts/gc-worktrees.sh"]
           securityContext:
             runAsNonRoot: true
@@ -185,7 +185,7 @@ spec:
               readOnly: true
         # Reads state.db (read-only) and serves model usage for Prometheus; see scripts/usage-exporter.py.
         - name: usage-exporter
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:dc4b053cfbd0cd21127a0c61e4aba5b8f9eb3887cfe7895b9aec3c5079c5b5d1
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:a56b059603f491f5e8bff75d6d2c582e3173890badbb2fa27c5eff2a597a7e0f
           command: ["python3", "/etc/hermes-scripts/usage-exporter.py"]
           securityContext:
             runAsNonRoot: true
