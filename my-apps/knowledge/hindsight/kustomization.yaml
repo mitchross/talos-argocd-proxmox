@@ -11,6 +11,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - httproute-ui.yaml
   - vpa.yaml
   - kopiur/hindsight-db.yaml
 

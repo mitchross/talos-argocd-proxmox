@@ -12,3 +12,6 @@ spec:
     - name: http # CRITICAL — HTTPRoute matches by port name; fails silently without it
       port: 8888
       targetPort: 8888
+    - name: ui
+      port: 9999
+      targetPort: 9999
