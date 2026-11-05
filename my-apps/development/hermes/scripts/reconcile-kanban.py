@@ -20,7 +20,7 @@ def reconcile(db_path, check_guard, run=subprocess.run):
             SELECT t.id FROM tasks t
             JOIN task_runs r ON r.id = (
                 SELECT id FROM task_runs WHERE task_id = t.id
-                ORDER BY started_at DESC, id DESC LIMIT 1
+                ORDER BY id DESC LIMIT 1
             )
             WHERE t.status = 'ready' AND t.claim_lock IS NULL
               AND t.current_run_id IS NULL AND r.outcome = 'crashed'

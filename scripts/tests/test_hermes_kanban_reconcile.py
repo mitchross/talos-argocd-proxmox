@@ -56,7 +56,7 @@ class KanbanReconciliationTests(unittest.TestCase):
 
     def test_new_successful_run_supersedes_old_crash(self):
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("INSERT INTO task_runs VALUES (7, 'crashed', 3, 4, 'done', 'completed')")
+            conn.execute("INSERT INTO task_runs VALUES (7, 'crashed', 0, 4, 'done', 'completed')")
         run = Mock()
         self.assertEqual(recovery.reconcile(self.db_path, Mock(return_value="active_pr"), run), [])
         run.assert_not_called()
