@@ -39,7 +39,7 @@ spec:
         # finds its files (no ~92 GB download). The 0.2.x entrypoint skips names that already exist and its
         # old-files check does not follow the links.
         - name: keep-old-paths
-          image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:DIGEST_PENDING
+          image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:254cff36099a22d0736ac8a457a644a3a7c1cb52407abf9e1f0e49b4cfc9c8b9
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -62,7 +62,7 @@ spec:
           # Built from Niko1221/Strata's own Dockerfile at a pinned commit by mitchross/homelab-images (images/strata).
           # The entrypoint runs `strata launch --no-tui` with the strata-settings variables: a first start or changed
           # settings run setup (download, pack, run settings), then it serves. Finished steps are not repeated.
-          image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:DIGEST_PENDING
+          image: ghcr.io/mitchross/strata:0.1.57.0-c3b3f50-sm86@sha256:254cff36099a22d0736ac8a457a644a3a7c1cb52407abf9e1f0e49b4cfc9c8b9
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
