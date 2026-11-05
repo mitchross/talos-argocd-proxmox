@@ -43,18 +43,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
-            - -c
-            - |
-              set -eu
-              mkdir -p /data/Strata-data
-              for d in models packs mtp; do
-                if [ -d "/data/$d" ] && [ ! -L "/data/$d" ] && [ ! -e "/data/Strata-data/$d" ]; then
-                  mv "/data/$d" "/data/Strata-data/$d" && echo "moved /data/$d -> /data/Strata-data/$d"
-                fi
-                if [ -d "/data/Strata-data/$d" ] && [ ! -e "/data/$d" ]; then
-                  ln -s "Strata-data/$d" "/data/$d" && echo "linked /data/$d -> Strata-data/$d"
-                fi
-              done
+            - /opt/repo-scripts/keep-old-paths.sh
           resources:
             requests:
               cpu: 10m
@@ -62,6 +51,9 @@ spec:
             limits:
               memory: 64Mi
           volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
             - name: data
               mountPath: /data
               subPath: strata
@@ -117,6 +109,10 @@ spec:
             - name: dshm
               mountPath: /dev/shm
       volumes:
+        - name: repo-scripts
+          configMap:
+            name: strata-scripts
+            defaultMode: 0555
         - name: data
           persistentVolumeClaim:
             claimName: ai-model-cache-strata

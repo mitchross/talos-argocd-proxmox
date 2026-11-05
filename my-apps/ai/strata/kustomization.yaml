@@ -36,3 +36,6 @@ configMapGenerator:
       # 1 slot: a 2nd slot measured no extra total speed (51 vs 50 tok/s) and halved per-request decode, so
       # overflow goes to deepseek-flash instead. LiteLLM's max_parallel_requests on the qwen3.8-27b route must match.
       - PARALLEL=1
+  - name: strata-scripts
+    files:
+      - scripts/keep-old-paths.sh
