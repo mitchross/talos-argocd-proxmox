@@ -120,6 +120,7 @@ hermes skills install mattpocock/skills/skills/engineering/diagnosing-bugs --cat
 hermes skills install mattpocock/skills/skills/productivity/grill-me --category matt-pocock --yes
 hermes skills install backnotprop/pstack/skills/unslop --category pstack --yes
 hermes skills install DietrichGebert/ponytail/skills/ponytail --category ponytail --yes
+hermes skills install pbakaus/impeccable/.hermes/skills/impeccable --category creative --yes   # if you build UIs
 ```
 
 This cluster's full list is in
@@ -129,7 +130,8 @@ Skip the homelab skills (`homelab-ops`, `homelab-triage` and similar). They only
 !!! warning "Start small"
     Every installed skill adds its name and description to every message.
     On OpenRouter you pay for that text on every turn.
-    Start with 10–20 skills. Turn off the ones you do not use with `hermes skills config`.
+    Start with 10–20 skills. Turn off the ones you do not use with `hermes skills config`,
+    or list them under `skills.disabled` in `config.yaml`.
 
 ### Let Hermes write skills
 
@@ -139,6 +141,8 @@ The next time a similar task comes up, Hermes loads that skill first.
 
 When a skill gets a step wrong, say so: "update the skill so it does X".
 Hermes fixes the skill, not only the current chat.
+
+To stop Hermes from changing a skill you wrote by hand, lock it: `hermes curator lock <skill>`.
 
 ### Write your own skill
 
@@ -183,6 +187,8 @@ To publish one, push it to GitHub. Others install it with `hermes skills install
   Use it whenever two chats work on the same repo.
 - Run `hermes config set checkpoints.enabled true` to snapshot files before risky edits.
   Then `/rollback` undoes the last change.
+- Press Esc twice, or type `/rewind`, to go back to an earlier message. Edit and resend it, or fork a new chat from there.
+- Start a new chat with `/new` for each new topic. Long chats resend their whole history on every call.
 
 ### Route subagents to cheap and strong models
 
