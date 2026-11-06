@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: hypercache-server
-          image: ghcr.io/posthog/posthog/hypercache-server:master@sha256:da7f1c343ece4fd2e468dc50d67a1461d652bb8871ab523abd5a3a35f7b49439
+          image: ghcr.io/posthog/posthog/hypercache-server:master@sha256:b474ad03f4a2b6539e6e519a5f7191e5f28cefbd4d27d53d98ed651e98e3f20e
           envFrom:
             - configMapRef:
                 name: posthog-env
