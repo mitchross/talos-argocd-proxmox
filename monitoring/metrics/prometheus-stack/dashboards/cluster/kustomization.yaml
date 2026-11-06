@@ -25,6 +25,3 @@ configMapGenerator:
   - name: vpa-recommendations-dashboard
     files:
       - vpa-recommendations.json
-  - name: vpn-egress-dashboard
-    files:
-      - vpn-egress.json

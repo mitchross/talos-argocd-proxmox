@@ -135,7 +135,6 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
   redlib's volume that exceeds Loki's 500-series query limit.
 - **Logs:** Loki labels are OTEL-style (`k8s_namespace_name`, `service_name`,
   `detected_level`), not Promtail's `namespace`/`job`.
-- **VPN egress:** every `vpn_egress_*` series comes from the controller in
-  `infrastructure/networking/vpn-egress/`, one scrape target, labelled by
-  `gateway`. Byte counters restart at 0 when a gateway recreates its tunnel;
-  `rate()` handles that.
+- **Cluster VPN:** the custom controller and its dashboard are retired. Tunnel
+  presence is an NFD label, not a health metric; use the checks in the
+  [VPN runbook](../../../../docs/domains/networking/vpn-egress.md).

@@ -56,6 +56,10 @@ ipam:
 egressGateway:
   enabled: true
 
+# Include dynamic VPN links without replacing automatic detection of LAN devices.
+devices: "wg-vpn+"
+forceDeviceDetection: true
+
 # Enable Socket-level Load Balancing (critical for pod-to-service connectivity)
 socketLB:
   enabled: true

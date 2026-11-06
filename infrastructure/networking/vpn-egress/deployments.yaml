@@ -1,0 +1,351 @@
+# Direct upstream commands avoid init deleting the host default route on setup failure.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpn-1
+  namespace: vpn-egress
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vpn-1
+  template:
+    metadata:
+      labels:
+        app: vpn-1
+        app.kubernetes.io/part-of: cluster-vpn
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/part-of: cluster-vpn
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: wireguard
+        image: ghcr.io/linuxserver/wireguard:1.0.20260223-r0-ls129@sha256:236f9a9a89c701bc83f6d41007157dc77361114d14e56a08e846bb4499622e97
+        command:
+        - /bin/sleep
+        - infinity
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /usr/bin/wg-quick
+              - up
+              - /config/wg_confs/wg-vpn1.conf
+          preStop:
+            exec:
+              command:
+              - /usr/bin/wg-quick
+              - down
+              - /config/wg_confs/wg-vpn1.conf
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_ADMIN
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn1 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 20
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn1 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn1 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        volumeMounts:
+        - name: proton
+          mountPath: /config/wg_confs
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: proton
+        secret:
+          secretName: vpn-1
+          defaultMode: 256
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpn-2
+  namespace: vpn-egress
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vpn-2
+  template:
+    metadata:
+      labels:
+        app: vpn-2
+        app.kubernetes.io/part-of: cluster-vpn
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/part-of: cluster-vpn
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: wireguard
+        image: ghcr.io/linuxserver/wireguard:1.0.20260223-r0-ls129@sha256:236f9a9a89c701bc83f6d41007157dc77361114d14e56a08e846bb4499622e97
+        command:
+        - /bin/sleep
+        - infinity
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /usr/bin/wg-quick
+              - up
+              - /config/wg_confs/wg-vpn2.conf
+          preStop:
+            exec:
+              command:
+              - /usr/bin/wg-quick
+              - down
+              - /config/wg_confs/wg-vpn2.conf
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_ADMIN
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn2 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 20
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn2 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn2 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        volumeMounts:
+        - name: proton
+          mountPath: /config/wg_confs
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: proton
+        secret:
+          secretName: vpn-2
+          defaultMode: 256
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpn-3
+  namespace: vpn-egress
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vpn-3
+  template:
+    metadata:
+      labels:
+        app: vpn-3
+        app.kubernetes.io/part-of: cluster-vpn
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/part-of: cluster-vpn
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: wireguard
+        image: ghcr.io/linuxserver/wireguard:1.0.20260223-r0-ls129@sha256:236f9a9a89c701bc83f6d41007157dc77361114d14e56a08e846bb4499622e97
+        command:
+        - /bin/sleep
+        - infinity
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /usr/bin/wg-quick
+              - up
+              - /config/wg_confs/wg-vpn3.conf
+          preStop:
+            exec:
+              command:
+              - /usr/bin/wg-quick
+              - down
+              - /config/wg_confs/wg-vpn3.conf
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_ADMIN
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn3 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 20
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn3 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - t=$(wg show wg-vpn3 latest-handshakes | cut -f2); test "${t:-0}" -gt "$(($(date +%s) - 180))"
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        volumeMounts:
+        - name: proton
+          mountPath: /config/wg_confs
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: proton
+        secret:
+          secretName: vpn-3
+          defaultMode: 256
+      - name: tmp
+        emptyDir: {}

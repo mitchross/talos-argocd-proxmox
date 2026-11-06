@@ -1,0 +1,14 @@
+# Mitch: apply cluster-wide through Omni before enabling routing; Argo CD does not apply this.
+apiVersion: v1alpha1
+kind: RoutingRuleConfig
+name: "1000"
+src: 10.2.0.2/32
+table: "100"
+action: unicast
+---
+# An empty tunnel table must not fall through to the normal LAN default route.
+apiVersion: v1alpha1
+kind: RoutingRuleConfig
+name: "1001"
+src: 10.2.0.2/32
+action: unreachable

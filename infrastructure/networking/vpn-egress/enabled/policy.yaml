@@ -1,0 +1,36 @@
+# egressGateway is required by the CRD but ignored when egressGateways is nonempty.
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: vpn-egress
+spec:
+  selectors:
+  - podSelector:
+      matchLabels:
+        io.kubernetes.pod.namespace: vpn-egress-test
+  destinationCIDRs:
+  - 0.0.0.0/0
+  excludedCIDRs:
+  - 10.0.0.0/8
+  - 100.64.0.0/10
+  - 169.254.0.0/16
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+  egressGateways:
+  - nodeSelector:
+      matchLabels:
+        feature.node.kubernetes.io/vpn-tunnel: '1'
+    interface: wg-vpn1
+  - nodeSelector:
+      matchLabels:
+        feature.node.kubernetes.io/vpn-tunnel: '2'
+    interface: wg-vpn2
+  - nodeSelector:
+      matchLabels:
+        feature.node.kubernetes.io/vpn-tunnel: '3'
+    interface: wg-vpn3
+  egressGateway:
+    nodeSelector:
+      matchLabels:
+        feature.node.kubernetes.io/vpn-tunnel: '1'
+    interface: wg-vpn1

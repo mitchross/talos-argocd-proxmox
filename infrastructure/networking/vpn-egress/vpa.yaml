@@ -1,44 +1,71 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vpn-gateway
-  namespace: vpn-egress
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: DaemonSet
-    name: vpn-gateway
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      # WireGuard crypto runs in kernel softirq, not in this container; it only runs a control loop.
-      - containerName: gateway
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: 200m
-          memory: 128Mi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: vpn-egress-controller
+  name: vpn-1
   namespace: vpn-egress
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: vpn-egress-controller
+    name: vpn-1
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: controller
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: 200m
-          memory: 128Mi
+    - containerName: wireguard
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: 200m
+        memory: 128Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpn-2
+  namespace: vpn-egress
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vpn-2
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: wireguard
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: 200m
+        memory: 128Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpn-3
+  namespace: vpn-egress
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vpn-3
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: wireguard
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: 200m
+        memory: 128Mi
