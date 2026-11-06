@@ -13,6 +13,15 @@ spec:
       labels:
         app: stirling-pdf
     spec:
+      # Keep off hp-elite-gen12: whisper is pinned there for the Intel iGPU and needs the memory.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: ["hp-elite-gen12"]
       containers:
         - name: stirling-pdf
           image: ghcr.io/stirling-tools/stirling-pdf:latest@sha256:ed7b1775c6706b5e5ea24fa6155f078eff1027bd35a17d21834e4407036025e6
