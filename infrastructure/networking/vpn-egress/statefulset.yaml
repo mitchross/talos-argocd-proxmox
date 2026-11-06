@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: DaemonSet
+kind: StatefulSet
 metadata:
   name: vpn-gateway
   namespace: vpn-egress
@@ -9,11 +9,13 @@ spec:
   selector:
     matchLabels:
       app: vpn-gateway
-  # One gateway at a time: each restart moves that node's pods to the other gateways.
+  serviceName: vpn-gateway
+  replicas: 3
+  podManagementPolicy: Parallel
+  # Let the controller admit a recovered tunnel before updating the next VPN.
+  minReadySeconds: 30
   updateStrategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
   template:
     metadata:
       labels:
@@ -24,24 +26,41 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
-      terminationGracePeriodSeconds: 15
+      terminationGracePeriodSeconds: 30
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
-                  - key: kubernetes.io/hostname
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+                  - key: kubernetes.io/os
                     operator: In
-                    values:
-                      - hp-elite-gen13
-                      - mini-pc-dell-ultra-worker
-                      - hp-elite-gen12
+                    values: [linux]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: vpn-gateway
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: gateway
           image: ghcr.io/linuxserver/wireguard:1.0.20260223-r0-ls129@sha256:236f9a9a89c701bc83f6d41007157dc77361114d14e56a08e846bb4499622e97
           # Bypass the image's s6 init; we only need its wg, iproute2, curl and jq.
           command: ["/bin/bash", "/scripts/gateway.sh"]
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/run/vpn/ready"]
+            periodSeconds: 2
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
             - name: NODE_NAME
               valueFrom:
                 fieldRef:
@@ -60,6 +79,8 @@ spec:
             limits:
               memory: 128Mi
           volumeMounts:
+            - name: runtime
+              mountPath: /run/vpn
             - name: scripts
               mountPath: /scripts
               readOnly: true
@@ -67,6 +88,9 @@ spec:
               mountPath: /etc/proton
               readOnly: true
       volumes:
+        - name: runtime
+          emptyDir:
+            medium: Memory
         - name: scripts
           configMap:
             name: vpn-gateway-scripts
@@ -74,3 +98,28 @@ spec:
           secret:
             secretName: proton-wireguard
             defaultMode: 0400
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vpn-gateway
+  namespace: vpn-egress
+spec:
+  clusterIP: None
+  selector:
+    app: vpn-gateway
+  ports:
+    - name: wireguard
+      port: 51820
+      protocol: UDP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vpn-gateway
+  namespace: vpn-egress
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: vpn-gateway

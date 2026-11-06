@@ -16,7 +16,7 @@
     "to": "now"
   },
   "schemaVersion": 42,
-  "version": 1,
+  "version": 2,
   "links": [
     {
       "title": "Toggle (vpn.vanillax.me)",
@@ -391,6 +391,7 @@
             "include": {
               "names": [
                 "gateway",
+                "node",
                 "exit_ip",
                 "endpoint",
                 "Value #UP",
@@ -411,13 +412,14 @@
           "options": {
             "indexByName": {
               "gateway": 0,
-              "Value #UP": 1,
-              "Value #POL": 2,
-              "exit_ip": 3,
-              "endpoint": 4,
-              "Value #HS": 5,
-              "Value #RX": 6,
-              "Value #TX": 7
+              "node": 1,
+              "Value #UP": 2,
+              "Value #POL": 3,
+              "exit_ip": 4,
+              "endpoint": 5,
+              "Value #HS": 6,
+              "Value #RX": 7,
+              "Value #TX": 8
             },
             "renameByName": {
               "gateway": "Gateway",
@@ -427,7 +429,8 @@
               "endpoint": "Proton endpoint",
               "Value #HS": "Handshake age",
               "Value #RX": "Down (5m)",
-              "Value #TX": "Up (5m)"
+              "Value #TX": "Up (5m)",
+              "node": "Node"
             }
           }
         }
@@ -565,7 +568,7 @@
       "targets": [
         {
           "expr": "rate(vpn_egress_gateway_receive_bytes_total[$__rate_interval]) * 8",
-          "legendFormat": "{{gateway}}",
+          "legendFormat": "{{gateway}} \u00b7 {{node}}",
           "refId": "A"
         }
       ],
@@ -607,7 +610,7 @@
       "targets": [
         {
           "expr": "rate(vpn_egress_gateway_transmit_bytes_total[$__rate_interval]) * 8",
-          "legendFormat": "{{gateway}}",
+          "legendFormat": "{{gateway}} \u00b7 {{node}}",
           "refId": "A"
         }
       ],
@@ -649,7 +652,7 @@
       "targets": [
         {
           "expr": "vpn_egress_gateway_handshake_age_seconds",
-          "legendFormat": "{{gateway}}",
+          "legendFormat": "{{gateway}} \u00b7 {{node}}",
           "refId": "A"
         }
       ],

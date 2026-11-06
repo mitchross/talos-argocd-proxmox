@@ -77,7 +77,7 @@
     <div class="scroll">
       <table>
         <thead><tr>
-          <th>Node</th><th>Tunnel</th><th>In policy</th><th>Exit IP</th><th>Proton endpoint</th>
+          <th>VPN</th><th>Node</th><th>Tunnel</th><th>In policy</th><th>Exit IP</th><th>Proton endpoint</th>
           <th>Handshake</th><th>Down</th><th>Up</th><th>Total down / up</th>
         </tr></thead>
         <tbody id="gateways"></tbody>
@@ -156,7 +156,7 @@ function render(s) {
     const pol = g.inPolicy ? '<span class="pill up">yes</span>'
       : (g.up && s.enabled ? '<span class="pill wait">joining</span>' : '<span class="pill muted">no</span>');
     return `<tr>
-      <td><code>${esc(g.name)}</code></td><td>${tunnel}</td><td>${pol}</td>
+      <td><code>${esc(g.name)}</code></td><td><code>${esc(g.node) || "–"}</code></td><td>${tunnel}</td><td>${pol}</td>
       <td><code>${esc(g.exitIP) || "–"}</code></td><td><code>${esc(g.endpoint) || "–"}</code></td>
       <td>${age(g.handshakeAge)}</td>
       <td class="num">${mbps(g.rxRate)}</td><td class="num">${mbps(g.txRate)}</td>

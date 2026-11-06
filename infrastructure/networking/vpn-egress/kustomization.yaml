@@ -5,7 +5,7 @@ resources:
   - namespace.yaml
   - external-secret.yaml
   - rbac.yaml
-  - daemonset.yaml
+  - statefulset.yaml
   - controller.yaml
   - httproute.yaml
   - servicemonitor.yaml

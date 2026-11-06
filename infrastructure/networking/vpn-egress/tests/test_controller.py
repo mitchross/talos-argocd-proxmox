@@ -17,7 +17,8 @@ SPEC = importlib.util.spec_from_file_location("controller", HERE.parent / "scrip
 controller = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(controller)
 
-NODES = ["hp-elite-gen13", "mini-pc-dell-ultra-worker", "hp-elite-gen12"]
+NODES = ["worker-a", "worker-b", "worker-c"]
+GATEWAYS = [f"vpn-gateway-{i}" for i in range(3)]
 POLICY = "/apis/cilium.io/v2/ciliumegressgatewaypolicies/vpn-egress"
 
 
@@ -26,6 +27,7 @@ class FakeKube:
 
     def __init__(self) -> None:
         self.configmaps: dict[str, dict] = {}
+        self.pods = {}
         self.nodes = {n: {"metadata": {"name": n}, "spec": {}, "status": {"conditions": [{"type": "Ready", "status": "True"}]}} for n in NODES}
         self.namespaces = ["default", "kube-system", "vpn-egress", "vpn-egress-test", "argocd", "jellyfin", "vllm"]
         self.policy: dict | None = None
@@ -48,6 +50,8 @@ class FakeKube:
                 assert content_type == "application/apply-patch+yaml"
                 self.configmaps[name] = body
                 return body
+        if base == "/api/v1/namespaces/vpn-egress/pods":
+            return {"items": list(self.pods.values())}
         if base == "/api/v1/nodes":
             return {"items": list(self.nodes.values())}
         if base == "/api/v1/namespaces":
@@ -72,10 +76,18 @@ class FakeKube:
         raise AssertionError(f"unexpected call {method} {path}")
 
     def report(self, node, now, healthy=True, ifindex="12", rx=1000, tx=500, handshake_age=30):
-        self.configmaps[f"vpn-gateway-{node}"] = {
-            "metadata": {"name": f"vpn-gateway-{node}", "labels": {"app.kubernetes.io/component": "gateway-status"}},
+        name = GATEWAYS[NODES.index(node)]
+        self.pods.setdefault(name, {
+            "metadata": {"name": name, "uid": name + "-uid", "ownerReferences": [
+                {"kind": "StatefulSet", "name": "vpn-gateway", "controller": True}
+            ]},
+            "spec": {"nodeName": node},
+            "status": {"conditions": [{"type": "Ready", "status": "True"}]},
+        })
+        self.configmaps[name] = {
+            "metadata": {"name": name, "labels": {"app.kubernetes.io/component": "gateway-status"}},
             "data": {
-                "node": node, "healthy": "true" if healthy else "false", "exitIP": f"185.0.0.{NODES.index(node) + 1}",
+                "nodeName": self.pods[name]["spec"]["nodeName"], "podUID": self.pods[name]["metadata"]["uid"], "healthy": "true" if healthy else "false", "exitIP": f"185.0.0.{NODES.index(node) + 1}",
                 "message": "probe ok" if healthy else "probe failed (3 in a row)", "latestHandshake": str(int(now - handshake_age)),
                 "rxBytes": str(rx), "txBytes": str(tx), "endpoint": "149.88.0.1:51820", "ifindex": ifindex, "updated": str(int(now)),
             },
@@ -93,7 +105,6 @@ class Clock:
 def make(env=None):
     base = {
         "POD_NAMESPACE": "vpn-egress",
-        "GATEWAY_NODES": " ".join(NODES),
         "INCLUDE_NAMESPACES": "vpn-egress-test",
         "EXEMPT_NAMESPACES": "kube-system argocd vpn-egress vllm",
         "RISE": "2",
@@ -131,14 +142,14 @@ def test_first_start_creates_state_on_and_waits_for_rise():
 
 def test_policy_scope_phase1_and_phase2():
     ctrl, kube, clock = make()
-    body = controller.build_policy(ctrl.cfg, [{"name": NODES[0], "ifindex": "3"}], None)
+    body = controller.build_policy(ctrl.cfg, [{"name": GATEWAYS[0], "node": NODES[0], "ifindex": "3"}], None)
     expr = body["spec"]["selectors"][0]["podSelector"]["matchExpressions"][0]
     assert expr == {"key": "io.kubernetes.pod.namespace", "operator": "In", "values": ["vpn-egress-test"]}
     assert body["spec"]["egressGateway"] == body["spec"]["egressGateways"][0]
     assert "10.0.0.0/8" in body["spec"]["excludedCIDRs"]
 
     ctrl2, _, _ = make({"INCLUDE_NAMESPACES": "", "EXEMPT_NAMESPACES": "argocd"})
-    body = controller.build_policy(ctrl2.cfg, [{"name": NODES[0], "ifindex": "3"}], None)
+    body = controller.build_policy(ctrl2.cfg, [{"name": GATEWAYS[0], "node": NODES[0], "ifindex": "3"}], None)
     expr = body["spec"]["selectors"][0]["podSelector"]["matchExpressions"][0]
     assert expr["operator"] == "NotIn"
     # kube-system and vpn-egress stay exempt even when the config forgets them.
@@ -189,7 +200,7 @@ def test_stale_status_and_cordoned_or_notready_node_drop_gateway():
     snap = ctrl.reconcile()
     assert policy_gateways(kube) == [NODES[2]]
     reasons = {g["name"]: g["reason"] for g in snap["gateways"]}
-    assert "stale" in reasons[NODES[0]] and reasons[NODES[1]] == "node cordoned"
+    assert "stale" in reasons[GATEWAYS[0]] and reasons[GATEWAYS[1]] == "node cordoned"
     kube.nodes[NODES[2]]["status"]["conditions"][0]["status"] = "False"
     kube.nodes[NODES[1]]["spec"]["unschedulable"] = False
     clock.t += 10
@@ -229,6 +240,11 @@ def test_restart_keeps_live_policy_without_flapping():
 
 def test_new_link_ifindex_changes_policy_annotation():
     ctrl, kube, clock = running()
+    for n in NODES:
+        kube.report(n, clock.t, ifindex="99" if n == NODES[0] else "12")
+    ctrl.reconcile()
+    assert NODES[0] not in policy_gateways(kube), "a rebuilt link must pass RISE again"
+    clock.t += 10
     for n in NODES:
         kube.report(n, clock.t, ifindex="99" if n == NODES[0] else "12")
     ctrl.reconcile()
@@ -275,11 +291,11 @@ def test_metrics_names():
     for name in [
         "vpn_egress_enabled 1",
         "vpn_egress_policy_active 1",
-        'vpn_egress_gateway_up{gateway="hp-elite-gen13"} 1',
-        'vpn_egress_gateway_in_policy{gateway="hp-elite-gen12"} 1',
-        'vpn_egress_gateway_receive_bytes_total{gateway="hp-elite-gen13"} 1000',
-        'vpn_egress_gateway_handshake_age_seconds{gateway="hp-elite-gen13"}',
-        'vpn_egress_gateway_info{gateway="hp-elite-gen13",exit_ip="185.0.0.1",endpoint="149.88.0.1:51820"} 1',
+        'vpn_egress_gateway_up{gateway="vpn-gateway-0",node="worker-a"} 1',
+        'vpn_egress_gateway_in_policy{gateway="vpn-gateway-2",node="worker-c"} 1',
+        'vpn_egress_gateway_receive_bytes_total{gateway="vpn-gateway-0",node="worker-a"} 1000',
+        'vpn_egress_gateway_handshake_age_seconds{gateway="vpn-gateway-0",node="worker-a"}',
+        'vpn_egress_gateway_info{gateway="vpn-gateway-0",node="worker-a",exit_ip="185.0.0.1",endpoint="149.88.0.1:51820"} 1',
         'vpn_egress_namespaces{coverage="covered"} 1',
     ]:
         assert name in text, name
@@ -327,3 +343,72 @@ def test_http_pages(server):
         assert b"vpn_egress_enabled 1" in r.read()
     with urllib.request.urlopen(url + "/") as r:
         assert b"VPN egress" in r.read()
+
+
+def test_discovery_without_configured_nodes():
+    ctrl, kube, clock = running()
+    assert not hasattr(ctrl.cfg, "gateway_nodes")
+    assert [g["name"] for g in ctrl.snapshot["gateways"]] == GATEWAYS
+    assert any("pods?labelSelector=app=vpn-gateway" in path for _, path in kube.calls)
+
+
+def test_gateway_move_ignores_old_status_then_updates_node():
+    ctrl, kube, clock = running()
+    new_node = "replacement-worker"
+    kube.nodes[new_node] = {"metadata": {"name": new_node}, "status": {"conditions": [{"type": "Ready", "status": "True"}]}}
+    pod = kube.pods[GATEWAYS[0]]
+    pod["spec"]["nodeName"] = new_node
+    pod["metadata"]["uid"] = "replacement-pod-uid"
+    snap = ctrl.reconcile()
+    assert policy_gateways(kube) == NODES[1:]
+    assert "waiting for this pod" in snap["gateways"][0]["reason"]
+    for _ in range(2):
+        clock.t += 10
+        all_report(kube, clock)
+        ctrl.reconcile()
+    assert policy_gateways(kube) == [new_node, *NODES[1:]]
+    assert f"{new_node}=12" in kube.policy["metadata"]["annotations"]["vpn-egress.vanillax.dev/links"]
+    assert 'gateway="vpn-gateway-0",node="replacement-worker"' in ctrl.metrics()
+
+
+def test_duplicate_nodes_never_appear_twice_in_policy():
+    ctrl, kube, clock = running()
+    kube.pods[GATEWAYS[1]]["spec"]["nodeName"] = NODES[0]
+    for _ in range(2):
+        all_report(kube, clock)
+        ctrl.reconcile()
+        clock.t += 10
+    assert policy_gateways(kube) == [NODES[0], NODES[2]]
+
+
+@pytest.mark.parametrize("change", ["unready", "terminating", "missing"])
+def test_pod_must_be_ready_and_present(change):
+    ctrl, kube, clock = running()
+    if change == "unready":
+        kube.pods[GATEWAYS[0]]["status"]["conditions"][0]["status"] = "False"
+    elif change == "terminating":
+        kube.pods[GATEWAYS[0]]["metadata"]["deletionTimestamp"] = "2026-11-05T00:00:00Z"
+    else:
+        del kube.pods[GATEWAYS[0]]
+    ctrl.reconcile()
+    assert policy_gateways(kube) == NODES[1:]
+
+
+def test_pod_without_status_stays_visible_but_not_selected():
+    ctrl, kube, clock = running()
+    del kube.configmaps[GATEWAYS[0]]
+    ctrl.reconcile()
+    assert len(ctrl.snapshot["gateways"]) == 3
+    assert policy_gateways(kube) == NODES[1:]
+
+
+def test_replacement_pod_on_same_node_must_pass_rise():
+    ctrl, kube, clock = running()
+    kube.pods[GATEWAYS[0]]["metadata"]["uid"] = "new-pod-same-node"
+    all_report(kube, clock)
+    ctrl.reconcile()
+    assert policy_gateways(kube) == NODES[1:]
+    clock.t += 10
+    all_report(kube, clock)
+    ctrl.reconcile()
+    assert policy_gateways(kube) == NODES

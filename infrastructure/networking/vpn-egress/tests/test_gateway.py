@@ -12,10 +12,10 @@ from pathlib import Path
 import pytest
 
 SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "gateway.sh"
-NODE = "hp-elite-gen13"
+NODE = "worker-a"
 
 CONF = """[Interface]
-# Key for hp-elite-gen13
+# Test key
 PrivateKey = cHJpdmF0ZWtleXByaXZhdGVrZXlwcml2YXRla2V5cHI=
 Address = 10.2.0.2/32, 2a07:b944::2:2/128
 DNS = 10.2.0.1
@@ -29,6 +29,8 @@ Endpoint = 149.88.0.1:51820
 MOCK_IP = r"""#!/usr/bin/env bash
 S="$MOCK_STATE"; echo "ip $*" >> "$S/calls"
 case "$*" in
+  "rule del "*) exit 1 ;;
+  "link del wg-proton") rm -f "$S/link" ;;
   "rule show") cat "$S/rules" 2>/dev/null ;;
   "rule add priority "*) echo "${3}:	from ${6%/32} lookup ${8}" >> "$S/rules" ;;
   "link show wg-proton") [[ -e $S/link ]]; exit ;;
@@ -82,7 +84,7 @@ def env(tmp_path):
         p = bin_dir / name
         p.write_text(body)
         p.chmod(0o755)
-    (conf / NODE).write_text(CONF)
+    (conf / "config-1").write_text(CONF)
     (sa / "token").write_text("test-token")
     (sa / "namespace").write_text("vpn-egress")
     (sa / "ca.crt").write_text("")
@@ -90,6 +92,9 @@ def env(tmp_path):
         "PATH": f"{bin_dir}:{os.environ['PATH']}",
         "MOCK_STATE": str(state),
         "NODE_NAME": NODE,
+        "POD_NAME": "vpn-gateway-0",
+        "POD_UID": "pod-uid",
+        "READY_FILE": str(state / "ready"),
         "CONF_DIR": str(conf),
         "SA_DIR": str(sa),
         "KUBE_API": "https://api.test:6443",
@@ -103,7 +108,8 @@ def run(e, **extra):
 
 
 def writes(state):
-    return [json.loads(line) for line in (state / "writes").read_text().splitlines()]
+    return [cm for line in (state / "writes").read_text().splitlines()
+            if (cm := json.loads(line))["data"]["message"] != "gateway stopping"]
 
 
 def test_healthy_round_sets_up_tunnel_and_reports(env):
@@ -118,14 +124,15 @@ def test_healthy_round_sets_up_tunnel_and_reports(env):
     setconf = (state / "setconf").read_text()
     assert "PrivateKey" in setconf and "Address" not in setconf and "DNS" not in setconf
     [cm] = writes(state)
-    assert cm["metadata"]["name"] == "vpn-gateway-hp-elite-gen13"
+    assert cm["metadata"]["name"] == "vpn-gateway-0"
     assert cm["metadata"]["labels"]["app.kubernetes.io/component"] == "gateway-status"
     d = cm["data"]
+    assert d["nodeName"] == NODE and d["podUID"] == "pod-uid"
     assert d["healthy"] == "true" and d["exitIP"] == "185.159.157.10"
     assert (d["rxBytes"], d["txBytes"], d["latestHandshake"]) == ("123456", "7890", "1800000000")
     assert (d["endpoint"], d["ifindex"]) == ("149.88.0.1:51820", "7")
     api = (state / "api").read_text()
-    assert "PATCH https://api.test:6443/api/v1/namespaces/vpn-egress/configmaps/vpn-gateway-hp-elite-gen13?fieldManager=vpn-gateway&force=true" in api
+    assert "PATCH https://api.test:6443/api/v1/namespaces/vpn-egress/configmaps/vpn-gateway-0?fieldManager=vpn-gateway&force=true" in api
     assert (state / "auth").read_text().strip() == "Authorization: Bearer test-token"
     # No node labels any more.
     assert "/nodes/" not in api
@@ -147,7 +154,7 @@ def test_link_down_is_rebuilt_with_routes(env):
     assert "link missing or down; rebuilding" in r.stdout
     calls = (state / "calls").read_text()
     assert calls.count("ip route replace default dev wg-proton table 51820") == 2
-    assert calls.count("ip link add") == 1
+    assert calls.count("ip link add") == 2
 
 
 def test_reports_down_only_after_consecutive_failures(env):
@@ -169,11 +176,11 @@ def test_never_healthy_reports_false(env):
 
 def test_missing_config_exits(env):
     e, _ = env
-    r = run(e, NODE_NAME="unknown-node", MAX_ROUNDS="1")
+    r = run(e, POD_NAME="vpn-gateway-3", MAX_ROUNDS="1")
     assert r.returncode == 1 and "no Proton config" in r.stdout
 
 
-def test_sigterm_exits_cleanly_and_leaves_tunnel(env):
+def test_sigterm_exits_cleanly_and_removes_host_state(env):
     e, state = env
     p = subprocess.Popen(["bash", str(SCRIPT)], env={**e, "INTERVAL": "30"}, stdout=subprocess.PIPE, text=True)
     for _ in range(100):
@@ -182,5 +189,31 @@ def test_sigterm_exits_cleanly_and_leaves_tunnel(env):
         time.sleep(0.05)
     p.send_signal(signal.SIGTERM)
     out, _ = p.communicate(timeout=10)
-    assert p.returncode == 0 and "tunnel stays up" in out
-    assert "ip link del" not in (state / "calls").read_text()
+    assert p.returncode == 0
+    calls = (state / "calls").read_text()
+    assert "ip link del wg-proton" in calls
+    assert "ip rule del priority 90 lookup 51820" in calls
+    assert "ip route flush table 51820" in calls
+    assert not (state / "link").exists() and not (state / "ready").exists()
+    assert json.loads((state / "writes").read_text().splitlines()[-1])["data"]["healthy"] == "false"
+
+
+@pytest.mark.parametrize("ordinal", [1, 2])
+def test_config_selected_by_ordinal(env, ordinal):
+    e, state = env
+    (Path(e["CONF_DIR"]) / f"config-{ordinal + 1}").write_text(CONF.replace("149.88.0.1", f"149.88.0.{ordinal + 1}"))
+    result = run(e, POD_NAME=f"vpn-gateway-{ordinal}", MAX_ROUNDS="1")
+    assert result.returncode == 0, result.stderr
+    assert f"149.88.0.{ordinal + 1}" in (state / "setconf").read_text()
+    assert writes(state)[0]["metadata"]["name"] == f"vpn-gateway-{ordinal}"
+
+
+def test_start_replaces_leftover_link_and_exit_cleans_it(env):
+    e, state = env
+    (state / "link").touch()
+    result = run(e, MAX_ROUNDS="1")
+    assert result.returncode == 0, result.stderr
+    calls = (state / "calls").read_text()
+    assert calls.index("ip link del wg-proton") < calls.index("ip link add wg-proton")
+    assert calls.count("ip link del wg-proton") == 2
+    assert not (state / "link").exists()

@@ -5,7 +5,7 @@ ON and no healthy gateway: delete the policy, so pods fall back to the home IP.
 OFF: delete the policy.
 
 Desired state lives in the ConfigMap vpn-egress-state, which this controller creates
-on first start. Gateways report health in the ConfigMaps vpn-gateway-<node>.
+on first start. Gateways report health in the ConfigMaps vpn-gateway-<ordinal>.
 Neither the policy nor those ConfigMaps are in Git, so Argo CD never fights them.
 
 Standard library only: it runs on the stock python image with this file in a ConfigMap.
@@ -44,7 +44,6 @@ class Config:
         self.policy_name = env.get("POLICY_NAME", "vpn-egress")
         self.state_cm = env.get("STATE_CONFIGMAP", "vpn-egress-state")
         self.default_enabled = env.get("DEFAULT_ENABLED", "true").lower() == "true"
-        self.gateway_nodes = _words(env.get("GATEWAY_NODES", ""))
         self.include_namespaces = _words(env.get("INCLUDE_NAMESPACES", ""))
         exempt = _words(env.get("EXEMPT_NAMESPACES", ""))
         self.exempt_namespaces = sorted(set(exempt) | set(ALWAYS_EXEMPT))
@@ -110,13 +109,15 @@ def node_schedulable_ready(node: dict | None) -> tuple[bool, str]:
     return False, "node has no Ready condition"
 
 
-def gateway_view(name: str, data: dict | None, node: dict | None, now: float, stale_seconds: float) -> dict:
+def gateway_view(name: str, data: dict | None, node: dict | None, now: float, stale_seconds: float, pod: dict | None = None) -> dict:
     """Turn one gateway's status ConfigMap and its Node into what the UI and metrics show."""
     data = data or {}
     updated = _num(data.get("updated"))
     handshake = _num(data.get("latestHandshake"))
     view = {
         "name": name,
+        "node": (pod or {}).get("spec", {}).get("nodeName", ""),
+        "podUID": (pod or {}).get("metadata", {}).get("uid", ""),
         "up": False,
         "reason": "",
         "exitIP": data.get("exitIP", ""),
@@ -133,8 +134,16 @@ def gateway_view(name: str, data: dict | None, node: dict | None, now: float, st
         "inPolicy": False,
     }
     node_ok, node_reason = node_schedulable_ready(node)
-    if not data:
+    pod_ready = pod and not pod.get("metadata", {}).get("deletionTimestamp") and any(
+        c.get("type") == "Ready" and c.get("status") == "True"
+        for c in pod.get("status", {}).get("conditions", [])
+    )
+    if not pod_ready:
+        view["reason"] = "pod not ready or terminating"
+    elif not data:
         view["reason"] = "no status reported yet"
+    elif data.get("nodeName") != view["node"] or data.get("podUID") != view["podUID"]:
+        view["reason"] = "waiting for this pod's status"
     elif now - updated > stale_seconds:
         view["reason"] = f"status is stale ({int(now - updated)} s old)"
     elif data.get("healthy") != "true":
@@ -162,7 +171,7 @@ def build_policy(cfg: Config, gateways: list[dict], owner_uid: str | None) -> di
             ]
         }
     entries = [
-        {"nodeSelector": {"matchLabels": {"kubernetes.io/hostname": g["name"]}}, "interface": cfg.interface}
+        {"nodeSelector": {"matchLabels": {"kubernetes.io/hostname": g["node"]}}, "interface": cfg.interface}
         for g in gateways
     ]
     metadata: dict = {
@@ -170,7 +179,7 @@ def build_policy(cfg: Config, gateways: list[dict], owner_uid: str | None) -> di
         "labels": {"app.kubernetes.io/name": "vpn-egress", "app.kubernetes.io/managed-by": "vpn-egress-controller"},
         # Cilium reads the link's ifindex only when the policy or a node changes. A gateway
         # that recreated its link gets a new ifindex here, which makes Cilium re-read it.
-        "annotations": {"vpn-egress.vanillax.dev/links": ",".join(f"{g['name']}={g['ifindex']}" for g in gateways)},
+        "annotations": {"vpn-egress.vanillax.dev/links": ",".join(f"{g['node']}={g['ifindex']}" for g in gateways)},
     }
     if owner_uid:
         # Deleting the vpn-egress namespace garbage-collects the policy: pods go back to the home IP.
@@ -216,6 +225,8 @@ class Controller:
         self.lock = threading.Lock()
         self.wake = threading.Event()
         self.streak: dict[str, int] = {}
+        self.identities: dict[str, tuple] = {}
+        self.active_links: dict[str, str] = {}
         self.in_policy: list[str] = []
         self.prev_bytes: dict[str, tuple[float, int, int]] = {}
         self.rates: dict[str, tuple[float, float]] = {}
@@ -277,20 +288,42 @@ class Controller:
         cms = self.kube.request(
             "GET", f"/api/v1/namespaces/{cfg.namespace}/configmaps?labelSelector={STATUS_SELECTOR}"
         ).get("items", [])
-        status_by_node = {cm.get("data", {}).get("node"): cm.get("data", {}) for cm in cms}
+        status_by_name = {cm["metadata"]["name"]: cm.get("data", {}) for cm in cms}
+        pods = self.kube.request(
+            "GET", f"/api/v1/namespaces/{cfg.namespace}/pods?labelSelector=app=vpn-gateway"
+        ).get("items", [])
+        pods = {p["metadata"]["name"]: p for p in pods if any(
+            o.get("kind") == "StatefulSet" and o.get("name") == "vpn-gateway" and o.get("controller")
+            for o in p["metadata"].get("ownerReferences", [])
+        )}
         nodes = {n["metadata"]["name"]: n for n in self.kube.request("GET", "/api/v1/nodes").get("items", [])}
 
         gateways = []
-        for name in cfg.gateway_nodes:
-            view = gateway_view(name, status_by_node.get(name), nodes.get(name), now, cfg.stale_seconds)
+        for name in sorted(pods.keys() | status_by_name.keys()):
+            pod = pods.get(name)
+            node_name = (pod or {}).get("spec", {}).get("nodeName", "")
+            view = gateway_view(name, status_by_name.get(name), nodes.get(node_name), now, cfg.stale_seconds, pod)
+            identity = (node_name, view["podUID"], view["ifindex"])
+            if self.identities.get(name) != identity:
+                previous = self.identities.get(name)
+                if previous is not None:
+                    self.active_links.pop(previous[0], None)
+                self.streak[name] = 0
+                self.prev_bytes.pop(name, None)
+                self.rates.pop(name, None)
+            self.identities[name] = identity
             self._add_rates(view)
             self.streak[name] = self.streak.get(name, 0) + 1 if view["up"] else 0
             gateways.append(view)
 
-        # Healthy gateways already in the policy stay; new or recovered ones wait for RISE checks.
-        chosen = [
-            g for g in gateways if g["up"] and (g["name"] in self.in_policy or self.streak[g["name"]] >= cfg.rise)
-        ]
+        # Never advertise two tunnels on one host, even if scheduling/status is inconsistent.
+        chosen = []
+        seen_nodes = set()
+        for g in gateways:
+            retained = self.active_links.get(g["node"]) == g["ifindex"]
+            if g["up"] and (retained or self.streak[g["name"]] >= cfg.rise) and g["node"] not in seen_nodes:
+                chosen.append(g)
+                seen_nodes.add(g["node"])
 
         if self.owner_uid is None:
             try:
@@ -312,6 +345,7 @@ class Controller:
                     LOG.info("policy gateways: %s", ", ".join(g["name"] for g in chosen))
                     self.policy_applies += 1
                 self.in_policy = [g["name"] for g in chosen]
+                self.active_links = {g["node"]: g["ifindex"] for g in chosen}
             else:
                 try:
                     self.kube.request("DELETE", policy_path)
@@ -321,6 +355,7 @@ class Controller:
                     if err.status != 404:
                         raise
                 self.in_policy = []
+                self.active_links = {}
         except KubeError as err:
             # Typical cause: the Cilium agents were not restarted, so the policy CRD is missing.
             errors.append(f"policy update failed: {err}")
@@ -384,9 +419,11 @@ class Controller:
                 raise
             live = {}
         entries = live.get("spec", {}).get("egressGateways", []) if live else []
-        self.in_policy = [
+        live_nodes = {
             e.get("nodeSelector", {}).get("matchLabels", {}).get("kubernetes.io/hostname", "") for e in entries
-        ]
+        }
+        links = live.get("metadata", {}).get("annotations", {}).get("vpn-egress.vanillax.dev/links", "")
+        self.active_links = dict(part.split("=", 1) for part in links.split(",") if "=" in part and part.split("=", 1)[0] in live_nodes)
         self.seeded = True
 
     def run_forever(self) -> None:
@@ -438,11 +475,11 @@ class Controller:
             for g in gateways:
                 value = fn(g)
                 if value is not None:
-                    lines.append(f'{metric}{{gateway="{g["name"]}"}} {value}')
+                    lines.append(f'{metric}{{gateway="{g["name"]}",node="{_label(g["node"])}"}} {value}')
         lines += ["# HELP vpn_egress_gateway_info Exit IP and Proton endpoint per gateway.", "# TYPE vpn_egress_gateway_info gauge"]
         for g in gateways:
             lines.append(
-                f'vpn_egress_gateway_info{{gateway="{g["name"]}",exit_ip="{_label(g["exitIP"])}",endpoint="{_label(g["endpoint"])}"}} 1'
+                f'vpn_egress_gateway_info{{gateway="{g["name"]}",node="{_label(g["node"])}",exit_ip="{_label(g["exitIP"])}",endpoint="{_label(g["endpoint"])}"}} 1'
             )
         ns = snap.get("namespaces", {})
         lines += [
@@ -539,7 +576,7 @@ def main() -> None:
     ctrl = Controller(cfg, Kube())
     threading.Thread(target=ctrl.run_forever, daemon=True).start()
     server = ThreadingHTTPServer(("", cfg.port), make_handler(ctrl))
-    LOG.info("listening on :%d, gateways: %s", cfg.port, " ".join(cfg.gateway_nodes))
+    LOG.info("listening on :%d, discovering floating VPN gateways", cfg.port)
     server.serve_forever()
 
 

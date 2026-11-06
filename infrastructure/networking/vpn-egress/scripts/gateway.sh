@@ -4,12 +4,12 @@
 # Runs in the host network namespace of one gateway node. It:
 #   1. sends traffic from the tunnel address only to the tunnel table, which ends in a
 #      blackhole, so a packet SNATed to the tunnel address never leaves on the LAN NIC;
-#   2. creates the kernel WireGuard link from this node's Proton config;
+#   2. creates the kernel WireGuard link from this pod's Proton config;
 #   3. every INTERVAL, probes through the tunnel and writes health, exit IP, handshake
-#      and byte counters to the ConfigMap vpn-gateway-<node>.
+#      and byte counters to the ConfigMap vpn-gateway-<ordinal>.
 # The vpn-egress controller reads those ConfigMaps and picks the gateways for the
 # CiliumEgressGatewayPolicy. This script never touches the policy or node labels.
-# The tunnel lives in the kernel: it keeps forwarding while this pod restarts.
+# The pod owns its host link and removes it when it exits.
 set -euo pipefail
 
 IFACE="${IFACE:-wg-proton}"
@@ -25,8 +25,13 @@ SA="${SA_DIR:-/var/run/secrets/kubernetes.io/serviceaccount}"
 NAMESPACE="${NAMESPACE:-$(cat "$SA/namespace")}"
 API="${KUBE_API:-https://${KUBERNETES_SERVICE_HOST:-}:${KUBERNETES_SERVICE_PORT:-}}"
 
-CONF="${CONF_DIR}/${NODE_NAME}"
-STATUS_CM="vpn-gateway-${NODE_NAME}"
+POD_NAME="${POD_NAME:?downward API metadata.name}"
+POD_UID="${POD_UID:?downward API metadata.uid}"
+ORDINAL="${POD_NAME##*-}"
+[[ $POD_NAME == vpn-gateway-* && $ORDINAL =~ ^[0-9]+$ ]] || exit 1
+CONF="${CONF_DIR}/config-$((10#$ORDINAL + 1))"
+STATUS_CM="$POD_NAME"
+READY_FILE="${READY_FILE:-/run/vpn/ready}"
 
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*"; }
 
@@ -51,11 +56,8 @@ setup() {
     ip rule add priority "$RULE_PRIORITY" from "$addr" lookup "$TABLE"
   ip route replace blackhole default metric 4096 table "$TABLE"
 
-  local created=0
-  if ! ip link show "$IFACE" >/dev/null 2>&1; then
-    ip link add "$IFACE" type wireguard
-    created=1
-  fi
+  ip link del "$IFACE" 2>/dev/null || true
+  ip link add "$IFACE" type wireguard
   # wg setconf takes only the WireGuard keys; drop the wg-quick-only lines.
   wg setconf "$IFACE" <(grep -Eiv '^[[:space:]]*(Address|DNS|MTU|Table|PreUp|PostUp|PreDown|PostDown|SaveConfig)[[:space:]]*=' "$CONF")
   ip address replace "$addr" dev "$IFACE"
@@ -64,7 +66,7 @@ setup() {
   peer=$(wg show "$IFACE" peers | head -1)
   wg set "$IFACE" peer "$peer" persistent-keepalive 25
   ip route replace default dev "$IFACE" table "$TABLE"
-  log "tunnel $IFACE up as $addr (new link: $created)"
+  log "tunnel $IFACE up as $addr"
 }
 
 probe() {
@@ -81,14 +83,14 @@ write_status() {
   # The controller puts the ifindex on the policy: a recreated link makes Cilium re-read it.
   ifindex=$(ip -o link show "$IFACE" 2>/dev/null | cut -d: -f1) || true
   body=$(jq -cn \
-    --arg name "$STATUS_CM" --arg ns "$NAMESPACE" --arg node "$NODE_NAME" \
+    --arg name "$STATUS_CM" --arg ns "$NAMESPACE" --arg node "$NODE_NAME" --arg uid "$POD_UID" \
     --arg healthy "$healthy" --arg exit_ip "$exit_ip" --arg message "$message" \
     --arg handshake "${handshake:-0}" --arg rx "${rx:-0}" --arg tx "${tx:-0}" \
     --arg endpoint "${endpoint:-}" --arg ifindex "${ifindex:-0}" --arg updated "$(date +%s)" \
     '{apiVersion: "v1", kind: "ConfigMap",
       metadata: {name: $name, namespace: $ns,
                  labels: {"app.kubernetes.io/name": "vpn-egress", "app.kubernetes.io/component": "gateway-status"}},
-      data: {node: $node, healthy: $healthy, exitIP: $exit_ip, message: $message,
+      data: {nodeName: $node, podUID: $uid, healthy: $healthy, exitIP: $exit_ip, message: $message,
              latestHandshake: $handshake, rxBytes: $rx, txBytes: $tx,
              endpoint: $endpoint, ifindex: $ifindex, updated: $updated}}')
   # Server-side apply creates the ConfigMap on the first run and updates it after.
@@ -97,15 +99,26 @@ write_status() {
     log "could not write status ConfigMap $STATUS_CM"
 }
 
-# Leave the tunnel and the last status in place: the kernel keeps forwarding while
-# the pod restarts. The controller drops this gateway if the status goes stale.
 sleep_pid=""
-trap 'log "stopping; tunnel stays up"; [[ -z $sleep_pid ]] || kill "$sleep_pid" 2>/dev/null; exit 0' TERM INT
+cleanup() {
+  local result=$?
+  trap - EXIT
+  [[ -z $sleep_pid ]] || kill "$sleep_pid" 2>/dev/null || true
+  rm -f "$READY_FILE"
+  write_status false "" "gateway stopping" || true
+  ip link del "$IFACE" 2>/dev/null || true
+  while ip rule del priority "$RULE_PRIORITY" lookup "$TABLE" 2>/dev/null; do :; done
+  ip route flush table "$TABLE" 2>/dev/null || true
+  exit "$result"
+}
+trap cleanup EXIT
+trap 'exit 0' TERM INT
 
-[[ -r $CONF ]] || { log "no Proton config for $NODE_NAME at $CONF"; exit 1; }
+[[ -r $CONF ]] || { log "no Proton config for $POD_NAME at $CONF"; exit 1; }
 ADDR=$(tunnel_addr)
 [[ -n $ADDR ]] || { log "no IPv4 /32 Address in $CONF"; exit 1; }
 
+rm -f "$READY_FILE"
 setup "$ADDR"
 conf_sum=$(sha256sum "$CONF" | cut -d' ' -f1)
 fails=0
@@ -139,8 +152,9 @@ while true; do
     fi
   fi
 
+  if [[ $healthy == true ]]; then touch "$READY_FILE"; else rm -f "$READY_FILE"; fi
   write_status "$healthy" "$exit_ip" "$message"
-  # Tests set MAX_ROUNDS to stop the loop; the DaemonSet never does.
+  # Tests set MAX_ROUNDS to stop the loop; the StatefulSet never does.
   rounds=$((rounds + 1))
   if [[ -n ${MAX_ROUNDS:-} ]] && ((rounds >= MAX_ROUNDS)); then exit 0; fi
   sleep "$INTERVAL" &

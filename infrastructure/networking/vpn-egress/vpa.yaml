@@ -6,7 +6,7 @@ metadata:
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: DaemonSet
+    kind: StatefulSet
     name: vpn-gateway
   updatePolicy:
     updateMode: InPlaceOrRecreate

@@ -20,20 +20,27 @@ pod ──(VXLAN)──> gateway node ──wg-proton (kernel WireGuard)──> 
                      │
                      └─ Cilium Egress Gateway SNATs the pod to 10.2.0.2 and sends it out wg-proton
 
-vpn-gateway (DaemonSet, 3 nodes)  ──writes health──>  ConfigMap vpn-gateway-<node>
+vpn-gateway (StatefulSet, 3 pods) ──writes health──>  ConfigMap vpn-gateway-<ordinal>
 vpn-egress-controller (1 pod)     ──reads health + on/off──>  creates or deletes CiliumEgressGatewayPolicy vpn-egress
 UI vpn.vanillax.me / Home Assistant ──POST /api/enabled──>  ConfigMap vpn-egress-state
 ```
 
-- Three gateway nodes: `hp-elite-gen13`, `mini-pc-dell-ultra-worker` and `hp-elite-gen12`.
-  Each needs its own Proton config, because a WireGuard key works in one place only.
-  All three live in one 1Password item, `talos-cluster-global-vpn-config`, as fields `config-1`, `config-2` and `config-3` (in that node order).
-- The `vpn-gateway` DaemonSet runs in the host network of those nodes.
-  It creates the kernel WireGuard link `wg-proton` from the node's Proton config.
-  Every 15 s it probes through the tunnel and writes health, exit IP, handshake time and byte counters to ConfigMap `vpn-gateway-<node>`.
+- Three floating VPNs, `vpn-gateway-0`, `vpn-gateway-1` and `vpn-gateway-2`.
+  Each uses its own Proton config from 1Password item `talos-cluster-global-vpn-config`:
+  `config-1`, `config-2` and `config-3`, in that order. The Secret keeps those field names.
+- A StatefulSet runs them on any eligible Linux worker, one VPN per node.
+  Control-plane nodes are excluded. Existing taints still apply, so the Wi-Fi worker is not eligible today.
+  The GPU worker is eligible: these pods request no GPU and need no special hardware.
+  Required pod anti-affinity prevents shared host links and tunnel addresses.
+  A disruption budget allows one voluntary eviction at a time during drains.
+- Kubernetes moves the VPNs when workers are drained or removed; no node list needs editing.
+  Each pod creates `wg-proton` on its current node. On exit it marks itself down and removes
+  its link, source rule and route table. On start it replaces any leftover link.
+  Every 15 s it reports probes, exit IP, handshake and bytes in a ConfigMap with its pod name,
+  including its current node and pod UID. Status from an old pod cannot admit a replacement.
 - The `vpn-egress-controller` Deployment owns the `CiliumEgressGatewayPolicy` named `vpn-egress`. Every 10 s it:
     - reads the on/off state from ConfigMap `vpn-egress-state`;
-    - picks the healthy gateways: probe OK, status younger than 60 s, node Ready and not cordoned;
+    - picks the healthy gateways: probe OK, status younger than 60 s, pod Ready, node Ready and not cordoned;
     - **on, with healthy gateways:** applies the policy with only those gateways;
     - **on, with no healthy gateway:** deletes the policy, so pods use the normal path (fallback, no kill switch);
     - **off:** deletes the policy.
@@ -56,11 +63,11 @@ The policy has the `vpn-egress` Namespace as its owner. Deleting that namespace 
 | All tunnels down | The controller deletes the policy. Pods use the normal path. The UI shows a red "VPN down — traffic on home IP" banner. |
 | A tunnel recovers | It rejoins after 2 good checks in a row, so a flapping tunnel doesn't keep re-hashing pods. |
 | Gateway node powers off or is cordoned | Status goes stale (60 s) or the node is NotReady/cordoned. The controller drops it. |
-| Gateway pod restarts | The kernel tunnel keeps forwarding. The pod reuses the link on start. |
+| Gateway pod restarts or moves | Old host state is removed; the new pod rebuilds its tunnel. It rejoins after fresh health checks. Existing connections may reset. |
 | Controller restarts | It reads the live policy first and keeps those gateways, so a restart doesn't flap traffic. While it is down the policy stays as it was. |
 | `wg-proton` recreated (new ifindex) | The controller writes `node=ifindex` into a policy annotation. The change makes Cilium re-read the link (Cilium re-reads gateway links only on policy or node events: `pkg/egressgateway/manager.go` at `v1.20.4`). |
 
-The `ip rule from 10.2.0.2` and its blackhole route stay on each gateway.
+The `ip rule from 10.2.0.2` and its blackhole route stay while each gateway runs, then are removed on exit.
 They are not a kill switch: they only stop a packet that Cilium already SNATed to `10.2.0.2` from leaving on the LAN NIC.
 
 ### "Home IP" before phase 3
@@ -111,6 +118,12 @@ If the controller itself is down while the policy points at a dead tunnel, those
 - **Toggling and gateway changes reset connections.** Turning the VPN on or off changes the source IP of open connections.
   Adding or removing a gateway re-hashes pods across gateways ([cilium/cilium#39245](https://github.com/cilium/cilium/issues/39245)). Apps reconnect.
 - **Up to ~55 s of drops when the last tunnel dies:** 45 s of failed probes plus one controller loop, before the fallback.
+- **A VPN move can drop traffic for about a minute** while the controller removes the old route and the replacement warms up. Other VPNs keep serving.
+  Full recovery after an abrupt node loss can take longer: Kubernetes waits for node eviction.
+  A StatefulSet may wait until a lost node is removed or fenced before replacing its pod.
+  Never force-delete a gateway pod on a node that might still run it: the same Proton key would run twice.
+- **A forced kill cannot run cleanup.** A reboot clears host state; a replacement on that host replaces the link.
+  Normal exits and drains clean up immediately.
 - **IPv6:** pods are IPv4-only (`enable-ipv6: false`), and the gateway never configures an IPv6 address.
 - **MTU:** pods send up to 1450-byte packets; `wg-proton` uses 1420. Large uploads may fragment the outer packets. Check upload speed in phase 1.
 - **The UI has no login.** It is on the internal Gateway only (LAN and Tailscale), like Longhorn and Headlamp.
@@ -119,10 +132,8 @@ If the controller itself is down while the policy points at a dead tunnel, those
 
 ## Throughput (expected, not measured)
 
-- Each gateway links at 1 Gb/s. Checked live on 2026-11-03 with node-exporter `node_network_speed_bytes`:
-  `hp-elite-gen12` `eno1`, `hp-elite-gen13` `eno1` and `mini-pc-dell-ultra-worker` `enp128s31f6` all report 1000 Mb/s, and none has a second NIC.
-  Earlier notes said 2.5 GbE. If a NIC is 2.5G-capable, the cable or switch port holds it at 1 Gb/s today.
-- One gateway tops out near 940 Mbps (its 1 GbE port). A single pod uses one gateway, so it also peaks near 940 Mbps, above today's 670 Mbps cap.
+- Speed depends on the workers Kubernetes chooses and the Proton servers. Placement is not tied to a particular NIC or CPU.
+- A single pod uses one gateway; many pods can use all three. Measure phase 1 rather than assuming line speed.
 - Many pods spread across three gateways, so the cluster total can reach the 2 Gb line.
 - WireGuard crypto runs in kernel softirq on the gateway node. Expect about 1-2 cores per gateway at full speed.
 
@@ -177,11 +188,11 @@ The controller exposes `/metrics` (ServiceMonitor `vpn-egress-controller`):
 | `vpn_egress_enabled` | Toggle on (1) or off (0). |
 | `vpn_egress_policy_active` | 1 while the policy exists and covered pods use Proton. |
 | `vpn_egress_fallback` | 1 when on but no gateway is healthy. |
-| `vpn_egress_gateway_up{gateway}` | Probe through that tunnel works. |
-| `vpn_egress_gateway_in_policy{gateway}` | The policy uses that gateway. |
-| `vpn_egress_gateway_handshake_age_seconds{gateway}` | Seconds since the last WireGuard handshake (renews about every 2 min). |
-| `vpn_egress_gateway_receive_bytes_total{gateway}`, `..._transmit_bytes_total` | Tunnel bytes down / up. |
-| `vpn_egress_gateway_info{gateway,exit_ip,endpoint}` | Current exit IP and Proton server. |
+| `vpn_egress_gateway_up{gateway,node}` | Probe through that tunnel works. |
+| `vpn_egress_gateway_in_policy{gateway,node}` | The policy uses that gateway. |
+| `vpn_egress_gateway_handshake_age_seconds{gateway,node}` | Seconds since the last WireGuard handshake (renews about every 2 min). |
+| `vpn_egress_gateway_receive_bytes_total{gateway,node}`, `..._transmit_bytes_total` | Tunnel bytes down / up. |
+| `vpn_egress_gateway_info{gateway,node,exit_ip,endpoint}` | Current exit IP and Proton server. |
 | `vpn_egress_namespaces{coverage}` | Covered and exempt namespace counts. |
 
 ## Options considered
@@ -258,15 +269,20 @@ Owner steps are marked **(Mitch)**. Hermes can open the phase 2 PR.
 - Fastest: flip the switch off at <https://vpn.vanillax.me>. Pods use the normal path within 10 s.
 - If the controller is broken: `kubectl delete ciliumegressgatewaypolicy vpn-egress`, then scale the controller to 0 so it doesn't recreate it.
 - Full: revert the PR in Git. The policy has no Git owner, so delete it by hand as above (or delete the `vpn-egress` namespace, which garbage-collects it).
-  The leftover `wg-proton` link and `ip rule` are unused and go away at the next reboot.
+  Normal pod exits remove `wg-proton`, its source rule and route table. A forced kill may leave unused host state until restart or reboot.
 - Phase 3: turn the Firewalla VPN rule back on.
 
 ## Add a gateway
 
-Each gateway needs its own Proton config: two nodes sharing one key knock each other offline.
-Add a field to the 1Password item first (for example `config-4`), then change in one PR:
-`daemonset.yaml` (affinity), `config.env` (`GATEWAY_NODES`), `rbac.yaml` (status ConfigMap names) and `external-secret.yaml` (one entry per node, `secretKey` = node name).
-Keep at least two gateways up during a change.
+Add the next unique Proton config to the same 1Password item (`config-4`, base64-encoded), then in one PR:
+
+- Bump `replicas` in `statefulset.yaml`.
+- Add the matching `config-4` entry in `external-secret.yaml`.
+- Allow status ConfigMap `vpn-gateway-3` in `rbac.yaml`.
+
+The controller discovers the new VPN automatically. It needs another eligible worker;
+if there are fewer workers than VPNs, the extra pod stays Pending rather than sharing a host.
+Keep at least two VPNs up during a change.
 
 ## Follow-ups
 
