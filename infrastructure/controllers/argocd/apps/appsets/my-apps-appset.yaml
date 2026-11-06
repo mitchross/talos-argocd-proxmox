@@ -21,14 +21,6 @@ spec:
   goTemplate: true
   goTemplateOptions:
     - missingkey=error
-  # Immutable-dataSourceRef escape hatch: preserve per-Application
-  # compare-options annotations while any Bound PVC still carries an older
-  # immutable dataSourceRef than Git (live converges only on PVC recreate,
-  # e.g. a DR drill). VolSync-era in origin; still needed for kopiur
-  # dataSourceRef repoints, which hit the same immutable-field behavior.
-  ignoreApplicationDifferences:
-  - jsonPointers:
-    - /metadata/annotations/argocd.argoproj.io~1compare-options
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
@@ -55,19 +47,16 @@ spec:
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "6"
-        # Immutable-dataSourceRef compare mode: disables server-side diff
-        # for every my-apps-* Application while any backed-up PVC's live
-        # immutable spec.dataSourceRef differs from Git (live converges
-        # only on PVC recreate). Argo's uncached compare path runs an SSA
-        # dry-run that the API server rejects ("spec is immutable"),
-        # producing a ComparisonError. App-level compare-options is
-        # evaluated before any per-resource SSA dry-run dispatch, so
-        # this fully bypasses the failing path. Client-side diff still
-        # runs, and existing ignoreDifferences on PVC dataSourceRef/
-        # dataSource/volumeName continue to mask the legitimate
-        # immutable-spec drift. pvc-plumber-era in origin; retained
-        # because kopiur dataSourceRef repoints hit the same behavior.
-        argocd.argoproj.io/compare-options: ServerSideDiff=false
+        # Server-side diff, so a field deleted from Git is removed live.
+        # With SSA and the old client-side diff, removed fields never showed
+        # as a diff and stayed live while the app read Synced (2026-11-06:
+        # strata kept reverted env vars for 6 h).
+        # Before a kopiur dataSourceRef repoint (live PVC differs from Git
+        # in an immutable field), the SSA dry-run fails with "spec is
+        # immutable". In that PR, switch just that app off with
+        #   ServerSideDiff={{ if eq .path.basename "APP" }}false{{ else }}true{{ end }}
+        # and drop the condition once the PVC is recreated.
+        argocd.argoproj.io/compare-options: ServerSideDiff=true
     spec:
       project: my-apps
       revisionHistoryLimit: 3
