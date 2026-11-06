@@ -48,6 +48,9 @@ spec:
               value: "America/Detroit"
             - name: CLUSTER_SOURCES
               value: "ebay,slickdeals,msu,comprenew,lowcostminipcs"
+            # eBay only quotes calculated shipping when it knows where the item ships to.
+            - name: SHIP_TO_POSTAL_CODE
+              value: "49525"
             - name: DEAL_SCOUT_TOKEN
               valueFrom:
                 secretKeyRef:
