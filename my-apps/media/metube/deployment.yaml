@@ -23,7 +23,7 @@ spec:
       # CHOWN_DIRS is off (SMB), so pre-create the emptyDir folders for the gosu'd uid.
       initContainers:
         - name: work-dirs
-          image: ghcr.io/alexta69/metube:2026.11.01@sha256:a97f455f4b56044debe1a5ce31ff01a9cb20e9e36322ba04f8dd2bb0539b9ec7
+          image: ghcr.io/alexta69/metube:2026.11.06@sha256:96dfbf0d5b2944e4ee38f6ce1b34bb0e75a1a3c74eaefd93424ed11284cb72b2
           command: ["sh", "-c", "mkdir -p /work/state /work/tmp && chown 1000:1000 /work/state /work/tmp"]
           resources:
             requests:
@@ -37,7 +37,7 @@ spec:
       containers:
         - name: metube
           # Starts as root only to self-update yt-dlp nightly, then drops to PUID:PGID via gosu.
-          image: ghcr.io/alexta69/metube:2026.11.01@sha256:a97f455f4b56044debe1a5ce31ff01a9cb20e9e36322ba04f8dd2bb0539b9ec7
+          image: ghcr.io/alexta69/metube:2026.11.06@sha256:96dfbf0d5b2944e4ee38f6ce1b34bb0e75a1a3c74eaefd93424ed11284cb72b2
           ports:
             - name: http
               containerPort: 8081
