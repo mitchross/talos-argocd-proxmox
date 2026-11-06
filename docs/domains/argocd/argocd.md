@@ -220,8 +220,11 @@ the root `CLAUDE.md` rule on Job hook annotations.
   because a StorageClass is only read when a volume is created.
 - **Do not** put `argocd.argoproj.io/compare-options: ServerSideDiff=false` on
   an individual resource. Argo only reads that option from the `Application`
-  (as the `my-apps` ApplicationSet template and `root.yaml` do). On a resource
-  it does nothing.
+  (as `root.yaml` does). On a resource it does nothing.
+- `my-apps` uses `ServerSideDiff=true`. With Server-Side Apply, a client-side
+  diff never shows a field deleted from Git, so the field stays live while the
+  app reads Synced. Turn it off for one app only while a kopiur repoint leaves
+  a live PVC's `dataSourceRef` different from Git (see the template comment).
 
 ## Renderer version contract
 
