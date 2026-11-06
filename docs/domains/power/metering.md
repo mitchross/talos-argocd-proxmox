@@ -492,7 +492,7 @@ a deploy. Make a permanent change in `configuration.yaml`.
 The central AC has no plug meter, so its cost is **modeled**, not measured.
 `binary_sensor.ac_cooling` is on while the Google Nest (`climate.hallway_hallway`)
 reports `hvac_action: cooling` (fan-only runs read `fan` and are not counted),
-and the runtime is priced at `input_number.ac_cooling_wattage` (placeholder 3500 W)
+and the runtime is priced at `input_number.ac_cooling_wattage` (2000 W, calibrated November 2026)
 × the live TOU rate. This uses the same integration pipeline as the gaming sessions.
 
 | Sensor | What it holds |
@@ -509,6 +509,10 @@ median implied value, then commit it as `initial:` in `configuration.yaml`.
 Git is the source of truth, and the UI slider resets on HA restart. Month-end check:
 `ac_cooling_cost_last_month` + `combined_*` + baseline should land within ~10–15%
 of the CE bill. The wattage is an estimate (±20 % on a variable-speed unit).
+
+**November 2026 calibration:** 11 no-cooling days (Oct 23–Nov 2) gave a baseline of 19.6 kWh/day (±1.8).
+Nov 3–4 had 3.7 cooling hours and 6.7 kWh above that baseline, about 1.8 kW.
+Two days give about ±0.7 kW of uncertainty, so repeat the check on hot days next summer.
 CE data is one day late, so every house comparison is yesterday versus yesterday.
 The 3 min `delay_off` over-counts runtime on short cycles, so implied watts
 read low on those days. Calibrate from long, sustained cooling days.

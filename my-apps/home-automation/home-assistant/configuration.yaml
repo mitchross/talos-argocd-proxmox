@@ -331,9 +331,8 @@ input_number:
     mode: box
     unit_of_measurement: "W"
     icon: mdi:air-conditioner
-    initial: 3500
-  # Unmetered non-AC household draw (fridge, water heater, lights), estimated from a
-  # mild no-cooling CE day; subtracted before attributing the residual to the AC.
+    initial: 2000
+  # Unmetered non-AC household draw (fridge, water heater, lights): CE house minus plugs on no-cooling days.
   ac_house_baseline_kwh:
     name: "AC — House Baseline (non-AC kWh/day)"
     min: 0
@@ -342,7 +341,7 @@ input_number:
     mode: box
     unit_of_measurement: "kWh"
     icon: mdi:home-minus
-    initial: 15
+    initial: 19.5
 
 # Cost integrates a live USD/h cost-rate (power * current TOU rate), not a fixed tariff.
 # Every integral starts at 0 when first created; totals only fill in as data accumulates.
@@ -1222,7 +1221,7 @@ template:
         device_class: power
         state_class: measurement
         state: >
-          {{ states('input_number.ac_cooling_wattage') | float(3500)
+          {{ states('input_number.ac_cooling_wattage') | float(2000)
              if is_state('binary_sensor.ac_cooling', 'on') else 0 }}
 
       - name: "AC Cooling Cost Rate"
@@ -1318,7 +1317,7 @@ template:
           {% set h = states('sensor.ac_cooling_hours_yesterday') | float(1) %}
           {% set resid = (states('sensor.consumers_energy_kwh_yesterday') | float(0)
             - states('sensor.combined_total_energy_yesterday') | float(0)
-            - states('input_number.ac_house_baseline_kwh') | float(15)) %}
+            - states('input_number.ac_house_baseline_kwh') | float(19.5)) %}
           {{ (resid / h * 1000) | round(0) if resid > 0 else 0 }}
 
       # now()-based templates re-render every minute; float(<bill default>) keeps this right
