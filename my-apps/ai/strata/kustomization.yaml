@@ -19,10 +19,8 @@ configMapGenerator:
   # choose from the node's RAM. Check the run settings in /data/install after a start for what it picked.
   - name: strata-settings
     literals:
-      # TEMPORARY A/B (revert after): Unsloth Dynamic v3.1 UD-IQ4_XS (93.7 GB, ~56 GiB of experts, all kept in RAM:
-      # setup reads the host's 98 GiB). A change reruns setup and downloads it; the IQ3_S files stay for the revert.
-      - FAMILY=unsloth
-      - MODEL=UD-IQ4_XS-v31
+      - FAMILY=qwen
+      - MODEL=IQ3_S
       - CONTEXT=131072
       # Images: yes = the CUDA image encoder (needs an image built with BUILD_VISION=1). A change reruns setup:
       # the GGUFs and pack are reused, only the ~0.9 GB mmproj is downloaded.

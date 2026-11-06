@@ -86,8 +86,7 @@ spec:
             httpGet: { path: /health, port: http }
             periodSeconds: 10
             timeoutSeconds: 5
-            # TEMPORARY A/B: 2 hours, room for the ~94 GB Unsloth download and its SHA-256 check.
-            failureThreshold: 720
+            failureThreshold: 360
           livenessProbe:
             httpGet: { path: /health, port: http }
             periodSeconds: 30
@@ -107,9 +106,7 @@ spec:
               memory: 54Gi
             limits:
               nvidia.com/gpu: "2"
-              # TEMPORARY A/B: UD-IQ4_XS-v31 keeps ~56 GiB of experts in RAM (IQ3_S: ~47), ~60 GiB in all.
-              # The request stays 54Gi so the pod still schedules on the GPU node.
-              memory: 72Gi
+              memory: 64Gi
           volumeMounts:
             - name: data
               mountPath: /data
