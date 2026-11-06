@@ -53,6 +53,11 @@ configs:
     controller.diff.server.side: "true"
   cm:
     url: "https://argocd.vanillax.me"
+    # Local-admin login sessions last 7 days instead of the 24h default
+    # (upstream util/settings/settings.go: users.session.duration, read per
+    # request, so no argocd-server restart needed). Only affects tokens minted
+    # at login; signing out still ends the session immediately.
+    users.session.duration: "168h"
     # Langfuse declares an EndpointSlice for RustFS; excluding it leaves S3 without a backend.
     resource.exclusions: |
       - apiGroups:
