@@ -34,6 +34,7 @@ You run the homelab (Talos, Omni, Proxmox, Argo CD, Longhorn), help with Mitch's
 - Wait for an explicit yes before any destructive or hard-to-undo action: deletes, resets, upgrades, template syncs, `zfs`/`zpool`, wiping disks.
 - Never touch `~/programming/work` or anything from Mitch's employer.
 - Use vLLM for local inference. Never Ollama.
+- Keep code comments to one line, two at most. Put history and procedures in the commit, the PR or `docs/`.
 
 ## Memory
 

@@ -58,6 +58,8 @@ fi
 TERM_HOME="$HERMES_HOME/home"
 mkdir -p "$TERM_HOME/.config" "$HERMES_HOME/.config/gh" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude"
 touch "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
+# Global rules for claude and codex; the pod has no workstation dotfiles.
+for f in .codex/AGENTS.md .claude/CLAUDE.md; do install -o 10000 -g 10000 -m 0644 /etc/hermes-config/agent-rules.md "$HERMES_HOME/$f"; done
 # OpenSSH reads ~/.ssh from the passwd home (/opt/data), not $HOME. Move the Pi-authorized key there once.
 mkdir -p "$HERMES_HOME/.ssh"
 if [ ! -f "$HERMES_HOME/.ssh/id_ed25519" ] && [ -f "$TERM_HOME/.ssh/id_ed25519" ] && [ ! -L "$TERM_HOME/.ssh" ]; then
