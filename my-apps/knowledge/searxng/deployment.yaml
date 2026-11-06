@@ -44,7 +44,7 @@ spec:
               readOnly: true
       containers:
         - name: searxng
-          image: ghcr.io/searxng/searxng:2026.11.5-3e95f6cd2
+          image: ghcr.io/searxng/searxng:2026.11.6-ac11e14c5
           resources:
             requests:
               memory: 100M
