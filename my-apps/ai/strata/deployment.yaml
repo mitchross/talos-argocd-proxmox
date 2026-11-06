@@ -16,6 +16,11 @@ spec:
       app: strata-server
   template:
     metadata:
+      annotations:
+        # Bump to make Argo re-apply this Deployment. With ServerSideApply and
+        # client-side diff, Argo misses fields removed from Git (#3520 left the
+        # #3507 PCIe env vars live). A changed value marks it OutOfSync.
+        homelab/reapply: "2026-11-06"
       labels:
         app: strata-server
     spec:
