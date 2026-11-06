@@ -143,14 +143,42 @@ Three jobs run on a schedule:
 | Too many skills | 177 installed, 38 ever loaded. Of the 55 pstack skills, 4 were used. Of the Matt Pocock skills, about 6. | Install 10–20. Add a skill when you need it, not before. |
 | Every skill costs tokens | The skill list adds about 3,800 tokens to every message. Hermes ignores `disable-model-invocation`, which 72 of these skills set. | Run `hermes skills config` and turn off what you do not use. |
 | A strong model for everything | The main chat ran on Claude Opus. At API prices, 17 days came to about $950. A subscription covered it here. | On OpenRouter, use a mid-tier main model. Send hard work to the `deep` route. |
-| A rule nobody follows | `SOUL.md` says to send subagents to Codex by default. Only 10 of 131 subagent tasks went there. | Check with real usage that a rule works. Delete rules that do not. |
+| A rule nobody follows | `SOUL.md` said to send subagents to Codex by default. Only 10 of 131 subagent tasks went there. | Check with real usage that a rule works. Enforce it in config, not prose. |
 | Two skills with one name | A local `claude-code` skill shadows the one that ships with Hermes, so both show in the list. | Give your copy a new `name:`, or delete it. |
+
+### What was fixed here
+
+- [#3527](https://github.com/mitchross/talos-argocd-proxmox/pull/3527) turns off the 111 skills that were never loaded, with `skills.disabled` in `config.yaml`. They stay on disk. Delete a name from the list to turn it back on.
+- [#3504](https://github.com/mitchross/talos-argocd-proxmox/pull/3504) sends subagents and Kanban cards to Codex through config, and compacts long Opus chats at 200k tokens.
+
+The trim saves about 2% of input tokens, because the skill list is cached on most calls.
+The bigger win is a shorter list, so Hermes picks the right skill more often.
+
+## Skills worth adding
+
+From the [Skill Leaderboard](https://www.skillleaderboard.com/), only two filled a real gap here:
+
+| Skill | Why |
+|---|---|
+| [`pbakaus/impeccable`](https://github.com/pbakaus/impeccable) | Designs, critiques and polishes web and native app UI. Ships a Hermes copy. |
+| [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill) | Security review of code, APIs and services. |
+
+Big packs such as `obra/superpowers`, the Karpathy skills and `caveman` overlap Ponytail and pstack.
+Overlapping skills are what the trim just removed, so skip them unless they replace something.
+
+## Habits
+
+- Start a new chat per topic. Long chats resend their whole history on every call.
+  The longest chats here ran 300–450 messages.
+- Use `/rewind` (v0.23.0) to go back to an earlier message and edit it or fork from it, instead of arguing a chat back on track.
+- Lock skills you curate by hand with `hermes curator lock <skill>` (v0.23.0).
+  Hermes can no longer rewrite them, so lessons go through a PR instead.
 
 ## Start with this kit
 
 1. Install Hermes and OpenRouter: [Run Hermes on your PC](hermes-one-computer.md).
 2. Copy the "How to talk" and "How to work" blocks of `SOUL.md`.
-3. Install `ponytail`, `ponytail-review`, `unslop`, `pr`, `to-tickets` and `diagnosing-bugs`.
+3. Install `ponytail`, `ponytail-review`, `unslop`, `pr`, `to-tickets` and `diagnosing-bugs`. Add `impeccable` if you build UIs.
 4. Work in the loop: ask, let it open a PR, merge, say "merged".
 5. Say "save that as a skill" after any hard task.
 6. After two weeks, ask Hermes which skills it loaded. Turn off the rest.
