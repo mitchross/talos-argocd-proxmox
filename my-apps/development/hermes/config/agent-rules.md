@@ -9,8 +9,7 @@ The repo's own `AGENTS.md` and `CLAUDE.md` add to these rules. When they conflic
 - Never force-push, `git reset --hard`, `git clean` or delete a branch unless Mitch asks.
 - Stage only the files your task changed.
 - Never commit secrets. Secrets live in 1Password and reach pods through ExternalSecrets.
-- Change the cluster only through Git. Never `kubectl apply` or edit live resources to make a change.
-- Never touch `~/programming/work` or anything from Mitch's employer.
+- Change config only through Git. Day-to-day fixes (restart, scale, Argo sync) are fine.
 
 ## Code: the smallest complete change
 
