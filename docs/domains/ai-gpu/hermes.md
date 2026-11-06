@@ -282,7 +282,7 @@ Use an explicit handoff to the intended reviewer or implementer when further wor
 Reassigning to the same profile does not clear the PR guard.
 Keep tasks blocked while they need Mitch's review or a prerequisite deployment.
 
-Hermes v0.22.7 hard-codes a 20-second worker receipt deadline.
+Hermes hard-codes a 20-second worker receipt deadline. The upstream issue is still open at v0.23.0.
 Database stalls can still end turns with `worker_receipt_timeout` despite these contention limits.
 Track [upstream issue 147839](https://github.com/NousResearch/hermes-agent/issues/147839) before treating persistence failures as resolved.
 Retest persistence and concurrent compression after an upstream fix reaches the pinned image.
