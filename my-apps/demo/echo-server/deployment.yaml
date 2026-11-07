@@ -17,6 +17,11 @@ spec:
       labels:
         app.kubernetes.io/name: echo-server
     spec:
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

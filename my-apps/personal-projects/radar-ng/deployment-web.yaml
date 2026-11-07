@@ -19,6 +19,11 @@ spec:
       labels:
         app: radar-ng-web
     spec:
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 101

@@ -17,6 +17,11 @@ spec:
       labels:
         app.kubernetes.io/name: pairdrop
     spec:
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       containers:
       - name: pairdrop
         image: ghcr.io/linuxserver/pairdrop:latest@sha256:2108e5bd6295b7a2700f50b88685cf2f4c360d9d4a6cb347e97f463379428a36

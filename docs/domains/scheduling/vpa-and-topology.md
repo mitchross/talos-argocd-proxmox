@@ -164,6 +164,38 @@ currently runs one replica per component, so its PDBs stay off on purpose.
 Topology spread does not rebalance running pods. If request growth repeatedly
 fills one node, first correct ceilings and placement constraints.
 
+### Wi-Fi worker eligibility
+
+Keep the HP Micro's `node.vanillax.dev/link=wifi:NoSchedule` taint and both
+Longhorn disks unschedulable. Opt in selected PVC-free Deployments with an exact
+Wi-Fi toleration. A toleration permits placement; it does not pin the app there.
+
+| Eligible Deployment | Why it fits |
+|---|---|
+| `excalidraw`, `it-tools`, `vert` | Small browser frontends; Vert's conversion backend stays wired |
+| `homepage-public`, `echo-server` | Small web services with no persistent data |
+| `radar-ng-web`, `map-styles` | Static frontend and style files; map data and workers stay wired |
+| `redlib`, Redlib's `anubis` | Small optional web services with no persistent data |
+| `mcp-grafana` | Read-only Grafana tool service with no persistent data |
+| `pairdrop` | Web interface and signaling; this deployment disables WebSocket file-transfer fallback |
+
+PVC-free is the first filter. Keep cluster controllers, public tunnel gateways,
+databases, builds, conversion backends, and inference workloads on wired nodes.
+Remote database calls and high network traffic can make a PVC-free app unsuitable.
+ConfigMap and Secret volumes are suitable. Review scratch volume size and write
+activity separately. Disabled Longhorn disks do not prevent remote PVC mounts.
+
+After ArgoCD syncs the affected Applications, check pod readiness and placement:
+
+```sh
+kubectl get pods -A --field-selector spec.nodeName=talos-prod-cluster-v2-hp-micro-workers-pstbbd -o wide
+```
+
+Expect only opted-in applications and existing system or edge pods on HP Micro.
+Eligible apps may remain on wired nodes because requests, topology, and affinity
+still affect placement. Revert an app's toleration through a PR to remove its
+eligibility. The resulting Deployment rollout replaces its pods on eligible nodes.
+
 ### Control-plane eligibility
 
 The Omni template's `control-plane-workloads` patch removes the control-plane

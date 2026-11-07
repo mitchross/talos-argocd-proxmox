@@ -17,6 +17,11 @@ spec:
       labels:
         app.kubernetes.io/name: map-styles
     spec:
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 101   # nginx-unprivileged's built-in non-root nginx user
