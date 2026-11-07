@@ -26,8 +26,10 @@ spec:
     spec:
       enableServiceLinks: false
       runtimeClassName: nvidia
-      # Never evicts other pods to find its ~54 GiB; it stays Pending until the node has room.
-      priorityClassName: gpu-workload-no-preempt
+      # Evicts ordinary pods (priority below 1000) to get its ~54 GiB back.
+      # With no-preempt, a node restart let other apps fill the RAM first and
+      # Strata sat Pending for 15 h (2026-11-07).
+      priorityClassName: gpu-workload-high
       # Upstream gives the model two minutes to unload (docs/DOCKER.md, --stop-timeout 120).
       terminationGracePeriodSeconds: 120
       nodeSelector:
