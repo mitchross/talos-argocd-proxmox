@@ -44,9 +44,10 @@ The image's entrypoint (upstream [`docker/entrypoint.sh`](https://github.com/Nik
 Later starts reuse what is there. Changing a setting in the ConfigMap restarts
 the pod, and setup redoes only the steps that setting changes.
 
-The pod uses `gpu-workload-no-preempt`: if the node lacks 54 GiB of
-unrequested memory it stays `Pending` instead of evicting other pods. Check
-with `kubectl describe node <gpu node>` (Allocated resources, memory).
+The pod uses `gpu-workload-high`: if the node lacks 54 GiB of unrequested
+memory, it evicts ordinary pods (priority below 1000) and they restart on other
+nodes. Pods with a higher class, such as `app-critical`, stay put. Check with
+`kubectl describe node <gpu node>` (Allocated resources, memory).
 
 ## Images (vision)
 
