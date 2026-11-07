@@ -70,6 +70,21 @@ time, so check its `minAllowed` floors. Tuning the descheduler does not help.
 descheduler works. If the same pods are evicted every run, the thresholds fight the
 scheduler. Raise `targetThresholds` or check the pods' node selectors.
 
+### Underused nodes exist, but no pods move
+
+Check for `Skipping eviction for pod, doesn't tolerate node taint` in the logs.
+The descheduler can classify a tainted node as underutilized while most pods
+cannot run there. `nodeFit` prevents eviction when no other node can run the pod.
+
+If all ordinary workers exceed 65% memory requests, only the tainted nodes may
+qualify as destinations. Raising eviction limits does not remove those taints.
+Review [control-plane eligibility](vpa-and-topology.md#control-plane-eligibility)
+and workload tolerations before changing thresholds.
+
+Keep the Wi-Fi worker's taint and disabled Longhorn disks. Permit selected
+PVC-free workloads with an explicit Wi-Fi toleration. Disabled Longhorn disks
+prevent replica placement; they do not prevent an app from mounting a remote PVC.
+
 ## Pausing it
 
 Set `suspend: true` in `infrastructure/scheduling/descheduler/values.yaml` and let

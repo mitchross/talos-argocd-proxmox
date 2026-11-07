@@ -137,8 +137,7 @@ The Omni template declares a separate `node.vanillax.dev/pool` label:
 
 These labels describe intent. A label alone does not move existing apps or
 Longhorn replicas. Cloudflared and the OpenTelemetry gateway use the label as a
-soft preference. These labels add no new taints, storage tags or control-plane
-scheduling changes.
+soft preference. The separate control-plane scheduling patch is described below.
 
 Check live labels after syncing the Omni template. Merging Git does not change
 allocated machines. Finish the active Talos upgrade before applying another
@@ -165,11 +164,44 @@ currently runs one replica per component, so its PDBs stay off on purpose.
 Topology spread does not rebalance running pods. If request growth repeatedly
 fills one node, first correct ceilings and placement constraints.
 
-### Descheduler: rebalancing stateless pods
+### Control-plane eligibility
 
-The scheduler places a pod once. The descheduler moves stateless pods later, so
-reboots don't leave some nodes overloaded and others idle. It never moves pods
-with PVCs. For what it does and how to read a run, see
+The Omni template's `control-plane-workloads` patch removes the control-plane
+`NoSchedule` taint. Application pods can then run without a control-plane
+toleration. Existing pods stay in place until a rollout or descheduler eviction.
+
+This is template desired state. The live taint remains until the approved Omni
+patch is applied. ArgoCD does not apply Omni templates.
+
+Use the Talos 1.14 `KubeNodeConfig.taints` deletion, not the legacy
+`cluster.allowSchedulingOnControlPlanes` field. See the
+[Talos control-plane scheduling guide](https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/workloads-on-controlplane).
+
+Inspect the Omni template diff before applying it. Stop if it includes unrelated
+upgrades, machine changes, or resource deletions. Apply only the reviewed
+`control-plane-workloads` ConfigPatch when the full template has unrelated drift.
+
+After applying the approved patch, run:
+
+```sh
+kubectl get nodes -l node-role.kubernetes.io/control-plane -o custom-columns='NAME:.metadata.name,TAINTS:.spec.taints'
+kubectl -n descheduler get jobs
+kubectl -n descheduler logs job/<newest-job>
+```
+
+Expect the control-plane taint to be absent. Check subsequent descheduler logs
+for evictions and verify replacement pods become Ready. Resource requests,
+affinity, and PodDisruptionBudgets still restrict placement.
+
+For rollback, restore `node-role.kubernetes.io/control-plane: NoSchedule` in the
+same ConfigPatch through a PR. `NoSchedule` blocks new pods but does not evict
+existing pods. Review existing placements separately.
+
+### Descheduler: rebalancing movable pods
+
+The scheduler places a pod once. The descheduler moves eligible pods later, so
+reboots don't leave some nodes overloaded and others idle. It protects PVCs on
+selected storage classes; other PVC-backed pods may move. See
 [descheduler](descheduler.md).
 
 The [hardware and placement review](../../audits/2026-09-05-hardware-and-placement-review.md)
