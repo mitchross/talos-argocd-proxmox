@@ -330,15 +330,13 @@ controller:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
-  # VPA-optimized resources (2026-02-28)
-  # VPA target: cpu 2048m, memory 3.5Gi — memory below lowerBound
-  # Previous: memory 1536Mi → 4Gi (VPA lowerBound exceeded)
+  # VPA resizes these live; Git only applies before VPA runs, so keep them schedulable.
   resources:
     requests:
-      cpu: 2000m
-      memory: 4Gi   # Increased from 1536Mi (was below VPA lowerBound)
+      cpu: 500m
+      memory: 1536Mi
     limits:
-      memory: 6Gi   # Increased from 4Gi to accommodate memory growth
+      memory: 6Gi
 # Argo CD repo-server settings
 repoServer:
   # One schedulable worker today; scale with real worker failure domains.
