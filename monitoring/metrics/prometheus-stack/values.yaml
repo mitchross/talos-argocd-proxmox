@@ -16,6 +16,8 @@ defaultRules:
 prometheus:
   enabled: true
   prometheusSpec:
+    # Needs a 12Gi hole; without priority it sat Pending after an eviction.
+    priorityClassName: monitoring-critical
     retention: 15d
     # PVC below is 50Gi; retentionSize leaves headroom for WAL/compaction.
     retentionSize: 40GB

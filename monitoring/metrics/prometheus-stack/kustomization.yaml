@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: prometheus-stack
 resources:
   - vpa.yaml
+  - priority-class.yaml
   - ns.yaml
   - grafana-externalsecret.yaml
   - alertmanager-http-route.yaml
