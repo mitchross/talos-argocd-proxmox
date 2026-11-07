@@ -187,6 +187,13 @@ patches:
       kind: Policy
       rules:
       - level: None
+- name: control-plane-workloads
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    taints:
+      node-role.kubernetes.io/control-plane:
+        $patch: delete
 ---
 kind: Workers
 name: hp-micro-workers
