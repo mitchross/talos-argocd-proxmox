@@ -126,3 +126,8 @@
   value:
     name: MRMS_QPE_24H_ENABLED
     value: '1'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: MRMS_SEVERE_ENABLED
+    value: '1'
