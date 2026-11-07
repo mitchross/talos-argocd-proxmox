@@ -19,6 +19,11 @@ spec:
       labels:
         app.kubernetes.io/name: homepage-public
     spec:
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

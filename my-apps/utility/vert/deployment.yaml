@@ -17,6 +17,11 @@ spec:
       labels:
         app.kubernetes.io/name: vert
     spec:
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       containers:
         - name: vert
           image: ghcr.io/vert-sh/vert:latest@sha256:51edb89e7c57197b0281ba8427fb27eea63730a3683b10d422061afab2708a49

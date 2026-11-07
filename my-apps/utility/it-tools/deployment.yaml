@@ -17,6 +17,11 @@ spec:
       labels:
         app.kubernetes.io/name: it-tools
     spec:
+      tolerations:
+        - key: node.vanillax.dev/link
+          operator: Equal
+          value: wifi
+          effect: NoSchedule
       containers:
         - name: it-tools
           image: ghcr.io/sharevb/it-tools:nightly@sha256:5348a161ee650a2f03eb7d993d71c50e611ce6e9822a7a4a87cf0a95dae62a7d
