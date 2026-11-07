@@ -20,6 +20,9 @@ spec:
         app: open-meteo
     spec:
       terminationGracePeriodSeconds: 40
+      # Pinned to one node, so it must win a spot there: on 2026-11-07 Strata
+      # (priority 1000) evicted it and it could not come back.
+      priorityClassName: app-critical
       # openmeteo-data is longhorn-flash, whose only disk is on this node.
       affinity:
         nodeAffinity:

@@ -1,0 +1,11 @@
+# Lets Prometheus evict ordinary pods (priority 0) when no node has 12Gi free.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: monitoring-critical
+  annotations:
+    description: "Prometheus: above general homelab apps, below production pipelines and AI"
+    argocd.argoproj.io/sync-wave: "-5"
+value: 400
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
