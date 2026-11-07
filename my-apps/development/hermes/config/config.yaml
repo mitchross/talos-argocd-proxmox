@@ -197,6 +197,14 @@ mcp_servers:
       Authorization: "Bearer ${env:CLOUDFLARE_API_TOKEN}"
     timeout: 180
 
+  # Deal Scout read-only MCP (mitchross/deal-scout docs/mcp.md). In-cluster URL with the operator header
+  # unlocks fleet tools; the public Gateway route forces public mode.
+  deal-scout:
+    url: "http://deal-scout.deal-scout.svc:8000/mcp"
+    headers:
+      X-Deal-Scout-Mode: "operator"
+    timeout: 60
+
   # REA (Reverse Engineer Anything, morluto/rea, MIT): static analysis of shipped binaries, Electron/JS, APKs.
   # Pinned to an exact npm version; bump it together with the library skill software-development/reverse-engineer-anything
   # (copied from morluto/rea tag rea-agents-6.8.0). npx fetches the package on first start, so allow a long connect.
