@@ -41,6 +41,8 @@ These are grants in the shared policy, not a list of all effective access:
 | IoT subnet `192.168.101.0/24` | TCP 80, 443 | Smart-plug control |
 | LoadBalancer pool `192.168.10.32/27` | All | Service external IP access |
 
+A separate policy, `gateway-egress-technitium-ui`, lets only the gateway envoy (`reserved:ingress`) reach the Pi `192.168.10.15` on TCP 5380. This serves the `technitium.vanillax.me` route.
+
 The LoadBalancer exception overlaps the Wyze address. The separate 8554 grant
 does not restrict that address to 8554 while the broader subnet grant applies.
 The router `192.168.10.1` has no explicit allow. A failed ICMP

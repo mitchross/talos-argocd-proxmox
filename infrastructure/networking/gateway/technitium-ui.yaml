@@ -1,0 +1,74 @@
+# Technitium runs in Docker on the Pi, outside the cluster; the EndpointSlice points the Service at it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: technitium-ui
+  namespace: gateway
+spec:
+  ports:
+    - name: http
+      port: 5380
+      targetPort: 5380
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: technitium-ui
+  namespace: gateway
+  labels:
+    kubernetes.io/service-name: technitium-ui
+    endpointslice.kubernetes.io/managed-by: gitops.vanillax.me
+addressType: IPv4
+ports:
+  - name: http
+    protocol: TCP
+    port: 5380
+endpoints:
+  - addresses:
+      - 192.168.10.15
+    conditions:
+      ready: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: technitium
+  namespace: gateway
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "technitium.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: technitium-ui
+          port: 5380
+          weight: 1
+---
+# default-deny-lan-egress also applies to the gateway envoy (reserved:ingress); allow only the Technitium UI.
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: gateway-egress-technitium-ui
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: reserved:ingress
+        operator: Exists
+  egress:
+    - toCIDR:
+        - 192.168.10.15/32
+      toPorts:
+        - ports:
+            - port: "5380"
+              protocol: TCP

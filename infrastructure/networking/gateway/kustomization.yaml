@@ -7,5 +7,6 @@ resources:
 - httproute-argocd.yaml
 - httproute-argocd-webhook.yaml
 - httproute-longhorn.yaml
+- technitium-ui.yaml
 generatorOptions:
   disableNameSuffixHash: true
