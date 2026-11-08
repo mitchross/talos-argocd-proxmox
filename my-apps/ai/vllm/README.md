@@ -27,7 +27,7 @@ the saved FP8 TP2 baseline is about 40 tok/s single-stream.
 **Git-declared backend and operating policy.** The
 [2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
 records measurements of the earlier v0.28.0 deployment, with medium sent
-explicitly. It does not benchmark the current tunables or the xhigh default below. `deployment.yaml` pins the running version.
+explicitly. It does not benchmark the current tunables or the medium server default below. `deployment.yaml` pins the running version.
 Confirm the running arguments and repeat acceptance after merge and Argo reconciliation.
 
 | Setting | Value |
@@ -44,7 +44,7 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 | GPU utilization budget | 0.90 per GPU |
 | Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
-| Reasoning | on, explicit `xhigh` default; `low` and `medium` per request |
+| Reasoning | on, `medium` default (16,384 thinking tokens); low=4,096, high/xhigh/max=32,768 |
 | Speculation | **off**; no MTP or external drafter |
 | Power | existing 220 W per card |
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
@@ -82,8 +82,8 @@ See the [model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for gatew
 
 ## Explicit reasoning and sampling
 
-The server supplies `enable_thinking=true`, `reasoning_effort=xhigh`, and
-`preserve_thinking=true` through the checkpoint's native chat template.
+The server supplies `enable_thinking=true`, `reasoning_effort=medium`, and
+`preserve_thinking=true` through the baked club-3090 Qwen3.8 chat template.
 The Qwen reasoning parser emits reasoning separately from answer content.
 `qwen3_coder` parses tool calls, and automatic tool choice stays enabled.
 
@@ -91,21 +91,24 @@ The Qwen reasoning parser emits reasoning separately from answer content.
 |---|---|
 | No thinking | `{"enable_thinking":false,"preserve_thinking":false}` |
 | Brief thinking | `{"enable_thinking":true,"reasoning_effort":"low"}` |
-| Less reasoning than the default | `{"enable_thinking":true,"reasoning_effort":"medium"}` |
-| Accuracy-first default | `{"enable_thinking":true,"reasoning_effort":"xhigh"}` |
+| Server default | `{"enable_thinking":true,"reasoning_effort":"medium"}` |
+| Explicit extended reasoning | `{"enable_thinking":true,"reasoning_effort":"xhigh"}` |
 
-The valid efforts are `low`, `medium`, and `xhigh`. `high` is not a native Qwen
-value. WebUI maps generic `high` to `xhigh`, and Pi exposes the valid levels instead.
-The server merges its explicit defaults with request kwargs, so an omitted effort
-stays `xhigh`. Explicit low, medium and off are still honored. No custom chat
-template is needed.
+The baked template at `/etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja`
+maps `high`/`max` to `xhigh` and `minimal` to `low`. Requests without an effort
+use `medium`; explicit client choices remain unchanged (including WebUI/Pi xhigh).
 
-Xhigh is an accuracy-first operating choice, not a measured quality improvement.
-Expect more reasoning time and output tokens. It applies to any local
-request that omits an effort, including background application tasks and local
-`pi-auto` generation. The router's classifier explicitly disables thinking.
-DeepSeek high/max, route selection and cloud-failover boundaries are unchanged.
-A client that explicitly sends medium still gets medium.
+Build-time patches B/D use the static `effort_budget.py shell-env` output in the
+Deployment: low/minimal=4,096, medium=16,384, high/xhigh/max=32,768 thinking tokens,
+with a 16,384 fallback for endpoints without the chat hook. Explicit request budgets
+win. Upstream's sampled top-k-off and trace-replay safety exceptions remain.
+`--reasoning-parser qwen3` enables budget tracking on v0.32.0; no extra reasoning
+config or runtime patch installer is needed. The template provenance also records
+tool-key sorting and in-place later system messages.
+
+Medium is the un-nudged baseline, not a measured quality improvement. More reasoning
+can take more time and output tokens. `pi-auto` inherits medium; its classifier
+explicitly disables thinking. DeepSeek high/max and cloud-failover boundaries are unchanged.
 
 Preservation stays on for coding agents. Keep returned reasoning with the
 assistant messages to retain continuity and allow reuse of unchanged prefixes.
@@ -158,7 +161,7 @@ official Qwen default of 1.0 or an established fix. The author of
 claims. Low and medium are not universally immune, and the reported narrow penalty
 band and extraction scores do not establish coding, tool, or vision quality.
 The suspected EOS-inside-thinking mechanism is not a confirmed root cause.
-Validate all supported modes. The xhigh-default rollout does not change sampling.
+Validate all supported modes. The medium-default rollout does not change sampling.
 The server value is a fallback, not an enforced floor, and explicit client values
 win. WebUI and the Pi extension use 1.05 for every thinking effort and 1.0 for
 off. When changing that policy, update server, clients, tests and docs together.
@@ -167,8 +170,8 @@ off. When changing that policy, update server, clients, tests and docs together.
 
 Before live tests, inspect the **running** Deployment args and request payloads.
 A short answer alone cannot prove which effort reached the model. The running
-`--default-chat-template-kwargs` must contain thinking=true, effort=xhigh and
-preservation=true. Keep the stock parser, template and thinking sampler.
+`--default-chat-template-kwargs` must contain thinking=true, effort=medium and
+preservation=true. Check the baked template path, budget env, stock parser and unchanged thinking sampler.
 
 ```bash
 kubectl -n vllm get deploy vllm-server -o json | jq '.spec.template.spec.containers[0].args'
@@ -189,10 +192,10 @@ curl -fsS http://127.0.0.1:18000/v1/chat/completions \
 
 | Case | Request / expected result |
 |---|---|
-| Default | Omit kwargs; running defaults resolve to enabled/xhigh/preserved; answer 1591 with separate reasoning. |
+| Default | Omit kwargs; running defaults resolve to enabled/medium/preserved; answer 1591 with separate reasoning. |
 | Explicit low | `{"enable_thinking":true,"reasoning_effort":"low"}`; payload remains low, coherent answer. |
 | Explicit medium | `{"enable_thinking":true,"reasoning_effort":"medium"}`; payload remains medium, coherent answer. |
-| Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; same effort as the default, coherent answer. |
+| Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; explicit extended effort (32,768 thinking-token budget), coherent answer. |
 | Off | `{"enable_thinking":false,"preserve_thinking":false}` plus the non-thinking sampler; empty/absent reasoning fields and no think tags in content. |
 | Tool under xhigh | Supply a `lookup` function with an integer `id` argument and ask to look up id 7; expect a valid `tool_calls` entry with parseable JSON `{"id":7}`. Do not execute external actions. |
 | Image under xhigh | Send one known local image as an `image_url` data URI plus a factual question; check visible facts against the actual image. HTTP 200 alone is insufficient. |

@@ -49,14 +49,14 @@ Both cards belong to vLLM. Other GPU workloads stay parked.
 | Context ceiling | 262,144 tokens |
 | Concurrency | up to 16 sequences sharing the KV pool |
 | Vision | one image per request, video disabled |
-| Reasoning | off / low / medium / xhigh; **xhigh** default |
+| Reasoning | off / low / medium / xhigh; **medium** server default |
 | Speculation | disabled |
 | Power | 220 W per card |
 
 262K is a server ceiling, not a promise of two simultaneous full-length
-sessions. Use `xhigh` by default for the accuracy-first policy; select `medium`
-or `low` for less reasoning, or explicitly turn thinking off. More reasoning
-can use more time and tokens. A quality improvement is not guaranteed.
+sessions. The server defaults to `medium` with 16,384 thinking tokens; `low` gets
+4,096 and `high`/`xhigh`/`max` get 32,768. Explicit request budgets win. More
+reasoning is not a guaranteed quality improvement; clients can also turn it off.
 
 Exact flags, rollout checks and rollback live in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).
@@ -122,7 +122,7 @@ sequenceDiagram
 
 | Tier | Model | Effort | Runs on |
 |---|---|---|---|
-| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: xhigh | the two RTX 3090s, free |
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: medium | the two RTX 3090s, free |
 | `COMPLEX` | `deepseek-flash` | `high` | OpenRouter, paid |
 | `REASONING` | `deepseek-flash` | `max` | OpenRouter, paid |
 | classifier failed | `deepseek-flash` | as above | OpenRouter, paid |

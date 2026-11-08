@@ -4,8 +4,8 @@ Local AI inference uses Qwen3.8-27B INT4 AutoRound/W4A8 on patched vLLM (version
 both RTX 3090s (TP=2), FP8 KV and native vision. GPU allocations are whole-card
 with time-slicing off. The server ceiling is 262,144 tokens; speculation is off.
 
-Local Qwen defaults to explicit xhigh reasoning with preservation enabled.
-Low and medium remain available for less reasoning, and explicit off requests
+Local Qwen defaults to medium reasoning (16,384 thinking tokens) with preservation enabled.
+Low (4,096) and high/xhigh/max (32,768) remain available, and explicit off requests
 use their separate sampler. More reasoning can take longer and is not a
 measured accuracy improvement. See [the vLLM runbook](vllm/README.md) for the
 canonical runtime, source references and reasoning acceptance checks.

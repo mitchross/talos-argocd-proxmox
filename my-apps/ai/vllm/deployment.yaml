@@ -58,7 +58,7 @@ spec:
       containers:
         - name: vllm-server
           # Built and smoke-tested in homelab-images; pin its digest after publication.
-          image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.1
+          image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
@@ -93,8 +93,10 @@ spec:
             - qwen3_coder
             - --reasoning-parser
             - qwen3
+            - --chat-template
+            - /etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja
             - --default-chat-template-kwargs
-            - '{"enable_thinking":true,"reasoning_effort":"xhigh","preserve_thinking":true}'
+            - '{"enable_thinking":true,"reasoning_effort":"medium","preserve_thinking":true}'
             # Triton rejects FP8 KV on SM86; FlashInfer supports this path.
             - --attention-config
             - '{"backend":"FLASHINFER"}'
@@ -126,6 +128,11 @@ spec:
             - --port
             - "8000"
           env:
+            # Static output of effort_budget.py shell-env for default effort medium.
+            - name: CLUB3090_REASONING_EFFORT_BUDGETS
+              value: '{"high":32768,"low":4096,"max":32768,"medium":16384,"minimal":4096,"xhigh":32768}'
+            - name: CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET
+              value: "16384"
             - name: VLLM_MARLIN_INPUT_DTYPE
               value: int8
             - name: VLLM_USE_FLASHINFER_SAMPLER
