@@ -43,6 +43,8 @@ defaultSettings:
   # Each failed kopiur backup burns a snapshot slot; a full volume can never back up again without a manual purge.
   snapshotMaxCount: "30"
   autoCleanupSystemGeneratedSnapshot: "true"
+  # Let fstrim-daily punch freed blocks through the snapshot chain so replica and clone sizes shrink.
+  removeSnapshotsDuringFilesystemTrim: "true"
   # Allow Longhorn to auto-upgrade volume engines after manager upgrades
   concurrentAutomaticEngineUpgradePerNodeLimit: "3"
   # Detached multi-replica volumes still rebuild; otherwise a clone waits for an attach that never comes.

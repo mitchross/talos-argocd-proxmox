@@ -107,7 +107,10 @@ if [ -n "${OMNI_SERVICE_ACCOUNT_KEY:-}" ] && command -v omnictl >/dev/null 2>&1;
 fi
 # Drop only the localhost stub old omnictl runs left as root; rmdir keeps anything else.
 rm -f "$HERMES_HOME/.talos/omni/config"; rmdir "$HERMES_HOME/.talos/omni" "$HERMES_HOME/.talos" 2>/dev/null || true
-chown -R 10000:10000 "$TERM_HOME" "$HERMES_HOME/.ssh" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
+# Avoid recursive chown on $TERM_HOME, .codex or .claude (~950k files across worktrees and caches).
+chown 10000:10000 "$TERM_HOME" "$TERM_HOME/.profile" "$TERM_HOME/.config" "$HERMES_HOME/.config" "$HERMES_HOME/.config/gh" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
+chown -h 10000:10000 "$TERM_HOME/.codex" "$TERM_HOME/.claude" "$TERM_HOME/.hindsight" "$TERM_HOME/.claude.json" "$TERM_HOME/.gitconfig" "$TERM_HOME/.ssh" "$TERM_HOME/.config/gh"
+chown -R 10000:10000 "$TERM_HOME/.talos" "$HERMES_HOME/.ssh"
 
 # Coding agents: repo checkout, git identity, shared-memory hooks. gh and codex logins are done once by hand (docs).
 as_hermes git config --global user.name "Hermes Agent"

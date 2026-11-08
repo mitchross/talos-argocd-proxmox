@@ -1,4 +1,4 @@
-# Hourly restore points without a full-volume clone. Retain prunes only this job's snapshots.
+# Hourly restore points between 6h Kopiur backups without a full-volume clone. Retain prunes only this job's snapshots.
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
 metadata:
@@ -11,5 +11,5 @@ spec:
   task: snapshot
   cron: "58 * * * *"
   groups: []
-  retain: 24
+  retain: 6
   concurrency: 1
