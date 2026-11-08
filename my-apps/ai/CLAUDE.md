@@ -9,7 +9,7 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
 - Model ID: `qwen3.8-27b`; `Frozenlock/Qwen3.8-27B-int4-AutoRound`.
 - vLLM (version: `my-apps/ai/vllm/deployment.yaml`), two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
 - **MTP/speculation stays off** pending the long-session fixes and validation.
-- Server default: `medium`, preservation true; thinking budgets low=4096, medium=16384, xhigh=32768.
+- Server default: `xhigh`, preservation true; thinking budgets low=4096, medium=16384, xhigh=32768.
   The baked template maps high/max to xhigh and minimal to low; explicit client efforts still win.
 - Off requests use `enable_thinking=false`, `preserve_thinking=false`, and
   the separate non-thinking sampler in the vLLM runbook. Preserve the server's

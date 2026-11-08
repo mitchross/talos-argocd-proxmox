@@ -139,11 +139,11 @@ class QwenReasoningTests(unittest.IsolatedAsyncioTestCase):
 
 
 class DeclaredPolicyTests(unittest.TestCase):
-    def test_server_uses_explicit_medium_and_thinking_sampler(self):
+    def test_server_uses_explicit_xhigh_and_thinking_sampler(self):
         deployment = yaml.safe_load((ROOT / 'my-apps/ai/vllm/deployment.yaml').read_text())
         args = deployment['spec']['template']['spec']['containers'][0]['args']
         defaults = json.loads(args[args.index('--default-chat-template-kwargs') + 1])
-        self.assertEqual(defaults, dict(enable_thinking=True, reasoning_effort='medium', preserve_thinking=True))
+        self.assertEqual(defaults, dict(enable_thinking=True, reasoning_effort='xhigh', preserve_thinking=True))
         sampler = json.loads(args[args.index('--override-generation-config') + 1])
         self.assertEqual(sampler, dict(temperature=1.0, top_p=0.95, top_k=20, min_p=0.0,
                                       presence_penalty=0.0, repetition_penalty=1.05))
