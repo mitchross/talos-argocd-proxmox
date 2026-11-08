@@ -444,7 +444,7 @@ patches:
   inline:
     apiVersion: v1alpha1
     kind: KubeletConfig
-    image: ghcr.io/siderolabs/kubelet:v1.37.1
+    image: ghcr.io/siderolabs/kubelet:v1.37.2
     config:
       serializeImagePulls: false
       maxPods: 250

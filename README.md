@@ -405,7 +405,7 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 
 ## Cluster upgrades & Talos 1.14 notes
 
-The prod template pins Talos **1.14.4** and Kubernetes **1.37.1**. The kopiur
+The prod template pins Talos **1.14.5** and Kubernetes **1.37.2**. The kopiur
 rendering target and Cluster CI schema stay at 1.37.0. `kubectl get nodes -o wide` shows what
 each node runs, since Omni rolls an upgrade out one node at a time.
 

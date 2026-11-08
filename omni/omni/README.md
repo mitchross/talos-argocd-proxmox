@@ -52,7 +52,7 @@ up before you start. It is the step most likely to block you.
 
 ### Version
 
-`OMNI_IMG_TAG` in `omni.env` pins the version (currently `v1.12.4`). Read the
+`OMNI_IMG_TAG` in `omni.env` pins the version (currently `v1.13.2`). Read the
 [release notes](https://github.com/siderolabs/omni/releases) before you upgrade.
 Omni deprecates flags between minors.
 

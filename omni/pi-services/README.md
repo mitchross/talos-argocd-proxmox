@@ -7,23 +7,23 @@ persistent storage stay on the Pi. Do not copy them into Git.
 
 ## Version choices
 
-The October 27, 2026 inspection found these running versions and prepared targets.
+The November 8, 2026 inspection found these running versions and prepared targets.
 The target files are desired state until deployed and verified live.
 
 | Service | Inspected running state | Prepared target |
 | --- | --- | --- |
-| Docker Engine / containerd | 29.9.2 / 2.4.2 | Already current after refreshing Docker's ARM64 apt repository |
-| Docker Compose / Buildx | 5.6.1 / 0.38.1 | Already current after refreshing Docker's ARM64 apt repository |
-| Omni | 1.12.4 | Already current; pinned in [omni.env.example](../omni/omni.env.example) |
+| Docker Engine / containerd | 29.9.2 / 2.4.2 | 29.9.3 / 2.4.2 from Docker's ARM64 apt repository |
+| Docker Compose / Buildx | 5.6.1 / 0.38.1 | 5.7.0 / 0.38.1 from Docker's ARM64 apt repository |
+| Omni | 1.12.4 | [1.13.2](https://github.com/siderolabs/omni/releases/tag/v1.13.2), pinned in [omni.env.example](../omni/omni.env.example) |
 | Proxmox providers | 0.3.0 | Already latest stable; keep [existing pins](../proxmox-providers/docker-compose.yml) |
-| Technitium DNS | 15.5.1 | [15.6.2](https://github.com/TechnitiumSoftware/DnsServer/releases/tag/v15.6.2), pinned in [Compose](technitium/docker-compose.yml) |
-| ProxCenter frontend | Native ARM64 1.4.10, Node 26.10.0 | [1.4.12](https://github.com/adminsyspro/proxcenter-ui/releases/tag/v1.4.12); rebuild with Node 26.12.1 / Alpine 3.24 |
-| ProxCenter PostgreSQL | 16.15-alpine3.24 | Refresh the image digest for the same PostgreSQL version in [override](proxcenter/docker-compose.override.yml) |
-| booter (PXE) | 0.4.0, running in `~/booter` | Already current; pinned in [Compose](booter/docker-compose.yml); see [booter/README.md](booter/README.md) |
+| Technitium DNS | 15.6.2 | Already latest stable; pinned in [Compose](technitium/docker-compose.yml) |
+| ProxCenter frontend | Native ARM64 1.4.12, Node 26.12.1 | [1.4.14](https://github.com/adminsyspro/proxcenter-ui/releases/tag/v1.4.14); rebuild with Node 26.13.0 / Alpine 3.24 |
+| ProxCenter PostgreSQL | 16.15-alpine3.24 | Same version, refreshed digest in [override](proxcenter/docker-compose.override.yml); a major bump needs a dump and restore |
+| booter (PXE) | 0.4.0, running in `~/booter` | [0.4.1](https://github.com/siderolabs/booter/releases/tag/v0.4.1), pinned in [Compose](booter/docker-compose.yml); see [booter/README.md](booter/README.md) |
 
 Upstream ProxCenter's [publishing workflow](https://github.com/adminsyspro/proxcenter-ui/blob/main/.github/workflows/docker-publish.yml)
-still builds only `linux/amd64`. Its stable `v1.4.12` release resolves to
-`ef72b932aafa60f59a2646b8349d815bbd50c38e`.
+still builds only `linux/amd64`. Its stable `v1.4.14` release resolves to
+`725516877d0fbd630e47476a4b6f16e3c8173a0c`.
 Do not run its installer or pull its frontend image on this Pi.
 
 The [build script](proxcenter/build-arm64.sh) downloads that immutable source
@@ -137,7 +137,7 @@ docker exec proxcenter-frontend wget -qO- http://127.0.0.1:3000/api/health
 docker exec proxcenter-frontend node --version
 ```
 
-Expect `status: healthy`, `db: reachable` and Node `v26.12.1`. Confirm the image
+Expect `status: healthy`, `db: reachable` and Node `v26.13.0`. Confirm the image
 is ARM64, both containers are healthy, and the five configured Proxmox
 connections remain. Preserve the previous frontend image and all data volumes.
 
