@@ -66,20 +66,10 @@ when the reader would otherwise need to assemble a flow from several files or
 controllers. Runbooks only need a diagram when ordering, state transitions, or
 failure boundaries are difficult to express as numbered steps.
 
-Reader-facing diagrams are committed SVG assets under `docs/assets/`. The site
-does not render Mermaid in the browser. Operational flows use Mermaid sources
-under `docs/diagrams/`. Run `npm run diagrams` to generate the SVGs with the
-pinned CLI. Do not edit those generated SVG files directly. The main
-platform map and Kustomize Component mental model remain hand-authored SVGs
-because they need deliberate spatial grouping.
-
-This split keeps routine flows auto-laid out and diffable. Hand-authored SVGs
-keep full control where the visual carries the explanation. Each committed SVG
-contains a source hash covering its Mermaid file, renderer lockfile, scripts,
-and configuration. CI verifies that hash, independently compiles every source
-to a temporary directory, and checks the resulting SVG structure. The
-normalization step adds `xml:space="preserve"` through an XML parser so native
-SVG renderers retain spaces in Mermaid's nested text spans.
+Operational diagrams are inline `mermaid` blocks rendered by MkDocs Material and GitHub.
+Keep `accTitle` and `accDescr` in each block for accessible names and descriptions.
+The hand-authored platform map, Kustomize Component model, and Postgres lifecycle
+illustrations remain SVG assets under `docs/assets/`.
 
 Every diagram should:
 
@@ -91,18 +81,16 @@ Every diagram should:
   never cross headings, labels, or body text;
 - use a `viewBox`, readable text at narrow widths, and descriptive `<title>` and
   `<desc>` elements;
-- include Markdown alt text and a caption that states the invariant
-  or trade-off the reader should remember;
+- include accessible Mermaid titles/descriptions (or SVG alt text) and nearby
+  prose that states the invariant or trade-off the reader should remember;
 - avoid credentials, private identifiers, volatile version numbers, and details
   that cannot be verified from the owning manifests.
 
-Motion is allowed when it explains direction or order. Keep it inside the SVG
-so the same asset works on GitHub Pages and remains a valid static image in
-Markdown. Mermaid flow sources assign stable edge IDs and use `animation: fast`
-or `animation: slow`; shared configuration disables those animations under
-`prefers-reduced-motion: reduce`. Custom SVG connectors use a permanent solid
-path with a small open chevron plus a separate moving packet. Every diagram
-must remain understandable when animation is disabled.
+Motion is allowed when it explains direction or order. Mermaid blocks may use
+stable edge IDs with `animation: fast` or `animation: slow`. Custom SVG connectors
+use a permanent solid path with a small open chevron plus a separate moving
+packet; their styles disable motion under `prefers-reduced-motion: reduce`.
+Every diagram must remain understandable when animation is disabled.
 
 The custom-SVG implementation is ordinary, dependency-free SVG:
 

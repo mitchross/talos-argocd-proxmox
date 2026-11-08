@@ -8,26 +8,12 @@ on:
       - "docs/**"
       - "mkdocs.yml"
       - "requirements.txt"
-      - "package.json"
-      - "package-lock.json"
-      - "scripts/render-diagrams.sh"
-      - "scripts/normalize-diagram.mjs"
-      - "scripts/diagram-hash.mjs"
-      - "scripts/verify-diagram.mjs"
-      - "scripts/check-diagrams.sh"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
       - "docs/**"
       - "mkdocs.yml"
       - "requirements.txt"
-      - "package.json"
-      - "package-lock.json"
-      - "scripts/render-diagrams.sh"
-      - "scripts/normalize-diagram.mjs"
-      - "scripts/diagram-hash.mjs"
-      - "scripts/verify-diagram.mjs"
-      - "scripts/check-diagrams.sh"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -47,22 +33,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          cache: npm
-
-      - name: Install diagram font
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends fonts-inter
-          fc-cache --force
-
-      - name: Verify generated diagrams
-        run: |
-          npm ci
-          npm run diagrams:check
 
       - uses: actions/setup-python@v6
         with:

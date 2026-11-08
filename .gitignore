@@ -100,13 +100,11 @@ omni/configs/*.yaml
 
 # Lock Files (Potentially broad)
 *.lock
-!package-lock.json
 
 # Misc
 config.xml
 !my-apps/development-infra/posthog/config/clickhouse/config.xml
 *.pid
-/node_modules
 /dist
 /.astro
 /site
