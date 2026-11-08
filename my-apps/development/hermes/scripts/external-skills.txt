@@ -1,5 +1,5 @@
-# <owner/repo> <commit sha> <path in repo> <Hermes category> [name]; the seed reinstalls a skill when its sha changes.
-# The optional name renames the skill folder and its frontmatter name, to avoid clashing with a same-named skill.
+# Non-registry skills: <owner/repo> <commit sha> <path> <category> [name].
+# Registry skills live in skills/snapshot.json; optional name preserves aliases.
 ayghri/i-have-adhd 1ecea1993b7fce257ffbd686c070948b5e07eda6 skills/i-have-adhd productivity
 DietrichGebert/ponytail 09c434ab73ca43761c5d8b0c5d341926c2fba710 skills/ponytail software-development
 DietrichGebert/ponytail 09c434ab73ca43761c5d8b0c5d341926c2fba710 skills/ponytail-audit software-development
@@ -41,69 +41,5 @@ expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-da
 expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-dev-client mobile
 expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-animation mobile
 expo/skills 05754e71d02abe0d2d7a2fb5259ccac41f5ea59c plugins/expo/skills/expo-module mobile
-# pstack (Lauren Tan, MIT) via the harness-neutral mirror. Left out: make-bot-ui, statechart and
-# typescript-best-practices, which the Hermes skills scanner blocked. tdd and teach are renamed to avoid Matt's.
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/architect pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/arena pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/automate-me pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/benchmark-checklist pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/blast-radius pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/bro pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/correct pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/create-formal-verification-skill pstack
 backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/create-verification-skill pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/figure-it-out pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/how pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/in-your-own-words pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/interrogate pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/ketchup pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/ketchup-video pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/maintain-formal-verification-skill pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/maintain-verification-skill pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/no-comments pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/poteto-help pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/poteto-mode pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-attack-the-premise pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-boundary-discipline pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-build-the-lever pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-encode-lessons-in-structure pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-exhaust-the-design-space pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-experience-first pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-explain-the-number pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-fix-root-causes pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-foundational-thinking pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-guard-the-context-window pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-laziness-protocol pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-make-operations-idempotent pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-migrate-callers-then-delete-legacy-apis pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-minimize-reader-load pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-model-the-domain pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-never-block-on-the-human pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-outcome-oriented-execution pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-prove-it-works pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-redesign-from-first-principles pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-separate-before-serializing-shared-state pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-sequence-verifiable-units pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-subtract-before-you-add pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-test-behavior-not-implementation pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/principle-type-system-discipline pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/recall pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/reflect pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/setup-pstack pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/sharpen pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/show-me-your-work pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/swarm pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/tdd pstack pstack-tdd
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/teach pstack pstack-teach
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/technical-writing pstack
-backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/unslop pstack
 backnotprop/pstack ecec42adbe4f240e4ae19d296768445f0dfbd38e skills/why pstack
-mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/engineering/ask-matt matt-pocock
-mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/engineering/setup-matt-pocock-skills matt-pocock
-mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/engineering/wizard matt-pocock
-mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/misc/git-guardrails-claude-code matt-pocock
-mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/misc/migrate-to-shoehorn matt-pocock
-mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/misc/scaffold-exercises matt-pocock
-mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/misc/setup-pre-commit matt-pocock
-pbakaus/impeccable c3bb418ee38ee49a6b999b7752c1368f3123a2bd .hermes/skills/impeccable creative
-cloudflare/security-audit-skill c1c8a8c1471069fb0e188eeaff69b8e8db6564a8 skills/security-audit devops
