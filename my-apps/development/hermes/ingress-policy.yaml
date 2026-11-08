@@ -1,0 +1,25 @@
+# Only the gateway and kubelet probes reach the dashboard, only Prometheus reaches metrics.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hermes-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: hermes
+  ingress:
+    - fromEntities:
+        - ingress
+        - host
+      toPorts:
+        - ports:
+            - port: "9119"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: prometheus-stack
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "9464"
+              protocol: TCP

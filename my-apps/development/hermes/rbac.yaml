@@ -29,9 +29,8 @@ roleRef:
   name: hermes-viewer
   apiGroup: rbac.authorization.k8s.io
 ---
-# Day-to-day fixes without touching desired state: exec into pods, restart or
-# delete pods, roll out a Deployment, run a Job from a CronJob, cordon a node.
-# No create/update of app resources (those go through Git) and still no secrets.
+# Day-to-day fixes: exec, restart or delete pods, roll out, run a Job, cordon a node.
+# Cluster-wide exec can read any Secret mounted in a pod; no Secret API access and no app edits.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

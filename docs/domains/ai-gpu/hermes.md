@@ -16,7 +16,7 @@
 
 Hermes is an agent that keeps running when nobody is at a keyboard. One pod in the `hermes` namespace runs a gateway for cron jobs and chat platforms, plus a web dashboard.
 It remembers across sessions through Hindsight and loads skills on demand.
-Hermes is the coordinator: it checks the cluster read-only, and runs Claude Code or Codex inside its own pod to open pull requests. You merge; Argo CD deploys.
+Hermes is the coordinator: it reads the cluster, does day-to-day fixes (restart, exec, cordon), and runs Claude Code or Codex inside its own pod to open pull requests. You merge; Argo CD deploys.
 
 ```mermaid
 flowchart LR
@@ -26,7 +26,7 @@ flowchart LR
     Gateway -.->|picker: qwen3.8-27b| LiteLLM --> vLLM
     Gateway --> Hindsight[(Hindsight memory)]
     Gateway -->|claude -p / codex exec| Agents[Claude Code / Codex in the pod] --> GitHub[Pull request]
-    Gateway -->|read-only kubectl| K8s[Cluster API]
+    Gateway -->|kubectl| K8s[Cluster API]
     Git[my-apps/development/hermes] --> Argo[Argo CD] --> Gateway
     Gateway --> Vol[(hermes-data 200Gi)] --> Kopiur[Kopiur 6-hourly backup]
 ```
@@ -36,7 +36,7 @@ flowchart LR
 | Piece | Where | Notes |
 |---|---|---|
 | Image | `ghcr.io/mitchross/hermes-dev` from [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev), pinned by digest in `deployment.yaml` | Official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`; one container runs the gateway and the dashboard under s6-overlay |
-| Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000. Init container `seed` runs `scripts/seed.sh` first. Limits 8 CPU / 12 GiB: the CPU limit caps how many workers Jest and cargo start; VPA sets the requests |
+| Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000. Init container `seed` runs `scripts/seed.sh` first. Limits 8 CPU / 16 GiB: the CPU limit caps how many workers Jest and cargo start; VPA sets the requests |
 | Rust toolchains | `scripts/seed.sh` | `RUSTUP_HOME=/opt/data/tools/rustup` on the volume. The image's toolchain is linked as default `hermes-image`; a repo's `rust-toolchain.toml` version installs once on first use (`RUSTUP_AUTO_INSTALL=1`) |
 | Settings | `config/config.yaml` becomes a ConfigMap, and `scripts/seed.sh` copies it to `/opt/data/config.yaml` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
 | Plugins | `scripts/seed.sh` | Installs `hindsight` and `homeassistant` into the volume on first start |
@@ -50,8 +50,8 @@ flowchart LR
 | Home Assistant | 1Password `home-assistant/ha-longlived-token` feeds `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Volume | `pvc.yaml` | `hermes-data`, 200Gi Longhorn, restore-before-bind |
-| Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28; keeps 8 hourly, 14 daily, 6 weekly, 3 monthly. Mover runs as 10000:10000. Longhorn also keeps 24 hourly snapshots on the volume; they do not survive loss of the volume |
-| Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`, read-only (`hermes-viewer`), no secrets |
+| Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28; keeps 8 hourly, 14 daily, 8 weekly, no monthly. Mover runs as 10000:10000. Longhorn also keeps 24 hourly snapshots on the volume; they do not survive loss of the volume |
+| Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`: `hermes-viewer` reads (no Secrets or ConfigMaps, except `kube-system/cilium-config` via `hermes-cilium-config-reader`); `hermes-operator` restarts, deletes and evicts pods, scales, cordons and execs in every namespace. Exec can read any Secret mounted in a pod |
 | Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) feed `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
 | Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`: OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated; its public half is in the Pi's `authorized_keys` |
 | Personality | `config/SOUL.md` is copied to `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
@@ -81,11 +81,12 @@ flowchart LR
 | Layer | Source | Pinned by |
 |---|---|---|
 | Base | official `nousresearch/hermes-agent` (gateway, dashboard, s6-overlay, Node, Python) | tag + digest |
-| `tmux`, `jq`, `less`, `openssh-client` | Debian packages | base image |
+| `tmux`, `jq`, `less`, `openssh-client`, `build-essential`, `pkg-config`, `libssl-dev`, `protobuf-compiler`, `libprotobuf-dev` | Debian packages | base image |
 | `gh` | GitHub CLI `.deb` from the release page | `GH_VERSION` + `GH_SHA256` |
 | `kubectl` | `dl.k8s.io` | `KUBECTL_VERSION` + `KUBECTL_SHA256` |
 | `omnictl`, `talosctl` | Sidero GitHub releases | `OMNICTL_VERSION` (matches the Omni server), `TALOSCTL_VERSION` (matches the cluster), each with a SHA-256 |
 | Claude Code, Codex | npm, installed into `/opt/agents` | `CLAUDE_VERSION`, `CODEX_VERSION` |
+| Go, Rust | `go.dev`, `rustup` | `GO_VERSION`, `RUSTUP_VERSION`, `RUST_VERSION` |
 
 `/opt/agents/bin` comes first on `PATH`, so the pinned CLIs win over anything on the volume. `DISABLE_AUTOUPDATER=1` stops Claude Code from updating itself.
 The build runs `hermes-image-smoke` as uid 10000; it fails if `hermes`, `claude`, `codex`, `git`, `gh`, `kubectl`, `tmux`, `jq`, `rg`, `node`, `npm`, `python3` or `ssh` is missing.
@@ -117,7 +118,7 @@ To pin a digest by hand, read it from the job summary or run:
 docker buildx imagetools inspect ghcr.io/mitchross/hermes-dev:main | grep Digest
 ```
 
-Put it in **both** `image:` lines in `deployment.yaml`, the `seed` init container and the `hermes` container, in one PR.
+Put it in every `hermes-dev` reference in one PR: the four containers in `deployment.yaml` (`seed`, `hermes`, `worktree-gc`, `usage-exporter`) and `image-prepull.yaml`. Check with `git grep -n hermes-dev@ my-apps/development/hermes`.
 
 ### Build and test it yourself
 
@@ -190,7 +191,7 @@ The seed reruns `gh auth setup-git` on every start. A restored volume keeps both
 ## 4. Ask about the cluster
 
 In the Chat tab, ask in plain words: "is the cluster healthy", "why is wyze-bridge degraded", "which backups failed this week".
-Hermes loads the `homelab-ops` skill and runs the read-only `kubectl` checks. It names the Git directory that owns a fix; it cannot change the cluster.
+Hermes loads the `homelab-ops` skill and runs the read-only `kubectl` checks. It names the Git directory that owns a fix; config changes go through a PR, and Argo CD reverts drift.
 
 Check the daily digest under **Cron** in the dashboard. Run it by hand with the **Trigger** button.
 
@@ -341,7 +342,7 @@ Never delete the app directory as a rollback. Argo CD can prune the volume.
 - Every device on the home LAN or the tailnet can reach the dashboard login.
 - The dashboard terminal is a shell with every login in the pod: Claude, Codex, GitHub, Gitea. Treat the password like an SSH key.
 - The pod's GitHub login can reach every repo of the account.
-- Coding agents run with their approval prompts off. The pod is the sandbox: `kubectl` is read-only and cannot read Secrets.
+- Coding agents run with their approval prompts off. The pod is the sandbox: `kubectl` cannot read Secrets through the API or edit app resources, but cluster-wide exec can read Secrets mounted in any pod.
 - The pod holds LiteLLM's master key, so an agent can spend OpenRouter credit through LiteLLM.
 - The Omni Operator key, `ssh pi` (passwordless sudo) and coding agents with approvals off share one trust boundary. The ask-first rules are agent instructions, not enforced controls.
 - Proxmox hosts and Longhorn evictions are not available in the pod; Hermes hands them to you.
