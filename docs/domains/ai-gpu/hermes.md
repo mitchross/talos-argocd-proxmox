@@ -35,7 +35,7 @@ flowchart LR
 
 | Piece | Where | Notes |
 |---|---|---|
-| Image | `ghcr.io/mitchross/hermes-dev` from [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev), pinned by digest in `deployment.yaml` | Official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `gh`, `tmux`; one container runs the gateway and the dashboard under s6-overlay |
+| Image | `ghcr.io/mitchross/hermes-dev` from [homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev), pinned by digest in `deployment.yaml` | Official Hermes plus `claude`, `codex`, `kubectl`, `omnictl`, `talosctl`, `hubble`, `gh`, `tmux`; one container runs the gateway and the dashboard under s6-overlay |
 | Pod | `deployment.yaml` | 1 replica, `Recreate`, starts as root, s6 drops to uid 10000. Init container `seed` runs `scripts/seed.sh` first. Limits 8 CPU / 16 GiB: the CPU limit caps how many workers Jest and cargo start; VPA sets the requests |
 | Rust toolchains | `scripts/seed.sh` | `RUSTUP_HOME=/opt/data/tools/rustup` on the volume. The image's toolchain is linked as default `hermes-image`; a repo's `rust-toolchain.toml` version installs once on first use (`RUSTUP_AUTO_INSTALL=1`) |
 | Settings | `config/config.yaml` becomes a ConfigMap, and `scripts/seed.sh` copies it to `/opt/data/config.yaml` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
@@ -50,7 +50,7 @@ flowchart LR
 | Home Assistant | 1Password `home-assistant/ha-longlived-token` feeds `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only; remote clients use Tailscale |
 | Volume | `pvc.yaml` | `hermes-data`, 200Gi Longhorn, restore-before-bind |
-| Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28; keeps 8 hourly, 14 daily, 8 weekly, no monthly. Mover runs as 10000:10000. Longhorn also keeps 24 hourly snapshots on the volume; they do not survive loss of the volume |
+| Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28; keeps 8 hourly, 14 daily, 8 weekly, no monthly. Mover runs as 10000:10000. Longhorn also keeps 6 hourly snapshots on the volume; they do not survive loss of the volume |
 | Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image as ServiceAccount `hermes`: `hermes-viewer` reads (no Secrets or ConfigMaps, except `kube-system/cilium-config` via `hermes-cilium-config-reader`); `hermes-operator` restarts, deletes and evicts pods, scales, cordons and execs in every namespace. Exec can read any Secret mounted in a pod |
 | Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) feed `hermes-secrets`; the seed writes `~/.talos/config` | Omni **Operator** role: manages clusters and machines, not users or service accounts |
 | Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`: OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated; its public half is in the Pi's `authorized_keys` |
@@ -85,6 +85,7 @@ flowchart LR
 | `gh` | GitHub CLI `.deb` from the release page | `GH_VERSION` + `GH_SHA256` |
 | `kubectl` | `dl.k8s.io` | `KUBECTL_VERSION` + `KUBECTL_SHA256` |
 | `omnictl`, `talosctl` | Sidero GitHub releases | `OMNICTL_VERSION` (matches the Omni server), `TALOSCTL_VERSION` (matches the cluster), each with a SHA-256 |
+| `hubble` | Cilium GitHub releases | `HUBBLE_VERSION` (near the cluster's Cilium release), SHA-256 checked |
 | Claude Code, Codex | npm, installed into `/opt/agents` | `CLAUDE_VERSION`, `CODEX_VERSION` |
 | Go, Rust | `go.dev`, `rustup` | `GO_VERSION`, `RUSTUP_VERSION`, `RUST_VERSION` |
 
