@@ -31,9 +31,8 @@ spec:
           operator: Exists
           effect: NoExecute
           tolerationSeconds: 30
+      # No fsGroup: kubelet would re-own ~1.4M files whenever the volume root drifts; seed.sh chowns what Hermes needs.
       securityContext:
-        fsGroup: 10000
-        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       initContainers:
