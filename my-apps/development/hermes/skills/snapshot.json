@@ -393,12 +393,6 @@
       "category": "productivity"
     },
     {
-      "name": "notion",
-      "source": "official",
-      "identifier": "official/productivity/notion",
-      "category": "productivity"
-    },
-    {
       "name": "llm-wiki",
       "source": "official",
       "identifier": "official/research/llm-wiki",

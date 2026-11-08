@@ -6,6 +6,7 @@ resources:
   - externalsecret.yaml
   - rbac.yaml
   - pvc.yaml
+  - pvc-scratch.yaml
   - deployment.yaml
   - image-prepull.yaml
   - service.yaml
@@ -14,6 +15,7 @@ resources:
   - servicemonitor.yaml
   - kopiur/hermes-data.yaml
   - pi-egress.yaml
+  - ingress-policy.yaml
 configMapGenerator:
   - name: hermes-config
     files:
