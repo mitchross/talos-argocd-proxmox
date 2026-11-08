@@ -1,6 +1,6 @@
 {
   "hermes_version": "0.1.0",
-  "exported_at": "2026-11-08T20:39:51.549795+00:00",
+  "exported_at": "2026-11-08T21:02:41.756654+00:00",
   "skills": [
     {
       "name": "unslop",
@@ -427,6 +427,240 @@
       "source": "skills.sh",
       "identifier": "skills-sh/cloudflare/security-audit-skill/skills/security-audit",
       "category": "devops"
+    },
+    {
+      "name": "i-have-adhd",
+      "source": "skills.sh",
+      "identifier": "skills-sh/ayghri/i-have-adhd/skills/i-have-adhd",
+      "category": "productivity"
+    },
+    {
+      "name": "ponytail",
+      "source": "skills.sh",
+      "identifier": "skills-sh/DietrichGebert/ponytail/skills/ponytail",
+      "category": "software-development"
+    },
+    {
+      "name": "ponytail-audit",
+      "source": "skills.sh",
+      "identifier": "skills-sh/DietrichGebert/ponytail/skills/ponytail-audit",
+      "category": "software-development"
+    },
+    {
+      "name": "ponytail-debt",
+      "source": "skills.sh",
+      "identifier": "skills-sh/DietrichGebert/ponytail/skills/ponytail-debt",
+      "category": "software-development"
+    },
+    {
+      "name": "ponytail-gain",
+      "source": "skills.sh",
+      "identifier": "skills-sh/DietrichGebert/ponytail/skills/ponytail-gain",
+      "category": "software-development"
+    },
+    {
+      "name": "ponytail-help",
+      "source": "skills.sh",
+      "identifier": "skills-sh/DietrichGebert/ponytail/skills/ponytail-help",
+      "category": "software-development"
+    },
+    {
+      "name": "ponytail-review",
+      "source": "skills.sh",
+      "identifier": "skills-sh/DietrichGebert/ponytail/skills/ponytail-review",
+      "category": "software-development"
+    },
+    {
+      "name": "code-review",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/code-review",
+      "category": "software-development"
+    },
+    {
+      "name": "codebase-design",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/codebase-design",
+      "category": "software-development"
+    },
+    {
+      "name": "diagnosing-bugs",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/diagnosing-bugs",
+      "category": "software-development"
+    },
+    {
+      "name": "domain-modeling",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/domain-modeling",
+      "category": "software-development"
+    },
+    {
+      "name": "grill-with-docs",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/grill-with-docs",
+      "category": "software-development"
+    },
+    {
+      "name": "implement",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/implement",
+      "category": "software-development"
+    },
+    {
+      "name": "implement-spec",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/implement-spec",
+      "category": "software-development"
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/improve-codebase-architecture",
+      "category": "software-development"
+    },
+    {
+      "name": "pr",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/pr",
+      "category": "software-development"
+    },
+    {
+      "name": "prototype",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/prototype",
+      "category": "software-development"
+    },
+    {
+      "name": "research",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/research",
+      "category": "software-development"
+    },
+    {
+      "name": "retro",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/retro",
+      "category": "software-development"
+    },
+    {
+      "name": "to-spec",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/to-spec",
+      "category": "software-development"
+    },
+    {
+      "name": "to-tickets",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/to-tickets",
+      "category": "software-development"
+    },
+    {
+      "name": "triage",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/triage",
+      "category": "software-development"
+    },
+    {
+      "name": "wayfinder",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/engineering/wayfinder",
+      "category": "software-development"
+    },
+    {
+      "name": "grill-me",
+      "source": "official",
+      "identifier": "official/software-development/grill-me",
+      "category": "productivity"
+    },
+    {
+      "name": "grilling",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/productivity/grilling",
+      "category": "productivity"
+    },
+    {
+      "name": "handoff",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/productivity/handoff",
+      "category": "productivity"
+    },
+    {
+      "name": "to-questionnaire",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/productivity/to-questionnaire",
+      "category": "productivity"
+    },
+    {
+      "name": "wait-what",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/productivity/wait-what",
+      "category": "productivity"
+    },
+    {
+      "name": "writing-for-agents",
+      "source": "skills.sh",
+      "identifier": "skills-sh/mattpocock/skills/skills/productivity/writing-for-agents",
+      "category": "productivity"
+    },
+    {
+      "name": "react-best-practices",
+      "source": "skills.sh",
+      "identifier": "skills-sh/vercel-labs/agent-skills/skills/react-best-practices",
+      "category": "software-development"
+    },
+    {
+      "name": "react-native-skills",
+      "source": "skills.sh",
+      "identifier": "skills-sh/vercel-labs/agent-skills/skills/react-native-skills",
+      "category": "software-development"
+    },
+    {
+      "name": "composition-patterns",
+      "source": "skills.sh",
+      "identifier": "skills-sh/vercel-labs/agent-skills/skills/composition-patterns",
+      "category": "software-development"
+    },
+    {
+      "name": "web-design-guidelines",
+      "source": "skills.sh",
+      "identifier": "skills-sh/vercel-labs/agent-skills/skills/web-design-guidelines",
+      "category": "software-development"
+    },
+    {
+      "name": "expo-router",
+      "source": "skills.sh",
+      "identifier": "skills-sh/expo/skills/plugins/expo/skills/expo-router",
+      "category": "mobile"
+    },
+    {
+      "name": "expo-native-ui",
+      "source": "skills.sh",
+      "identifier": "skills-sh/expo/skills/plugins/expo/skills/expo-native-ui",
+      "category": "mobile"
+    },
+    {
+      "name": "expo-data-fetching",
+      "source": "skills.sh",
+      "identifier": "skills-sh/expo/skills/plugins/expo/skills/expo-data-fetching",
+      "category": "mobile"
+    },
+    {
+      "name": "expo-dev-client",
+      "source": "skills.sh",
+      "identifier": "skills-sh/expo/skills/plugins/expo/skills/expo-dev-client",
+      "category": "mobile"
+    },
+    {
+      "name": "expo-animation",
+      "source": "skills.sh",
+      "identifier": "skills-sh/expo/skills/plugins/expo/skills/expo-animation",
+      "category": "mobile"
+    },
+    {
+      "name": "expo-module",
+      "source": "skills.sh",
+      "identifier": "skills-sh/expo/skills/plugins/expo/skills/expo-module",
+      "category": "mobile"
     }
   ],
   "taps": []
