@@ -8,8 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"    # after the wave-0 cache-sync hook
 spec:
-  # Parked (0) while Strata tests both cards (my-apps/ai/strata/); 1 gives it both cards back.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1
@@ -58,16 +57,16 @@ spec:
               readOnly: true
       containers:
         - name: vllm-server
-          # Keep the stock runtime pinned; no community kernel overlays.
-          image: vllm/vllm-openai:v0.33.0@sha256:d825baf9ce4b1b6bfc5ecc7b79880c7e6748c65a72d697ce3d47607aafa84c6e
+          # Built and smoke-tested in homelab-images; pin its digest after publication.
+          image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.1
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
-            - /models/Qwen3.8-27B-FP8-017b9c7af6b5
+            - /models/Qwen3.8-27B-int4-AutoRound-b4c61732c4f2
             - --served-model-name
             - qwen3.8-27b
             - --quantization
-            - fp8
+            - auto_round
             - --dtype
             - bfloat16
             - --tensor-parallel-size
@@ -77,12 +76,13 @@ spec:
             # Guest topology reports no peer access; use NCCL host transport.
             - --disable-custom-all-reduce
             - --gpu-memory-utilization
-            - "0.92"
+            - "0.90"
+            # Beyond native 262K needs YaRN; planned A/B only, never enabled here.
             - --max-model-len
             - "262144"
             # Slot count only; the KV pool (boot log "GPU KV cache size") bounds what runs. Two slots queued Hindsight retries 50 deep.
             - --max-num-seqs
-            - "8"
+            - "16"
             - --limit-mm-per-prompt
             - '{"image":1,"video":0}'
             - --async-scheduling
@@ -101,7 +101,7 @@ spec:
             - --kv-cache-dtype
             - fp8_e4m3
             - --mamba-ssm-cache-dtype
-            - float16
+            - bfloat16
             - --enable-prefix-caching
             # Already the default with prefix caching on; explicit so a vLLM upgrade can't shift it.
             - --mamba-cache-mode
@@ -109,22 +109,27 @@ spec:
             - --prefix-match-unit
             - "16"
             - --enable-chunked-prefill
-            # 8192 tokens per step across up to two requests; the 4096 threshold caps each request's prefill chunk.
-            # Benchmark latency and KV headroom before changing either.
+            # Shared 8192-token prefill budget; each long request gets at most 4096 per step.
             - --max-num-batched-tokens
             - "8192"
             - --long-prefill-token-threshold
             - "4096"
-            # Speculation stays off until the GDN long-session faults are fixed.
+            # Speculation stays off for GDN long-session faults; MTP n=4 is the planned A/B.
             # Sampler is a community-reported mitigation (QwenLM/Qwen3.8#216), not an upstream default; keep WebUI/Pi thinking=1.05, off=1.0 in sync.
             - --override-generation-config
             - '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":0.0,"repetition_penalty":1.05}'
+            - --trust-remote-code
+            - --enable-prompt-tokens-details
             - --enable-force-include-usage
             - --host
             - 0.0.0.0
             - --port
             - "8000"
           env:
+            - name: VLLM_MARLIN_INPUT_DTYPE
+              value: int8
+            - name: VLLM_USE_FLASHINFER_SAMPLER
+              value: "0"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: compute,utility
             - name: HF_HUB_OFFLINE

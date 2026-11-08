@@ -12,15 +12,14 @@ New to the stack? Read [Local AI starter kit](index.md) first.
 | `qwen3.8-27b` | your two RTX 3090s | free | `qwen3.8-27b` |
 | `deepseek-flash` | OpenRouter, external | paid | `deepseek-flash` |
 | `pi-auto` | picks between the two | mixed | `pi-auto` |
-| `qwen3.8-flash-next` | both RTX 3090s via Strata, **test only** | free | `qwen3.8-flash-next` |
+| `qwen3.8-27b-local` | same vLLM engine, no cloud fallback | free | `qwen3.8-27b-local` |
 
-!!! warning "Strata test (temporary)"
-    vLLM is parked at 0 replicas and Strata holds both cards. LiteLLM sends
-    `qwen3.8-27b` to `deepseek-flash` (paid, prompts leave home)
-    until the test PR is reverted. Runbook: `my-apps/ai/strata/README.md`.
+Strata is parked and its Flash-Next route is removed. Default/auto Qwen routes
+keep paid DeepSeek overflow while vLLM is busy or loading. Hermes uses the private
+alias for its local worker; existing sessions selecting Flash-Next must reselect.
 
 !!! tip "In 10 seconds"
-    - Qwen is local, free, and private. It is the default for every app.
+    - Qwen runs locally; default/auto routes can overflow to paid cloud. Use `qwen3.8-27b-local` for privacy.
     - DeepSeek Flash is cloud and paid. Prompts leave home.
     - `pi-auto` picks one of the two for each request.
 
@@ -31,24 +30,24 @@ other two per request.
 
 | Backend | Replicas | Cards | Model | Status |
 |---|---:|---:|---|---|
-| vLLM | `0` (test) | **2** | `qwen3.8-27b` | production, parked for the Strata test |
-| Strata | `1` (test) | 2 | `qwen3.8-flash-next` | test; one request at a time |
+| vLLM | `1` | **2** | `qwen3.8-27b` | active INT4/W4A8 |
+| Strata | `0` | 2 | `qwen3.8-flash-next` | parked |
 | NInfer | n/a | 1 | `qwen3.8-ninfer` | archived (`my-apps/ai/_archive/ninfer/`) |
 | ComfyUI / SwarmUI | `0` | 1 | image generation | parked |
 
 Both cards belong to vLLM. Other GPU workloads stay parked.
 [GPU scale-swap](gpu-scale-swap.md) owns the procedure.
 
-## Local: Qwen3.8-27B FP8
+## Local: Qwen3.8-27B INT4
 
 | Property | Value |
 |---|---|
-| Engine | stock vLLM, pinned image digest |
-| Weights | official `Qwen/Qwen3.8-27B-FP8`, pinned revision |
+| Engine | patched vLLM from homelab-images (digest pin follows publication) |
+| Weights | `Frozenlock/Qwen3.8-27B-int4-AutoRound`, pinned revision |
 | Placement | TP=2, two RTX 3090s, no CPU offload |
-| KV / recurrent state | FP8 E4M3 / float16 |
+| KV / recurrent state | FP8 E4M3 / bfloat16 |
 | Context ceiling | 262,144 tokens |
-| Concurrency | up to eight sequences sharing the KV pool |
+| Concurrency | up to 16 sequences sharing the KV pool |
 | Vision | one image per request, video disabled |
 | Reasoning | off / low / medium / xhigh; **xhigh** default |
 | Speculation | disabled |
@@ -158,12 +157,13 @@ stronger tier, not a specific model.
 |---|---|
 | `max_tokens_from_tier_model: false` | keeps the client's 32K output cap; the default would hand Flash 943K |
 | `enable_context_window_escalation: true` | an oversized prompt moves up instead of being cut |
-| `router_settings.fallbacks` on `qwen3.8-27b-auto` | a vLLM outage sends **`pi-auto` only** to DeepSeek |
+| `router_settings.fallbacks` on default / auto | busy or unavailable vLLM sends those routes to paid DeepSeek |
 
 `qwen3.8-27b-auto` is the same vLLM backend as `qwen3.8-27b` under a second
-name. LiteLLM fallbacks key on the model name, so a rule on `qwen3.8-27b` would
-send every client (Open WebUI, Hindsight, bare `pi` and the rest) to paid
-OpenRouter during an outage. Local-only clients must fail instead.
+name. Both have paid overflow: Open WebUI, Hindsight, bare `pi` and other default
+clients may reach OpenRouter during an outage or burst. For private requests use
+`qwen3.8-27b-local`, which fails instead of falling back. Each alias has a separate
+16-request cap per LiteLLM pod; vLLM shares one 16-sequence scheduler across them.
 
 Source of truth: [`litellm/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/litellm/config.yaml).
 To see the split live, read [AI gateway and analytics](ai-observability.md).

@@ -1,8 +1,28 @@
-# vLLM: official Qwen3.8-27B FP8 on two RTX 3090s
+# vLLM: Qwen3.8-27B INT4/W4A8 on two RTX 3090s
 
-> **Parked (`replicas: 0`) during the Strata two-card test** ([`../strata/`](../strata/README.md)).
-> The settings below are unchanged. Meanwhile `qwen3.8-27b` falls back to `deepseek-flash` in LiteLLM.
-> Revert the test PR to bring this server back on both cards.
+vLLM owns both cards; [Strata](../strata/README.md) is parked. The image comes from
+[homelab-images PR 48](https://github.com/mitchross/homelab-images/pull/48): merge it,
+wait for publication, then merge this GitOps change. The custom image digest pin
+follows publication; the upstream base is already pinned by digest.
+
+The [club-3090 dual-fast recipe](https://github.com/noonghunna/club-3090/blob/def9711c8e6dc8bb3e6d1ecaad795b3bbb4bb665/models/qwen3.8-27b/vllm/compose/dual/autoround-int4/mtp.yml)
+is pinned to `def9711c8e6dc8bb3e6d1ecaad795b3bbb4bb665`. W4A8, Mamba block-drop and
+FlashInfer decode-pin fixes are baked into the image, never applied at boot.
+Budget patches are omitted. The bundled model template supports `reasoning_effort`,
+so no template overlay is needed. The existing repetition penalty stays **1.05**,
+rather than the recipe's 1.0; thinking defaults and all other sampler values stay unchanged.
+
+The recipe's historical v0.30.0, speculation-off, fp32-SSM reference at 0.90 held
+**584,550 KV tokens (2.23 × 262K, two full-length sessions)**. That is a planning
+reference, not a measurement of this v0.32.0/bf16-SSM/16-slot deployment. Keep 0.90
+unless startup reports fewer than 262,144 KV tokens: raise to 0.92 through Git,
+never reduce context to fit. Verify actual pool size, vision and long-context
+quality after rollout. Beyond native 262K needs YaRN; planned A/B only.
+
+[Concurrency study #1092](https://github.com/noonghunna/club-3090/discussions/1092)
+reported spec-off 1K/512-token throughput on v0.27.1: C1 68, C8 211, C16 254,
+C32 308 aggregate tok/s. These are upstream reference numbers, not local results;
+the saved FP8 TP2 baseline is about 40 tok/s single-stream.
 
 **Git-declared backend and operating policy.** The
 [2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
@@ -12,16 +32,16 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 
 | Setting | Value |
 |---|---|
-| Model | Official `Qwen/Qwen3.8-27B-FP8`, no Unsloth/GGUF conversion |
-| Revision | `017b9c7af6b5689d5dd426a76e0bc077eb5ca20a` |
-| Runtime | stock vLLM, pinned immutable image digest |
+| Model | `Frozenlock/Qwen3.8-27B-int4-AutoRound`, W4A8 int8 activations |
+| Revision | `b4c61732c4f2d8af323d75ba5702b5c7f3361539` |
+| Runtime | vLLM 0.32.0, patched `ghcr.io/mitchross/vllm-qwen38-dualfast` |
 | GPUs | 2 × RTX 3090, tensor parallel 2, multiprocessing executor |
 | Interconnect | no custom all-reduce; NCCL P2P disabled; shared host transport |
 | Context ceiling | 262,144 tokens, native model limit, no RoPE extrapolation |
-| Concurrency | up to eight sequences sharing one KV pool; the pool, not the slot count, bounds what runs |
+| Concurrency | up to 16 sequences sharing one KV pool; the pool, not the slot count, bounds what runs |
 | Attention | FlashInfer explicitly selected for Ampere FP8 KV |
-| KV / recurrent state | `fp8_e4m3` / float16 |
-| GPU utilization budget | 0.92 per GPU |
+| KV / recurrent state | `fp8_e4m3` / bfloat16 |
+| GPU utilization budget | 0.90 per GPU |
 | Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
 | Reasoning | on, explicit `xhigh` default; `low` and `medium` per request |
@@ -29,11 +49,10 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 | Power | existing 220 W per card |
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
 
-FP8 weights use an Ampere-compatible weight-only path. A 3090 has no
-native FP8 arithmetic. The official checkpoint is roughly 30.89 GB (28.77
-GiB), shared across both cards. The retained AutoRound INT4 checkpoint is for
-a later controlled speed comparison. It is not the active choice.
-[Official checkpoint](https://huggingface.co/Qwen/Qwen3.8-27B-FP8)
+The active [AutoRound checkpoint](https://huggingface.co/Frozenlock/Qwen3.8-27B-int4-AutoRound)
+is 19.02 GB decimal including tokenizer and vision artifacts. Marlin uses INT4
+weights with INT8 activations on Ampere. The official FP8 files and their original
+manifest stay intact for rollback; staging never prunes other checkpoints.
 
 The config selects FlashInfer explicitly, because vLLM 0.28.0's Triton backend rejects FP8
 KV on SM86. The official checkpoint has no calibrated K/V scales,
@@ -45,9 +64,9 @@ checks, not just throughput checks. This runtime does not add the unsupported le
 [KV scale handling](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/model_executor/layers/quantization/kv_cache.py).
 
 Speculation stays disabled until the GDN/Mamba long-session
-fault fixes are validated. The runtime has no community kernel patches, W4A8 overlays, or experimental
-speculative backports. Revisit MTP only against a fixed runtime
-and a long-session regression test.
+fault fixes are validated (vLLM #50021, #53912, #55533, #62304). The image includes
+supporting patches for a planned MTP n=4 A/B, but no `--speculative-config` is passed.
+Revisit MTP only with a long-session regression test.
 [Upstream fault/fix discussion](https://github.com/vllm-project/vllm/pull/50021)
 
 ## Endpoints and client compatibility
@@ -121,7 +140,7 @@ does not replace weights, and it does not cure thinking loops.
 
 `--max-num-batched-tokens 8192` is the aggregate scheduling budget;
 `--long-prefill-token-threshold 4096` caps the prefill chunk of each request.
-That cap is active even at two sequence slots, so a single long prompt
+That cap is active with 16 sequence slots, so a single long prompt
 does not receive 8,192-token chunks. Alignment, available tokens, vision and
 other scheduler constraints can reduce chunks further. This is an intentional
 8192/4096 profile. It is not four times fewer steps and not a measured speedup.
@@ -218,13 +237,14 @@ changing runtime flags.
 
 ## Reproducible staging
 
-`model-manifest.json` pins 77 necessary checkpoint/tokenizer/vision files by
-revision, exact byte count and SHA-256 (30,889,980,352 bytes total, including
-the checkpoint's MTP file even though speculation is disabled).
+`model-manifest-int4.json` pins 17 checkpoint/tokenizer/vision artifacts by
+revision, exact byte count and SHA-256 (19,016,926,426 bytes). Kustomize exposes it
+as `model-manifest.json` to the unchanged download/sync/wait mechanism.
+The original FP8 `model-manifest.json` remains available for rollback.
 
 1. Wave -3 creates the namespace. Wave -2 creates the scripts ConfigMap and
    dedicated NFS writer PV/PVC. The existing archive reader PVC is unchanged.
-2. Wave -1 `vllm-download-qwen38-fp8` downloads into a revision-named directory
+2. Wave -1 `vllm-download-qwen38-int4` downloads into a revision-named directory
    on `192.168.10.133:/mnt/ai-pool/vllm`. Interrupted downloads keep `.part`
    files. Each completed file is hash and size verified before an atomic rename.
 3. Wave 0 `vllm-cache-sync` verifies the archive, copies to local NVMe and
@@ -236,28 +256,32 @@ the checkpoint's MTP file even though speculation is disabled).
 4. Wave 1 Deployment waits for the matching manifest marker and complete file
    inventory. Serving is offline from the local cache.
 
-Warm syncs hash files again, so same-size corruption is not mistaken for a
-valid cache. A manifest change invalidates old readiness. Failed copies never
+Warm syncs trust the verified marker and byte sizes; ZFS checksums protect the archive.
+A manifest change invalidates old readiness. Failed copies never
 publish readiness, and incomplete artifacts never replace verified files.
 The wait container uses a small pinned Python image and does not need CUDA.
 
 Prerequisites: the NFS export permits the download Job to write and has at
-least 31 GB free; local NVMe has at least that much free as well. The earlier
+least 20 GB additional free; local NVMe has at least that much free as well. The earlier
 approximately 123 GiB local free-space check is historical. Re-check storage
 and export permissions before restaging. No private model token is required.
-Existing AutoRound, GGUF and compile-cache files stay, and nothing is pruned.
+Existing FP8, AutoRound, GGUF and compile-cache files stay, and nothing is pruned.
 
 ## Verification after the user merges
 
 ArgoCD applies the changed arguments through the existing `Recreate` deployment.
-Inference is interrupted while the model loads. This default
-change does not alter the checkpoint, cache precision, memory budget or GPU ownership.
+Strata stops and the INT4 model downloads and loads; default/auto LiteLLM routes
+overflow to paid DeepSeek meanwhile. `qwen3.8-27b-local` replaces the removed
+Flash-Next picker route without adding cloud fallback for private Hermes work.
+Hermes restarts to seed its updated picker and local worker model; finish running
+agent jobs before merging. Route caps are per deployment/pod, not a shared global
+16-request admission budget across aliases; vLLM itself schedules at most 16 sequences.
 
 From the workstation:
 
 ```bash
 kubectl -n vllm get jobs,pods
-kubectl -n vllm logs job/vllm-download-qwen38-fp8
+kubectl -n vllm logs job/vllm-download-qwen38-int4
 kubectl -n vllm logs job/vllm-cache-sync
 kubectl -n vllm logs deploy/vllm-server --tail=200
 kubectl -n vllm exec deploy/vllm-server -- nvidia-smi
@@ -306,11 +330,7 @@ apply the restored Pi settings and zshrc, and start a fresh session. ArgoCD
 reconciles the server and WebUI policy. It cannot update workstation settings.
 Do not change model weights, sampler or KV precision to roll back effort.
 
-vLLM is the only GPU inference backend, with no second backend to fall back
-to. To roll back a bad checkpoint or runtime change, revert its commit and
-let the staging hooks re-run against the retained cache.
-
-The old AutoRound files are retained under
-`Qwen3.8-27B-W4A16-AutoRound-3090-int8lmhead`. A later INT4/W4A8 A/B must pin its
-own artifact manifest and demonstrate TP=2/Marlin compatibility. Do not assume
-its single-card history proves the dual-card speed path.
+Revert this GitOps PR to restore Strata, its routes and the parked FP8 vLLM config.
+No checkpoint files are deleted. A later FP8-only comparison can switch the
+ConfigMap manifest mapping back to `model-manifest.json` and restore FP8 args.
+CPU image smoke is not GPU, vision, long-context or concurrent-load acceptance.

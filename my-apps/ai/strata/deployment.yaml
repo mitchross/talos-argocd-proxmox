@@ -7,7 +7,7 @@ metadata:
     app: strata-server
 spec:
   # Both RTX 3090s (layer split, vLLM parked). Strata serves one request at a time (FIFO).
-  replicas: 1
+  replicas: 0
   strategy:
     type: Recreate            # whole-card GPU workload on an RWO local volume
   revisionHistoryLimit: 1

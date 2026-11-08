@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: vllm-download-qwen38-fp8
+  name: vllm-download-qwen38-int4
   namespace: vllm
   annotations:
     argocd.argoproj.io/hook: Sync

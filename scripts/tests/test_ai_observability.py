@@ -93,9 +93,8 @@ class AIObservabilityTests(unittest.TestCase):
         model = provider['models'][0]
         config = read('my-apps/ai/litellm/config.yaml')
         route = next(m for m in config['model_list'] if m['model_name'] == model['id'])
-        # Strata (vLLM parked). Pi's 262K window is its own config (dotfiles); a prompt over Strata's 131K
-        # gets Strata's 400 and the qwen3.8-27b fallback sends it to deepseek-flash.
-        self.assertEqual(route['litellm_params']['api_base'], 'http://strata-service.strata.svc.cluster.local:8080/v1')
+        # Pi and vLLM keep the native 262K ceiling.
+        self.assertEqual(route['litellm_params']['api_base'], 'http://vllm-service.vllm.svc.cluster.local:8080/v1')
         self.assertGreaterEqual(route['litellm_params']['timeout'], 1800)
         self.assertEqual(model['contextWindow'], 262144)
 
@@ -151,27 +150,28 @@ class AIObservabilityTests(unittest.TestCase):
     def test_default_local_model_overflows_to_cloud_instead_of_queueing(self):
         config = read('my-apps/ai/litellm/config.yaml')
         routes = {route['model_name']: route for route in config['model_list']}
-        strata = 'http://strata-service.strata.svc.cluster.local:8080/v1'
-        settings = dict(line.split('=', 1) for line in next(
-            g for g in read('my-apps/ai/strata/kustomization.yaml')['configMapGenerator']
-            if g['name'] == 'strata-settings')['literals'])
-        slots = int(settings['PARALLEL'])
-        self.assertGreaterEqual(slots, 1)
-        # Every app's model name is Strata, capped at Strata's batch slots so one more request gets
-        # LiteLLM's 429 (and the fallback) instead of a place in Strata's queue.
-        default = routes['qwen3.8-27b']['litellm_params']
-        self.assertEqual(default['api_base'], strata)
-        self.assertEqual(default['max_parallel_requests'], slots)
+        deployment = read('my-apps/ai/vllm/deployment.yaml')
+        args = container(deployment)['args']
+        slots = int(args[args.index('--max-num-seqs') + 1])
+        self.assertEqual(slots, 16)
+        for name in ('qwen3.8-27b', 'qwen3.8-27b-auto', 'pi-classifier', 'qwen3.8-27b-local'):
+            params = routes[name]['litellm_params']
+            self.assertEqual(params['api_base'], 'http://vllm-service.vllm.svc.cluster.local:8080/v1')
+            self.assertEqual(params['model'], 'openai/qwen3.8-27b')
+            self.assertEqual(params['max_parallel_requests'], slots)
         fallbacks = {k: v for entry in config['router_settings']['fallbacks'] for k, v in entry.items()}
         self.assertEqual(fallbacks['qwen3.8-27b'], ['deepseek-flash'])
-        # Pi's routes stay below the slot count so Pi alone cannot take Strata from the apps.
-        for name in ('qwen3.8-27b-auto', 'pi-classifier'):
-            self.assertEqual(routes[name]['litellm_params']['api_base'], strata)
-            self.assertLess(routes[name]['litellm_params']['max_parallel_requests'], slots + 1)
-        # The explicit Strata name never leaves home: no fallback, and no limit that would 429 it.
-        self.assertNotIn('qwen3.8-flash-next', fallbacks)
-        self.assertNotIn('max_parallel_requests', routes['qwen3.8-flash-next']['litellm_params'])
-        self.assertEqual(routes['qwen3.8-flash-next']['litellm_params']['model'], default['model'])
+        self.assertNotIn('qwen3.8-27b-local', fallbacks)
+        self.assertNotIn('qwen3.8-flash-next', routes)
+        self.assertEqual(deployment['spec']['replicas'], 1)
+        self.assertEqual(read('my-apps/ai/strata/deployment.yaml')['spec']['replicas'], 0)
+        self.assertNotIn('--language-model-only', args)
+        self.assertNotIn('--speculative-config', args)
+        self.assertNotIn('--rope-scaling', args)
+        self.assertEqual(args[args.index('--max-model-len') + 1], '262144')
+        self.assertEqual(json.loads(args[args.index('--limit-mm-per-prompt') + 1]), {'image': 1, 'video': 0})
+        hermes = read('my-apps/development/hermes/config/config.yaml')
+        self.assertTrue(hermes['providers']['litellm']['models']['qwen3.8-27b-local']['supports_vision'])
 
     def test_pi_auto_router_keeps_easy_work_local_and_escalates_hard_work(self):
         config = read('my-apps/ai/litellm/config.yaml')
@@ -205,7 +205,7 @@ class AIObservabilityTests(unittest.TestCase):
             'COMPLEX': 'deepseek-flash',
             'REASONING': 'deepseek-flash',
         })
-        # The auto route is the same Strata backend under a separate name.
+        # The auto route is the same vLLM backend under a separate name.
         auto_local = routes['qwen3.8-27b-auto']['litellm_params']
         shared = routes['qwen3.8-27b']['litellm_params']
         self.assertEqual(auto_local['model'], shared['model'])
@@ -237,8 +237,7 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertEqual(params['complexity_router_default_model'], 'deepseek-flash')
         # vLLM being down must not fail the request.
         settings = config['router_settings']
-        # pi-auto's local tier and the bare qwen3.8-27b name (Strata's overflow, see
-        # test_default_local_model_overflows_to_cloud_instead_of_queueing) are the only paid diversions.
+        # Only the default and auto routes divert local traffic to paid overflow.
         self.assertEqual(settings['fallbacks'], [{'qwen3.8-27b-auto': ['deepseek-flash']},
                                                  {'qwen3.8-27b': ['deepseek-flash']}])
         self.assertEqual(settings['context_window_fallbacks'],
@@ -248,12 +247,12 @@ class AIObservabilityTests(unittest.TestCase):
             'max_output_tokens': 32768,
         })
         self.assertEqual(routes['qwen3.8-27b']['litellm_params']['api_base'],
-                         'http://strata-service.strata.svc.cluster.local:8080/v1')
-        # The second card's model is local-only: no paid fallback reaches it either.
-        self.assertEqual(routes['qwen3.8-flash-next']['litellm_params']['api_base'],
-                         'http://strata-service.strata.svc.cluster.local:8080/v1')
+                         'http://vllm-service.vllm.svc.cluster.local:8080/v1')
+        # The private alias has no cloud fallback.
+        self.assertEqual(routes['qwen3.8-27b-local']['litellm_params']['api_base'],
+                         'http://vllm-service.vllm.svc.cluster.local:8080/v1')
         for rule in settings['fallbacks'] + settings['context_window_fallbacks']:
-            self.assertNotIn('qwen3.8-flash-next', rule)
+            self.assertNotIn('qwen3.8-27b-local', rule)
         deepseek = routes['deepseek-flash']
         self.assertEqual(deepseek['litellm_params']['model'],
                          'openrouter/~deepseek/deepseek-flash-latest')

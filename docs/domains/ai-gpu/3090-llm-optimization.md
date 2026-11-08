@@ -9,7 +9,7 @@ room for the others.
 
 New to the stack? Read [Local AI starter kit](index.md) first.
 
-Baseline: official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
+Historical baseline (not the active INT4/W4A8 configuration): official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
 vision, speculation off. Exact flags and rollback are in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).
 

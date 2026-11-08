@@ -17,17 +17,15 @@ resources:
   - httproute.yaml
   - servicemonitor.yaml
 
-# Parked for the Strata two-card test; qwen3.8-27b falls back to deepseek-flash in LiteLLM.
-# Back to 1 (or revert the test PR) to give vLLM both RTX 3090s again.
 replicas:
   - name: vllm-server
-    count: 0
+    count: 1
 
 configMapGenerator:
   - name: vllm-scripts
     files:
       - scripts/model_cache.py
-      - model-manifest.json
+      - model-manifest.json=model-manifest-int4.json
     options:
       annotations:
         argocd.argoproj.io/sync-wave: "-2"
