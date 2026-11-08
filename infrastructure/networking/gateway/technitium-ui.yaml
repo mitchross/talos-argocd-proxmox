@@ -53,6 +53,7 @@ spec:
           kind: Service
           name: technitium-ui
           port: 5380
+          weight: 1
 ---
 # default-deny-lan-egress also applies to the gateway envoy (reserved:ingress); allow only the Technitium UI.
 apiVersion: cilium.io/v2
