@@ -1,11 +1,11 @@
 # AI stack guide
 
-Local AI inference uses official Qwen3.8-27B FP8 on stock vLLM (version pinned in `vllm/deployment.yaml`) with
+Local AI inference uses Qwen3.8-27B INT4 AutoRound/W4A8 on patched vLLM (version pinned in `vllm/deployment.yaml`) with
 both RTX 3090s (TP=2), FP8 KV and native vision. GPU allocations are whole-card
 with time-slicing off. The server ceiling is 262,144 tokens; speculation is off.
 
-Local Qwen defaults to explicit xhigh reasoning with preservation enabled.
-Low and medium remain available for less reasoning, and explicit off requests
+Local Qwen defaults to medium reasoning (16,384 thinking tokens) with preservation enabled.
+Low (4,096) and high/xhigh/max (32,768) remain available, and explicit off requests
 use their separate sampler. More reasoning can take longer and is not a
 measured accuracy improvement. See [the vLLM runbook](vllm/README.md) for the
 canonical runtime, source references and reasoning acceptance checks.
@@ -13,9 +13,9 @@ canonical runtime, source references and reasoning acceptance checks.
 ComfyUI and SwarmUI are parked while vLLM owns both cards. The API model is
 `qwen3.8-27b`.
 
-Strata test (temporary): vLLM is parked and [Strata](strata/README.md) runs
-`qwen3.8-flash-next` on both cards; `qwen3.8-27b` falls back to `deepseek-flash`
-(paid) in LiteLLM. Revert the test PR to end it.
+[Strata](strata/README.md) is parked. vLLM uses both cards with 16 sequence slots.
+LiteLLM default/auto routes overflow to paid DeepSeek; the private `qwen3.8-27b-local`
+route replaces Flash-Next in Hermes and never falls back to cloud.
 
 For coding, follow the [Pi.dev setup guide](../../docs/domains/ai-gpu/pi-agent-local-dev.md).
 Pi's local defaults and launcher also need the companion dotfiles update.
@@ -34,7 +34,7 @@ export OPENAI_BASE_URL="https://litellm.vanillax.me/v1"
 export OPENAI_API_KEY="${LITELLM_API_KEY:?Set the gateway key outside Git first}"
 ```
 
-Select `qwen3.8-27b` for local-only requests. Direct vLLM endpoints are for
+Select `qwen3.8-27b-local` for local-only requests. Direct vLLM endpoints are for
 diagnostics and bypass gateway telemetry. See the
 [model catalog](../../docs/domains/ai-gpu/model-catalog.md) for route boundaries.
 

@@ -3,14 +3,14 @@
 ## LLM Backend
 
 The Git-declared production backend is **vLLM**, never Ollama. See
-[`vllm/README.md`](vllm/README.md) for the pinned official FP8 checkpoint,
+[`vllm/README.md`](vllm/README.md) for the pinned AutoRound INT4 checkpoint,
 staging order, runtime flags, reasoning/sampling controls and rollback.
 
-- Model ID: `qwen3.8-27b`; official `Qwen/Qwen3.8-27B-FP8`.
+- Model ID: `qwen3.8-27b`; `Frozenlock/Qwen3.8-27B-int4-AutoRound`.
 - vLLM (version: `my-apps/ai/vllm/deployment.yaml`), two RTX 3090s with TP=2, FP8 KV, vision, 262,144-token ceiling.
 - **MTP/speculation stays off** pending the long-session fixes and validation.
-- Explicit thinking levels: `low`, `medium`, `xhigh`; coding/server default
-  is `xhigh`, preservation true. Lower effort is opt-in; WebUI's generic high maps to xhigh.
+- Server default: `medium`, preservation true; thinking budgets low=4096, medium=16384, xhigh=32768.
+  The baked template maps high/max to xhigh and minimal to low; explicit client efforts still win.
 - Off requests use `enable_thinking=false`, `preserve_thinking=false`, and
   the separate non-thinking sampler in the vLLM runbook. Preserve the server's
   thinking sampler; do not globally disable preserved thinking.
@@ -20,23 +20,19 @@ staging order, runtime flags, reasoning/sampling controls and rollback.
   selector Service.
 - Historical capacity and current client guidance: `docs/domains/ai-gpu/3090-llm-optimization.md`.
   A configured ceiling is not proof of concurrent near-ceiling vision capacity.
-- AutoRound is a later speed A/B only.
-- **Strata test (temporary):** vLLM is parked (`replicas: 0`); [Strata](strata/README.md) holds both 3090s
-  as `qwen3.8-flash-next` (IQ3_S, layer split, `PARALLEL` batch slots, image encoder on: `VISION=yes`). LiteLLM's default name
-  `qwen3.8-27b` (and Pi's `qwen3.8-27b-auto` / `pi-classifier`) now points at Strata with
-  `max_parallel_requests` = the slots; a request beyond them gets LiteLLM's 429 and falls back to
-  `deepseek-flash` (paid, prompts leave home) instead of queueing. Change `PARALLEL` and the
-  `qwen3.8-27b` limit together (`scripts/tests/test_ai_observability.py` checks they match).
+- Strata is parked (`replicas: 0`); vLLM serves INT4/W4A8 with `max-num-seqs=16`.
+- LiteLLM default/auto routes keep paid DeepSeek overflow; `qwen3.8-27b-local` is private-only.
+  Each deployment cap is 16 per LiteLLM pod, not a shared engine-wide admission cap.
 
 Pi's direct-Qwen settings and launcher are managed in `mitchross/dotfiles`;
-keep them aligned with this default. Explicit low/medium/off still win.
+keep their explicit xhigh preference unchanged unless requested. Explicit client efforts still win.
 `pi-auto` inherits the local server default without forwarding Qwen effort;
 its classifier stays thinking-off and its DeepSeek high/max routes are unchanged.
 
 ## GPU Topology
 
 Whole-card allocations, time-slicing disabled, `Recreate` strategy. vLLM
-requests both RTX 3090s (during the Strata test Strata does, and vLLM is at 0);
+requests both RTX 3090s; Strata is parked;
 ComfyUI and SwarmUI remain at zero replicas.
 Use committed replica counts and the
 [scale-swap runbook](../../docs/domains/ai-gpu/gpu-scale-swap.md).

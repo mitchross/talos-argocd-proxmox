@@ -11,8 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a production-grade GitOps Kubernetes cluster running on **Talos OS** with **self-managing ArgoCD**. The key differentiator is that ArgoCD manages its own configuration and automatically discovers applications through directory structure - no manual Application manifests needed.
 
 **AI/LLM Backend**: **vLLM** is the GPU inference backend; never Ollama.
-**Strata test (temporary):** vLLM is parked at 0 and Strata (`my-apps/ai/strata/`) holds both cards as
-`qwen3.8-flash-next`; LiteLLM sends `qwen3.8-27b` to paid `deepseek-flash` until the test PR is reverted.
+**Active backend:** patched vLLM serves Qwen3.8-27B INT4 AutoRound/W4A8 on both 3090s (TP=2, 16 sequences).
+Strata is parked at 0; LiteLLM keeps paid DeepSeek overflow and a separate private `qwen3.8-27b-local` route.
 
 - Stable API model: `qwen3.8-27b`. Apps use authenticated LiteLLM at
   `http://litellm-service.litellm.svc.cluster.local:4000/v1` for Langfuse telemetry. Direct diagnostic / gateway upstream service:

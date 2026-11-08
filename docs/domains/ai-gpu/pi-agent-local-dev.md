@@ -66,7 +66,7 @@ preserved thinking. Pick medium, low or off per session when you want less.
 Xhigh uses more time and output tokens. It does not promise better answers.
 
 `pi-auto` shows `medium` in Pi but sends no effort to Qwen. Auto-routed Qwen
-uses the server default, xhigh; DeepSeek uses high or max by tier. Do not change
+uses the server default, medium (16,384 thinking tokens); DeepSeek uses high or max by tier. Do not change
 the auto provider to xhigh or forward Qwen kwargs into cloud routes.
 
 A resumed session keeps its saved thinking level. Start a new session with

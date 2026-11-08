@@ -9,7 +9,7 @@ room for the others.
 
 New to the stack? Read [Local AI starter kit](index.md) first.
 
-Baseline: official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
+Historical baseline (not the active INT4/W4A8 configuration): official Qwen3.8-27B FP8, stock vLLM, TP=2, FP8 E4M3 KV, native
 vision, speculation off. Exact flags and rollback are in the
 [vLLM runbook](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md).
 
@@ -22,7 +22,7 @@ vision, speculation off. Exact flags and rollback are in the
 
 The September 6 audit measured an earlier vLLM release with medium
 reasoning explicitly requested. These values are not a measurement of the
-current prefill settings or the xhigh default. Re-check the running engine after
+current prefill settings or the medium server default. Re-check the running engine after
 rollout. Do not relabel the historical pool as current capacity.
 
 | Observation | Value |
@@ -121,7 +121,7 @@ This used a text-only profile at `--max-num-seqs 3`. It does not cover vision
 
 | Do | Why |
 |---|---|
-| Use **xhigh** reasoning by default | accuracy-first policy. Choose medium or low explicitly for less reasoning |
+| Use **medium** reasoning by default | 16,384 thinking-token fallback; low=4,096, high/xhigh/max=32,768; explicit client budgets win |
 | Keep one image in submitted history | a second retained screenshot exceeds the one-image limit |
 | Keep tool outputs bounded | dumping unrelated files burns context and triggers expensive prefill |
 | Run one long session near the ceiling | a second full-length request causes waiting or preemption |

@@ -12,6 +12,9 @@ Check what the pod can do before handing a command to the user: `kubectl auth ca
 
 `talosctl list/read` on `/var/lib/kubelet/pods/<podUID>/volumes/...` reads a pod's emptyDir or mounted files from the node side when exec is not allowed.
 
+## vLLM image and checkpoint changes
+Retain rollback manifests and map `model-manifest.json=<new-manifest>.json` in the ConfigMap generator so download/sync/wait consumers share the new pin without pruning old weights. Bake community site-packages patches into a digest-pinned homelab-images base; CPU import/patch smoke is separate from post-merge GPU, vision and KV-capacity acceptance.
+
 ## Commands handed to the user
 - Before asking the user to create any credential, grep the repo's ExternalSecrets (`git grep -n -A3 remoteRef origin/main -- '*secret*.yaml'`) for an existing one that fits and reuse it. Say plainly what that token's scope allows. The user refuses to make a new token when one exists.
 - Give exact copy-paste commands, not click-through steps. The desktop shell is zsh with the 1Password `op` CLI: write hidden prompts as `read -rs "T?Token: "` (bash's `read -p` means coprocess in zsh and leaves the variable empty, so `op item edit` saves a blank field). Write secrets with `op item edit <item> --vault homelab-prod "<field>[password]=$T"`.
