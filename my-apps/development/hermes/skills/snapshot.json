@@ -1,0 +1,61 @@
+{
+  "hermes_version": "0.1.0",
+  "exported_at": "2026-11-08T21:02:41.756654+00:00",
+  "skills": [
+    {
+      "name": "opencode",
+      "source": "official",
+      "identifier": "official/autonomous-ai-agents/opencode",
+      "category": "autonomous-ai-agents"
+    },
+    {
+      "name": "design-md",
+      "source": "official",
+      "identifier": "official/creative/design-md",
+      "category": "creative"
+    },
+    {
+      "name": "gif-search",
+      "source": "official",
+      "identifier": "official/media/gif-search",
+      "category": "media"
+    },
+    {
+      "name": "songsee",
+      "source": "official",
+      "identifier": "official/media/songsee",
+      "category": "media"
+    },
+    {
+      "name": "box",
+      "source": "official",
+      "identifier": "official/productivity/box",
+      "category": "productivity"
+    },
+    {
+      "name": "llm-wiki",
+      "source": "official",
+      "identifier": "official/research/llm-wiki",
+      "category": "research"
+    },
+    {
+      "name": "inspecting-hermes-desktop-dom",
+      "source": "official",
+      "identifier": "official/software-development/inspecting-hermes-desktop-dom",
+      "category": "software-development"
+    },
+    {
+      "name": "node-inspect-debugger",
+      "source": "official",
+      "identifier": "official/software-development/node-inspect-debugger",
+      "category": "software-development"
+    },
+    {
+      "name": "python-debugpy",
+      "source": "official",
+      "identifier": "official/software-development/python-debugpy",
+      "category": "software-development"
+    }
+  ],
+  "taps": []
+}

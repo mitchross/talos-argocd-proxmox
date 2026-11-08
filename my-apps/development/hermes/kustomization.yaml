@@ -30,6 +30,7 @@ configMapGenerator:
   - name: hermes-scripts
     files:
       - seed.sh=scripts/seed.sh
+      - seed-skills.py=scripts/seed-skills.py
       - gc-worktrees.sh=scripts/gc-worktrees.sh
       - usage-exporter.py=scripts/usage-exporter.py
       - reconcile-kanban.py=scripts/reconcile-kanban.py

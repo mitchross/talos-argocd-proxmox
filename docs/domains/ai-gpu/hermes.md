@@ -56,8 +56,9 @@ flowchart LR
 | Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`: OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated; its public half is in the Pi's `authorized_keys` |
 | Personality | `config/SOUL.md` is copied to `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
 | Coding agent rules | `config/agent-rules.md` is installed as `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` on every start | Git, code, comment and writing rules for `codex` and `claude` in the pod. Edit it in Git |
-| Third-party skills | `scripts/external-skills.txt` | i-have-adhd, Ponytail, Matt Pocock's, Vercel (React) and Expo skills, pinned by commit. Change the sha to update one |
-| Hermes-made skills | `skills/library/<category>/<name>/` | Skills Hermes wrote itself. The seed copies one in only when the volume lacks it, so the live copy keeps its edits; refresh Git through a PR |
+| Registry skills | `skills/snapshot.json` | 9 unpinned registry entries. `scripts/seed-skills.py` imports missing skills as uid 10000. Identifiers track registry contents, not immutable versions |
+| Commit-pinned skills | `scripts/external-skills.txt` | All 105 existing pins stay pinned, including two stale registry paths and Matt Pocock's `tdd`/`teach` name collisions |
+| Local and edited skills | `skills/library/<category>/<name>/` | Authored skills, saved local copies and the six modified bundled skills. Restored before snapshot import, only if missing; refresh Git through a PR |
 | Cloudflare | `config.yaml` `mcp_servers.cloudflare` → `https://mcp.cloudflare.com/mcp`; 1Password `cloudflared-proxmox/api-token` feeds `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi; copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
@@ -187,7 +188,66 @@ Do each once from the dashboard terminal (bottom bar, terminal icon):
 Then ask Hermes in a chat: "run `command -v claude codex; gh auth status; codex login status` in the terminal".
 Hermes's terminal uses its own home (`/opt/data/home`). The seed links the logins into it, and this chat check proves Hermes itself can see them.
 
-The seed reruns `gh auth setup-git` on every start. A restored volume keeps both logins.
+The seed runs `gh auth setup-git` again on every start.
+A restored volume keeps the Codex and GitHub logins.
+Interactive logins for Claude Code, Codex and `gh` live only on the PVC.
+They are not stored in Git or in a separate credential backup.
+
+After a rebuild without a backup, log in again for each account you use:
+
+- Claude Code: `claude auth login`
+- Codex: `codex login --device-auth`
+- GitHub: `gh auth login --web --git-protocol https`
+
+Claude can still use `CLAUDE_CODE_OAUTH_TOKEN` from 1Password while that token is valid.
+It does not need an interactive login when this token works.
+
+### Skill recovery
+
+The seed reads these files from the checkout's fetched `origin/main`:
+
+| Recovery source | What it restores |
+|---|---|
+| `skills/snapshot.json` | 9 registry skills with no external pin |
+| `scripts/external-skills.txt` | All 105 existing commit pins, including the four registry exceptions |
+| `skills/library/` | 31 saved skill directories, including local edits and archived copies |
+
+The [skill inventory](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/skills/README.md) lists the skills and the four exceptions.
+Pinned skills stay pinned.
+The seed skips snapshot entries whose names are also installed by a pin.
+
+The seed restores missing library skills first.
+It then imports missing registry skills as uid 10000.
+It uses `hermes skills snapshot import --force`.
+The force flag allows caution findings without asking for confirmation.
+Upstream's block on dangerous community skills still applies.
+
+Existing registry and library copies keep their local edits.
+Commit-pinned external skills reinstall only when their source SHA changes.
+The library keeps the old `notion` skill.
+Its registry identifier stopped working after upstream split it into `notion-apps` and `notion-cli`.
+Pstack's `tdd` and `teach` keep the aliases `pstack-tdd` and `pstack-teach`.
+
+After a successful seed, `/opt/data/.skills-last-good.tgz` holds the skill files and the Hub lock.
+The seed replaces this archive atomically, so an interrupted save cannot leave a half-written archive.
+Disposable Hub cache and quarantine files are excluded.
+
+If Git fetch fails or a registry import is incomplete, the seed logs the failure.
+It then restores missing skills from the last-good archive.
+It does not replace local edits.
+It does not replace the last-good archive after a failure.
+
+Look for `imported from Git snapshot` or `registry unreachable, restored last-good` in the logs.
+If no usable archive exists, the logs say so.
+These failures do not block init.
+
+A fresh PVC without a checkout or last-good archive needs network access to recover all skills.
+This is not an offline bootstrap bundle.
+The final drift log lists volume skills absent from both the Git inventory and upstream's bundled skills.
+This log is informational.
+It never deletes skills or fails init.
+
+Reverting the seed PR leaves installed skills and the archive on the PVC.
 
 ## 4. Ask about the cluster
 
