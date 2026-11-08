@@ -28,6 +28,10 @@ web:
   search_backend: searxng
   extract_backend: parallel
 
+browser:
+  # The pod blocks user namespaces, and Hermes adds --no-sandbox only under Docker or root.
+  chromium_args: ["--no-sandbox", "--disable-dev-shm-usage"]
+
 memory:
   provider: hindsight
   hindsight:
