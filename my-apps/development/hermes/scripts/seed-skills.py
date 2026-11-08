@@ -169,6 +169,8 @@ def seed(home, repo, hermes="/opt/hermes/bin/hermes", bundled=Path("/opt/hermes/
             copy_missing(library, home / "skills")
             if offline:
                 raise OSError("GitHub fetch failed; registry access skipped")
+            pinned_names = {row[4] if len(row) > 4 else Path(row[2]).name for row in external}
+            snapshot["skills"] = [entry for entry in snapshot["skills"] if entry["name"] not in pinned_names]
             pending = [entry for entry in snapshot["skills"] if not (home / "skills" / skill_path(entry) / "SKILL.md").exists()]
             complete = True
             if pending:

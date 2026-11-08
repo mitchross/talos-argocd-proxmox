@@ -57,7 +57,7 @@ flowchart LR
 | Personality | `config/SOUL.md` is copied to `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
 | Coding agent rules | `config/agent-rules.md` is installed as `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` on every start | Git, code, comment and writing rules for `codex` and `claude` in the pod. Edit it in Git |
 | Registry skills | `skills/snapshot.json` | Native Hermes snapshot; `scripts/seed-skills.py` imports missing skills as uid 10000. Identifiers track registry contents, not immutable versions |
-| Pinned skill exceptions | `scripts/external-skills.txt` | Two stale registry paths and Matt Pocock's `tdd`/`teach` name collisions; all other registry installs use the snapshot |
+| Commit-pinned skills | `scripts/external-skills.txt` | All 105 existing pins stay pinned, including two stale registry paths and Matt Pocock's `tdd`/`teach` name collisions |
 | Local and edited skills | `skills/library/<category>/<name>/` | Authored skills, saved local copies and the six modified bundled skills. Restored before snapshot import, only if missing; refresh Git through a PR |
 | Cloudflare | `config.yaml` `mcp_servers.cloudflare` → `https://mcp.cloudflare.com/mcp`; 1Password `cloudflared-proxmox/api-token` feeds `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi; copied to the volume on every start |

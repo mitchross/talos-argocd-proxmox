@@ -91,6 +91,39 @@ def test_warm_start_does_not_fetch_registry(tmp_path):
     assert (home / ".skills-last-good.tgz").exists()
 
 
+def test_snapshot_skips_pinned_names_across_categories_and_aliases(tmp_path):
+    entries = [{"name": name, "category": "media", "identifier": f"official/media/{name}"}
+               for name in ["pinned", "renamed", "remote"]]
+    external = "owner/repo sha skills/pinned devops\nowner/repo sha skills/original devops renamed\n"
+    repo = repository(tmp_path, entries, external)
+    home = tmp_path / "h"
+    run = subprocess.run
+    imported = []
+
+    def import_snapshot(command, **kwargs):
+        if command[0] != "fake-hermes":
+            return run(command, **kwargs)
+        assert kwargs["env"]["HERMES_HOME"] == str(home)
+        pending = json.loads(Path(command[4]).read_text())["skills"]
+        imported.extend(entry["name"] for entry in pending)
+        for entry in pending:
+            put_skill(home / "skills", seed_skills.skill_path(entry))
+        return subprocess.CompletedProcess(command, 0)
+
+    def install_pins(entries, home, temporary):
+        for row in entries:
+            put_skill(home / "skills", f"{row[3]}/{row[4] if len(row) > 4 else Path(row[2]).name}")
+        return True
+
+    with patch.object(seed_skills.subprocess, "run", side_effect=import_snapshot), \
+            patch.object(seed_skills, "install_external", side_effect=install_pins):
+        seed_skills.seed(home, repo, hermes="fake-hermes", bundled=tmp_path / "bundled")
+    assert imported == ["remote"]
+    assert (home / ".skills-last-good.tgz").exists()
+    assert not (home / "skills/media/pinned/SKILL.md").exists()
+    assert not (home / "skills/media/renamed/SKILL.md").exists()
+
+
 def test_aliases_preserve_both_tdd_skills(tmp_path):
     home = tmp_path / "h"
     put_skill(home / "skills", "pstack/tdd", "---\nname: tdd\n---\n")
