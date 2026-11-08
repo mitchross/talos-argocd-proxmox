@@ -14,6 +14,7 @@
     'docker-compose',
     'dockerfile',
     'custom.regex',
+    'npm',
   ],
   argocd: {
     managerFilePatterns: [
@@ -52,6 +53,13 @@
     ],
   },
   packageRules: [
+    {
+      description: 'Docs diagram toolchain (root package.json): one weekly PR for minor and patch so audit alerts do not pile up. Majors stay separate: mermaid 12 breaks our SVG-label layout.',
+      matchManagers: ['npm'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'weekly docs toolchain updates',
+      schedule: ['* 0-5 * * 1'],
+    },
     {
       description: 'Group routine updates weekly per Application; later rules preserve protected groups.',
       matchUpdateTypes: [
