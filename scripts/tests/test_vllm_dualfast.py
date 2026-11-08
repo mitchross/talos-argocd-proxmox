@@ -47,6 +47,8 @@ def test_dualfast_render_uses_pinned_int4_manifest_and_preserves_fp8():
         'minimal': 4096, 'low': 4096, 'medium': 16384,
         'high': 32768, 'xhigh': 32768, 'max': 32768}
     assert env['CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET'] == '32768'
+    rc = json.loads(args[args.index('--reasoning-config') + 1])
+    assert rc['reasoning_end_str'].rstrip().endswith('</think>') and 'solution' in rc['reasoning_end_str']
     assert env['VLLM_MARLIN_INPUT_DTYPE'] == 'int8'
     assert env['VLLM_USE_FLASHINFER_SAMPLER'] == '0'
     assert env['NCCL_P2P_DISABLE'] == '1'

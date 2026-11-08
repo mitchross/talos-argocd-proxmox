@@ -94,6 +94,9 @@ spec:
             - qwen3_coder
             - --reasoning-parser
             - qwen3
+            # When the thinking cap hits, push the model to answer; a bare </think> let xhigh keep reasoning in the reply.
+            - --reasoning-config
+            - '{"reasoning_start_str":"<think>","reasoning_end_str":"\n\nI have to give the solution based on the reasoning directly now.\n</think>\n\n"}'
             - --chat-template
             - /etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja
             - --default-chat-template-kwargs
