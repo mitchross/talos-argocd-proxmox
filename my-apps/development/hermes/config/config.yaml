@@ -215,6 +215,14 @@ mcp_servers:
     timeout: 300
     connect_timeout: 300
 
+  # Craft Anything (storytold/craft-anything, Apache-2.0): Rust reverse-engineering engine, Clean room by default.
+  # The seed installs the pinned release binary; plain `mcp` lists the core toolset, enable_toolset adds the rest.
+  craft-anything:
+    command: "/opt/data/tools/craft-anything-0.5.0/bin/craft-anything-cli"
+    args: ["mcp"]
+    enabled: true
+    timeout: 300
+
 # Repo-local skills (.agents/skills, .hermes/skills) load in sessions started inside these checkouts.
 skills:
   trusted_project_dirs:

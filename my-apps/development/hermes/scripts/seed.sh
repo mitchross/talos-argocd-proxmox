@@ -79,6 +79,20 @@ for tc in /opt/rust/rustup/toolchains/*-x86_64-unknown-linux-gnu; do
     && as_hermes env RUSTUP_HOME="$HERMES_HOME/tools/rustup" /opt/rust/cargo/bin/rustup default hermes-image >/dev/null \
     || echo "[seed] rustup link failed, continuing"
 done
+# Craft Anything MCP binary, pinned by release and sha256; bump with the craft-anything library skill.
+CA_VER=0.5.0 CA_SHA=d18c54ef05e5c7ef50f8c4959fee8983c0a4a1f141edc488d11f7029973c885b
+CA_DIR="$HERMES_HOME/tools/craft-anything-$CA_VER"
+if [ ! -x "$CA_DIR/bin/craft-anything-cli" ]; then
+  ca_tgz=/tmp/craft-anything.tar.gz
+  if curl -fsSL -o "$ca_tgz" "https://github.com/storytold/craft-anything/releases/download/v$CA_VER/craft-anything-$CA_VER-linux-x86_64.tar.gz" \
+    && echo "$CA_SHA  $ca_tgz" | sha256sum -c - >/dev/null; then
+    mkdir -p "$CA_DIR" && tar -xzf "$ca_tgz" -C "$CA_DIR" --strip-components=1 && chown -R 10000:10000 "$CA_DIR" \
+      && echo "[seed] installed craft-anything $CA_VER"
+  else
+    echo "[seed] craft-anything download failed, continuing"
+  fi
+  rm -f "$ca_tgz"
+fi
 # SSH targets and pinned host keys come from Git; the private key stays on the volume and is never regenerated.
 mkdir -p "$TERM_HOME/.talos"
 install -m 0600 /etc/hermes-config/ssh_config "$HERMES_HOME/.ssh/config"
