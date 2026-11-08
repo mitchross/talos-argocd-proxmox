@@ -6,7 +6,7 @@
     "diagrams:check": "bash scripts/check-diagrams.sh"
   },
   "devDependencies": {
-    "@xmldom/xmldom": "0.9.10",
+    "@xmldom/xmldom": "0.9.12",
     "@mermaid-js/mermaid-cli": "11.16.0"
   }
 }
