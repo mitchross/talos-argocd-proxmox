@@ -27,7 +27,7 @@ the saved FP8 TP2 baseline is about 40 tok/s single-stream.
 **Git-declared backend and operating policy.** The
 [2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
 records measurements of the earlier v0.28.0 deployment, with medium sent
-explicitly. It does not benchmark the current tunables or the medium server default below. `deployment.yaml` pins the running version.
+explicitly. It does not benchmark the current tunables or the xhigh server default below. `deployment.yaml` pins the running version.
 Confirm the running arguments and repeat acceptance after merge and Argo reconciliation.
 
 | Setting | Value |
@@ -44,7 +44,7 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 | GPU utilization budget | 0.90 per GPU |
 | Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
-| Reasoning | on, `medium` default (16,384 thinking tokens); low=4,096, high/xhigh/max=32,768 |
+| Reasoning | on, `xhigh` default (32,768-token cap); low=4,096, high/xhigh/max=32,768 |
 | Speculation | **off**; no MTP or external drafter |
 | Power | existing 220 W per card |
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
@@ -161,7 +161,7 @@ official Qwen default of 1.0 or an established fix. The author of
 claims. Low and medium are not universally immune, and the reported narrow penalty
 band and extraction scores do not establish coding, tool, or vision quality.
 The suspected EOS-inside-thinking mechanism is not a confirmed root cause.
-Validate all supported modes. The medium-default rollout does not change sampling.
+Validate all supported modes. The xhigh default does not change sampling.
 The server value is a fallback, not an enforced floor, and explicit client values
 win. WebUI and the Pi extension use 1.05 for every thinking effort and 1.0 for
 off. When changing that policy, update server, clients, tests and docs together.

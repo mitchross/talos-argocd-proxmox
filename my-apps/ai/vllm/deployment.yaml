@@ -97,7 +97,7 @@ spec:
             - --chat-template
             - /etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja
             - --default-chat-template-kwargs
-            - '{"enable_thinking":true,"reasoning_effort":"medium","preserve_thinking":true}'
+            - '{"enable_thinking":true,"reasoning_effort":"xhigh","preserve_thinking":true}'
             # Triton rejects FP8 KV on SM86; FlashInfer supports this path.
             - --attention-config
             - '{"backend":"FLASHINFER"}'
@@ -129,11 +129,11 @@ spec:
             - --port
             - "8000"
           env:
-            # Static output of effort_budget.py shell-env for default effort medium.
+            # Static output of effort_budget.py shell-env; requests that send no effort get xhigh's 32K cap.
             - name: CLUB3090_REASONING_EFFORT_BUDGETS
               value: '{"high":32768,"low":4096,"max":32768,"medium":16384,"minimal":4096,"xhigh":32768}'
             - name: CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET
-              value: "16384"
+              value: "32768"
             - name: VLLM_MARLIN_INPUT_DTYPE
               value: int8
             - name: VLLM_USE_FLASHINFER_SAMPLER

@@ -37,16 +37,16 @@ def test_dualfast_render_uses_pinned_int4_manifest_and_preserves_fp8():
     assert '--speculative-config' not in args
     assert '--language-model-only' not in args
     assert not any('rope' in arg.lower() or 'yarn' in arg.lower() for arg in args)
-    assert server['image'] == 'ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2'
+    assert server['image'].startswith('ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2@sha256:')
     assert args[args.index('--chat-template') + 1] == '/etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja'
     assert json.loads(args[args.index('--default-chat-template-kwargs') + 1]) == {
-        'enable_thinking': True, 'reasoning_effort': 'medium', 'preserve_thinking': True}
+        'enable_thinking': True, 'reasoning_effort': 'xhigh', 'preserve_thinking': True}
     assert args[args.index('--reasoning-parser') + 1] == 'qwen3'
     env = {e['name']: e['value'] for e in server['env']}
     assert json.loads(env['CLUB3090_REASONING_EFFORT_BUDGETS']) == {
         'minimal': 4096, 'low': 4096, 'medium': 16384,
         'high': 32768, 'xhigh': 32768, 'max': 32768}
-    assert env['CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET'] == '16384'
+    assert env['CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET'] == '32768'
     assert env['VLLM_MARLIN_INPUT_DTYPE'] == 'int8'
     assert env['VLLM_USE_FLASHINFER_SAMPLER'] == '0'
     assert env['NCCL_P2P_DISABLE'] == '1'

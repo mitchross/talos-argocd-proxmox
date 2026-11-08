@@ -49,12 +49,12 @@ Both cards belong to vLLM. Other GPU workloads stay parked.
 | Context ceiling | 262,144 tokens |
 | Concurrency | up to 16 sequences sharing the KV pool |
 | Vision | one image per request, video disabled |
-| Reasoning | off / low / medium / xhigh; **medium** server default |
+| Reasoning | off / low / medium / xhigh; **xhigh** server default |
 | Speculation | disabled |
 | Power | 220 W per card |
 
 262K is a server ceiling, not a promise of two simultaneous full-length
-sessions. The server defaults to `medium` with 16,384 thinking tokens; `low` gets
+sessions. The server defaults to `xhigh` with a 32,768 thinking-token cap; `low` gets
 4,096 and `high`/`xhigh`/`max` get 32,768. Explicit request budgets win. More
 reasoning is not a guaranteed quality improvement; clients can also turn it off.
 
@@ -122,7 +122,7 @@ sequenceDiagram
 
 | Tier | Model | Effort | Runs on |
 |---|---|---|---|
-| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: medium | the two RTX 3090s, free |
+| `SIMPLE`, `MEDIUM` | `qwen3.8-27b-auto` | server default: xhigh | the two RTX 3090s, free |
 | `COMPLEX` | `deepseek-flash` | `high` | OpenRouter, paid |
 | `REASONING` | `deepseek-flash` | `max` | OpenRouter, paid |
 | classifier failed | `deepseek-flash` | as above | OpenRouter, paid |

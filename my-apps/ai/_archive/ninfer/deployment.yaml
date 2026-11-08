@@ -65,7 +65,7 @@ spec:
             - "--draft-tokens"
             - "3"
             - "--lm-head-draft"
-            # Parked evaluation baseline uses non-thinking; production vLLM defaults to medium.
+            # Parked evaluation baseline uses non-thinking; production vLLM defaults to xhigh.
             - "--no-thinking"
             # Schema-v8 measurement log — the benchmark harness's authoritative source
             # (NInfer has no Prometheus endpoint). emptyDir: collected live during runs.
