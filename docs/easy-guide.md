@@ -138,10 +138,55 @@ discover everything else. Git is the cluster. The cluster is a cache.
 
 ## Part 2. How Argo waits (sync waves)
 
-![Argo CD sync waves turn repository dependencies into a gated rebuild sequence](assets/argocd-sync-waves.svg){ loading=lazy }
+```mermaid
+flowchart LR
+  accTitle: Argo CD bootstrap and sync-wave ordering
+  accDescr: A manual seed creates the root Application. Root waves gate direct child Applications. ApplicationSets created in later waves generate independently reconciled Applications; they do not aggregate descendant health.
 
-*Wave numbers order resources. Health checks make each dependency gate wait.
-[Open the sync-wave sequence full size](assets/argocd-sync-waves.svg).*
+  subgraph BOOTSTRAP["BOOTSTRAP ONCE"]
+    direction LR
+    BOOT["`Manual seed: root.yaml
+    Root seed is not self-managed
+    Root manages its entrypoints`"]
+  end
+
+  subgraph WAVES["ROOT RESOURCE ORDER"]
+    direction LR
+    W01["`WAVES 0-1 - FOUNDATION
+    Argo CD, Cilium, 1Password, ESO
+    cert-manager, Longhorn, snapshots`"]
+    W23["`WAVES 2-3 - RECOVERY
+    Kopiur operator and CRDs
+    repository, credentials, snapshot class`"]
+    W45["`WAVES 4-5 - ENTRYPOINTS
+    platform Apps and AppSets
+    generated Apps sync independently`"]
+    W6["`WAVE 6 - ENTRYPOINTS
+    workload AppSet and overlays
+    generated Apps sync independently`"]
+    W01 wave12@--> W23
+    W23 wave34@--> W45
+    W45 wave56@--> W6
+  end
+
+  BOOT entry@--> W01
+
+  classDef action fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef waiting fill:#f3f6f8,stroke:#9aa8b3,color:#17212b
+  class W6 action
+  class BOOT desired
+  class W23 controller
+  class W01,W45 waiting
+
+  entry@{ animation: fast }
+  wave12@{ animation: slow }
+  wave34@{ animation: slow }
+  wave56@{ animation: slow }
+```
+
+Wave numbers order resources. Health checks make each dependency gate wait.
 
 A cluster rebuild has an ordering problem. Apps need volumes, volumes
 need the backup operator, the operator needs credentials, credentials need the
@@ -302,10 +347,91 @@ entire design rule.
 
 ## Part 4. kopiur: the backup operator
 
-![Kopiur configuration is assembled at Kustomize build time, while backup and restore happen later inside Kubernetes](assets/kopiur-kustomize-flow.svg){ loading=lazy }
+```mermaid
+flowchart TB
+  accTitle: Kopiur Kustomize, backup, and restore flow
+  accDescr: A small per-PVC manifest and shared Kustomize Component render complete Kopiur resources. At runtime the schedule snapshots Longhorn, Kopia copies data to RustFS, and restore-before-bind hydrates replacement PVCs.
 
-*Build time declares the recovery contract. Runtime moves the data and enforces
-restore-before-bind. [Open the complete Kopiur flow full size](assets/kopiur-kustomize-flow.svg).*
+  subgraph BUILD["BUILD TIME - DESIRED STATE"]
+    direction LR
+    STUB["`Per-PVC stub
+    identity, schedule, retention
+    mover UID and GID`"]
+    COMPONENT["`Shared Kustomize Component
+    repository, snapshot class
+    restore defaults, copy method`"]
+    KBUILD(("`Kustomize
+    build`"))
+    OUTPUT["`Rendered resources
+    SnapshotPolicy
+    SnapshotSchedule
+    Restore`"]
+    STUB stub@--> KBUILD
+    COMPONENT component@--> KBUILD
+    KBUILD rendered@--> OUTPUT
+  end
+
+  subgraph BACKUP["RUNTIME - SCHEDULED BACKUP"]
+    direction LR
+    SCHEDULE["`SnapshotSchedule
+    cron and retention`"]
+    JOB["`Kopiur Job
+    runs as data owner`"]
+    LONGHORN["`Longhorn snapshot
+    point-in-time volume`"]
+    KOPIA["`Kopia mover
+    content-addressed copy`"]
+    RUSTFS["`RustFS on TrueNAS
+    off-cluster repository`"]
+    SCHEDULE backup1@--> JOB
+    JOB backup2@--> LONGHORN
+    LONGHORN backup3@--> KOPIA
+    KOPIA backup4@--> RUSTFS
+  end
+
+  subgraph RESTORE["RUNTIME - RESTORE BEFORE BIND"]
+    direction LR
+    CLAIM["`Replacement PVC
+    dataSourceRef: Restore`"]
+    PENDING["`PVC Pending
+    application cannot start`"]
+    RMOVER["`Restore mover
+    hydrates from Kopia`"]
+    READY["`PVC Bound with data
+    application starts`"]
+    CLAIM restore1@--> PENDING
+    PENDING restore2@--> RMOVER
+    RMOVER restore3@--> READY
+  end
+
+  OUTPUT desired@-.-> SCHEDULE
+  OUTPUT contract@-.-> CLAIM
+  RUSTFS hydrate@--> RMOVER
+
+  classDef input fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class STUB input
+  class COMPONENT,OUTPUT,SCHEDULE,CLAIM,PENDING,READY desired
+  class KBUILD,JOB,LONGHORN,KOPIA,RMOVER controller
+  class RUSTFS external
+
+  stub@{ animation: fast }
+  component@{ animation: fast }
+  rendered@{ animation: fast }
+  backup1@{ animation: slow }
+  backup2@{ animation: slow }
+  backup3@{ animation: slow }
+  backup4@{ animation: slow }
+  restore1@{ animation: fast }
+  restore2@{ animation: fast }
+  restore3@{ animation: fast }
+  hydrate@{ animation: slow }
+```
+
+Build time declares the recovery contract. Runtime moves the data and enforces
+restore-before-bind.
 
 [kopiur](https://github.com/home-operations/kopiur) is a Kopia-native Kubernetes
 operator (Rust). You declare small CRs and it runs Jobs. [Kopia](https://kopia.io)
@@ -528,10 +654,63 @@ shared component. It is the one field that varies per volume.
 
 ## Part 7. Putting it together: the full DR story
 
-![The disaster-recovery sequence from surviving sources of truth through Talos provisioning, Argo reconciliation, data restoration, and proof](assets/disaster-recovery-sequence.svg){ loading=lazy }
+```mermaid
+flowchart TB
+  accTitle: Full-cluster disaster recovery sequence
+  accDescr: Git, Omni configuration, 1Password, and Kopia survive outside the cluster. Talos is rebuilt, Argo bootstraps, application data restores, and health checks prove recovery.
 
-*Recovery finishes only when desired state, credentials, protected data, and
-runtime health all converge. [Open the disaster-recovery sequence full size](assets/disaster-recovery-sequence.svg).*
+  SURVIVE["`SURVIVES OUTSIDE THE CLUSTER
+  Git desired state | Omni and Talos identity
+  1Password credentials | Kopia snapshots
+  protected application and Postgres volumes`"]
+
+  subgraph RECOVERY["RECOVERY STAGES"]
+    direction LR
+    FAIL["`STEP 0 - Failure event
+    Talos VMs, API
+    and volumes gone
+    Stop: prove backups first`"]
+    TALOS["`STEP 1 - Rebuild Talos
+    Omni provisions machines
+    API and Cilium ready`"]
+    ARGO["`STEP 2 - Bootstrap Argo
+    root Application lands
+    core dependencies reconcile`"]
+    DATA["`STEP 3 - Restore data
+    PVCs remain Pending
+    Kopiur hydrates
+    protected PVCs`"]
+    PROVE["`STEP 4 - Prove recovery
+    PVCs Bound
+    app reads and writes pass
+    backups resume`"]
+    FAIL fail@--> TALOS
+    TALOS talos@--> ARGO
+    ARGO argo@--> DATA
+    DATA data@--> PROVE
+  end
+
+  SURVIVE context@-.-> RECOVERY
+
+  classDef survivor fill:#f3f6f8,stroke:#9aa8b3,color:#17212b
+  classDef failure fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class SURVIVE survivor
+  class FAIL failure
+  class TALOS controller
+  class ARGO,PROVE desired
+  class DATA external
+
+  fail@{ animation: fast }
+  talos@{ animation: fast }
+  argo@{ animation: fast }
+  data@{ animation: fast }
+```
+
+Recovery finishes only when desired state, credentials, protected data, and
+runtime health all converge.
 
 Everything above comes down to one rule: protect the off-cluster pieces,
 and treat the cluster as disposable.

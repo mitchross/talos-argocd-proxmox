@@ -9,10 +9,53 @@ The kopia repo is a custom resource (`ClusterRepository`). For how backup and
 restore flow once the backend is up, see
 [kopiur backup architecture](domains/storage/kopiur-backup-architecture.md).
 
-![Git references and 1Password values flowing through External Secrets into labeled namespaces](assets/secret-fanout-flow.svg)
+```mermaid
+flowchart LR
+  accTitle: External Secrets credential fanout
+  accDescr: Git supplies references and namespace selectors while 1Password supplies values. External Secrets reads both and creates short-lived Kubernetes Secrets only in labeled namespaces.
 
-*Git owns the references; 1Password owns the values; External Secrets owns the
-namespace copies. [Open the full-size credential-flow diagram](assets/secret-fanout-flow.svg).*
+  GIT["`Git desired state
+  ClusterExternalSecret
+  remote key references`"]
+  VAULT["`1Password
+  secret values`"]
+  ESO["`External Secrets Operator
+  reads references
+  reconciles continuously`"]
+
+  subgraph NAMESPACES["ONLY LABELED NAMESPACES"]
+    direction TB
+    NSA["`namespace A
+    kopiur-rustfs Secret`"]
+    NSB["`namespace B
+    kopiur-rustfs Secret`"]
+    NSN["`namespace N
+    kopiur-rustfs Secret`"]
+  end
+
+  GIT refs@--> ESO
+  VAULT values@--> ESO
+  ESO fanoutA@--> NSA
+  ESO fanoutB@--> NSB
+  ESO fanoutN@--> NSN
+
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef secret fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  class GIT desired
+  class VAULT secret
+  class ESO controller
+  class NSA,NSB,NSN secret
+
+  refs@{ animation: fast }
+  values@{ animation: fast }
+  fanoutA@{ animation: slow }
+  fanoutB@{ animation: slow }
+  fanoutN@{ animation: slow }
+```
+
+Git owns the references; 1Password owns the values; External Secrets owns the
+namespace copies.
 
 > This cluster uses [RustFS](https://github.com/rustfs/rustfs) (an
 > S3-compatible object store) running off-cluster at `192.168.10.133:30292`.

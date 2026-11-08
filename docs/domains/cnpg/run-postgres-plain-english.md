@@ -84,6 +84,47 @@ Where the pieces live (gitea is the reference, so copy it):
 To **create** a new database, follow [The pattern](#the-pattern) or
 run `/project:new-database <app>`. Don't hand-roll the four files.
 
+The deployed pattern restores volume snapshots; PITR and automatic database failover need a separate design review.
+
+```mermaid
+flowchart TB
+  accTitle: PostgreSQL snapshot recovery and its limits
+  accDescr: The deployed database pattern is plain PostgreSQL with PGDATA and WAL on one PVC, restored through Kopiur. Point-in-time recovery and database failover would require a separate design review; CNPG is retired.
+
+  NEED{"`Need PITR, replicas,
+  automated failover,
+  or near-zero RPO?`"}
+
+  REVIEW["`Separate design review
+  Not supplied by the current pattern
+  CNPG is retired`"]
+
+    DEPLOY["`DEPLOYED: Plain PostgreSQL
+    Recreate Deployment`"]
+    PVC["`One PVC
+    PGDATA and WAL`"]
+    KOPIUR["`Kopiur
+    restore-before-bind`"]
+    DEPLOY plain1@--> PVC
+    PVC plain2@--> KOPIUR
+
+  NEED yes@-- "YES" --> REVIEW
+  NEED no@-- "NO" --> DEPLOY
+
+  classDef decision fill:#344250,stroke:#17212b,color:#ffffff
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  class NEED decision
+  class REVIEW external
+  class DEPLOY,PVC,KOPIUR desired
+
+  yes@{ animation: fast }
+  no@{ animation: fast }
+  plain1@{ animation: slow }
+  plain2@{ animation: slow }
+```
+
 ### The pattern
 
 The reference is `my-apps/development/gitea/postgres/`. Four pieces live in the
