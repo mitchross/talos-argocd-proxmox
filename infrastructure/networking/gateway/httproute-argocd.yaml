@@ -15,6 +15,24 @@ spec:
   rules:
     - matches:
         - path:
+            type: Exact
+            value: /api/v1/session
+          method: POST
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              # Argo issues a session cookie; preserve its token and persist it for seven days.
+              - name: Set-Cookie
+                value: "%RESP(set-cookie)%; Max-Age=604800; Secure"
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: argocd-server
+          port: 80
+          weight: 1
+    - matches:
+        - path:
             type: PathPrefix
             value: /
       backendRefs:
