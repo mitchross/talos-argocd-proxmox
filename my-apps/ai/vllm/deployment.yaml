@@ -57,8 +57,8 @@ spec:
               readOnly: true
       containers:
         - name: vllm-server
-          # Built and smoke-tested in homelab-images; pin its digest after publication.
-          image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2
+          # Built and smoke-tested in homelab-images.
+          image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2@sha256:fba9042e57effa23fd3c47aafe3c91081fa2f81c4cce244d4fed49299bf5808c
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
@@ -86,8 +86,9 @@ spec:
             - --limit-mm-per-prompt
             - '{"image":1,"video":0}'
             - --async-scheduling
+            # CUDA graphs must cover all 16 slots; at 4, batches over 4 ran without graphs (8 users: 65 tok/s total).
             - --compilation-config
-            - '{"max_cudagraph_capture_size":4,"custom_ops":["+rms_norm","+silu_and_mul"]}'
+            - '{"max_cudagraph_capture_size":16,"custom_ops":["+rms_norm","+silu_and_mul"]}'
             - --enable-auto-tool-choice
             - --tool-call-parser
             - qwen3_coder
