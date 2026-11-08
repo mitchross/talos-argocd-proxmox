@@ -71,7 +71,11 @@ done
 [ -L "$TERM_HOME/.config/gh" ] || { rm -rf "${TERM_HOME:?}/.config/gh"; ln -s "$HERMES_HOME/.config/gh" "$TERM_HOME/.config/gh"; }
 # shellcheck disable=SC2016 # Preserve $PATH for the terminal's login shell.
 printf '%s\n' 'export PATH=/opt/agents/bin:/opt/rust/cargo/bin:/usr/local/go/bin:$PATH' \
-  'export RUSTUP_HOME=/opt/data/tools/rustup RUSTUP_AUTO_INSTALL=1 CARGO_HOME=/opt/data/.cargo' > "$TERM_HOME/.profile"
+  'export RUSTUP_HOME=/opt/data/tools/rustup RUSTUP_AUTO_INSTALL=1 CARGO_HOME=/opt/data/.cargo' \
+  'export CARGO_BUILD_BUILD_DIR=/opt/scratch/cargo-build/{workspace-path-hash} XDG_CACHE_HOME=/opt/scratch/cache' \
+  'export BUN_INSTALL_CACHE_DIR=/opt/scratch/bun npm_config_cache=/opt/scratch/npm YARN_CACHE_FOLDER=/opt/scratch/yarn' > "$TERM_HOME/.profile"
+# Rebuildable caches and Rust intermediates live on hermes-scratch, which has no snapshots or backups.
+install -d -o 10000 -g 10000 /opt/scratch /opt/scratch/cargo-build /opt/scratch/cache /opt/scratch/bun /opt/scratch/npm /opt/scratch/yarn
 # The image's Rust is read-only; a volume RUSTUP_HOME defaults to it via a link and installs repo-pinned toolchains once.
 mkdir -p "$HERMES_HOME/tools/rustup"; chown 10000:10000 "$HERMES_HOME/tools" "$HERMES_HOME/tools/rustup"
 for tc in /opt/rust/rustup/toolchains/*-x86_64-unknown-linux-gnu; do
@@ -107,7 +111,9 @@ if [ -n "${OMNI_SERVICE_ACCOUNT_KEY:-}" ] && command -v omnictl >/dev/null 2>&1;
 fi
 # Drop only the localhost stub old omnictl runs left as root; rmdir keeps anything else.
 rm -f "$HERMES_HOME/.talos/omni/config"; rmdir "$HERMES_HOME/.talos/omni" "$HERMES_HOME/.talos" 2>/dev/null || true
-chown -R 10000:10000 "$TERM_HOME" "$HERMES_HOME/.ssh" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
+# Only what this script writes as root; a recursive chown of $TERM_HOME walked ~900k worktree and cache files.
+chown 10000:10000 "$TERM_HOME" "$TERM_HOME/.profile"
+chown -R 10000:10000 "$TERM_HOME/.config" "$TERM_HOME/.talos" "$HERMES_HOME/.ssh" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
 
 # Coding agents: repo checkout, git identity, shared-memory hooks. gh and codex logins are done once by hand (docs).
 as_hermes git config --global user.name "Hermes Agent"

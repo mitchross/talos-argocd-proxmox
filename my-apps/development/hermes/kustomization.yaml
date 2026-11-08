@@ -6,6 +6,7 @@ resources:
   - externalsecret.yaml
   - rbac.yaml
   - pvc.yaml
+  - pvc-scratch.yaml
   - deployment.yaml
   - image-prepull.yaml
   - service.yaml

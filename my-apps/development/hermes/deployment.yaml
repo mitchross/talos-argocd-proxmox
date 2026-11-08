@@ -31,9 +31,8 @@ spec:
           operator: Exists
           effect: NoExecute
           tolerationSeconds: 30
+      # No fsGroup: Hermes resets /opt/data to 0700 on login saves, so kubelet re-owned ~1.4M files each start. seed.sh chowns what Hermes needs.
       securityContext:
-        fsGroup: 10000
-        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       initContainers:
@@ -66,6 +65,8 @@ spec:
             - name: hermes-skills
               mountPath: /etc/hermes-skills
               readOnly: true
+            - name: scratch
+              mountPath: /opt/scratch
       containers:
         - name: hermes
           image: ghcr.io/mitchross/hermes-dev:main@sha256:a56b059603f491f5e8bff75d6d2c582e3173890badbb2fa27c5eff2a597a7e0f
@@ -152,6 +153,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/data
+            - name: scratch
+              mountPath: /opt/scratch
             - name: shm
               mountPath: /dev/shm
             - name: cluster-config
@@ -180,6 +183,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/data
+            - name: scratch
+              mountPath: /opt/scratch
             - name: hermes-scripts
               mountPath: /etc/hermes-scripts
               readOnly: true
@@ -212,6 +217,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: hermes-data
+        - name: scratch
+          persistentVolumeClaim:
+            claimName: hermes-scratch
         - name: hermes-config
           configMap:
             name: hermes-config
