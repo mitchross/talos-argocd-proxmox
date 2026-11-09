@@ -4,10 +4,69 @@ Split-horizon DNS for `vanillax.me` is served by Technitium (`192.168.10.15`)
 behind Firewalla. LAN clients get private records for internal services and fall
 back to Cloudflare for public names:
 
-![Private Technitium and public Cloudflare request paths through separate Cilium gateways](../../assets/networking-request-paths.svg)
+```mermaid
+flowchart TB
+  accTitle: Private and public request paths
+  accDescr: Private requests resolve through Technitium to the internal Cilium gateway. Public requests enter through Cloudflare Tunnel and the external gateway. Both paths end at an HTTPRoute and application service.
 
-*Private and public exposure are separate DNS, Gateway, and HTTPRoute choices.
-[Open the full-size request-path diagram](../../assets/networking-request-paths.svg).*
+  subgraph PRIVATE["PRIVATE / LAN"]
+    direction LR
+    LAN["`LAN client
+    Firewalla DNS`"]
+    TECH["`Technitium
+    private override`"]
+    INT["`Internal Cilium Gateway
+    private LoadBalancer`"]
+    IROUTE["`HTTPRoute
+    private hostname`"]
+    IPOD["`Service and pod
+    traffic stays on LAN`"]
+    LAN private1@--> TECH
+    TECH private2@--> INT
+    INT private3@--> IROUTE
+    IROUTE private4@--> IPOD
+  end
+
+  subgraph PUBLIC["PUBLIC / INTERNET"]
+    direction LR
+    WEB["`Internet client
+    public DNS`"]
+    CF["`Cloudflare
+    DNS and edge`"]
+    TUNNEL["`cloudflared
+    outbound tunnel`"]
+    EXT["`External Cilium Gateway
+    hostname allowlist`"]
+    PPOD["`HTTPRoute and pod
+    public opt-in`"]
+    WEB public1@--> CF
+    CF public2@--> TUNNEL
+    TUNNEL public3@--> EXT
+    EXT public4@--> PPOD
+  end
+
+  PRIVATE ~~~ PUBLIC
+
+  classDef source fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  classDef healthy fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  class LAN,WEB source
+  class TECH,INT,IROUTE,EXT controller
+  class CF,TUNNEL external
+  class IPOD,PPOD healthy
+
+  private1@{ animation: fast }
+  private2@{ animation: fast }
+  private3@{ animation: fast }
+  private4@{ animation: fast }
+  public1@{ animation: fast }
+  public2@{ animation: fast }
+  public3@{ animation: fast }
+  public4@{ animation: fast }
+```
+
+Private and public exposure are separate DNS, Gateway, and HTTPRoute choices.
 
 ```text
 LAN client

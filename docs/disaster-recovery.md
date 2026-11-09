@@ -10,10 +10,63 @@
 > Databases use the same automatic PVC restoration. Database recovery still needs
 > application-level acceptance; see [post-restore acceptance](#post-restore-acceptance).
 
-![Full-cluster failure, external survivors, Talos rebuild, Argo waves, data restoration, and acceptance](assets/disaster-recovery-sequence.svg)
+```mermaid
+flowchart TB
+  accTitle: Full-cluster disaster recovery sequence
+  accDescr: Git, Omni configuration, 1Password, and Kopia survive outside the cluster. Talos is rebuilt, Argo bootstraps, application data restores, and health checks prove recovery.
 
-*Recovery is complete only after desired state, credentials, and protected data
-converge and you verify them. [Open the full-size DR sequence](assets/disaster-recovery-sequence.svg).*
+  SURVIVE["`SURVIVES OUTSIDE THE CLUSTER
+  Git desired state | Omni and Talos identity
+  1Password credentials | Kopia snapshots
+  protected application and Postgres volumes`"]
+
+  subgraph RECOVERY["RECOVERY STAGES"]
+    direction LR
+    FAIL["`STEP 0 - Failure event
+    Talos VMs, API
+    and volumes gone
+    Stop: prove backups first`"]
+    TALOS["`STEP 1 - Rebuild Talos
+    Omni provisions machines
+    API and Cilium ready`"]
+    ARGO["`STEP 2 - Bootstrap Argo
+    root Application lands
+    core dependencies reconcile`"]
+    DATA["`STEP 3 - Restore data
+    PVCs remain Pending
+    Kopiur hydrates
+    protected PVCs`"]
+    PROVE["`STEP 4 - Prove recovery
+    PVCs Bound
+    app reads and writes pass
+    backups resume`"]
+    FAIL fail@--> TALOS
+    TALOS talos@--> ARGO
+    ARGO argo@--> DATA
+    DATA data@--> PROVE
+  end
+
+  SURVIVE context@-.-> RECOVERY
+
+  classDef survivor fill:#f3f6f8,stroke:#9aa8b3,color:#17212b
+  classDef failure fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class SURVIVE survivor
+  class FAIL failure
+  class TALOS controller
+  class ARGO,PROVE desired
+  class DATA external
+
+  fail@{ animation: fast }
+  talos@{ animation: fast }
+  argo@{ animation: fast }
+  data@{ animation: fast }
+```
+
+Recovery is complete only after desired state, credentials, and protected data
+converge and you verify them.
 
 !!! danger
     The destructive steps require explicit operator intent. This documents the

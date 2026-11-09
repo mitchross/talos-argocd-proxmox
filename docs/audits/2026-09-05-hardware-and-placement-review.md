@@ -43,10 +43,128 @@ The first hardware purchase I would prioritize is a qualified approximately
 decision is the Elite data SSD. I would not start by buying six identical SATA
 drives, breaking the Threadripper mirror, or repurposing the NAS server.
 
-![Live replicas remain in the cluster; Kopiur restores from the separate NAS](../assets/storage-failure-domains.svg)
+```mermaid
+flowchart LR
+  accTitle: Longhorn and Kopiur failure domains
+  accDescr: Longhorn and CSI snapshots remain inside Kubernetes. Kopiur copies protected application and Postgres volumes to RustFS and restores replacement PVCs before binding. A single Longhorn replica cannot survive the loss of its host.
+
+  subgraph CLUSTER["TALOS CLUSTER"]
+    direction TB
+    APP["`App or plain Postgres
+    reads and writes`"]
+    PVC["`Longhorn PVC
+    live block storage`"]
+    SNAP["`CSI snapshot
+    point-in-time source`"]
+    REPLACE["`Replacement PVC
+    Pending`"]
+    MOVER["`Kopiur restore mover
+    hydrates volume`"]
+    BOUND["`PVC Bound with data
+    application may start`"]
+    APP app@--> PVC
+    PVC snapshot@--> SNAP
+    REPLACE restore1@--> MOVER
+    MOVER restore2@--> BOUND
+  end
+
+  subgraph OFFCLUSTER["OUTSIDE KUBERNETES"]
+    direction TB
+    RUSTFS["`TrueNAS / RustFS
+    separate host boundary`"]
+    KOPIA["`Kopia bucket
+    app and Postgres snapshots`"]
+    RUSTFS ~~~ KOPIA
+  end
+
+  SNAP backup@-- "Kopia mover" --> KOPIA
+  KOPIA hydrate@-- "restore" --> MOVER
+
+  classDef workload fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef runtime fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef restore fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class APP workload
+  class PVC,SNAP runtime
+  class REPLACE,MOVER,BOUND restore
+  class RUSTFS,KOPIA external
+
+  app@{ animation: fast }
+  snapshot@{ animation: fast }
+  backup@{ animation: slow }
+  hydrate@{ animation: slow }
+  restore1@{ animation: fast }
+  restore2@{ animation: fast }
+```
 
 A second live copy serves routine failover. A backup reconstructs lost state.
 Both are useful, but they solve different failures.
+
+### Legacy Wi-Fi provisioning illustration
+
+This older provisioning illustration names a Dell host and management NUC.
+It is not the audited or current topology: the table below places the Wi-Fi
+worker on the shed HP. Keep it as a conceptual Git → Omni → provider example,
+not as a host-placement instruction.
+
+```mermaid
+flowchart LR
+  accTitle: Wi-Fi Proxmox Talos CPU worker architecture
+  accDescr: Git and Omni define a CPU-only Talos worker request. A Proxmox provider on the management NUC creates a VM on the Dell host and the worker joins the existing cluster through the ASUS media bridge.
+
+  subgraph MANAGEMENT["MANAGEMENT"]
+    direction LR
+    GIT["`Git desired state
+    machine class + template`"]
+    OMNI["`Omni
+    machine lifecycle`"]
+    PROVIDER["`Proxmox provider
+    one Dell API endpoint`"]
+    GIT desired@--> OMNI
+    OMNI request@--> PROVIDER
+  end
+
+  subgraph WIFI["WI-FI SITE"]
+    direction LR
+    BRIDGE["`ASUS media bridge
+    Ethernet over Wi-Fi`"]
+    PVE["`Dell Proxmox
+    CPU-only host`"]
+    VM["`Talos worker VM
+    static address + RTL-SDR`"]
+    BRIDGE link@<--> PVE
+    PVE create@--> VM
+  end
+
+  subgraph CLUSTER["KUBERNETES"]
+    direction TB
+    CORE["`Existing wired core
+    control plane + CPU + RTX workers`"]
+    VXLAN["`Cilium VXLAN
+    node-IP transport`"]
+    CORE corePath@--> VXLAN
+    VM dellPath@--> VXLAN
+  end
+
+  PROVIDER provision@--> PVE
+
+  classDef action fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class GIT desired
+  class OMNI,PROVIDER,PVE,VM controller
+  class BRIDGE external
+  class CORE,VXLAN action
+
+  desired@{ animation: slow }
+  request@{ animation: fast }
+  provision@{ animation: fast }
+  link@{ animation: fast }
+  create@{ animation: fast }
+  corePath@{ animation: slow }
+  dellPath@{ animation: slow }
+```
 
 ## Hardware and disk report
 

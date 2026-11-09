@@ -3,10 +3,62 @@
 The operator's reference for how application data survives anything in
 this cluster, including the loss of the cluster itself.
 
-![Longhorn live storage, Kopiur restore-before-bind, and off-cluster RustFS failure domains](assets/storage-failure-domains.svg)
+```mermaid
+flowchart LR
+  accTitle: Longhorn and Kopiur failure domains
+  accDescr: Longhorn and CSI snapshots remain inside Kubernetes. Kopiur copies protected application and Postgres volumes to RustFS and restores replacement PVCs before binding. A single Longhorn replica cannot survive the loss of its host.
 
-*Longhorn provides live availability inside Kubernetes; RustFS provides the
-recoverable copy outside it. [Open the full-size storage diagram](assets/storage-failure-domains.svg).*
+  subgraph CLUSTER["TALOS CLUSTER"]
+    direction TB
+    APP["`App or plain Postgres
+    reads and writes`"]
+    PVC["`Longhorn PVC
+    live block storage`"]
+    SNAP["`CSI snapshot
+    point-in-time source`"]
+    REPLACE["`Replacement PVC
+    Pending`"]
+    MOVER["`Kopiur restore mover
+    hydrates volume`"]
+    BOUND["`PVC Bound with data
+    application may start`"]
+    APP app@--> PVC
+    PVC snapshot@--> SNAP
+    REPLACE restore1@--> MOVER
+    MOVER restore2@--> BOUND
+  end
+
+  subgraph OFFCLUSTER["OUTSIDE KUBERNETES"]
+    direction TB
+    RUSTFS["`TrueNAS / RustFS
+    separate host boundary`"]
+    KOPIA["`Kopia bucket
+    app and Postgres snapshots`"]
+    RUSTFS ~~~ KOPIA
+  end
+
+  SNAP backup@-- "Kopia mover" --> KOPIA
+  KOPIA hydrate@-- "restore" --> MOVER
+
+  classDef workload fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef runtime fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef restore fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class APP workload
+  class PVC,SNAP runtime
+  class REPLACE,MOVER,BOUND restore
+  class RUSTFS,KOPIA external
+
+  app@{ animation: fast }
+  snapshot@{ animation: fast }
+  backup@{ animation: slow }
+  hydrate@{ animation: slow }
+  restore1@{ animation: fast }
+  restore2@{ animation: fast }
+```
+
+Longhorn provides live availability inside Kubernetes; RustFS provides the
+recoverable copy outside it.
 
 !!! abstract "Scope"
     Application PVCs (Longhorn → kopiur/Kopia → RustFS S3). Since the

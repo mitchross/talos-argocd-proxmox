@@ -32,10 +32,55 @@ this repo.
 
 ## How it works
 
-![Argo CD bootstrap and dependency-gated sync waves](docs/assets/argocd-sync-waves.svg)
+```mermaid
+flowchart LR
+  accTitle: Argo CD bootstrap and sync-wave ordering
+  accDescr: A manual seed creates the root Application. Root waves gate direct child Applications. ApplicationSets created in later waves generate independently reconciled Applications; they do not aggregate descendant health.
 
-*Waves order resources within an Application; generated applications reconcile independently.
-[Open the Argo CD flow full size](docs/assets/argocd-sync-waves.svg).*
+  subgraph BOOTSTRAP["BOOTSTRAP ONCE"]
+    direction LR
+    BOOT["`Manual seed: root.yaml
+    Root seed is not self-managed
+    Root manages its entrypoints`"]
+  end
+
+  subgraph WAVES["ROOT RESOURCE ORDER"]
+    direction LR
+    W01["`WAVES 0-1 - FOUNDATION
+    Argo CD, Cilium, 1Password, ESO
+    cert-manager, Longhorn, snapshots`"]
+    W23["`WAVES 2-3 - RECOVERY
+    Kopiur operator and CRDs
+    repository, credentials, snapshot class`"]
+    W45["`WAVES 4-5 - ENTRYPOINTS
+    platform Apps and AppSets
+    generated Apps sync independently`"]
+    W6["`WAVE 6 - ENTRYPOINTS
+    workload AppSet and overlays
+    generated Apps sync independently`"]
+    W01 wave12@--> W23
+    W23 wave34@--> W45
+    W45 wave56@--> W6
+  end
+
+  BOOT entry@--> W01
+
+  classDef action fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef waiting fill:#f3f6f8,stroke:#9aa8b3,color:#17212b
+  class W6 action
+  class BOOT desired
+  class W23 controller
+  class W01,W45 waiting
+
+  entry@{ animation: fast }
+  wave12@{ animation: slow }
+  wave34@{ animation: slow }
+  wave56@{ animation: slow }
+```
+
+Waves order resources within an Application; generated applications reconcile independently.
 
 **A directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application`. No manual `Application` resources.
 
