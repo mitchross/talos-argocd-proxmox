@@ -66,7 +66,7 @@ preserved thinking. Pick medium, low or off per session when you want less.
 Xhigh uses more time and output tokens. It does not promise better answers.
 
 `pi-auto` shows `medium` in Pi but sends no effort to Qwen. Auto-routed Qwen
-uses the server default, medium (16,384 thinking tokens); DeepSeek uses high or max by tier. Do not change
+uses the server default, xhigh (16,384-token thinking cap); DeepSeek uses high or max by tier. Do not change
 the auto provider to xhigh or forward Qwen kwargs into cloud routes.
 
 A resumed session keeps its saved thinking level. Start a new session with
@@ -240,9 +240,8 @@ pi --list-models pi-auto
 type pi-qwen-only; type pi-flash; type pi-withflash
 ```
 
-Expect Qwen at roughly 262K context and 32K output, DeepSeek Flash at roughly 1M
-context with the deliberate 32K Pi cap, and `pi-auto` at the safe 262K/32K
-intersection. All report thinking and image support. The aliases must expand to
+Expect Qwen at roughly 262K context and 48K output, DeepSeek Flash at roughly 1M
+context with the deliberate 32K Pi cap, and `pi-auto` at 262K/48K. All report thinking and image support. The aliases must expand to
 the provider/model pairs above, including `--thinking xhigh` for `pi-qwen-only`
 and `--models $AUTO` for `pi-withflash`.
 
@@ -251,7 +250,7 @@ Check outgoing request kwargs, not answer length: direct Qwen should send
 by default. Repeat with explicit medium, low and off. The
 [vLLM acceptance matrix](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#reasoning-acceptance-checks)
 covers tools, images and multi-turn history. A run that exhausts its output
-budget is inconclusive. Xhigh does not expand the 32K allowance.
+budget is inconclusive. The server caps thinking at 16K, leaving the rest of the 48K for the answer.
 
 ## Rollback
 
@@ -300,7 +299,7 @@ it against `litellm/config.yaml`, so keep them in step.
       "models": [
         {
           "id": "qwen3.8-27b",
-          "name": "Qwen3.8 27B (vLLM FP8, 2x3090, 262K)",
+          "name": "Qwen3.8 27B (vLLM INT4, 2x3090, 262K)",
           "reasoning": true,
           "thinkingLevelMap": {
             "off": "off",
@@ -313,7 +312,7 @@ it against `litellm/config.yaml`, so keep them in step.
           },
           "input": ["text", "image"],
           "contextWindow": 262144,
-          "maxTokens": 32768,
+          "maxTokens": 49152,
           "cost": {
             "input": 0,
             "output": 0,
@@ -387,7 +386,7 @@ it against `litellm/config.yaml`, so keep them in step.
           },
           "input": ["text", "image"],
           "contextWindow": 262144,
-          "maxTokens": 32768,
+          "maxTokens": 49152,
           "cost": {
             "input": 0.3,
             "output": 1.2,
