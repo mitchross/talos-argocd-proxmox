@@ -132,11 +132,11 @@ spec:
             - --port
             - "8000"
           env:
-            # Static output of effort_budget.py shell-env; requests that send no effort get xhigh's 32K cap.
+            # Static output of effort_budget.py shell-env; requests that send no effort get xhigh's 16K cap.
             - name: CLUB3090_REASONING_EFFORT_BUDGETS
-              value: '{"high":32768,"low":4096,"max":32768,"medium":16384,"minimal":4096,"xhigh":32768}'
+              value: '{"high":16384,"low":4096,"max":16384,"medium":16384,"minimal":4096,"xhigh":16384}'
             - name: CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET
-              value: "32768"
+              value: "16384"
             - name: VLLM_MARLIN_INPUT_DTYPE
               value: int8
             - name: VLLM_USE_FLASHINFER_SAMPLER
