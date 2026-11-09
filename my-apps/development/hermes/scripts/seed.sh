@@ -134,4 +134,7 @@ as_hermes /opt/hermes/.venv/bin/python /etc/hermes-scripts/seed-skills.py "$REPO
   || echo "[seed] skills: seed failed; keeping installed skills"
 as_hermes /opt/hermes/.venv/bin/python /etc/hermes-scripts/reconcile-kanban.py \
   || echo "[seed] Kanban reconciliation failed; inspect task diagnostics"
+# Qwen Lab profiles (qwen-lab, qwen-worker, ...) and their Kanban board; never writes the default profile.
+as_hermes /opt/hermes/.venv/bin/python /etc/hermes-scripts/seed-qwen-lab.py \
+  || echo "[seed] qwen-lab seed failed; default profile unaffected"
 echo "[seed] done"

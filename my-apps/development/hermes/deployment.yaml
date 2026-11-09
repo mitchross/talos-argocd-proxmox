@@ -65,6 +65,9 @@ spec:
             - name: hermes-skills
               mountPath: /etc/hermes-skills
               readOnly: true
+            - name: hermes-qwen-lab
+              mountPath: /etc/hermes-qwen-lab
+              readOnly: true
             - name: scratch
               mountPath: /opt/scratch
       containers:
@@ -155,6 +158,10 @@ spec:
             - name: cluster-config
               mountPath: /etc/hermes/cluster
               readOnly: true
+            # Read by secrets.command in config.yaml; the default profile's credentials under multiplex.
+            - name: hermes-secrets-files
+              mountPath: /etc/hermes-secrets
+              readOnly: true
         # Agent worktrees keep full build trees on the volume; 79Gi of `target/` filled it on 2026-10-31.
         # Shares the pod because the claim is ReadWriteOnce. Prunes build output only, never a worktree.
         - name: worktree-gc
@@ -225,6 +232,13 @@ spec:
         - name: hermes-skills
           configMap:
             name: hermes-skills
+        - name: hermes-qwen-lab
+          configMap:
+            name: hermes-qwen-lab
+        - name: hermes-secrets-files
+          secret:
+            secretName: hermes-secrets
+            defaultMode: 0444
         - name: cluster-config
           configMap:
             name: cluster-config

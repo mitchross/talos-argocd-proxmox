@@ -372,6 +372,29 @@ Configuration rollback does not unblock tasks parked by startup recovery.
 Never edit `config.yaml` or the skill in the pod to change configuration. Git is the source of truth.
 Runtime state stays on the volume: sessions, cron jobs, skills Hermes writes, memories, provider logins.
 
+## Qwen Lab
+
+Qwen Lab is a team of Hermes profiles that only use the local Qwen model on vLLM. Use it for fun and
+for testing what a local model can do. Your normal Hermes (the default profile) does not change.
+
+| Profile | Job |
+|---|---|
+| `qwen-lab` | The lead. Chat with this one. It splits bigger work into Kanban cards. |
+| `qwen-worker` | Does one code card in a git worktree and proves it with tests. |
+| `qwen-reviewer` | Reviews a card using only the goal and the diff. |
+| `qwen-researcher` | Searches with SearXNG and cites sources, or says NOT FOUND. |
+| `qwen-designer` | UI work, checked with browser screenshots. |
+
+To use it, open the desktop app and pick `qwen-lab` in the profile list or the Bots tab.
+Switch back to `default` for normal work. Lab cards go on the Kanban board `qwen-lab`.
+
+To change it, edit `my-apps/development/hermes/qwen-lab/` and open a PR.
+The seed rewrites each lab profile's `config.yaml`, `SOUL.md` and lab skills on every start.
+
+The lab talks to vLLM directly, so it has no key and no cloud fallback. Two parts still touch the
+cloud: Hindsight extracts memories with DeepSeek, and `web_extract` has no local backend
+(the lab reads pages with the browser tool instead).
+
 ## Troubleshooting
 
 | Symptom | Check |
