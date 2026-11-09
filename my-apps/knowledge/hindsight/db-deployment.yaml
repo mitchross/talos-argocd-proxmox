@@ -81,10 +81,17 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            - name: shm
+              mountPath: /dev/shm
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: hindsight-db-pvc
+        # The container default is 64Mi; creating a bank asks Postgres for a 64 MB segment and fails.
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
 ---
 apiVersion: v1
 kind: Service
