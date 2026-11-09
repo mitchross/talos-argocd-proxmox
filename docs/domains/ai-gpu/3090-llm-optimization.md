@@ -121,7 +121,7 @@ This used a text-only profile at `--max-num-seqs 3`. It does not cover vision
 
 | Do | Why |
 |---|---|
-| Use **xhigh** reasoning by default | 32,768 thinking-token cap; low=4,096, high/xhigh/max=32,768; explicit client budgets win |
+| Use **xhigh** reasoning by default | 16,384 thinking-token cap; low=4,096, high/xhigh/max=16,384; explicit client budgets win |
 | Keep one image in submitted history | a second retained screenshot exceeds the one-image limit |
 | Keep tool outputs bounded | dumping unrelated files burns context and triggers expensive prefill |
 | Run one long session near the ceiling | a second full-length request causes waiting or preemption |

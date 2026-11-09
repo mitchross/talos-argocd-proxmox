@@ -44,7 +44,7 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 | GPU utilization budget | 0.90 per GPU |
 | Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
-| Reasoning | on, `xhigh` default (32,768-token cap); low=4,096, high/xhigh/max=32,768 |
+| Reasoning | on, `xhigh` default (16,384-token cap); low=4,096, high/xhigh/max=16,384 |
 | Speculation | **off**; no MTP or external drafter |
 | Power | existing 220 W per card |
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
@@ -99,7 +99,7 @@ maps `high`/`max` to `xhigh` and `minimal` to `low`. Requests without an effort
 use `medium`; explicit client choices remain unchanged (including WebUI/Pi xhigh).
 
 Build-time patches B/D use the static `effort_budget.py shell-env` output in the
-Deployment: low/minimal=4,096, medium=16,384, high/xhigh/max=32,768 thinking tokens,
+Deployment: low/minimal=4,096, medium=16,384, high/xhigh/max=16,384 thinking tokens,
 with a 16,384 fallback for endpoints without the chat hook. Explicit request budgets
 win. Upstream's sampled top-k-off and trace-replay safety exceptions remain.
 `--reasoning-parser qwen3` enables budget tracking on v0.32.0; no extra reasoning
@@ -195,7 +195,7 @@ curl -fsS http://127.0.0.1:18000/v1/chat/completions \
 | Default | Omit kwargs; running defaults resolve to enabled/medium/preserved; answer 1591 with separate reasoning. |
 | Explicit low | `{"enable_thinking":true,"reasoning_effort":"low"}`; payload remains low, coherent answer. |
 | Explicit medium | `{"enable_thinking":true,"reasoning_effort":"medium"}`; payload remains medium, coherent answer. |
-| Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; explicit extended effort (32,768 thinking-token budget), coherent answer. |
+| Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; explicit extended effort (16,384 thinking-token budget), coherent answer. |
 | Off | `{"enable_thinking":false,"preserve_thinking":false}` plus the non-thinking sampler; empty/absent reasoning fields and no think tags in content. |
 | Tool under xhigh | Supply a `lookup` function with an integer `id` argument and ask to look up id 7; expect a valid `tool_calls` entry with parseable JSON `{"id":7}`. Do not execute external actions. |
 | Image under xhigh | Send one known local image as an `image_url` data URI plus a factual question; check visible facts against the actual image. HTTP 200 alone is insufficient. |

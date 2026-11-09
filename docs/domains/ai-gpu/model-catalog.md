@@ -54,8 +54,8 @@ Both cards belong to vLLM. Other GPU workloads stay parked.
 | Power | 220 W per card |
 
 262K is a server ceiling, not a promise of two simultaneous full-length
-sessions. The server defaults to `xhigh` with a 32,768 thinking-token cap; `low` gets
-4,096 and `high`/`xhigh`/`max` get 32,768. Explicit request budgets win. More
+sessions. The server defaults to `xhigh` with a 16,384 thinking-token cap; `low` gets
+4,096 and `high`/`xhigh`/`max` get 16,384. Explicit request budgets win. More
 reasoning is not a guaranteed quality improvement; clients can also turn it off.
 
 Exact flags, rollout checks and rollback live in the
