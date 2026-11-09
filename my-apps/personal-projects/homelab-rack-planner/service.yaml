@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: homelab-rack-planner
+  namespace: homelab-rack-planner
+spec:
+  selector:
+    app: homelab-rack-planner
+  ports:
+    - port: 8080
+      targetPort: http
+      name: http
+  type: ClusterIP
