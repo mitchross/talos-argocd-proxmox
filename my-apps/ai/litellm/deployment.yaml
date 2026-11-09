@@ -20,7 +20,7 @@ spec:
         node.vanillax.dev/pool: general
       containers:
         - name: litellm
-          image: ghcr.io/berriai/litellm:v1.108.1@sha256:562251f032a0075a5e5a775b8f44aa9f9f1e93d16562892565f29bfa23fbf2f6
+          image: ghcr.io/berriai/litellm:v1.108.3@sha256:f14d0a035d84d1a8bc98538faf5999e456641fd4cfa191822fd4be1934c1f4f6
           args: ["--config", "/app/config.yaml", "--port", "4000"]
           ports:
             - name: http
