@@ -124,7 +124,7 @@ class AIObservabilityTests(unittest.TestCase):
         auto_model = auto_provider['models'][0]
         self.assertEqual(auto_model['id'], 'pi-auto')
         self.assertEqual(auto_model['contextWindow'], 262144)
-        self.assertEqual(auto_model['maxTokens'], 32768)
+        self.assertEqual(auto_model['maxTokens'], 49152)
         self.assertEqual(auto_model['cost'], deepseek['cost'])
         self.assertIn('CachyOS workstation inventory', guide)
         self.assertIn('`@narumitw/pi-subagents`', guide)
