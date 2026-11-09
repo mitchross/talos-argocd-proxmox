@@ -15,7 +15,8 @@ BACKEND = re.compile(r'https?://(?:vllm-service(?:\.vllm(?:\.svc(?:\.cluster\.lo
                      r'strata-service(?:\.strata(?:\.svc(?:\.cluster\.local)?)?)?|'
                      r'(?:vllm|llama)\.vanillax\.me)(?=[:/\s\"\x27]|$)')
 SUFFIXES = {'.yaml', '.yml', '.json', '.env'}
-ALLOWED = {'my-apps/ai/litellm/config.yaml'}
+# Qwen Lab is direct on purpose: LiteLLM's qwen alias can fall back to cloud, and the lab must not (#3604).
+ALLOWED = {'my-apps/ai/litellm/config.yaml', 'my-apps/development/hermes/qwen-lab/base.yaml'}
 BACKEND_DIRS = ('my-apps/ai/vllm/', 'my-apps/ai/strata/')
 
 
