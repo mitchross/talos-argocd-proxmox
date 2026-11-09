@@ -1,0 +1,111 @@
+# Shared config for every Qwen Lab profile. scripts/seed-qwen-lab.py merges profiles.yaml on top and
+# writes /opt/data/profiles/<name>/config.yaml on every start. The default profile never reads this.
+# Local-only: the only model endpoint is vLLM in the cluster. No LiteLLM, no fallbacks, no cloud keys.
+model:
+  provider: homelab-vllm
+  default: qwen3.8-27b
+
+# vLLM runs without --api-key; the value is a placeholder, not a secret.
+providers:
+  homelab-vllm:
+    name: homelab-vllm
+    base_url: http://vllm-service.vllm.svc.cluster.local:8080/v1
+    api_key: no-key
+    models:
+      qwen3.8-27b:
+        supports_vision: true
+
+fallback_providers: []
+
+terminal:
+  backend: local
+  cwd: /opt/data/workspace/qwen-lab
+  timeout: 180
+
+# Search is SearXNG in the cluster. Extract has no local backend yet (#3603); read pages with the browser tool.
+# SearXNG only. The keyless ring and rescue call Exa/Parallel/Firecrawl free tiers in the cloud,
+# so they are off; with no extract backend, web_extract errors and the lab reads pages with the browser.
+web:
+  search_backend: searxng
+  keyless_fallback: false
+  keyless_rescue: false
+
+browser:
+  chromium_args: ["--no-sandbox", "--disable-dev-shm-usage"]
+
+# Built-in memory only (MEMORY.md/USER.md in each profile). Hindsight extracts facts with a cloud
+# model and has no per-bank model setting, so the lab skips it to stay fully local (#3603).
+memory:
+  provider: ""
+  memory_enabled: true
+  user_profile_enabled: true
+
+timezone: "America/Detroit"
+
+agent:
+  max_turns: 150
+  reasoning_effort: xhigh
+  # Cloud-backed or connector toolsets stay off: TTS is Edge (cloud), connections are hosted.
+  disabled_toolsets: [tts, connections, image_gen, video_gen, x_search, computer_use]
+
+# 262K window, but a 27B on two 3090s slows down on long prompts; compact well before that.
+compression:
+  threshold_tokens: 100000
+
+# Subagents run on the same local model; few at a time so the apps keep vLLM slots.
+delegation:
+  provider: homelab-vllm
+  model: qwen3.8-27b
+  max_concurrent_children: 2
+  max_spawn_depth: 1
+
+# Every helper task pinned to local Qwen at low effort. vision stays unset on purpose: pinning it
+# forces text-only image handling; unset it uses the main (local) model.
+auxiliary:
+  compression: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 300}
+  approval: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: none, timeout: 120}
+  mcp: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: none, timeout: 120}
+  title_generation: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: none, timeout: 120}
+  memory_query_rewrite: {provider: homelab-vllm, model: qwen3.8-27b, timeout: 60}
+  triage_specifier: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 300}
+  kanban_decomposer: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 300}
+  profile_describer: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: none, timeout: 120}
+  goal_judge: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 300}
+  group_router: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: none, timeout: 120}
+  curator: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 900}
+  review: {provider: homelab-vllm, model: qwen3.8-27b}
+  background_review: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 300}
+
+sessions:
+  auto_archive: true
+  auto_archive_days: 7
+
+# The lab never changes the cluster or merges anything; deny globs block even in yolo mode.
+approvals:
+  mode: smart
+  smart_policy: >-
+    APPROVE without asking: reading files, running tests and builds, git commands on a local feature
+    branch or worktree. Always ESCALATE: kubectl, talosctl, omnictl, helm, any git push, gh pr merge,
+    claude or codex, and any curl or request to a cloud AI API.
+  deny:
+    - "kubectl *"
+    - "talosctl *"
+    - "omnictl *"
+    - "gh pr merge*"
+    - "git push*"
+    - "claude *"
+    - "codex *"
+
+plugins:
+  enabled: []
+  disabled: [hindsight]
+
+# Local MCP servers only; Cloudflare (cloud, needs a token) is left out.
+mcp_servers:
+  deal-scout:
+    url: "http://deal-scout.deal-scout.svc:8000/mcp"
+    headers:
+      X-Deal-Scout-Mode: "operator"
+    timeout: 60
+
+_config_version: 52

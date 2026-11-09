@@ -65,6 +65,9 @@ spec:
             - name: hermes-skills
               mountPath: /etc/hermes-skills
               readOnly: true
+            - name: hermes-qwen-lab
+              mountPath: /etc/hermes-qwen-lab
+              readOnly: true
             - name: scratch
               mountPath: /opt/scratch
       containers:
@@ -83,6 +86,9 @@ spec:
           envFrom:
             - secretRef:
                 name: hermes-secrets
+            # Service URLs; also mounted as files for secrets.command (see config/config.yaml).
+            - configMapRef:
+                name: hermes-profile-env
           env:
             - name: HERMES_DASHBOARD
               value: "1"
@@ -95,12 +101,6 @@ spec:
             # A blank volume otherwise leaves the gateway registered but down.
             - name: HERMES_GATEWAY_BOOTSTRAP_STATE
               value: running
-            - name: HINDSIGHT_API_URL
-              value: http://hindsight-service.hindsight.svc.cluster.local:8888
-            - name: HASS_URL
-              value: http://home-assistant.home-assistant.svc.cluster.local:8123
-            - name: SEARXNG_URL
-              value: http://searxng.searxng.svc.cluster.local:8080
             # claude -p defaults to Sonnet on this plan; every run must report this model in its JSON modelUsage.
             - name: ANTHROPIC_MODEL
               value: claude-opus-5-5
@@ -154,6 +154,13 @@ spec:
               mountPath: /dev/shm
             - name: cluster-config
               mountPath: /etc/hermes/cluster
+              readOnly: true
+            # Read by secrets.command in config.yaml; the default profile's credentials under multiplex.
+            - name: hermes-secrets-files
+              mountPath: /etc/hermes-secrets
+              readOnly: true
+            - name: hermes-profile-env
+              mountPath: /etc/hermes-env
               readOnly: true
         # Agent worktrees keep full build trees on the volume; 79Gi of `target/` filled it on 2026-10-31.
         # Shares the pod because the claim is ReadWriteOnce. Prunes build output only, never a worktree.
@@ -225,6 +232,16 @@ spec:
         - name: hermes-skills
           configMap:
             name: hermes-skills
+        - name: hermes-qwen-lab
+          configMap:
+            name: hermes-qwen-lab
+        - name: hermes-secrets-files
+          secret:
+            secretName: hermes-secrets
+            defaultMode: 0444
+        - name: hermes-profile-env
+          configMap:
+            name: hermes-profile-env
         - name: cluster-config
           configMap:
             name: cluster-config
