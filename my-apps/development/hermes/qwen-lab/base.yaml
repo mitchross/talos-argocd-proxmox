@@ -23,8 +23,12 @@ terminal:
   timeout: 180
 
 # Search is SearXNG in the cluster. Extract has no local backend yet (#3603); read pages with the browser tool.
+# SearXNG only. The keyless ring and rescue call Exa/Parallel/Firecrawl free tiers in the cloud,
+# so they are off; with no extract backend, web_extract errors and the lab reads pages with the browser.
 web:
   search_backend: searxng
+  keyless_fallback: false
+  keyless_rescue: false
 
 browser:
   chromium_args: ["--no-sandbox", "--disable-dev-shm-usage"]

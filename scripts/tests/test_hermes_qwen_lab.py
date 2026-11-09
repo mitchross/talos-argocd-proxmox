@@ -127,3 +127,10 @@ def test_default_profile_keeps_pod_secrets_under_multiplex(tmp_path):
     cmd = helper.replace('/etc/hermes-secrets', str(sec)).replace('/etc/hermes-env', str(envd))
     out = subprocess.check_output(['/bin/sh', '-c', cmd], text=True)
     assert sorted(out.splitlines()) == ['LITELLM_API_KEY=fake-1', 'SEARXNG_URL=http://s']
+
+
+def test_lab_web_tools_never_use_cloud_free_tiers():
+    web = _base()['web']
+    assert web['search_backend'] == 'searxng'
+    assert web['keyless_fallback'] is False and web['keyless_rescue'] is False
+    assert not web.get('extract_backend')
