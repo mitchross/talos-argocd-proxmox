@@ -80,7 +80,7 @@ spec:
       - name: migrate
         # Keep the migration hook on the same monolith digest as web/workers.
         # Mixed monolith/node digests caused schema drift during pod restarts.
-        image: posthog/posthog:latest@sha256:415e94a0451bec357745f605d957c35fd07f993a4eab04b921627067072bb9f4
+        image: posthog/posthog:latest@sha256:95b911541d6ba5a1996df5f7c0b5dca50ac4029c5e994fd06bfa00a7c308f365
         command:
         - /bin/sh
         - -c
@@ -161,7 +161,7 @@ spec:
       containers:
       - name: migrate
         # Creates the cyclotron_node database if missing, then applies its migrations.
-        image: ghcr.io/posthog/posthog/sqlx-migrate:master@sha256:53309712c6808bfbc8dbd64b6b8f8b9982c5a8d694c8b1e9e668fb2f19c449a8
+        image: ghcr.io/posthog/posthog/sqlx-migrate:master@sha256:c03a1b7901f9d57a2956a571cf4f130da8c39a5585fc6ed2c846cb1679a73eca
         args: ["cyclotron-node"]
         env:
         - name: CYCLOTRON_NODE_DATABASE_URL
@@ -202,7 +202,7 @@ spec:
       containers:
       - name: remote-config-sync
         # Keep on the same monolith digest as web/workers.
-        image: posthog/posthog:latest@sha256:415e94a0451bec357745f605d957c35fd07f993a4eab04b921627067072bb9f4
+        image: posthog/posthog:latest@sha256:95b911541d6ba5a1996df5f7c0b5dca50ac4029c5e994fd06bfa00a7c308f365
         command:
         - /bin/sh
         - -c
