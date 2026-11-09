@@ -17,6 +17,12 @@ resources:
   - pi-egress.yaml
   - ingress-policy.yaml
 configMapGenerator:
+  # Non-secret service URLs for the default profile; env vars plus files read by secrets.command.
+  - name: hermes-profile-env
+    literals:
+      - HINDSIGHT_API_URL=http://hindsight-service.hindsight.svc.cluster.local:8888
+      - HASS_URL=http://home-assistant.home-assistant.svc.cluster.local:8123
+      - SEARXNG_URL=http://searxng.searxng.svc.cluster.local:8080
   - name: hermes-config
     files:
       - config.yaml=config/config.yaml

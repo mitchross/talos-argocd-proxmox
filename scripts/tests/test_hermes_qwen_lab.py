@@ -100,6 +100,8 @@ def test_seed_never_writes_the_default_profile(tmp_path):
     assert not (root / 'profiles/qwen-worker/skills/qwen-lab/qwen-best-of-n').exists()
     meta = yaml.safe_load((root / 'profiles/qwen-lab/profile.yaml').read_text())
     assert meta['ui_meta']['hermes-bots']['sectionName'] == 'Qwen Lab'
+    lab_env = (root / 'profiles/qwen-researcher/.env').read_text()
+    assert 'SEARXNG_URL=' in lab_env and 'KEY' not in lab_env and 'TOKEN' not in lab_env
 
 
 def test_default_profile_keeps_pod_secrets_under_multiplex(tmp_path):
@@ -113,9 +115,15 @@ def test_default_profile_keeps_pod_secrets_under_multiplex(tmp_path):
     assert vol['secret']['secretName'] == 'hermes-secrets'
     main = next(c for c in pod['containers'] if c['name'] == 'hermes')
     assert any(m['mountPath'] == '/etc/hermes-secrets' for m in main['volumeMounts'])
+    assert any(m['mountPath'] == '/etc/hermes-env' for m in main['volumeMounts'])
+    env_names = {e['name'] for e in main.get('env', [])}
+    assert not env_names & {'SEARXNG_URL', 'HASS_URL', 'HINDSIGHT_API_URL'}, 'keep service URLs in hermes-profile-env'
     # Same layout kubelet writes: key files plus dot-dirs the helper must skip.
-    (tmp_path / '..data').mkdir()
-    (tmp_path / 'LITELLM_API_KEY').write_text('fake-1')
-    (tmp_path / 'GITEA_TOKEN').write_text('fake-2')
-    out = subprocess.check_output(['/bin/sh', '-c', helper.replace('/etc/hermes-secrets', str(tmp_path))], text=True)
-    assert sorted(out.splitlines()) == ['GITEA_TOKEN=fake-2', 'LITELLM_API_KEY=fake-1']
+    sec, envd = tmp_path / 'sec', tmp_path / 'env'
+    for d in (sec, envd):
+        (d / '..data').mkdir(parents=True)
+    (sec / 'LITELLM_API_KEY').write_text('fake-1')
+    (envd / 'SEARXNG_URL').write_text('http://s')
+    cmd = helper.replace('/etc/hermes-secrets', str(sec)).replace('/etc/hermes-env', str(envd))
+    out = subprocess.check_output(['/bin/sh', '-c', cmd], text=True)
+    assert sorted(out.splitlines()) == ['LITELLM_API_KEY=fake-1', 'SEARXNG_URL=http://s']

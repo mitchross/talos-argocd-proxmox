@@ -47,12 +47,12 @@ memory:
 dashboard:
   public_url: https://hermes.vanillax.me
 
-# Pod secrets (hermes-secrets, mounted as files) for the default profile only. Once Qwen Lab adds
-# a second profile the gateway multiplexes, and then only this source and .env reach default turns.
+# Pod secrets and service URLs, mounted as files, for the default profile only. With a second
+# profile the gateway multiplexes, and then only this source and .env reach default turns.
 secrets:
   command:
     enabled: true
-    command: 'cd /etc/hermes-secrets && for k in [A-Z]*; do printf "%s=%s\n" "$k" "$(cat "$k")"; done'
+    command: 'for d in /etc/hermes-secrets /etc/hermes-env; do (cd "$d" && for k in [A-Z]*; do printf "%s=%s\n" "$k" "$(cat "$k")"; done); done'
 
 # Cron schedules and the agent clock follow this zone; the pod itself runs UTC.
 timezone: "America/Detroit"
