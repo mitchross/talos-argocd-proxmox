@@ -8,13 +8,13 @@ follows publication; the upstream base is already pinned by digest.
 The [club-3090 dual-fast recipe](https://github.com/noonghunna/club-3090/blob/def9711c8e6dc8bb3e6d1ecaad795b3bbb4bb665/models/qwen3.8-27b/vllm/compose/dual/autoround-int4/mtp.yml)
 is pinned to `def9711c8e6dc8bb3e6d1ecaad795b3bbb4bb665`. W4A8, Mamba block-drop and
 FlashInfer decode-pin fixes are baked into the image, never applied at boot.
-Budget patches are omitted. The bundled model template supports `reasoning_effort`,
-so no template overlay is needed. The existing repetition penalty stays **1.05**,
-rather than the recipe's 1.0; thinking defaults and all other sampler values stay unchanged.
+Thinking-budget patches B/D and the club-3090 reasoning-effort template are baked in
+([homelab-images PR 49](https://github.com/mitchross/homelab-images/pull/49)). The existing
+repetition penalty stays **1.05**, rather than the recipe's 1.0; other sampler values are unchanged.
 
-The recipe's historical v0.30.0, speculation-off, fp32-SSM reference at 0.90 held
-**584,550 KV tokens (2.23 × 262K, two full-length sessions)**. That is a planning
-reference, not a measurement of this v0.32.0/bf16-SSM/16-slot deployment. Keep 0.90
+Startup on 2026-11-08 reported **612,192 KV tokens (2.3 × 262K, two full-length
+sessions)** at 0.90 with 16 slots. Measured: 56/185/326/512 aggregate tok/s at
+1/4/8/16 concurrent requests, thinking off. Keep 0.90
 unless startup reports fewer than 262,144 KV tokens: raise to 0.92 through Git,
 never reduce context to fit. Verify actual pool size, vision and long-context
 quality after rollout. Beyond native 262K needs YaRN; planned A/B only.
@@ -82,7 +82,7 @@ See the [model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for gatew
 
 ## Explicit reasoning and sampling
 
-The server supplies `enable_thinking=true`, `reasoning_effort=medium`, and
+The server supplies `enable_thinking=true`, `reasoning_effort=xhigh`, and
 `preserve_thinking=true` through the baked club-3090 Qwen3.8 chat template.
 The Qwen reasoning parser emits reasoning separately from answer content.
 `qwen3_coder` parses tool calls, and automatic tool choice stays enabled.
@@ -91,24 +91,29 @@ The Qwen reasoning parser emits reasoning separately from answer content.
 |---|---|
 | No thinking | `{"enable_thinking":false,"preserve_thinking":false}` |
 | Brief thinking | `{"enable_thinking":true,"reasoning_effort":"low"}` |
-| Server default | `{"enable_thinking":true,"reasoning_effort":"medium"}` |
-| Explicit extended reasoning | `{"enable_thinking":true,"reasoning_effort":"xhigh"}` |
+| Faster, still thinking | `{"enable_thinking":true,"reasoning_effort":"medium"}` |
+| Server default | `{"enable_thinking":true,"reasoning_effort":"xhigh"}` |
 
 The baked template at `/etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja`
 maps `high`/`max` to `xhigh` and `minimal` to `low`. Requests without an effort
-use `medium`; explicit client choices remain unchanged (including WebUI/Pi xhigh).
+use `xhigh`; explicit client choices win.
 
 Build-time patches B/D use the static `effort_budget.py shell-env` output in the
 Deployment: low/minimal=4,096, medium=16,384, high/xhigh/max=16,384 thinking tokens,
 with a 16,384 fallback for endpoints without the chat hook. Explicit request budgets
 win. Upstream's sampled top-k-off and trace-replay safety exceptions remain.
-`--reasoning-parser qwen3` enables budget tracking on v0.32.0; no extra reasoning
-config or runtime patch installer is needed. The template provenance also records
-tool-key sorting and in-place later system messages.
+`--reasoning-parser qwen3` enables budget tracking on v0.32.0. `--reasoning-config`
+sets `reasoning_end_str` to a short hand-off ("I have to give the solution based on
+the reasoning directly now.") so a capped think ends in an answer. With a bare
+`</think>`, xhigh kept reasoning inside the reply until it ran out of tokens.
+The template provenance also records tool-key sorting and in-place later system messages.
 
-Medium is the un-nudged baseline, not a measured quality improvement. More reasoning
-can take more time and output tokens. `pi-auto` inherits medium; its classifier
-explicitly disables thinking. DeepSeek high/max and cloud-failover boundaries are unchanged.
+Qwen3.8-27B overthinks (unpatched upstream; see HF discussions 76 and 178), so the
+cap does the work. A 2026-11-08 A/B at xhigh (22 coding, math, RAG and tool tasks,
+two samples each) scored a 16K cap 40/44 and a 32K cap 39/44, with 16K about 21%
+faster, so the cap is 16K. Ask for more per request with `thinking_token_budget`.
+Turns `pi-auto` sends to local Qwen get the xhigh default; its classifier explicitly
+disables thinking. DeepSeek high/max and cloud-failover boundaries are unchanged.
 
 Preservation stays on for coding agents. Keep returned reasoning with the
 assistant messages to retain continuity and allow reuse of unchanged prefixes.
@@ -170,7 +175,7 @@ off. When changing that policy, update server, clients, tests and docs together.
 
 Before live tests, inspect the **running** Deployment args and request payloads.
 A short answer alone cannot prove which effort reached the model. The running
-`--default-chat-template-kwargs` must contain thinking=true, effort=medium and
+`--default-chat-template-kwargs` must contain thinking=true, effort=xhigh and
 preservation=true. Check the baked template path, budget env, stock parser and unchanged thinking sampler.
 
 ```bash
@@ -192,7 +197,7 @@ curl -fsS http://127.0.0.1:18000/v1/chat/completions \
 
 | Case | Request / expected result |
 |---|---|
-| Default | Omit kwargs; running defaults resolve to enabled/medium/preserved; answer 1591 with separate reasoning. |
+| Default | Omit kwargs; running defaults resolve to enabled/xhigh/preserved; answer 1591 with separate reasoning. |
 | Explicit low | `{"enable_thinking":true,"reasoning_effort":"low"}`; payload remains low, coherent answer. |
 | Explicit medium | `{"enable_thinking":true,"reasoning_effort":"medium"}`; payload remains medium, coherent answer. |
 | Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; explicit extended effort (16,384 thinking-token budget), coherent answer. |
