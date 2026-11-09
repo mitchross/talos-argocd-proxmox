@@ -25,7 +25,7 @@ Human steps live in [docs/domains/ai-gpu/hermes.md](../../../docs/domains/ai-gpu
 | Coding agents | talos | `skills/homelab-ops/SKILL.md` runs `claude -p` or `codex exec` in this pod; there is no fallback |
 | Gitea push/clone | talos | `GIT_CONFIG_*` env in `deployment.yaml` serves `GITEA_TOKEN` (1Password `gitea/git_token`) for `https://gitea.vanillax.me` |
 | Codex and GitHub logins | volume | `codex login --device-auth` and `gh auth login` once from the dashboard terminal; state lives on `hermes-data` |
-| Qwen Lab profiles | talos | `qwen-lab/` (`base.yaml` shared config, `profiles.yaml` team, `SOUL.md`, `skills/`) seeded by `scripts/seed-qwen-lab.py` into `/opt/data/profiles/qwen-*`. Local only: vLLM direct, no LiteLLM, no fallbacks, no keys in their `.env`. Also creates Kanban board `qwen-lab` with repo `/opt/data/workspace/qwen-lab/sandbox` |
+| Qwen Lab profiles | talos | `qwen-lab/` (`base.yaml` shared config, `profiles.yaml` team, `SOUL.md`, `skills/`) seeded by `scripts/seed-qwen-lab.py` into `/opt/data/profiles/qwen-*`. Local only: vLLM direct, no LiteLLM, no fallbacks, built-in memory (no Hindsight), only `SEARXNG_URL` in their `.env`. Also creates Kanban board `qwen-lab` with repo `/opt/data/workspace/qwen-lab/sandbox` |
 | Upstream behavior | `NousResearch/hermes-agent` | read the tagged source; do not fork |
 
 ## Rules

@@ -391,9 +391,9 @@ Switch back to `default` for normal work. Lab cards go on the Kanban board `qwen
 To change it, edit `my-apps/development/hermes/qwen-lab/` and open a PR.
 The seed rewrites each lab profile's `config.yaml`, `SOUL.md` and lab skills on every start.
 
-The lab talks to vLLM directly, so it has no key and no cloud fallback. Two parts still touch the
-cloud: Hindsight extracts memories with DeepSeek, and `web_extract` has no local backend
-(the lab reads pages with the browser tool instead).
+The lab talks to vLLM directly, so it has no key and no cloud fallback. Memory is Hermes' built-in
+`MEMORY.md`, not Hindsight, because Hindsight extracts facts with a cloud model. Search is SearXNG.
+`web_extract` has no local backend, so the lab reads pages with the browser tool.
 
 ## Troubleshooting
 

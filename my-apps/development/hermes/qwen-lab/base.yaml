@@ -29,14 +29,10 @@ web:
 browser:
   chromium_args: ["--no-sandbox", "--disable-dev-shm-usage"]
 
-# Own bank, so lab experiments stay out of the main memory. Hindsight's own extraction model is still cloud (#3603).
+# Built-in memory only (MEMORY.md/USER.md in each profile). Hindsight extracts facts with a cloud
+# model and has no per-bank model setting, so the lab skips it to stay fully local (#3603).
 memory:
-  provider: hindsight
-  hindsight:
-    mode: local_external
-    api_url: http://hindsight-service.hindsight.svc.cluster.local:8888
-    bank_id: qwen-lab
-    recall_budget: mid
+  provider: ""
   memory_enabled: true
   user_profile_enabled: true
 
@@ -97,8 +93,8 @@ approvals:
     - "codex *"
 
 plugins:
-  enabled: [hindsight]
-  disabled: []
+  enabled: []
+  disabled: [hindsight]
 
 # Local MCP servers only; Cloudflare (cloud, needs a token) is left out.
 mcp_servers:

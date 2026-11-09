@@ -1,11 +1,11 @@
 """Seed the Qwen Lab profiles from Git (/etc/hermes-qwen-lab). Runs as the hermes user during seed.sh.
 
 Creates each profile once, then rewrites its Git-owned files on every start: config.yaml, SOUL.md,
-Hindsight config and lab skills. profile.yaml (Bot Mode roster) is only filled in where keys are
+.env (non-secret) and lab skills. profile.yaml (Bot Mode roster) is only filled in where keys are
 missing, so desktop edits survive. Also creates the qwen-lab Kanban board. The default profile's
 files are never written here.
 """
-import copy, json, os, subprocess, sys
+import copy, os, subprocess, sys
 from pathlib import Path
 from io import StringIO
 
@@ -23,7 +23,6 @@ HERMES = os.environ.get("HERMES_BIN", "/opt/hermes/bin/hermes")
 WORKSPACE = Path(os.environ.get("QWEN_LAB_WORKSPACE", "/opt/data/workspace/qwen-lab"))
 SANDBOX = WORKSPACE / "sandbox"
 BOARD = "qwen-lab"
-HINDSIGHT_URL = "http://hindsight-service.hindsight.svc.cluster.local:8888"
 # The lab terminal gets the toolchains but not /opt/agents/bin (claude, codex).
 LAB_PROFILE_SH = (
     "export PATH=/opt/rust/cargo/bin:/usr/local/go/bin:$PATH\n"
@@ -82,12 +81,6 @@ def seed_profile(name, spec, base, soul, skills_src):
     cfg = merge(base, spec.get("config"))
     write(home / "config.yaml", "# Git owns this file: my-apps/development/hermes/qwen-lab, seeded on every start.\n" + dump(cfg))
     write(home / "SOUL.md", soul.replace("{role}", spec["role"].strip()))
-    hs = cfg["memory"]["hindsight"]
-    write(home / "hindsight" / "config.json", json.dumps({
-        "mode": hs["mode"], "api_url": hs["api_url"], "bank_id": hs["bank_id"],
-        "recall_budget": hs.get("recall_budget", "mid"), "recall_types": "observation,world,experience", "prefetch_retain_drain_timeout": 120,
-    }, indent=2) + "\n")
-
     # Bot Mode roster entry; only missing keys are filled so desktop edits (avatar, section) stay.
     meta_path = home / "profile.yaml"
     meta = (load(meta_path.read_text()) if meta_path.exists() else None) or {}
@@ -108,10 +101,6 @@ def seed_profile(name, spec, base, soul, skills_src):
     write(term_home / ".profile", LAB_PROFILE_SH)
     if not (term_home / ".gitconfig").exists():
         write(term_home / ".gitconfig", GITCONFIG)
-
-    if not (home / "plugins" / "hindsight").exists():
-        log(f"installing hindsight plugin for {name}")
-        run("-p", name, "plugins", "install", "hindsight", "--enable", "--yes-deps")
 
 
 def seed_board():
