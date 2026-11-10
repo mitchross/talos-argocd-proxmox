@@ -239,6 +239,7 @@ Paths without a prefix are under `my-apps/development/hermes/`.
 | Local and edited skills | `skills/library/<category>/<name>/` | Authored skills, saved local copies and the six modified bundled skills. The seed restores them before the snapshot import, only if missing. Refresh Git through a PR |
 | Cloudflare | `config.yaml` `mcp_servers.cloudflare` points at `https://mcp.cloudflare.com/mcp`. 1Password `cloudflared-proxmox/api-token` feeds `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi. Copied to the volume on every start |
+| Placement skill | `skills/hermes-change-placement/SKILL.md` | Tells Hermes which repo owns a change to itself: image, talos Git, 1Password or the volume. Copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`. Output goes under `cron/output/` until a chat platform exists |
 | Watch jobs | `cron/jobs.txt`, `cron/*.py`, `scripts/seed.sh` | Four script-only cron jobs. The seed restores a missing script and creates a missing job. It never overwrites a live copy |
 | Drift report | `scripts/report-drift.sh` | Runs at the end of the seed. Lists volume content that Git and the image do not install, in `/opt/data/logs/seed-drift.log` |

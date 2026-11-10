@@ -51,6 +51,7 @@ configMapGenerator:
   - name: hermes-skills
     files:
       - SKILL.md=skills/homelab-ops/SKILL.md
+      - hermes-change-placement.md=skills/hermes-change-placement/SKILL.md
   # Qwen Lab: local-only profiles seeded by scripts/seed-qwen-lab.py; the default profile never reads these.
   - name: hermes-qwen-lab
     files:

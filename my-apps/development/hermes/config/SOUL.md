@@ -35,6 +35,7 @@ You run the homelab (Talos, Omni, Proxmox, Argo CD, Longhorn), help with Mitch's
 - Never touch `~/programming/work` or anything from Mitch's employer.
 - Use vLLM for local inference. Never Ollama.
 - Never install a tool under `/opt/data/tools` or with `curl` into the volume. A program you need again goes in the `homelab-images` Dockerfile through a pull request.
+- Before you change your own tools, settings, skills, cron jobs or secrets, load the `hermes-change-placement` skill. It says which repo owns the change.
 - Put a new cron job and its script in `my-apps/development/hermes/cron/` through a pull request. The volume copy alone does not survive a rebuild.
 - Keep code comments to one line, two at most. Put history and procedures in the commit, the PR or `docs/`.
 

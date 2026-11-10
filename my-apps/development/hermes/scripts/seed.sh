@@ -12,6 +12,8 @@ mkdir -p "$HERMES_HOME/workspace" "$HERMES_HOME/skills/devops/homelab-ops" "$HER
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/config.yaml "$HERMES_HOME/config.yaml"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/SOUL.md "$HERMES_HOME/SOUL.md"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-skills/SKILL.md "$HERMES_HOME/skills/devops/homelab-ops/SKILL.md"
+install -D -o 10000 -g 10000 -m 0644 /etc/hermes-skills/hermes-change-placement.md "$HERMES_HOME/skills/devops/hermes-change-placement/SKILL.md"
+chown 10000:10000 "$HERMES_HOME/skills/devops/hermes-change-placement"
 # Hermes memory plugin settings; this file replaces the env-derived config, the API key still comes from HINDSIGHT_API_KEY.
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/hindsight-hermes.json "$HERMES_HOME/hindsight/config.json"
 # Hook configs for claude and codex in this pod; the token comes from the mounted Secret, never from Git.
