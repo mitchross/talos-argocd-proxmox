@@ -31,3 +31,43 @@ resources:
 
 ingress:
   enabled: false
+
+# AI Assistant plugin, pinned by version and ArtifactHub SHA256; bump both together.
+initContainers:
+  - name: install-ai-assistant
+    image: docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+    env:
+      - name: PLUGIN_VERSION
+        value: "0.5.0-alpha"
+      - name: PLUGIN_SHA256
+        value: "efe29409e91e51240d312c0819a0a4b058c3d99bd08af39c6b3a8d04aea06ad8"
+    command: ["/bin/sh", "-ec"]
+    args:
+      - |
+        wget -qO /tmp/ai.tgz "https://github.com/headlamp-k8s/plugins/releases/download/ai-assistant-${PLUGIN_VERSION}/headlamp-k8s-ai-assistant-${PLUGIN_VERSION}.tar.gz"
+        echo "${PLUGIN_SHA256}  /tmp/ai.tgz" | sha256sum -c -
+        tar xzf /tmp/ai.tgz -C /headlamp/plugins
+    securityContext:
+      runAsUser: 100
+      runAsGroup: 101
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 64Mi
+    volumeMounts:
+      - name: plugins
+        mountPath: /headlamp/plugins
+
+volumeMounts:
+  - name: plugins
+    mountPath: /headlamp/plugins
+
+volumes:
+  - name: plugins
+    emptyDir: {}
