@@ -104,7 +104,7 @@ spec:
             limits:   { cpu: "6", memory: "6Gi" }
       volumes:
         - name: tiles
-          persistentVolumeClaim: { claimName: tiles }
+          persistentVolumeClaim: { claimName: tiles-v2 }
         - name: grids
           persistentVolumeClaim: { claimName: grids }
         - name: state
@@ -206,7 +206,7 @@ spec:
             limits:   { cpu: "8", memory: "12Gi" }
       volumes:
         - name: tiles
-          persistentVolumeClaim: { claimName: tiles }
+          persistentVolumeClaim: { claimName: tiles-v2 }
         - name: grids
           persistentVolumeClaim: { claimName: grids }
         - name: state
@@ -309,7 +309,7 @@ spec:
             limits:   { cpu: "6", memory: "6Gi" }
       volumes:
         - name: tiles
-          persistentVolumeClaim: { claimName: tiles }
+          persistentVolumeClaim: { claimName: tiles-v2 }
         - name: grids
           persistentVolumeClaim: { claimName: grids }
         - name: state
@@ -412,7 +412,7 @@ spec:
             limits:   { cpu: "2", memory: "4Gi" }
       volumes:
         - name: tiles
-          persistentVolumeClaim: { claimName: tiles }
+          persistentVolumeClaim: { claimName: tiles-v2 }
         - name: grids
           persistentVolumeClaim: { claimName: grids }
         - name: state
