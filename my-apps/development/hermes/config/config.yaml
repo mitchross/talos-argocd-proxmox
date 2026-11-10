@@ -71,11 +71,13 @@ kanban:
 compression:
   threshold_tokens: 200000
 
-# When Claude rate-limits or errors, the chat moves to Codex (ChatGPT plan), then DeepSeek Flash.
+# On a rate limit or error, move to the next entry not on the failing backend (Codex workers reach Claude).
 # A limit that resets within 2 minutes is waited out instead of switching.
 fallback_providers:
   - provider: openai-codex
     model: gpt-6.1-sol
+  - provider: anthropic
+    model: claude-sonnet-5-5
   - provider: litellm
     model: deepseek-flash
 fallback:
