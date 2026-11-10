@@ -13,10 +13,10 @@ resources:
   - core-dependencies/longhorn-app.yaml
   - core-dependencies/snapshot-controller-app.yaml  # kopiur copyMethod=Snapshot needs CSI VolumeSnapshot
   # VolSync + pvc-plumber RETIRED 2026-06-27 — replaced by kopiur (all PVCs
-  # migrated; see docs/kopiur-trial.md). Removed: volsync-app,
+  # migrated). Removed: volsync-app,
   # volsync-backup-cluster-app, pvc-plumber-app + their dirs.
   # kopiur — THE production backup system since 2026-06-27 (Wave 2 operator,
-  # Wave 3 config). Trial history: docs/kopiur-trial.md.
+  # Wave 3 config).
   - core-dependencies/kopiur-operator-app.yaml
   - core-dependencies/kopiur-config-app.yaml
 

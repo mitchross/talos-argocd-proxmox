@@ -1,17 +1,19 @@
 # AI gateway and analytics
 
-**Which model answered?** Open Grafana `/d/pi-routing`.
-**Why did that turn escalate?** Open `langfuse.vanillax.me`, filter tag `pi`.
+This page shows how to see which model answered a request, what it cost, and
+why the router sent it there. Read it when you add a client to the gateway or
+when a dashboard looks wrong.
 
 New to the stack? Read [Local AI starter kit](index.md) first.
 
 !!! tip "Which tool do I open?"
-    - **How many, how fast, how much?** Grafana.
-    - **Why did this one request do that?** Langfuse.
-    - **Is it even running?** Run [Verify a deployment](#verify-a-deployment). About 15 minutes.
+    - To see how many requests ran, how fast, and at what cost, open Grafana. For the local and paid split, use `/d/pi-routing`.
+    - To see why one request went where it did, open `langfuse.vanillax.me` and filter on the tag `pi`.
+    - To check that telemetry works at all, run [Verify a deployment](#verify-a-deployment). It takes about 15 minutes.
 
-Every LLM request in the homelab goes through one gateway, LiteLLM. LiteLLM
-sends each request to a backend and reports what happened to two places.
+Every LLM request in the lab goes through one gateway, LiteLLM. LiteLLM sends
+each request to a backend. It then reports the request to Prometheus, which
+stores metrics, and to Langfuse, which stores one trace per request.
 
 ```mermaid
 flowchart LR
@@ -32,7 +34,7 @@ flowchart LR
 | Grafana `/d/ai-gateway-analytics`, AI Gateway and Analytics | all gateway requests, tokens, latency, failures, Langfuse health |
 | Grafana `/d/llm-engines`, Local LLM Engines | vLLM and Strata side by side: state, speed, latency, history per engine |
 | Grafana `/d/vllm-inference`, vLLM Inference | vLLM queue depth, decode/prefill speed, latency, KV cache use |
-| Grafana `/d/strata-inference`, Strata Inference | Strata live state, decode/prefill speed, latency, expert/prompt caches, MTP |
+| Grafana `/d/strata-inference`, Strata Inference | Strata live state, decode/prefill speed, latency, expert/prompt caches, MTP. Strata is parked at 0 replicas |
 | Grafana `/d/gpu-overview`, GPU Overview | GPU power, memory, temperature, utilisation |
 | Langfuse | one trace per request: input, output, tokens, session, routing reason |
 
@@ -41,8 +43,8 @@ Grafana, then open Langfuse to see why one request went where it did.
 
 ## Reading the Qwen / DeepSeek split
 
-Pi shows the `pi-auto` alias, never the backend that answered. LiteLLM records
-two model labels on each request, and the split is the gap between them:
+Pi shows the `pi-auto` name, never the backend that answered. LiteLLM records
+two model labels on each request. Compare them to see which backend ran:
 
 ```mermaid
 flowchart LR
@@ -56,16 +58,16 @@ flowchart LR
 | `requested_model` | the route LiteLLM counted | `qwen3.8-27b-auto` | `pi-auto` |
 | `litellm_model_name` | what actually ran | `qwen3.8-27b` | `~deepseek/deepseek-flash-latest` |
 
-**Gotcha.** LiteLLM counts a local turn under the tier route
-`qwen3.8-27b-auto`, not under `pi-auto`. A query that filters on
-`requested_model="pi-auto"` alone shows 0% local. Match both names:
-`requested_model=~"pi-auto|qwen3.8-27b-auto"`. Only `pi-auto` can reach
-`qwen3.8-27b-auto`, so no other client gets counted.
+!!! warning "Match both route names"
+    LiteLLM counts a local turn under the tier route `qwen3.8-27b-auto`, not
+    under `pi-auto`. A query that filters on `requested_model="pi-auto"` alone
+    shows 0% local. Use `requested_model=~"pi-auto|qwen3.8-27b-auto"`. Only
+    `pi-auto` can reach `qwen3.8-27b-auto`, so the query counts no other client.
 
 `litellm_proxy_total_requests_metric_total` carries only `requested_model`, so
 it cannot show the split. Use `litellm_deployment_success_responses_total`.
 
-Pi traffic is sparse, and that causes two traps:
+Pi traffic is sparse. Sparse traffic causes two wrong readings:
 
 1. A counter that first appears at its full value makes `increase()` read
    zero for that first sample. A short window right after a LiteLLM restart can
@@ -75,9 +77,9 @@ Pi traffic is sparse, and that causes two traps:
 
 ## Reading Langfuse
 
-Langfuse stores the backend that answered in `providedModelName`. Scope every
-widget with the tag filter `tags any of [pi]`; without it, Open WebUI and the
-other gateway clients count as Pi turns.
+Langfuse stores the backend that answered in `providedModelName`. Add the tag
+filter `tags any of [pi]` to every widget. Without it, Open WebUI and the other
+gateway clients count as Pi turns.
 
 Per trace, read `routing_decision.cause`:
 
@@ -86,13 +88,15 @@ Per trace, read `routing_decision.cause`:
 | `llm_classifier` | the classifier graded the request |
 | `default_model_fallback` | classification failed, so the request went to the default, DeepSeek |
 
-Langfuse dashboards live in the Langfuse database, not in Git. After a rebuild,
-recreate them in the UI, or with `dashboardWidgets.create` plus
-`dashboard.updateDashboardDefinition`.
+## Where the dashboards are stored
 
-Grafana dashboards live in Git under
+Langfuse dashboards are stored in the Langfuse database, not in Git. After a
+cluster rebuild, recreate them in the UI, or with `dashboardWidgets.create`
+plus `dashboard.updateDashboardDefinition`.
+
+Grafana dashboards are stored in Git under
 [`monitoring/metrics/prometheus-stack/dashboards/ai/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/monitoring/metrics/prometheus-stack/dashboards/ai).
-Edit the JSON through a PR, and ArgoCD reloads them.
+Edit the JSON through a PR. ArgoCD then reloads the dashboards.
 
 ## Routes and credentials
 
@@ -105,30 +109,34 @@ Every URL, key and auth path is listed once, in
 |---|---|---|
 | PostgreSQL | identity, projects, configuration | kopiur, restore-before-bind |
 | ClickHouse | AI observations | kopiur, restore-before-bind |
-| Valkey | queue | **exempt**. Losing it loses in-flight observations. |
+| Valkey | queue | backup-exempt. Losing it loses in-flight observations. |
 | RustFS | event payloads, media, exports | separate bucket lifecycle |
 
-The Langfuse chart's bundled stores are disabled. The app owns PostgreSQL,
-ClickHouse and Valkey, so no database operator is needed. A Sync hook creates
-the RustFS bucket before web and worker start.
+The Langfuse chart's bundled stores are disabled. The app's own manifests run
+PostgreSQL, ClickHouse and Valkey as plain Deployments, so the cluster needs no
+database operator. An ArgoCD Sync hook creates the RustFS bucket before web and
+worker start.
 
-This is not lossless messaging. Keep all stores consistent when planning a
-restore, and test recovery with synthetic observations first.
+The pipeline can lose observations that are in flight. Restore all stores to
+the same point in time, and test a recovery with synthetic observations first.
 
-Langfuse v4 uses a new observations data model. The LiteLLM image ships the
+## Why the callback is `langfuse_otel`
+
+Langfuse v4 has its own observations data model. The LiteLLM image ships the
 legacy Langfuse SDK, so the plain `langfuse` callback does not work.
 `langfuse_otel` sends the v4 header and exports to
-`/api/public/otel/v1/traces`. Read with Observations API v2; legacy traces APIs
-return 404 on a fresh v4 install.
+`/api/public/otel/v1/traces`. Read data with Observations API v2. The legacy
+traces APIs return 404 on a fresh v4 install.
 
 ## Verify a deployment
 
-This takes about 15 minutes.
+This check takes about 15 minutes. It sends synthetic requests and changes no
+configuration.
 
-1. Confirm `my-apps-langfuse`, `my-apps-litellm`, `my-apps-open-webui` and
-   `monitoring-prometheus-stack` are Synced/Healthy.
-2. Sign into Langfuse and open **Homelab AI**. An empty chart means nothing
-   until you confirm the project exists.
+1. Confirm that the ArgoCD Applications `my-apps-langfuse`, `my-apps-litellm`,
+   `my-apps-open-webui` and `monitoring-prometheus-stack` are Synced and Healthy.
+2. Sign in to Langfuse and open the project **Homelab AI**. An empty chart in
+   another project proves nothing.
 3. Send synthetic traffic:
    ```bash
    kubectl -n litellm exec -i deploy/litellm -- python - < scripts/smoke-litellm.py
@@ -138,15 +146,16 @@ This takes about 15 minutes.
    `ai-observability-...` session marker.
 4. In Langfuse Observations, filter by that `session_id` and clear the
    root-only filter. Expect at least five generations with model, input/output,
-   positive token usage and latency. **Intake HTTP success alone proves
-   nothing.** Only stored observations do.
+   positive token usage and latency. A successful intake HTTP response does not
+   prove ingestion. Only stored observations do.
 5. Check backups:
    ```bash
    kubectl -n langfuse get secret kopiur-rustfs
    kubectl -n langfuse get snapshotpolicy,snapshotschedule,restore,snapshot
    ```
-   Both database policies exist and snapshots reach `Succeeded` with non-zero
-   files. A brand-new empty PVC is not a tested restore.
+   Expect a `SnapshotPolicy` for each database, and each `Snapshot` at
+   `Succeeded` with non-zero files. An empty PVC that has never been backed up
+   is not a tested restore.
 
 ## Check that `pi-auto` uses both models
 
@@ -174,8 +183,9 @@ Run this before you deploy a LiteLLM bump:
 kubectl -n litellm exec -i deploy/litellm -- python - < scripts/verify-litellm-langfuse.py
 ```
 
-It uses synthetic in-memory spans, makes no model requests, and catches a
-pinned-adapter incompatibility before it reaches the cluster.
+The script uses synthetic in-memory spans and makes no model requests. It
+fails when the pinned Langfuse adapter is not compatible with the LiteLLM
+version, before that version reaches the cluster.
 
 ## When telemetry breaks
 
@@ -183,14 +193,15 @@ pinned-adapter incompatibility before it reaches the cluster.
 |---|---|---|
 | Requests work, no traces | adapter or key mismatch | run the adapter check above |
 | Empty charts, project missing | signed into the wrong project | open **Homelab AI** |
-| Traces stop after a version bump | v4 data-model or SDK drift | re-run the adapter check, then step 4 |
+| Traces stop after a version bump | v4 data-model or SDK drift | re-run the adapter check, then step 4 of the verify list |
 | `/d/pi-routing` shows 0% local | query filters on `pi-auto` only | match `pi-auto\|qwen3.8-27b-auto` |
 | TTFT panel empty | no streaming traffic | send a streamed request |
 
-Availability and restart panels never prove ingestion. Only step 4 does.
+Availability and restart panels never prove ingestion. Only step 4 of
+[Verify a deployment](#verify-a-deployment) does.
 
-Telemetry is optional to inference. If Langfuse is down, model requests still
-succeed and observations for that window are lost.
+Inference does not depend on telemetry. If Langfuse is down, model requests
+still succeed, and the observations for that time are lost.
 
 ## Upstream
 

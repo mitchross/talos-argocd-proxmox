@@ -308,7 +308,7 @@
 
     { n:"Lesson 8 of 9", title:"What deliberately does NOT use this path",
       learn:`<p>Two kinds of data skip the snapshot machinery — <strong>on purpose</strong>, and each skip is written down.</p>
-      <p><strong>Databases</strong> (Postgres) ride the same kopiur pipeline on an <strong>hourly</strong> schedule: the CSI snapshot is crash-consistent — exactly what Postgres is built to recover from (WAL replay, as after a power cut). The trade, accepted deliberately: restores land on the last snapshot, not an arbitrary point in time. (CNPG/Barman, the old SQL-aware system, was retired 2026-08-13.)</p>
+      <p><strong>Databases</strong> (Postgres) ride the same kopiur pipeline on a <strong>daily</strong> schedule, or every 6 hours for data you cannot re-create. The CSI snapshot is crash-consistent — exactly what Postgres is built to recover from (WAL replay, as after a power cut). The trade, accepted deliberately: restores land on the last snapshot, not an arbitrary point in time. (CNPG/Barman, the old SQL-aware system, was retired 2026-08-13.)</p>
       <p><strong>Disposable data</strong> (caches, analytics, easily-rebuilt files) is marked <code>backup-exempt: "true"</code> — always paired with a written <em>reason</em>, so “not backed up” is a recorded decision, never an accident. A CI check audits every disk: protected, or exempt-with-reason. Nothing in between.</p>
       <div class="goal"><span class="g-ic">✓</span><span>You learned: databases use their own SQL-aware backups, and every unprotected disk carries a written reason.</span></div>`,
       show:`<div class="figframe"><div class="pvc2">

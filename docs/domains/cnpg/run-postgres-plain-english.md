@@ -1,41 +1,40 @@
-# Run Postgres in this cluster: the plain-English guide
+# Run Postgres in this cluster
 
-**Purpose:** what a junior Kubernetes operator needs to run, check,
-restore, and change a Postgres database in this cluster without fighting
-GitOps.
-**Status:** current truth. This is the **only** database pattern in the
-cluster (plain Postgres + kopiur, default since 2026-07-09; the last two
-CloudNativePG databases were retired 2026-08-13 in a data-zero cutover).
-**Scope:** day-to-day operations and recovery. [The pattern](#the-pattern) below and the
-`/project:new-database` command cover creating a brand-new database.
+This page tells you how to check, change, and restore a Postgres database in
+this cluster without working against GitOps. It is for anyone who operates a
+database here, including people who are new to Kubernetes. To create a database,
+read [The pattern](#the-pattern) and run `/project:new-database <app>`.
 
----
+Every Postgres database here is plain Postgres with a kopiur backup. No
+database operator runs in this cluster. CNPG (CloudNativePG) is retired. Do not
+add it back.
 
-## TL;DR
+## The short version
 
 !!! tip
-    - A database here is **just an app**: a Deployment running the official
-      `postgres` image, a Service, a PVC, and a small backup stub. It has no operator
-      and no StatefulSet.
-    - **Git is the only control panel.** ArgoCD notices your commit and makes
-      the cluster match. ArgoCD silently reverts `kubectl edit` within minutes.
-    - kopiur snapshots the database volume **every hour** to S3. If the PVC is
-      ever recreated, it **refills itself from the newest snapshot before the
-      pod starts** ("restore-before-bind"). Worst case you lose 1 hour of data.
-    - A PVC stuck `Pending` after a rebuild is usually the restore **working**,
-      not broken. Read [the Pending section](#a-pending-pvc-is-usually-good-news)
-      before touching anything.
-    - To roll a database back to its last snapshot, delete two objects and let
-      ArgoCD recreate them. Full steps [below](#level-2-roll-the-database-back-to-the-last-snapshot).
+    - A database here is an ordinary app. It is a Deployment that runs the
+      official `postgres` image, a Service, a PVC (the request for a disk), and
+      a small backup stub.
+    - Git is the only place to make a change. Argo CD applies your commit to
+      the cluster. Argo CD also reverts a `kubectl edit` within minutes.
+    - kopiur makes a backup of the database volume once a day. Databases with
+      data that cannot be re-created get a backup every 6 hours.
+    - When a PVC is recreated, kopiur fills it from the newest backup before the
+      pod starts. This is restore-before-bind. You lose the changes made since
+      that backup.
+    - A PVC that stays `Pending` after a rebuild usually means the restore is
+      running. Read [A `Pending` PVC is usually good news](#a-pending-pvc-is-usually-good-news)
+      before you change anything.
+    - To roll a database back to its newest backup, delete two objects and let
+      Argo CD recreate them. The steps are in
+      [Level 2](#level-2-roll-the-database-back-to-the-last-snapshot).
 
----
-
-## The mental model (read this once, slowly)
+## How it works
 
 ![The cluster dies on a nuke; Git, Kopia snapshots in RustFS S3, and 1Password survive off-cluster and rebuild the new cluster with no manual steps](../../assets/postgres-nuke-lifecycle.svg)
 
-*Everything inside the cluster is disposable, because everything it needs to
-rebuild itself lives outside it.
+*The cluster can be thrown away, because everything it needs for a rebuild is
+stored outside it.
 [Open the full-size lifecycle diagram](../../assets/postgres-nuke-lifecycle.svg).*
 
 ```text
@@ -47,44 +46,37 @@ The cluster                  Git repo          ── rebuilds objects ──┐
   the databases                                                        same data
 ```
 
-Three loops run all the time. Once you understand them, the odd behavior in this
-page makes sense:
+Three loops run all the time. They explain most of the behavior on this page.
 
-```text
-LOOP 1 — ArgoCD (every ~3 min, or on git push)
-  "Does the cluster match Git?"  If not → make it match.
-  This includes re-creating things you deleted and reverting things you edited.
+| Loop | When it runs | What it does |
+|---|---|---|
+| 1. Argo CD | About every 3 minutes, and on each Git push | Compares the cluster with Git and makes the cluster match. It recreates objects you deleted and reverts objects you edited. |
+| 2. kopiur backup | On a daily cron per database, or every 6 hours for data that cannot be re-created | Takes a CSI snapshot of the PVC and uploads it to the Kopia repository on RustFS. |
+| 3. kopiur restore-before-bind | Only when a PVC is created | Keeps the new PVC `Pending`, copies the newest backup into it, and then lets it bind. |
 
-LOOP 2 — kopiur backup (daily cron per database; 6-hourly if irreplaceable)
-  "Snapshot the PVC → upload to S3 (RustFS bucket)."
-  Postgres is never stopped for this; the snapshot is crash-consistent,
-  which Postgres is designed to recover from (it looks like a power cut).
+Postgres keeps running during a backup. Before the CSI snapshot, a kopiur hook
+runs `CHECKPOINT` in the database. The CSI snapshot is crash-consistent, which
+means it looks like the disk after a power cut. Postgres is built to recover
+from that state. On start, it replays its write-ahead log (WAL), the journal of
+recent changes.
 
-LOOP 3 — kopiur restore-before-bind (only when a PVC is CREATED)
-  New PVC appears → it does NOT bind empty. It waits (Pending) while kopiur
-  downloads the newest snapshot into it, THEN binds with data, THEN the
-  Postgres pod starts and replays its write-ahead log like after a power loss.
-```
+Because of loops 1 and 3, you recover by deleting. You do not copy data back by
+hand. You delete the broken object, Argo CD recreates it from Git, and loop 3
+fills in the data. A full cluster rebuild works the same way.
 
-This makes GitOps with databases *easier* here, not harder.
-**Deleting things is the recovery mechanism.** You never restore by hand.
-You delete the broken object, ArgoCD recreates it from Git, and loop 3 refills
-the data. The whole cluster rebuild works the same way.
-
-Where the pieces live (gitea is the reference, so copy it):
+Gitea is the reference database. Copy it.
 
 | Piece | File (reference) | What it is |
 |---|---|---|
 | The database | `my-apps/development/gitea/postgres/deployment.yaml` | Plain `postgres:18.x` Deployment, `Recreate` strategy, runs as uid 999 |
 | The address apps use | `my-apps/development/gitea/postgres/service.yaml` | `gitea-postgres.gitea.svc.cluster.local:5432` |
 | The disk | `my-apps/development/gitea/postgres/pvc.yaml` | Longhorn PVC whose `dataSourceRef` points at the kopiur `Restore` |
-| The backup contract | `my-apps/development/gitea/kopiur/gitea-postgres-data.yaml` | `SnapshotPolicy` (daily) + `SnapshotSchedule` + `Restore` |
-| The password | 1Password, through an ExternalSecret, into `gitea-db-secret` | Never in Git. See [rotation gotcha](#gotcha-4-the-password-lives-in-two-places) |
+| The backup stub | `my-apps/development/gitea/kopiur/gitea-postgres-data.yaml` | `SnapshotPolicy` (daily) + `SnapshotSchedule` + `Restore` |
+| The password | 1Password, through an ExternalSecret, into `gitea-db-secret` | Never in Git. See [the password rule](#gotcha-4-the-password-lives-in-two-places) |
 
-To **create** a new database, follow [The pattern](#the-pattern) or
-run `/project:new-database <app>`. Don't hand-roll the four files.
-
-The deployed pattern restores volume snapshots; PITR and automatic database failover need a separate design review.
+This pattern restores a whole volume to its newest backup. It has no
+point-in-time recovery (PITR), no replicas, and no automatic failover. If you
+need one of those, start a separate design review first.
 
 ```mermaid
 flowchart TB
@@ -127,8 +119,9 @@ flowchart TB
 
 ### The pattern
 
-The reference is `my-apps/development/gitea/postgres/`. Four pieces live in the
-owning app's directory:
+The reference is `my-apps/development/gitea/postgres/`. A database is four
+pieces in the directory of the app that owns it. Use `/project:new-database <app>`
+to create them. Do not write the four files from memory.
 
 | Piece | Key points |
 |---|---|
@@ -137,23 +130,24 @@ owning app's directory:
 | `postgres/pvc.yaml` | `longhorn`, a `dataSourceRef` pointing at the kopiur `Restore`, and the two masking annotations |
 | `kopiur/<app>-postgres-data.yaml` | stub with mover `999:999`, **daily** retention tier (`keepDaily: 7, keepWeekly: 8`), distinct cron minute |
 
-The trade: restores land on the **last snapshot** (daily tier targets daily
-snapshots, 6h for irreplaceable data), not any point in time. There are no
-replicas or failover (single pod, `Recreate`). Postgres **major** upgrades are
-a manual dump and restore. Renovate still automates minors and patches.
+The pattern has three limits:
 
-kopiur's CSI VolumeSnapshot is crash-consistent. Postgres recovers from that
-by WAL replay on boot, as after a power cut, and `--data-checksums` makes
-torn-page corruption detectable. The startup probe allows about five
-minutes before liveness can restart the container; size it from observed
-recovery time for a large database.
+- A restore gives you the newest backup, not any point in time. The daily tier
+  makes one backup a day. Data that cannot be re-created gets one every 6 hours.
+- There are no replicas and no failover. One pod runs, with the `Recreate` strategy.
+- A Postgres major upgrade is a manual dump and restore. Renovate automates
+  minor and patch versions only.
 
----
+The CSI snapshot that kopiur reads is crash-consistent. Postgres recovers from
+it by WAL replay on start. `--data-checksums` lets Postgres detect a page that
+was only half written. The startup probe allows about five minutes before the
+liveness probe can restart the container. For a large database, set that time
+from the recovery time you measure.
 
-## Daily driving: is my database healthy?
+## Check that a database is healthy
 
-All of these are read-only. Run them before you decide anything is broken (gitea shown;
-substitute your namespace and app):
+All of these commands only read. Run them before you decide that something is
+broken. The examples use gitea. Replace the namespace and the app name.
 
 ```bash
 # 1. Pod running and ready?
@@ -166,103 +160,119 @@ kubectl -n gitea get pvc gitea-postgres-data
 
 # 3. Backups actually happening? (THE most important check)
 kubectl -n gitea get snapshot
-# EXPECT: newest Snapshot age < 1h, phase Succeeded, non-zero files.
-# A database whose newest snapshot is a day old has a broken safety net —
-# fix that BEFORE it matters, see kopiur architecture doc.
+# EXPECT: newest Snapshot no older than its schedule (1 day, or 6h on the
+# 6-hourly tier), phase Succeeded, non-zero files. If the newest Snapshot is
+# older than that, fix the backup first. See the kopiur architecture doc.
 
 # 4. Talk to the database directly (troubleshooting only, changes nothing):
 kubectl -n gitea exec -it deploy/gitea-postgres -c postgres -- \
   psql -U gitea -d gitea -c 'select version();'
 ```
 
-For trends, use Grafana. The postgres exporter sidecar (see
-[Metrics](#metrics-seeing-inside-the-database)) publishes connection counts,
-database size, and long-running-query gauges for every database that carries it.
-
----
+For trends, use Grafana. The postgres exporter sidecar publishes connection
+counts, database size, and long-running-query gauges for each database that
+carries it. See [Metrics](#metrics-seeing-inside-the-database).
 
 ## The GitOps gotchas (why your instinct is wrong here)
 
-These five things bite people who come from `kubectl`-driven or
-managed-database setups. Each one exists for a reason.
+These five rules surprise people who are used to `kubectl` changes or managed
+databases. Each rule has a reason.
 
 ### Gotcha 1: `kubectl edit` doesn't stick
 
-`my-apps` Applications run with self-heal on: ArgoCD reverts any live edit,
-including `kubectl scale --replicas=0`, usually within a few minutes. This is
-intended, because it means the cluster can always be rebuilt from Git alone.
+Applications under `my-apps` run with self-heal on. Argo CD reverts every live
+edit, including `kubectl scale --replicas=0`, usually within a few minutes. This
+is intended. It guarantees that Git alone can rebuild the cluster.
 
-**Instead:** change the YAML in Git, push, and let ArgoCD sync. If you need
-the DB down now, see the restore ladder below. Those runbooks work *with*
-self-heal, not against it.
+Change the YAML in Git, push, and let Argo CD sync. If the database must go
+down now, use [the restore ladder](#the-restore-ladder-start-at-level-0-escalate-only-if-needed).
+Its steps work with self-heal.
 
 ### Gotcha 2: every database change causes a short outage (on purpose)
 
-The Deployment uses `strategy: Recreate`, so the old pod fully stops before the
-new one starts. A `ReadWriteOnce` disk requires this. `RollingUpdate`
-would try to attach one disk to two pods and deadlock forever
-(`Multi-Attach error`, pod stuck `ContainerCreating`).
+The Deployment uses `strategy: Recreate`. The old pod stops completely before
+the new pod starts. A `ReadWriteOnce` disk requires this, because it attaches to
+one node at a time.
 
-**Never** "fix" the brief downtime by switching to RollingUpdate. Expect ~30–60
-seconds of database unavailability on any image bump or config change. The apps
-reconnect on their own.
+Do not switch to `RollingUpdate` to remove the downtime. `RollingUpdate` tries
+to attach one disk to two pods. The new pod then stays in `ContainerCreating`
+with a `Multi-Attach error`, and it never recovers.
+
+Expect about 30 to 60 seconds without the database on each image or
+configuration change. The apps reconnect without help.
 
 ### Gotcha 3: version bumps, minors are free, majors are a project
 
-Renovate auto-bumps `postgres:18.3 → 18.4` (safe, data format unchanged).
-A **major** bump (`18 → 19`) is different. Postgres data directories are not
-major-version compatible, and merging one crashloops the pod on its old data
-dir. This happened in PR #1621, 17 to 18. Renovate therefore gates majors
-behind manual approval. To do one on purpose, dump with
-the **old** major's image first, wipe and reinit the data dir, then restore. The exact
-order is in the comment block at the top of the gitea postgres
-`deployment.yaml`.
+Renovate updates minor versions automatically, for example
+`postgres:18.3 → 18.4`. A minor update is safe because the data format does not
+change.
+
+A major update, for example `18 → 19`, is different. A Postgres data directory
+works with one major version only. If you merge a major update, the pod
+crash-loops on its old data directory. Renovate therefore holds major updates
+until you approve them by hand.
+
+To do a major update on purpose, follow this order:
+
+1. Dump the database with the image of the old major version.
+2. Wipe and re-initialize the data directory.
+3. Restore the dump.
+
+The comment block at the top of the gitea postgres `deployment.yaml` has the
+exact order.
 
 ### Gotcha 4: the password lives in two places
 
-The 1Password item feeds the Kubernetes Secret, but Postgres **also** stores
-the password inside its own data, and the in-data copy wins. The env vars only
-matter on the very first boot of an *empty* volume. Two traps follow:
+The 1Password item fills the Kubernetes Secret. Postgres also stores the
+password inside its own data, and the copy in the data is the one Postgres
+checks. The environment variables matter only on the first start of an empty
+volume. Two rules follow.
 
-- Changing the 1Password item alone does **not** change the database password.
-  It just makes the app present a wrong password. Rotate in this order:
-  run `ALTER ROLE ... WITH PASSWORD` inside psql **first**, then update 1Password,
-  then restart consumers. Authenticate with the current password, keep the
-  password and the SQL out of Git and shell history, and verify consumers
-  before discarding the old credential.
-- After a **restore**, the database has the password from snapshot time. If
-  someone rotated since the snapshot, the app gets auth errors until you
-  re-run the `ALTER ROLE` with the current 1Password value.
+A change in 1Password alone does not change the database password. The app then
+sends a password that Postgres rejects. Rotate in this order:
+
+1. Run `ALTER ROLE ... WITH PASSWORD` in psql. Authenticate with the current password.
+2. Update 1Password.
+3. Restart the consumers.
+4. Verify the consumers before you discard the old credential.
+
+Keep the password and the SQL out of Git and out of your shell history.
+
+After a restore, the database has the password from the time of the backup. If
+someone rotated the password after that backup, the app gets authentication
+errors. Run the `ALTER ROLE` again with the current 1Password value.
 
 ### Gotcha 5: the PVC's odd annotations matter
 
-The database PVC carries `argocd.argoproj.io/compare-options` /
-`sync-options` annotations and a `dataSourceRef`. A PVC's `dataSourceRef` is
-immutable after creation, and those annotations stop ArgoCD from endlessly
-trying (and failing) to "fix" that immutable field. Removing them causes
-a permanent `ComparisonError` or a forever-OutOfSync PVC. Leave
-them alone. An OutOfSync-looking PVC that is `Bound` and working is fine.
+The database PVC carries the annotations `argocd.argoproj.io/compare-options`
+and `argocd.argoproj.io/sync-options`, and a `dataSourceRef`. Kubernetes does
+not allow a change to `dataSourceRef` after the PVC is created. The annotations
+stop Argo CD from trying to change that field again and again.
 
----
+Do not remove the annotations. Without them, the PVC shows a permanent
+`ComparisonError` or stays OutOfSync. A PVC that looks OutOfSync but is `Bound`
+and works is fine.
 
 ## A `Pending` PVC is usually good news
 
-When a database PVC is (re)created, it sits `Pending` while kopiur downloads
-the newest snapshot into it. **This is the restore working.** Small DBs take
-under a minute. Big ones take as long as the download takes.
+When a database PVC is created or recreated, it stays `Pending` while kopiur
+copies the newest backup into it. That is the restore at work. A small database
+takes under a minute. A large one takes as long as the download.
 
 ![When a PVC is created: snapshot exists means it fills then binds with data; S3 unreachable means it waits Pending and never binds empty; a brand-new database binds empty once and is protected from then on](../../assets/postgres-restore-decision.svg)
 
-*Remember this: an outage delays a restore and can never fake one.
-"Empty after rebuild" requires a reachable repo with no snapshot, which only
-describes a database that never existed before.
+*An outage can delay a restore. It cannot produce an empty database. A PVC binds
+empty only when the Kopia repository is reachable and holds no backup, which is
+true only for a database that never existed before.
 [Open the full-size decision diagram](../../assets/postgres-restore-decision.svg).*
 
-```text
-PVC created ──┬─ snapshot exists  → fills from newest snapshot → binds WITH data
-              ├─ S3 unreachable   → waits Pending + retries — NEVER binds empty
-              └─ brand-new DB     → binds empty once → scheduled backups begin
-```
+| State when the PVC is created | Result |
+|---|---|
+| A backup exists | The PVC fills from the newest backup, then binds with the data. Postgres starts and replays its WAL. |
+| The Kopia repository is unreachable (NAS down, S3 credentials broken) | The PVC stays `Pending` and kopiur retries. The PVC never binds empty. Fix the repository and the restore continues. |
+| The database is new and has no backup | The PVC binds empty once. Scheduled backups start from there. |
+
+Watch the restore:
 
 ```bash
 # Watch the hydration:
@@ -270,66 +280,54 @@ kubectl -n <ns> get restore <pvc-name>-restore
 kubectl -n <ns> get events --sort-by=.lastTimestamp | tail -20
 ```
 
-Only two outcomes are possible, both safe:
-
-- **Snapshot exists.** The PVC binds *with the data in it*. Postgres then boots
-  and replays its journal. The startup probe allows ~5 minutes for this, so do
-  not "help" by killing a pod that's starting slowly.
-- **Backup repo unreachable** (NAS down, S3 creds broken). The PVC **stays
-  Pending forever rather than binding empty.** This is deliberate: an outage
-  can never silently give you a blank database. Fix the repo and the restore
-  proceeds.
-
-A new PVC binds empty only for a genuinely **brand-new** database
-that has never had a snapshot. That is the intended first-deploy path.
-
----
+After the PVC binds, the startup probe gives Postgres about 5 minutes to replay
+its WAL. Do not delete a pod because it starts slowly.
 
 ## The restore ladder (start at level 0, escalate only if needed)
 
 ### Level 0: pod crashed, node rebooted, OOM-kill
 
-**Do nothing.** Kubernetes restarts the pod, Postgres replays its
-write-ahead log exactly like after a power cut, and comes back consistent.
-Data loss: none. Wait, and run
-`kubectl -n <ns> get events` if it recurs.
+Do nothing. Kubernetes restarts the pod, and Postgres replays its WAL as it does
+after a power cut. No data is lost. If it happens again, run
+`kubectl -n <ns> get events`.
 
 ### Level 1: database is up but the app can't reach it
 
-This is a plumbing problem, not a data problem. Do **not** restore anything.
-Check in order: Secret in sync (`kubectl -n <ns> get externalsecret`), the Service
-name the app points at, and whether someone rotated the password without
-the `ALTER ROLE` step (gotcha 4).
+This is a connection problem, not a data problem. Do not restore anything.
+Check these in order:
+
+1. The Secret is in sync: `kubectl -n <ns> get externalsecret`.
+2. The app points at the correct Service name.
+3. Nobody rotated the password without the `ALTER ROLE` step (gotcha 4).
 
 ### Level 2: roll the database back to the last snapshot
 
-For: bad migration, corrupted data, "the app wrote garbage for the last
-20 minutes and I want the 10 a.m. state back."
+Use this level after a bad migration, after data corruption, or when the app
+wrote wrong data and you want the state of the newest backup.
 
-!!! warning "This discards data: check what you're rolling back to first"
-    Everything written **after the newest snapshot is gone** (a daily schedule
-    loses up to a day, a 6-hourly one up to 6 hours). Confirm the newest snapshot's age and size *before*
-    deleting anything:
+!!! warning "This discards data. Check what you roll back to first"
+    Everything written after the newest backup is lost. A daily schedule loses
+    up to a day. A 6-hourly schedule loses up to 6 hours. Confirm the age and
+    the size of the newest `Snapshot` before you delete anything:
     ```bash
     kubectl -n <ns> get snapshot   # newest age + Succeeded + non-zero files?
     ```
-    Point-in-time recovery ("2:37 p.m. exactly") does **not** exist on this
-    pattern. We accepted that trade-off against CNPG. The last snapshot is the
-    only restore point.
+    This pattern has no point-in-time recovery. The newest backup is the only
+    restore point.
 
-The runbook needs no ArgoCD pausing. Self-heal does the
-work, and the weekly restore-canary drill exercises the same mechanic:
+You do not pause Argo CD for this. Self-heal does the work. The restore canary
+drill uses the same steps.
 
 ```bash
 NS=gitea; APP=gitea-postgres; PVC=gitea-postgres-data
 
-# 1. Don't bother scaling the app to 0 — self-heal puts it back. It doesn't
-#    matter: the app will error while its database is gone (expected) and
-#    anything it writes in the meantime dies with the old volume anyway.
+# 1. Do not scale the app to 0. Self-heal puts it back. The app shows errors
+#    while its database is gone (expected), and anything it writes in the
+#    meantime is lost with the old volume.
 
 # 2. Delete the pinned Restore CR. A Restore remembers ("pins") the snapshot
-#    it used the first time — deleting it is what makes the recreate pull the
-#    NEWEST snapshot instead of the ancient pinned one.
+#    it used the first time. Deleting it makes the recreated Restore pull the
+#    NEWEST snapshot instead of the old pinned one.
 kubectl -n $NS delete restore $PVC-restore
 
 # 3. Delete the PVC, then the postgres pod holding it (the PVC finalizer
@@ -340,84 +338,70 @@ kubectl -n $NS delete pod -l app=$APP
 # 4. Let ArgoCD do the restore: self-heal notices the missing Restore + PVC
 #    and recreates both from Git; the new PVC hydrates from the newest
 #    snapshot; the new postgres pod starts on the restored data.
-#    Impatient? Click SYNC on the my-apps-<app> Application in the ArgoCD UI.
+#    To go faster, click SYNC on the my-apps-<app> Application in the ArgoCD UI.
 kubectl -n $NS get pvc,restore,pod -w
 # EXPECT within a few minutes: Restore recreated → PVC Pending → PVC Bound →
 # postgres pod 2/2 Running.
 ```
 
-**Finish:** once postgres is `Running`, bounce the app so it reconnects
-cleanly instead of nursing dead connections:
-`kubectl -n $NS delete pod -l <app's pod label>`.
+Finish: when Postgres is `Running`, restart the app pods so that they open new
+connections:
 
-**Verify:** psql in (health check #4 above), confirm the data state matches
-the snapshot time, and confirm the app works. **If it goes sideways:** nothing
-here is unrecoverable. The snapshots in S3 are untouched by all of the above,
-and re-running the same steps retries the restore.
+`kubectl -n $NS delete pod -l <app's pod label>`
+
+Verify: connect with psql (health check 4 above). Confirm that the data matches
+the time of the backup. Confirm that the app works.
+
+If the restore fails: none of these steps change the backups in the Kopia
+repository. Run the same steps again to retry.
 
 ### Level 3: the whole namespace is wrecked
 
-Delete the namespace. This is the proven DR drill (karakeep,
-2026-06-27). Run `kubectl delete namespace <ns>`. ArgoCD recreates everything
-from Git (`CreateNamespace=true`), and **every** backed-up PVC in it hydrates
-from its newest snapshot. The level 2 warning applies: all PVCs in the namespace
-roll back to their last snapshots.
+Delete the namespace:
+
+`kubectl delete namespace <ns>`
+
+Argo CD recreates everything from Git (`CreateNamespace=true`). Every PVC in the
+namespace that has a backup fills from its newest backup. The level 2 warning
+applies to all of them: each PVC goes back to its newest backup.
 
 ### Level 4: the whole cluster is gone
 
-Don't decide this alone. The database part is easy: databases need
-**zero special steps** in a cluster rebuild. Bootstrap runs, ArgoCD deploys
-everything, PVCs hydrate, and Postgres recovers. The full runbook, with the pre-nuke
-checklist, is [docs/disaster-recovery.md](../../disaster-recovery.md).
-
----
-
-## What happened to CloudNativePG?
-
-Retired 2026-08-13. gitea and immich migrated with their data. paperless and
-temporal were cut over as fresh empty databases, a deliberate data-zero
-decision during a cluster rebuild. Their old Barman buckets are aging out
-via the RustFS lifecycle policy. Any CNPG instructions you find
-are history, and this page is the pattern. The migration steps are in git
-history. See [plain-postgres-migration.md](plain-postgres-migration.md).
-
----
+Do not decide this alone. Databases need no special step in a cluster rebuild.
+The bootstrap runs, Argo CD deploys everything, the PVCs fill from their
+backups, and Postgres recovers. The full runbook and the pre-nuke checklist are
+in the [disaster recovery runbook](../../disaster-recovery.md).
 
 ## Metrics: seeing inside the database
 
-Each plain-Postgres deployment can carry a small `postgres-exporter` sidecar
-that publishes database internals to Prometheus/Grafana. The reference
-implementation is `my-apps/development/gitea/postgres/` (sidecar in the
-Deployment, `metrics` port on the Service, and `servicemonitor.yaml`). Copy those
-three pieces for any other database.
-
-What to look at, and why:
+A plain Postgres Deployment can carry a small `postgres-exporter` sidecar. It
+publishes database internals to Prometheus and Grafana. The reference is
+`my-apps/development/gitea/postgres/`. Copy three pieces for another database:
+the sidecar in the Deployment, the `metrics` port on the Service, and
+`servicemonitor.yaml`.
 
 | Metric | Question it answers |
 |---|---|
-| `pg_stat_activity_count` vs `pg_settings_max_connections` | "Are we running out of connections?" Running out is a classic silent DB killer. Sustained >80% means an app is leaking connections. |
-| `pg_database_size_bytes` | "Will the PVC fill up?" Trend this, and resize the PVC in Git *before* it's urgent. |
-| `pg_stat_activity_max_tx_duration` | "Is something stuck?" A transaction open for minutes usually means a hung migration or a lock pile-up. |
-| `pg_up` | "Can the exporter even reach Postgres?" If 0, the DB or its password is the problem, not the metrics. |
-
----
+| `pg_stat_activity_count` vs `pg_settings_max_connections` | Are the connections running out? Above 80% for a long time means an app leaks connections. |
+| `pg_database_size_bytes` | Will the PVC fill up? Watch the trend and resize the PVC in Git before it is urgent. |
+| `pg_stat_activity_max_tx_duration` | Is something stuck? A transaction that stays open for minutes usually means a hung migration or a lock queue. |
+| `pg_up` | Can the exporter reach Postgres? If it is 0, the database or its password is the problem, not the metrics. |
 
 ## The never-do list
 
-- **Never** `RollingUpdate` on the database Deployment (gotcha 2).
-- **Never** merge a Postgres **major** version bump casually (gotcha 3).
-- **Never** rotate the password by editing 1Password alone (gotcha 4).
-- **Never** remove the PVC's compare/sync annotations or `dataSourceRef`
+- Never use `RollingUpdate` on the database Deployment (gotcha 2).
+- Never merge a Postgres major version update without the dump and restore (gotcha 3).
+- Never rotate the password with a 1Password edit alone (gotcha 4).
+- Never remove the PVC's compare and sync annotations or its `dataSourceRef`
   (gotcha 5).
-- **Never** hand-create or hand-edit kopiur `SnapshotPolicy` /
-  `SnapshotSchedule` / `Restore` objects. They come from Git, and deleting them
-  (level 2) is the only sanctioned live interaction.
-- **Never** "fix" a `Pending` PVC by removing its `dataSourceRef` to make it
-  bind empty. You'd be trading a delayed restore for permanent data loss.
+- Never create or edit kopiur `SnapshotPolicy`, `SnapshotSchedule`, or `Restore`
+  objects by hand. They come from Git. The level 2 delete is the only allowed
+  live action on them.
+- Never remove the `dataSourceRef` from a `Pending` PVC to make it bind empty.
+  That turns a delayed restore into permanent data loss.
 
 ## Related
 
-- [CNPG retirement note](plain-postgres-migration.md): the old cutover runbook lives in git history
-- [kopiur backup architecture](../storage/kopiur-backup-architecture.md): how loops 2 and 3 work inside
-- [kopiur mover permissions](../storage/kopiur-mover-permissions.md): the uid/gid gotcha when adding backups
-- [Cluster disaster recovery runbook](../../disaster-recovery.md): levels 3–4 in full, restore canary
+- [How kopiur backup and restore work](../storage/kopiur-backup-architecture.md): loops 2 and 3 in detail
+- [Why the kopiur mover runs as the data owner](../storage/kopiur-mover-permissions.md): the uid:gid to set when you add a backup
+- [Disaster recovery runbook](../../disaster-recovery.md): levels 3 and 4 in full, and the restore canary

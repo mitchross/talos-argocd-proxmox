@@ -1,130 +1,112 @@
 # Network topology
 
-## Overview
+This page shows how the machines in `talos-prod-cluster-v2` connect, which addresses
+are fixed, and how pod traffic crosses between nodes. Read it before you debug a
+network symptom or add a machine.
 
-The cluster (`talos-prod-cluster-v2`) spans four Proxmox hosts and two bare-metal
-minis on a flat LAN. All are wired except the shed host, which sits behind a Wi-Fi
-media bridge. Every node address is on the same `192.168.10.0/24`:
+The cluster runs on three Proxmox hosts and three bare-metal mini PCs. All of them
+are on one flat LAN, `192.168.10.0/24`. Every machine is wired, except the shed host,
+which sits behind a Wi-Fi media bridge.
 
-- **Main LAN (192.168.10.0/24).** All cluster traffic. Wired nodes connect through the
-  10G switch.
-- **Control-plane VM.** DHCP on the wired LAN, on the HP SFF host.
-- **GPU worker VM.** DHCP on the wired LAN. Two RTX 3090s pass through from
-  the bare-metal X399/2950X Threadripper host.
-- **HP SFF worker VM.** DHCP on the wired LAN. It has the `wired-storage`
-  Longhorn tag.
-- **Bare-metal mini workers.** `mini-pc-dell-ultra-worker` (Dell Pro Micro),
-  `hp-elite-gen12` (HP Elite Mini 800 G9) and `hp-elite-gen13` (HP Elite Mini
-  600 G9). They use DHCP on the wired LAN at 1 GbE. They PXE-boot into Omni through booter
-  on the Pi. See [bare-metal Talos workers](../hosts/bare-metal-talos.md).
-  `hp-elite-gen12` holds the Zigbee stick.
-- **HP micro worker VM.** DHCP, in the shed behind an ASUS RT-AX86U media
-  bridge. It has the USB radios and the taint `node.vanillax.dev/link=wifi`.
-- **Storage.** TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
+## How the machines connect
 
-Wall-plug draw and cost per host are metered separately. See
-[power metering](../power/metering.md).
-
-Verify live node addresses with `kubectl get nodes -o wide`.
-
-### Expected shed-node downtime
-
-The solar/battery-powered shed HP micro Kubernetes worker intentionally becomes
-unavailable during its power/sleep cycle. Power-related NotReady periods or
-missing host metrics alone are expected, not an incident. Do not remediate
-solely to bring the node online. Check the current power state and affected
-workloads before diagnosing a fault. Unexpected network/power symptoms and
-failures of dependent workloads still need normal investigation.
-
-Cross-node pod traffic uses a **Cilium VXLAN tunnel between node IPs**
-(`routingMode: tunnel`). **No pod routes exist anywhere.** None are on Firewalla,
-in machine config, or on any host, and no device between nodes ever
-sees a pod IP on the wire. The cluster uses tunnel mode because the shed's
-media bridge silently drops inbound-first frames for IPs without an
-ARP-learned binding, which means every pod IP. Direct node/LAN traffic
-such as NFS to TrueNAS and API node endpoints is not encapsulated. Traffic
-whose remote endpoint is a pod IP uses VXLAN. That includes cross-node Longhorn
-instance-manager and replica flows.
-
-## Physical topology
-
-| Physical host | Talos role | Network boundary |
+| Physical host | Talos role | Network link |
 | --- | --- | --- |
-| HP SFF `.21` | One control plane and one worker | Wired; both VMs fail with the same chassis |
-| Threadripper `.14` | One GPU worker, two RTX 3090s | Wired |
-| Dell Pro Micro (bare metal) | Worker `mini-pc-dell-ultra-worker` | Wired 1 GbE; no Proxmox |
-| HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12`, Zigbee stick | Wired 1 GbE; no Proxmox |
-| HP Elite Mini 600 G9 (bare metal) | Worker `hp-elite-gen13` | Wired 1 GbE; no Proxmox |
-| Shed HP `.20` | One worker with USB radios | Ethernet to ASUS RT-AX86U, then Wi-Fi media bridge |
-| Pi 5 `.15` | Omni, Technitium and booter (PXE), outside Kubernetes | Separate management/DNS host |
-| TrueNAS `.133` | NAS and RustFS, outside Kubernetes | 10 GbE; planned NAS downtime stalls its consumers |
+| HP SFF `.21` (Proxmox) | One control-plane VM and one worker VM. The worker has the `wired-storage` Longhorn tag | Wired. Both VMs fail with the same chassis |
+| Threadripper `.14` (Proxmox) | One GPU worker VM with two RTX 3090s passed through | Wired |
+| Dell Pro Micro (bare metal) | Worker `mini-pc-dell-ultra-worker` | Wired 1 GbE, no Proxmox |
+| HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12`, holds the Zigbee stick | Wired 1 GbE, no Proxmox |
+| HP Elite Mini 600 G9 (bare metal) | Worker `hp-elite-gen13` | Wired 1 GbE, no Proxmox |
+| Shed HP micro `.20` (Proxmox) | One worker VM with the USB radios and the taint `node.vanillax.dev/link=wifi` | Ethernet to an ASUS RT-AX86U, then a Wi-Fi media bridge |
+| Pi 5 `.15` | Omni, Technitium and booter (PXE). Outside Kubernetes | Separate management and DNS host |
+| TrueNAS `.133` | NAS and RustFS. Outside Kubernetes | 10 GbE. Planned NAS downtime stalls the apps that use it |
 
-Firewalla DHCP sends PXE clients to the Pi (option 66 `192.168.10.15`, option 67
-`snp.efi`). See the [booter README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md).
+Wired nodes connect through the 10G switch. A 10G switch does not give every
+attached host a 10 GbE link. The [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md)
+has the measured capacity of each host, and the [disk map](../storage/disk-map.md)
+has the disks. Wall-plug draw and cost per host are in [power metering](../power/metering.md).
 
-A 10G switch does not give every attached host a 10 GbE link. See the
-[fleet inventory](../../inventory/2026-11-03-fleet-inventory.md) for measured
-host capacity, and the [disk map](../storage/disk-map.md) for disks.
+The bare-metal minis PXE-boot into Omni through booter on the Pi. Firewalla DHCP
+sends PXE clients to the Pi with option 66 `192.168.10.15` and option 67 `snp.efi`.
+See [bare-metal Talos workers](../hosts/bare-metal-talos.md) and the
+[booter README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md).
 
-## IP assignments
+## IP addresses
 
-### Main LAN (192.168.10.0/24)
+All Talos nodes get their address from DHCP. Read the live node addresses with
+`kubectl get nodes -o wide`. The fixed addresses on the main LAN are:
 
 | Device | IP | Purpose |
 |--------|-----|---------|
-| Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
-| Proxmox | 192.168.10.14 | Hypervisor |
-| HP micro Proxmox | 192.168.10.20 | Shed hypervisor behind the media bridge; USB radios |
-| HP SFF Proxmox | 192.168.10.21 | CPU-only hypervisor (wired); hosts the control plane |
-| Technitium / Omni (rpi5) | 192.168.10.15 | Split-DNS for `vanillax.me`, self-hosted Omni, booter PXE server |
-| ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the shed |
-| Control Plane | DHCP | K8s control-plane node; verify live address with `kubectl` |
-| Bare-metal mini workers | DHCP | `mini-pc-dell-ultra-worker`, `hp-elite-gen12`, `hp-elite-gen13`; verify live addresses with `kubectl` |
-| TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3), 10G |
-| GPU Worker | DHCP | K8s GPU worker node; verify live address with `kubectl` |
+| Router and gateway (Firewalla) | 192.168.10.1 | Default route and client DNS |
+| Threadripper Proxmox | 192.168.10.14 | Hypervisor for the GPU worker |
+| HP micro Proxmox | 192.168.10.20 | Shed hypervisor behind the media bridge, with the USB radios |
+| HP SFF Proxmox | 192.168.10.21 | CPU-only hypervisor (wired). Hosts the control plane |
+| Technitium and Omni (Pi 5) | 192.168.10.15 | Split DNS for `vanillax.me`, self-hosted Omni, booter PXE server |
+| ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi to Ethernet) for the shed |
+| TrueNAS | 192.168.10.133 | NAS (NFS, SMB, RustFS S3), 10G |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |
-| LoadBalancer Pool | 192.168.10.32-63 (/27) | Cilium L2 announcements |
+| LoadBalancer pool | 192.168.10.32-63 (/27) | Cilium L2 announcements |
 
-## Talos configuration
+The Threadripper host and TrueNAS each have one 10G interface on the main LAN:
+
+| Machine | Interface | Address | Speed |
+|---------|-----------|---------|-------|
+| Threadripper Proxmox | bridge `vmbr0` on NIC `ens2` | 192.168.10.14/24 | 10G |
+| TrueNAS | `enp67s0` | 192.168.10.133/24 | 10G SFP+ |
+
+## How pod traffic crosses nodes
+
+Cilium, the cluster's network plugin, carries pod traffic between nodes in a VXLAN
+tunnel between node IPs (`routingMode: tunnel`). A VXLAN tunnel wraps each pod packet
+inside a packet addressed to the other node.
+
+No pod routes exist on Firewalla, in machine config, or on any host. No device
+between two nodes sees a pod IP on the wire.
+
+Keep tunnel mode. The shed's media bridge silently drops inbound-first frames for an
+IP that has no ARP-learned binding. No pod IP has one, so without the tunnel the
+bridge drops those frames for every pod on the shed node.
+
+Traffic whose remote end is a pod IP uses VXLAN. That includes cross-node Longhorn
+instance-manager and replica traffic. Traffic between a node and a LAN address is not
+wrapped. That includes NFS to TrueNAS and the API endpoints on each node.
+
+## Talos network settings
+
+The nodes have no per-NIC network settings, so Talos runs DHCP on every physical NIC.
+Each worker machine set pins the kubelet node IP to the main LAN in
+`omni/cluster-template/cluster-template-prod-v2.yaml`:
 
 ```yaml
-machine:
-  network:
-    interfaces:
-      - interface: ens18
-        dhcp: true
-  kubelet:
-    nodeIP:
-      validSubnets:
-        - 192.168.10.0/24
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP:
+  validSubnets:
+  - 192.168.10.0/24
 ```
 
-## Proxmox bridge configuration
+## Storage access from pods
 
-| Bridge | Physical NIC | CIDR | Purpose |
-|--------|--------------|------|---------|
-| vmbr0 | ens2 | 192.168.10.14/24 | Main LAN (10G) |
+A shared Cilium NetworkPolicy blocks pod traffic to private LAN addresses unless a
+rule allows it. It allows the TrueNAS ports for NFS, SMB, the TrueNAS CSI API, and
+RustFS S3. The list of ports is in [Cilium policies](policy.md).
 
-## TrueNAS network configuration
+## Expected shed-node downtime
 
-| Interface | IP | Speed | Purpose |
-|-----------|-----|-------|---------|
-| enp67s0 | 192.168.10.133/24 | 10G SFP+ | Main LAN (via 10G switch) |
+The shed HP micro worker runs on solar and battery power. It becomes unavailable
+during its power and sleep cycle, and that is intended.
 
-## Whitelisted storage access
+A `NotReady` period or missing host metrics on this node is expected, not an
+incident. Do not act only to bring the node back online. Check the current power
+state and the affected workloads before you diagnose a fault.
 
-The Cilium network policy allows these storage connections:
-
-| Destination | Ports | Purpose |
-|-------------|-------|---------|
-| 192.168.10.133 | 2049, 111 | NFS |
-| 192.168.10.133 | 445 | SMB |
-| 192.168.10.133 | 443 | TrueNAS CSI API |
-| 192.168.10.133 | 9000, 30292, 30293 | RustFS S3 (Kopiur, Loki, Tempo) |
+Investigate normally when you see an unexpected network or power symptom, or when a
+workload that depends on the node fails.
 
 ## Troubleshooting
 
-### Can't reach storage
+### Pods cannot reach storage
 
 ```bash
 # Test connectivity to TrueNAS
@@ -136,9 +118,9 @@ showmount -e 192.168.10.133
 
 ### Nodes are Ready, but pods cannot cross nodes
 
-After a clean rebuild, every node can be `Ready` while Longhorn managers
-crashloop and new PVCs remain `Pending`. `Ready` only proves that the nodes can
-reach Kubernetes. It does not prove that pods can reach pods on other nodes.
+After a clean rebuild, every node can be `Ready` while Longhorn managers crashloop
+and new PVCs stay `Pending`. `Ready` proves only that the nodes can reach Kubernetes.
+It does not prove that pods can reach pods on other nodes.
 
 Check Cilium from an agent pod:
 
@@ -146,9 +128,9 @@ Check Cilium from an agent pod:
 kubectl exec -n kube-system <cilium-pod> -- cilium-health status --probe
 ```
 
-`Node 1/1` with `Endpoints 0/1` means the normal network works but the pod
-overlay does not. The cause is a virtio checksum offload bug, not MTU, Cilium
-state, or the host's NIC.
+`Node 1/1` with `Endpoints 0/1` means the node network works but the pod tunnel does
+not. The cause is a virtio checksum offload bug. It is not MTU, Cilium state, or the
+host's NIC.
 
 Keep both offload guards in the cluster-level Talos `EthernetConfig`:
 
@@ -161,15 +143,44 @@ features:
   tx-udp_tnl-csum-segmentation: false
 ```
 
-An unchanged template sync may do nothing because Omni already considers the
-config current. Adding the second guard produced a real config change, and
-Talos re-applied the settings. The nodes did not visibly reboot.
+A template sync that changes nothing does nothing, because Omni already considers the
+config current. Talos applies the settings again only when the config really changes.
+The nodes do not visibly reboot for this change.
 
-Success means Cilium reports every node and endpoint reachable and all Longhorn
-managers return to `2/2 Running`. Let existing CrashLoop backoff expire. Do not
+The fix works when Cilium reports every node and endpoint reachable and all Longhorn
+managers return to `2/2 Running`. Let the existing CrashLoop backoff expire. Do not
 keep restarting Longhorn, change MTU, or redesign the bridge for this symptom.
 
-### Storage performance testing
+### NFS reads are slow
+
+The default Linux kernel `read_ahead_kb` of 128 KB limits NFS sequential reads to
+about 140 MB/s on any link speed. The cluster applies these settings through Talos
+machine config:
+
+| Layer | Setting | Value |
+|-------|---------|-------|
+| VFS readahead | udev rule `ATTR{read_ahead_kb}` | 16384 (16MB) |
+| NFS readahead | `siderolabs/nfsrahead` extension | Installed on all nodes |
+| RPC concurrency | `sunrpc.tcp_slot_table_entries` | 128 |
+| TCP congestion | `net.ipv4.tcp_congestion_control` | bbr |
+| TCP buffers | `net.core.rmem_max` / `wmem_max` | 64MB |
+| NIC ring buffers | Proxmox + TrueNAS | 8192 (max) |
+| NFS mount options | Per-PV CSI mountOptions | `nconnect=16,rsize=1M,wsize=1M` |
+
+Check that a pod sees the tuned values:
+
+```bash
+# Verify readahead is 16384 (not 128)
+kubectl exec -n <ns> <pod> -- cat /sys/class/bdi/0:*/read_ahead_kb
+
+# Verify sunrpc slots are 128 (not 2)
+kubectl exec -n <ns> <pod> -- cat /proc/sys/sunrpc/tcp_slot_table_entries
+
+# Full NFS mount stats (connections, slots, RTT)
+kubectl exec -n <ns> <pod> -- cat /proc/self/mountstats
+```
+
+Then measure each layer:
 
 ```bash
 # Test raw wire speed (target ~9.4 Gbps)
@@ -183,38 +194,13 @@ mount -t nfs -o nfsvers=4.1,nconnect=16,rsize=1048576,wsize=1048576 192.168.10.1
 dd if=/mnt/nfstest/testfile of=/dev/null bs=1M status=progress
 ```
 
-### NFS 10G tuning
-
-The default Linux kernel `read_ahead_kb` of 128 KB limits NFS sequential reads to ~140 MB/s on any link speed. The cluster applies these fixes through Talos machine config:
-
-| Layer | Setting | Value |
-|-------|---------|-------|
-| VFS readahead | udev rule `ATTR{read_ahead_kb}` | 16384 (16MB) |
-| NFS readahead | `siderolabs/nfsrahead` extension | Installed on all nodes |
-| RPC concurrency | `sunrpc.tcp_slot_table_entries` | 128 |
-| TCP congestion | `net.ipv4.tcp_congestion_control` | bbr |
-| TCP buffers | `net.core.rmem_max` / `wmem_max` | 64MB |
-| NIC ring buffers | Proxmox + TrueNAS | 8192 (max) |
-| NFS mount options | Per-PV CSI mountOptions | `nconnect=16,rsize=1M,wsize=1M` |
-
-Reference throughput (TrueNAS ARC-cached 4GB file):
+Reference throughput, read from a 4GB file held in the TrueNAS ARC cache:
 
 | Layer | Speed |
 |-------|-------|
 | iperf3 (wire) | 9.4 Gb/s |
-| Proxmox host → NFS | Historical 2.7 GB/s application read. It exceeds a 10 GbE wire, so do not treat it as wire throughput. Separate cache effects from test method first. |
-| Talos VM → NFS (untuned) | ~128 MB/s |
+| Proxmox host to NFS | 2.7 GB/s application read. This exceeds a 10 GbE wire, so do not treat it as wire throughput. Separate cache effects from the test method first. |
+| Talos VM to NFS (untuned) | ~128 MB/s |
 
-Debug commands:
-```bash
-# Verify readahead is 16384 (not 128)
-kubectl exec -n <ns> <pod> -- cat /sys/class/bdi/0:*/read_ahead_kb
-
-# Verify sunrpc slots are 128 (not 2)
-kubectl exec -n <ns> <pod> -- cat /proc/sys/sunrpc/tcp_slot_table_entries
-
-# Full NFS mount stats (connections, slots, RTT)
-kubectl exec -n <ns> <pod> -- cat /proc/self/mountstats
-```
-
-See `scripts/debug-nfs-server.sh` (TrueNAS) and `scripts/debug-nfs-client.sh` (Proxmox) for full debugging.
+For deeper checks, run `scripts/debug-nfs-server.sh` on TrueNAS and
+`scripts/debug-nfs-client.sh` on Proxmox.

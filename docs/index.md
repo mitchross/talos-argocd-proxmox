@@ -1,91 +1,88 @@
-# talos-argocd-proxmox
+# The big picture
 
-A GitOps Kubernetes homelab on Talos Linux with self-managing ArgoCD.
-ApplicationSets discover app directories. Per-PVC Kopiur resources declare
-backup and restore behavior. After the operator rebuilds Talos and seeds Argo,
-protected volumes restore automatically from the off-cluster repository.
+This site documents one homelab: a Kubernetes cluster on Talos Linux that Argo CD
+deploys from a Git repo. Read it to learn how the cluster works, to operate it,
+or to copy a pattern into your own cluster.
 
-> Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
-> · This site renders `docs/` from that repo.
+Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox).
+This site renders the `docs/` folder of that repo.
 
 ![Logical overview of the Proxmox, Talos, Argo CD, networking, secrets, storage, and backup platform](assets/platform-overview.svg)
 
-*Git reconstructs desired state, 1Password reconstructs credentials, and RustFS
-reconstructs protected data. [Open the full-size platform map](assets/platform-overview.svg).*
+*Git rebuilds the desired state. 1Password rebuilds the credentials. RustFS
+rebuilds the protected data. [Open the full-size platform map](assets/platform-overview.svg).*
 
-!!! tip "The point"
-    The whole cluster can be destroyed and rebuilt with every protected volume
-    restored automatically from the off-cluster Kopia repository, with no manual storage
-    steps. See [disaster recovery](disaster-recovery.md).
+## The one idea
 
-## Stack
+You can destroy the whole cluster and rebuild it, and every protected volume
+comes back with its data. Nobody runs a storage command by hand.
 
-- OS: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
-- CNI: Cilium with Gateway API + LoadBalancer
-- GitOps: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- Storage: Longhorn V1, placed by drive endurance. It keeps two replicas by default
-  and one on the flash tier. The NAS holds bulk files and
-  off-cluster backups. [Current machines and capacity](inventory/2026-11-03-fleet-inventory.md).
-- Backup: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) to RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
-- Database: plain Postgres Deployments backed up by kopiur. Snapshots run daily, or every 6 hours for data that can't be re-created, with restore-before-bind
-- Hosts: Ansible applies Proxmox and Pi operating-system settings from `host-monitoring/` ([guide](domains/hosts/physical-hosts-ansible.md))
-- Secrets: 1Password Connect + External Secrets Operator
-- Observability: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
-- AI: the production backend serves official `qwen3.8-27b` FP8 through vLLM
-  on both RTX 3090s. The [local AI starter kit](domains/ai-gpu/index.md) lists the parts and the build order. The [model catalog](domains/ai-gpu/model-catalog.md)
-  owns the local backend and Pi's optional OpenRouter DeepSeek Flash route. Use the
-  [scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md) to change the card owner.
-  [Hermes](domains/ai-gpu/hermes.md) is the always-on agent with cron, memory, chat platforms, and
-  in-pod Claude Code and Codex for pull requests.
+Three things make that work:
 
-## Reading order
+1. Argo CD reads the Git repo and creates every app. A folder with a
+   `kustomization.yaml` is one app.
+2. kopiur, the backup operator, uploads each protected volume to a Kopia
+   repository that lives outside the cluster.
+3. When an app asks for its volume on a new cluster, kopiur fills the volume
+   from the last backup before the app starts.
 
-Start with [the easy guide](easy-guide.md), then follow the sidebar from top to
-bottom. The order is platform, operation, hardware, measured performance, then
-future changes.
+The [disaster recovery runbook](disaster-recovery.md) has the full procedure.
 
-| Sidebar section | Use it for | Start here |
-|---|---|---|
-| Overview | Understand how the platform works | [The easy guide](easy-guide.md) |
-| Operations | Learn the deployed platform and its procedures | [Operations guide](operations/index.md) |
-| Inventory | Machines, disks, hardware health, and workload placement | [Inventory](inventory/index.md) |
-| Audits | Performance measurements, limitations, and ranked recommendations | [Audits](audits/index.md) |
-| Ongoing research | Options being considered and the tests needed to decide | [Research](research/index.md) |
+## Where to start
 
-For current upgrade priorities, jump to the
-[September 20 decision report](audits/2026-09-20-homelab-report.html).
+| You want to | Read |
+|---|---|
+| Understand the whole system from zero | [The easy guide](easy-guide.md) |
+| Learn backup and restore by doing, in the browser | [Course: survive a cluster wipe](learn/course.md) |
+| Look up a word such as restore, snapshot, or sync | [Glossary](glossary.md) |
+| Add an app or learn how Argo CD finds it | [How ArgoCD deploys this repo](domains/argocd/argocd.md) |
+| Choose where an app's data lives | [Pick a StorageClass](domains/storage/storage-tiers.md) |
+| Add or fix a backup | [How kopiur backup and restore work](domains/storage/kopiur-backup-architecture.md) |
+| Run a Postgres database | [Run Postgres here](domains/cnpg/run-postgres-plain-english.md) |
+| Rebuild the cluster | [Disaster recovery runbook](disaster-recovery.md) |
+| Run a local LLM on your own GPUs | [Local AI starter kit](domains/ai-gpu/index.md) |
 
-The [fleet inventory](inventory/2026-11-03-fleet-inventory.md) is the current machine list;
-the [full inventory](inventory/2026-10-15-full-inventory.md) and explorer were last refreshed on October 15.
-Historical benchmarks keep their collection dates. An inventory is not a live dashboard,
-and a research proposal is not a deployed change.
+## What is in each section
 
-## Frequent tasks
+The sidebar has eight sections. Read them top to bottom the first time.
 
-1. Find a machine or its disks. The [disk map](domains/storage/disk-map.md) shows
-   every physical disk, what it holds, and where new data should go.
-   [Explore the lab](lab.md) and the [hardware diagnostics report](diagnostics.md)
-   hold the dated hardware snapshots.
-2. Understand NAS speeds and RAM. [NAS performance](nas-performance.md)
-   separates physical-disk reads, RAM-cache reads, and flushed writes.
-3. Add or troubleshoot backups. Start with the
-   [kopiur architecture](domains/storage/kopiur-backup-architecture.md), then
-   [mover permissions](domains/storage/kopiur-mover-permissions.md).
-4. Recover the platform. Use the [disaster recovery runbook](disaster-recovery.md).
-   The [backup simulator](kopiur-playground.md) is a safe browser-only walkthrough.
-5. Release a worker. Use the
-   [Temporal safe deployment runbook](domains/temporal/safe-deployments.md).
-6. Keep SSD wear down. Follow the [disk-write rules](domains/storage/disk-writes.md)
-   and check the top writers there.
-7. Change a Proxmox host or the Pi. Ansible configures those machines, not Argo CD. Use [physical hosts with Ansible](domains/hosts/physical-hosts-ansible.md).
+| Section | What it covers |
+|---|---|
+| Start here | The big picture, the easy guide, the interactive course, and the glossary |
+| GitOps and ArgoCD | How a change in Git becomes a running app, and how to check a risky change |
+| Storage | Which disk holds which data, the storage classes, and SSD wear |
+| Backups and recovery | kopiur backups, Postgres, and the cluster rebuild runbook |
+| Networking | The network layout, Cilium policies, VPN egress, and split DNS |
+| Hardware and hosts | The machines, how Ansible configures them, and power metering |
+| Running apps | Pod sizing and placement, Temporal workers, PostHog, and observability |
+| Local AI | Models, GPUs, measurement, and the Pi and Hermes agents |
 
-Every page follows the [documentation reader contract](documentation-standard.md):
-state the current posture, explain unfamiliar choices, give verifiable steps,
-and include failure and rollback guidance for risky operations.
+## The stack
 
-## Adopting any of this
+| Layer | What runs here |
+|---|---|
+| Operating system | Talos Linux on Proxmox VMs and bare-metal machines. Omni provisions the nodes. |
+| Network | Cilium, with Gateway API for routing and LoadBalancer addresses |
+| GitOps | Argo CD manages itself. ApplicationSets discover app folders. |
+| Storage | Longhorn for app volumes. A TrueNAS NAS holds bulk files and the backups. |
+| Backup | [kopiur](https://github.com/home-operations/kopiur) uploads each volume to RustFS S3 and restores it before the app starts |
+| Databases | Plain Postgres Deployments, backed up by kopiur |
+| Secrets | 1Password Connect and External Secrets Operator |
+| Observability | kube-prometheus-stack, Loki, Tempo, and OpenTelemetry |
+| Local AI | vLLM serves `qwen3.8-27b` on two RTX 3090s. LiteLLM is the gateway for apps. |
+| Hosts | Ansible configures the Proxmox hosts and the Pi. Argo CD does not manage them. |
 
-This is one operator's homelab, not a product. The patterns are portable: the label-driven backup contract, the off-cluster repository, the
-restore-canary idea, and the sync-wave bootstrap. The image tags, hostnames,
-and 1Password item names are not. Start with
-[storage-architecture.md](storage-architecture.md).
+The [fleet inventory](inventory/2026-11-03-fleet-inventory.md) lists the machines.
+The [disk map](domains/storage/disk-map.md) lists every disk.
+
+## Copy a pattern from this lab
+
+This is one operator's homelab, not a product. You can copy the patterns: the
+per-volume backup files, the off-cluster Kopia repository, the restore canary,
+and the sync-wave bootstrap. You cannot copy the image tags, hostnames, or
+1Password item names; replace them with your own.
+
+Start with [the easy guide](easy-guide.md). It ends with the order in which to
+adopt the pieces.
+
+To change these docs, read [how these docs are written](documentation-standard.md).

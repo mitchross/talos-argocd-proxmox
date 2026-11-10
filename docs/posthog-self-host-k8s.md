@@ -1,24 +1,26 @@
-# Self-Hosting PostHog on Kubernetes
+# Self-host PostHog on Kubernetes
 
-A working recipe for running full PostHog (product analytics, session replay,
-feature flags) on any Kubernetes cluster. The reference implementation lives in
+This page shows how to run full PostHog (product analytics, session replay and
+feature flags) on any Kubernetes cluster. It is for someone who wants to copy
+the setup, and for the owner before a PostHog upgrade. The manifests are in
 [`my-apps/development-infra/posthog/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development-infra/posthog).
-It uses plain Deployments and Kustomize, with no Helm, and ports to any cluster.
+They are plain Deployments and Kustomize, with no Helm chart.
 
-## 1. Reality check
+## What you take on
 
-- PostHog **does not support self-hosting**. The Helm chart is dead. The only
-  maintained reference is the single-box `docker-compose` "hobby" deploy
-  ([docs](https://posthog.com/docs/self-host)).
+- PostHog **does not support self-hosting**. Its Helm chart is unmaintained.
+  The only maintained reference is the single-box `docker-compose` "hobby"
+  deploy ([docs](https://posthog.com/docs/self-host)).
 - Upstream ships continuously from `master` (`posthog/posthog:latest`, Rust
-  services at `:master`). There are no semver releases to follow.
-- This guide translates the hobby topology to Kubernetes manifests you own.
-  Act as your own vendor. Pin digests, and run the
-  [upgrade checklist](#8-upgrades) before every bump.
+  services at `:master`). It publishes no semver releases.
+- This guide translates the hobby topology to Kubernetes manifests that you
+  own. You are your own vendor. Pin every image by digest, and run the
+  [upgrade checklist](#upgrades) before every bump.
 
-## 2. Topology
+## Topology
 
-**Required.** The minimum for analytics, session replay, and feature flags:
+These services are required. They are the minimum for analytics, session
+replay and feature flags:
 
 | Service | Image | Role | Port |
 |---|---|---|---|
@@ -37,11 +39,12 @@ It uses plain Deployments and Kustomize, with no Helm, and ports to any cluster.
 | kafka | `redpandadata/redpanda` | event bus (Kafka API, no JVM/ZK) | 9092 |
 | clickhouse | `clickhouse/clickhouse-server` | analytics store, single node, embedded Keeper | 8123/9000 |
 
-Match postgres/redis/redpanda/clickhouse versions to whatever upstream's
+Match the postgres, redis, redpanda and clickhouse versions to the versions
+that upstream's
 [`docker-compose.base.yml`](https://github.com/PostHog/posthog/blob/master/docker-compose.base.yml)
-currently pins. That is the only combination upstream tests.
+pins. That is the only combination that upstream tests.
 
-**Optional.** Skip these until you need the feature:
+These services are optional. Skip each one until you need its feature:
 
 | Service | What you lose without it |
 |---|---|
@@ -54,55 +57,14 @@ currently pins. That is the only combination upstream tests.
 | hypercache-server | nothing yet. Flag/survey config comes from Postgres |
 | browserless (Chromium) | page screenshots (heatmap previews, exports) |
 
-AI telemetry now belongs to [Langfuse](domains/ai-gpu/ai-observability.md).
-PostHog keeps product analytics, session replay, and feature flags.
+In this lab, [Langfuse](domains/ai-gpu/ai-observability.md) records AI
+telemetry. PostHog records product analytics, session replay and feature flags.
 
-### Self-hosted replay retention
+## Boot order and init jobs
 
-Project 1 declares 30-day replay retention through
-`SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS=1` in `posthog-env.env`. The migration
-hook runs `scripts/configure-replay-retention.py` after Django migrations to
-reconcile that supported Team model field. It updates only the listed projects
-and skips projects that have not been created yet. Their setting reconciles on
-the next ArgoCD sync after onboarding. Add another project ID to the comma-separated
-list only when that project should also use 30 days.
-
-The pinned PostHog revision
-[`065179102`](https://github.com/PostHog/posthog/blob/065179102ef87898ef952381080b55c453e7867d/posthog/api/team.py)
-rejects retention updates with `Invalid retention entitlement.` (HTTP 500)
-when a self-hosted organization lacks billing metadata. New self-hosted projects
-default to five years, so this also blocks selecting the ordinary 30-day option.
-PostHog's hourly feature sync would remove a one-time entitlement insertion.
-The repo therefore carries a **local compatibility patch**, not an
-upstream-supported environment switch. `scripts/patch-replay-retention.py`
-allows exactly `30d` only when the retention feature is absent and `is_cloud()`
-is false. Existing entitlements and longer-retention checks follow the original
-validator. The patch creates no license or billing feature records.
-
-The migration hook checks the upstream validator's hash before running. Web
-applies the same patch to its ephemeral container source before starting.
-Unexpected source changes fail the hook and require the
-[upgrade review](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/UPGRADE.md). A generated
-ConfigMap mounts the scripts, so a fresh pod repeats the declared fix.
-
-After the PR is merged and ArgoCD finishes syncing, confirm the migration Job
-reports `Project 1: replay retention set to 30d` (or `already 30d`). Open
-**Settings → Project → Session replay**, select 30 days, save, and reload.
-The team update should return HTTP 200 and the retained value should be `30d`.
-Recheck after the hourly feature sync at minute 30. Capture and play a new
-recording to verify replay still works. Local manifest rendering and the unit
-tests change no live retention state.
-
-This changes the project's retention setting. It does not rewrite historical
-recording expiry metadata or the object store lifecycle policy. Roll back the
-startup wrapper, patch, and reconciliation through Git and ArgoCD. A Git revert
-does not restore an earlier database retention value. Declare any desired
-replacement in a reviewed follow-up reconciliation before reenabling it.
-
-## 3. Boot order and init jobs
-
-Strict ordering prevents every classic first-boot failure. With ArgoCD, use
-the sync waves shown. Otherwise apply in this order and wait between steps:
+Start the services in a strict order. The order prevents the common first-boot
+failures. With ArgoCD, use the sync-wave annotations shown. Without ArgoCD,
+apply in this order and wait between steps:
 
 ```
 wave -1  namespace, secrets, routes
@@ -112,7 +74,7 @@ wave  2  migrate Job
 wave  3  everything else
 ```
 
-**kafka-init** pre-creates the topics ingestion expects
+The `kafka-init` Job creates the topics that ingestion expects
 ([`core/jobs.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/core/jobs.yaml)):
 `events_plugin_ingestion`, `exceptions_ingestion`, `clickhouse_events_json`,
 `session_recording_events`, `session_recording_events2`,
@@ -120,51 +82,57 @@ wave  3  everything else
 `logs_ingestion`, plus `events_plugin_ingestion_ai`, `ai_events_ingestion`, and `clickhouse_ai_events_json`
 if you run the LLM-analytics capture path.
 
-**migrate** runs these steps in order: wait for postgres and clickhouse,
-`manage.py migrate`, `manage.py migrate_clickhouse`, `run_async_migrations`
-best-effort, then `run_async_migrations --check` as the hard gate. Expected
-result: Job `Completed`. A failed `--check` fails the deploy **before** app pods
-roll. That is the design. Do not remove it.
+The `migrate` Job runs these steps in order:
+
+1. Wait for postgres and clickhouse.
+2. Run `manage.py migrate`.
+3. Run `manage.py migrate_clickhouse`.
+4. Run `run_async_migrations`, best-effort.
+5. Run `run_async_migrations --check` as the hard gate.
+
+The expected result is a Job in state `Completed`. A failed `--check` fails
+the deploy before the app pods roll. **Do not remove the `--check` gate.**
 
 If you use ArgoCD, give every Job `argocd.argoproj.io/hook: Sync` and
-`hook-delete-policy: BeforeHookCreation`. Jobs are immutable, so image bumps fail
-the sync otherwise.
+`hook-delete-policy: BeforeHookCreation`. A Job is immutable after creation, so
+without these annotations an image bump fails the sync.
 
-## 4. Single-node ClickHouse (the hard part)
+## Single-node ClickHouse
 
-PostHog's code assumes a sharded, replicated ClickHouse cluster. A single node
-works, but only with all of the following
+This is the hardest part of the setup. PostHog's code assumes a sharded,
+replicated ClickHouse cluster. A single node works only with all of the
+following
 ([`config/clickhouse/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development-infra/posthog/config/clickhouse)):
 
-- **Embedded Keeper, no ZooKeeper.** `Replicated*` engines need a Keeper;
-  ClickHouse ships one (`keeper.xml`: port 9181, single `server_id`). One less
-  StatefulSet.
-- **Nine `remote_servers` clusters, all pointing at the same node**:
+- Use the embedded Keeper, not ZooKeeper. `Replicated*` engines need a Keeper,
+  and ClickHouse ships one (`keeper.xml`: port 9181, single `server_id`). You
+  then run one StatefulSet less.
+- Define nine `remote_servers` clusters that all point at the same node:
   `posthog`, `posthog_single_shard`, `posthog_migrations`, `posthog_writable`,
   `posthog_primary_replica`, plus the satellite clusters `ai_events`, `aux`,
   `ops`, `sessions`. Migrations run `ON CLUSTER <name>` against every one of
   these. A missing name fails `migrate_clickhouse`.
-- **Mirror upstream's `named_collections` exactly** (currently eight:
+- Mirror upstream's `named_collections` exactly. There are eight:
   `msk_cluster`, `warpstream_ingestion`, `warpstream_calculated_events`,
   `warpstream_replay`, `warpstream_shared`, `warpstream_cyclotron`,
-  `warpstream_logs`, `warpstream_traces`). Each only sets
+  `warpstream_logs`, `warpstream_traces`. Each one only sets
   `kafka_broker_list from_env="KAFKA_HOSTS"`. Upstream's Kafka-engine tables
-  reference them by name, so a missing one fails migrations. This list grows
-  without notice. Diff it on every monolith bump.
-- **Bootstrap `sharded_events` yourself.** Upstream's migrations assume the
-  sharded table already exists on each shard. On a single node, create
-  `posthog.sharded_events` as a local `ReplicatedReplacingMergeTree` (plus the
-  migration-tracking tables) in an init Job before migrate runs. See
+  reference them by name, so a missing one fails migrations. Upstream adds to
+  this list without notice. Diff it on every monolith bump.
+- Create `sharded_events` yourself. Upstream's migrations assume the sharded
+  table already exists on each shard. On a single node, create
+  `posthog.sharded_events` as a local `ReplicatedReplacingMergeTree`, plus the
+  migration-tracking tables, in an init Job before `migrate` runs. See
   [`core/clickhouse-init.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/core/clickhouse-init.yaml).
-  Skipping this surfaces later as async-migration failures referencing
+  If you skip this, async migrations fail later with errors that name
   `sharded_events`.
 - Create the `posthog` and `cyclotron` databases in the image's
   `docker-entrypoint-initdb.d`.
 
-## 5. Routing
+## Routing
 
-One hostname, path-routed to five backends. Works with Gateway API HTTPRoute or
-any Ingress ([`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/httproute.yaml)):
+One hostname routes by path to five backends. The table works with a Gateway
+API HTTPRoute or with any Ingress ([`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/httproute.yaml)):
 
 | Path prefixes | Backend | Port |
 |---|---|---|
@@ -174,23 +142,25 @@ any Ingress ([`httproute.yaml`](https://github.com/mitchross/talos-argocd-proxmo
 | `/public/webhooks`, `/public/m` | plugins | 6738 |
 | `/` (everything else) | web | 8000 |
 
-Rules:
+Follow these rules:
 
-- **Name your Service ports** (`name: http`). Gateway API backends fail
-  silently without named ports.
+- **Name your Service ports** (`name: http`). A Gateway API backend fails with
+  no error when the port has no name.
 - If SDK ingest is internet-facing but the UI is not, publish a second
   hostname with the same path rules minus `/`.
 - Behind a proxy, set `IS_BEHIND_PROXY=true` and `TRUSTED_PROXIES=<gateway IPs>`.
   Keep `SITE_URL` equal to the public UI URL.
 
-## 6. Config and secrets
+## Config and secrets
 
-**Shared env ConfigMap.** Put the common env in one ConfigMap consumed via
-`envFrom` by every Python/Node workload. With Kustomize's `configMapGenerator`
-the name is hash-suffixed, so any env edit rolls every consumer.
-No manual restarts, no stale-config pods.
+### Shared env ConfigMap
 
-Baseline that matters
+Put the common env in one ConfigMap. Every Python and Node workload reads it
+through `envFrom`. Kustomize's `configMapGenerator` adds a hash to the name, so
+an env edit rolls every consumer. You do not restart pods by hand, and no pod
+keeps old config.
+
+These are the baseline values
 ([`posthog-env.env`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/posthog-env.env)):
 
 ```bash
@@ -207,12 +177,16 @@ OTEL_SDK_DISABLED=true
 OPT_OUT_CAPTURE=true             # don't phone home usage analytics
 ```
 
-**Secrets.** A plain K8s Secret works. Use External Secrets Operator if you
-have a vault. You need `SECRET_KEY` (any long random), `ENCRYPTION_SALT_KEYS`
+### Secrets
+
+A plain Kubernetes Secret works. Use External Secrets Operator if you have a
+vault. You need `SECRET_KEY` (any long random string), `ENCRYPTION_SALT_KEYS`
 (`openssl rand -hex 16`, exactly 32 hex chars), the postgres password,
 `DATABASE_URL`, and the S3 access and secret keys.
 
-**Object storage.** Use any S3-compatible backend (MinIO, RustFS, Garage, SeaweedFS):
+### Object storage
+
+Use any S3-compatible backend (MinIO, RustFS, Garage, SeaweedFS):
 
 ```bash
 OBJECT_STORAGE_ENABLED=true
@@ -226,9 +200,10 @@ SESSION_RECORDING_V2_S3_FORCE_PATH_STYLE=true
 Session replay does not work without object storage. Create the bucket before
 first boot.
 
-## 7. Sizing
+## Sizing
 
-Measured single-node baselines (light homelab traffic; scale up, not down):
+These are measured single-node baselines under light homelab traffic. Scale up
+from them, not down:
 
 | Workload | CPU req | Mem req | Mem limit |
 |---|---|---|---|
@@ -242,30 +217,33 @@ Measured single-node baselines (light homelab traffic; scale up, not down):
 | postgres | 250m | 512Mi | 4Gi (8Gi PVC) |
 | valkey | 50m | 64Mi | 768Mi (4Gi PVC) |
 
-Rules that keep it healthy:
+Follow these sizing rules:
 
-- **Cap celery.** The worker defaults `--concurrency` to the node's CPU count
-  (32 forks on a big node) with no recycling. Leaked memory accumulates into
-  the tens of Gi. Set these on the worker container:
+- Cap celery. The worker defaults `--concurrency` to the node's CPU count
+  (32 forks on a big node) and never recycles a fork. Leaked memory grows to
+  tens of Gi. Set these on the worker container:
   `WEB_CONCURRENCY=4`, `CELERY_MAX_TASKS_PER_CHILD=300`,
   `CELERY_MAX_MEMORY_PER_CHILD=1048576` (KiB).
-- **Use `strategy: Recreate` on every Deployment with an RWO PVC.** RollingUpdate
-  deadlocks on Multi-Attach.
-- Set memory limits only, no CPU limits. This avoids throttling, and requests
-  handle scheduling. Optional but recommended.
-- `NGINX_UNIT_APP_PROCESSES=2` trims the web monolith (upstream default 4).
+- **Use `strategy: Recreate` on every Deployment with an RWO PVC.** An RWO PVC
+  is a disk that one node mounts at a time. `RollingUpdate` deadlocks on
+  Multi-Attach, because the new pod cannot mount the disk the old pod holds.
+- Set memory limits and no CPU limits. No CPU limit means no throttling, and
+  the requests still guide scheduling. This rule is optional.
+- Set `NGINX_UNIT_APP_PROCESSES=2` to shrink the web monolith. The upstream
+  default is 4.
 
-## 8. Upgrades
+## Upgrades
 
-You are the vendor. Every bump is deliberate:
+You are the vendor, so plan every bump:
 
-1. **Pin by digest** (`image:tag@sha256:…`), including `:latest`/`:master`
+1. Pin by digest (`image:tag@sha256:…`), including `:latest`/`:master`
    images. The tag documents intent, and the digest makes it immutable.
-2. **Bump `posthog/posthog` and `ghcr.io/posthog/posthog-node` in lockstep.** The
-   migrate Job runs the monolith image, so web, worker, and plugin-server must match it.
-3. Before any monolith bump, run the drift checklist. Upstream's compose and
-   configs move without notice, and config drift (not code) is what breaks
-   self-hosts:
+2. Bump `posthog/posthog` and `ghcr.io/posthog/posthog-node` together. The
+   `migrate` Job runs the monolith image, so web, worker and plugin-server must
+   match it.
+3. Before any monolith bump, run the drift checklist. Upstream changes its
+   compose file and configs without notice. Config drift, not code, is what
+   breaks a self-hosted install:
    - diff upstream `docker/clickhouse/config.d/default.xml` against yours: new
      `named_collections` / `remote_servers` / satellite clusters must be
      mirrored or `migrate_clickhouse` fails;
@@ -274,16 +252,16 @@ You are the vendor. Every bump is deliberate:
    - grep `docker-compose.base.yml` and `.env.services` for newly required env;
    - re-check the server entrypoint (`bin/docker-server-unit`) for changed
      process-model defaults.
-4. Only move postgres/redis/redpanda/clickhouse when upstream's compose pins
-   move.
+4. Change the postgres, redis, redpanda or clickhouse version only when
+   upstream's compose pins change.
 
-The `run_async_migrations --check` gate in the migrate Job is your safety net.
-A bump that needs an unapplied async migration fails the deploy before any app
-pod rolls.
+The `run_async_migrations --check` gate in the `migrate` Job protects each
+bump. A bump that needs an unapplied async migration fails the deploy before
+any app pod rolls.
 
-## 9. Verify
+## Verify
 
-After first boot (and every upgrade):
+Run these checks after first boot and after every upgrade:
 
 ```bash
 kubectl -n posthog get pods                     # all Running, migrate Job Completed
@@ -300,32 +278,94 @@ kubectl -n posthog logs job/posthog-migrate     # ends "All migrations complete"
 - In ClickHouse, the count from `SELECT count() FROM events` grows. The
   postgres and redpanda logs are clean.
 
-## 10. Backups and cluster rebuild
+## Backups and cluster rebuild
 
-PostHog's stores split cleanly by value:
+Each PostHog store has a different value, so each gets a different backup rule:
 
 | Store | Holds | Backup posture |
 |---|---|---|
-| **Postgres** | The identity layer: project API keys (`Team.api_token`, the `phc_` key every SDK embeds), personal API keys, users/orgs, dashboards, insights, feature-flag and cohort definitions | **Back this up.** It is small (single-digit GiB) and irreplaceable |
+| Postgres | The identity layer: project API keys (`Team.api_token`, the `phc_` key every SDK embeds), personal API keys, users/orgs, dashboards, insights, feature-flag and cohort definitions | **Back this up.** It is small (single-digit GiB) and irreplaceable |
 | ClickHouse | Event history, recording metadata | Optional. Rebuilds empty from migrations; only history is lost |
 | Kafka / Redis | In-flight buffers, caches | Disposable. Init Jobs and warm-up recreate them |
 | Object storage | Recording blobs | Useless without ClickHouse metadata; treat like ClickHouse |
 
-Rules that make a cluster rebuild painless:
+Follow these rules so that a cluster rebuild keeps the identity layer:
 
-1. **Back up the Postgres PVC** (volume-snapshot based backup, or scheduled
-   `pg_dump` to S3). A crash-consistent volume snapshot is fine. Postgres
-   WAL-recovers from it like a power loss. The reference repo uses a
-   restore-before-bind populator
+1. Back up the Postgres PVC, with a backup based on a volume snapshot or with
+   a scheduled `pg_dump` to S3. A crash-consistent volume snapshot is enough.
+   Postgres recovers from it through its WAL, as it does after a power loss.
+   This lab uses kopiur with restore-before-bind
    (`my-apps/development-infra/posthog/kopiur/postgres-data.yaml`). The PVC's
-   `dataSourceRef` points at a Restore object, so on rebuild the volume
-   hydrates from the latest snapshot *before* Postgres starts.
-2. **Keep `SECRET_KEY` and `ENCRYPTION_SALT_KEYS` in an external secret
-   manager**, never only in-cluster. Encrypted Postgres fields (integration
-   credentials) are unreadable after a restore without the same salt keys.
-3. **Restore Postgres and keep the same secrets, and SDKs never notice.** The
-   project API key comes back identical, so instrumented apps keep sending
-   through the rebuild. Dashboards and flags are intact. Analytics history
-   starts fresh, and Persons views are sparse until events re-accumulate.
-4. Never bump the Postgres major version casually. A restored data directory
-   only starts on the major it was written by.
+   `dataSourceRef` points at a `Restore` object. On a rebuild, the PVC fills
+   from the latest backup before Postgres starts.
+2. Keep `SECRET_KEY` and `ENCRYPTION_SALT_KEYS` in an external secret manager,
+   never only in the cluster. Without the same salt keys, the encrypted
+   Postgres fields (integration credentials) are unreadable after a restore.
+3. Restore Postgres with the same secrets. The project API key is then
+   identical, so instrumented apps keep sending through the rebuild. Dashboards
+   and flags are intact. Analytics history starts empty, and Persons views are
+   sparse until new events arrive.
+4. Do not bump the Postgres major version without a migration plan. A restored
+   data directory starts only on the major version that wrote it.
+
+## Replay retention on a self-hosted project
+
+This section applies to this lab's deployment. It explains why the Git repo
+carries a local patch for session replay retention.
+
+Project 1 declares 30-day replay retention through
+`SELF_HOSTED_REPLAY_RETENTION_TEAM_IDS=1` in `posthog-env.env`. The migration
+hook runs `scripts/configure-replay-retention.py` after the Django migrations.
+The script sets that supported Team model field. It updates only the listed
+projects and skips a project that does not exist yet. The setting for such a
+project is applied on the next ArgoCD sync after you create the project. Add
+another project ID to the comma-separated list only when that project must
+also use 30 days.
+
+The patch exists because of three upstream behaviours:
+
+- The pinned PostHog revision
+  [`065179102`](https://github.com/PostHog/posthog/blob/065179102ef87898ef952381080b55c453e7867d/posthog/api/team.py)
+  rejects retention updates with `Invalid retention entitlement.` (HTTP 500)
+  when a self-hosted organization lacks billing metadata.
+- A self-hosted project defaults to five years, so the rejection also blocks
+  the ordinary 30-day option.
+- PostHog's hourly feature sync removes an entitlement that you insert once by
+  hand.
+
+The Git repo therefore carries a **local compatibility patch**. It is not an
+environment switch that upstream supports. `scripts/patch-replay-retention.py`
+allows exactly `30d`, and only when the retention feature is absent and
+`is_cloud()` is false. Existing entitlements and checks for longer retention
+follow the original validator. The patch creates no license or billing feature
+records.
+
+The migration hook checks the hash of the upstream validator before it runs.
+The web container applies the same patch to its own source before it starts.
+An unexpected source change fails the hook. Then do the
+[upgrade review](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development-infra/posthog/UPGRADE.md).
+A generated ConfigMap mounts the scripts, so every fresh pod applies the patch
+again.
+
+### Verify retention
+
+Rendering the manifests locally and running the unit tests change no live
+retention state. Verify on the cluster after ArgoCD finishes the sync:
+
+1. Confirm that the migration Job reports
+   `Project 1: replay retention set to 30d` (or `already 30d`).
+2. Open **Settings → Project → Session replay**, select 30 days, save, and
+   reload. Expect the team update to return HTTP 200 and the saved value `30d`.
+3. Check the value again after the hourly feature sync at minute 30.
+4. Capture and play a new recording to confirm that replay still works.
+
+### Limits and rollback
+
+The patch changes the project's retention setting. It does not rewrite the
+expiry metadata of existing recordings or the lifecycle policy of the object
+store.
+
+Roll back the startup wrapper, the patch and the reconciliation script through
+Git and ArgoCD. A Git revert does not restore an earlier retention value in the
+database. Declare the value you want in a reviewed follow-up change before you
+enable the reconciliation again.
