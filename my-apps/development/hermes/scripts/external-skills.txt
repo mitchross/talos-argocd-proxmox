@@ -107,3 +107,4 @@ mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/misc/scaffold-
 mattpocock/skills 59db609eb1e18aaf59b63284d0e52255aff0c63c skills/misc/setup-pre-commit matt-pocock
 pbakaus/impeccable c3bb418ee38ee49a6b999b7752c1368f3123a2bd .hermes/skills/impeccable creative
 cloudflare/security-audit-skill c1c8a8c1471069fb0e188eeaff69b8e8db6564a8 skills/security-audit devops
+shadcn-ui/ui 4233ed1caded8c38f4bc14b14afe1f93ebcaf966 skills/shadcn software-development
