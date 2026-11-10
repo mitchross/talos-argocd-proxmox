@@ -30,7 +30,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 # Day-to-day fixes: exec, restart or delete pods, roll out, run a Job, cordon a node.
-# Cluster-wide exec can read any Secret mounted in a pod; no Secret API access and no app edits.
+# Deliberate: cluster-wide Job create, workload patch and exec make this account cluster-admin in effect.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

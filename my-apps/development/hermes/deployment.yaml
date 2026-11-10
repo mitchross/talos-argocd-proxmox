@@ -182,6 +182,9 @@ spec:
             # A build that touched the tree inside this window is left alone.
             - name: IDLE_HOURS
               value: "6"
+            # Scratch filled in 28 hours at the 72-hour default.
+            - name: SCRATCH_IDLE_HOURS
+              value: "12"
           volumeMounts:
             - name: data
               mountPath: /opt/data

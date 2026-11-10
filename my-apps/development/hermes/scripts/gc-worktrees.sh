@@ -42,8 +42,12 @@ prune() {
     done
   done
   # CARGO_BUILD_BUILD_DIR keeps one dir per workspace path; drop the ones no build used for days.
+  # A full scratch volume fails every build; under pressure keep only dirs a build touched in the last hour.
+  scratch_min=$((scratch_idle_hours * 60))
+  used=$(df -P "$cargo_build" 2>/dev/null | awk 'NR==2 {sub("%", "", $5); print $5}')
+  if [ "${used:-0}" -ge "${SCRATCH_PRESSURE_PCT:-85}" ]; then scratch_min=60; fi
   for dir in "$cargo_build"/*/*/; do
-    [ -d "$dir" ] && prune_idle "${dir%/}" $((scratch_idle_hours * 60))
+    [ -d "$dir" ] && prune_idle "${dir%/}" "$scratch_min"
   done
   free_after=$(df -Pk /opt/data | awk 'NR==2 {print $4}')
   echo "[gc] pass done; /opt/data free KiB $free_before -> $free_after"

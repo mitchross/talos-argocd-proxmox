@@ -23,6 +23,7 @@ spec:
           command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
           timeout: 2m
   retention:
+    keepHourly: 8
     keepDaily: 14
     keepWeekly: 8
   mover:
@@ -45,7 +46,8 @@ spec:
   policyRef:
     name: hindsight-db-pvc
   schedule:
-    cron: "57 3 * * *"
+    # Agent memory cannot be re-created. Name kept: existing Snapshots are owned by this schedule.
+    cron: "57 */6 * * *"
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
