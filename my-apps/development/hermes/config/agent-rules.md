@@ -10,6 +10,7 @@ The repo's own `AGENTS.md` and `CLAUDE.md` add to these rules. When they conflic
 - Stage only the files your task changed.
 - Never commit secrets. Secrets live in 1Password and reach pods through ExternalSecrets.
 - Change config only through Git. Day-to-day fixes (restart, scale, Argo sync) are fine.
+- Never install a tool onto the `/opt/data` volume. Add it to the `hermes-dev` Dockerfile in `homelab-images` through a pull request.
 
 ## Code: the smallest complete change
 

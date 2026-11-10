@@ -227,9 +227,9 @@ Paths without a prefix are under `my-apps/development/hermes/`.
 | Home Assistant | 1Password `home-assistant/ha-longlived-token` feeds `HASS_TOKEN` | Turns on the Home Assistant platform and entity tools |
 | Route | `httproute.yaml` | `gateway-internal-technitium` only. Remote clients use Tailscale |
 | Volume | `pvc.yaml` | `hermes-data`, 200Gi Longhorn, restore-before-bind |
-| Scratch volume | `pvc-scratch.yaml` | `hermes-scratch`, 150Gi Longhorn, mounted at `/opt/scratch`, backup-exempt. Holds caches and Rust intermediates, so backups of `hermes-data` hold only state worth restoring |
+| Scratch volume | `pvc-scratch.yaml` | `hermes-scratch`, 150Gi Longhorn, mounted at `/opt/scratch`, backup-exempt. Holds caches and Rust intermediates, so backups of `hermes-data` hold only state worth restoring. The `worktree-gc` sidecar deletes Cargo build dirs idle for 12 hours, or for 1 hour once the volume is 85% full |
 | Backups | `kopiur/hermes-data.yaml` | Every 6 hours at :28. Keeps 8 hourly, 14 daily, 8 weekly, no monthly. The mover runs as 10000:10000. Longhorn also keeps 6 hourly CSI snapshots on the volume, and they do not survive loss of the volume |
-| Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image runs as ServiceAccount `hermes`. `hermes-viewer` reads, with no Secrets or ConfigMaps except `kube-system/cilium-config` through `hermes-cilium-config-reader`. `hermes-operator` restarts, deletes and evicts pods, scales, cordons, and execs in every namespace. Exec can read any Secret mounted in a pod |
+| Cluster access | `rbac.yaml`, `config/kube-in-cluster.yaml` | `kubectl` from the image runs as ServiceAccount `hermes`. `hermes-viewer` reads, with no Secrets or ConfigMaps except `kube-system/cilium-config` through `hermes-cilium-config-reader`. `hermes-operator` restarts, deletes and evicts pods, scales, cordons, and execs in every namespace. Exec can read any Secret mounted in a pod. Job create and workload patch make this account cluster-admin in effect, by design |
 | Omni and Talos | 1Password `hermes-omni-sa` (`OMNI_ENDPOINT`, `OMNI_SERVICE_ACCOUNT_KEY`) feeds `hermes-secrets`. The seed writes `~/.talos/config` | Omni Operator role, which manages clusters and machines but not users or service accounts |
 | Pi SSH | `config/ssh_config`, `config/known_hosts`, `pi-egress.yaml` | `ssh pi` reaches the rpi5 as `vanillax` (Docker, sudo). Files live in `/opt/data/.ssh`, because OpenSSH uses the passwd home, not `$HOME`. The key is never regenerated. Its public half is in the Pi's `authorized_keys` |
 | Personality | `config/SOUL.md` is copied to `/opt/data/SOUL.md` on every start | Tone and hard rules. Edit it in Git, never in the pod |
@@ -240,6 +240,19 @@ Paths without a prefix are under `my-apps/development/hermes/`.
 | Cloudflare | `config.yaml` `mcp_servers.cloudflare` points at `https://mcp.cloudflare.com/mcp`. 1Password `cloudflared-proxmox/api-token` feeds `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi. Copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`. Output goes under `cron/output/` until a chat platform exists |
+| Watch jobs | `cron/jobs.txt`, `cron/*.py`, `scripts/seed.sh` | Four script-only cron jobs. The seed restores a missing script and creates a missing job. It never overwrites a live copy |
+| Drift report | `scripts/report-drift.sh` | Runs at the end of the seed. Lists volume content that Git and the image do not install, in `/opt/data/logs/seed-drift.log` |
+
+### Where a change goes
+
+| The change is | Put it in | A rebuild restores it from |
+|---|---|---|
+| A program (`helm`, `bun`, a CLI) | The `hermes-dev` Dockerfile in homelab-images | The image |
+| A setting, a rule, a skill, a cron job or its script | `my-apps/development/hermes/` | Git, through the seed |
+| A secret | 1Password and `externalsecret.yaml` | 1Password |
+| State Hermes produces: sessions, Kanban, logins | Nothing to do. It lives on `hermes-data` | The kopiur backup only |
+
+Never install a tool on the volume. Only the backup can restore it, and the drift report lists it on every start.
 
 ## The image
 
