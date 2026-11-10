@@ -454,9 +454,7 @@ The prod template pins Talos **1.14.5** and Kubernetes **1.37.2**. The kopiur
 rendering target and Cluster CI schema stay at 1.37.0. `kubectl get nodes -o wide` shows what
 each node runs, since Omni rolls an upgrade out one node at a time.
 
-The [upgrade results and disk review](docs/audits/2026-09-05-upgrade-and-disks.md)
-record the Longhorn fix and recovery checks. Merging a version change still
-does not upgrade the machines. Omni performs that rollout separately. The
+Merging a version change does not upgrade the machines. Omni performs that rollout separately. The
 replacement disk layout below takes effect when new VMs are provisioned.
 
 ### Fresh GPU disk layout

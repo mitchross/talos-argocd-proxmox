@@ -186,9 +186,7 @@ isn't enough to plan around.
   patches no longer select it. An installed machine keeps its detected system
   disk. Fresh machines default to the smallest eligible disk. With this GPU
   class that selects the 300 GB flash disk. Do not delete or reprovision the GPU VM
-  until selection is deterministic for a replacement UUID. The
-  [upgrade and disk review](../docs/audits/2026-09-05-upgrade-and-disks.md)
-  explains the resolver, machine-specific overrides and remaining fix.
+  until selection is deterministic for a replacement UUID.
 - **No VM migration on node failure.** If a Proxmox host dies, its VMs
   don't auto-migrate to another host. For that you need Proxmox HA separately
   (cluster-level, not Omni-level).

@@ -1,7 +1,7 @@
 # Glossary
 
-**Purpose:** give each overloaded word in this repo one meaning.
-**Status:** current. Docs, PR text, and agent replies use these meanings.
+This page gives each overloaded word in this repo one meaning. Docs, pull request
+text, and agent replies use these meanings.
 
 Several words here name two or three different things. "Restore" can mean a
 kopiur `Restore` object or a manual recovery. "Repo" can mean Git or Kopia.
@@ -9,10 +9,10 @@ When a word has a second meaning, write the longer name from the table.
 
 ## Rules
 
-1. Use the **Term** column exactly. Do not switch to a synonym.
-2. When you mean something in the **Not this** column, use the name given there.
-3. Write Kubernetes kinds in code style (`Restore`, `Snapshot`) when you mean
-   the object, not the idea.
+1. Use the word in the Term column exactly. Do not switch to a synonym.
+2. When you mean the thing in the "Not this" column, use the name given there.
+3. Write a Kubernetes kind in code style (`Restore`, `Snapshot`) when you mean
+   the object and not the idea.
 
 ## Backup and restore
 
@@ -42,7 +42,7 @@ When a word has a second meaning, write the longer name from the table.
 
 ## Policies
 
-"Policy" alone is ambiguous here. Name the kind.
+The word "policy" alone can mean three things here. Name the kind.
 
 | Say | Means |
 |---|---|
@@ -54,4 +54,4 @@ When a word has a second meaning, write the longer name from the table.
 
 - [Kopiur backup architecture](domains/storage/kopiur-backup-architecture.md) owns the backup and restore flow.
 - [Root entrypoints and sync waves](domains/argocd/entrypoints.md) owns wave order.
-- [Documentation reader contract](documentation-standard.md) owns the writing rules.
+- [How these docs are written](documentation-standard.md) owns the writing rules.

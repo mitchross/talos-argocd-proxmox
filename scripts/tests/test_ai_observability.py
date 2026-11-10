@@ -270,8 +270,8 @@ class AIObservabilityTests(unittest.TestCase):
         self.assertGreaterEqual(tuple(map(int, match.groups())), (1, 102, 1), image)
 
         guide = (ROOT / 'docs/domains/ai-gpu/model-catalog.md').read_text()
-        self.assertIn('SIMPLE` / `MEDIUM` work on local Qwen', guide)
-        self.assertIn('COMPLEX` / `REASONING`', guide)
+        self.assertIn('`SIMPLE` and `MEDIUM` work stays on local Qwen', guide)
+        self.assertIn('`REASONING` work goes to DeepSeek', guide)
         self.assertIn('stall_escalation_enabled', guide)
         self.assertIn('LITELLM ESCALATE', guide)
         self.assertIn('classification_mode: every_request', guide)

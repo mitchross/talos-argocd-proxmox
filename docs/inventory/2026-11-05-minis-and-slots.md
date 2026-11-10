@@ -1,9 +1,9 @@
 # Mini PCs, RAM and M.2 slots — November 5, 2026
 
-**Purpose:** what is inside each office mini, which M.2 storage slots are still free across the
-fleet, and what to buy next.
-**Status:** dated snapshot. It adds to the [November 3 inventory](2026-11-03-fleet-inventory.md),
-which stays the main page for power, PCIe links and speeds.
+This page shows what is inside each office mini PC, which M.2 storage slots are free across the
+fleet, and what to buy next. It is a dated snapshot. The
+[November 3 inventory](2026-11-03-fleet-inventory.md) stays the main page for power, PCIe links,
+and speeds.
 
 How it was collected, on November 5:
 

@@ -77,74 +77,70 @@ plugins:
   - search
 
 extra_css:
-  - assets/lab-explorer.css
   - assets/kopiur-playground.css
   - assets/nav-tweaks.css
   - assets/diagram-docs.css
   - assets/motion.css
 
 extra_javascript:
-  - assets/lab-inventory-data.js
-  - assets/lab-explorer.js
   - assets/kopiur-playground.js
   # Adds body.motion-on, which is what arms the reveal rules in motion.css.
   # Without it every page renders fully static — never blank.
   - assets/motion.js
 
 nav:
-  - Overview:
-      - Start here — the big picture: index.md
-      - Getting started — the easy guide: easy-guide.md
-      - Documentation reader contract: documentation-standard.md
+  - Start here:
+      - The big picture: index.md
+      - The easy guide: easy-guide.md
+      - Course — survive a cluster wipe: learn/course.md
       - Glossary: glossary.md
-  - Operations:
-      - Operations overview: operations/index.md
-      - GitOps & ArgoCD:
-          - ArgoCD architecture: domains/argocd/argocd.md
-          - Root entrypoints & sync waves: domains/argocd/entrypoints.md
-          - Static transition risk check: domains/argocd/gitops-risk-check.md
-          - Manifest cache contract: domains/argocd/manifest-cache-contract.md
-      - Temporal:
-          - Worker versioning — homelab to production: domains/temporal/worker-versioning-guide.md
-          - Safe worker deployments (runbook): domains/temporal/safe-deployments.md
-      - Storage:
-          - Storage architecture (source of truth): storage-architecture.md
-          - Disk map — every disk and where data goes: domains/storage/disk-map.md
-          - Storage tiers (which class): domains/storage/storage-tiers.md
-          - Disk writes and SSD wear: domains/storage/disk-writes.md
-          - Longhorn volumes and SELinux labels: domains/storage/selinux-mount-context.md
-          - TrueNAS special-vdev stall runbook: truenas-special-vdev-stall-runbook.md
-      - Backups & disaster recovery (kopiur):
-          - Interactive course — surviving a cluster wipe: learn/course.md
-          - Interactive kopiur playground: kopiur-playground.md
-          - kopiur backup architecture (the guide): domains/storage/kopiur-backup-architecture.md
-          - kopiur mover permissions (#1 gotcha): domains/storage/kopiur-mover-permissions.md
-          - Backup validation contract: domains/storage/backup-validation-contract.md
-          - Backup repository setup: backup-repository-setup.md
-          - Kopia maintenance: domains/storage/kopia-maintenance-plan.md
-          - Disaster recovery runbook: disaster-recovery.md
-          - Decision records:
-              - kopiur evaluation: domains/storage/kopiur-evaluation.md
-              - kopiur trial: kopiur-trial.md
-      - Databases:
-          - Run Postgres here — plain-English guide (start here): domains/cnpg/run-postgres-plain-english.md
-          - CNPG retirement note: domains/cnpg/plain-postgres-migration.md
-      - Networking:
-          - Topology: domains/networking/topology.md
-          - Cilium policies: domains/networking/policy.md
-          - VPN egress for pods: domains/networking/vpn-egress.md
-          - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
-      - Physical hosts:
-          - Ansible host management: domains/hosts/physical-hosts-ansible.md
-          - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
-      - Reference & ops:
-          - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
-          - Omni contract validation: domains/scheduling/omni-contract-validation.md
-          - Descheduler — why pods get moved: domains/scheduling/descheduler.md
-          - RustFS credential runbook: domains/rustfs/credential-runbook.md
-          - Observability — radar-ng cookbook: domains/observability/radar-ng.md
-          - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
-          - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md
+      - How these docs are written: documentation-standard.md
+  - GitOps and ArgoCD:
+      - How ArgoCD deploys this repo: domains/argocd/argocd.md
+      - Entrypoints and sync waves: domains/argocd/entrypoints.md
+      - Check a risky change before merge: domains/argocd/gitops-risk-check.md
+      - Check the live cluster before the next phase: domains/argocd/live-prerequisite-gate.md
+      - Manifest cache contract: domains/argocd/manifest-cache-contract.md
+  - Storage:
+      - Storage architecture: storage-architecture.md
+      - Disk map — which disk holds what: domains/storage/disk-map.md
+      - Pick a StorageClass: domains/storage/storage-tiers.md
+      - Move a PVC to another StorageClass: domains/storage/pvc-storageclass-migration.md
+      - Disk writes and SSD wear: domains/storage/disk-writes.md
+      - Longhorn volumes and SELinux labels: domains/storage/selinux-mount-context.md
+      - Collect storage evidence (read-only): domains/storage/collecting-storage-evidence.md
+      - NAS performance and RAM: nas-performance.md
+      - TrueNAS special-vdev stall runbook: truenas-special-vdev-stall-runbook.md
+  - Backups and recovery:
+      - How kopiur backup and restore work: domains/storage/kopiur-backup-architecture.md
+      - Try it — kopiur playground: kopiur-playground.md
+      - "Mover permissions (the #1 gotcha)": domains/storage/kopiur-mover-permissions.md
+      - Backup validation contract: domains/storage/backup-validation-contract.md
+      - Backup repository setup: backup-repository-setup.md
+      - Kopia maintenance: domains/storage/kopia-maintenance-plan.md
+      - RustFS credential runbook: domains/rustfs/credential-runbook.md
+      - Run Postgres here: domains/cnpg/run-postgres-plain-english.md
+      - Disaster recovery runbook: disaster-recovery.md
+  - Networking:
+      - Topology: domains/networking/topology.md
+      - Cilium policies: domains/networking/policy.md
+      - VPN egress for pods: domains/networking/vpn-egress.md
+      - Split DNS with Technitium: domains/networking/technitium-vanillax-me-migration.md
+  - Hardware and hosts:
+      - Hardware overview: inventory/index.md
+      - Fleet inventory: inventory/2026-11-03-fleet-inventory.md
+      - Minis, RAM and M.2 slots: inventory/2026-11-05-minis-and-slots.md
+      - Manage hosts with Ansible: domains/hosts/physical-hosts-ansible.md
+      - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
+      - Omni contract validation: domains/scheduling/omni-contract-validation.md
+      - Power and cost metering: domains/power/metering.md
+  - Running apps:
+      - VPA and topology spread: domains/scheduling/vpa-and-topology.md
+      - Descheduler — why pods move: domains/scheduling/descheduler.md
+      - Temporal worker versioning: domains/temporal/worker-versioning-guide.md
+      - Temporal safe deployments (runbook): domains/temporal/safe-deployments.md
+      - Self-host PostHog: posthog-self-host-k8s.md
+      - radar-ng observability cookbook: domains/observability/radar-ng.md
   - Local AI:
       - Starter kit — start here: domains/ai-gpu/index.md
       - Models and GPUs:
@@ -158,26 +154,3 @@ nav:
           - Hermes on another cluster: domains/ai-gpu/hermes-other-clusters.md
           - Hermes on your PC: domains/ai-gpu/hermes-one-computer.md
           - How I use Hermes (what to copy): domains/ai-gpu/hermes-how-i-work.md
-  - Inventory:
-      - Inventory overview: inventory/index.md
-      - Fleet inventory — 3 November (current): inventory/2026-11-03-fleet-inventory.md
-      - Minis, RAM and M.2 slots — 5 November: inventory/2026-11-05-minis-and-slots.md
-      - Explore the lab: lab.md
-  - Audits:
-      - Audits overview: audits/index.md
-      - Homelab report & recommendations: audits/2026-09-20-homelab-report.html
-      - Proxmox & Kubernetes performance: inventory/2026-09-20-capacity-and-benchmarks.md
-      - NAS performance & RAM: nas-performance.md
-      - Architecture audit — 5 September: audits/2026-09-05-architecture-audit.md
-      - Hardware and workload placement — 5 September: audits/2026-09-05-hardware-and-placement-review.md
-      - Past snapshots:
-          - Fleet inventory — 27 October: inventory/2026-10-27-fleet-inventory.md
-          - Full inventory — 15 October: inventory/2026-10-15-full-inventory.md
-          - etcd on the Intel S3610 — 11 October: inventory/2026-10-11-etcd-on-s3610.md
-          - Storage audit — 26 September: inventory/2026-09-26-storage-audit.md
-          - Hardware diagnostics — September: diagnostics.md
-  - Ongoing research:
-      - Research overview: research/index.md
-      - Tiered storage: domains/storage/architecture-future.md
-      - Multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md
-      - Multi-cluster requirements: domains/multicluster/prd.md

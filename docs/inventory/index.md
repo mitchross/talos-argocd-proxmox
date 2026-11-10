@@ -1,28 +1,38 @@
-# Inventory
+# Hardware overview
 
-This section shows what the lab runs now. Start with the current snapshot; older pages are listed
-under [History](#history).
+This section lists the machines in the lab and how they are configured. Use it
+to find a machine, check what is inside it, or plan an upgrade.
+
+The live view is the Homelab Guide at `homelab.vanillax.me`. It shows every
+device, disk, and benchmark, and it has the rack planner. It answers only on
+the home network. The pages below are the public, dated record that the guide
+builds from.
 
 | Page | What it answers |
 | --- | --- |
-| [Fleet inventory — 3 November](2026-11-03-fleet-inventory.md) | **Current.** Which machines exist, their RAM and PCIe links, NVMe and RAM speed, power per plug, and how loaded the nodes are. |
-| [Minis, RAM and M.2 slots — 5 November](2026-11-05-minis-and-slots.md) | **New.** What is inside each office mini, which M.2 slots are free across the fleet, and the buy list. |
-| [Explore the lab](../lab.md) | What is inside each machine, as an interactive map. Its data predates the bare-metal minis. |
-| [Disk map](../domains/storage/disk-map.md) | Which physical disk holds which data, and where new data should go. |
+| [Fleet inventory](2026-11-03-fleet-inventory.md) | Which machines exist, with their CPU, RAM, PCIe links, measured speed, and power use. |
+| [Minis, RAM and M.2 slots](2026-11-05-minis-and-slots.md) | What is inside each mini PC, which M.2 slots are free, and what to buy. |
+| [Disk map](../domains/storage/disk-map.md) | Which physical disk holds which data, and where new data goes. |
+| [Manage hosts with Ansible](../domains/hosts/physical-hosts-ansible.md) | How to change a setting on a Proxmox host or the Pi. |
+| [Bare-metal Talos workers](../domains/hosts/bare-metal-talos.md) | How to add a machine to the cluster without Proxmox. |
+| [Power and cost metering](../domains/power/metering.md) | What each machine costs to run, and how to add a smart plug. |
 
-For speed verdicts and upgrade priorities, open [Audits](../audits/index.md). For changes still
-being considered, open [ongoing research](../research/index.md).
+An inventory page is a snapshot from one day. It is not a live dashboard. Each
+page states its collection date. Where two pages disagree, the newer page is
+correct.
 
-## History
+## Older snapshots
 
-Each page is a dated snapshot. The current page wins where they disagree.
+These pages stay in the repo because the Homelab Guide cites them as sources.
+They are not in the sidebar. Read them only for the detail named here.
 
 | Snapshot | Still useful for |
 | --- | --- |
-| [Fleet inventory — 27 October](2026-10-27-fleet-inventory.md) | Per-node Longhorn disks and requests, and the retired `proxmox-hp-elite` provider. |
-| [Full inventory — 15 October](2026-10-15-full-inventory.md) | VM disk paths, Proxmox storage, drives with SMART status, NAS pools. |
-| [etcd on the Intel S3610 — 11 October](2026-10-11-etcd-on-s3610.md) | How much faster etcd is on an enterprise SSD. |
-| [Storage audit — 26 September](2026-09-26-storage-audit.md) | Daily SSD writes and NAS risks. |
-| [Capacity and benchmarks — 20 September](2026-09-20-capacity-and-benchmarks.md) | Disk speeds and fast/slow verdicts for the Proxmox hosts and volumes. |
+| [Fleet inventory, 27 October 2026](2026-10-27-fleet-inventory.md) | Longhorn disks and requests per node. |
+| [Full inventory, 15 October 2026](2026-10-15-full-inventory.md) | VM disk paths, Proxmox storage, SMART status per drive, and NAS pools. |
+| [etcd on the Intel S3610, 11 October 2026](2026-10-11-etcd-on-s3610.md) | etcd disk latency on an enterprise SSD. |
+| [Capacity and benchmarks, 20 September 2026](2026-09-20-capacity-and-benchmarks.md) | Disk speeds for the Proxmox hosts and Kubernetes volumes. |
 
-The 21 and 22 October snapshots were deleted. Their content is in git history.
+Do not move or rename a file in `docs/inventory/` or `docs/assets/` without
+updating `scripts/build-lab-data.mjs` in the `homelab-rack-planner` repo. That
+script reads them by path.

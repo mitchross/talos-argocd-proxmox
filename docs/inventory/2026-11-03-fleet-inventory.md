@@ -1,9 +1,8 @@
 # Fleet inventory — November 3, 2026
 
-**Purpose:** the current list of machines in the lab: what is inside them, how fast they are, what
-they cost to run, and what runs on them.
-**Status:** dated, read-only snapshot. It replaces the [October 27 inventory](2026-10-27-fleet-inventory.md)
-as the current page. Disks are maintained in the [disk map](../domains/storage/disk-map.md).
+This page lists the machines in the lab on November 3, 2026: what is inside them, how fast
+they are, what they cost to run, and what runs on them. It is a dated snapshot. The
+[disk map](../domains/storage/disk-map.md) owns the disk list.
 
 > **Update, November 5:** `hp-elite-gen13` moved to `.141`, and the minis' DIMMs and M.2 slots are
 > now read. See [Minis, RAM and M.2 slots](2026-11-05-minis-and-slots.md).
@@ -181,5 +180,5 @@ Per-node Longhorn disks are in the [disk map](../domains/storage/disk-map.md).
 
 ## History
 
-Earlier snapshots are listed in [Inventory](index.md#history). The October 21 and 22 snapshots were
+Earlier snapshots are listed in [Inventory](index.md#older-snapshots). The October 21 and 22 snapshots were
 deleted; their content is superseded by this page and stays in git history.

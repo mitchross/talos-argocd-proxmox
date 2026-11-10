@@ -1,12 +1,16 @@
-# Physical hosts with Ansible
+# Manage physical hosts with Ansible
 
-Omni builds the Talos VMs and Argo CD runs everything inside Kubernetes. The
-machines underneath them, five Proxmox hosts and the management Pi, are plain
-Debian systems that Argo CD cannot reach. Their operating-system settings live
-in [`host-monitoring/`][dir]. Ansible applies them from a workstation.
+This page explains which settings Ansible owns on the physical machines and how to
+run a playbook safely. Read it before you change a Proxmox host or the management Pi.
 
-Status: current. You apply playbooks by hand. Merging a pull request
-changes nothing on a host until someone runs the playbook against it.
+Omni builds the Talos VMs, and Argo CD runs everything inside Kubernetes. The
+machines underneath them, three Proxmox hosts and the management Pi, are plain
+Debian systems that Argo CD cannot reach. Their operating-system settings are in
+[`host-monitoring/`][dir]. Ansible, a tool that applies settings over SSH, applies
+them from a workstation.
+
+You apply playbooks by hand. A merged pull request changes nothing on a host until
+someone runs the playbook against that host.
 
 ## What Ansible manages
 
@@ -16,8 +20,8 @@ changes nothing on a host until someone runs the playbook against it.
 | [`logging-playbook.yaml`][logging] | Persistent journal plus an OpenTelemetry Collector that ships it to Loki (Grafana **Nodes / Crash logs**) | Proxmox, Pi | [LOGGING.md][logging-doc] |
 | [`crash-capture-playbook.yaml`][crash] | Lockups become panics that reboot, panic text saved to EFI pstore, chipset hardware watchdog, kernel messages streamed to the Pi with netconsole | Proxmox, one host at a time | [LOGGING.md § Crash capture][crash-doc] |
 
-TrueNAS is an appliance and is not changed by Ansible. Its exporters run as a
-TrueNAS Custom App from [`truenas-compose.yaml`][truenas].
+Ansible does not change TrueNAS, because TrueNAS is an appliance. Its exporters run
+as a TrueNAS Custom App from [`truenas-compose.yaml`][truenas].
 
 Ansible does **not** manage the Talos VMs, Proxmox network interfaces, USB and PCI
 resource mappings, or Proxmox package upgrades. The Omni Proxmox provider builds
@@ -30,29 +34,31 @@ the VMs from `omni/machine-classes/`.
 
 | Group | Names | SSH user |
 |---|---|---|
-| `proxmox` | `gpu` (.14), `shed` (.20), `sff` (.21), `elite` (.22) | `root` |
+| `proxmox` | `gpu` (.14), `shed` (.20), `sff` (.21) | `root` |
 | `management` | `pi` (.15) | `vanillax` with sudo |
-| `appliances` | `nas` (.133) | listed for reference; no playbook targets it |
+| `appliances` | `nas` (.133) | Listed for reference. No playbook targets it |
 
-A setting that only one host needs is a host variable in the inventory, so it
-survives the next run. A manual change lasts only until a playbook
-runs again and restores the declared state.
+The `proxmox` and `management` groups together form the group `physical_linux`.
 
-## Prerequisites
+Put a setting that only one host needs in the inventory as a host variable, so it
+survives the next run. A manual change on a host lasts only until a playbook runs
+again and restores the declared state.
 
-Run everything from the repository root.
+## Before you start
 
-1. Ansible on your workstation: `ansible-playbook --version` prints a version.
-2. The pinned collection:
+Run every command from the repository root.
+
+1. Install Ansible on your workstation. `ansible-playbook --version` prints a version.
+2. Install the pinned collection:
    `ansible-galaxy collection install -r host-monitoring/requirements.yaml`
-3. SSH key login to each host, then confirm Ansible can reach them:
+3. Set up SSH key login to each host. Then confirm that Ansible can reach them:
 
     ```sh
     ansible -i host-monitoring/inventory.yaml physical_linux -m ping
     ```
 
-    Expected: every host answers `"ping": "pong"`. Fix SSH before continuing
-    if any host is `UNREACHABLE`.
+    Expected result: every host answers `"ping": "pong"`. If a host is
+    `UNREACHABLE`, fix SSH before you continue.
 
 ## Run a playbook safely
 
@@ -72,9 +78,9 @@ inventory name.
     ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/<playbook> --limit <host> --check --diff
     ```
 
-    Check mode skips shell and command steps, and a step can fail because a
-    file created earlier in the same run does not exist yet. Read those
-    failures; they do not always mean the real run will fail.
+    Check mode skips shell and command steps. A step can also fail because a
+    file that an earlier step creates does not exist yet. Read those failures.
+    They do not always mean that the real run will fail.
 
 3. Apply to that host.
 
@@ -82,20 +88,20 @@ inventory name.
     ansible-playbook -i host-monitoring/inventory.yaml host-monitoring/<playbook> --limit <host>
     ```
 
-    Expected: `PLAY RECAP` shows `failed=0`. Running it again shows
+    Expected result: `PLAY RECAP` shows `failed=0`. A second run shows
     `changed=0`, because a playbook changes only what differs.
 
 4. Verify with the checks in that playbook's guide.
 5. Repeat for the remaining hosts, one at a time.
 
-Playbooks never reboot a host. A kernel boot option they add takes effect at
-the next reboot.
+Playbooks never reboot a host. A kernel boot option that a playbook adds takes
+effect at the next reboot.
 
-## Rollback
+## Roll back
 
-Each guide lists the files and services its playbook creates. To undo one,
-stop or remove those on the affected host, then revert the pull request so the
-next run does not put them back.
+Each guide lists the files and services that its playbook creates. To undo a
+playbook, stop or remove those files and services on the affected host. Then revert
+the pull request, so the next run does not put them back.
 
 [dir]: https://github.com/mitchross/talos-argocd-proxmox/tree/main/host-monitoring
 [readme]: https://github.com/mitchross/talos-argocd-proxmox/blob/main/host-monitoring/README.md

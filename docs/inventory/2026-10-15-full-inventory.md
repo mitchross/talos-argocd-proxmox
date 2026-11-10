@@ -1,6 +1,6 @@
 # Full infrastructure inventory — October 15, 2026
 
-**Status:** dated, read-only inventory. This replaces the September hardware snapshot in [Explore the lab](../lab.md).
+**Status:** dated, read-only inventory.
 
 Collection: approximately 04:00–04:10 UTC; LXC configuration checked at 04:12 UTC. Kubernetes, Talos and host queries are separate samples, not an atomic snapshot.
 

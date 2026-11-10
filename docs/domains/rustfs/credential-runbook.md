@@ -1,17 +1,27 @@
 # RustFS credential runbook
 
-RustFS uses two credential classes:
+This runbook lists the RustFS credentials, where they are stored, and how to
+rotate the key that Kubernetes uses. RustFS is the S3-compatible object store on
+the NAS. A rotation changes the workload key in 1Password and in the cluster
+Secrets. It does not change the root key, the Kopia password, or any bucket data.
 
-- Root/app credentials are only for the TrueNAS RustFS app bootstrap and console administration.
-- Workload credentials are RustFS-console-created access keys used by Kubernetes clients through External Secrets Operator.
+## The two kinds of credential
 
-Do not point Kubernetes workloads at the TrueNAS app/root credential.
+RustFS has two kinds of credential. Keep them separate.
 
-## 1Password item
+| Credential | Where it is created | Who uses it |
+|---|---|---|
+| Root (app) credential | The TrueNAS RustFS app settings | A person, for the first setup and for console administration |
+| Workload access key | The RustFS console | Kubernetes S3 clients, through External Secrets Operator (ESO) |
 
-The shared item is `rustfs` in vault `homelab-prod`.
+!!! warning
+    Do not point a Kubernetes workload at the root credential. With the
+    workload key, the cluster cannot run RustFS admin operations.
 
-Required fields:
+## The 1Password item
+
+All values are in the item `rustfs` in the vault `homelab-prod`. The item needs
+these fields:
 
 | Field | Purpose |
 | --- | --- |
@@ -23,10 +33,10 @@ Required fields:
 | `endpoint` | RustFS S3 endpoint, currently `http://192.168.10.133:30292`. |
 | `S3_ENDPOINT` | RustFS S3 endpoint, currently `http://192.168.10.133:30292`. |
 
-## Workload key IAM policy
+## The workload key policy
 
-The single workload key (named `homelab-workload` in the RustFS console) is
-configured with a broad allow policy:
+There is one workload key. Its name in the RustFS console is
+`homelab-workload`. It has a broad allow policy:
 
 ```json
 {
@@ -41,27 +51,53 @@ configured with a broad allow policy:
 }
 ```
 
-The scope is broad on purpose (homelab, single tenant). Per-bucket IAM scoping
-would duplicate the namespace separation Kubernetes RBAC already gives, and it
-adds little protection with a single operator. A compromised cluster means a
-compromised key either way. A broad policy also means new buckets work at once,
-so a new logging, metrics, or backup destination can't fail on a forgotten IAM
-rule. The workload key stays separate from `root-access-key`, so the
-cluster cannot run RustFS admin operations. Bucket create/delete and user
-management use root via the console.
+The policy is broad on purpose, because this lab has one operator and one tenant:
 
-Tighten the policy when:
+- A policy per bucket would repeat the namespace separation that Kubernetes
+  RBAC already gives. If the cluster is compromised, the key is compromised in
+  both designs.
+- A new bucket works at once. A new log, metric, or backup destination cannot
+  fail because someone forgot an IAM rule.
+- The workload key stays separate from `root-access-key`. Bucket creation,
+  bucket deletion, and user management need the root credential in the console.
 
-- Multiple operators or people gain cluster access and the homelab becomes shared.
-- A specific app misbehaves with the bucket. Scope that app's key, not the shared one.
-- An audit or compliance exercise requires least-privilege docs.
+Tighten the policy in these cases:
 
-Captured in mink:
-`rustfs-workload-key-policy-full-s3-on-all-buckets-homelab-single-tenant-decision.md`
+- More people or operators get access to the cluster.
+- One app misuses a bucket. Give that app its own scoped key. Do not change the
+  shared key.
+- An audit requires least-privilege documentation.
 
-## Update 1Password
+## Which Secrets read the workload key
 
-To rotate the RustFS workload key, run these commands. Replace the placeholder values by hand.
+These ExternalSecrets in Git read `rustfs-workload-access-key` and
+`rustfs-workload-secret-key`:
+
+| ExternalSecret | Kubernetes Secret |
+| --- | --- |
+| `loki-stack/loki-s3-credentials` | `loki-s3-credentials` |
+| `monitoring/tempo-s3-credentials` | `tempo-s3-credentials` |
+| `posthog/posthog-secrets` | `posthog-secrets` |
+| `langfuse/langfuse-secrets` | `langfuse-secrets` |
+| `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
+| `kopiur/kopiur-rustfs` (ClusterExternalSecret to every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
+
+The `kopiur-rustfs` ClusterExternalSecret is in
+`infrastructure/backup/kopiur/externalsecret.yaml`. It copies the Kopia
+repository credentials into every namespace that has a backup.
+
+## Rotate the workload key
+
+### Before you start
+
+- Sign in to the `op` CLI with access to the `homelab-prod` vault.
+- Create the new access key in the RustFS console, with the policy above.
+- Keep the new access key and secret key ready to paste. Do not put them in a
+  file in Git or in a chat.
+
+### 1. Update 1Password
+
+Replace the two placeholder values by hand, then run the command.
 
 ```bash
 op item edit rustfs \
@@ -70,7 +106,7 @@ op item edit rustfs \
   'rustfs-workload-secret-key[concealed]=PASTE_RUSTFS_WORKLOAD_SECRET_KEY_HERE'
 ```
 
-Optional root/app fields, if the 1Password item does not already have them:
+If the item does not have the root fields yet, add them. This step is optional.
 
 ```bash
 op item edit rustfs \
@@ -79,7 +115,9 @@ op item edit rustfs \
   'root-secret-key[concealed]=PASTE_RUSTFS_ROOT_SECRET_KEY_HERE'
 ```
 
-Verify field presence without revealing concealed values:
+### 2. Check the fields
+
+This command shows that the fields exist. It does not reveal concealed values.
 
 ```bash
 op item get rustfs \
@@ -87,27 +125,18 @@ op item get rustfs \
   --fields rustfs-workload-access-key,rustfs-workload-secret-key,kopia_password,endpoint,S3_ENDPOINT
 ```
 
-## ESO consumers
+Expected result: all five fields are listed.
 
-These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rustfs-workload-secret-key`:
+### 3. Force an ESO refresh
 
-| ExternalSecret | Kubernetes Secret |
-| --- | --- |
-| `loki-stack/loki-s3-credentials` | `loki-s3-credentials` |
-| `monitoring/tempo-s3-credentials` | `tempo-s3-credentials` |
-| `posthog/posthog-secrets` | `posthog-secrets` |
-| `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
-| `kopiur/kopiur-rustfs` (ClusterExternalSecret to every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
-
-The single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/backup/kopiur/externalsecret.yaml`) delivers per-PVC backup credentials. It copies the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`.
-
-Force ESO refresh after changing 1Password:
+ESO copies the new values into the cluster Secrets. Force the copy now.
 
 ```bash
 TS="$(date +%s)"
 kubectl annotate externalsecret -n loki-stack loki-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n monitoring tempo-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n posthog posthog-secrets force-sync="$TS" --overwrite
+kubectl annotate externalsecret -n langfuse langfuse-secrets force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n rustfs-lifecycle rustfs-admin-credentials force-sync="$TS" --overwrite
 
 # Also refresh the kopiur repo-credential fanout (one ClusterExternalSecret
@@ -115,7 +144,11 @@ kubectl annotate externalsecret -n rustfs-lifecycle rustfs-admin-credentials for
 kubectl annotate clusterexternalsecret kopiur-rustfs force-sync="$TS" --overwrite
 ```
 
-Restart consumers that load S3 credentials from environment variables:
+Expected result: each command prints that the object is annotated.
+
+### 4. Restart the consumers that read the key from environment variables
+
+A running pod keeps the old environment variables. Restart these workloads.
 
 ```bash
 kubectl rollout restart statefulset/loki-backend statefulset/loki-write -n loki-stack
@@ -126,8 +159,25 @@ kubectl rollout restart deploy/db deploy/feature-flags deploy/plugins deploy/web
                        deploy/recording-api deploy/replay-capture \
                        deploy/temporal-django-worker deploy/property-defs-rs \
                        -n posthog
+kubectl rollout restart deploy/langfuse-web deploy/langfuse-worker -n langfuse
 ```
 
-kopiur mover Jobs read the namespace `kopiur-rustfs` Secret when the Job is created. The next scheduled or manually triggered Snapshot picks up rotated credentials automatically, with no operator restart.
-The RustFS lifecycle CronJob spawns its Job, so the next scheduled run
-uses the refreshed Secret.
+Two consumers need no restart:
+
+- A kopiur mover reads the `kopiur-rustfs` Secret of its namespace when kopiur
+  creates the Job. The next scheduled or manual `Snapshot` uses the new key. The
+  kopiur operator needs no restart.
+- The RustFS lifecycle CronJob starts a new Job for each run. The next run uses
+  the refreshed Secret.
+
+### Verify
+
+- Check that the restarted pods reach `Running` and stay there.
+- Check that the next kopiur `Snapshot` reaches `Succeeded`:
+  `kubectl get snapshot -A`.
+
+### Roll back
+
+Put the previous key values back in 1Password with the command in step 1. Then
+repeat steps 3 and 4. This works only while the previous key still exists in
+RustFS.
