@@ -118,7 +118,12 @@ If machines are not appearing in Proxmox:
   reports `failed to pull installer image: deadline exceeded` is usually
   waiting on the Image Factory to finish building a large schematic (for
   example the NVIDIA extensions); it retries and succeeds once the image
-  exists. Find the blocker with `omnictl get clustermachinestatus` and fix
+  exists. Omni's primary factory is the self-hosted one on the Pi
+  (`--primary-factory-url=https://factory.vanillax.me:8443`), with
+  `factory.talos.dev` as the secondary. The Pi needs about 20 minutes for the first
+  build of a schematic, so installer pulls time out until the image is cached. Wait
+  for the build; do not change the schematic to retry. Find the blocker with
+  `omnictl get clustermachinestatus` and fix
   that node; never delete the control plane to "unstick" an upgrade.
 - **A full EFI partition fails the install.** The installer writes a new boot image
   of about 575 MB to the node's EFI partition (2.1 GB on the GPU worker). If hand-saved
@@ -164,7 +169,8 @@ kubectl -n longhorn-system get replicas.longhorn.io -o json \
           {"op":"add","path":"/spec/disks/hp-sff-ssd/tags/-","value":"gpu-bulk"}]'
    ```
 2. Wait until no replica on the GPU node has `evictionRequested: true`. Longhorn also
-   attaches detached volumes to move them, so expect about 200 GiB and 45 minutes.
+   attaches detached volumes to move them. On 2026-11-10 about 150 GiB moved in
+   45 minutes, about 48 MB/s in total and 26-51 MB/s per volume.
    Omni retries the drain by itself. Do not scale the workloads to 0: Longhorn must
    move a detached single-copy volume too, so the wait stays the same. Watch the copy:
    ```bash
@@ -178,7 +184,20 @@ kubectl -n longhorn-system get replicas.longhorn.io -o json \
      -p='{"spec":{"disks":{"hp-sff-ssd":{"tags":["hp-sff-ssd"]}}}}'
    ```
 
-Expected result: `longhorn-flash` volumes move back to `ssd-flash` through
-best-effort data locality, and the rest move back when hp-sff drains.
+Restoring the tags does not move a copy back. A `longhorn-flash` volume returns to
+`ssd-flash` only when its pod runs on the GPU node, because best-effort data locality
+copies to the pod's node. A pod on another node gets a local copy that fails with
+"tags not fulfilled", and the data stays on `hp-sff-ssd`. On 2026-11-10 that happened
+to all four PostHog volumes. List the volumes still outside `ssd-flash`:
+
+```bash
+kubectl -n longhorn-system get replicas.longhorn.io -o json | jq -r '.items[]
+  | select(.spec.nodeID != "" and (.spec.diskPath | test("ssd-flash") | not))
+  | .spec.volumeName' | sort -u > /tmp/off-flash
+kubectl -n longhorn-system get volumes.longhorn.io -o json | jq -r --rawfile off /tmp/off-flash '.items[]
+  | select((.spec.diskSelector // []) | index("flash")) | select(.metadata.name as $v | $off | contains($v))
+  | .status.kubernetesStatus | "\(.namespace)/\(.pvcName)"'
+```
+
 Do not leave the tags in place. `hp-sff-ssd` is a consumer drive, and the
 `flash` class holds the heavy writers.
