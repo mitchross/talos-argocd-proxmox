@@ -1,4 +1,4 @@
-# Serves the PMTiles archive on the pmtiles-rwx PVC; the fetch-basemap init container fills it when it's missing.
+# Serves the PMTiles archive on the basemap-pmtiles PVC; the fetch-basemap init container fills it when it's missing.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -101,4 +101,4 @@ spec:
             pullPolicy: IfNotPresent
         - name: pmtiles
           persistentVolumeClaim:
-            claimName: pmtiles-rwx
+            claimName: basemap-pmtiles

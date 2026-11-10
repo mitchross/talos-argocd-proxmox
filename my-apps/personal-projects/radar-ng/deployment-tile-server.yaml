@@ -149,7 +149,7 @@ spec:
       volumes:
         - name: tiles
           persistentVolumeClaim:
-            claimName: tiles
+            claimName: tiles-v2
         - name: grids
           persistentVolumeClaim:
             claimName: grids
