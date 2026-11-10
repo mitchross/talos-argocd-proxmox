@@ -62,19 +62,6 @@ flowchart LR
 | Cloudflare | `config.yaml` `mcp_servers.cloudflare` → `https://mcp.cloudflare.com/mcp`; 1Password `cloudflared-proxmox/api-token` feeds `CLOUDFLARE_API_TOKEN` | Cloudflare's OAuth login needs a browser in the pod, so Hermes sends an API token instead |
 | Ops skill | `skills/homelab-ops/SKILL.md` | Six read-only checks, the digest format, and risk-based rules for Omni, Talos and the Pi; copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`, output under `cron/output/` until a chat platform exists |
-| Watch jobs | `cron/jobs.txt`, `cron/*.py`, `scripts/seed.sh` | Four script-only cron jobs. The seed restores a missing script and creates a missing job; it never overwrites a live copy |
-| Drift report | `scripts/report-drift.sh` | Runs at the end of the seed. Lists volume content that Git and the image do not install, in `/opt/data/logs/seed-drift.log` |
-
-### Where a change goes
-
-| The change is | Put it in | A rebuild restores it from |
-|---|---|---|
-| A program (`helm`, `bun`, a CLI) | The `hermes-dev` Dockerfile in homelab-images | The image |
-| A setting, a rule, a skill, a cron job or its script | `my-apps/development/hermes/` | Git, through the seed |
-| A secret | 1Password and `externalsecret.yaml` | 1Password |
-| State Hermes produces: sessions, Kanban, logins | Nothing to do; it lives on `hermes-data` | The kopiur backup only |
-
-Never install a tool on the volume. Only the backup can restore it, and the drift report lists it on every start.
 
 ## The image
 
