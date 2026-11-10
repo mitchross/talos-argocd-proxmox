@@ -21,5 +21,9 @@ helmCharts:
     namespace: kube-system
     includeCRDs: true
     valuesFile: values.yaml
+configMapGenerator:
+  - name: headlamp-plugin-scripts
+    files:
+      - scripts/install-ai-assistant.sh
 patches:
   - path: patch-remove-session-ttl.yaml

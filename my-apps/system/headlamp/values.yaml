@@ -41,12 +41,7 @@ initContainers:
         value: "0.5.0-alpha"
       - name: PLUGIN_SHA256
         value: "efe29409e91e51240d312c0819a0a4b058c3d99bd08af39c6b3a8d04aea06ad8"
-    command: ["/bin/sh", "-ec"]
-    args:
-      - |
-        wget -qO /tmp/ai.tgz "https://github.com/headlamp-k8s/plugins/releases/download/ai-assistant-${PLUGIN_VERSION}/headlamp-k8s-ai-assistant-${PLUGIN_VERSION}.tar.gz"
-        echo "${PLUGIN_SHA256}  /tmp/ai.tgz" | sha256sum -c -
-        tar xzf /tmp/ai.tgz -C /headlamp/plugins
+    command: ["/bin/sh", "/scripts/install-ai-assistant.sh"]
     securityContext:
       runAsUser: 100
       runAsGroup: 101
@@ -63,6 +58,9 @@ initContainers:
     volumeMounts:
       - name: plugins
         mountPath: /headlamp/plugins
+      - name: plugin-scripts
+        mountPath: /scripts
+        readOnly: true
 
 volumeMounts:
   - name: plugins
@@ -71,3 +69,6 @@ volumeMounts:
 volumes:
   - name: plugins
     emptyDir: {}
+  - name: plugin-scripts
+    configMap:
+      name: headlamp-plugin-scripts
