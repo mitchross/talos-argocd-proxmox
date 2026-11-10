@@ -135,7 +135,7 @@ auxiliary:
       - provider: openai-codex
         model: gpt-6.1-sol
       - provider: litellm
-        model: qwen3.8-27b
+        model: qwen3.8-27b-local
   background_review:
     provider: openai-codex
     model: gpt-6.1-sol
