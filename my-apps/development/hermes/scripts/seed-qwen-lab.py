@@ -100,7 +100,9 @@ def seed_profile(name, spec, base, soul, skills_src):
         write(home / "skills" / "qwen-lab" / skill / "SKILL.md", (skills_src / f"skill-{skill}.md").read_text())
 
     # Non-secret only: lab profiles never get keys. Multiplexed turns read this, not the pod env.
-    write(home / ".env", "# Git owns this file (seed-qwen-lab.py).\nSEARXNG_URL=http://searxng.searxng.svc.cluster.local:8080\n", 0o600)
+    # The Kanban dispatcher expands the main config under each profile every minute; the placeholder stops its warning.
+    write(home / ".env", "# Git owns this file (seed-qwen-lab.py).\nSEARXNG_URL=http://searxng.searxng.svc.cluster.local:8080\n"
+          "CLOUDFLARE_API_TOKEN=not-for-this-profile\n", 0o600)
 
     term_home = home / "home"
     write(term_home / ".profile", LAB_PROFILE_SH)

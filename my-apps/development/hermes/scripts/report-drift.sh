@@ -7,8 +7,8 @@ report() { echo "[drift] $1: ${2:-none}"; }
 # Prints the names in directory $1 that do not match the extended regex $2.
 unlisted() { for e in "$1"/*; do [ -e "$e" ] && ! printf '%s\n' "${e##*/}" | grep -Eq "$2" && printf '%s ' "${e##*/}"; done; }
 
-# Keep these lists equal to what seed.sh installs.
-report "tools outside the image" "$(unlisted "$H/tools" '^(rustup|craft-anything-.*)$')"
+# Keep these lists equal to what seed.sh installs. Caches and Hermes's own tool store (facts.json) are not drift.
+report "tools outside the image" "$(unlisted "$H/tools" '^(rustup|cargo|venvs|facts\.json|agent-browser-.*|craft-anything-.*)$')"
 report "plugins the seed does not install" "$(unlisted "$H/plugins" '^(hindsight|homeassistant|advanced-delegation)$')"
 report "cron scripts missing from Git" "$(for f in "$H"/scripts/*; do
   [ -f "$f" ] && [ ! -f "$G/cron-${f##*/}" ] && printf '%s ' "${f##*/}"; done)"

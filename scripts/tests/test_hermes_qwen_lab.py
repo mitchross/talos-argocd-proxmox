@@ -109,6 +109,7 @@ def test_seed_never_writes_the_default_profile(tmp_path):
     meta = yaml.safe_load((root / 'profiles/qwen-lab/profile.yaml').read_text())
     assert meta['ui_meta']['hermes-bots']['sectionName'] == 'Qwen Lab'
     lab_env = (root / 'profiles/qwen-researcher/.env').read_text()
+    lab_env = lab_env.replace('CLOUDFLARE_API_TOKEN=not-for-this-profile', '')  # placeholder, not a key
     assert 'SEARXNG_URL=' in lab_env and 'KEY' not in lab_env and 'TOKEN' not in lab_env
 
 
