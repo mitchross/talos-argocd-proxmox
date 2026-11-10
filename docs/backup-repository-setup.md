@@ -1,13 +1,23 @@
-# Backup repository setup (S3 + Kopia, via kopiur)
+# Backup repository setup
 
-This is the one-time backend setup behind the
-[backup/restore system](storage-architecture.md). It covers the S3 box, the bucket, the
-credentials, and how they fan out to every namespace. You do this once. After
-that, a single namespace label does everything.
+This page describes the storage and credentials behind every backup: the S3
+store, the bucket, the keys, and how the keys reach each namespace. Read it when
+you build the backend for the first time, or when a backup cannot reach its
+storage. You do this setup once. After that, one namespace label gives an app
+access.
 
-The kopia repo is a custom resource (`ClusterRepository`). For how backup and
-restore flow once the backend is up, see
-[kopiur backup architecture](domains/storage/kopiur-backup-architecture.md).
+The Kopia repository is the encrypted backup store. It lives in the `kopiur`
+bucket on RustFS, an S3-compatible object store that runs on the NAS. For how a
+backup and a restore-before-bind work after this setup, see
+[how kopiur backup and restore work](domains/storage/kopiur-backup-architecture.md).
+
+!!! note "Other S3 stores work too"
+    This cluster uses [RustFS](https://github.com/rustfs/rustfs) at
+    `192.168.10.133:30292`, outside the cluster. Any S3 store works, including
+    MinIO, TrueNAS S3, Garage, and Backblaze B2. Only the endpoint and the
+    credentials change.
+
+## How the credentials reach a namespace
 
 ```mermaid
 flowchart LR
@@ -54,15 +64,9 @@ flowchart LR
   fanoutN@{ animation: slow }
 ```
 
-Git owns the references; 1Password owns the values; External Secrets owns the
-namespace copies.
-
-> This cluster uses [RustFS](https://github.com/rustfs/rustfs) (an
-> S3-compatible object store) running off-cluster at `192.168.10.133:30292`.
-> Any S3 works, including MinIO, TrueNAS S3, Garage, and Backblaze B2. Only the endpoint
-> and credentials change.
-
-## The credential flow
+Git holds the references. 1Password holds the secret values. External Secrets
+Operator (ESO) reads both and writes a `kopiur-rustfs` Secret into each labeled
+namespace.
 
 ```text
  1Password item: rustfs
@@ -86,65 +90,73 @@ namespace copies.
         RustFS S3  (bucket: kopiur)
 ```
 
-You store one credential once. External Secrets copies it into every namespace
-that opts in. Apps never carry S3 config.
+You store one credential in 1Password. ESO copies it into every namespace that
+carries the label. No app holds its own S3 configuration.
 
-## The pieces (all in `infrastructure/backup/kopiur/`)
+## Where the manifests are
+
+All four files are in `infrastructure/backup/kopiur/`:
 
 | File | Resource | What it sets up |
 |---|---|---|
-| `clusterrepository.yaml` | `ClusterRepository cluster-kopia` | the kopia repo, pointing at RustFS `s3://kopiur` |
-| `externalsecret.yaml` | `ClusterExternalSecret kopiur-rustfs` | fans the repo creds into labeled namespaces |
-| `volumesnapshotclass.yaml` | `VolumeSnapshotClass longhorn-snapclass` | how CSI takes snapshots (kopiur `copyMethod: Snapshot`) |
-| `namespace.yaml` | `Namespace kopiur-system` | operator + managed `Maintenance` + cluster creds live here |
+| `clusterrepository.yaml` | `ClusterRepository cluster-kopia` | The Kopia repository on RustFS `s3://kopiur` |
+| `externalsecret.yaml` | `ClusterExternalSecret kopiur-rustfs` | The copy of the credentials into labeled namespaces |
+| `volumesnapshotclass.yaml` | `VolumeSnapshotClass longhorn-snapclass` | How Longhorn takes a CSI snapshot for kopiur `copyMethod: Snapshot` |
+| `namespace.yaml` | `Namespace kopiur-system` | The namespace for the operator, its `Maintenance` object, and the cluster credentials |
 
-This is the GitOps-managed config for kopiur, not the operator. The operator
-is the Helm Application at `core-dependencies/kopiur-operator-app.yaml`.
+This directory is the kopiur configuration. The kopiur operator is a separate
+Helm Application, `core-dependencies/kopiur-operator-app.yaml`.
 
 ## One-time setup steps
 
+Steps 1 and 2 are manual work on the NAS and in 1Password. Steps 3 to 5 are
+already in Git. Argo CD applies them.
+
 ### 1. The S3 side: RustFS on TrueNAS
 
-The S3 store must live **outside the cluster**, so it survives the cluster.
-Here it is [RustFS](https://github.com/rustfs/rustfs)
-running as a TrueNAS app on the NAS. The S3 API endpoint is
-`192.168.10.133:30292` and the console is on `:30293`. **Point Kubernetes at the
-API port, not the console.**
+The S3 store must run outside the cluster, so that it survives the loss of the
+cluster. Here it is the RustFS app on TrueNAS. The S3 API is at
+`192.168.10.133:30292`. The web console is at port `30293`.
 
-1. Install the RustFS app on TrueNAS. Its app and root credentials exist only
-   for bootstrap and console administration. **Never point Kubernetes at
-   the root key.**
-2. In the RustFS console, create the buckets:
-   - `kopiur` is the Kopia repository for kopiur (this doc). The repo lives at the
-     bucket root, `prefix: ""`.
-   - `postgres-backups` is the retired CNPG/Barman bucket, aging out via lifecycle policy.
-3. Create one workload access key, named `homelab-workload`, for all
-   Kubernetes S3 clients. Scope its allow policy to those buckets.
-   The [RustFS credential runbook](domains/rustfs/credential-runbook.md) has the
-   exact IAM policy JSON and the root-vs-workload rationale.
-   **The workload key MUST have read/write on the `kopiur` bucket.** If the
-   policy only scopes it to other buckets, widen it, or the
-   `ClusterRepository` create/connect fails.
-4. Register the key and verify it works before you rely on it. See the
-   rules below.
+!!! warning
+    Point Kubernetes at the API port, `30292`. Do not use the console port.
+    Do not give Kubernetes the RustFS root key.
 
-### 2. The secret side (1Password → ESO)
+1. Install the RustFS app on TrueNAS. Use its app and root credentials only for
+   the first setup and for console administration.
+2. In the RustFS console, create the bucket `kopiur`. It holds the Kopia
+   repository at the bucket root (`prefix: ""`).
+3. Create one workload access key named `homelab-workload`. All Kubernetes S3
+   clients use this key.
+4. Give the key the allow policy from the
+   [RustFS credential runbook](domains/rustfs/credential-runbook.md). The runbook
+   has the policy JSON and explains why root and workload keys are separate.
+5. Confirm that the key has read and write access on the `kopiur` bucket.
+   Without it, the `ClusterRepository` cannot create or connect to the repository.
+6. Verify that the key works before you rely on it. See [Rules to keep](#rules-to-keep).
 
-One item, `rustfs`, in the `homelab-prod` vault. The
-[credential runbook](domains/rustfs/credential-runbook.md) has the full field list, including the
-admin-only root keys:
+The RustFS console also shows a `postgres-backups` bucket. It holds data from
+the retired CNPG operator, and a lifecycle policy expires that data.
+
+### 2. The secret side: 1Password
+
+Put the values in one item, `rustfs`, in the `homelab-prod` vault. The
+[credential runbook](domains/rustfs/credential-runbook.md) has the full field list.
 
 | Field | Used as |
 |---|---|
-| `kopia_password` | `KOPIA_PASSWORD`. It encrypts every backup. **Lose this, lose the backups.** |
+| `kopia_password` | `KOPIA_PASSWORD`. It encrypts every backup. |
 | `rustfs-workload-access-key` | `AWS_ACCESS_KEY_ID` |
 | `rustfs-workload-secret-key` | `AWS_SECRET_ACCESS_KEY` |
-| `root-access-key` / `root-secret-key` | TrueNAS app admin only. Workloads never use them. |
+| `root-access-key` / `root-secret-key` | TrueNAS app administration only. Workloads never use them. |
+
+!!! danger "Do not lose `kopia_password`"
+    Without this password, no backup can be decrypted. Keep it in 1Password.
 
 ### 3. The repository CR (in Git, already done)
 
-`infrastructure/backup/kopiur/clusterrepository.yaml` declares the repo as a
-custom resource. The relevant fields:
+`infrastructure/backup/kopiur/clusterrepository.yaml` declares the Kopia
+repository as a custom resource. The main fields are:
 
 ```yaml
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -172,22 +184,28 @@ spec:
         kopiur.home-operations.com/repo: cluster-kopia
 ```
 
-Gotchas:
-- The endpoint is a **bare `host:port`**, with no `http://` and no trailing slash.
-- Plain-HTTP RustFS needs `tls.disableTls: true`.
-- A cluster-scoped `secretRef` **must** carry an explicit `namespace`. The webhook enforces this.
-- `allowedNamespaces.selector` is label-driven tenancy. Any namespace labeled
-  `kopiur.home-operations.com/repo: cluster-kopia` may use this repo. The
-  same label drives the credential fan-out below, so onboarding an app is
-  one namespace label.
+Four rules apply to this file:
+
+- Write the endpoint as a bare `host:port`. Do not add `http://` or a trailing slash.
+- Keep `tls.disableTls: true`. RustFS serves plain HTTP.
+- Give every `secretRef` on this cluster-scoped object an explicit `namespace`.
+  The kopiur webhook rejects it otherwise.
+- `allowedNamespaces.selector` decides which namespaces may use the repository.
+  Any namespace with the label `kopiur.home-operations.com/repo: cluster-kopia`
+  may use it. The same label selects the namespaces that receive the
+  credentials, so one label gives an app both.
+
+The file also sets `parameters.epoch.minDuration` and a longer
+`bootstrap.failurePolicy.activeDeadlineSeconds`. The comments in the file give
+the reasons. Do not remove them.
 
 ### 4. The credential fan-out (in Git, already done)
 
 `infrastructure/backup/kopiur/externalsecret.yaml` is one
-`ClusterExternalSecret kopiur-rustfs`. It creates the `kopiur-rustfs`
-Secret in every namespace labeled `kopiur.home-operations.com/repo:
-cluster-kopia`. That includes the consumer namespaces and `kopiur-system` itself, which
-needs the creds for the controller connection and the managed `Maintenance`:
+`ClusterExternalSecret` named `kopiur-rustfs`. It creates the `kopiur-rustfs`
+Secret in every namespace labeled
+`kopiur.home-operations.com/repo: cluster-kopia`. That includes `kopiur-system`,
+which needs the credentials for the operator's connection and for `Maintenance`.
 
 ```yaml
 # the Secret each labeled namespace receives (kopiur-rustfs)
@@ -196,34 +214,37 @@ AWS_ACCESS_KEY_ID:     <from 1Password: rustfs-workload-access-key>
 AWS_SECRET_ACCESS_KEY: <from 1Password: rustfs-workload-secret-key>
 ```
 
-The endpoint, bucket, and TLS settings are **not** in this Secret. They live on the
-`ClusterRepository` CR. The Secret carries only the creds and the kopia password.
+The endpoint, the bucket, and the TLS setting are not in this Secret. They are
+on the `ClusterRepository`.
 
-> **The Secret NAME must equal the `ClusterRepository`'s
-> `auth.secretRef.name` / `encryption.passwordSecretRef.name` (`kopiur-rustfs`)**
-> and carry the well-known keys (`KOPIA_PASSWORD` / `AWS_ACCESS_KEY_ID` /
-> `AWS_SECRET_ACCESS_KEY`). This is the "without credential projection" path.
-> ESO delivers the creds with least privilege. The operator gets no
-> cluster-wide secrets-write RBAC.
+!!! warning "The Secret name and keys must match"
+    The Secret must be named `kopiur-rustfs`, the name in the
+    `ClusterRepository` fields `auth.secretRef.name` and
+    `encryption.passwordSecretRef.name`. It must hold the keys `KOPIA_PASSWORD`,
+    `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`.
 
-Label the namespace and the Secret appears. No app needs its own credential setup.
+This cluster does not use kopiur's credential projection. ESO delivers the
+credentials, so the kopiur operator needs no cluster-wide right to write Secrets.
+
+Label a namespace and the Secret appears there.
 
 ### 5. The snapshot class
 
 `infrastructure/backup/kopiur/volumesnapshotclass.yaml` defines
-`VolumeSnapshotClass longhorn-snapclass` (driver `driver.longhorn.io`, the
-cluster-default snapshot class). kopiur's `copyMethod: Snapshot` references it by
-name, so every backup depends on it.
+`VolumeSnapshotClass longhorn-snapclass`. Its driver is `driver.longhorn.io`,
+and it is the default snapshot class of the cluster. kopiur's
+`copyMethod: Snapshot` refers to it by name, so every backup needs it. Do not
+remove it.
 
-### 6. Fail-closed behavior
+### 6. What happens when the store is down
 
-On a restore-before-bind, if the repo is **unreachable**, kopiur raises a
-backend error before it reaches the "no snapshot, bind empty" decision. The
-PVC stays `Pending` and never binds an empty volume. There is no separate
-admission gate to maintain. Full flow:
-[kopiur backup architecture §4 (restore-before-bind)](domains/storage/kopiur-backup-architecture.md).
+During restore-before-bind, kopiur raises a backend error when the Kopia
+repository is unreachable. It does so before it decides what to do about a
+missing backup. The PVC stays `Pending` and never binds as an empty volume.
+No admission policy is involved. The full flow is in
+[how kopiur backup and restore work, section 4](domains/storage/kopiur-backup-architecture.md#4-restore-before-bind-flow-the-dr-magic).
 
-## Verifying the backend
+## Verify the backend
 
 ```bash
 # the repository CR is healthy (operator connected/created the repo):
@@ -239,20 +260,24 @@ nc -zw5 192.168.10.133 30292 && echo OK
 kubectl get snapshot -A
 ```
 
-## Operational rules
+Expect the `ClusterRepository` to report a healthy state, the Secret to exist,
+`nc` to print `OK`, and at least one `Snapshot` in `Succeeded`.
 
-- **Register the access key on the S3 server, then verify before any
-  destructive rebuild.** An unregistered external credential blocks all
-  recovery even with perfect Git state. The
-  [DR pre-nuke checklist](disaster-recovery.md#pre-nuke-checklist) checks
-  this for you.
-- **Confirm the workload key has read/write on the `kopiur` bucket.** A policy
-  scoped to another bucket lets everything else look healthy while the
+## Rules to keep
+
+- Register the access key on the S3 server and verify it before any
+  destructive rebuild. A key that RustFS does not know blocks every restore,
+  even when Git is correct. The
+  [DR pre-nuke checklist](disaster-recovery.md#pre-nuke-checklist) includes
+  this check.
+- Confirm that the workload key has read and write access on the `kopiur`
+  bucket. With access to other buckets only, the other S3 clients work while the
   `ClusterRepository` fails to create or connect.
-- **The Kopia password is the single blast radius.** One shared repo, one
-  password, every backup encrypted with it. Keep it only in 1Password.
-  This is acceptable on a LAN. See
+- Keep the Kopia password only in 1Password. One repository and one password
+  encrypt every backup, so a leak or a loss affects all of them. This is an
+  accepted limit on a LAN. See
   [known limitations](storage-architecture.md#known-limitations-and-non-goals).
-- Rotation. The [credential runbook](domains/rustfs/credential-runbook.md) has the
-  per-step procedure: new key on RustFS, update
-  1Password, force an ESO refresh, then restart env-var consumers.
+- To rotate the keys, follow the
+  [credential runbook](domains/rustfs/credential-runbook.md). The order is: new
+  key on RustFS, update 1Password, force an ESO refresh, restart the consumers
+  that read the keys from environment variables.

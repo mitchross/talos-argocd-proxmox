@@ -1,36 +1,42 @@
-# Disk map: every disk, what it holds, and where data should go
+# Disk map: which disk holds what
 
-**Purpose:** this page answers "which physical disk is this data on?" for
-every machine in the lab, and "where should new data go?".
-**Status:** maintained layout, rechecked October 15, 2026. Update this page after disk changes.
-Machines and RAM: [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md). See the [full inventory](../../inventory/2026-10-15-full-inventory.md) for dated capacities and health observations.
+This page answers two questions for every machine in the lab: which physical disk holds a
+given piece of data, and where new data should go. Use it when you place a PVC, add a
+disk, or rebuild a host.
+
+The layout was last checked against the live machines on October 15, 2026. Update this
+page after every disk change. The [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md)
+lists the machines and their RAM. The [full inventory](../../inventory/2026-10-15-full-inventory.md)
+has dated capacities and health observations.
 
 ## How the layers fit
 
-A byte written by an app passes through up to five layers. Each column in the
-tables below is one layer:
+A byte that an app writes passes through several layers before it reaches a drive. Each
+column in the tables below is one layer:
 
 ```
 Physical drive ─► Proxmox storage ─► VM disk ─► Talos mount ─► Longhorn disk ─► PVC (your app)
  (the SSD)         (LVM on that SSD)   (scsiN)     (/var/mnt/…)    (name + tag)
 ```
 
-- **Proxmox storage.** You create it by hand on the host, once. Omni only picks it
-  by name (`storage_selector` in `omni/machine-classes/`). See
+- A Proxmox storage is a named pool of space on one host drive. You create it by hand on
+  the host, once. Omni, the tool that creates the Talos VMs, only selects it by name
+  (`storage_selector` in `omni/machine-classes/`). See
   [rebuild prerequisites](#rebuild-prerequisites).
-- **VM disks.** They come from `additional_disks` in the machine class. Omni creates them
-  when it creates the VM; changing the class does not add a disk to a running VM.
-- **Talos mounts.** They come from `UserVolumeConfig` patches in
-  `omni/cluster-template/cluster-template-prod-v2.yaml`. Each selects its disk by
-  exact size, which is why every data disk on a node has a different size.
-- **Longhorn disks.** They register from the `node.longhorn.io/default-disks-config`
-  annotation in the same template. Longhorn reads that annotation **once**, when the node
-  first joins. On an existing node, add the disk to the Longhorn node object
-  too (see [adding a disk](#adding-a-disk-to-a-running-node)).
+- VM disks come from `additional_disks` in the machine class. Omni creates them when it
+  creates the VM. A change to the class does not add a disk to a running VM.
+- Talos mounts come from `UserVolumeConfig` patches in
+  `omni/cluster-template/cluster-template-prod-v2.yaml`. Each patch selects its disk by
+  exact size, so every data disk on a node has a different size.
+- Longhorn disks register from the `node.longhorn.io/default-disks-config` annotation in
+  the same template. Longhorn reads that annotation **once**, when the node first joins.
+  On an existing node, also add the disk to the Longhorn node object (see
+  [adding a disk](#adding-a-disk-to-a-running-node)).
+- Bare-metal workers have no Proxmox layers. Talos runs directly on the drive.
 
-Consumer SSDs wear out from writes. Enterprise SSDs with power-loss protection
-("PLP") survive far more. The tables mark each drive so heavy writers land on the
-right one.
+Consumer SSDs wear out from writes. Enterprise SSDs with power-loss protection (PLP)
+survive far more writes. The tables mark the class of each drive, so you can put heavy
+writers on the right one.
 
 ## Proxmox hosts
 
@@ -51,7 +57,7 @@ right one.
 | PNY CS900 1 TB (serial `…01C1`) | consumer SATA | host root + `hp-prodesk-vmstore` (thick LVM) | 128 GiB + 690 GiB (worker) | `/var` + `/var/mnt/longhorn-hp-sff-ssd` | `hp-sff-ssd` (node tag `wired-storage`) | ordinary volumes, second copies |
 | PNY CS900 1 TB (serial `…01C5`) | consumer SATA | `hp-sff-ssd2-vmstore` (VG `hp-sff-ssd2`, thick LVM) | 920 GiB (worker) | `/var/mnt/longhorn-hp-sff-ssd2` | `hp-sff-ssd2` (tags `hp-sff-ssd2`, `clone-ok`; `wired-storage`) | ordinary volumes, second copies, backup clones |
 
-Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` serials, not `sdX`.
+The `sdX` letters on this host change when a drive is added. Identify drives by their `/dev/disk/by-id/` serials, not by `sdX`.
 
 ### HP Micro `.20`, shed worker (Wi-Fi link)
 
@@ -62,10 +68,11 @@ Adding the S3610 shifted the `sdX` letters on this host. Use `/dev/disk/by-id/` 
 
 ## Bare-metal workers (no Proxmox)
 
-These minis PXE-boot into Omni through booter on the Pi. See
-[booter](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md). Talos installs on the one
-NVMe, and the template pins it with `install.diskSelector` on `disk.serial`.
-`hp-elite-gen13` and `mini-pc-dell-ultra-worker` also have a Longhorn disk. `hp-elite-gen12` is compute-only.
+These mini PCs boot from the network into Omni through
+[booter](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md),
+which runs on the Raspberry Pi. Talos installs on the NVMe drive that the template selects
+with `install.diskSelector` on `disk.serial`. `hp-elite-gen13` and
+`mini-pc-dell-ultra-worker` also have a Longhorn disk. `hp-elite-gen12` is compute-only.
 
 | Node | Physical drive | Class | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|
@@ -78,7 +85,8 @@ NVMe, and the template pins it with `install.diskSelector` on `disk.serial`.
 ## TrueNAS `.133`
 
 The NAS has one 10 GbE port. Only the Threadripper also has 10 GbE. The other
-Proxmox hosts reach it at 2.5 GbE. The bare-metal minis and the shed reach it at 1 GbE.
+Proxmox hosts reach the NAS at 2.5 GbE. The bare-metal mini PCs and the shed reach it at
+1 GbE. [NAS performance and RAM](../../nas-performance.md) has the measurements.
 
 | Pool | Disks | Redundancy | Good for | Not for |
 |---|---|---|---|---|
@@ -88,12 +96,12 @@ Proxmox hosts reach it at 2.5 GbE. The bare-metal minis and the shed reach it at
 
 The NAS also has a mirrored boot pool (T-FORCE 512 GB and HPE 480 GB).
 A Samsung 850 EVO 500 GB was visible as `sdk`, outside the imported pools,
-on October 15. It is retired after failed load tests (PR #2946).
+on October 15. It is retired, because it failed load tests.
 
-ZFS ARC caches reads across all pools. The October 15 sample held 83.3 GiB,
-compared with the larger September cache. Cache size varies with workload and uptime. File creation and `fsync` still go to the disks. Measured
-from a pod, NFS created about 50 small files per second and did about 110
-`fsync` writes per second, against about 490 and 460 for a local Longhorn volume.
+ARC, the ZFS RAM cache, caches reads across all pools. The October 15 sample held
+83.3 GiB. The cache size varies with workload and uptime. File creation and `fsync` still
+go to the disks. Measured from a pod, NFS created about 50 small files per second and did
+about 110 `fsync` writes per second. A local Longhorn volume did about 490 and 460.
 
 ## Where should new data go?
 
@@ -105,18 +113,20 @@ from a pod, NFS created about 50 small files per second and did about 110
 | A cache that rebuilds itself | `longhorn`, sized to what it really uses | small and local; never back it up |
 | Anything that runs Docker/overlay storage or an embedded search engine | `longhorn` | overlay filesystems and search-index locking don't work well on NFS |
 
-Size PVCs to what the app uses plus headroom, not "big to be safe". Longhorn
-reserves the full requested size on a disk. Oversized volumes fill a
-disk's bookings long before the disk is physically full.
+Size each PVC to what the app uses plus headroom. Do not make it large "to be safe".
+Longhorn reserves the full requested size on a disk, so oversized volumes use up a disk's
+reservations long before the disk is physically full.
+[Pick a StorageClass](storage-tiers.md) describes each class.
 
 ## Rebuild prerequisites
 
-Nuking and rebuilding the cluster keeps the Proxmox hosts, so their storages
-survive. After you **reinstall Proxmox** on a host, recreate its storages before
-Omni provisions VMs there, or provisioning fails with "no matching storage".
+A cluster rebuild keeps the Proxmox hosts, so their storages survive. A Proxmox
+reinstall on a host does not keep them. After you **reinstall Proxmox** on a host,
+recreate its storages before Omni creates VMs there. If you do not, Omni fails with
+"no matching storage".
 
-Threadripper, PNY boot SSD (`sda`, VG `pve`): Proxmox's installer creates a
-`local-lvm` thin pool here. Replace it with thick LVM:
+On the Threadripper, the Proxmox installer creates a `local-lvm` thin pool on the PNY boot
+SSD (`sda`, VG `pve`). Replace it with thick LVM:
 
 ```bash
 # On 192.168.10.14 as root. Removes the empty installer thin pool; check `lvs` first.
@@ -126,41 +136,41 @@ pvesm add lvm tr-sda-vmstore --vgname pve --content images
 pvesm status | grep tr-sda-vmstore     # expected: active
 ```
 
-Every other storage name the machine classes select (`nvme0-vmstore`,
-`nvme1-vmstore`, `ssd-ent`, `hp-sff-cp-vmstore`, `hp-prodesk-vmstore`,
-`hp-sff-ssd2-vmstore`, `hp-ssd-vmstore`, `local-lvm`) must also
-exist with that exact name. Check each host with `pvesm status`.
+Every other storage name that the machine classes select must also exist with that exact
+name: `nvme0-vmstore`, `nvme1-vmstore`, `ssd-ent`, `hp-sff-cp-vmstore`,
+`hp-prodesk-vmstore`, `hp-sff-ssd2-vmstore`, `hp-ssd-vmstore` and `local-lvm`. Check each
+host with `pvesm status`.
 
 ## Adding a disk to a running node
 
-1. Create the Proxmox storage on the host (as above) and add the disk to the
-   machine class `additional_disks`, so a rebuilt VM gets it.
-2. Attach it to the running VM (the class change alone does not):
+1. Create the Proxmox storage on the host, as in the section above. Add the disk to
+   `additional_disks` in the machine class, so a rebuilt VM gets it.
+2. Attach the disk to the running VM. The class change alone does not attach it.
    `qm set <vmid> --scsiN <storage>:<GiB>,aio=io_uring,cache=none,discard=on,iothread=1,ssd=1`
-3. Add a `UserVolumeConfig` and the Longhorn disk entry to the
-   node's section of the cluster template, **at the end of that section**. Patch
-   IDs are numbered by position, so inserting in the middle renames existing patches.
-   VM disks report no serial, so select by a size floor that no existing disk on
-   the node meets (for example `disk.size >= 900u * GB`).
-   Then `omnictl cluster template diff`, then `sync`.
-4. Register the disk on the live Longhorn node (the annotation only applies to new nodes):
+3. Add a `UserVolumeConfig` and the Longhorn disk entry to the node's section of the
+   cluster template, **at the end of that section**. Patch IDs are numbered by position,
+   so an entry in the middle renames the existing patches. VM disks report no serial.
+   Select the disk by a minimum size that no existing disk on the node meets, for example
+   `disk.size >= 900u * GB`. Run `omnictl cluster template diff`, then `sync`.
+4. Register the disk on the live Longhorn node. The annotation applies only to new nodes.
    ```bash
    kubectl -n longhorn-system edit nodes.longhorn.io <node>   # add it under spec.disks
    ```
-5. Talos trims the new volume weekly without extra configuration. Confirm it is
-   listed: `talosctl -n <node> get volumetrimschedules`.
+5. Confirm that Talos lists the volume for its weekly trim, which needs no configuration:
+   `talosctl -n <node> get volumetrimschedules`.
 
 ## Moving a volume to another disk on the same node
 
-To move a one-copy volume, add a second copy on the new disk, wait
-until the volume is healthy, then remove the old copy. Two settings get in the way
-when both disks are on the same node:
+To move a one-copy volume, add a second copy on the target disk, wait until the volume
+is healthy, then remove the old copy. Two settings block this when both disks are on the
+same node:
 
 - Longhorn is set to never keep two copies of a volume on one node
-  (`replica-soft-anti-affinity: false`), so the second copy is refused with
-  "tags not fulfilled". Allow it for that one volume during the move.
-- When the copy count drops back to 1, Longhorn chooses which copy to delete, and
-  it may pick the new one. Delete the **old** copy yourself first, then lower the count.
+  (`replica-soft-anti-affinity: false`). It refuses the second copy with
+  "tags not fulfilled". Allow two copies on one node for that one volume during the move.
+- When the copy count goes back to 1, Longhorn chooses which copy to delete, and it can
+  choose the copy on the target disk. Delete the **old** copy yourself first, then lower
+  the count.
 
 ```bash
 V=$(kubectl -n <ns> get pvc <pvc> -o jsonpath='{.spec.volumeName}')
@@ -173,8 +183,8 @@ kubectl -n longhorn-system patch volumes.longhorn.io $V --type merge \
   -p '{"spec":{"numberOfReplicas":1,"replicaSoftAntiAffinity":"ignored"}}'
 ```
 
-Longhorn refuses to delete the last healthy copy, so a mistake in this order
-cannot lose data. It just stops.
+Longhorn refuses to delete the last healthy copy. A mistake in this order therefore
+stops the move and does not lose data.
 
 ## Check the live layout
 
@@ -191,6 +201,9 @@ talosctl -n <node> get discoveredvolumes
 ssh root@<host> 'pvesm status; lvs; qm config <vmid> | grep ^scsi'
 ```
 
-Related: [storage tiers](storage-tiers.md) (classes), [disk writes](disk-writes.md)
-(write budget), [storage architecture](../../storage-architecture.md) (backups),
-[NAS performance](../../nas-performance.md).
+## Related
+
+- [Pick a StorageClass](storage-tiers.md) describes each class.
+- [Disk writes](disk-writes.md) lists the rules that limit SSD wear.
+- [Storage architecture](../../storage-architecture.md) covers placement, copy counts and the backup summary.
+- [NAS performance and RAM](../../nas-performance.md) has the NAS measurements.

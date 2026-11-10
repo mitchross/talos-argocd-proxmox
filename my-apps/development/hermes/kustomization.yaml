@@ -42,6 +42,12 @@ configMapGenerator:
       - reconcile-kanban.py=scripts/reconcile-kanban.py
       - external-skills.txt=scripts/external-skills.txt
       - seed-qwen-lab.py=scripts/seed-qwen-lab.py
+      - report-drift.sh=scripts/report-drift.sh
+      - cron-jobs.txt=cron/jobs.txt
+      - cron-upstream-watch.py=cron/upstream-watch.py
+      - cron-strata-v31-watch.py=cron/strata-v31-watch.py
+      - cron-argo-rid-watch.py=cron/argo-rid-watch.py
+      - cron-radar-kanban-unlock.py=cron/radar-kanban-unlock.py
   - name: hermes-skills
     files:
       - SKILL.md=skills/homelab-ops/SKILL.md
@@ -52,8 +58,6 @@ configMapGenerator:
       - profiles.yaml=qwen-lab/profiles.yaml
       - SOUL.md=qwen-lab/SOUL.md
       - skill-qwen-ticket-template.md=qwen-lab/skills/qwen-ticket-template.md
-      - skill-qwen-cite-or-not-found.md=qwen-lab/skills/qwen-cite-or-not-found.md
-      - skill-qwen-verify-by-running.md=qwen-lab/skills/qwen-verify-by-running.md
       - skill-qwen-reviewer-checklist.md=qwen-lab/skills/qwen-reviewer-checklist.md
       - skill-qwen-best-of-n.md=qwen-lab/skills/qwen-best-of-n.md
   - name: cluster-config

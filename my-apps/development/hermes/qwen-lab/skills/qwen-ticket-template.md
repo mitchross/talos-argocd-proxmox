@@ -1,7 +1,7 @@
 ---
 name: qwen-ticket-template
 description: Use when splitting work into Kanban cards for the Qwen Lab team.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [Kanban, Planning, Qwen-Lab]
@@ -21,9 +21,19 @@ Small cards win. A card a worker can finish in one sitting beats a big card it g
    - `board`: `"qwen-lab"` (always pass it).
    - `assignee`: `qwen-worker` (code), `qwen-researcher` (questions), `qwen-designer` (UI).
    - `workspace_kind`: `"worktree"` for code, with `workspace_path` set to the absolute repo path
-     under `/opt/data/workspace/qwen-lab/`. Never `scratch` for code: it is deleted on completion.
+     under `/opt/data/workspace/qwen-lab/`. Never leave these out on a code card: the default is
+     `scratch`, which is deleted on completion.
    - `parents`: the card ids it depends on, so it waits for them.
    - Never set `triage: true`.
+   A code card call looks like this:
+
+   ```json
+   {"board": "qwen-lab", "title": "Add slugify()", "assignee": "qwen-worker",
+    "workspace_kind": "worktree", "workspace_path": "/opt/data/workspace/qwen-lab/sandbox",
+    "body": "Goal: ..."}
+   ```
+
+   After creating it, check the result's `workspace_kind` says `worktree`. If not, fix the card.
 5. Use this body for every card:
 
 ```

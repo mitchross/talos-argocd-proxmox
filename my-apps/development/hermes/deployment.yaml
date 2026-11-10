@@ -38,7 +38,7 @@ spec:
       initContainers:
         # Image from homelab-images/images/hermes-dev: official Hermes plus claude, codex, kubectl, gh, tmux.
         - name: seed
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:aca87748285ca5480f1999d9655df6f9b08613ad8dd859f19ca34436e456a99a
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:1582ccf8100fac467f9ae9ad25714d492cdf9be3eb2a6666b868eebeba122ba9
           command: ["/bin/sh", "/etc/hermes-scripts/seed.sh"]
           envFrom:
             - secretRef:
@@ -72,7 +72,7 @@ spec:
               mountPath: /opt/scratch
       containers:
         - name: hermes
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:aca87748285ca5480f1999d9655df6f9b08613ad8dd859f19ca34436e456a99a
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:1582ccf8100fac467f9ae9ad25714d492cdf9be3eb2a6666b868eebeba122ba9
           args: ["gateway", "run"]
           # s6-overlay must start as root; it drops the gateway and dashboard to uid 10000 itself.
           securityContext:
@@ -165,7 +165,7 @@ spec:
         # Agent worktrees keep full build trees on the volume; 79Gi of `target/` filled it on 2026-10-31.
         # Shares the pod because the claim is ReadWriteOnce. Prunes build output only, never a worktree.
         - name: worktree-gc
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:aca87748285ca5480f1999d9655df6f9b08613ad8dd859f19ca34436e456a99a
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:1582ccf8100fac467f9ae9ad25714d492cdf9be3eb2a6666b868eebeba122ba9
           command: ["/bin/sh", "/etc/hermes-scripts/gc-worktrees.sh"]
           securityContext:
             runAsNonRoot: true
@@ -182,6 +182,9 @@ spec:
             # A build that touched the tree inside this window is left alone.
             - name: IDLE_HOURS
               value: "6"
+            # Scratch filled in 28 hours at the 72-hour default.
+            - name: SCRATCH_IDLE_HOURS
+              value: "12"
           volumeMounts:
             - name: data
               mountPath: /opt/data
@@ -192,7 +195,7 @@ spec:
               readOnly: true
         # Reads state.db (read-only) and serves model usage for Prometheus; see scripts/usage-exporter.py.
         - name: usage-exporter
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:aca87748285ca5480f1999d9655df6f9b08613ad8dd859f19ca34436e456a99a
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:1582ccf8100fac467f9ae9ad25714d492cdf9be3eb2a6666b868eebeba122ba9
           command: ["python3", "/etc/hermes-scripts/usage-exporter.py"]
           securityContext:
             runAsNonRoot: true

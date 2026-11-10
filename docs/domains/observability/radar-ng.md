@@ -1,13 +1,18 @@
 # radar-ng observability cookbook
 
-App-specific guide to the radar-ng observability stack. It shows how to find out what
-radar-ng is doing right now. Platform-level docs (collector layout, retention,
-storage backends) live in
+This page shows how to find out what radar-ng, the weather radar app, is doing
+at this moment. It gives the dashboard, the log queries, the metrics and the
+alerts for that one app. Use it when a user reports a slow app or stale radar.
+
+The platform docs (collector layout, retention, storage backends) are in
 [`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md).
+
+The stack has three stores. Loki stores logs, Tempo stores traces, and
+Prometheus stores metrics. Grafana reads all three.
 
 ## Signal sources
 
-| component | sink | how it gets there |
+| Component | Store | How the signal gets there |
 |---|---|---|
 | `radar-ng-mobile` (Expo app) | Tempo + Loki | OTel SDK in `src/lib/telemetry.ts` sends OTLP/HTTP to `otel.vanillax.me` (gateway) |
 | `tile-server` API logs | Loki | stdout JSON goes to otel-agent (DaemonSet), then the gateway, then Loki |
@@ -15,29 +20,40 @@ storage backends) live in
 | `ingest-mrms` / `ingest-hrrr` / `ingest-lightning` / `ingest-tropical` / `nowcast` / `basemap` / `open-meteo` logs | Loki | same pipeline as tile-server |
 | Pod CPU / memory / OOM | Prometheus | kube-state-metrics + cadvisor |
 
+!!! warning "Check the pod names before you trust an empty result"
+    The ingest and nowcast code runs in five Temporal worker pools named
+    `radar-ng-worker-*` (`mrms`, `nowcast`, `hrrr`, `aux`, `alerts`). The
+    queries below select pods named `ingest-mrms.*` and `ingest-lightning.*`.
+    If a query returns no data, run `kubectl -n radar-ng get pods` and change
+    the `k8s_pod_name` selector to match.
+
 Loki uses OTel-semconv labels: `k8s_namespace_name`, `k8s_pod_name`,
 `k8s_container_name` and `service_name`. Promtail-style `namespace` and
-`pod` labels do **not** exist. Selectors that use them return "No data".
+`pod` labels do not exist. A selector that uses them returns "No data".
 
 ## Grafana: the radar-ng dashboard
 
-Grafana imports this dashboard automatically from [`monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json).
-The dashboard has the label `grafana_dashboard: "1"`, which the sidecar picks up. In
-Grafana, open Dashboards and search for "radar-ng".
+Grafana imports this dashboard from [`monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json).
+The dashboard has the label `grafana_dashboard: "1"`, and the Grafana sidecar
+loads every dashboard with that label. In Grafana, open Dashboards and search
+for "radar-ng".
 
-| panel | tells you |
+| Panel | What it tells you |
 |---|---|
-| **MRMS radar data age (s)** | live `radar_ng_mrms_age_seconds`. Green < 300, red > 600 |
-| **tile-server requests/sec by endpoint** | rate(`radar_ng_*_requests_total`) ; shows the manifest versus forecast traffic split |
-| **Forecast cache hit %** | `radar_ng_forecast_cache_hits_total / radar_ng_forecast_requests_total` |
-| **Log volume by container** | Loki `count_over_time({k8s_namespace_name="radar-ng"})` |
-| **Recent error lines** | Loki tail filtered by error/warn |
-| **Tile timestamps per layer** | gauge per layer. Should always be 3 frames behind in steady state |
-| **Pod CPU vs request** | which pods are CPU-bound vs idle |
-| **Pod memory vs limit** | early-warning before OOM |
-| **tile-server replicas** | 1 ready replica. A gap means a restart or an unscheduled pod |
-| **OOM kills (1h)** | should be 0 |
-| **Container restarts (1h)** | should be 0 |
+| MRMS radar data age (s) | live `radar_ng_mrms_age_seconds`. Green < 300, red > 600 |
+| tile-server requests/sec by endpoint | rate(`radar_ng_*_requests_total`). Shows the split between manifest and forecast traffic |
+| Forecast cache hit % | `radar_ng_forecast_cache_hits_total / radar_ng_forecast_requests_total` |
+| Log volume by container | Loki `count_over_time({k8s_namespace_name="radar-ng"})` |
+| Recent error lines | Loki tail filtered by error/warn |
+| Tile timestamps per layer | gauge per layer. Expect 3 frames behind in steady state |
+| Pod CPU vs request | which pods are CPU-bound and which are idle |
+| Pod memory vs limit | early warning before an OOM kill |
+| tile-server replicas | 1 ready replica. A gap means a restart or an unscheduled pod |
+| OOM kills (1h) | expect 0 |
+| Container restarts (1h) | expect 0 |
+
+The dashboard also has rows for client traffic, the Open-Meteo forecast sync,
+and the API and geocoding routes.
 
 ## Loki query cookbook
 
@@ -58,8 +74,8 @@ Paste these into Grafana, under Explore, with Loki as the data source.
   | line_format "{{.timestamp}} took {{.duration_s}}s"
 ```
 
-Steady state is ~120 s per frame with parallel palettes. If a frame takes > 200 s, look at
-CPU saturation.
+Steady state is ~120 s per frame with parallel palettes. If a frame takes
+more than 200 s, check CPU saturation.
 
 ### Tile-server slow requests
 
@@ -78,7 +94,7 @@ CPU saturation.
   | line_format "backlog={{.backlog}} rendering={{.rendering}}"
 ```
 
-If `backlog` keeps climbing across cycles, the ingester is falling behind.
+If `backlog` grows from one cycle to the next, the ingester cannot keep up.
 
 ### Lightning ingester reconnects
 
@@ -87,8 +103,9 @@ If `backlog` keeps climbing across cycles, the ingester is falling behind.
   |~ "ws_disconnect|reconnect"
 ```
 
-Blitzortung WS drops several times per hour. That is normal. Sustained
-reconnects (one per minute or worse) mean an upstream issue, not a problem on your side.
+The Blitzortung WebSocket drops several times per hour. That is normal. One
+reconnect per minute or more means an upstream problem, not a problem in this
+cluster.
 
 ### Mobile app red-screen crashes
 
@@ -96,29 +113,31 @@ reconnects (one per minute or worse) mean an upstream issue, not a problem on yo
 {service_name="radar-ng-mobile"} |= "ERROR"
 ```
 
-The app's `telemetry.ts` hooks into `ErrorUtils.setGlobalHandler`. Every
-fatal red-screen and unhandled promise rejection arrives here with a stack trace.
+The app's `telemetry.ts` registers a handler with `ErrorUtils.setGlobalHandler`.
+Every fatal red-screen and unhandled promise rejection arrives in Loki with a
+stack trace.
 
 ### Find logs for a specific trace
 
-In Tempo, copy the trace_id, then:
+In Tempo, copy the trace_id. Then run:
 
 ```logql
 {k8s_namespace_name="radar-ng"} |= "<trace_id>"
 ```
 
-Backend logs include the trace_id in the JSON envelope when an instrumented client call
-triggered the request.
+A backend log line includes the trace_id in its JSON envelope when an
+instrumented client call started the request.
 
-### Tile-server connection failures (e.g. basemap pod restarting)
+### Tile-server connection failures
 
 ```logql
 {k8s_namespace_name="radar-ng", k8s_pod_name=~"tile-server.*"}
   |~ "dial tcp .* connect: (refused|timed out|operation not permitted)"
 ```
 
-Spikes during pod rollouts are expected and resolve themselves. For sustained errors,
-check basemap pod health (`kubectl get pods -n radar-ng -l app=basemap`).
+Expect a short spike during a pod rollout, for example when the basemap pod
+restarts. The spike stops without action. For errors that continue, check the
+basemap pod (`kubectl get pods -n radar-ng -l app=basemap`).
 
 ## Tempo (traces): what spans the mobile app emits
 
@@ -131,25 +150,27 @@ await trace("manifest.fetch", async (span) => {
 });
 ```
 
-Currently instrumented spans:
+The app emits one instrumented span:
 
-| span name | where | attributes |
+| Span name | Where | Attributes |
 |---|---|---|
 | `map.fetchStyle` | `WeatherMap.tsx::usePatchedMapStyle` | `map.style`, `http.status_code` |
 
-Service name: `radar-ng-mobile`. In Grafana, open Explore, pick Tempo, and search by
-service. Click any span, then "Logs for this span", to pull correlated Loki lines.
+The service name is `radar-ng-mobile`. In Grafana, open Explore, select Tempo,
+and search by service. Click a span, then "Logs for this span", to see the
+matching Loki lines.
 
-To correlate with the backend, make the backend hook propagate the
-`traceparent` header from the OTLP request to its own logger. FastAPI
-in `tile-server` doesn't propagate it automatically. Instrumentation is a TODO.
+Backend spans do not exist yet. FastAPI in `tile-server` does not pass the
+`traceparent` header to its logger. To correlate a client trace with backend
+logs, add that propagation to the backend.
 
 ## Prometheus: radar-ng metric reference
 
-`tile-server.radar-ng.svc/api/metrics` exposes them. The ServiceMonitor at
-`my-apps/personal-projects/radar-ng/servicemonitor.yaml` picks them up.
+`tile-server.radar-ng.svc/api/metrics` exposes these metrics. The
+ServiceMonitor at `my-apps/personal-projects/radar-ng/servicemonitor.yaml`
+tells Prometheus to scrape them.
 
-| metric | type | what it is |
+| Metric | Type | What it is |
 |---|---|---|
 | `radar_ng_forecast_requests_total` | counter | every `/api/forecast/{lat}/{lon}` hit |
 | `radar_ng_forecast_cache_hits_total` | counter | the subset served from in-memory 5-min cache |
@@ -171,35 +192,38 @@ sum(rate(radar_ng_forecast_cache_hits_total[5m]))
 # Are tiles current? alert if MRMS age > 10 min for 5 min
 radar_ng_mrms_age_seconds > 600
 
-# Per-layer tile retention — should hover near a fixed number
+# Per-layer tile retention: should hover near a fixed number
 radar_ng_tile_timestamps
 ```
 
-## Alert candidates (not yet wired)
+## Alerts
 
-Add these PrometheusRule entries when you want pager-grade alerts:
+The alert rules are in
+[`my-apps/personal-projects/radar-ng/prometheusrule.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/radar-ng/prometheusrule.yaml).
+That file is the source of truth. These rules cover radar freshness and the API:
+
+| Alert | Fires when |
+|---|---|
+| `RadarNgObservedRadarStale` | `radar_ng_mrms_age_seconds > 600` for 5 minutes |
+| `RadarNgFreshnessMetricMissing` | `radar_ng_mrms_age_seconds` is absent for 10 minutes |
+| `RadarNgApiHighErrorRate` | the API 5xx ratio stays above 5 percent for 10 minutes |
+
+The file also has rules for the Open-Meteo sync, the geocoder, worker memory
+and restarts, missing tile layers, Temporal pollers and schedules, and volume
+space.
+
+### A candidate that is not in the rule file
+
+This rule is not deployed. Add it to `prometheusrule.yaml` if you need it.
+Worker restarts already have a deployed rule, `RadarNgWorkerRestarting`.
 
 ```yaml
-- alert: RadarNgMrmsStale
-  expr: radar_ng_mrms_age_seconds > 900
-  for: 5m
-  annotations:
-    summary: "radar-ng: MRMS frame > 15 min old"
-
-- alert: RadarNgIngestMrmsRestarting
-  expr: increase(kube_pod_container_status_restarts_total{namespace="radar-ng",pod=~"ingest-mrms.*"}[15m]) > 2
-  for: 5m
-  annotations:
-    summary: "radar-ng: ingest-mrms restarting"
-
 - alert: RadarNgForecastUpstreamErrors
   expr: rate(radar_ng_forecast_upstream_errors_total[5m]) > 0.1
   for: 10m
   annotations:
     summary: "radar-ng: Open-Meteo upstream errors"
 ```
-
-Drop these into `monitoring/metrics/prometheus-stack/` as a `PrometheusRule`.
 
 ## Troubleshooting flow
 
@@ -224,10 +248,14 @@ check Grafana radar-ng dashboard
                                               └─ Loki: service_name=radar-ng-mobile errors
 ```
 
+Read the flow from the top. Start at the Grafana dashboard, then follow the
+branch that matches the red panel.
+
 ## Related links
 
 - [`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md): platform observability layout
-- [`monitoring/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/CLAUDE.md): design rationale and pitfalls
+- [`monitoring/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/CLAUDE.md): design reasons and known problems
+- [`radar-ng/RUNBOOK.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/radar-ng/RUNBOOK.md): worker pools, queues and recovery
 - [`monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/metrics/prometheus-stack/dashboards/apps/radar-ng.json): the dashboard JSON
 - [`my-apps/personal-projects/radar-ng/servicemonitor.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/personal-projects/radar-ng/servicemonitor.yaml): Prometheus scrape config
 - radar-ng repo: `src/lib/telemetry.ts`, mobile OTel wiring

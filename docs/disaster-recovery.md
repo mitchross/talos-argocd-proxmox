@@ -1,14 +1,24 @@
-# Disaster Recovery
+# Disaster recovery runbook
 
-> The full-cluster destroy, rebuild, and restore runbook. Concepts and per-PVC
-> operations live in [storage-architecture.md](storage-architecture.md). The
-> backup/restore engine (kopiur) and its exact flows live in
-> [kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
-> and [kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md).
-> Databases are plain Postgres + kopiur. CNPG was retired 2026-08-13; see
-> the [CNPG retirement note](domains/cnpg/plain-postgres-migration.md).
-> Databases use the same automatic PVC restoration. Database recovery still needs
-> application-level acceptance; see [post-restore acceptance](#post-restore-acceptance).
+This runbook destroys the whole cluster, rebuilds it, and restores the data. It
+is for the operator who runs a planned rebuild or recovers from a total loss.
+The rebuild deletes every Kubernetes object and every Longhorn volume. It does
+not touch the Git repo, the Kopia repository on RustFS, the 1Password vault, or
+the Omni and Talos machine configuration.
+
+!!! danger
+    The destructive steps need a clear decision from the operator. Do not run
+    them as routine maintenance.
+
+Other pages own the background:
+
+- [Storage, backup and restore architecture](storage-architecture.md) has the concepts and the per-PVC operations.
+- [How kopiur backup and restore work](domains/storage/kopiur-backup-architecture.md) has the exact backup and restore flows.
+- [Why the kopiur mover runs as the data owner](domains/storage/kopiur-mover-permissions.md) has the file permission rules.
+
+All Postgres here is plain Postgres with a kopiur backup, so a database restores
+like any other PVC. CNPG is retired. A restored database still needs the app
+checks in [post-restore acceptance](#post-restore-acceptance).
 
 ```mermaid
 flowchart TB
@@ -65,16 +75,20 @@ flowchart TB
   data@{ animation: fast }
 ```
 
-Recovery is complete only after desired state, credentials, and protected data
-converge and you verify them.
+The recovery is complete only when the objects, the credentials, and the data
+are all back, and you have checked them.
 
-!!! danger
-    The destructive steps require explicit operator intent. This documents the
-    verified path. It is not an invitation to nuke during routine maintenance.
+The page has five parts. Use them in this order:
+
+1. [Pre-nuke checklist](#pre-nuke-checklist): what must be true before you destroy anything.
+2. [Rebuild sequence](#rebuild-sequence): the steps and the result of each.
+3. [What to expect while the data restores](#what-to-expect-while-the-data-restores): normal behavior and real problems.
+4. [In-cluster registry and Gitea Actions](#in-cluster-registry-and-gitea-actions): images that the cluster builds for itself.
+5. [Post-restore acceptance](#post-restore-acceptance): the four checks that close the recovery.
 
 ---
 
-## The DR model in one diagram
+## What dies and what survives
 
 ```text
   Dies with the cluster            Survives (off-cluster)
@@ -92,10 +106,10 @@ converge and you verify them.
       All protected data back, unattended
 ```
 
-Clusters are cattle. The Kopia repository, the Git repo, and the secrets
-vault are the pets. Everything between them is reconstructed automatically.
+The cluster is replaceable. The Kopia repository, the Git repo, and the
+1Password vault are not. The rebuild creates everything else from those three.
 
-!!! warning "Longhorn runs the V1 engine: do not switch to V2"
+!!! warning "Longhorn runs the V1 engine. Do not switch to V2"
     Interrupted rebuilds under mass-restore load corrupt V2/SPDK replica metadata
     (upstream [#13315](https://github.com/longhorn/longhorn/issues/13315),
     [#13314](https://github.com/longhorn/longhorn/issues/13314)). Stay on V1.
@@ -104,194 +118,276 @@ vault are the pets. Everything between them is reconstructed automatically.
 
 ## Pre-nuke checklist
 
-Block the nuke until every box checks. **You restore *from* these:**
+Do not destroy the cluster until every box is checked. The restore reads from
+each of these.
 
-- [ ] GitHub reachable; the rebuild revision **pushed** (ArgoCD pulls origin, not your working tree)
-- [ ] GHCR image pulls work
-- [ ] 1Password reachable; Connect token valid and recoverable off-cluster
-- [ ] Cloudflare token valid and recoverable off-cluster
-- [ ] RustFS/S3 endpoint reachable; access key registered on the external server; Kopia auth works
-      (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
-- [ ] Talos secrets / Omni machine configs available off-cluster
-- [ ] Private Docker Hub patch, in-cluster registry images and manually protected data saved off-cluster
-- [ ] **Backups fresh**: each backed-up PVC has a recent `Succeeded` kopiur `Snapshot` you can live with. Apps roll back to exactly that snapshot. Spot-check across namespaces:
-      `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`.
-      To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
-- [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists. kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward. Confirm every PVC you intend to *restore* (not seed) shows at least one `Succeeded` Snapshot before the nuke.
-- [ ] Restore canary green: recent `last-drill-result=pass`
-- [ ] Every Proxmox storage the machine classes select exists on its host (`pvesm status`), including `tr-sda-vmstore` on the Threadripper. A reinstalled host loses it ([disk map](domains/storage/disk-map.md#rebuild-prerequisites))
+- [ ] GitHub is reachable, and the revision you rebuild from is pushed. Argo CD
+      pulls from origin, not from your working tree.
+- [ ] GHCR image pulls work.
+- [ ] 1Password is reachable. The Connect token is valid, and you can get it from
+      outside the cluster.
+- [ ] The Cloudflare token is valid, and you can get it from outside the cluster.
+- [ ] The RustFS S3 endpoint is reachable, the access key is registered on the
+      RustFS server, and Kopia can authenticate. A key that RustFS does not know
+      blocks every restore, even when Git is correct.
+- [ ] The Talos secrets and the Omni machine configs are available outside the cluster.
+- [ ] The private Docker Hub patch, the in-cluster registry images, and any data
+      you protect by hand are saved outside the cluster.
+- [ ] The backups are fresh. Each PVC with a backup has a recent `Succeeded`
+      `Snapshot` that you accept as the restore point. Each app goes back to
+      exactly that backup. Check the newest `Snapshot` per source across
+      namespaces: `kubectl get snapshot -A`. Check that no `SnapshotSchedule` is
+      stuck: `kubectl get snapshotschedule -A`. To make a fresh backup now, run
+      `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew).
+- [ ] Every PVC that you expect to restore has at least one `Succeeded`
+      `Snapshot`. With `onMissingSnapshot: Continue`, kopiur binds a PVC that
+      has no backup as an empty volume and starts backups from there.
+- [ ] The restore canary is green, with a recent `last-drill-result=pass`.
+- [ ] Every Proxmox storage that the machine classes select exists on its host
+      (`pvesm status`). This includes `tr-sda-vmstore` on the Threadripper. A
+      reinstalled host loses it. See the
+      [disk map](domains/storage/disk-map.md#rebuild-prerequisites).
 
 ## Talos 1.14 rebuild
 
-The template uses 1.14 Kubernetes documents for node settings, the kubelet and
-control-plane components. It sets no `.machine.kubelet`: Talos 1.14
+These facts explain the cluster template. Read them before you change the
+template or check the disks of new machines.
+
+The template uses Talos 1.14 Kubernetes documents for the node settings, the
+kubelet, and the control-plane components. It sets no `.machine.kubelet`. Talos
+1.14
 [rejects it next to a `KubeletConfig`](https://github.com/siderolabs/talos/blob/v1.14.1/pkg/machinery/config/types/k8s/kubelet.go#L163),
-which Omni adds on every Kubernetes upgrade. Longhorn needs no kubelet bind
-mount, and Talos's own Longhorn CI runs without one. Its data disks are user volumes
-under `/var/mnt`, which Talos already exposes to the kubelet.
+and Omni adds a `KubeletConfig` on every Kubernetes upgrade.
 
-The control plane reserves **32 GiB ETCD + 64 GiB EPHEMERAL** within its existing
-100 GiB disk. The GPU uses **16 GiB boot + 434 GiB EPHEMERAL** on NVMe0 so Omni
-selects the boot disk. Model, flash and bulk allocations stay at 450, 440 and 800 GiB.
-Each Talos volume selects its disk by that exact size.
-Check the resulting disks and mount paths with `talosctl get disks`,
-`talosctl get volumestatus` and `talosctl get mountstatus` before restoring.
+Longhorn needs no kubelet bind mount. Its data disks are user volumes under
+`/var/mnt`, and Talos already exposes that path to the kubelet.
 
-Fresh 1.14 enables workload isolation and weekly filesystem trimming. Keep
-its mount defaults. The final release [keeps `/var` executable](https://github.com/siderolabs/talos/blob/v1.14.0/internal/app/machined/pkg/controllers/block/internal/volumes/volumeconfig/system_volumes_test.go#L837),
-so the beta `secure: false` workaround is unnecessary for Longhorn V1.
+Each Talos volume selects its disk by exact size:
+
+| Machine | Disk layout |
+|---|---|
+| Control plane | **32 GiB ETCD + 64 GiB EPHEMERAL** inside its 100 GiB disk |
+| GPU worker | **16 GiB boot + 434 GiB EPHEMERAL** on NVMe0, so that Omni selects the boot disk |
+| GPU worker data | Model, flash, and bulk allocations stay at 450, 440, and 800 GiB |
+
+Check the disks and the mount paths before you restore data:
+
+```bash
+talosctl get disks
+talosctl get volumestatus
+talosctl get mountstatus
+```
+
+A fresh Talos 1.14 install enables workload isolation and weekly filesystem
+trimming. Keep its mount defaults. Talos 1.14
+[keeps `/var` executable](https://github.com/siderolabs/talos/blob/v1.14.0/internal/app/machined/pkg/controllers/block/internal/volumes/volumeconfig/system_volumes_test.go#L837),
+so Longhorn V1 needs no `secure: false` setting.
 
 ## Rebuild sequence
 
-> **Historical identity migration:** the 2026-07-31 domain-prefix change is
-> complete. Its merge-after-destruction step is not part of a normal rebuild.
-> Future Application renames need a separate ownership/finalizer migration.
-> Deleting an old Application identity can prune the resources it owns.
+The exact commands for steps 1 to 7 are in `README.md`, section "Rebuild and
+bootstrap". That section is the one procedure for them. This list gives the
+order and the result to expect.
 
-```text
-  omnictl cluster delete
-    -> wait: machines drained, VMs gone in Proxmox
-    -> omnictl apply machine classes + template validate/sync
-    -> machines provision from the NEW template
-    -> Gateway API CRDs
-    -> seed Cilium CNI
-    -> seed 1Password credentials
-    -> bootstrap-argocd.sh
-    -> sync waves install Cilium management -> Longhorn -> kopiur -> DB support
-    -> generated apps: backed-up PVCs hydrate via restore-before-bind
-    -> confirm restored `longhorn` volumes reach two healthy replicas
-    -> verify application reads/writes, credentials and fresh backups
-```
+1. Delete the cluster with `omnictl cluster delete`.
+   Expected result: the machines drain, and the VMs are gone in Proxmox.
+2. Apply the machine classes with `omnictl apply`. Then validate and sync the
+   cluster template.
+   Expected result: Omni holds the current machine classes and template.
+3. Wait for the machines to provision from the template.
+   Expected result: the nodes join the cluster.
+4. Install the Gateway API CRDs.
+5. Seed the Cilium CNI.
+   Expected result: the nodes reach `Ready`.
+6. Check cross-node pod networking. See
+   [the gate below](#check-cross-node-pod-networking-before-you-bootstrap).
+   Expected result: every node shows `1/1` under `Node` and `Endpoints`.
+7. Seed the 1Password credentials.
+8. Run `bootstrap-argocd.sh`.
+   Expected result: Argo CD starts and the sync waves begin.
+9. Wait for the sync waves. They install Cilium management, then Longhorn, then
+   kopiur, then the database support.
+10. Wait for the generated apps. Each PVC with a backup fills through
+    restore-before-bind.
+    Expected result: each PVC goes from `Pending` to `Bound`.
+11. Confirm that the restored `longhorn` volumes reach two healthy replicas.
+12. Verify app reads and writes, credentials, and fresh backups. Use
+    [post-restore acceptance](#post-restore-acceptance).
 
-> **Manual pre-steps before `bootstrap-argocd.sh`.** The script assumes them.
-> Follow the single canonical procedure in `README.md` § Rebuild and Bootstrap.
-> Skip the Cilium seed and the new cluster has no CNI (nodes stay `NotReady`).
-> Skip the 1Password seed and External Secrets can never start.
+!!! warning "Do not skip steps 5 and 7"
+    `bootstrap-argocd.sh` assumes both seeds. Without the Cilium seed, the
+    cluster has no CNI and the nodes stay `NotReady`. Without the 1Password
+    seed, External Secrets cannot start.
 
-**Ordering rule (twice-learned):** machine classes and the cluster template
-are **snapshots inside Omni**. Apply and sync them *before* machines
-provision, or VMs are built from stale state and must be reprovisioned. Applying
-a changed MachineClass does not resize or replace an already allocated VM. A
-replacement or full rebuild is required for its new virtual hardware to take
-effect.
+### Apply machine classes and the template before machines provision
 
-### Gate the wave train on cross-node pod networking
+Omni stores the machine classes and the cluster template as its own copies.
+Apply and sync them before the machines provision. Otherwise Omni builds the
+VMs from the old copies, and you must provision them again.
 
-Run this after the Cilium install and **before** `bootstrap-argocd.sh`. Nodes
-reaching `Ready` only proves the kubelet talks to the API server. It does not
-prove that pods on different nodes can talk to each other. A rebuild is exactly
-when that differs, because it brings new VMs, new NICs, and new placement.
+A changed MachineClass does not resize or replace a VM that already exists. The
+new virtual hardware applies only after a replacement or a full rebuild.
+
+### Check cross-node pod networking before you bootstrap
+
+Run this check after the Cilium install and before `bootstrap-argocd.sh`.
 
 ```bash
 kubectl -n kube-system exec ds/cilium -c cilium-agent -- cilium-health status
 ```
 
-Every node must report **`1/1` under both `Node` and `Endpoints`**. `Node 1/1`
-with `Endpoints 0/1` is the trap. The node is reachable at its host IP while the
-pod network to it is broken. Node-level checks, `kubectl get nodes`, and ICMP all
-pass in that state.
+Expected result: every node reports `1/1` under both `Node` and `Endpoints`.
 
-Do not start the wave train with any node showing `Endpoints 0/1`. Sync waves
-gate on pod readiness, which a broken pod network does not disturb. The waves
-proceed normally, and the failures surface much later as unrelated apps stuck on
-missing Secrets. Fix the network first. It is far cheaper than unwinding a
-half-converged cluster.
+A node in `Ready` proves only that its kubelet reaches the API server. It does
+not prove that pods on different nodes reach each other. A rebuild brings new
+VMs, new NICs, and new placement, so the two can differ.
 
-**Bootstrap rules** (proven by the 2026-06 rebuilds):
+`Node 1/1` with `Endpoints 0/1` means the node answers at its host IP while the
+pod network to it is broken. `kubectl get nodes` and ICMP both pass in that
+state.
 
-- CRDs first, controllers second, CRs third.
-- Observability is **not** a core dependency. Core apps must bootstrap
-  without Prometheus, and `kube-prometheus-stack` is the sole owner of
+Do not run `bootstrap-argocd.sh` while any node shows `Endpoints 0/1`. The sync
+waves wait for pod readiness, and a broken pod network does not change pod
+readiness. The waves continue, and the failures appear much later as unrelated
+apps that wait for missing Secrets. Fix the network first.
+
+### Bootstrap rules
+
+- Install CRDs first, controllers second, custom resources third.
+- Do not make observability a core dependency. Core apps must start without
+  Prometheus. `kube-prometheus-stack` is the only owner of the
   `monitoring.coreos.com` CRDs.
-- The **kopiur operator** lands at **Wave 2** (`infrastructure/backup/kopiur-operator/`,
-  which installs the CRDs, operator, and webhook). **kopiur-config** lands at **Wave 3**
-  (`infrastructure/backup/kopiur/`, which holds the namespace, the `ClusterRepository
-  cluster-kopia` → RustFS `s3://kopiur`, and the `ClusterExternalSecret`
-  credential fan-out). Databases (Wave 4) and app backups (Wave 6) follow. The
-  per-PVC kopiur CRs (`SnapshotPolicy`/`SnapshotSchedule`/`Restore`) and the
-  `kopiur.home-operations.com/repo: cluster-kopia` namespace label render with
-  each app at Wave 6.
-- Replica rebuilds stay throttled to **2/node**
-  (`infrastructure/storage/longhorn/node-failure-settings.yaml`). A mass
-  restore saturates any engine on shared homelab hardware, so do not raise it
-  mid-bootstrap.
+- Do not raise the Longhorn replica rebuild limit during the bootstrap. It stays
+  at 2 per node (`infrastructure/storage/longhorn/node-failure-settings.yaml`).
+  A mass restore already loads the shared hardware fully.
+- Do not rename an Argo CD Application during a rebuild. A rename needs its own
+  ownership and finalizer migration. Deleting the old Application can prune the
+  resources it owns.
 
-## What the restore wave looks like (calibrated expectations)
+The backup pieces arrive in this order:
 
-- Each backed-up PVC is recreated from Git with `spec.dataSourceRef → Restore
-  "<pvc>-restore"`. Kubernetes withholds binding while a populator
-  `dataSourceRef` is present, so the **PVC sits `Pending`** until the kopiur
-  populator restores the latest Kopia snapshot, then binds **with data** and the
-  pod starts. See the full flow in
-  [kopiur-backup-architecture.md §4](domains/storage/kopiur-backup-architecture.md#4-restore-before-bind-flow-the-dr-magic).
-- **Backend-down is fail-safe.** If the Kopia repo is **unreachable** during a
-  restore, kopiur raises the backend error before the `onMissingSnapshot` decision,
-  so the PVC stays `Pending` and retries. **It never binds empty over a black-holed
-  backend.** The one case that *does* bind empty is a brand-new PVC with **no
-  snapshot yet** while the repo is reachable (`onMissingSnapshot: Continue` =
-  deploy-or-restore). That is why the pre-nuke checklist insists a Snapshot exists
-  for anything you intend to restore.
-- Historical rebuilds of roughly 24 PVCs took about an hour. Current app count,
-  data size, placement and storage load differ. Treat this as a reference measurement,
-  not a current recovery-time guarantee.
-- **PostHog adds almost nothing to the wave.** Only `postgres-data` restores
-  (~165 MB actual, seconds to hydrate). Its ClickHouse/Kafka/Redis rebuild
-  empty by design. PostHog's rebuild cost is the migrate Job re-creating the
-  ClickHouse schema (minutes), not data movement.
-- Past restore bursts increased etcd fsync latency and caused API readiness
-  and leader-election failures. Watch those symptoms during recovery. Persistent
-  failures need investigation of storage latency and node health. Do not assume
-  every API failure is harmless restore load.
-- A few movers may hit cross-node attach conflicts ("volume is currently
-  attached to a different node") as Jobs recreate pods. Longhorn's
-  attachment reconciler clears these, and the last stragglers land as load drains.
-- Signs that something is actually wrong: a kopiur mover Job in
-  `Failed`, a `Restore` stuck without ever populating its PVC (PVC `Pending`
-  long after the repo is confirmed reachable), or a `Snapshot` stuck in error.
-  Watch with `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot`.
-- **A `Failed` Restore is terminal. kopiur never retries it.** A mover pod
-  stuck Unschedulable past `failurePolicy.podStartupDeadlineSeconds` fails the
-  CR with `MoverPodWedged`, and no spec change or Argo sync resets it. An infra
-  outage during the restore wave can fail every Restore at once. To recover,
-  delete the Failed CRs and let Argo recreate them. Each fresh CR pins the
-  then-latest snapshot, and the unbound PVC is untouched throughout.
+| Sync wave | What arrives | Path |
+|---|---|---|
+| 2 | The kopiur operator: CRDs, operator, webhook | `infrastructure/backup/kopiur-operator/` |
+| 3 | The kopiur configuration: namespace, `ClusterRepository cluster-kopia` on RustFS `s3://kopiur`, and the `ClusterExternalSecret` that copies the credentials | `infrastructure/backup/kopiur/` |
+| 4 | Databases | |
+| 6 | Each app, with its `SnapshotPolicy`, `SnapshotSchedule`, `Restore`, and the namespace label `kopiur.home-operations.com/repo: cluster-kopia` | |
 
-  ```bash
-  kubectl get restore -A --no-headers | awk '$3=="Failed" {system("kubectl -n "$1" delete restore "$2)}'
-  ```
-- **Privileged-mover namespaces may lag a grant race** (upstream kopiur #194).
-  In the three root-mover namespaces (home-assistant, tubesync, nginx-example)
-  the controller can miss the `privileged-movers` annotation event when the
-  namespace and CRs land together, which is exactly the DR cold-start timing. It then leaves
-  `MoverPermitted=False` until a ~5 min backstop requeue. If a Restore there
-  sits blocked well past that, nudge it with `kubectl -n <ns> annotate restore
-  <name> kopiur.home-operations.com/kick="$(date +%s)"`. Any no-op metadata
-  touch retriggers reconcile.
+## What to expect while the data restores
+
+### Normal behavior
+
+- Argo CD recreates each PVC from Git with a `dataSourceRef` that points at the
+  `Restore` named `<pvc>-restore`. Kubernetes does not bind a PVC with that
+  reference. The PVC stays `Pending` until the kopiur mover has copied the
+  newest backup into it. Then it binds with the data, and the pod starts. The
+  full flow is in
+  [how kopiur backup and restore work, section 4](domains/storage/kopiur-backup-architecture.md#4-restore-before-bind-flow-the-dr-magic).
+- If the Kopia repository is unreachable, the PVC stays `Pending` and kopiur
+  retries. kopiur raises the backend error before the `onMissingSnapshot`
+  decision, so the PVC never binds empty during an outage.
+- A PVC binds empty in one case only: the repository is reachable and holds no
+  backup for it (`onMissingSnapshot: Continue`). That is the reason for the
+  `Snapshot` check in the pre-nuke checklist.
+- Earlier rebuilds of about 24 PVCs took about an hour. The app count, the data
+  size, the placement, and the storage load have changed since. Use the number
+  as a reference, not as a recovery-time promise.
+- PostHog adds almost nothing. Only `postgres-data` restores (about 165 MB,
+  seconds to copy). Its ClickHouse, Kafka, and Redis volumes start empty by
+  design. The PostHog cost is the migrate Job that recreates the ClickHouse
+  schema, which takes minutes.
+- A few movers can report "volume is currently attached to a different node"
+  while Jobs recreate their pods. Longhorn clears these attach conflicts. The
+  last ones finish when the load drops.
+
+### Watch the control plane
+
+A burst of restores can raise etcd fsync latency. The symptoms are API
+readiness failures and leader-election failures. Watch for them during the
+restore. If they continue, investigate storage latency and node health. Do not
+assume that every API failure comes from restore load.
+
+### Signs of a real problem
+
+Watch the kopiur objects in a namespace with this command:
+
+```bash
+kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot
+```
+
+These states need action:
+
+- A kopiur mover Job is `Failed`.
+- A `Restore` never fills its PVC. The PVC is still `Pending` long after you
+  confirmed that the Kopia repository is reachable.
+- A `Snapshot` stays in an error state.
+
+### Fix: a `Restore` is `Failed`
+
+A `Failed` `Restore` stays failed. kopiur does not retry it. No spec change and
+no Argo CD sync resets it.
+
+One cause is a mover pod that stays Unschedulable longer than
+`failurePolicy.podStartupDeadlineSeconds`. kopiur then fails the `Restore` with
+reason `MoverPodWedged`. An infrastructure outage during the restore can fail
+every `Restore` at once.
+
+Delete the failed `Restore` objects and let Argo CD recreate them:
+
+```bash
+kubectl get restore -A --no-headers | awk '$3=="Failed" {system("kubectl -n "$1" delete restore "$2)}'
+```
+
+Expected result: Argo CD recreates each `Restore`. Each new `Restore` uses the
+newest backup at that moment. The unbound PVC does not change during this.
+
+### Fix: a `Restore` in a privileged-mover namespace stays blocked
+
+This applies to namespaces that carry the `privileged-movers` annotation, for
+example home-assistant, tubesync, and nginx-example. When such a namespace and
+its kopiur objects arrive together, kopiur can miss the annotation (upstream
+kopiur #194). A cluster rebuild has exactly that timing. The `Restore` then
+shows `MoverPermitted=False` until kopiur checks again after about 5 minutes.
+
+If a `Restore` stays blocked well past 5 minutes, change its metadata to trigger
+a new check:
+
+```bash
+kubectl -n <ns> annotate restore <name> kopiur.home-operations.com/kick="$(date +%s)"
+```
+
+Any metadata change that has no other effect works the same way.
 
 ## In-cluster registry and Gitea Actions
 
-`registry.vanillax.me` is an in-cluster registry in namespace
-`container-registry`. Its `registry` PVC is kopiur-backed (daily, 03:41), so a
-rebuild restores the images through restore-before-bind like any other app.
-Images pushed after the last daily snapshot are missing until rebuilt.
+`registry.vanillax.me` is a container registry that runs in the cluster, in the
+namespace `container-registry`. Its `registry` PVC has a daily backup at 03:41,
+so a rebuild restores the images through restore-before-bind. Images pushed
+after the newest backup are missing until you build them again.
 
-Check the catalog from inside the registry pod:
+### 1. Check the registry catalog
+
+Run the check inside the registry pod:
 
 ```bash
 kubectl exec -n container-registry deploy/registry -- \
   wget -qO- http://127.0.0.1:5000/v2/_catalog
 ```
 
-Expected result: the repositories that `image: registry.vanillax.me/...`
-references in git. If the catalog is empty (no snapshot yet, or the restore
-bound empty), those workloads hit `ImagePullBackOff` until the images are
-rebuilt. Dispatch the image's Gitea Actions workflow once the runner is back.
-With an empty registry the workflow restarts at its version floor, so check that the
-tag it pushes matches the one pinned in git.
+Expected result: the catalog lists the repositories that the manifests in Git
+use as `image: registry.vanillax.me/...`.
 
-Restore Gitea first, then get the Gitea Actions runner online. The runner
-needs `Secret/gitea-actions/act-runner-token`. Git declares that as an
-ExternalSecret, and 1Password stores the generated token:
+If the catalog is empty, the PVC had no backup or it bound empty. The workloads
+that use those images then show `ImagePullBackOff` until the images exist again.
+To rebuild an image, start its Gitea Actions workflow when the runner is back.
+
+With an empty registry, a workflow starts again at its lowest version number.
+Check that the tag it pushes matches the tag that Git pins.
+
+### 2. Bring the Gitea Actions runner online
+
+Restore Gitea first. The runner needs `Secret/gitea-actions/act-runner-token`.
+Git declares it as an ExternalSecret, and 1Password stores the token:
 
 - vault: `homelab-prod`
 - item: `gitea-actions`
@@ -303,7 +399,10 @@ Generate or rotate the token from the restored Gitea pod:
 kubectl exec -n gitea deploy/gitea -- gitea actions generate-runner-token
 ```
 
-If 1Password is not updated yet, this manual patch gets the live runner moving:
+Store the new token in the 1Password field above.
+
+If 1Password does not have the new token yet, patch the Secret by hand to start
+the runner:
 
 ```bash
 TOKEN="$(kubectl exec -n gitea deploy/gitea -- \
@@ -317,29 +416,19 @@ kubectl logs -n gitea-actions act-runner-0 -c runner --tail=50
 kubectl logs -n gitea-actions act-runner-1 -c runner --tail=50
 ```
 
-Expected log from each of the two runners (`act-runner-0`, `act-runner-1`):
+Expected result: each of the two runners (`act-runner-0`, `act-runner-1`) logs
+this line:
 
 ```text
 runner: act-runner-0 ... declare successfully
 ```
 
-For radar-ng, the recovery images are pinned in
-`my-apps/personal-projects/radar-ng/`. If the registry is empty and the runner is not
-usable yet, manually refill the exact pinned tags from local checkouts:
+### 3. If a pod does not schedule
 
-```bash
-cd ~/programming/radar-ng/backend
-VERSION=v1.1.4 ./scripts/build-push.sh tile-server
-VERSION=v1.1.1 ./scripts/build-push.sh open-meteo-worker
-VERSION=v1.1.7 ./scripts/build-push.sh temporal-worker
-
-kubectl -n radar-ng rollout restart deploy/tile-server deploy/basemap deploy/open-meteo
-kubectl -n radar-ng delete pod -l app=radar-ng-worker
-```
-
-An `Insufficient cpu` scheduling event means requests exceed an eligible node's
-available allocatable CPU. Inspect affinity, taints and requests across eligible
-nodes. Low host utilization alone does not make a pod schedulable. Verify with:
+An `Insufficient cpu` scheduling event means that the pod's requests are larger
+than the free allocatable CPU on every eligible node. Low CPU use on the host
+does not make a pod schedulable. Check affinity, taints, and requests across the
+eligible nodes:
 
 ```bash
 kubectl describe node <eligible-node> \
@@ -349,47 +438,50 @@ kubectl top nodes
 
 ## Post-restore acceptance
 
-Record all four acceptance checks, with live evidence:
+Record all four checks with evidence from the live cluster.
 
-1. **Restore contract**: every backed-up PVC is `Bound` via its kopiur `Restore`
-   populator (none stuck `Pending`), and the first post-restore `Snapshot` for
-   each source reaches `Succeeded`. Cross-check per namespace:
+1. **Restore contract.** Every PVC with a backup is `Bound` through its
+   `Restore`, and none is `Pending`. The first `Snapshot` after the restore
+   reaches `Succeeded` for each source. Check per namespace:
    `kubectl -n <ns> get pvc,restore,snapshot`.
-2. **Exemption hygiene**: every intentionally backup-exempt PVC is still bound
-   and still carries the fully-qualified
-   `storage.vanillax.dev/backup-exempt-reason` annotation. A non-zero count isn't a
-   restore failure, but it masks real problems. Two exempt PVCs once sat
-   unnoticed because acceptance only quoted the protected counters. PostHog's
-   ClickHouse/Kafka/Redis, and standalone Redis
-   are the expected exempt set. PostHog's `postgres-data` is protected because it
-   carries the API keys/dashboards.
-
-3. **Application recovery**: a Bound PVC is necessary but not sufficient. Check that
-   Postgres accepts authenticated connections and the app can read existing data
-   and complete a normal write. Verify Gitea can read a known repository and its
-   database, Paperless can retrieve an existing document, and Temporal can complete
-   a new workflow/timer. For apps with separate file/database PVCs, confirm both
-   restore points describe compatible data. Validate restored credentials against
-   1Password before treating an authentication failure as data corruption.
-4. **Second replicas**: restored `longhorn` and `longhorn-wired-ha` volumes get two
-   replicas from their class. Confirm they reach `2 healthy`; see
+2. **Exemption hygiene.** Every backup-exempt PVC is bound and still carries the
+   annotation `storage.vanillax.dev/backup-exempt-reason`. Count the exempt PVCs
+   as well as the PVCs with a backup, or a missing exempt PVC stays unnoticed.
+   The expected exempt set is PostHog's ClickHouse, Kafka, and Redis, and the
+   standalone Redis. PostHog's `postgres-data` has a backup, because it holds
+   the API keys and dashboards.
+3. **Application recovery.** A `Bound` PVC is necessary but not enough. Make
+   these checks:
+    - Postgres accepts authenticated connections.
+    - Each app reads existing data and completes a normal write.
+    - Gitea reads a known repository and its database.
+    - Paperless retrieves an existing document.
+    - Temporal completes a new workflow or timer.
+    - For an app with separate file and database PVCs, both restore points
+      describe compatible data.
+    - Compare the restored credentials with 1Password before you treat an
+      authentication failure as data corruption.
+4. **Second replicas.** Restored `longhorn` and `longhorn-wired-ha` volumes get
+   two replicas from their StorageClass. Confirm that they reach `2 healthy`. See
    [two copies for data that can't be re-created](storage-architecture.md#two-copies-for-data-that-cant-be-re-created).
 
 ---
 
 ## The restore canary
 
-Point-in-time acceptance goes stale. The canary is a safe, isolated place to
-repeat the proof.
+An acceptance check proves the restore at one moment. The restore canary lets
+you repeat the proof on a test volume, without touching production PVCs.
 
-`my-apps/system/restore-canary/` re-runs the real DR path against a dedicated test
-PVC. Its `kopiur/restore-canary-data.yaml` stub carries the `SnapshotPolicy` +
-`SnapshotSchedule` + `Restore`, and the PVC's `dataSourceRef` points at the `Restore`.
-The `SnapshotSchedule` keeps a fresh snapshot, and a weekly quick verification
-checks repository blobs. Those automated checks do **not** prove a restore. To
-drill the full path, write and hash a sentinel, force and wait for a successful
-snapshot, delete the canary PVC **and its `Restore` CR**, and let Argo recreate
-both so the populator re-hydrates the PVC:
+`my-apps/system/restore-canary/` runs the real restore path on its own PVC. Its
+stub `kopiur/restore-canary-data.yaml` holds the `SnapshotPolicy`, the
+`SnapshotSchedule`, and the `Restore`. The PVC's `dataSourceRef` points at the
+`Restore`.
+
+Two things run automatically. The `SnapshotSchedule` makes a daily backup. A
+weekly quick verification checks the blobs in the Kopia repository. Neither one
+proves a restore. Only the drill does, and you run the drill by hand.
+
+### Run the drill
 
 ```
 sentinel (new UID + sha256) → forced kopiur Snapshot
@@ -398,41 +490,57 @@ sentinel (new UID + sha256) → forced kopiur Snapshot
 → kopiur populator restore → byte-identical verification
 ```
 
-**Delete the `Restore` CR too. The drill is invalid without it.** A `Restore`
-resolves its source **once, at admission, and never re-resolves**
-(`status.resolved` is pinned; `offset: 0` means "latest as of admission", not
-"latest now"). Delete only the PVC and the populator replays whatever snapshot
-the `Restore` pinned on first use, so the drill reports `RestoreSucceeded`
-against frozen data regardless of whether backups work. Every drill between
-2026-08-03 and 2026-08-13 restored a 2026-06-10 sentinel this way and still
-passed its own success check.
+1. Write a sentinel file with a new UID to the canary PVC. Record its sha256 hash.
+2. Force a backup and wait until the `Snapshot` is `Succeeded`.
+3. Delete the canary PVC and the `Restore` named `restore-canary-data-restore`.
+4. Let Argo CD recreate both. The new `Restore` selects the new backup, and the
+   kopiur mover fills the PVC.
+5. Check the pin (see below).
+6. Compare the restored sentinel with the recorded hash. They must be identical.
+7. Record the result in the `restore-canary.vanillax.dev/last-drill-*`
+   annotations on the namespace.
 
-Gate the verdict on the pin before the bytes:
+The canary
+[README](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/system/restore-canary/README.md)
+repeats these rules. Destructive actions apply only to the namespace
+`restore-canary` and the PVC `restore-canary-data`.
+
+!!! danger "Delete the `Restore` too, or the drill is invalid"
+    A `Restore` selects its backup once, when it is created, and never selects
+    again. `status.resolved` is pinned, and `offset: 0` means "latest at
+    creation", not "latest now". If you delete only the PVC, the mover copies
+    the backup that the `Restore` pinned on first use. The drill then reports
+    `RestoreSucceeded` against old data, whether backups work or not.
+
+### Check the pin before the bytes
 
 ```
 kubectl -n restore-canary get restore restore-canary-data-restore \
   -o jsonpath='{.status.resolved.pinnedAt} {.status.resolved.kopiaSnapshotID}'
 ```
 
-`pinnedAt` must be newer than the drill snapshot. A healthy drill moves
-`Pending`, then `Restoring`, then `Bound`. A PVC that binds instantly never ran the
-populator, and a `TargetAlreadyBound` reason means the `Restore` short-circuited
-because the PVC still existed.
+Expected result: `pinnedAt` is newer than the backup you forced in step 2.
 
-A manually executed passing drill proves the *entire* chain: Git render, kopiur CR wiring,
-kopia round-trip, and populator restore. It checks data integrity by hash
-and never touches production PVCs. Results land as
-`restore-canary.vanillax.dev/last-drill-*` annotations on the namespace.
+A healthy drill moves the PVC from `Pending` to `Restoring` to `Bound`. A PVC
+that binds at once did not run the mover. The reason `TargetAlreadyBound` means
+that the `Restore` did nothing because the PVC still existed.
 
-Treat a missing or stale `last-drill-*` annotation as "restore not recently
-proven," even when snapshots and quick verification are green. Automating the
-destructive PVC deletion is intentionally deferred until a kopiur-native,
-namespace-contained drill helper has been reviewed.
+### What the drill proves
 
-What it does **not** prove: restores of backups older than its own, or
-app-level data semantics. Drill those separately when they matter.
+A passing drill proves the whole chain: the Git render, the kopiur object
+references, the Kopia upload and download, and restore-before-bind. It checks
+data integrity by hash.
+
+The drill does not prove that older backups restore, or that an app accepts its
+restored data. Test those separately when they matter.
+
+Treat a missing or old `last-drill-*` annotation as "restore not recently
+proven", even when the backups and the quick verification are green. The
+deletion of the PVC is not automated. Automation waits for a reviewed drill
+helper that is native to kopiur and stays inside the namespace.
 
 ## Failure-mode catalog
 
-Worked fixes for stale CSI attachments, read-only filesystems, wedged clone PVCs, and finalizer-stuck resources live in the
-[common failure modes table](storage-architecture.md#common-failure-modes).
+The [common failure modes table](storage-architecture.md#common-failure-modes)
+has the fixes for stale CSI attachments, read-only filesystems, stuck clone
+PVCs, and resources stuck on a finalizer.

@@ -1,11 +1,15 @@
-# Why the kopiur mover runs as the data owner (file permissions)
+# Why the kopiur mover runs as the data owner
 
-> If a `Snapshot` fails with `PermissionDenied` or "unable to open
-> file ... permission denied", this is why. The fix is one field.
+Read this page when a `Snapshot` fails with `PermissionDenied` or
+"unable to open file ... permission denied". It also tells you which user ID to
+put in a new stub, the per-PVC backup file `kopiur/<pvc>.yaml`.
 
-## TL;DR
+## The short answer
 
-The kopiur mover is the short-lived pod that reads your PVC and copies it to the repository. It must run as the user that owns the data on disk, not as root. Set it per PVC in the stub:
+The mover is the short-lived Job that kopiur starts to copy a PVC's data to or
+from the Kopia repository. It must run as the user that owns the files on the
+disk. Running it as root does not help. Set the owner in the stub, for both the
+`SnapshotPolicy` and the `Restore`:
 
 ```yaml
 mover:
@@ -13,33 +17,45 @@ mover:
   podSecurityContext: { fsGroup: 1000, supplementalGroups: [1000] }
 ```
 
-Find the right number with:
+Find the owner of the data with this command:
+
 `kubectl -n <ns> exec <pod> -- stat -c '%u:%g' <data-mountpath>`
 
-## In plain English
+The output is `UID:GID`, for example `1000:1000`. Use those two numbers.
 
-The backup tool doesn't copy your files itself. It starts a small temporary helper, the mover. The mover reads your app's files and copies them to backup storage.
+## Why root cannot read the files
 
-On Linux, a user owns every file. That user is just a number, a "UID". To read a file you must be its owner, be in its group, or the file must be open to everyone. Normally root can read everything, like a building superintendent with a master key.
+On Linux, every file has an owner. The owner is a number, the UID. A process
+can read a file in three cases:
 
-The cluster takes the master key away from the mover, on purpose, for security. So even a mover that runs "as root" is a declawed root. It can only read files it owns, like any normal user. kopiur's `privilegedMode` setting sounds like it would give the key back, but it doesn't. It only matters when restoring, not when reading.
+- The process UID owns the file.
+- The process GID is the file's group, and the file is group-readable.
+- The file is readable by everyone.
 
-A declawed-root mover that tries to read your app's data, owned by some normal user, gets "permission denied." The fix is to run the mover as the same user that owns the files. If user `1000` owns the data, run the mover as `1000`. It then owns the files and reads them fine, with no master key.
+Root normally skips these checks. Two Linux capabilities give root that right:
+`CAP_DAC_READ_SEARCH` and `CAP_DAC_OVERRIDE`.
 
-## The technical version
+Every app namespace here enforces the Pod Security Admission level `baseline`.
+Under `baseline`, the mover pod runs with
+`securityContext.capabilities: drop: ["ALL"]`. That removes both capabilities.
+A mover with `runAsUser: 0` is then a root UID that must pass the same three
+checks as any other user.
 
-- Under Pod Security Admission `baseline`, which every app namespace enforces here, the mover pod runs with `securityContext.capabilities: drop: ["ALL"]`. That strips `CAP_DAC_READ_SEARCH` and `CAP_DAC_OVERRIDE`, the capabilities that let root bypass file-permission checks. So `runAsUser: 0` with capabilities dropped is a root UID with **no** permission-bypass power.
-- kopiur's `mover.privilegedMode: true` does **not** add capabilities. The pod still runs `drop: ["ALL"]`. The setting only governs chown-on-restore, which re-creates original ownership when writing files back. It does nothing for the read path during a backup.
-- So the mover can only read a file in three cases. Its UID owns the file. Its GID is the file's group and the file is group-readable. Or the file is world-readable. Mode-`600` or `700` files owned by another UID are unreadable and give `PermissionDenied`.
+A mover that runs as root therefore gets `PermissionDenied` on files with mode
+`600` or `700` that another UID owns. A mover that runs as the owner reads them.
 
-### Choosing the mover identity
+kopiur's `mover.privilegedMode: true` does not add capabilities. The pod still
+runs with `drop: ["ALL"]`. The setting controls only the ownership change on
+restore, where the mover sets the original owner on the files it writes back.
+It does nothing for reading during a backup.
+
+## Choose the mover identity
 
 ```text
  Who owns the data files?   (stat -c '%u:%g' <path>)
  │
- ├─ same UID the pod runs as ──────────► [OK]  inheritSecurityContextFrom: pvcConsumer
- │  (most bjw-s / single-UID apps)              (backup only — restores have no pod
- │                                               to inherit from)
+ ├─ same UID the pod runs as ──────────► [OK]  explicit securityContext = that UID:GID
+ │  (most bjw-s / single-UID apps)
  │
  ├─ pod runs root but data isn't ──────► [OK]  explicit securityContext = data-owner UID:GID
  │  (daemon-drop, e.g. mysql 999:568)
@@ -50,34 +66,70 @@ A declawed-root mover that tries to read your app's data, owned by some normal u
  ├─ several owners, files ─────────────► [OK]  supplementalGroups: [gid]
  │  group-readable (g+r)
  │
- └─ several owners AND 600/700 modes ──► [STOP] consolidate ownership — or
+ └─ several owners AND 600/700 modes ──► [STOP] consolidate ownership, or
                                                 CAP_DAC_READ_SEARCH + privileged PSS
                                                 (last resort)
 ```
 
-1. **`inheritSecurityContextFrom.pvcConsumer`** (recommended for backup). kopiur copies the security context of the pod that mounts the PVC. This works when the pod's UID equals the data owner, as in most bjw-s and single-UID apps.
-2. **Explicit `securityContext` set to the data owner.** Use this when inherit can't give the right answer:
-   - **Daemon-drop apps.** Some images start as root, then drop to another user to write data. Example: in mysql the pod runs as root, but `999:568` owns the database files. Inherit would copy root and fail. Set `runAsUser: 999, runAsGroup: 568` explicitly.
-   - **Restore (cold DR).** During restore-before-bind there is no consumer pod to inherit from. The `Restore` mover always needs an explicit UID, or `runAsUser: 0` + `privilegedMode: true`. The second option uses root and chown to rebuild original ownership.
-3. **`supplementalGroups: [<gid>]`** lets the mover read files owned by other UIDs, as long as they are group-readable (mode `g+r`, for example `660`). Use it for volumes with a few different owners that share a group.
+The cases, from most common to least common:
 
-### The genuinely hard case
+1. **One owner, same as the app pod.** Set the mover `securityContext` to that
+   UID:GID. Most apps are in this group.
+2. **The pod starts as root, then switches user.** Some images start as root and
+   change to another user before they write data. In mysql the pod runs as root,
+   but `999:568` owns the database files. Set `runAsUser: 999, runAsGroup: 568`.
+3. **Root owns the data (`0:0`).** Set `runAsUser: 0` and add the
+   `privileged-movers` annotation to the namespace. Use this only for data that
+   root owns. Do not use root to work around a permission error.
+4. **A few owners that share a group.** Add `supplementalGroups: [<gid>]`. The
+   mover can then read files that other UIDs own, if the files are
+   group-readable (mode `g+r`, for example `660`).
+5. **Several owners and owner-only modes.** See the next section.
 
-Some volumes have mixed owners and owner-only modes. These are `700` or `600` files owned by several different UIDs, as in docker-mailserver and some nextcloud layouts. No single UID can read all of them, and group membership doesn't help. You have two options:
+kopiur also has `inheritSecurityContextFrom.pvcConsumer`, which copies the
+security context of the pod that mounts the PVC. This cluster does not use it.
+During restore-before-bind there is no app pod to copy from, so the `Restore`
+mover always needs an explicit UID. The alternative for a `Restore` is
+`runAsUser: 0` with `privilegedMode: true`, which uses root to set the original
+ownership.
 
-- **Consolidate ownership** to one UID/GID (for example everything `1000:1000`). This is the cleanest option. It makes `inheritSecurityContextFrom.pvcConsumer` work.
-- **Give the mover the master key back.** Add `CAP_DAC_READ_SEARCH` to the mover `securityContext.capabilities.add`. `baseline` PSS rejects this, so you must raise that namespace to `privileged` Pod Security. This is the escape hatch for apps you can't consolidate. It relaxes that namespace.
+### Several owners and owner-only modes
 
-## How this cluster does it
+Some volumes hold `700` or `600` files that several different UIDs own.
+docker-mailserver and some nextcloud layouts work this way. No single UID can
+read every file, and a shared group does not help. You have two options:
 
-- The shared `kopiur-backup` Kustomize component injects the uniform fields: repository, copyMethod, populator, schedule defaults. It deliberately does **not** set the mover, because the UID varies per PVC.
-- Each per-PVC stub sets its own mover `securityContext` to the data owner. UIDs in use here: `568` (open-webui, perplexica, immich, qdrant, copyparty, frigate, restore-canary), `1000` (paperless, flatnotes, zomboid, homepage, jellyfin, gitea), `1001` (karakeep), `999:568` (mysql), `0:0` (home-assistant, tubesync, nginx).
+- Change the ownership of all files to one UID:GID, for example `1000:1000`.
+  Prefer this option. The volume then fits case 1.
+- Add `CAP_DAC_READ_SEARCH` to the mover's `securityContext.capabilities.add`.
+  The `baseline` level rejects this, so you must raise that namespace to the
+  `privileged` Pod Security level. This lowers the security of the whole
+  namespace. Use it only for an app whose ownership you cannot change.
+
+## How this cluster sets it
+
+The shared `kopiur-backup` Kustomize component adds the fields that are the same
+for every PVC: the Kopia repository, the copy method, the restore settings, and
+the schedule defaults. It does not set the mover, because the UID differs per PVC.
+
+Each stub sets its own mover `securityContext`. These UIDs are in use:
+
+| Mover UID:GID | Examples |
+|---|---|
+| `568` | open-webui, immich library, copyparty, restore-canary |
+| `1000` | paperless, jellyfin, gitea shared storage, homepage, deal-scout |
+| `1001` | karakeep |
+| `999` | plain Postgres databases (the official `postgres` image) |
+| `0` | home-assistant, tubesync, nginx, frigate, perplexica |
 
 Examples to copy:
-- Component: [`my-apps/common/kopiur-backup/kustomization.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/common/kopiur-backup/kustomization.yaml)
-- Simple single-UID case: [`my-apps/ai/open-webui/kopiur/storage.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/open-webui/kopiur/storage.yaml) (uid `568`)
-- Daemon-drop case (mysql): [`my-apps/knowledge/_archive/project-nomad/mysql/kopiur-backup.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/knowledge/_archive/project-nomad/mysql/kopiur-backup.yaml) (uid `999:568`)
-- Root-owned case: [`my-apps/home-automation/home-assistant/kopiur/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/home-automation/home-assistant/kopiur/config.yaml) (uid `0`, + namespace privileged-movers annotation)
 
-See also: [`my-apps/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/CLAUDE.md) "Application with
-Persistent Storage + Backups" and [`.claude/commands/add-backup.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/.claude/commands/add-backup.md).
+- Component: [`my-apps/common/kopiur-backup/kustomization.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/common/kopiur-backup/kustomization.yaml)
+- One owner: [`my-apps/ai/open-webui/kopiur/storage.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/open-webui/kopiur/storage.yaml) (uid `568`)
+- Pod starts as root, data owned by another user (mysql): [`my-apps/knowledge/_archive/project-nomad/mysql/kopiur-backup.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/knowledge/_archive/project-nomad/mysql/kopiur-backup.yaml) (uid `999:568`)
+- Root-owned data: [`my-apps/home-automation/home-assistant/kopiur/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/home-automation/home-assistant/kopiur/config.yaml) (uid `0`, plus the namespace `privileged-movers` annotation)
+
+For the full procedure, see
+[`.claude/commands/add-backup.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/.claude/commands/add-backup.md)
+and the "Application with Persistent Storage + Backups" section of
+[`my-apps/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/CLAUDE.md).

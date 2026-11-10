@@ -11,8 +11,7 @@ Postgres Deployment inside the owning app's directory, backed up by kopiur:
 - Create one with `/project:new-database <app>`
 
 CNPG (CloudNativePG) was **fully retired 2026-08-13** — operator, Barman
-plugin, recovery script, and the AppSet manual-sync gates were all deleted
-(history: [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)).
+plugin, recovery script, and the AppSet manual-sync gates were all deleted.
 Do not resurrect it. The old Barman buckets age out via
 `infrastructure/backup/rustfs-lifecycle/`.
 

@@ -26,8 +26,6 @@ runs as app-owned Deployments backed up by kopiur; CNPG/Barman is retired.
   — backup and restore mechanics, per-PVC configuration, and verification.
 - [docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)
   — mover permissions must match the data owner.
-- [docs/domains/cnpg/plain-postgres-migration.md](docs/domains/cnpg/plain-postgres-migration.md)
-  — short note on the completed CNPG retirement.
 - [docs/domains/cnpg/run-postgres-plain-english.md](docs/domains/cnpg/run-postgres-plain-english.md)
   — operating the app-owned databases.
 

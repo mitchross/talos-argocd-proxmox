@@ -1,9 +1,12 @@
 # Run Hermes on your PC
 
-**Purpose:** install Hermes Agent on your own computer, then use skills to build things with it.
-**Status:** guide. It copies the useful parts of [this cluster's Hermes](hermes.md) without the cluster.
-**Scope:** one computer and one OpenRouter key. You need no GPU, server or Kubernetes.
-**Have a cluster?** Use [Run Hermes on another cluster](hermes-other-clusters.md) instead.
+This page shows how to install Hermes Agent on your own computer, then use skills to build things with it.
+Hermes is an AI agent: an LLM that can also run commands and edit files for you.
+You need one computer and one OpenRouter key. You need no GPU, server or Kubernetes.
+
+If you have a cluster, use [Run Hermes on another cluster](hermes-other-clusters.md) instead.
+This guide copies the useful parts of [this cluster's Hermes](hermes.md) without the cluster.
+The table shows what changes:
 
 | This cluster | Your PC |
 |---|---|
@@ -22,21 +25,23 @@ curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
 On Windows or macOS, you can install the desktop app from the
 [Hermes website](https://hermes-agent.nousresearch.com/) instead.
-Other platforms: [Installation](https://hermes-agent.nousresearch.com/docs/getting-started/installation).
+For other platforms, read [Installation](https://hermes-agent.nousresearch.com/docs/getting-started/installation).
 
-**Expected result:** `hermes --version` prints a version.
+Expected result: `hermes --version` prints a version.
 
 ## 2. Connect OpenRouter
 
+OpenRouter is a paid service that gives one API key for models from many providers.
+
 1. Create an [OpenRouter](https://openrouter.ai) account, add some credit and make an API key.
 2. Run `hermes model`.
-3. Pick **OpenRouter** and paste the key.
+3. Pick OpenRouter and paste the key.
 4. Pick your main model. This model does the real work, so pick a strong one.
 
 Hermes saves the key in `~/.hermes/.env`. Never put keys in `config.yaml`.
-Model ids are listed at [openrouter.ai/models](https://openrouter.ai/models).
+[openrouter.ai/models](https://openrouter.ai/models) lists the model ids.
 
-**Expected result:** `hermes chat -q "say hi"` answers.
+Expected result: `hermes chat -q "say hi"` answers.
 
 Hermes makes small helper calls, for example to name chats. Point them at a cheap model to save money:
 
@@ -52,10 +57,10 @@ hermes fallback add   # optional backup model for when the main one is down
 
 | Option | What you get | Setup |
 |---|---|---|
-| **Built-in (start here)** | Two small notes files: facts about you and about your setup | Nothing. It is on by default. |
-| **Hindsight in Docker** | Long-term memory of every chat, with search across all of them | About 5 minutes, below |
+| Built-in (start here) | Two small notes files, one with facts about you and one about your setup | Nothing. It is on by default. |
+| Hindsight in Docker | Long-term memory of every chat, with search across all of them | About 5 minutes, below |
 
-Start with built-in memory. Add Hindsight later if Hermes forgets things you want it to keep.
+Start with built-in memory. Add Hindsight, a separate memory server, when Hermes forgets things you want it to keep.
 
 ### Optional: Hindsight in Docker Compose
 
@@ -90,25 +95,25 @@ Start with built-in memory. Add Hindsight later if Hermes forgets things you wan
     ```
 
 3. Start it with `cd ~/hindsight && docker compose up -d`.
-4. Run `hermes plugins install hindsight`. Answer **yes** to "Use 'hindsight' as the memory provider now?".
-5. Run `hermes memory setup`, pick **hindsight**, pick mode `local_external` and enter `http://localhost:8888`.
+4. Run `hermes plugins install hindsight`. Answer "yes" to "Use 'hindsight' as the memory provider now?".
+5. Run `hermes memory setup`, pick `hindsight`, pick mode `local_external` and enter `http://localhost:8888`.
 
-**Expected result:** `hermes memory status` shows `hindsight` as active.
-Tell Hermes a fact, start a new chat with `/new`, and ask about the fact.
+Expected result: `hermes memory status` shows `hindsight` as active.
+To test it, tell Hermes a fact, start a new chat with `/new`, and ask about the fact.
 
-No Docker? Pick mode `local_embedded` in step 5 instead. Hermes then runs Hindsight itself.
+Without Docker, pick mode `local_embedded` in step 5 instead. Hermes then runs Hindsight itself.
 To undo, run `hermes memory off`. Hermes goes back to built-in memory.
 
 ## 4. Skills
 
-Skills are the main reason to use Hermes. A skill is a Markdown how-to file (`SKILL.md`).
+A skill is a Markdown how-to file (`SKILL.md`). Skills are the main reason to use Hermes.
 Hermes sees every skill's name and description, and loads the full file only when a task matches.
 
 ### Use a skill
 
 - `/skills` lists your skills. `/skills browse` shows the official optional ones.
-- Every skill is also a slash command: `/tdd add a login form`.
-- Or ask in plain words: "use the grill-me skill on my plan".
+- Every skill is also a slash command, for example `/tdd add a login form`.
+- You can also ask in plain words: "use the grill-me skill on my plan".
 
 ### Install skills other people wrote
 
@@ -126,6 +131,7 @@ hermes skills install pbakaus/impeccable/.hermes/skills/impeccable --category cr
 This cluster's full list is in
 [`external-skills.txt`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/scripts/external-skills.txt).
 Skip the homelab skills (`homelab-ops`, `homelab-triage` and similar). They only work with this cluster.
+[How I use Hermes](hermes-how-i-work.md) shows which skills were loaded most and which were never used.
 
 !!! warning "Start small"
     Every installed skill adds its name and description to every message.
@@ -135,7 +141,7 @@ Skip the homelab skills (`homelab-ops`, `homelab-triage` and similar). They only
 
 ### Let Hermes write skills
 
-Hermes learns. After a hard task, it offers to save what worked as a skill.
+After a hard task, Hermes offers to save what worked as a skill.
 You can also ask: "save what we just did as a skill".
 The next time a similar task comes up, Hermes loads that skill first.
 
@@ -170,7 +176,7 @@ Start a new chat with `/new` to load a new skill.
 ### Share skills
 
 A skill is a folder. Copy it to a friend, or keep `~/.hermes/skills` in a Git repo.
-To publish one, push it to GitHub. Others install it with `hermes skills install <owner>/<repo>/<path>`.
+To publish a skill, push it to GitHub. Others install it with `hermes skills install <owner>/<repo>/<path>`.
 
 ## 5. Build things
 
@@ -178,7 +184,7 @@ To publish one, push it to GitHub. Others install it with `hermes skills install
 
 1. Open a terminal in your project folder and run `hermes`.
 2. Add an `AGENTS.md` at the repo root. Write the build command, the test command and your rules in it.
-   Hermes reads it at the start of every chat in that repo. It also reads `CLAUDE.md` when there is no `AGENTS.md`.
+   Hermes reads it at the start of every chat in that repo. It reads `CLAUDE.md` when there is no `AGENTS.md`.
 3. Ask for a change: "add a dark mode toggle, then run the tests".
 
 ### Stay safe while it edits
@@ -221,22 +227,23 @@ delegation:
           reasoning_effort: high
 ```
 
-Hermes shows the main agent only the names and descriptions.
+The main agent sees only the names and descriptions, so write each description as a rule for when to use the route.
 
-**Expected result:** `hermes delegation config --show` lists the three routes.
-Ask "use a fast subagent to summarise this folder". The result names the `fast` route.
+Expected result: `hermes delegation config --show` lists the three routes.
+To test it, ask "use a fast subagent to summarise this folder". The result names the `fast` route.
 
 ## 6. Give it a personality (optional)
 
 `~/.hermes/SOUL.md` sets how Hermes talks and works in every chat.
 Copy [this cluster's SOUL.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/SOUL.md)
 as a start. Delete the homelab rules and keep the style rules you like.
+[How I use Hermes](hermes-how-i-work.md#soulmd-rules-that-matter) lists the rules that changed the most.
 
 ## Verify
 
 1. Run `hermes doctor`. Fix anything it marks as failed.
-2. Run `hermes skills list`. Your skills are there.
-3. In a project, ask Hermes to run the tests. It finds the command in `AGENTS.md`.
+2. Run `hermes skills list`. The output lists your skills.
+3. In a project, ask Hermes to run the tests. Hermes finds the command in `AGENTS.md`.
 
 ## Update, undo and back up
 
@@ -253,6 +260,8 @@ as a start. Delete the homelab rules and keep the style rules you like.
 This cluster also runs local GPUs behind LiteLLM, Omni and Talos access, SSH to other machines,
 Kopiur backups and a hosted address for the desktop apps.
 Those parts exist only because Hermes runs in a cluster. You do not need them to start.
+[Hermes in the cluster](hermes.md) describes them.
 
-For the skills, flows and habits that make this setup work, and what not to copy, read
-[How I use Hermes: what to copy](hermes-how-i-work.md).
+## Next step
+
+Read [How I use Hermes](hermes-how-i-work.md) for the skills, flows and habits to copy, and what not to copy.

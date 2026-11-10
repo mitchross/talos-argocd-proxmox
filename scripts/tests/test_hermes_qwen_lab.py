@@ -98,6 +98,14 @@ def test_seed_never_writes_the_default_profile(tmp_path):
     assert cfg['model']['provider'] == 'homelab-vllm'
     assert (root / 'profiles/qwen-lab/skills/qwen-lab/qwen-best-of-n/SKILL.md').exists()
     assert not (root / 'profiles/qwen-worker/skills/qwen-lab/qwen-best-of-n').exists()
+    # A skill dropped from profiles.yaml is pruned on the next start; skills outside qwen-lab/ stay.
+    stale = root / 'profiles/qwen-worker/skills/qwen-lab/qwen-old-skill'
+    stale.mkdir(parents=True)
+    mine = root / 'profiles/qwen-worker/skills/custom/keep-me'
+    mine.mkdir(parents=True)
+    again = subprocess.run([sys.executable, str(APP / 'scripts/seed-qwen-lab.py')], env=env, capture_output=True, text=True)
+    assert again.returncode == 0, again.stdout + again.stderr
+    assert not stale.exists() and mine.exists()
     meta = yaml.safe_load((root / 'profiles/qwen-lab/profile.yaml').read_text())
     assert meta['ui_meta']['hermes-bots']['sectionName'] == 'Qwen Lab'
     lab_env = (root / 'profiles/qwen-researcher/.env').read_text()

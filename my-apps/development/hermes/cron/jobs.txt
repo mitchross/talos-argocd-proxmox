@@ -1,0 +1,5 @@
+# name|schedule|script|prompt. seed.sh creates a job only when its name is absent from cron/jobs.json.
+upstream-watch|0 9 * * *|upstream-watch.py|Script-only upstream watch for Hermes and Hindsight releases and watched fixes.
+strata-v31-watch|every 360m|strata-v31-watch.py|Script-only watch for Unsloth Dynamic V3.1 support in upstream Strata. Remove once V3.1 is supported and benchmarked.
+argo-rid-watch|0 9 * * *|argo-rid-watch.py|Argo RespectIgnoreDifferences fix watch (script-only).
+radar-ng kanban unlock on merge|every 15m|radar-kanban-unlock.py|Complete blocked radar-ng Kanban cards whose PR merged, then dispatch.

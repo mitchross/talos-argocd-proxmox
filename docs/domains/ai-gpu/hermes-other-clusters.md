@@ -1,10 +1,16 @@
 # Run Hermes on another cluster
 
-**Purpose:** run the public `hermes-dev` image in another homelab, with Docker Compose or plain Kubernetes manifests.
-**Scope:** nothing from this cluster is needed: no Argo CD, 1Password, Longhorn, Kopiur, LiteLLM or Hindsight.
-**This cluster's setup:** [Hermes Agent: the AI agent in the cluster](hermes.md).
-**How the pieces fit:** [Local AI starter kit](index.md).
-**Image source:** [homelab-images/images/hermes-dev](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev) lists what is installed and how it is built.
+This page shows how to run the public `hermes-dev` image in another homelab, with Docker Compose or plain Kubernetes manifests.
+It is for someone who does not have this Git repo.
+You need nothing from this cluster: no Argo CD, 1Password, Longhorn, Kopiur, LiteLLM or Hindsight.
+
+Hermes is an AI agent that runs all day on a server. You talk to it through a web dashboard.
+It can run shell commands and start the coding agents Claude Code and Codex, which the image includes.
+[homelab-images/images/hermes-dev](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev) lists what the image installs and how it is built.
+
+Related pages: [Hermes in the cluster](hermes.md) describes this cluster's setup.
+[Run Hermes on your PC](hermes-one-computer.md) needs no server.
+The [Local AI starter kit](index.md) shows how the pieces fit.
 
 ```mermaid
 flowchart TD
@@ -14,8 +20,9 @@ flowchart TD
     K --> L
 ```
 
-## Use a coding agent
+## Let a coding agent do the install
 
+This step is optional. Skip it to follow the manual steps below.
 Paste this prompt into Claude Code or Codex, inside your own cluster repo:
 
 ```text
@@ -32,9 +39,9 @@ Review every command the agent proposes before it runs.
 
 - An `amd64` machine. The image has no `arm64` build.
 - Docker, or a Kubernetes cluster with a default `ReadWriteOnce` StorageClass.
-- For Kubernetes: an HTTPS Gateway (Gateway API) or Ingress controller that passes WebSockets.
+- For Kubernetes, an HTTPS Gateway (Gateway API) or an Ingress controller that passes WebSockets.
 - A DNS name for Hermes, for example `hermes.example.com`.
-- One model: a Claude Max/Pro token from `claude setup-token` on your PC, or an OpenAI-compatible server (vLLM, llama.cpp, Ollama, LiteLLM).
+- One model. Use a Claude Max or Pro token from `claude setup-token` on your PC, or an OpenAI-compatible server such as vLLM, llama.cpp or LiteLLM.
 
 The image is public at `ghcr.io/mitchross/hermes-dev`. Pin a digest, because the `main` tag moves with each build:
 
@@ -42,13 +49,14 @@ The image is public at `ghcr.io/mitchross/hermes-dev`. Pin a digest, because the
 docker buildx imagetools inspect ghcr.io/mitchross/hermes-dev:main | grep Digest
 ```
 
-The container must start as root. s6-overlay sets up the volume, then drops the gateway and dashboard to user `hermes` (uid 10000).
+The container must start as root.
+s6-overlay, the process supervisor in the image, sets up the volume. It then drops the gateway and the dashboard to user `hermes` (uid 10000).
 
 ## The settings file
 
-Hermes reads `config.yaml` from its data directory (`/opt/data`). Start with one of these.
+Hermes reads `config.yaml` from its data directory (`/opt/data`). Start with one of these two files.
 
-Claude subscription (the token goes in `CLAUDE_CODE_OAUTH_TOKEN`):
+For a Claude subscription, the token goes in `CLAUDE_CODE_OAUTH_TOKEN`:
 
 ```yaml
 model:
@@ -60,7 +68,7 @@ terminal:
 timezone: "America/New_York"
 ```
 
-Your own OpenAI-compatible server (the key goes in `MY_LLM_API_KEY`; use any non-empty value if the server has no key):
+For your own OpenAI-compatible server, the key goes in `MY_LLM_API_KEY`. Use any non-empty value if the server has no key:
 
 ```yaml
 model:
@@ -74,18 +82,19 @@ terminal:
 timezone: "America/New_York"
 ```
 
-Change `default`, `base_url` and `timezone` to yours. You can also switch models later in the dashboard's model picker.
+Change `default`, `base_url` and `timezone` to your values. You can also switch models later in the dashboard's model picker.
 
 ## Option A: Docker Compose
 
-1. Make a folder with a `data/` directory in it, and save one of the settings files above as `data/config.yaml`.
-2. Generate two secrets. Run this twice and keep both values:
+1. Make a folder with a `data/` directory in it.
+2. Save one of the settings files above as `data/config.yaml`.
+3. Generate two secrets. Run this command twice and keep both values:
 
     ```bash
     openssl rand -base64 32
     ```
 
-3. Save this as `compose.yaml` next to `data/`:
+4. Save this as `compose.yaml` next to `data/`:
 
     ```yaml
     services:
@@ -115,16 +124,18 @@ Change `default`, `base_url` and `timezone` to yours. You can also switch models
               size: 536870912
     ```
 
-4. Run `docker compose up -d`.
-5. Open `http://<server-ip>:9119` and sign in as `admin` with the first secret.
+5. Run `docker compose up -d`.
+6. Open `http://<server-ip>:9119` and sign in as `admin` with the first secret.
 
-**It worked when** `curl -s http://<server-ip>:9119/api/status` shows `"gateway_state":"running"`.
+It worked when `curl -s http://<server-ip>:9119/api/status` shows `"gateway_state":"running"`.
+
+Continue at [Connect and log in](#connect-and-log-in).
 
 ## Option B: Kubernetes
 
-Create a folder with these files, and save your settings file in it as `config.yaml`.
+Create a folder with the files below, and save your settings file in it as `config.yaml`.
 
-`kustomization.yaml`:
+`kustomization.yaml` lists the files and turns `config.yaml` into a ConfigMap:
 
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -142,7 +153,7 @@ configMapGenerator:
       - config.yaml
 ```
 
-`namespace.yaml`. Use `baseline`, not `restricted`, because the container starts as root.
+`namespace.yaml`. Use the `baseline` Pod Security level, not `restricted`, because the container starts as root.
 
 ```yaml
 apiVersion: v1
@@ -153,7 +164,7 @@ metadata:
     pod-security.kubernetes.io/enforce: baseline
 ```
 
-`pvc.yaml`:
+`pvc.yaml` requests the disk that holds sessions, memories, skills and logins:
 
 ```yaml
 apiVersion: v1
@@ -167,7 +178,8 @@ spec:
       storage: 20Gi
 ```
 
-`deployment.yaml`. The `seed` init container copies `config.yaml` from Git over the volume on every start, so Git stays the source of truth:
+`deployment.yaml`. The `seed` init container copies `config.yaml` from the ConfigMap over the volume on every start.
+Your Git copy of `config.yaml` therefore stays the source of truth, and an edit made in the pod is lost on the next start.
 
 ```yaml
 apiVersion: apps/v1
@@ -311,7 +323,7 @@ spec:
           port: 9119
 ```
 
-Or `route.yaml` for ingress-nginx, which closes idle WebSockets after 60 s unless you raise the timeouts:
+Or use this `route.yaml` for ingress-nginx. ingress-nginx closes idle WebSockets after 60 s unless you raise the timeouts:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -342,7 +354,7 @@ spec:
 ### Deploy
 
 1. Replace `hermes.example.com` and `<digest>` in the files.
-2. Create the namespace and the Secret. Keep its values out of Git. Leave out the model key you don't use:
+2. Create the namespace and the Secret. Keep the Secret values out of Git. Leave out the model key that you do not use:
 
     ```bash
     kubectl apply -f namespace.yaml
@@ -383,7 +395,8 @@ curl -s -o /dev/null -w '%{http_code}\n' https://hermes.example.com/
 
 1. Open your hostname and sign in as `admin` with the password.
 2. Open the dashboard terminal (bottom bar, terminal icon).
-3. Log in to Codex and GitHub once. Logins stay on the volume:
+3. For Codex, first open chatgpt.com, go to Settings, then Security and login, and turn on device code sign-in.
+4. Log in to Codex and GitHub once. The logins stay on the volume:
 
     ```bash
     codex login --device-auth
@@ -391,27 +404,34 @@ curl -s -o /dev/null -w '%{http_code}\n' https://hermes.example.com/
     gh auth setup-git
     ```
 
-4. Set your Git identity: `git config --global user.name "<name>"` and `git config --global user.email "<email>"`.
+5. Set your Git identity: `git config --global user.name "<name>"` and `git config --global user.email "<email>"`.
 
-Claude Code needs no login when `CLAUDE_CODE_OAUTH_TOKEN` is set. Codex device sign-in must be turned on first in chatgpt.com → Settings → Security and login.
+Claude Code needs no login when `CLAUDE_CODE_OAUTH_TOKEN` is set.
 
-This cluster's extras (Hindsight memory, the read-only `kubectl` access, the daily digest skill) live in [`my-apps/development/hermes`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/hermes). Copy them once the basic pod works.
+It worked when `codex login status` and `gh auth status` both report a signed-in account.
+
+This cluster adds Hindsight memory, `kubectl` access to the cluster and a daily digest skill.
+Those extras are in [`my-apps/development/hermes`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/development/hermes), and [Hermes in the cluster](hermes.md) explains them.
+Copy them after the basic pod works.
+For skills and daily habits, read [How I use Hermes](hermes-how-i-work.md).
 
 ## Security
 
-Hermes gives anyone with the dashboard password a shell with your logins. Treat it like SSH.
+Hermes gives anyone with the dashboard password a shell with your logins. Treat the password like an SSH key.
 
 - Use a long random password.
-- Prefer an identity gate in front, such as Cloudflare Access or a VPN. A bare password on a public hostname is the weakest option.
-- Use a fine-grained GitHub token for the repos agents need: `gh auth login --with-token`.
+- Put an identity gate in front, such as Cloudflare Access or a VPN. A bare password on a public hostname is the weakest option.
+- Use a fine-grained GitHub token for the repos that agents need: `gh auth login --with-token`.
 - Protect your GitOps branch. A token that can push there can deploy anything.
 - Do not give the pod a ServiceAccount with write access. The manifests above mount no token at all.
 - Set a monthly spend limit at every paid model provider.
 
 ## Update, back up, roll back
 
-- **Update:** change the digest and apply again. The volume stays.
-- **Back up:** snapshot `hermes-data` (or `./data` for Compose) with your storage tool or Velero. It holds sessions, memories, skills and logins.
-- **Roll back:** put the old digest back and apply again.
+| Task | Do this |
+|---|---|
+| Update | Change the digest and apply again. The volume stays. |
+| Back up | Snapshot `hermes-data` (or `./data` for Compose) with your storage tool or Velero. It holds sessions, memories, skills and logins. |
+| Roll back | Put the old digest back and apply again. |
 
 **Warning:** `kubectl delete namespace hermes` deletes the PVC with your sessions and logins.
