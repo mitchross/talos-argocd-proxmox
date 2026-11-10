@@ -124,7 +124,6 @@ nav:
   - Networking:
       - Topology: domains/networking/topology.md
       - Cilium policies: domains/networking/policy.md
-      - VPN egress for pods: domains/networking/vpn-egress.md
       - Split DNS with Technitium: domains/networking/technitium-vanillax-me-migration.md
   - Hardware and hosts:
       - Hardware overview: inventory/index.md

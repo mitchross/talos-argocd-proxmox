@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: vpn-egress
-  labels:
-    # Gateways run in the host network with NET_ADMIN to own the WireGuard link.
-    pod-security.kubernetes.io/enforce: privileged
