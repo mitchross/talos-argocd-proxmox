@@ -120,6 +120,10 @@ If machines are not appearing in Proxmox:
   example the NVIDIA extensions); it retries and succeeds once the image
   exists. Find the blocker with `omnictl get clustermachinestatus` and fix
   that node; never delete the control plane to "unstick" an upgrade.
+- **A full EFI partition fails the install.** The installer writes a new boot image
+  of about 575 MB to the node's EFI partition (2.1 GB on the GPU worker). If hand-saved
+  boot images fill it, the upgrade fails with `no space left on device`. Lock the
+  machine to stop Omni's retries, delete the extra images, then unlock it.
 - **Treat kernel arguments as risky.** Cluster templates cannot set
   `kernelArgs` on machine sets that use a machine class, and Omni has an open
   reboot-loop bug with kernel arguments
@@ -161,7 +165,13 @@ kubectl -n longhorn-system get replicas.longhorn.io -o json \
    ```
 2. Wait until no replica on the GPU node has `evictionRequested: true`. Longhorn also
    attaches detached volumes to move them, so expect about 200 GiB and 45 minutes.
-   Omni retries the drain by itself.
+   Omni retries the drain by itself. Do not scale the workloads to 0: Longhorn must
+   move a detached single-copy volume too, so the wait stays the same. Watch the copy:
+   ```bash
+   kubectl -n longhorn-system get engines.longhorn.io -o json \
+     | jq -r '.items[] | select(.status.rebuildStatus | length > 0)
+         | "\(.spec.volumeName) \(.status.rebuildStatus | map(.progress) | join(","))%"'
+   ```
 3. When the GPU node is `Ready` and uncordoned, restore the original tags:
    ```bash
    kubectl -n longhorn-system patch nodes.longhorn.io talos-prod-cluster-v2-hp-sff-workers-h76ncc --type=merge \
