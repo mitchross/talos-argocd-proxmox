@@ -1,27 +1,32 @@
-# Move a kopiur-backed PVC to another StorageClass
+# Move a PVC to another StorageClass
 
-**Purpose:** change the StorageClass of an existing PVC (for example `longhorn` to
-`longhorn-wired-ha`) without losing data.
-**Status:** runbook, current truth.
-**Scope:** one PVC and its `Restore` CR. Nothing else in the Application changes.
-Kubernetes treats `spec.storageClassName` as immutable, so the only path is the
-same restore-before-bind flow the cluster uses for disaster recovery. Take a
-snapshot, delete the PVC and `Restore`, and let Argo CD recreate both. Kopiur then
-hydrates the new volume from the snapshot.
+This runbook changes the StorageClass of one existing kopiur-backed PVC without losing
+data, for example from `longhorn` to `longhorn-wired-ha`. It changes one PVC and its
+`Restore`. It leaves everything else in the Application alone.
 
-## Prerequisites
+Kubernetes does not let you change `spec.storageClassName` on an existing PVC. The only
+path is restore-before-bind, the same flow that the cluster uses for disaster recovery.
+You take a backup, delete the PVC and its `Restore`, and let Argo CD recreate both. kopiur
+then fills the volume on the target class from that backup before the PVC binds.
 
-- The target class provisions and places replicas as you expect. Prove it
-  with a disposable PVC first (see "Canary" below).
-- The PVC is on the `kopiur-backup` component: `SnapshotPolicy`, `SnapshotSchedule`,
-  `Restore`, and a `dataSourceRef` pointing at the `Restore`.
+## Before you start
+
+Check each item. Do not start the cutover until all are true.
+
+- The target class creates volumes and places replicas as you expect. Prove it with a
+  disposable PVC first (see [Prove the target class](#prove-the-target-class)).
+- The PVC uses the `kopiur-backup` component. It has a `SnapshotPolicy`, a
+  `SnapshotSchedule`, a `Restore`, and a `dataSourceRef` that points at the `Restore`.
 - The last scheduled `Snapshot` is `Succeeded` and the Longhorn volume is `healthy`.
-- The workload is a single writer you can pause (a Postgres Deployment qualifies).
-- A merged Git change that sets the new `storageClassName` on the PVC. Until the
-  PVC is recreated, Argo CD reports that resource as failing to sync
-  ("field is immutable"). That is expected. Run the cutover right after the merge.
+- The workload has a single writer that you can pause. A Postgres Deployment qualifies.
+- A Git change that sets the target `storageClassName` on the PVC is merged. Until you
+  recreate the PVC, Argo CD reports that the PVC fails to sync ("field is immutable").
+  That is expected. Run the cutover right after the merge.
 
-## Canary
+## Prove the target class
+
+Create a throwaway PVC on the target class, write a file with a checksum, and list where
+Longhorn put the replicas:
 
 ```sh
 kubectl create ns sc-canary
@@ -36,8 +41,8 @@ PV=$(kubectl -n sc-canary get pvc canary -o jsonpath='{.spec.volumeName}')
 kubectl -n longhorn-system get replicas.longhorn.io -l longhornvolume=$PV -o custom-columns='NAME:.metadata.name,NODE:.spec.nodeID,STATE:.status.currentState'
 ```
 
-Expected: one replica per distinct node. Then delete one replica CR and confirm
-Longhorn rebuilds it and the data still verifies:
+Expect each replica on a different node. Then delete one replica object.
+Confirm that Longhorn rebuilds it and that the checksum still matches:
 
 ```sh
 kubectl -n longhorn-system delete replicas.longhorn.io <one-replica-name>
@@ -48,21 +53,22 @@ kubectl delete ns sc-canary
 
 ## Cutover (worked example: `temporal/temporal-postgres-data`)
 
-Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
-`temporal-postgres-data`, `<restore>` is `temporal-postgres-data-restore`.
+The commands use the Temporal Postgres volume as the example. `<ns>` is `temporal`,
+`<pvc>` is `temporal-postgres-data`, and `<restore>` is `temporal-postgres-data-restore`.
+Replace the names, the pod label and the `psql` user for another PVC.
 
-1. **The fallback is the pinned cutover snapshot, not the old volume.** Do not
-   patch the old PV to `Retain`. The class's `Delete` reclaim policy lets
-   Kubernetes and Longhorn garbage-collect the old volume the moment the claim
-   is gone, so nothing needs hand cleanup. Step 3 pins the kopia snapshot
-   that holds the exact pre-cutover bytes off-cluster.
+1. Leave the reclaim policy of the old PV alone. Your fallback is the pinned cutover
+   backup from step 3, not the old volume. Do not patch the old PV to `Retain`. With the
+   class's `Delete` reclaim policy, Kubernetes and Longhorn remove the old volume as soon
+   as the PVC is gone, so you clean up nothing by hand. The pinned backup holds the exact
+   pre-cutover bytes outside the cluster.
 
-2. **Stop writers without touching the pod.** Use a Cilium `ingressDeny`
-   policy. A plain Kubernetes NetworkPolicy with no ingress rules does **not**
-   block here. The cluster's existing Cilium allow rules still admit the
-   traffic, and clients reconnect within seconds. Deny rules win over allows.
-   Terminating open sessions forces every client to reconnect into the block.
-   Argo CD does not manage this object, so it will not remove it for you.
+2. Stop the writers without touching the pod. Apply a Cilium `ingressDeny` policy, then
+   end the open database sessions. A plain Kubernetes NetworkPolicy with no ingress rules
+   does **not** block traffic here, because the cluster's Cilium allow rules still admit
+   it and clients reconnect within seconds. A Cilium deny rule overrides every allow rule.
+   Each client that you disconnect tries to reconnect and meets the deny rule. Argo CD
+   does not manage this policy, so Argo CD will not remove it for you.
 
    ```sh
    kubectl -n <ns> apply -f - <<'YAML'
@@ -80,14 +86,14 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
      "SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND pid<>pg_backend_pid() AND client_addr IS NOT NULL;"
    ```
 
-   Expected: the count is `0` and stays `0` on a second run ten seconds later.
-   The metrics sidecar's loopback session is exempt (`client_addr IS NULL`) and
-   should remain. Temporal services log persistence errors while
-   blocked. That is the point.
+   Expect a count of `0`. Run the count again ten seconds later and expect `0` again.
+   The query leaves out the metrics sidecar's loopback session (`client_addr IS NULL`),
+   and that session stays open. Temporal services log persistence errors while the
+   policy blocks them. Those errors show that the block works.
 
-3. **Take the cutover snapshot.** Manual `Snapshot` CRs reuse the policy (hooks,
-   identity, mover uid). `Retain` keeps the kopia snapshot if someone later deletes the CR.
-   `pin` exempts it from retention.
+3. Take the cutover backup. A hand-made `Snapshot` object reuses the `SnapshotPolicy`
+   (hooks, identity, mover uid). `deletionPolicy: Retain` keeps the Kopia snapshot if
+   someone later deletes the object. `pin: true` exempts it from retention.
 
    ```sh
    kubectl -n <ns> apply -f - <<'YAML'
@@ -102,15 +108,16 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n <ns> get snapshot <pvc>-cutover -o jsonpath='{.status.phase} {.status.snapshot.kopiaSnapshotID}{"\n"}'
    ```
 
-   Expected: `Succeeded <kopia-id>` within a few minutes. Write the id down.
+   Expect `Succeeded <kopia-id>` within a few minutes. Write the id down.
 
-4. **Make Argo CD see the new class, then recreate the claim.** Argo CD can
-   hold a stale render for minutes after a merge and will recreate the
-   PVC on the **old** class from it. Hard-refresh and wait until the PVC shows
-   `OutOfSync` (the desired state now differs from the live claim) before
-   deleting anything. Delete the `Restore` first. It pins its snapshot at
-   admission and never re-resolves, so a leftover `Restore` would hydrate an old
-   snapshot. Delete the pod too, or PVC protection keeps the claim alive.
+4. Make Argo CD read the target class, then delete the `Restore`, the PVC and the pod.
+   Argo CD can keep an old render for minutes after a merge. From that render it
+   recreates the PVC on the **old** class. Hard-refresh the Application. Wait until the
+   PVC shows `OutOfSync`, which means the desired state differs from the live PVC. Delete
+   nothing before that. Delete the `Restore` first. A `Restore` chooses its backup once,
+   when it is created, and never chooses again, so a leftover `Restore` fills the volume
+   from an old backup. Delete the pod too, because PVC protection keeps the PVC while a
+   pod uses it.
 
    ```sh
    kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite
@@ -124,18 +131,18 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=normal --overwrite
    ```
 
-5. **Check the pin before the bytes.**
+5. Check which backup the recreated `Restore` chose before you check the data.
 
    ```sh
    kubectl -n <ns> get restore <restore> -o jsonpath='{.status.resolved.pinnedAt} {.status.resolved.kopiaSnapshotID}{"\n"}'
    kubectl -n <ns> get pvc <pvc> -o jsonpath='{.status.phase} {.spec.storageClassName}{"\n"}'
    ```
 
-   Expected: the kopia id from step 3, a `pinnedAt` newer than it, and the PVC
-   moving from `Pending` to `Bound` on the new class. A PVC that binds instantly never
-   ran the populator. Stop and inspect the `Restore` conditions.
+   Expect the Kopia id from step 3 and a `pinnedAt` time later than that backup. Expect
+   the PVC to go from `Pending` to `Bound` on the target class. A PVC that binds at once
+   was not filled by kopiur. In that case, stop and inspect the `Restore` conditions.
 
-6. **Verify the volume and the database.**
+6. Verify the volume and the database.
 
    ```sh
    NEW_PV=$(kubectl -n <ns> get pvc <pvc> -o jsonpath='{.spec.volumeName}')
@@ -144,10 +151,10 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n <ns> exec deploy/temporal-postgres -c postgres -- psql -U temporal -d temporal -tc "SELECT pg_is_in_recovery();"
    ```
 
-   Expected: replicas on distinct nodes, `redo done` then `ready to accept
-   connections`, and `f`.
+   Expect replicas on different nodes, the log lines `redo done` and then `ready to
+   accept connections`, and the query result `f`.
 
-7. **Release the writers.**
+7. Release the writers and check Temporal.
 
    ```sh
    kubectl -n <ns> delete ciliumnetworkpolicy cutover-quiesce
@@ -156,9 +163,10 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n <ns> exec deploy/temporal-admintools -- tdbg dlq list                     # count unchanged
    ```
 
-   A schedule whose `NextRunTime` is in the past after a restore has lost its
-   timer. The scheduler workflow shows no pending timer and reacts only to
-   signals. Re-arm it without touching the spec or the DLQ:
+   After a restore, a schedule whose `NextRunTime` is in the past has lost its timer.
+   Its scheduler workflow shows no pending timer and reacts only to signals. Pause and
+   unpause the schedule to start the timer again. This does not change the schedule spec
+   or the DLQ:
 
    ```sh
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule toggle --schedule-id <id> --namespace default --pause --reason "re-arm timer"
@@ -166,26 +174,26 @@ Replace names for another PVC. `<ns>` is `temporal`, `<pvc>` is
    kubectl -n <ns> exec deploy/temporal-admintools -- temporal schedule describe --schedule-id <id> --namespace default -o json | jq '.info.futureActionTimes[0]'   # in the future
    ```
 
-8. **Confirm the new volume backs up.** Nothing to retire. Step 4 garbage-collected the old volume.
+8. Confirm that the volume on the target class backs up. There is no old volume to remove, because step 4 deleted it.
 
    ```sh
    kubectl -n <ns> get snapshot --sort-by=.metadata.creationTimestamp | tail -2   # newest: Succeeded
    ```
 
-## Failure path
+## If a step fails, or to roll back
 
-- **PVC stuck `Pending`, `Restore` shows `Stalled`:** the repository is
-  unreachable or the mover cannot read. Fix the cause and kopiur retries. Nothing
-  binds empty, because restore-before-bind fails closed.
-- **Wrong snapshot pinned:** delete the `Restore` and the PVC again. The next
-  admission pins the newest snapshot.
-- **Roll back the class:** revert the Git change, then repeat step 4. The
-  cutover snapshot restores onto the old class just as well.
-- **Last resort:** the pinned cutover `Snapshot` holds the exact pre-cutover
-  bytes. A fresh `Restore` and PVC hydrate from it on any class.
+| Situation | What to do |
+|---|---|
+| The PVC stays `Pending` and the `Restore` shows `Stalled` | The Kopia repository is unreachable or the mover cannot read. Fix the cause, and kopiur retries. Nothing binds empty, because restore-before-bind keeps the PVC `Pending` on an error. |
+| The `Restore` chose the wrong backup | Delete the `Restore` and the PVC again. The recreated `Restore` chooses the newest backup. |
+| You want the old class back | Revert the Git change, then repeat step 4. The cutover backup restores onto the old class in the same way. |
+| Nothing else works | The pinned cutover `Snapshot` holds the exact pre-cutover bytes. A fresh `Restore` and PVC fill from it on any class. |
 
-## Source of truth
+## Related
 
-- StorageClass contract: [storage-tiers.md](storage-tiers.md)
-- Backup/restore mechanics and the `Restore` pin: [kopiur-backup-architecture.md](kopiur-backup-architecture.md), [../../disaster-recovery.md](../../disaster-recovery.md)
-- Worked example manifests: `my-apps/development-infra/temporal/postgres/pvc.yaml`, `my-apps/development-infra/temporal/kopiur/temporal-postgres-data.yaml`
+- [Pick a StorageClass](storage-tiers.md) describes each class.
+- [How kopiur backup and restore work](kopiur-backup-architecture.md) and
+  [disaster recovery](../../disaster-recovery.md) explain restore-before-bind and how a
+  `Restore` chooses its backup.
+- The worked example manifests are `my-apps/development-infra/temporal/postgres/pvc.yaml`
+  and `my-apps/development-infra/temporal/kopiur/temporal-postgres-data.yaml`.

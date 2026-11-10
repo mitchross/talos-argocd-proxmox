@@ -51,7 +51,7 @@ rationale: `docs/domains/cnpg/run-postgres-plain-english.md`.
 ## What about PITR / CNPG?
 
 CNPG was fully retired 2026-08-13 (operator, Barman plugin, and recovery
-script deleted; history in `docs/domains/cnpg/plain-postgres-migration.md`).
+script deleted; git history retains them).
 Every database uses the plain pattern above. If a future workload genuinely
 needs point-in-time recovery, that is a new architecture decision — raise it
 explicitly rather than resurrecting the old manifests.

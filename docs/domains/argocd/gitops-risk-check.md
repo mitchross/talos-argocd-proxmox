@@ -1,16 +1,20 @@
-# Static GitOps transition check
+# Check a risky change before merge
 
-This is the current V1 pre-PR check for this repository's directory-based
-ApplicationSets. It does not prove live safety, and it is not an Argo CD simulator. It exists
-because the September 28 reorganization kept final Application names stable
-while the controller's old path spec against the new tree deleted Applications.
-See [entrypoints and preservation behavior](entrypoints.md).
+`scripts/gitops-risk-check.py` compares two Git commits and reports changes that can make Argo CD delete Applications or storage.
+Run it before you open a PR that moves app folders, edits an ApplicationSet, or changes persistent objects.
+It reads only Git. It does not prove that the live cluster is safe, and it is not an Argo CD simulator.
 
-## Run before opening a PR
+The check exists for one failure in particular.
+A folder move can keep every final Application name the same and still delete Applications.
+That happens when the controller reads the new folder tree with the old ApplicationSet paths.
+[Entrypoints and sync waves](entrypoints.md#move-folders-and-change-applicationset-paths-in-separate-prs) has the rule.
 
-Use Python 3.12+, PyYAML, Kustomize 5.8.1 and Helm 4.3.0 (the Cluster CI/Argo
-versions). Commit the scoped changes on a feature branch first. The checker
-reads committed Git trees and ignores working-tree edits.
+## Before you start
+
+- Install Python 3.12+, PyYAML, Kustomize 5.8.3 and Helm 4.3.1. These match Cluster CI and Argo CD.
+- Commit the scoped changes on a feature branch. The check reads committed Git trees and ignores working-tree edits.
+
+## Run the check
 
 ```sh
 python3 scripts/gitops-risk-check.py
@@ -18,67 +22,99 @@ python3 scripts/gitops-risk-check.py --format json > /tmp/gitops-risk.json
 python3 -m unittest discover -s scripts/tests -p test_gitops_risk.py -v
 ```
 
-The default fetches current `origin/main` and compares it with `HEAD`. It rejects
-an outdated candidate that does not contain current main. Update the feature
-branch and rerun. CI checks the proposed merge tree the same way.
-`--base <commit> --head <commit> --no-fetch` supports explicit offline/historical
-comparisons. Do not use it to disguise a stale PR base.
+By default the check fetches current `origin/main` and compares it with `HEAD`.
+It rejects a candidate that does not contain current main. Update the feature branch and run the check again.
+CI checks the proposed merge tree the same way.
 
-- **PASS**, exit 0: no modeled transition risks found.
-- **WARN**, exit 0: review the named path/controller/sync change and any required
-  live prerequisites. A WARN does not authorize merging.
-- **BLOCK**, exit 1: a modeled dangerous transition or a failed/unsupported check.
-  Stop the dependent phase. Investigate or stage the migration. An intentional
-  retirement still needs explicit scope, recovery evidence and human review.
-  V1 has no blanket override switch. Add a separately reviewed exception mechanism
-  before making this check required for intentional deletions.
+`--base <commit> --head <commit> --no-fetch` compares two explicit commits offline.
+Do not use it to hide a stale PR base.
 
-JSON contains exact base/head SHAs, Application counts for all four states,
-findings with old/new values and the resulting status. The check uses no cluster credentials
-and makes no cluster writes, Git writes or automatic merges. Fetch updates remote
-tracking refs only. Rendering happens in temporary extracted trees.
+The check uses no cluster credentials. It makes no cluster writes, no Git writes, and no merges.
+The fetch updates remote tracking refs only. Rendering happens in temporary extracted trees.
 
-## What is checked
+## Read the result
 
-The rendered root entrypoints plus manually seeded `root.yaml` define active
-controllers. For each Git directory ApplicationSet, the check models **old generator/old
-tree**, **old/new**, **new/old**, and **new/new**. It uses slash-bounded glob matches and
-exclude precedence. A directory need not contain a kustomization to be discovered.
-Intermediate category directories are included. Supported Go templates are the
-path, basename, normalized basename and indexed path-segment forms used here.
-Unsupported generators, templates and repository revisions block rather than pass.
+| Result | Exit code | Meaning | What to do |
+|---|---|---|---|
+| PASS | 0 | No modeled transition risk found | Continue with normal review |
+| WARN | 0 | A path, controller, or sync change needs review | Review the named change and any live prerequisite. A WARN does not authorize a merge |
+| BLOCK | 1 | A modeled dangerous transition, or a failed or unsupported check | Stop the dependent phase. Investigate, or stage the migration |
 
-The check reports disappearing Applications and changed identities, owners, projects,
-destinations, explicit finalizers, generator paths and preservation policy.
-A temporarily missing source path warns when the Application remains discovered,
-because render failure differs from generator-driven deletion. Source moves warn even
-if discovery stays stable, because the prerequisite may still
-be absent live. Removing preservation blocks. Changes enabling prune or
-Force/Replace block. Other Application sync policy changes warn.
+An intentional retirement that returns BLOCK still needs explicit scope, recovery evidence, and human review.
+The check has no blanket override switch.
+Add a separately reviewed exception mechanism before you make this check required for intentional deletions.
 
-The check renders affected Application roots at both revisions with Kustomize/Helm,
-including local resource/component dependencies. It compares persistent object
-identities, owners, PVC/PV storage classes/bindings/reclaim policy, StatefulSet
-claim templates and relevant finalizers. Removal, rename and storage transitions
-block. It compares Helm-rendered resources and does not infer them from values files.
+The JSON output contains the exact base and head SHAs, the Application counts for all four states, the findings with old and new values, and the status.
 
-## Limits and next phase
+## What the check models
 
-This V1 does not model operator-created claims, mutable chart downloads,
-external/multi-source generators, indirect workload data lineage or every
-possible Argo prune interaction. Ownership comparison covers rendered affected
-roots. An unchanged owner's resources may need an additional render/live
-inspection. PASS cannot prove absence of risk. Keep normal render/schema CI,
-backup verification and scoped review.
+### Which Applications exist
 
-The reduced monitoring fixtures prove the checker flags the old-generator/new-
-tree disappearance even when final identities match. They do not reconstruct
-historical cluster timing or prove that a hook would have run before the incident.
+The rendered root entrypoints plus the manually seeded `root.yaml` define the active controllers.
+For each Git directory ApplicationSet, the check models four states:
 
-For a migration, open a prerequisite PR that broadens paths/preserves resources
-without moving them. The user explicitly merges it. Verify the required fields,
-Applications/finalizers and preserved resources **live** before preparing the
-move PR. Then verify the move before a separate cleanup PR. Neither a static
-PASS nor a merged prerequisite proves live reconciliation. On failure, continue
-read-only investigation and repair through a new PR. Do not delete Applications,
-strip finalizers or recreate storage to make a gate pass.
+| Generator | Tree |
+|---|---|
+| old | old |
+| old | new |
+| new | old |
+| new | new |
+
+The two mixed states are the important ones. They model the time when the controller has one half of the change.
+
+The check uses slash-bounded glob matches and exclude precedence.
+A directory does not need a kustomization to be discovered, and intermediate category directories are included.
+The supported Go templates are the forms this repo uses: path, basename, normalized basename, and indexed path segment.
+An unsupported generator, template, or repository revision returns BLOCK, not PASS.
+
+### What it reports
+
+| Change | Result |
+|---|---|
+| An Application disappears, or its identity, owner, project, destination, explicit finalizer, generator path, or preservation policy changes | Reported |
+| A source path is missing for a time, but the Application stays discovered | WARN, because a render failure differs from a deletion by the generator |
+| A source moves while discovery stays stable | WARN, because the prerequisite can still be absent live |
+| Preservation is removed | BLOCK |
+| A change enables prune, Force, or Replace | BLOCK |
+| Another Application sync policy changes | WARN |
+
+### Persistent objects
+
+The check renders each affected Application root at both revisions with Kustomize and Helm.
+The render includes local resource and Component dependencies.
+It compares Helm-rendered resources. It does not infer them from values files.
+
+It compares persistent object identities and owners, the storage class, binding, and reclaim policy of PVCs and PVs, StatefulSet claim templates, and relevant finalizers.
+A removal, a rename, or a storage transition returns BLOCK.
+
+## Limits
+
+A PASS cannot prove that no risk exists. Keep the normal render and schema CI, backup verification, and scoped review.
+
+The check does not model these things:
+
+- Claims that an operator creates.
+- Mutable chart downloads.
+- External or multi-source generators.
+- Indirect workload data lineage.
+- Every possible Argo CD prune interaction.
+
+The ownership comparison covers the rendered affected roots.
+The resources of an unchanged owner can need an additional render or a live inspection.
+
+The test fixtures are a reduced copy of the monitoring tree.
+They prove that the check flags the old-generator, new-tree disappearance even when the final identities match.
+They do not reproduce live controller timing or hook order.
+
+## After the check: stage the migration
+
+A static PASS and a merged prerequisite PR do not prove that the live cluster reconciled.
+
+1. Open a prerequisite PR that broadens paths or preserves resources, and moves nothing.
+2. Wait for the user to merge it explicitly.
+3. Verify the required fields, Applications, finalizers, and preserved resources **live**. Use the [live prerequisite check](live-prerequisite-gate.md).
+4. Prepare the move PR only after that check passes.
+5. Verify the move before you open a separate cleanup PR.
+
+On a failure, continue read-only investigation and repair through a new PR.
+Do not delete Applications, strip finalizers, or recreate storage to make a check pass.

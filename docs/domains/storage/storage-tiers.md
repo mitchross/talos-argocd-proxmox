@@ -1,12 +1,14 @@
-# Storage tiers
+# Pick a StorageClass
 
-**Status:** current placement contract, checked against the September 5 audit.
-Historical experiments are summarized separately below. The
-[hardware and placement review](../../audits/2026-09-05-hardware-and-placement-review.md)
-proposes changes. This document does not deploy them.
+This page tells you which StorageClass to put on a new PVC, the request an app makes for
+a disk. A StorageClass is the named recipe that Kubernetes uses to create the volume. Read
+this page before you add a PVC or move one.
 
-Choose storage by access pattern, durability and required recovery behavior.
-The class name does not describe the physical device or prove availability.
+Choose a class by how the app reads and writes, how many copies the data needs, and how
+the data must come back after a failure. The class name does not tell you which physical
+drive holds the data. The [disk map](disk-map.md) does.
+
+## The classes
 
 | Class | Current backing / selection | Appropriate use and limitation |
 |---|---|---|
@@ -16,97 +18,110 @@ The class name does not describe the physical device or prove availability.
 | `truenas-nfs` | TrueNAS BigTank, HDD mirrors behind a large RAM cache, RWX; each PVC is its own dataset with `sync=standard` | Bulk, read-mostly data where NAS downtime is accepted: the immich library, project-nomad downloads. Measured from a pod: fast repeated reads, but only about 50 file creates and 110 `fsync` writes per second, so never databases, Docker/overlay storage or search indexes. |
 | Static NFS / SMB classes | The specific NAS share named in each PV | Media, model files and shared data. Inspect the backing dataset: BigTank and the unmirrored AI SSD pool have different failure behavior. |
 
-`longhorn-kopiur-staging-local` is a separate, disposable restore and backup staging
-class. Do not select it for authoritative application data. Its clones
-land only on disks tagged `clone-ok`: the Threadripper flash disk and `hp-sff-ssd2`. Either disk can take any clone. A dead host no longer blocks clones, but a volume whose only copy is on that host cannot be backed up. Its
-WaitForFirstConsumer behavior and the existing Longhorn overprovisioning allowance
-support the Kopiur workflow. Include staging claims in capacity planning.
+Terms in the table: a replica is one full copy of a Longhorn volume on one node. PLP is
+power-loss protection, which lets an SSD finish its writes when power fails. RWX means
+several nodes can mount the volume at once. RWO means one node at a time.
 
-## Placement and ownership
+For the common cases, use this short list. The disk map has the
+[full placement table](disk-map.md#where-should-new-data-go).
 
-The active Omni template sets up Longhorn data disks on SFF (two disks),
-Threadripper, `hp-elite-gen13` and `mini-pc-dell-ultra-worker`. The shed's disks are
-registered but have scheduling disabled. The HP Micro in the shed is the machine
-behind the Wi-Fi media bridge. `hp-elite-gen12` is compute-only: it has no Longhorn disk.
-See the [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md).
+- A database or ordinary app state goes on `longhorn`.
+- A heavy writer, such as ClickHouse or Kafka, goes on `longhorn-flash`.
+- Bulk, read-mostly files go on `truenas-nfs`.
 
-The `wired-storage` tag includes SFF, Threadripper, `hp-elite-gen13` and the Dell. The [disk map](disk-map.md) lists once which physical disk holds
-what. [Storage architecture](../../storage-architecture.md#two-copies-for-data-that-cant-be-re-created) lists which volumes keep two
-copies.
+Do not use `longhorn-kopiur-staging-local` for application data. kopiur uses it for the
+temporary volume clones that backups and restores read. Its clones land only on disks
+tagged `clone-ok`: the Threadripper flash disk and `hp-sff-ssd2`. Either disk can take any
+clone, so one dead host does not block backups. A volume whose only copy is on the dead
+host still cannot be backed up. The class uses `WaitForFirstConsumer` binding, and it
+depends on the Longhorn overprovisioning allowance. Count the staging clones when you plan
+capacity.
 
-The Omni `node.longhorn.io/default-node-tags` annotation initializes Longhorn
-nodes whose tag list is empty. It does not reconcile tags on an
-already tagged Longhorn node. For any placement change, handle existing Longhorn
-node state through a reviewed GitOps mechanism and verify actual replica locations.
+## Which nodes hold Longhorn data
 
-Read-only inspection:
+The Omni cluster template sets up Longhorn data disks on the HP SFF worker (two disks),
+the Threadripper, `hp-elite-gen13` and `mini-pc-dell-ultra-worker`. Those four nodes carry
+the `wired-storage` tag. The HP Micro in the shed sits behind a Wi-Fi bridge. Its disks
+are registered, but scheduling is disabled on them. `hp-elite-gen12` is compute-only and
+has no Longhorn disk. The [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md)
+lists the machines.
+
+[Storage architecture](../../storage-architecture.md#two-copies-for-data-that-cant-be-re-created)
+lists which volumes keep two copies.
+
+The Omni annotation `node.longhorn.io/default-node-tags` sets tags only on a Longhorn node
+whose tag list is empty. It does not change the tags of a node that already has tags. To
+change placement on an existing node, change the Longhorn node object through a reviewed
+Git change. Then check where the replicas are.
+
+Inspect the tags and zones. These commands only read:
 
 ```sh
 kubectl -n longhorn-system get nodes.longhorn.io -o custom-columns='NAME:.metadata.name,TAGS:.spec.tags'
 kubectl get nodes -L topology.kubernetes.io/zone
 ```
 
-Expected current tags include the three wired workers above. The SFF's two Talos
-VMs share the `hp-sff` physical-host zone. A node tag is eligibility, not proof
-that an individual volume has two healthy copies.
+Expect `wired-storage` on the four nodes named above. The HP SFF's two Talos VMs share the
+`hp-sff` zone, because they run on one physical host. A node tag makes a node eligible for
+replicas. It does not prove that a given volume has two healthy copies.
 
-Changing a StorageClass does not migrate existing PVCs. Use the
-[PVC migration runbook](pvc-storageclass-migration.md) and preserve Kopiur backup
-identity. Do not delete a PVC because its only replica is temporarily
-unreachable. The [storage evidence collector](collecting-storage-evidence.md)
-joins claims to actual volumes, replicas and physical-zone labels.
+## Change the class of an existing PVC
+
+A change to a StorageClass does not move existing PVCs. Use the
+[PVC migration runbook](pvc-storageclass-migration.md), which keeps the kopiur backup
+identity. Do not delete a PVC because its only replica is unreachable for a while. The
+[storage evidence collector](collecting-storage-evidence.md) joins each PVC to its volume,
+its replicas and their zone labels.
 
 ## Performance and durability
 
-Keep three questions apart: are reads cached, do durable writes have
-acceptable tail latency, and does another host keep the data after a failure.
-A large ARC helps repeated reads. PLP can improve durable-write behavior. A
-second Longhorn replica adds a separate host copy and a synchronous network write.
-None of these substitutes for the other two.
+Ask three separate questions about any storage choice:
 
-The Threadripper flash pool uses thick LVM on purpose, after earlier thin-LVM
-fsync results were poor. Keep that arrangement until an equivalent end-to-end
-measurement justifies a change. The live flash tier also carries Radar NG,
-PostHog and monitoring I/O. Do not treat its local mirror as multi-host HA.
+1. Are repeated reads served from a cache?
+2. How long does the slowest durable write take?
+3. Does another host keep the data after a failure?
 
-NAS bulk streaming and small random I/O have different costs. The historical
-HDD-backed small-file test performed poorly and helped motivate the Radar storage
-move. That is workload-specific evidence. It does not prove that every database
-or every network storage protocol performs badly. Ten-gigabit bandwidth alone
-does not establish synchronous-write latency.
+A large ZFS RAM cache (ARC) answers only the first. PLP improves the second. A second
+Longhorn replica answers the third, and it adds a synchronous network write. None of the
+three replaces the other two.
 
-At the audit snapshot, `BigTank/k8s` used `sync=disabled` for inspected app
-NFS/iSCSI descendants, while `BigTank/k8s/rustfs` explicitly used `sync=standard`.
-Choose a dataset's durability contract before comparing database performance.
-Accepting service stalls while the NAS is off does not mean accepting loss
-of acknowledged writes. The audit changed no ZFS property.
+Keep the Threadripper flash storage (`ssd-ent`) on thick LVM. Thin LVM serializes `fsync`,
+which makes `longhorn-flash` a downgrade. Change this only after an
+end-to-end measurement that shows an equal result. `longhorn-flash` carries PostHog,
+radar-ng and product-bench. Its local mirror protects against one failed drive, not
+against a failed host.
 
-Multiple pods on the same Kubernetes node can mount a Longhorn RWO volume. It is
-not a multi-node shared filesystem. Use the repository's Recreate convention for
-ordinary RWO Deployments, so rollouts don't attach a volume on two nodes at once.
-Longhorn also supports RWX through share-manager pods, but these one-copy RWO classes
-don't declare it. Keep NAS RWX for the existing shared-file
-use cases unless a separate migration is justified.
+Bulk streaming and small random I/O cost different amounts on the NAS. Small-file writes
+on the HDD pool are slow, and that is one reason radar-ng uses `longhorn-flash`. That
+result is for one workload. It does not show that every database is slow on every network storage
+protocol. A 10 GbE link does not tell you the latency of a synchronous write.
 
-## Historical experiment: NAS flash over NVMe/TCP
+Check the `sync` property of a dataset before you compare database performance on it.
+Datasets that `truenas-nfs` creates use `sync=standard`, and so does `BigTank/k8s/rustfs`.
+Older app datasets under `BigTank/k8s` were set to `sync=disabled`. With `sync=disabled`,
+the NAS acknowledges a write before it reaches disk. An app that accepts a stall while the
+NAS is off does not thereby accept the loss of acknowledged writes. Run
+`zfs get sync <dataset>` on the NAS to read the live value.
 
-An earlier experiment used three HPE 480 GB drives in a NAS RAIDZ1 flash pool,
-exported through NVMe/TCP. The driver attached, but the recorded
-end-to-end synchronous workload delivered about 437 IOPS versus about 259 on
-that Longhorn comparison path. The run also hit filesystem inconsistency
-after reattachment, missing dataset mounts and leaked exports. The run did not isolate the corruption
-cause. That combination did not justify adoption.
+Several pods on the same Kubernetes node can mount one Longhorn RWO volume. That is not a
+shared filesystem across nodes. Use `strategy: type: Recreate` on a Deployment with an RWO
+PVC, so a rollout never attaches the volume on two nodes at once. Longhorn can also serve
+RWX through share-manager pods, but the classes here do not declare it. Keep NAS RWX for
+shared files unless a separate migration is justified.
 
-The original write-up mixed raw-device, filesystem and end-to-end measurements,
-including latency values that are not interchangeable inverses
-of the reported IOPS. It also made general claims about all network databases
-that the experiment did not establish. Raw history remains in Git; repeat a
-controlled test before relying on a precise speedup or assigning a root cause.
+## Do not export NAS flash over NVMe/TCP
 
-The current physical layout is two HPE drives in the Threadripper mirror and
-one HPE in the NAS boot mirror. There is no current three-drive worker flash
-pool or automatic 2.44 TB local-storage expansion. Do not recreate the retired
-NVMe/TCP experiment from historical prose.
+Do not recreate a NAS flash pool exported to the cluster over NVMe/TCP. A test used three
+HPE 480 GB drives in a NAS RAIDZ1 pool. The synchronous workload delivered about 437 IOPS,
+against about 259 on the Longhorn path it was compared with. The same test hit filesystem
+inconsistency after reattachment, missing dataset mounts and leaked exports. The test did
+not isolate the cause of the corruption. The gain did not justify those risks.
+
+Repeat a controlled test before you rely on a precise speedup or name a root cause. The
+recorded numbers mixed raw-device, filesystem and end-to-end measurements.
+
+Today two HPE drives are in the Threadripper mirror and one is in the NAS boot mirror.
+There is no three-drive flash pool on any worker, and no 2.44 TB local-storage expansion.
 
 ## Sources of truth
 
@@ -114,5 +129,5 @@ NVMe/TCP experiment from historical prose.
 - [Flash class](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/storage/longhorn/storageclass-flash.yaml)
 - [Wired two-copy class](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/storage/longhorn/storageclass-wired-ha.yaml)
 - [Omni disk declarations](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-prod-v2.yaml)
-- [Kopiur backup contract](kopiur-backup-architecture.md)
+- [How kopiur backup and restore work](kopiur-backup-architecture.md)
 - [Disaster recovery](../../disaster-recovery.md)

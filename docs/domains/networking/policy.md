@@ -1,18 +1,22 @@
 # Cilium network policy boundaries
 
-**Status:** current policy behavior, reviewed 2026-09-05. This page describes
-what the manifests allow and where isolation is still weak.
+This page states what the shared Cilium NetworkPolicy allows and what it does not
+protect. Read it before you rely on the policy for isolation or add a namespace
+NetworkPolicy.
 
-The shared policy limits ordinary pod egress to unlisted private LAN addresses.
-It also permits broad cluster traffic, internet access, and shared exceptions.
-It does not isolate applications from one another or make the NAS unreachable.
-The owning manifest is
+The shared policy stops ordinary pods from reaching private LAN addresses that no
+rule lists. It allows broad cluster traffic, internet access, and a short list of
+LAN exceptions. It does not isolate apps from one another, and it does not make the
+NAS unreachable.
+
+The policy is the `CiliumClusterwideNetworkPolicy` named `default-deny-lan-egress` in
 [`block-lan-access.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/networking/cilium/policies/block-lan-access.yaml).
 
-## Effective shared policy
+## What the shared policy allows
 
-`endpointSelector: {}` selects all Cilium-managed endpoints. Host-network and
-host-firewall behavior needs separate assessment. This is not a host firewall.
+`endpointSelector: {}` selects every endpoint that Cilium manages, which means every
+pod on the pod network. This policy is not a host firewall. Host-network pods and
+host-firewall behavior need a separate assessment.
 
 | Direction | Allowed by the shared policy |
 | --- | --- |
@@ -22,15 +26,17 @@ host-firewall behavior needs separate assessment. This is not a host firewall.
 | Egress to LoadBalancer pool | All ports in `192.168.10.32/27` |
 | Other private destinations | Only if another applicable allow or exception permits them |
 
-A compromised exposed application can therefore reach other cluster endpoints and the
-shared storage exceptions. Cloudflare Tunnel carries public
-requests to the external Gateway. Cloudflare Access is not configured, so application
-authentication stays with each application. Private routes use the internal
-Gateway and Technitium DNS.
+A compromised app that is exposed to the internet can therefore reach other cluster
+endpoints and the shared storage exceptions.
 
-## Explicit private-network exceptions
+Cloudflare Tunnel carries public requests to the external Gateway. Cloudflare Access
+is not configured, so each app does its own authentication. Private routes use the
+internal Gateway and Technitium DNS. See [Split DNS with Technitium](technitium-vanillax-me-migration.md).
 
-These are grants in the shared policy, not a list of all effective access:
+## Private-network exceptions
+
+These are the grants in the shared policy. They are not a list of all effective
+access, because other policies can add more.
 
 | Destination | Allowed ports | Purpose |
 | --- | --- | --- |
@@ -41,30 +47,37 @@ These are grants in the shared policy, not a list of all effective access:
 | IoT subnet `192.168.101.0/24` | TCP 80, 443 | Smart-plug control |
 | LoadBalancer pool `192.168.10.32/27` | All | Service external IP access |
 
-A separate policy, `gateway-egress-technitium-ui`, lets only the gateway envoy (`reserved:ingress`) reach the Pi `192.168.10.15` on TCP 5380. This serves the `technitium.vanillax.me` route.
+A separate policy, `gateway-egress-technitium-ui`, lets only the gateway envoy
+(`reserved:ingress`) reach the Pi `192.168.10.15` on TCP 5380. This serves the
+`technitium.vanillax.me` route.
 
-The LoadBalancer exception overlaps the Wyze address. The separate 8554 grant
-does not restrict that address to 8554 while the broader subnet grant applies.
-The router `192.168.10.1` has no explicit allow. A failed ICMP
-probe does not prove that every TCP path is denied.
+Two limits apply to this table:
+
+- The LoadBalancer exception overlaps the Wyze address. The separate 8554 grant does
+  not restrict that address to port 8554 while the broader subnet grant applies.
+- The router `192.168.10.1` has no explicit allow. A failed ICMP probe does not prove
+  that the policy denies every TCP path.
 
 ## Allow policies add together
 
-A namespace NetworkPolicy that lists only DNS and an inference backend cannot
-remove internet or cluster access granted by this shared policy. Allow policies
-combine. Cilium explicit deny rules take precedence over allows, but a broad deny can also block required DNS, API, gateway, backup, or storage traffic.
-See [Kubernetes policy semantics](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+Allow policies combine. A namespace NetworkPolicy that lists only DNS and an
+inference backend cannot remove the internet or cluster access that the shared
+policy grants.
+
+Cilium explicit deny rules take precedence over allows. A broad deny can also block
+required DNS, API, gateway, backup, or storage traffic. See
+[Kubernetes policy semantics](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
 and [Cilium deny policies](https://docs.cilium.io/en/stable/security/policy/language/#deny-policies).
 
-The [architecture audit](../../audits/2026-09-05-architecture-audit.md) proposes
-an opt-in namespace boundary. Exclude opted-in endpoints from the shared allow,
-then declare their actual ingress and egress dependencies. This is proposed work,
-not an isolation guarantee the manifests already provide. Start with a
-canary. Observe both allowed and rejected flows before changing real apps.
+Per-namespace isolation is proposed work. The manifests do not provide it. The
+proposal is an opt-in boundary: exclude the opted-in endpoints from the shared allow,
+then declare their actual ingress and egress dependencies. Start with a canary.
+Observe both allowed and rejected flows before you change real apps.
 
 ## Verify a change
 
-From the operator workstation, inspect current policy and endpoint state:
+Make policy changes through Git. From the operator workstation, inspect the current
+policy and endpoint state:
 
 ```bash
 kubectl get ciliumclusterwidenetworkpolicy
@@ -78,12 +91,16 @@ For an existing test pod with Hubble access configured:
 hubble observe --pod <namespace>/<pod> --verdict DROPPED
 ```
 
-Test each required connection and an intentionally denied TCP destination from
-the selected endpoint. Use policy verdicts to distinguish denial from a missing
-route, DNS failure, refused connection, or unavailable server. A policy object
-that exists does not prove it selected the intended endpoint.
+Test each required connection and one TCP destination that the policy must deny,
+from the selected endpoint. Use the policy verdicts to tell a denial apart from a
+missing route, a DNS failure, a refused connection, or an unavailable server. A
+policy object that exists does not prove that it selected the intended endpoint.
 
-Make policy changes through Git. If a change breaks required traffic, revert
-that policy commit and verify the original flows recover. Keep the Cilium
-VXLAN configuration the shed media bridge needs. Transport and policy are
-separate controls. The [topology guide](topology.md) owns the physical network.
+## Roll back
+
+If a change breaks required traffic, revert that policy commit. Verify that the
+original flows recover.
+
+Keep the Cilium VXLAN configuration that the shed media bridge needs. Transport and
+policy are separate controls. [Network topology](topology.md) owns the physical
+network and the tunnel.

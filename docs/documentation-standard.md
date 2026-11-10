@@ -1,36 +1,80 @@
-# Documentation reader contract
+# How these docs are written
 
-This repository is both a running platform and a learning environment. Its
-documentation should help a newcomer understand the design. It must not imply
-that cluster operations are risk-free or portable to every setup.
+This page is the writing standard for this documentation site. Read it before you
+add or change a page. It states what each page must tell the reader and how to
+write, draw, and review it.
 
-## What every document should tell the reader
+This repository is a running platform and a place to learn. The docs must help a
+newcomer understand the design. They must not suggest that cluster operations are
+free of risk or that they fit every setup.
 
-Start with the smallest useful context:
+## What every page tells the reader
 
-1. **Purpose:** what question this document answers.
-2. **Status:** current truth, future plan, historical decision, or runbook.
-3. **Scope:** what the procedure changes and what it deliberately leaves alone.
-4. **Prerequisites:** access, tools, backups, and expected starting state.
-5. **Action:** copyable steps with placeholders clearly marked.
-6. **Expected result:** observable output after each risky or important step.
-7. **Failure path:** when to stop, how to inspect the problem, and how to roll back.
-8. **Source of truth:** links to the owning manifests and canonical deeper guide.
+Open each page with one to three plain sentences. State the question the page
+answers and who needs it. State if the page describes the current state or a plan
+that is not implemented. For a runbook, state what the procedure changes and what
+it leaves alone. Write sentences, not a block of bold labels.
 
-Do not assume the reader knows Argo CD, Kustomize, Kubernetes controllers,
-or repository-specific history. Define a term when a misreading could cause a
-bad change. Explain why a non-obvious setting exists next to the setting
-itself. Keep long background material in one canonical document.
+After the opening, a page that asks the reader to act must give these items:
+
+| Item | What to write |
+|---|---|
+| Prerequisites | Access, tools, backups, and the expected starting state. |
+| Action | Steps that the reader can copy, with each placeholder clearly marked. |
+| Expected result | The output the reader can observe after each risky or important step. |
+| Failure path | When to stop, how to inspect the problem, and how to roll back. |
+| Source of truth | Links to the owning manifests and to the canonical deeper guide. |
+
+Do not assume that the reader knows Argo CD, Kustomize, Kubernetes controllers,
+or the history of this repository. Define a term the first time it appears, in one
+clause. Explain why a setting that is not obvious exists, next to the setting.
+Keep long background material in one canonical page.
 
 ## Write plain technical English
 
 Write about 80% of the way to ASD-STE100 Simplified Technical English:
 
-- One instruction per sentence, in the imperative. Keep it to 20 words or fewer.
-- Keep descriptive sentences to 25 words or fewer. Use active voice.
+- Write one instruction per sentence, in the imperative. Keep it to 20 words or fewer.
+- Keep descriptive sentences to 25 words or fewer. Use active voice, and name who
+  or what does the action.
 - Use one word for one meaning. The [glossary](glossary.md) fixes the meaning
   of overloaded words such as restore, snapshot, repository, and sync.
+- Use specific verbs. Do not write "handle", "deal with", or "take care of".
+- Write full sentences with articles and verbs. Spell out arrows and shorthand in
+  prose. Arrows are correct inside diagrams and code.
 - Simplify words, not facts. Keep gotchas, conditions, limits, and numbers.
+
+## Describe the current state only
+
+A page describes how the system works today. Git history records how it got there.
+
+- Do not write incident dates, pull request numbers, migration stories, or proof
+  that something once worked.
+- Do not write "now", "new", "previously", "we tried", or "replaced X".
+- Turn each lesson into a forward rule with its reason: "Do not set X, because Y."
+- Keep a date only when it is the measurement date of data on the page.
+- Keep a one-sentence "do not bring back X" rule where the root `CLAUDE.md` has one.
+
+## Remove AI-writing patterns
+
+These patterns make a page longer and harder to trust. Remove them.
+
+- Do not use em dashes in prose. Use a period or a comma. Do not use a colon to
+  join two halves of a sentence.
+- Bold only a true warning or the term you define. Most pages need fewer than ten
+  bold phrases.
+- Do not write lists of bold labels that each restate their own text. Write prose
+  or a table.
+- Write headings in sentence case. Do not put emoji in headings or bullets. Use
+  straight quotes.
+- Do not write "not just X, but Y", forced groups of three, or false ranges such
+  as "from X to Y".
+- Write "is" or "has". Do not write "serves as", "stands as", "boasts", or "features".
+- Remove filler such as "in order to" and "it is worth noting". Remove stacked
+  hedges, praise words such as "powerful" or "robust", and generic closing lines.
+- Name the literal thing. Do not use metaphor nouns such as "substrate" or "bedrock".
+- Replace a feeling with a mechanism or a number. Cut any sentence that could
+  appear in the docs of any project.
 
 ## Choose the right document shape
 
@@ -40,59 +84,61 @@ Write about 80% of the way to ASD-STE100 Simplified Technical English:
 | Perform an operation | Numbered runbook | Preconditions, commands, expected output, rollback |
 | Diagnose a failure | Symptom, then checks, causes, and fixes | Each check distinguishes between at least two causes |
 | Review architecture | Current-state document plus explicit limitations | Links to live configuration and known trade-offs |
-| Consider a future change | Plan/PRD marked as not implemented | Adoption trigger, phases, acceptance checks, deferred items |
+| Consider a future change | Plan marked as not implemented | Adoption trigger, phases, acceptance checks, deferred items |
 | Understand a decision | Short decision record | Context, choice, alternatives, consequences |
 
 ## Make guides interactive safely
 
-Interactivity means the reader can confirm understanding and cluster state. It
-does not mean every page needs JavaScript.
+An interactive guide lets the reader confirm what they understand and what the
+cluster state is. It does not need JavaScript on every page.
 
-- Prefer read-only discovery commands before mutation commands.
-- Put destructive commands behind a warning and a confirmation checkpoint.
-- Follow commands with a representative result or a precise success condition.
-- Use `<namespace>`, `<cluster-id>`, and similar obvious placeholders. Never
-  publish real credentials or silently reusable production identifiers.
-- Add small exercises, render previews, diagrams, or simulators when they make
-  controller ordering and failure behavior easier to understand.
-- Provide a no-cluster path where practical, such as `kustomize build`, schema
-  validation, or a sample object that lets the reader inspect the result.
-- End operational guides with verification and rollback, not only deployment.
+- Put read-only discovery commands before commands that change something.
+- Put each destructive command behind a warning and a confirmation checkpoint.
+- Follow each command with a representative result or a precise success condition.
+- Use obvious placeholders such as `<namespace>` and `<cluster-id>`. Never
+  publish real credentials or production identifiers that a reader could reuse
+  by accident.
+- Add a small exercise, render preview, diagram, or simulator when it makes
+  controller ordering or failure behavior easier to understand.
+- Give a path that needs no cluster where practical. Examples are `kustomize build`,
+  schema validation, or a sample object that the reader can inspect.
+- End an operational guide with verification and rollback, not with deployment.
 
 ## Use a consistent visual language
 
-Architecture and concept pages should open with one static explainer diagram
-when the reader would otherwise need to assemble a flow from several files or
-controllers. Runbooks only need a diagram when ordering, state transitions, or
-failure boundaries are difficult to express as numbered steps.
+Open an architecture or concept page with one static diagram when the reader must
+otherwise assemble a flow from several files or controllers. A runbook needs a
+diagram only when ordering, state transitions, or failure boundaries are hard to
+write as numbered steps.
 
-Operational diagrams are inline `mermaid` blocks rendered by MkDocs Material and GitHub.
-Keep `accTitle` and `accDescr` in each block for accessible names and descriptions.
-The hand-authored platform map, Kustomize Component model, and Postgres lifecycle
-illustrations remain SVG assets under `docs/assets/`.
+Operational diagrams are inline `mermaid` blocks. MkDocs Material and GitHub both
+render them. Keep `accTitle` and `accDescr` in each block, because they give the
+diagram an accessible name and description. The hand-drawn platform map, the
+Kustomize Component model, and the Postgres lifecycle illustrations are SVG assets
+under `docs/assets/`.
 
-Every diagram should:
+Every diagram must do these things:
 
-- answer one specific question in its title;
-- use numbered stages and directional arrows for ordered flows;
-- separate build time, runtime, and recovery when those phases differ;
-- keep box labels short and put detailed caveats in the surrounding prose;
-- route connectors through whitespace, enter a target from a clear edge, and
-  never cross headings, labels, or body text;
-- use a `viewBox`, readable text at narrow widths, and descriptive `<title>` and
-  `<desc>` elements;
-- include accessible Mermaid titles/descriptions (or SVG alt text) and nearby
-  prose that states the invariant or trade-off the reader should remember;
-- avoid credentials, private identifiers, volatile version numbers, and details
-  that cannot be verified from the owning manifests.
+- Answer one specific question in its title.
+- Use numbered stages and directional arrows for an ordered flow.
+- Separate build time, runtime, and recovery when those phases differ.
+- Keep box labels short, and put detailed caveats in the prose around the diagram.
+- Route connectors through whitespace and enter a target from a clear edge. Never
+  cross a heading, a label, or body text.
+- Use a `viewBox`, text that is readable at narrow widths, and descriptive
+  `<title>` and `<desc>` elements.
+- Include an accessible Mermaid title and description, or SVG alt text. Put prose
+  nearby that states the invariant or trade-off the reader must remember.
+- Leave out credentials, private identifiers, version numbers that change often,
+  and details that the owning manifests cannot prove.
 
-Motion is allowed when it explains direction or order. Mermaid blocks may use
-stable edge IDs with `animation: fast` or `animation: slow`. Custom SVG connectors
-use a permanent solid path with a small open chevron plus a separate moving
-packet; their styles disable motion under `prefers-reduced-motion: reduce`.
-Every diagram must remain understandable when animation is disabled.
+Motion is permitted when it shows direction or order. A Mermaid block can use
+stable edge IDs with `animation: fast` or `animation: slow`. A custom SVG
+connector uses a permanent solid path with a small open chevron, plus a separate
+moving packet. Its styles turn motion off under `prefers-reduced-motion: reduce`.
+The reader must be able to understand every diagram with animation off.
 
-The custom-SVG implementation is ordinary, dependency-free SVG:
+The custom SVG connector is ordinary SVG with no dependencies:
 
 ```xml
 <defs>
@@ -121,7 +167,7 @@ The custom-SVG implementation is ordinary, dependency-free SVG:
 </circle>
 ```
 
-For Mermaid sources, give each animated edge an ID and an explicit speed:
+In a Mermaid block, give each animated edge an ID and an explicit speed:
 
 ```mermaid
 flowchart LR
@@ -129,84 +175,88 @@ flowchart LR
   desired@{ animation: fast }
 ```
 
-For custom SVG, `markerUnits="userSpaceOnUse"` keeps arrowheads independent of
-connector stroke width. Initial packet opacity keeps static renderers clean.
-Browsers reveal the packet when animation begins. Negative `begin` values may
-stagger packets across a flow. Do not animate the connector's dash offset:
-short paths can appear detached, and static SVG renderers do not all freeze the
-same frame.
-This uses the same moving-flow idea as Draw.io's
-[Flow Animation](https://drawio-app.com/blog/connector-styles-and-animations-in-draw-io/),
-but keeps the line as the diagram's permanent content.
+For custom SVG, `markerUnits="userSpaceOnUse"` keeps the arrowhead size
+independent of the connector stroke width. The packet starts with zero opacity,
+so a static renderer does not show it. A browser shows the packet when the
+animation begins. Use negative `begin` values to stagger packets along a flow.
 
-Keep color meanings stable across the site:
+Do not animate the dash offset of the connector. A short path can look detached,
+and static SVG renderers do not all freeze the same frame. This approach uses the
+same moving-flow idea as the
+[Flow Animation](https://drawio-app.com/blog/connector-styles-and-animations-in-draw-io/)
+in Draw.io, but the line stays as permanent content of the diagram.
+
+Keep the meaning of each color the same across the site:
 
 | Color | Meaning |
 |---|---|
 | Coral | per-app input or a deliberate action |
 | Green | shared desired state, completed state, or healthy result |
-| Cyan | controller/runtime processing and primary data flow |
+| Cyan | controller or runtime processing and the primary data flow |
 | Amber | off-cluster storage or an external dependency |
 | Gray | waiting state, boundary, or inactive path |
 | Dark navy | invariant, warning, or conclusion |
 
-Prefer these visual shapes:
+Choose the diagram shape from the question the reader has:
 
 | Reader question | Diagram shape |
 |---|---|
-| What talks to what? | Left-to-right system map with trust/failure boundaries |
+| What talks to what? | Left-to-right system map with trust and failure boundaries |
 | What happens next? | Numbered request or reconciliation flow |
 | Why is it waiting? | State machine with success and failure exits |
 | What does Git produce? | Inputs and shared defaults, then rendered output |
 | Which design should I choose? | Small decision tree or trade-off matrix |
 
-Diagrams summarize the canonical prose; they do not replace it. When behavior
-changes, update the owning manifest, prose, and diagram together.
+A diagram summarizes the canonical prose. It does not replace the prose. When
+behavior changes, update the owning manifest, the prose, and the diagram together.
 
 ## Teach architecture in layers
 
-Concept guides and presentation notes should use the same five-beat sequence:
+Concept guides and presentation notes use the same five-step sequence:
 
-1. **Hook:** state the failure, question, or observable result first.
-2. **Mental model:** show one diagram and trace one path through it.
-3. **Implementation:** open the smallest set of owning manifests that proves
-   how the model is encoded.
-4. **Proof:** show rendered output, controller status, a read-only command, or
-   application behavior.
-5. **Boundary:** state what the design does not protect, automate, or guarantee.
+| Step | What to do |
+|---|---|
+| 1. Hook | State the failure, the question, or the observable result first. |
+| 2. Mental model | Show one diagram and trace one path through it. |
+| 3. Implementation | Open the smallest set of owning manifests that proves how the model is built. |
+| 4. Proof | Show rendered output, controller status, a read-only command, or app behavior. |
+| 5. Boundary | State what the design does not protect, automate, or guarantee. |
 
-Do not open with a field-by-field YAML tour. A diagram explains relationships.
-The manifests prove desired state. Runtime evidence proves behavior. Keep each
-diagram focused enough that a reader or presenter can reveal one path at a time.
+Do not open with a field-by-field tour of the YAML. A diagram explains
+relationships. The manifests prove the desired state. Runtime evidence proves
+behavior. Keep each diagram small enough that a reader can follow one path at a
+time.
 
 ## Keep one source of truth
 
-Inline YAML comments explain local syntax and the reason a setting cannot be
-removed casually. Domain documents explain the complete design. Runbooks own
-procedures. Other pages should link to those sources instead of copying them.
+An inline YAML comment explains local syntax and the reason that nobody should
+remove a setting casually. A domain page explains the complete design. A runbook
+owns a procedure. Every other page links to those sources and does not copy them.
 
-When behavior changes, update in the same pull request:
+When behavior changes, update these in the same pull request:
 
-- the manifest and its non-obvious inline comment;
-- the canonical architecture or runbook page;
-- the docs navigation/index if discoverability changes;
-- validation commands, examples, and stated limitations;
-- any future plan whose assumptions became current or stale.
+- the manifest and its inline comment, if the setting is not obvious;
+- the canonical architecture page or runbook;
+- the docs navigation in `mkdocs.yml` or the parent index, if a page becomes
+  easier or harder to find;
+- validation commands, examples, and stated limits;
+- any plan whose assumptions became current or stale.
 
 ## Review checklist
 
-Before publishing a documentation change, verify:
+Before you publish a documentation change, check each item:
 
-- [ ] A new reader can tell current state from future intent.
-- [ ] Commands identify where they run and which values must be replaced.
-- [ ] Risky steps have a stop condition, expected result, and rollback.
-- [ ] Links point to the canonical guide and live manifest rather than a second
+- [ ] The page opens with one to three plain sentences, not a block of bold labels.
+- [ ] A new reader can tell the current state from a plan.
+- [ ] The page describes the current state and contains no history.
+- [ ] Each command states where it runs and which values to replace.
+- [ ] Each risky step has a stop condition, an expected result, and a rollback.
+- [ ] Links point to the canonical guide and the live manifest, not to a second
       copy of the same explanation.
-- [ ] Examples match rendered resources and current controller terminology.
+- [ ] Examples match the rendered resources and the current controller terms.
 - [ ] Diagrams use the shared color meanings, have accessible text, and match
       the current manifests and prose.
 - [ ] The page is reachable from the MkDocs navigation or a parent index.
 - [ ] `mkdocs build --strict` succeeds.
 
-If a setting cannot be explained, it is not ready to become a hidden dependency
-of cluster recovery.
+If nobody can explain a setting, do not let cluster recovery depend on it.

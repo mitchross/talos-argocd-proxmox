@@ -1,8 +1,8 @@
 # Local AI starter kit
 
-**Purpose:** explain the parts of a self-hosted AI setup, what each part does,
-and the order to build them. This homelab is the worked example.
-**Status:** current state. Every part below runs here today.
+This page explains the parts of a self-hosted AI setup, what each part does,
+and the order to build them. Read it first if you are new to the AI stack in
+this lab. Every part below runs here, so each step ends with a check you can run.
 
 !!! tip "Do this first"
     1. Read [The parts](#the-parts) table. About 2 minutes.
@@ -46,8 +46,8 @@ flowchart LR
 
 | Part | What it does | Here | Lives in |
 |---|---|---|---|
-| GPUs | Do the math that runs the model | 2x RTX 3090, 24 GB each, 220 W cap | GPU worker node |
-| Model | The weights: a large file of numbers that produces answers | Qwen3.8 27B, FP8 | NAS, copied to local disk |
+| GPUs | Do the math that runs the model | 2x RTX 3090, 24 GB each, 200 W cap | GPU worker node |
+| Model | The weights: a large file of numbers that produces answers | Qwen3.8 27B, INT4 | NAS, copied to local disk |
 | Model server | Loads the model on the GPUs and answers over an OpenAI-style API | vLLM | [`my-apps/ai/vllm/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/vllm) |
 | Proxy | One URL and key for every client; maps model names to backends; holds cloud keys; records requests | LiteLLM | [`my-apps/ai/litellm/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/litellm) |
 | Cloud model | A stronger model for work the local one gets wrong | DeepSeek Flash via OpenRouter | OpenRouter account, key in 1Password |
@@ -60,8 +60,8 @@ flowchart LR
 | Traces | One record per request: prompt, answer, tokens, cost, routing reason | Langfuse | [`my-apps/ai/langfuse/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/langfuse) |
 | Secrets | Delivers keys to pods without putting them in Git | 1Password + External Secrets | `ExternalSecret` per namespace |
 
-The proxy is the centre. Every other part either sits behind it (models) or in
-front of it (people, apps, agents), and it feeds both measurement tools.
+The proxy is the centre. The models sit behind it. People, apps and agents sit
+in front of it. The proxy also sends its records to both measurement tools.
 
 ## Same parts on one PC or on Kubernetes
 
@@ -81,10 +81,15 @@ hostnames, secrets and how you ship a change differ.
 | Desk agent | Pi on the same PC, pointed at `localhost` | Pi on each PC, pointed at `litellm.vanillax.me` |
 | Background agent | Hermes in Docker Compose ([Option A](hermes-other-clusters.md#option-a-docker-compose)) | the Hermes pod |
 | Ship a change | edit a file, restart the container | open a PR; ArgoCD applies it |
-| Backups | copy the volumes | kopiur snapshots with restore-before-bind |
+| Backups | copy the volumes | kopiur backups with restore-before-bind |
 
 Start on one PC to learn the parts. Move to Kubernetes when several people or
 apps share the GPUs and you want Git to record every change.
+
+In the Kubernetes column, an HTTPRoute is the rule that gives an app a hostname.
+An `ExternalSecret` copies a key from 1Password into the cluster. ArgoCD applies
+what Git declares. Restore-before-bind means a recreated disk fills from its
+backup before the app starts.
 
 ## Build order
 
@@ -114,41 +119,40 @@ Put the model server on the GPUs and load the model.
 
 | Choice | Why |
 |---|---|
-| 27B model in FP8 | Fits two 24 GB cards with a 262,144-token context window |
+| 27B model in INT4 | Fits two 24 GB cards with a 262,144-token context window |
 | vLLM | Serves many requests at once; speaks the OpenAI API every tool expects |
 | Two cards (TP=2) | One card works; two read long prompts faster ([one card or two](3090-llm-optimization.md#one-card-or-two)) |
-| 220 W per card | Less heat and noise for a small speed loss |
+| 200 W per card | Less heat and noise for a small speed loss |
 
-**Done when:**
+The step is done when this command prints `qwen3.8-27b`:
 
 ```bash
 curl -s https://vllm.vanillax.me/v1/models | jq -r '.data[].id'
 ```
 
-prints `qwen3.8-27b`.
-
-**Gotcha:** one app owns a card at a time. To give the cards to image
-generation, follow the [GPU scale-swap runbook](gpu-scale-swap.md).
+One app owns a card at a time. To give the cards to image generation, follow
+the [GPU scale-swap runbook](gpu-scale-swap.md).
 
 ### 2. Put the proxy in front
 
-Point LiteLLM at vLLM and give it a master key. From now on, nothing calls vLLM
-directly.
+Point LiteLLM at vLLM and give it a master key. After this step, no client
+calls vLLM directly.
 
 Apps in the cluster use the internal service URL. People's PCs use
 `https://litellm.vanillax.me/v1`. For every URL and key, see [model catalog § Wiring](model-catalog.md#wiring).
 
-**Done when:** a request with `"model":"qwen3.8-27b"` to the proxy URL answers.
+The step is done when a request with `"model":"qwen3.8-27b"` to the proxy URL
+answers.
 
-**Gotcha:** a client that calls vLLM directly still works, but skips every
-record in step 4. Make the proxy the only documented URL.
+A client that calls vLLM directly still works, but it skips every record in
+step 4. Give clients the proxy URL only.
 
 ### 3. Connect the first users
 
 Point the chat UI and apps at the proxy. Each namespace gets the proxy key from
 1Password through an `ExternalSecret`, never from a file in Git.
 
-**Done when:** Open WebUI answers a chat message.
+The step is done when Open WebUI answers a chat message.
 
 ### 4. Measure before you add the cloud
 
@@ -162,37 +166,39 @@ Grafana dashboards. Do this before step 5, so the first paid request is visible.
 | Are the cards hot or at full power? | Grafana `/d/gpu-overview` |
 | What did one request say, and why did it go where it did? | Langfuse |
 
-**Done when:** the step 3 chat message appears in Grafana and as a trace in
-Langfuse. Details: [AI gateway and analytics](ai-observability.md).
+The step is done when the step 3 chat message appears in Grafana and as a trace
+in Langfuse. For details, see [AI gateway and analytics](ai-observability.md).
 
 ### 5. Add the cloud model and the router
 
 Add the cloud model to the proxy, then the `pi-auto` route. A short local
-call, the *classifier*, grades each request. Easy work stays local. Hard work,
+call, named the classifier, grades each request. Easy work stays local. Hard work,
 stuck tool loops, oversized prompts and classifier failures go to the cloud.
 Only clients that ask for `pi-auto` can reach the cloud. Every other client
 stays local. For how it decides, see [model catalog § The router](model-catalog.md#the-router).
 
-**Done when:** the [two-request check](ai-observability.md#check-that-pi-auto-uses-both-models)
+The step is done when the [two-request check](ai-observability.md#check-that-pi-auto-uses-both-models)
 shows one local and one cloud answer, and Grafana `/d/pi-routing` shows the split.
 
-**Gotcha:** one conversation can move between local and cloud message by
-message. Prompts sent to the cloud leave the building.
+!!! warning "Cloud prompts leave the lab"
+    One conversation can move between local and cloud message by message.
+    Every prompt that goes to the cloud leaves this network.
 
 ### 6. Give people agents
 
-An agent works in a loop: ask the model, run a tool, send back the result,
-repeat. One task can make dozens of requests, which is why the router in step 5
-pays off.
+An agent works in a loop. It asks the model, runs a tool, sends back the
+result, and repeats. One task can make dozens of requests, so the router in
+step 5 saves the most money here.
 
-Use a **desk agent** (Pi) for coding with someone at the keyboard. Use a
-**background agent** (Hermes) for checks, a daily digest, chat and PRs while
-nobody watches. Humans merge every PR. Side-by-side comparison:
+Use a desk agent (Pi) for coding with someone at the keyboard. Use a
+background agent (Hermes) for checks, a daily digest, chat and PRs while
+nobody watches. A person merges every PR. For a side-by-side comparison, see
 [Pi and Hermes](pi-agent-local-dev.md).
 
-**Done when:** Pi answers "what does this repo do?" and Hermes's Status page
-shows the gateway running.
-Setup: [Pi](pi-agent-local-dev.md#pi-in-five-minutes), [Hermes in the cluster](hermes.md),
+The step is done when Pi answers "what does this repo do?" and Hermes's Status
+page shows the gateway running.
+
+Setup guides: [Pi](pi-agent-local-dev.md#pi-in-five-minutes), [Hermes in the cluster](hermes.md),
 [Hermes on another cluster](hermes-other-clusters.md),
 [Hermes on your PC](hermes-one-computer.md).
 
@@ -214,7 +220,8 @@ Setup: [Pi](pi-agent-local-dev.md#pi-in-five-minutes), [Hermes in the cluster](h
 | token | A piece of a word, about 4 characters. Limits and prices count tokens |
 | context window | The most tokens one request can hold, prompt plus answer |
 | inference | Running the model to get an answer, not training it |
-| FP8 | Weights stored at 8 bits each, so a bigger model fits the cards |
+| INT4 | Weights stored at 4 bits each, so a bigger model fits the cards |
+| TP=2 | Tensor parallelism across two cards: vLLM splits the model over both |
 | tier | The router's grade: `SIMPLE`, `MEDIUM`, `COMPLEX`, `REASONING` |
 | reasoning effort | How long the model "thinks" first: off, low, medium, high, xhigh, max |
 | agent | An LLM that can also run tools |

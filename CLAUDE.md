@@ -193,13 +193,12 @@ of duplicating procedures.
 > - **Do NOT set Longhorn `dataLocality: best-effort` on general StorageClasses** — every pod move then copies the whole volume (a reboot re-copied 77 of 123 replicas). Disk-write rules: `docs/domains/storage/disk-writes.md`.
 > - **Do NOT re-add Coroot, Trivy Operator or Keep** — removed as duplicate telemetry / disk churn; the Prometheus + Loki + Tempo + Grafana stack is the one observability stack.
 > - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open Longhorn bugs #13315/#13314: interrupted rebuilds corrupt replica metadata). Forensics in git history; the DR doc carries the short version.
-> - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files. Current research is indexed in `docs/research/index.md`.
+> - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files.
 
 - **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture details
 - **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
-- **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + kopiur restore-based DR default, Longhorn for availability-critical apps). Do not act on it now.
 
 ## Mink capture
 

@@ -1,8 +1,15 @@
-# Technitium `vanillax.me` split-DNS
+# Split DNS with Technitium
 
-Split-horizon DNS for `vanillax.me` is served by Technitium (`192.168.10.15`)
-behind Firewalla. LAN clients get private records for internal services and fall
-back to Cloudflare for public names:
+This page explains how one name under `vanillax.me` resolves to a private address on
+the LAN and to Cloudflare from the internet. It also shows how to check the setup,
+operate it, and rebuild the Technitium side.
+
+Split DNS means the same hostname gets a different answer depending on where the
+client is. Here, Technitium (`192.168.10.15`, on the Pi) holds the private answers.
+LAN clients get a private record when one exists, and the public Cloudflare record
+when none exists.
+
+## How a request finds an app
 
 ```mermaid
 flowchart TB
@@ -66,7 +73,10 @@ flowchart TB
   public4@{ animation: fast }
 ```
 
-Private and public exposure are separate DNS, Gateway, and HTTPRoute choices.
+Private exposure and public exposure are separate choices. Each one has its own DNS
+record, its own Gateway, and its own HTTPRoute parent.
+
+A lookup from a LAN client takes this path:
 
 ```text
 LAN client
@@ -76,12 +86,12 @@ LAN client
   -> otherwise forwarded over DoH to Cloudflare
 ```
 
-Technitium serves `vanillax.me` as a Conditional Forwarder zone, not a
-Primary zone. An authoritative Primary zone returns NXDOMAIN for missing
-records instead of falling back to Cloudflare. The Conditional Forwarder
-returns local overrides when present and forwards everything else upstream.
+Technitium serves `vanillax.me` as a Conditional Forwarder zone. Do not change it to
+a Primary zone. A Primary zone is authoritative, so it returns NXDOMAIN for a missing
+record and never asks Cloudflare. A Conditional Forwarder zone returns a local record
+when one exists and forwards every other name upstream.
 
-## Components
+## The parts
 
 | Component | Responsibility |
 | --- | --- |
@@ -92,10 +102,135 @@ returns local overrides when present and forwards everything else upstream.
 | `gateway-internal-technitium` | Private routes at `192.168.10.52` |
 | `gateway-external` | Public Cloudflare routes at `192.168.10.49` |
 
-Private HTTPRoutes parent to `gateway-internal-technitium`; public routes
-parent to `gateway-external`.
+To give an app a private name, set the parent of its HTTPRoute to
+`gateway-internal-technitium`. The `external-dns-technitium` controller then writes
+the A and TXT records into Technitium. To give an app a public name, set the parent
+to `gateway-external`.
 
-## 1. The Conditional Forwarder zone
+## Check that it works
+
+Check the `external-dns-technitium` controller:
+
+```bash
+kubectl -n external-dns get pods
+kubectl -n external-dns logs deploy/external-dns-technitium -f
+```
+
+In the steady state the log shows this message:
+
+```text
+All records are already up to date
+```
+
+These messages mean the TSIG or AXFR configuration is broken:
+
+```text
+dns: bad authentication
+AXFR error
+bad xfr rcode: 5
+```
+
+Query private records directly against Technitium. All of them return `192.168.10.52`:
+
+```bash
+dig @192.168.10.15 argocd.vanillax.me A +short
+dig @192.168.10.15 homeassistant.vanillax.me A +short
+dig @192.168.10.15 grafana.vanillax.me A +short
+dig @192.168.10.15 registry.vanillax.me A +short
+```
+
+Query names that have no private record. They return public Cloudflare addresses,
+not NXDOMAIN:
+
+```bash
+dig @192.168.10.15 vanillax.me A +short
+dig @192.168.10.15 news.vanillax.me A +short
+dig @192.168.10.15 search.vanillax.me A +short
+```
+
+Repeat through Firewalla, which is the path that clients use:
+
+```bash
+dig @192.168.10.1 argocd.vanillax.me A +short    # 192.168.10.52
+dig @192.168.10.1 homeassistant.vanillax.me A +short   # 192.168.10.52
+dig @192.168.10.1 vanillax.me A +short           # public Cloudflare
+dig @192.168.10.1 news.vanillax.me A +short      # public Cloudflare
+```
+
+Check TLS and application routing:
+
+```bash
+curl -fsS -o /dev/null -w '%{http_code} %{remote_ip}\n' https://argocd.vanillax.me/
+curl -fsS -o /dev/null -w '%{http_code} %{remote_ip}\n' https://homeassistant.vanillax.me/
+```
+
+Private endpoints connect to `192.168.10.52` with valid TLS.
+
+## Rules for operating it
+
+**Restart the pod after you rotate the TSIG secret.** The pod reads the secret into
+the env var `EXTERNAL_DNS_RFC2136_TSIG_SECRET` through `secretKeyRef` when it starts.
+A changed Kubernetes Secret does not reach a running pod. After External Secrets
+rewrites the Secret, restart the deployment:
+
+```bash
+kubectl -n external-dns rollout restart deploy/external-dns-technitium
+```
+
+**Keep the TSIG key name and the secret bytes matched.** ExternalDNS signs RFC2136
+updates with key name `externaldns-vanillax` and the secret from the
+`external-dns-technitium-vanillax` 1Password item. A mismatch in the name or the
+bytes returns `dns: bad authentication` on both UPDATE and AXFR.
+
+**Keep clients pointed at Firewalla.** Never point a client directly at Technitium.
+
+**Add no per-host DNS overrides in Firewalla.** An override such as
+`address=/homeassistant.vanillax.me/...` hides the Technitium record and resolves the
+private name to the wrong endpoint.
+
+**Ignore only the defaulted `parentRefs` subfields in Argo CD.** In
+`infrastructure/controllers/argocd/values.yaml`, ignore `group` and `kind` only.
+Never ignore the whole `parentRefs` array or a whole entry:
+
+```yaml
+jqPathExpressions:
+- .spec.parentRefs[].group
+- .spec.parentRefs[].kind
+```
+
+`name`, `namespace`, and `sectionName` must stay visible to the diff. Otherwise Argo
+CD does not apply a change of a route's parent Gateway.
+
+## One certificate for both gateways
+
+Both gateways use the same publicly trusted wildcard certificate. There is no
+separate internal certificate.
+
+| Resource | Value |
+| --- | --- |
+| ClusterIssuer | `cloudflare-cluster-issuer` (ACME DNS-01 via Cloudflare) |
+| Certificate / Secret | `cert-vanillax` in namespace `gateway`, SAN `*.vanillax.me` |
+| `gateway-external` (`192.168.10.49`) | `certificateRefs: cert-vanillax` |
+| `gateway-internal-technitium` (`192.168.10.52`) | `certificateRefs: cert-vanillax` |
+
+The public path and the private path use the same hostnames under `*.vanillax.me`,
+so the same Let's Encrypt wildcard is valid on both. TLS authenticates the name, not
+the IP. A browser therefore accepts the public certificate from the private address
+`192.168.10.52` without a warning.
+
+cert-manager renews `cert-vanillax` through DNS-01 against the public Cloudflare
+zone. The renewal does not depend on where the gateway is reachable.
+
+## Rebuild the Technitium and Firewalla configuration
+
+Use this procedure when you rebuild Technitium or Firewalla. It configures the DNS
+zone, the key that ExternalDNS signs with, and the Firewalla forward. It does not
+change anything in the cluster.
+
+All update and transfer settings in steps 4 and 5 must be on the `vanillax.me`
+Conditional Forwarder zone. The same settings on any other zone have no effect.
+
+### 1. Create the Conditional Forwarder zone
 
 In the Technitium web console:
 
@@ -112,24 +247,22 @@ In the Technitium web console:
 6. Enable DNSSEC validation when the UI offers it.
 7. Save the zone.
 
-The Cloudflare DoH forwarder avoids Firewalla's interception of plain DNS
-traffic. Records stored locally in this zone override Cloudflare. Technitium
-forwards missing records to Cloudflare. The parenthesized IP bootstraps the DoH
-hostname. Without it, Technitium cannot resolve `cloudflare-dns.com` when
-recursion is disabled and returns `SERVFAIL`.
+The forwarder uses DNS over HTTPS (DoH) because Firewalla intercepts plain DNS
+traffic. The IP in parentheses tells Technitium where to find the DoH hostname.
+Without it, Technitium cannot resolve `cloudflare-dns.com` when recursion is
+disabled, and it returns `SERVFAIL`.
 
-Verify public fallback directly through Technitium:
+Expected result: both lookups return public Cloudflare addresses, not NXDOMAIN.
 
 ```bash
 dig @192.168.10.15 vanillax.me A +short
 dig @192.168.10.15 news.vanillax.me A +short
 ```
 
-These return public Cloudflare addresses, not NXDOMAIN.
+### 2. Create the TSIG key
 
-## 2. The TSIG key
-
-In **Settings -> TSIG**:
+A TSIG key is a shared secret that signs DNS update requests. In
+**Settings -> TSIG**:
 
 1. Add key name `externaldns-vanillax`.
 2. Select `HMAC-SHA256`.
@@ -139,9 +272,9 @@ In **Settings -> TSIG**:
 Treat the generated key as a credential. Keep it out of Git, terminal history,
 screenshots, tickets, and chat.
 
-## 3. The secret in 1Password
+### 3. Store the key in 1Password
 
-The generated key lives in one 1Password item:
+Put the generated key in one 1Password item:
 
 ```text
 Item:  external-dns-technitium-vanillax
@@ -149,12 +282,13 @@ Field: tsig-secret
 Value: <exact Base64 value generated by Technitium>
 ```
 
-The ExternalSecret passes this value through unchanged. Do not Base64-encode
-it again.
+The ExternalSecret passes this value through unchanged. Do not Base64-encode it
+again.
 
-## 4. RFC2136 dynamic updates
+### 4. Allow RFC2136 dynamic updates
 
-Open **Zones -> vanillax.me -> Options -> Dynamic Updates (RFC 2136)**:
+RFC2136 is the DNS protocol that ExternalDNS uses to add and remove records. Open
+**Zones -> vanillax.me -> Options -> Dynamic Updates (RFC 2136)**:
 
 ```text
 Dynamic Updates: Allow
@@ -165,14 +299,14 @@ Security Policy:
   Allowed Record Types: A, AAAA, CNAME, TXT
 ```
 
-The wildcard policy prevents the key from changing the zone apex and limits it
-to the record types ExternalDNS needs.
+The wildcard domain stops the key from changing the zone apex. The record-type list
+limits the key to the types that ExternalDNS needs.
 
-## 5. AXFR (zone transfer)
+### 5. Allow zone transfer (AXFR)
 
-ExternalDNS uses AXFR to read existing records and TXT ownership state. Without
-it, updates may succeed but ExternalDNS repeatedly resubmits the same records
-and logs `AXFR error: dns: bad xfr rcode: 5`.
+ExternalDNS uses AXFR to read the existing records and its TXT ownership records.
+Without AXFR, updates can succeed, but ExternalDNS submits the same records again on
+every run and logs `AXFR error: dns: bad xfr rcode: 5`.
 
 Open **Zones -> vanillax.me -> Options -> Zone Transfer**:
 
@@ -181,17 +315,13 @@ Zone Transfer: Allow
 Zone Transfer TSIG Key Names: externaldns-vanillax
 ```
 
-The populated TSIG list means transfers still require authentication even
-though the transfer mode is `Allow`.
+The transfer mode is `Allow`, but the TSIG key list means that a transfer still
+requires authentication.
 
-Both the RFC2136 update policy and the AXFR key list must live on the
-`vanillax.me` Conditional Forwarder zone. Configuring them on any other zone
-has no effect on this flow.
+### 6. Forward the zone from Firewalla
 
-## 6. Firewalla zone forwarding
-
-In Firewalla, one conditional-forwarding rule sends the whole zone to
-Technitium. Add no per-host overrides:
+In Firewalla, add one conditional-forwarding rule that sends the whole zone to
+Technitium:
 
 ```text
 Domain: vanillax.me
@@ -200,116 +330,9 @@ Include subdomains: enabled
 Scope: all LAN/VLAN networks that should use the homelab DNS view
 ```
 
-Client DHCP/DNS stays pointed at Firewalla. Never point clients directly
-at Technitium. Per-host GUI overrides (e.g. `address=/homeassistant.vanillax.me/...`)
-must not exist. They shadow Technitium records and resolve private names to
-the wrong endpoint.
+Leave client DHCP and DNS pointed at Firewalla. Add no per-host overrides.
 
-## Verification
-
-Check the `external-dns-technitium` controller:
-
-```bash
-kubectl -n external-dns get pods
-kubectl -n external-dns logs deploy/external-dns-technitium -f
-```
-
-Steady-state message:
-
-```text
-All records are already up to date
-```
-
-These messages mean the TSIG/AXFR configuration is broken:
-
-```text
-dns: bad authentication
-AXFR error
-bad xfr rcode: 5
-```
-
-Check private records directly against Technitium. All return `192.168.10.52`:
-
-```bash
-dig @192.168.10.15 argocd.vanillax.me A +short
-dig @192.168.10.15 homeassistant.vanillax.me A +short
-dig @192.168.10.15 grafana.vanillax.me A +short
-dig @192.168.10.15 registry.vanillax.me A +short
-```
-
-Public fallback stays public:
-
-```bash
-dig @192.168.10.15 vanillax.me A +short
-dig @192.168.10.15 news.vanillax.me A +short
-dig @192.168.10.15 search.vanillax.me A +short
-```
-
-Through the client DNS path (Firewalla):
-
-```bash
-dig @192.168.10.1 argocd.vanillax.me A +short    # 192.168.10.52
-dig @192.168.10.1 homeassistant.vanillax.me A +short   # 192.168.10.52
-dig @192.168.10.1 vanillax.me A +short           # public Cloudflare
-dig @192.168.10.1 news.vanillax.me A +short      # public Cloudflare
-```
-
-TLS and application routing:
-
-```bash
-curl -fsS -o /dev/null -w '%{http_code} %{remote_ip}\n' https://argocd.vanillax.me/
-curl -fsS -o /dev/null -w '%{http_code} %{remote_ip}\n' https://homeassistant.vanillax.me/
-```
-
-Private endpoints connect to `192.168.10.52` with valid TLS.
-
-## Operational notes
-
-- **TSIG secret rotation requires a pod restart.** The pod reads the secret as
-  the env var `EXTERNAL_DNS_RFC2136_TSIG_SECRET` via `secretKeyRef` at pod
-  start, so updating the K8s Secret does not hot-reload it. After ESO rewrites the
-  Secret, restart the deployment:
-
-  ```bash
-  kubectl -n external-dns rollout restart deploy/external-dns-technitium
-  ```
-
-- **The TSIG key name and secret bytes must match.** ExternalDNS signs RFC2136
-  updates with key name `externaldns-vanillax` and the secret bytes that ESO
-  delivers from the `external-dns-technitium-vanillax` 1Password item. A name/byte
-  mismatch returns `dns: bad authentication` on both UPDATE and AXFR.
-
-- **HTTPRoute parentRefs ignore rule.** In `infrastructure/controllers/argocd/values.yaml`,
-  ignore only the defaulted `group`/`kind` subfields. Never ignore the whole
-  `parentRefs` array or whole entries:
-
-  ```yaml
-  jqPathExpressions:
-  - .spec.parentRefs[].group
-  - .spec.parentRefs[].kind
-  ```
-
-  `name`/`namespace`/`sectionName` must stay diffable so route re-parenting is
-  applied.
-
-## TLS certificate architecture
-
-Both gateways share one publicly-trusted wildcard certificate. There is no separate
-internal cert:
-
-| Resource | Value |
-| --- | --- |
-| ClusterIssuer | `cloudflare-cluster-issuer` (ACME DNS-01 via Cloudflare) |
-| Certificate / Secret | `cert-vanillax` in namespace `gateway`, SAN `*.vanillax.me` |
-| `gateway-external` (`192.168.10.49`) | `certificateRefs: cert-vanillax` |
-| `gateway-internal-technitium` (`192.168.10.52`) | `certificateRefs: cert-vanillax` |
-
-Public and private paths use the same hostname under `*.vanillax.me`, so the
-same Let's Encrypt wildcard validates on both. TLS authenticates the name,
-not the IP, so a publicly-trusted cert served from a private `192.168.10.52`
-endpoint is valid with no browser warnings. cert-manager renews
-`cert-vanillax` via DNS-01 against the public Cloudflare zone regardless of
-where the gateway is reachable.
+Expected result: the checks in [Check that it works](#check-that-it-works) pass.
 
 ## References
 
