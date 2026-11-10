@@ -52,7 +52,7 @@ The sidebar has eight sections. Read them top to bottom the first time.
 | GitOps and ArgoCD | How a change in Git becomes a running app, and how to check a risky change |
 | Storage | Which disk holds which data, the storage classes, and SSD wear |
 | Backups and recovery | kopiur backups, Postgres, and the cluster rebuild runbook |
-| Networking | The network layout, Cilium policies, VPN egress, and split DNS |
+| Networking | The network layout, Cilium policies, and split DNS |
 | Hardware and hosts | The machines, how Ansible configures them, and power metering |
 | Running apps | Pod sizing and placement, Temporal workers, PostHog, and observability |
 | Local AI | Models, GPUs, measurement, and the Pi and Hermes agents |

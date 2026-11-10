@@ -18,7 +18,7 @@ JSON file into a ConfigMap and stamps two things on it:
 | Directory | Grafana folder | What lives there |
 |-----------|----------------|------------------|
 | `start-here/` | Start Here | Cockpit (Grafana home page), Homelab now (what is broken right now), Why Is This App Slow, Capacity |
-| `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear, VPN egress (+ kopiur from its chart) |
+| `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear (+ kopiur from its chart) |
 | `ai/` | AI | GPU, local LLM engines (overview, vLLM, Strata), AI gateway (LiteLLM), Pi auto-routing, Hermes AI split |
 | `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate, Public Edge (Cloudflare tunnel, Anubis, redlib, per-site hits) |
 | `logs/` | Logs | Logs Explorer, node crash logs |
@@ -135,7 +135,3 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
   redlib's volume that exceeds Loki's 500-series query limit.
 - **Logs:** Loki labels are OTEL-style (`k8s_namespace_name`, `service_name`,
   `detected_level`), not Promtail's `namespace`/`job`.
-- **VPN egress:** every `vpn_egress_*` series comes from the controller in
-  `infrastructure/networking/vpn-egress/`, one scrape target, labelled by
-  `gateway`. Byte counters restart at 0 when a gateway recreates its tunnel;
-  `rate()` handles that.
