@@ -24,7 +24,7 @@ A DaemonSet in the `prometheus-stack` namespace. It runs on GPU nodes only and l
 
 ### 4. Grafana dashboard (`dashboards/ai/gpu-overview.json`)
 
-Dashboard UID `gpu-overview`, in the Grafana folder AI. It shows per-card utilization, VRAM, temperature, power against the 220 W cap, clocks,
+Dashboard UID `gpu-overview`, in the Grafana folder AI. It shows per-card utilization, VRAM, temperature, power against the 200 W cap, clocks,
 PCIe link retries, and which pod holds each card.
 
 ## Key metrics

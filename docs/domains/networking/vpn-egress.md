@@ -8,6 +8,14 @@ Git holds the phase 1 configuration, which covers only the `vpn-egress-test`
 namespace. Phases 2 and 3 are planned. Each phase is live only after the manual
 steps in [Rollout](#rollout) run.
 
+!!! warning "The VPN is paused in Git"
+    No gateway or controller pod runs, and no pod traffic uses the cluster VPN.
+    `controller.yaml` and `test/egress-probe.yaml` set `replicas: 0`, and the
+    gateway DaemonSet selects the label `node.vanillax.dev/vpn-gateway: paused`,
+    which no node has. To resume, set both to `replicas: 1` and delete that
+    `nodeSelector`. The `proton-wireguard-egress` item must exist in 1Password
+    first, or the `proton-wireguard` ExternalSecret fails.
+
 | What | Where |
 |---|---|
 | Manifests | [`infrastructure/networking/vpn-egress/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/infrastructure/networking/vpn-egress) |

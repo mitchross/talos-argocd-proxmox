@@ -37,7 +37,7 @@ comparison is void.
 
 **One 3090 is sufficient for this workload.** The penalty is prefill and TTFT
 latency, not usable context. Full analysis and the rules that follow:
-[`docs/domains/ai-gpu/single-vs-dual-3090.md`](../../docs/domains/ai-gpu/single-vs-dual-3090.md).
+[`docs/domains/ai-gpu/3090-llm-optimization.md`](../../docs/domains/ai-gpu/3090-llm-optimization.md#one-card-or-two).
 
 Caveat: the agent workload converged near 146K tokens of
 context in B, so the run measured the pool to ~76% utilisation. Behaviour nearer the

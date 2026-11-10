@@ -278,7 +278,7 @@
         "wideLayout": true,
         "showPercentChange": false
       },
-      "description": "Each card is capped at 220 W on the host, so 440 W is the ceiling.",
+      "description": "Each card is capped at 200 W on the host, so 400 W is the ceiling.",
       "id": 4,
       "gridPos": {
         "x": 8,
@@ -991,7 +991,7 @@
               },
               {
                 "color": "red",
-                "value": 220
+                "value": 200
               }
             ]
           },
@@ -1011,7 +1011,7 @@
           "sort": "desc"
         }
       },
-      "description": "Red line = the 220 W per-card cap set on the host (DCGM exports no limit field on these cards).",
+      "description": "Red line = the 200 W per-card cap set on the host (DCGM exports no limit field on these cards).",
       "id": 13,
       "gridPos": {
         "x": 0,
