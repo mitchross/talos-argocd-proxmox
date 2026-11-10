@@ -638,3 +638,83 @@ patches:
     kind: HostnameConfig
     auto: "off"
     hostname: hp-elite-gen12
+---
+# TrueNAS VM (PXE via booter on the Pi): pinned by UUID, no provider or MachineClass.
+kind: Workers
+name: truenas-workers
+machines:
+- 3b35bad1-0de6-443e-b7e0-d3debcf0375d
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+patches:
+- name: truenas-worker
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: truenas-worker
+      node.vanillax.dev/pool: general
+      topology.kubernetes.io/zone: truenas
+      node.vanillax.dev/link: wired
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: truenas-worker-kubelet
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
+      systemReserved:
+        cpu: 500m
+        memory: 1Gi
+      kubeReserved:
+        cpu: 250m
+        memory: 512Mi
+# The cluster-wide vxlan-inner-checksum patch names eth0; this VM's virtio NIC is ens3.
+- name: truenas-worker-vxlan-inner-checksum
+  inline:
+    apiVersion: v1alpha1
+    kind: EthernetConfig
+    name: ens3
+    features:
+      tx-checksum-ip-generic: false
+      tx-udp_tnl-csum-segmentation: false
+# Longhorn reads default-disks-config only when its node first registers; add disks to a live node in its nodes.longhorn.io spec.
+- name: truenas-worker-longhorn-disks
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-node-tags: '["wired-storage"]'
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"truenas-ssd","path":"/var/mnt/longhorn-truenas-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["truenas-ssd"]}]
+# VM disks report no serial, so match the 230 GiB data disk by size.
+- name: truenas-worker-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-truenas-ssd
+    provisioning:
+      diskSelector:
+        match: "!system_disk && disk.size >= 200u * GB"
+      minSize: 200GB
+      grow: true
+---
+# TrueNAS VM `talosnas1` on the DL360. VM disks report no serial; the 60 GiB disk is the system disk.
+kind: Machine
+name: 3b35bad1-0de6-443e-b7e0-d3debcf0375d
+install:
+  diskSelector: disk.size < 100u * GB
+patches:
+- name: truenas-worker-hostname
+  inline:
+    apiVersion: v1alpha1
+    kind: HostnameConfig
+    auto: "off"
+    hostname: truenas-worker-01

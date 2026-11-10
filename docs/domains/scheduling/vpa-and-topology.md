@@ -114,6 +114,7 @@ The Omni template puts two labels on each node.
 | HP Elite | Worker | `hp-elite` | `general` | Everyday services and selected application state |
 | Dell Pro Micro (bare metal) | Worker `mini-pc-dell-ultra-worker` | `mini-pc-dell-ultra` | `general` | Everyday services and selected application state |
 | HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12` | `hp-elite-gen12` | `general` | Everyday services and selected application state |
+| TrueNAS DL360 (VM) | Worker `truenas-worker-01` | `truenas` | `general` | Everyday services and selected application state |
 | Threadripper | GPU worker | `house` | `gpu` | GPU workloads and selected heavy jobs |
 | Shed HP Micro | Worker behind the media bridge | `shed` | `edge` | Attached devices and permitted edge jobs |
 
