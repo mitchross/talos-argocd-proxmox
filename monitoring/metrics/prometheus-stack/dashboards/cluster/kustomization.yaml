@@ -19,6 +19,9 @@ configMapGenerator:
   - name: longhorn-dashboard
     files:
       - longhorn.json
+  - name: node-drains-and-storage-moves-dashboard
+    files:
+      - node-drains-and-storage-moves.json
   - name: storage-and-ssd-wear-dashboard
     files:
       - storage-and-ssd-wear.json
