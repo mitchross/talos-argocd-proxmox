@@ -46,7 +46,8 @@ The Grafana board "Node drains & storage moves" (Cluster folder) shows the same 
 ## Read the result
 
 - Eight Longhorn instance-manager PDBs at zero is normal. Longhorn keeps them while an instance manager runs engines or replicas.
-- "Longhorn must copy N volumes" means the drain waits for those copies. Copy speed is not a constant. On 2026-11-10 four busy volumes copied in parallel at 4-16 MB/s each, about an hour; mostly empty volumes ran at 250+ MB/s. Quote the minutes-left line, not a size-over-speed guess.
+- "Longhorn must copy N volumes" means the drain waits for those copies. On 2026-11-10 about 155 GiB left the GPU worker in 40 minutes (26-51 MB/s per volume). Prefer the minutes-left line to a size-over-speed guess.
+- After the uncordon, `best-effort` data locality copies the same volumes back. On 2026-11-10 that was another ~110 GiB in 20 minutes. Report it as part of the reboot cost.
 - The minutes-left estimate is a straight line from the last 10 minutes. It is wrong at the start of a copy.
 - Omni stage numbers come from `ClusterMachineStatusSpec.Stage` in Omni's `omni.proto`. 4 is RUNNING.
 
