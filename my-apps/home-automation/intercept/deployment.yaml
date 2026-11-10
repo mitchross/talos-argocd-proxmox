@@ -97,6 +97,12 @@ spec:
             # external Gateway without restoring application authentication.
             - name: INTERCEPT_DISABLE_AUTH
               value: "true"
+            - name: CARTO_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: intercept-carto
+                  key: CARTO_API_KEY
+                  optional: true
           ports:
             - name: http
               containerPort: 5050
@@ -145,6 +151,13 @@ spec:
             # change after a VM or hub restart, while both RTL2838s remain here.
             - name: usb-bus
               mountPath: /dev/bus/usb
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+          lifecycle:
+            postStart:
+              exec:
+                command: ["python3", "/opt/repo-scripts/set-carto-key.py"]
       volumes:
         - name: repo-scripts
           configMap:
