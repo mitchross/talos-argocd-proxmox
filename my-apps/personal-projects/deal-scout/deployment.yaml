@@ -90,10 +90,9 @@ spec:
             requests:
               cpu: 25m
               memory: 96Mi
-            # Idles at ~30-50Mi, but live peaks reached 714-852Mi on 2026-10-31 and v0.35.3 was
-            # OOMKilled twice at 768Mi during startup. VPA only moves requests, so keep headroom here.
+            # Startup cache warm plus ingest OOMKilled 1536Mi (2026-11-10); VPA targets ~2.2Gi. VPA moves requests only.
             limits:
-              memory: 1536Mi
+              memory: 3Gi
           volumeMounts:
             - name: data
               mountPath: /data
