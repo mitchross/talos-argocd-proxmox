@@ -39,7 +39,7 @@ Use committed replica counts and the
 
 Do not set `NVIDIA_VISIBLE_DEVICES` or `CUDA_VISIBLE_DEVICES` in GPU workloads;
 the device plugin/CDI owns allocation. The `nvidia-powerlimit` utility DaemonSet
-is the exception. Keep the **220 W per-card** cap; do not raise it for benchmarks.
+is the exception. Keep the **200 W per-card** cap; do not raise it for benchmarks.
 The production GPU node has `gpu-worker=true`; the Wi-Fi worker is CPU-only.
 
 ## GPU Workload Pattern

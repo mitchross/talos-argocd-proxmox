@@ -17,15 +17,13 @@ Prometheus stores metrics. Grafana reads all three.
 | `radar-ng-mobile` (Expo app) | Tempo + Loki | OTel SDK in `src/lib/telemetry.ts` sends OTLP/HTTP to `otel.vanillax.me` (gateway) |
 | `tile-server` API logs | Loki | stdout JSON goes to otel-agent (DaemonSet), then the gateway, then Loki |
 | `tile-server` `/api/metrics` | Prometheus | ServiceMonitor at `my-apps/personal-projects/radar-ng/servicemonitor.yaml` |
-| `ingest-mrms` / `ingest-hrrr` / `ingest-lightning` / `ingest-tropical` / `nowcast` / `basemap` / `open-meteo` logs | Loki | same pipeline as tile-server |
+| `radar-ng-worker-*` (`mrms`, `hrrr`, `nowcast`, `aux`, `alerts`), `basemap`, and `open-meteo` logs | Loki | same pipeline as tile-server |
 | Pod CPU / memory / OOM | Prometheus | kube-state-metrics + cadvisor |
 
-!!! warning "Check the pod names before you trust an empty result"
-    The ingest and nowcast code runs in five Temporal worker pools named
-    `radar-ng-worker-*` (`mrms`, `nowcast`, `hrrr`, `aux`, `alerts`). The
-    queries below select pods named `ingest-mrms.*` and `ingest-lightning.*`.
-    If a query returns no data, run `kubectl -n radar-ng get pods` and change
-    the `k8s_pod_name` selector to match.
+The ingest and nowcast code runs in five Temporal worker pools named
+`radar-ng-worker-*` (`mrms`, `nowcast`, `hrrr`, `aux`, `alerts`). The `aux`
+pool runs lightning, tropical, and air quality. If a query returns no data,
+run `kubectl -n radar-ng get pods` and check the `k8s_pod_name` selector.
 
 Loki uses OTel-semconv labels: `k8s_namespace_name`, `k8s_pod_name`,
 `k8s_container_name` and `service_name`. Promtail-style `namespace` and
@@ -65,10 +63,10 @@ Paste these into Grafana, under Explore, with Loki as the data source.
 {k8s_namespace_name="radar-ng"} |~ "(?i)error|warn|exception|traceback"
 ```
 
-### Render-cycle timing for ingest-mrms
+### Render-cycle timing for the MRMS worker
 
 ```logql
-{k8s_namespace_name="radar-ng", k8s_pod_name=~"ingest-mrms.*"}
+{k8s_namespace_name="radar-ng", k8s_pod_name=~"radar-ng-worker-mrms.*"}
   | json
   | msg = "frame_done"
   | line_format "{{.timestamp}} took {{.duration_s}}s"
@@ -86,20 +84,10 @@ more than 200 s, check CPU saturation.
   | line_format "{{.duration}}s {{.request_uri}}"
 ```
 
-### Backlog growing on ingest-mrms
-
-```logql
-{k8s_namespace_name="radar-ng", k8s_pod_name=~"ingest-mrms.*"}
-  | json | msg = "processing_batch"
-  | line_format "backlog={{.backlog}} rendering={{.rendering}}"
-```
-
-If `backlog` grows from one cycle to the next, the ingester cannot keep up.
-
 ### Lightning ingester reconnects
 
 ```logql
-{k8s_namespace_name="radar-ng", k8s_pod_name=~"ingest-lightning.*"}
+{k8s_namespace_name="radar-ng", k8s_pod_name=~"radar-ng-worker-aux.*"}
   |~ "ws_disconnect|reconnect"
 ```
 
@@ -233,13 +221,13 @@ user reports: app slow / radar stale
         ▼
 check Grafana radar-ng dashboard
         │
-        ├─ MRMS age red ─────────────▶ ingest-mrms not keeping up
+        ├─ MRMS age red ─────────────▶ radar-ng-worker-mrms not keeping up
         │                                     │
-        │                              Loki: ingest-mrms backlog query
-        │                                     ├─ backlog growing ─▶ bump ingest-mrms CPU/RAM
-        │                                     │                     or check NOAA S3 latency
-        │                                     └─ backlog flat ────▶ OOM kill or crash
-        │                                                           (kubectl describe pod)
+        │                              Loki: render-cycle timing query
+        │                                     ├─ frames over 200 s ─▶ bump the worker CPU/RAM
+        │                                     │                       or check NOAA S3 latency
+        │                                     └─ no frame_done ─────▶ OOM kill or crash
+        │                                                             (kubectl describe pod)
         │
         ├─ tile-server req/sec spike ─▶ traffic surge (single replica; check CPU vs request, VPA adjusts it)
         │

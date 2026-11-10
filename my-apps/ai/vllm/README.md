@@ -46,7 +46,7 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 | Vision | native encoder; one image per request, video disabled |
 | Reasoning | on, `xhigh` default (16,384-token cap); low=4,096, high/xhigh/max=16,384 |
 | Speculation | **off**; no MTP or external drafter |
-| Power | existing 220 W per card |
+| Power | existing 200 W per card |
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
 
 The active [AutoRound checkpoint](https://huggingface.co/Frozenlock/Qwen3.8-27B-int4-AutoRound)
@@ -225,7 +225,7 @@ stay honored, so test a fresh conversation as well as an existing one.
 The companion
 [dotfiles PR](https://github.com/mitchross/dotfiles/pull/10) manages Pi's startup preference and local-only alias. After both PRs merge,
 pull the updated dotfiles source and follow the scoped apply steps in the
-[Pi guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md#default-reasoning-and-rollout).
+[Pi guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md#reasoning-defaults).
 Start a fresh session or explicitly select xhigh in a resumed one. This rollout does not change the sampler
 extension, and reinstalling it alone does not change
 Pi's selected effort. `pi-auto` still delegates effort to the selected backend.

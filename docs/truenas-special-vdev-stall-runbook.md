@@ -15,7 +15,7 @@ optionally small files. When those SSDs stall, every NFS metadata request waits 
   `hard,nfsvers=4.1,tcp,rsize=1048576,wsize=1048576,noatime,nconnect=16`.
 - `BigTank/k8s` uses recordsize 128K, `sync=disabled`, zstd compression and atime off.
 - ARC, the ZFS RAM cache, has no size cap. A low idle ARC reading (about 5 GiB on a
-  157 GiB box) is normal.
+  377 GiB box) is normal.
 
 ## Rules that prevent the stall
 

@@ -20,7 +20,7 @@ Strata is parked at 0; LiteLLM keeps paid DeepSeek overflow and a separate priva
   `llama.vanillax.me` and `vllm.vanillax.me` route to vLLM directly.
 
 Both cards use whole-card allocations (`Recreate`, time-slicing disabled),
-with the existing 220 W per-card limit. Image generation must remain parked
+with the existing 200 W per-card limit. Image generation must remain parked
 while vLLM requests both cards. Runtime, flags, staging and rollback:
 `my-apps/ai/vllm/README.md`; app wiring: `docs/domains/ai-gpu/model-catalog.md`.
 
