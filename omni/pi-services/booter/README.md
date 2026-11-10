@@ -68,6 +68,19 @@ Some UEFI firmware ignores proxy-DHCP offers. The Firewalla options 66 and 67
 handle that case. If a machine never gets a boot response, check its BIOS
 network-boot settings and those two options.
 
+### TrueNAS VMs
+
+A TrueNAS VM does not network-boot by itself. TrueNAS puts only the disks in the
+boot order, so a VM with an empty disk stops at the UEFI shell. Do this once per VM:
+
+1. Open the VM console. At `Shell>`, type `exit`.
+2. Choose **Boot Manager**, then **UEFI PXEv4**.
+
+Expected result: the console shows `Start PXE over IPv4`, and booter logs a boot
+response for the VM's MAC. After Talos installs, the VM boots from its disk.
+[Bare-metal Talos workers](https://github.com/mitchross/talos-argocd-proxmox/blob/main/docs/domains/hosts/bare-metal-talos.md#add-a-truenas-vm)
+has the VM settings.
+
 ## Change the Talos version
 
 1. Change `--talos-version` in a PR.

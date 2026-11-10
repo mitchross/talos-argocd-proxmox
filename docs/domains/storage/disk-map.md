@@ -82,6 +82,15 @@ with `install.diskSelector` on `disk.serial`. `hp-elite-gen13` and
 | `hp-elite-gen13` (HP Elite Mini 600 G9) | WD SN530 256 GB NVMe (serial `22245M458316`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `hp-elite-gen13` | Intel 660p 512 GB NVMe (serial `BTNH9154019K512A`) | consumer **QLC**, past its rated writes | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes. **Replace this drive first.** |
 
+## TrueNAS VM worker (`truenas-worker-01`)
+
+The VM `talosnas1` runs on the NAS. Both of its disks are volumes on the `vm-ssd` pool.
+
+| Physical drive | Class | TrueNAS volume | VM disk | Talos mount | Longhorn disk | Holds |
+|---|---|---|---|---|---|---|
+| Intel DC S3700 400 GB (serial `BTTV32010018400HGN`) | **enterprise, PLP** | `vm-ssd/talosnas1-system` 60 GiB | `vda` | system + `/var` | `talos-ephemeral` (scheduling **off**) | Talos system, images, logs, `emptyDir` |
+| same drive | **enterprise, PLP** | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (`wired-storage`) | ordinary volumes |
+
 ## TrueNAS `.133`
 
 The NAS has one 10 GbE port. Only the Threadripper also has 10 GbE. The other
@@ -93,6 +102,8 @@ Proxmox hosts reach the NAS at 2.5 GbE. The bare-metal mini PCs and the shed rea
 | **BigTank** | 4× HGST 10 TB HDD as two mirrors | survives one disk per mirror | bulk and read-mostly files: media, immich library, project-nomad downloads, the kopiur repo (RustFS) | databases, anything that creates or `fsync`s many small files |
 | **ai-pool** | 3 consumer SATA SSDs, striped | **none**. One dead disk loses the pool | model files that can be re-downloaded | anything you can't re-create |
 | **Backup10T** | 1× Seagate 10 TB HDD | none | replicated copies of BigTank datasets | primary data |
+
+| **vm-ssd** | 1× Intel DC S3700 400 GB SATA SSD (**enterprise, PLP**) | none | the disks of the worker VM `truenas-worker-01` | anything else |
 
 The NAS also has a mirrored boot pool (T-FORCE 512 GB and HPE 480 GB).
 A Samsung 850 EVO 500 GB was visible as `sdk`, outside the imported pools,

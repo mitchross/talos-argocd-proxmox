@@ -140,7 +140,7 @@ Keep the Omni server and local `omnictl` on the **same** release. Mismatched ver
 > **The active cluster is `talos-prod-cluster-v2`**, defined by
 > `omni/cluster-template/cluster-template-prod-v2.yaml`. Machine classes: `hp-sff-control-plane.yaml`,
 > `hp-sff-worker.yaml`, `threadripper-gpu-worker.yaml`, and `hp-micro-worker.yaml`.
-> Topology: HP SFF (house, wired) has 1 control plane and 1 worker. Threadripper has 1 GPU worker. HP micro (shed, wifi) has 1 worker. 3 bare-metal mini workers PXE-boot via booter.
+> Topology: HP SFF (house, wired) has 1 control plane and 1 worker. Threadripper has 1 GPU worker. HP micro (shed, wifi) has 1 worker. 3 bare-metal mini workers and 1 TrueNAS VM worker PXE-boot via booter.
 
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
 100 GiB GPU VM; the shed HP hosts one worker. Three bare-metal minis
@@ -511,6 +511,7 @@ HP micro, which sits in the shed behind a Wi-Fi media bridge.
 | Dell Pro Micro QCM1250 (bare metal) | DHCP | Core Ultra 5 245T 14c · 32 GB | CPU worker `mini-pc-dell-ultra-worker`, iGPU + NPU, SATA Longhorn disk |
 | HP Elite Mini 800 G9 (bare metal) | DHCP | i5-12500T 12t · 16 GB | CPU worker `hp-elite-gen12`, Zigbee (Home Assistant), compute-only |
 | HP Elite Mini 600 G9 (bare metal) | DHCP | i5-13500T 20t · 16 GB | CPU worker `hp-elite-gen13`, NVMe Longhorn disk |
+| TrueNAS DL360 (VM `talosnas1`) | DHCP | 8 vCPU · 64 GiB | CPU worker `truenas-worker-01`, SATA Longhorn disk with power-loss protection |
 
 ```
 Storage

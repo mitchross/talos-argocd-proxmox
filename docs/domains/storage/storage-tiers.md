@@ -40,7 +40,7 @@ capacity.
 ## Which nodes hold Longhorn data
 
 The Omni cluster template sets up Longhorn data disks on the HP SFF worker (two disks),
-the Threadripper, `hp-elite-gen13` and `mini-pc-dell-ultra-worker`. Those four nodes carry
+the Threadripper, `hp-elite-gen13`, `mini-pc-dell-ultra-worker` and `truenas-worker-01`. Those five nodes carry
 the `wired-storage` tag. The HP Micro in the shed sits behind a Wi-Fi bridge. Its disks
 are registered, but scheduling is disabled on them. `hp-elite-gen12` is compute-only and
 has no Longhorn disk. The [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md)

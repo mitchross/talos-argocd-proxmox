@@ -8,13 +8,15 @@ A conversion wipes every disk in the host. The procedure changes the Omni cluste
 template and, for a conversion, removes the old Proxmox VM and its provider. It
 leaves the other nodes alone.
 
-Three nodes use this procedure:
+Three bare-metal nodes use this procedure. One TrueNAS VM uses the same PXE path; see
+[Add a TrueNAS VM](#add-a-truenas-vm).
 
 | Node | Longhorn disk | Notes |
 |---|---|---|
 | `mini-pc-dell-ultra-worker` | `dell-ultra-ssd` | Has an iGPU and an NPU. Runs Frigate (NPU detection, iGPU decode) |
 | `hp-elite-gen12` | None (compute-only) | Holds the Zigbee stick. Home Assistant runs here |
 | `hp-elite-gen13` | `hp-elite-nvme` | Keeps the class label `hp-elite-worker` |
+| `truenas-worker-01` | `truenas-ssd` | VM `talosnas1` on the TrueNAS DL360 |
 
 The hardware in each machine is in the [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md).
 Disk serials and roles are in the [disk map](../storage/disk-map.md).
@@ -167,6 +169,41 @@ docker compose stop <host> && docker compose rm -f <host>   # on the Pi
 omnictl delete machineclasses.omni.sidero.dev <host>-worker
 omnictl infraprovider delete proxmox-<host>
 ```
+
+## Add a TrueNAS VM
+
+A VM on the NAS joins the same way as a mini PC: it PXE-boots from booter, and the
+template pins it by UUID. The NAS has no Omni provider, so you create the VM by hand.
+`truenas-worker-01` is the reference.
+
+1. Create the VM in **TrueNAS → Virtual Machines → Add**:
+
+   | Setting | Value |
+   |---|---|
+   | Boot method | UEFI, Secure Boot off |
+   | Start on boot | on |
+   | CPU | 1 socket, 8 cores, 1 thread, Host Passthrough |
+   | Memory | 64 GiB |
+   | Disk 1 (system) | VirtIO, new volume on pool `vm-ssd`, 60 GiB |
+   | Disk 2 (Longhorn) | VirtIO, new volume on pool `vm-ssd`, 230 GiB |
+   | NIC | VirtIO, attached to `eno50` |
+   | Installation media | none |
+
+2. Attach the NIC to `eno50`, not to `eno49`. A VM attached to the NAS's own port
+   cannot reach the NAS, so NFS and the kopiur repository fail.
+3. TrueNAS refuses a volume larger than 80% of the pool's free space. Create the
+   60 GiB volume first; 230 GiB is then the limit on the 370 GiB pool.
+4. Start the VM and choose the PXE entry once. See
+   [booter: TrueNAS VMs](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/pi-services/booter/README.md#truenas-vms).
+5. Continue with steps 3 and 4 above. VM disks report no serial, so select them by
+   size: `disk.size < 100u * GB` for the install disk and `disk.size >= 200u * GB`
+   for the Longhorn volume. Leave out `intel-ucode`, `i915` and the watchdog patch.
+
+Expected result: the node is `Ready`, and `talosctl get volumestatus u-longhorn-truenas-ssd`
+reaches `ready`.
+
+VM memory comes out of the RAM that the ZFS cache uses. A NAS reboot stops the VM
+together with NFS and the kopiur repository.
 
 ## Swap a node's NIC (for example a USB 2.5G adapter)
 

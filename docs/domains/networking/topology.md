@@ -19,7 +19,7 @@ which sits behind a Wi-Fi media bridge.
 | HP Elite Mini 600 G9 (bare metal) | Worker `hp-elite-gen13` | Wired 1 GbE, no Proxmox |
 | Shed HP micro `.20` (Proxmox) | One worker VM with the USB radios and the taint `node.vanillax.dev/link=wifi` | Ethernet to an ASUS RT-AX86U, then a Wi-Fi media bridge |
 | Pi 5 `.15` | Omni, Technitium and booter (PXE). Outside Kubernetes | Separate management and DNS host |
-| TrueNAS `.133` | NAS and RustFS. Outside Kubernetes | 10 GbE. Planned NAS downtime stalls the apps that use it |
+| TrueNAS `.133` | NAS and RustFS. Also hosts the worker VM `truenas-worker-01` | 10 GbE on `eno49` for the NAS. The VM uses the second 10 GbE port, `eno50`. NAS downtime stalls the apps that use it and stops the VM |
 
 Wired nodes connect through the 10G switch. A 10G switch does not give every
 attached host a 10 GbE link. The [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md)
