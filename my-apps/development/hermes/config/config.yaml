@@ -124,9 +124,18 @@ delegation:
               model: gpt-6.1-sol
 
 # Small internal helper calls run on DeepSeek Flash (via LiteLLM) instead of Opus.
-# Compression and the approval classifier stay on the main model on purpose.
+# Compression stays on the main model on purpose.
+# The approval classifier is pinned with its own fallbacks: on the session model a Codex limit escalated every flagged command to Mitch.
 # background_review (the post-turn memory/skill review fork) runs on Codex: it was ~$75/week of Opus.
 auxiliary:
+  approval:
+    provider: anthropic
+    model: claude-sonnet-5-5
+    fallback_chain:
+      - provider: openai-codex
+        model: gpt-6.1-sol
+      - provider: litellm
+        model: qwen3.8-27b
   background_review:
     provider: openai-codex
     model: gpt-6.1-sol
