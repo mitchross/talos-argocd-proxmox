@@ -58,7 +58,7 @@ spec:
       containers:
         - name: vllm-server
           # Built and smoke-tested in homelab-images.
-          image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2@sha256:fba9042e57effa23fd3c47aafe3c91081fa2f81c4cce244d4fed49299bf5808c
+          image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2@sha256:0365528ac3265c776986f86c158b92d989b8d6bf60b4520039f8cbc1deba2e7d
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
