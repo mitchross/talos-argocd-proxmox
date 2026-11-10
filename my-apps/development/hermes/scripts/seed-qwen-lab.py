@@ -5,7 +5,7 @@ Creates each profile once, then rewrites its Git-owned files on every start: con
 missing, so desktop edits survive. Also creates the qwen-lab Kanban board. The default profile's
 files are never written here.
 """
-import copy, os, subprocess, sys
+import copy, os, shutil, subprocess, sys
 from pathlib import Path
 from io import StringIO
 
@@ -91,6 +91,11 @@ def seed_profile(name, spec, base, soul, skills_src):
         bots.setdefault(k, v)
     write(meta_path, dump(meta))
 
+    lab_skills = home / "skills" / "qwen-lab"
+    if lab_skills.is_dir():  # Git owns this folder; drop skills removed from profiles.yaml
+        for old in lab_skills.iterdir():
+            if old.is_dir() and old.name not in spec.get("skills", []):
+                shutil.rmtree(old)
     for skill in spec.get("skills", []):
         write(home / "skills" / "qwen-lab" / skill / "SKILL.md", (skills_src / f"skill-{skill}.md").read_text())
 

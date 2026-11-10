@@ -58,8 +58,6 @@ configMapGenerator:
       - profiles.yaml=qwen-lab/profiles.yaml
       - SOUL.md=qwen-lab/SOUL.md
       - skill-qwen-ticket-template.md=qwen-lab/skills/qwen-ticket-template.md
-      - skill-qwen-cite-or-not-found.md=qwen-lab/skills/qwen-cite-or-not-found.md
-      - skill-qwen-verify-by-running.md=qwen-lab/skills/qwen-verify-by-running.md
       - skill-qwen-reviewer-checklist.md=qwen-lab/skills/qwen-reviewer-checklist.md
       - skill-qwen-best-of-n.md=qwen-lab/skills/qwen-best-of-n.md
   - name: cluster-config
