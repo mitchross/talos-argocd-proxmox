@@ -359,6 +359,20 @@ Your normal Hermes, the `default` profile, does not change.
 To use it, open the desktop app and pick `qwen-lab` in the profile list or the Bots tab.
 Switch back to `default` for normal work. Lab cards go on the Kanban board `qwen-lab`.
 
+Give jobs to the lead only. The lead writes a one-page spec, makes at most 5 cards, and the last card merges into `main`.
+The other bots refuse a multi-step job typed into their chat.
+
+The whole team shares the GPUs, about 68 output tokens a second in total. A small project takes an hour or more.
+
+| Guard | What it does |
+|---|---|
+| `qwen-lab-doctor` cron job, every 5 minutes | Reclaims cards whose worker died (a pod restart kills them), starts ready cards up to 4 at once, and reports blocked cards and helper bots working outside a card. Log: `/opt/data/workspace/reports/qwen-lab/doctor.log` |
+| Helpers think at `medium` | Thinking was three quarters of all output at `xhigh` |
+| Workers have no subagents | Stop in the desktop app does not reach a running subagent |
+| Best-of-3 only after a failure | Three tries cost three times the GPU time |
+
+Don't restart the Hermes pod to stop one chat: it kills every running card. The doctor restarts them within 5 minutes, but each bot starts its card over.
+
 To change it, edit `my-apps/development/hermes/qwen-lab/` and open a PR.
 The seed rewrites each lab profile's `config.yaml`, `SOUL.md` and lab skills on every start.
 
