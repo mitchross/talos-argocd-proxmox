@@ -643,7 +643,7 @@ patches:
 kind: Workers
 name: asus-nuc13-workers
 machines:
-- NUC13-UUID-TBD
+- e18a034e-f8b4-f5e3-960d-48210b7c0dda
 systemExtensions:
 - siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
 - siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
@@ -686,9 +686,9 @@ patches:
         memory: 512Mi
 ---
 kind: Machine
-name: NUC13-UUID-TBD
+name: e18a034e-f8b4-f5e3-960d-48210b7c0dda
 install:
-  diskSelector: disk.serial == "NUC13-NVME-SERIAL-TBD"
+  diskSelector: disk.serial == "50026B73848B87DD"
 patches:
 - name: asus-nuc13-hostname
   inline:
