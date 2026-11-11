@@ -13,7 +13,8 @@ drive holds the data. The [disk map](disk-map.md) does.
 | Class | Current backing / selection | Appropriate use and limitation |
 |---|---|---|
 | `longhorn` (default) | Two V1 replicas on different Longhorn nodes tagged `wired-storage` (no data locality) | App state and databases. One node can fail and the volume stays up. Volumes created before the two-copy default keep the count set on the live Volume. |
-| `longhorn-flash` | One replica selected by disk tag `flash`; currently the Threadripper's 440 GiB guest disk on two mirrored HPE SATA SSDs with PLP and thick LVM | Selected write-heavy state and noisy local I/O. The mirror survives one member disk loss; it does not survive loss of the Threadripper host. |
+| `longhorn-flash` | One replica selected by disk tag `flash`. Two disks carry the tag: the Threadripper's 440 GiB `ssd-flash` (two mirrored HPE SATA SSDs with PLP, thick LVM) and the 229 GiB `truenas-ssd` (one Intel S3700 with PLP) | Selected write-heavy state and noisy local I/O. One copy does not survive the loss of its host, and a drain must copy it first. Existing volumes can be raised to two copies one by one. |
+| `longhorn-flash-ha` | Two replicas selected by disk tag `flash`, one on each `flash` disk, no data locality | New databases that need enterprise flash. A reboot of either node needs no copy. `truenas-ssd` sits on one drive and is small: check its free space before you add a volume. |
 | `longhorn-wired-ha` | Two replicas with hard node/zone/disk separation on Longhorn nodes tagged `wired-storage` | Selected state that needs a surviving live copy. Requires healthy replicas, a working control plane, eligible compute and the rest of the application's dependencies. |
 | `truenas-nfs` | TrueNAS BigTank, HDD mirrors behind a large RAM cache, RWX; each PVC is its own dataset with `sync=standard` | Bulk, read-mostly data where NAS downtime is accepted: the immich library, project-nomad downloads. Measured from a pod: fast repeated reads, but only about 50 file creates and 110 `fsync` writes per second, so never databases, Docker/overlay storage or search indexes. |
 | Static NFS / SMB classes | The specific NAS share named in each PV | Media, model files and shared data. Inspect the backing dataset: BigTank and the unmirrored AI SSD pool have different failure behavior. |
@@ -26,8 +27,12 @@ For the common cases, use this short list. The disk map has the
 [full placement table](disk-map.md#where-should-new-data-go).
 
 - A database or ordinary app state goes on `longhorn`.
+- A database that needs enterprise flash goes on `longhorn-flash-ha`.
 - A heavy writer, such as ClickHouse or Kafka, goes on `longhorn-flash`.
 - Bulk, read-mostly files go on `truenas-nfs`.
+
+A disk tag that a class selects must sit on at least two disks on two nodes. The
+[disk map](disk-map.md#rule-no-disk-tag-with-only-one-disk) has the rule and the current tags.
 
 Do not use `longhorn-kopiur-staging-local` for application data. kopiur uses it for the
 temporary volume clones that backups and restores read. Its clones land only on disks

@@ -38,6 +38,20 @@ Consumer SSDs wear out from writes. Enterprise SSDs with power-loss protection (
 survive far more writes. The tables mark the class of each drive, so you can put heavy
 writers on the right one.
 
+## Rule: no disk tag with only one disk
+
+Every Longhorn disk tag that a StorageClass selects must sit on at least two disks on two
+different nodes. With only one disk, Longhorn has nowhere to move a copy, so a drain of
+that node waits until someone adds the tag by hand.
+
+Today `flash` sits on `ssd-flash` (GPU worker) and `truenas-ssd` (`truenas-worker-01`), and
+`clone-ok` sits on `ssd-flash` and `hp-sff-ssd2`. Per-disk tags such as `gpu-bulk` or
+`truenas-ssd` name one disk on purpose. Only the scratch `storage-bench` classes select them.
+
+When you add a tag to a live disk, also add it to that node's `default-disks-config` in the
+Omni cluster template. Longhorn reads the annotation only when a node first registers, so
+a replaced node gets only the tags written there.
+
 ## Proxmox hosts
 
 ### Threadripper `.14`, GPU worker (VM 100)
@@ -89,7 +103,7 @@ The VM `talosnas1` runs on the NAS. Both of its disks are volumes on the `vm-ssd
 | Physical drive | Class | TrueNAS volume | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
 | Intel DC S3700 400 GB (serial `BTTV32010018400HGN`) | **enterprise, PLP** | `vm-ssd/talosnas1-system` 60 GiB | `vda` | system + `/var` | `talos-ephemeral` (scheduling **off**) | Talos system, images, logs, `emptyDir` |
-| same drive | **enterprise, PLP** | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (`wired-storage`) | ordinary volumes |
+| same drive | **enterprise, PLP** | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (tags `truenas-ssd`, `flash`; `wired-storage`) | the second `flash` disk: second copies of `longhorn-flash-ha` and two-copy `flash` volumes |
 
 ## TrueNAS `.133`
 
@@ -120,6 +134,7 @@ about 110 `fsync` writes per second. A local Longhorn volume did about 490 and 4
 | The data is… | Put it on | Why |
 |---|---|---|
 | A database (Postgres, MySQL, SQLite, Redis with persistence) | `longhorn` (two copies) | databases wait on every write; NFS makes each one slow |
+| A database that needs enterprise flash | `longhorn-flash-ha` | two copies on the two `flash` disks; a reboot of either node needs no copy |
 | A heavy writer (ClickHouse, Kafka, tile renderers) | `longhorn-flash` | only the enterprise drive can take that write volume |
 | Bulk, read-mostly files (media, downloads, archives, photo libraries) | `truenas-nfs` | lots of space, no SSD wear, served from the NAS RAM cache |
 | A cache that rebuilds itself | `longhorn`, sized to what it really uses | small and local; never back it up |

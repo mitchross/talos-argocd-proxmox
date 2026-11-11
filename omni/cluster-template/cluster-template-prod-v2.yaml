@@ -693,7 +693,7 @@ patches:
     annotations:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
-        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"truenas-ssd","path":"/var/mnt/longhorn-truenas-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["truenas-ssd"]}]
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"truenas-ssd","path":"/var/mnt/longhorn-truenas-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["truenas-ssd","flash"]}]
 # VM disks report no serial, so match the 230 GiB data disk by size.
 - name: truenas-worker-longhorn-ssd-volume
   inline:
