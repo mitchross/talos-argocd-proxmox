@@ -1,0 +1,9 @@
+# Runner pods run a privileged dind sidecar, so this namespace is exempt from PSS restricted (same as gitea-actions).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-runners
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/audit: privileged

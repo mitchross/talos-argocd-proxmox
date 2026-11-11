@@ -57,6 +57,10 @@ generatedTargets: []
 namespaceExemptions:
   - namespace: 1passwordconnect
     reason: "Bootstrap secret controllers are chart-owned."
+  - namespace: arc-systems
+    reason: "Runner controller is chart-owned; runner pods are ephemeral."
+  - namespace: arc-runners
+    reason: "Ephemeral runner pods are created per job by ARC, not owned Deployments."
   - namespace: cert-manager
     reason: "Bootstrap certificate controllers are chart-owned."
   - namespace: csi-driver-nfs

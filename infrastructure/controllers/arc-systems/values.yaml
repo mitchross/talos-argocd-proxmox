@@ -1,0 +1,14 @@
+# The scale-set chart cannot look up the controller under Argo/kustomize, so its ServiceAccount name is pinned here and referenced there.
+serviceAccount:
+  create: true
+  name: arc-gha-rs-controller
+
+flags:
+  logLevel: info
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi

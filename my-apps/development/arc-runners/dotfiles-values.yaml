@@ -1,0 +1,74 @@
+githubConfigUrl: https://github.com/mitchross/dotfiles
+githubConfigSecret: arc-github-token
+runnerScaleSetName: arc-dotfiles
+minRunners: 0
+maxRunners: 1
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-gha-rs-controller
+
+# Runner + dind sidecar, written out (containerMode: dind would leave dind unpinned and without resources).
+template:
+  spec:
+    initContainers:
+      - name: init-dind-externals
+        image: ghcr.io/actions/actions-runner:2.338.2
+        command: [cp, -r, /home/runner/externals/., /home/runner/tmpDir/]
+        volumeMounts:
+          - { name: dind-externals, mountPath: /home/runner/tmpDir }
+      - name: dind
+        image: docker:29-dind
+        args: [dockerd, --host=unix:///var/run/docker.sock, --group=$(DOCKER_GROUP_GID)]
+        env:
+          - name: DOCKER_GROUP_GID
+            value: "123"
+        securityContext:
+          privileged: true
+        restartPolicy: Always
+        startupProbe:
+          exec:
+            command: [docker, info]
+          periodSeconds: 5
+          failureThreshold: 24
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+        volumeMounts:
+          - { name: work, mountPath: /home/runner/_work }
+          - { name: dind-sock, mountPath: /var/run }
+          - { name: dind-externals, mountPath: /home/runner/externals }
+          - { name: docker-data, mountPath: /var/lib/docker }
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:2.338.2
+        command: [/home/runner/run.sh]
+        env:
+          - name: DOCKER_HOST
+            value: unix:///var/run/docker.sock
+          - name: RUNNER_WAIT_FOR_DOCKER_IN_SECONDS
+            value: "120"
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+        volumeMounts:
+          - { name: work, mountPath: /home/runner/_work }
+          - { name: dind-sock, mountPath: /var/run }
+    volumes:
+      - name: dind-sock
+        emptyDir: {}
+      - name: dind-externals
+        emptyDir: {}
+      - name: work
+        emptyDir:
+          sizeLimit: 5Gi
+      - name: docker-data
+        emptyDir:
+          sizeLimit: 10Gi

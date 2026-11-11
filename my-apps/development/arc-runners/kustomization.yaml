@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: arc-runners
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+
+# One release per private repo: a personal account has no org-level runner scope.
+helmCharts:
+  - name: gha-runner-scale-set
+    repo: oci://ghcr.io/actions/actions-runner-controller-charts
+    # renovate: datasource=docker depName=ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+    version: 0.15.1
+    releaseName: arc-deal-scout
+    namespace: arc-runners
+    valuesFile: deal-scout-values.yaml
+  - name: gha-runner-scale-set
+    repo: oci://ghcr.io/actions/actions-runner-controller-charts
+    # renovate: datasource=docker depName=ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+    version: 0.15.1
+    releaseName: arc-consumers-energy-sync
+    namespace: arc-runners
+    valuesFile: consumers-energy-sync-values.yaml
+  - name: gha-runner-scale-set
+    repo: oci://ghcr.io/actions/actions-runner-controller-charts
+    # renovate: datasource=docker depName=ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+    version: 0.15.1
+    releaseName: arc-dotfiles
+    namespace: arc-runners
+    valuesFile: dotfiles-values.yaml
