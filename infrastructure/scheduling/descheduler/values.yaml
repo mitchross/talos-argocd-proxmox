@@ -41,6 +41,9 @@ deschedulerPolicy:
               exclude:
                 - kube-system
                 - longhorn-system
+                # Evicting a CI runner mid-job cancels the GitHub Actions job.
+                - arc-runners
+                - arc-systems
         # Memory only (cpu/pods omitted = 100% = ignored): under 55% receives, over 65% sheds. The 10-pt gap stops ping-pong.
         - name: LowNodeUtilization
           args:
@@ -50,6 +53,9 @@ deschedulerPolicy:
                 - kube-system
                 # Evicting Longhorn CSI/manager pods restarts attach and backup work cluster-wide.
                 - longhorn-system
+                # Evicting a CI runner mid-job cancels the GitHub Actions job.
+                - arc-runners
+                - arc-systems
             thresholds:
               memory: 55
             targetThresholds:
