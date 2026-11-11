@@ -1,0 +1,28 @@
+# Hermes runs the benchmark: scratch pods, PVCs and Restores in this namespace only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-storage-bench
+rules:
+  - apiGroups: [""]
+    resources: [pods, persistentvolumeclaims]
+    verbs: [create, delete]
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [get, list]
+  - apiGroups: [kopiur.home-operations.com]
+    resources: [restores]
+    verbs: [create, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-storage-bench
+subjects:
+  - kind: ServiceAccount
+    name: hermes
+    namespace: hermes
+roleRef:
+  kind: Role
+  name: hermes-storage-bench
+  apiGroup: rbac.authorization.k8s.io

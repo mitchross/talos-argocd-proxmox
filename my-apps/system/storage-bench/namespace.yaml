@@ -1,0 +1,8 @@
+# Scratch namespace for the storage benchmark (#3665). Holds only throwaway PVCs and pods.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage-bench
+  labels:
+    # Lets a Restore here read the cluster repository for the restore-speed test.
+    kopiur.home-operations.com/repo: cluster-kopia

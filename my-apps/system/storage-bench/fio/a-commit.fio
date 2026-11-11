@@ -1,0 +1,10 @@
+[global]
+filename=/data/fio.dat
+size=8g
+[a-commit]
+rw=randwrite
+bs=4k
+iodepth=1
+fsync=1
+runtime=30
+time_based=1

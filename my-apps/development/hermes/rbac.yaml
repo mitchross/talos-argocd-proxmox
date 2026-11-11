@@ -29,7 +29,7 @@ roleRef:
   name: hermes-viewer
   apiGroup: rbac.authorization.k8s.io
 ---
-# Day-to-day fixes: exec, restart or delete pods, roll out, run a Job, cordon a node.
+# Day-to-day fixes: exec, restart or delete pods, roll out, run a Job, cordon a node, delete a PVC.
 # Deliberate: cluster-wide Job create, workload patch and exec make this account cluster-admin in effect.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -57,6 +57,10 @@ rules:
   - apiGroups: [batch]
     resources: [jobs]
     verbs: [create, delete]
+  # Delete PVCs that Git no longer holds (retired or scratch). Argo recreates an empty one if Git still has it.
+  - apiGroups: [""]
+    resources: [persistentvolumeclaims]
+    verbs: [delete]
   # Raise or lower a Longhorn volume's copy count. Existing volumes keep the
   # count they were made with, so a storage-class change never reaches them.
   - apiGroups: [longhorn.io]

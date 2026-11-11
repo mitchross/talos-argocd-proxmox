@@ -1,0 +1,11 @@
+[global]
+directory=/data/small
+[e-smallfiles]
+nrfiles=20000
+filesize=16k
+rw=write
+bs=16k
+create_on_open=1
+fsync_on_close=1
+openfiles=64
+runtime=170

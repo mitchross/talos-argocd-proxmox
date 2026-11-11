@@ -1,0 +1,11 @@
+[global]
+filename=/data/fio.dat
+size=8g
+ioengine=libaio
+direct=1
+[b-randread]
+rw=randread
+bs=4k
+iodepth=32
+runtime=30
+time_based=1

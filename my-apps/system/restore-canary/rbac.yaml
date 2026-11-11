@@ -1,0 +1,26 @@
+# Hermes runs the restore drill (README): force a snapshot, then delete the Restore so it re-resolves.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-restore-drill
+rules:
+  - apiGroups: [kopiur.home-operations.com]
+    resources: [snapshots]
+    verbs: [create]
+  - apiGroups: [kopiur.home-operations.com]
+    resources: [restores]
+    resourceNames: [restore-canary-data-restore]
+    verbs: [delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-restore-drill
+subjects:
+  - kind: ServiceAccount
+    name: hermes
+    namespace: hermes
+roleRef:
+  kind: Role
+  name: hermes-restore-drill
+  apiGroup: rbac.authorization.k8s.io

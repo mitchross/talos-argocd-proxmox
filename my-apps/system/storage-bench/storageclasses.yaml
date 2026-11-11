@@ -1,0 +1,35 @@
+# Scratch classes for paths 4 and 5. Only storage-bench PVCs use them.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: storage-bench-truenas-ssd
+provisioner: driver.longhorn.io
+allowVolumeExpansion: false
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  diskSelector: "truenas-ssd"
+  dataLocality: "disabled"
+---
+# Path 5: one copy on each flash disk. Needs `flash` on truenas-ssd (#3663 step 1).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: storage-bench-flash-2
+provisioner: driver.longhorn.io
+allowVolumeExpansion: false
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
+parameters:
+  numberOfReplicas: "2"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  diskSelector: "flash"
+  dataLocality: "disabled"
