@@ -639,6 +639,64 @@ patches:
     auto: "off"
     hostname: hp-elite-gen12
 ---
+# Bare metal (PXE via booter on the Pi): ASUS NUC 13 Pro NUC13ANH, one NVMe, compute-only.
+kind: Workers
+name: asus-nuc13-workers
+machines:
+- NUC13-UUID-TBD
+systemExtensions:
+- siderolabs/intel-ucode # renovate: datasource=docker depName=siderolabs/intel-ucode
+- siderolabs/i915 # renovate: datasource=docker depName=siderolabs/i915
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+patches:
+- name: asus-nuc13-watchdog
+  inline:
+    # Bare metal only: the Intel TCO watchdog resets the box if Talos hangs for 2 minutes.
+    apiVersion: v1alpha1
+    kind: WatchdogTimerConfig
+    device: /dev/watchdog0
+    timeout: 2m0s
+# No Longhorn disk label: createDefaultDiskLabeledNodes keeps this node compute-only.
+- name: asus-nuc13-worker
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.vanillax.dev/class: asus-nuc13
+      node.vanillax.dev/pool: general
+      topology.kubernetes.io/zone: asus-nuc13
+      node.vanillax.dev/link: wired
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+- name: asus-nuc13-kubelet
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    config:
+      serializeImagePulls: false
+      systemReserved:
+        cpu: 500m
+        memory: 1Gi
+      kubeReserved:
+        cpu: 250m
+        memory: 512Mi
+---
+kind: Machine
+name: NUC13-UUID-TBD
+install:
+  diskSelector: disk.serial == "NUC13-NVME-SERIAL-TBD"
+patches:
+- name: asus-nuc13-hostname
+  inline:
+    apiVersion: v1alpha1
+    kind: HostnameConfig
+    auto: "off"
+    hostname: asus-nuc13
+---
 # TrueNAS VM (PXE via booter on the Pi): pinned by UUID, no provider or MachineClass.
 kind: Workers
 name: truenas-workers
