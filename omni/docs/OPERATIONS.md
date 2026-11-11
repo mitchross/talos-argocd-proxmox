@@ -54,6 +54,18 @@ omnictl apply -f machine-classes/hp-micro-worker.yaml
 omnictl apply -f machine-classes/threadripper-gpu-worker.yaml
 ```
 
+### Labeling machines
+
+`machine-labels/machine-labels.yaml` gives each machine a `host` and a `kind` label in the Omni UI.
+The labels are display data only. They do not change a node.
+
+```bash
+omnictl apply -d -f machine-labels/machine-labels.yaml   # preview
+omnictl apply -f machine-labels/machine-labels.yaml
+```
+
+Add an entry when a machine joins. When the provider replaces a Proxmox VM, the VM gets a new UUID: update its `id`, then apply again.
+
 ### Verifying machine classes
 
 List applied classes to confirm they are registered:

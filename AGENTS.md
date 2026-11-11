@@ -64,6 +64,14 @@ never in a wrapper.
 | `new-database` | add a plain Postgres database |
 | `place-storage` | choose a PVC's storage class and size |
 
+## Hardware inventory
+
+When a machine joins, leaves, is renamed or is upgraded, update all three inventories:
+
+1. This repo: `docs/inventory/`, `docs/domains/hosts/`, `docs/domains/storage/disk-map.md`, the README hardware table, and `omni/machine-labels/`.
+2. `homelab-rack-planner` (Gitea). It serves `homelab.vanillax.me` and reads `docs/inventory/` by path.
+3. `deal-scout` (GitHub). Its fleet hosts drive the Lab upgrade plan. Never put serial numbers there.
+
 ## Mink Knowledge Capture
 
 Keep Mink updated during substantive work. Hooks may track session state automatically, but durable decisions, verified root causes, runbooks, and gotchas require explicit note capture with `mink note` or `/mink:note`.
