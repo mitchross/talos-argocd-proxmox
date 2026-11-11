@@ -59,6 +59,7 @@ spec:
       # where Argo kept reverting the new generator paths (see git log
       # around 2026-04-20). Standalone Applications dodge that entirely.
       # OTEL has a standalone wave-6 Application so its health cannot gate workload discovery.
+      - path: infrastructure/controllers/arc-systems
       - path: infrastructure/platform/container-registry
       - path: infrastructure/storage/csi-driver-nfs
       - path: infrastructure/storage/csi-driver-smb
