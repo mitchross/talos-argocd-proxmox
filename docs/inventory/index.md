@@ -12,6 +12,7 @@ builds from.
 | --- | --- |
 | [Fleet inventory](2026-11-03-fleet-inventory.md) | Which machines exist, with their CPU, RAM, PCIe links, measured speed, and power use. |
 | [Minis, RAM and M.2 slots](2026-11-05-minis-and-slots.md) | What is inside each mini PC, which M.2 slots are free, and what to buy. |
+| [ASUS NUC 13 Pro, 11 November 2026](2026-11-11-asus-nuc13.md) | A new mini PC that has not joined the cluster yet: label facts and the steps to bring it in. |
 | [Disk map](../domains/storage/disk-map.md) | Which physical disk holds which data, and where new data goes. |
 | [Manage hosts with Ansible](../domains/hosts/physical-hosts-ansible.md) | How to change a setting on a Proxmox host or the Pi. |
 | [Bare-metal Talos workers](../domains/hosts/bare-metal-talos.md) | How to add a machine to the cluster without Proxmox. |

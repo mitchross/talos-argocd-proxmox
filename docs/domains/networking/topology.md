@@ -17,6 +17,7 @@ which sits behind a Wi-Fi media bridge.
 | Dell Pro Micro (bare metal) | Worker `mini-pc-dell-ultra-worker` | Wired 1 GbE, no Proxmox |
 | HP Elite Mini 800 G9 (bare metal) | Worker `hp-elite-gen12`, holds the Zigbee stick | Wired 1 GbE, no Proxmox |
 | HP Elite Mini 600 G9 (bare metal) | Worker `hp-elite-gen13` | Wired 1 GbE, no Proxmox |
+| ASUS NUC 13 Pro (bare metal, joining) | Planned worker `asus-nuc13`. Not in Omni yet | Wired 2.5 GbE capable (Intel i226-V). Switch port and negotiated speed to be recorded |
 | Shed HP micro `.20` (Proxmox) | One worker VM with the USB radios and the taint `node.vanillax.dev/link=wifi` | Ethernet to an ASUS RT-AX86U, then a Wi-Fi media bridge |
 | Pi 5 `.15` | Omni, Technitium and booter (PXE). Outside Kubernetes | Separate management and DNS host |
 | TrueNAS `.133` | NAS and RustFS. Also hosts the worker VM `truenas-worker-01` | 10 GbE on `eno49` for the NAS. The VM uses the second 10 GbE port, `eno50`. NAS downtime stalls the apps that use it and stops the VM |

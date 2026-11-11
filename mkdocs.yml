@@ -130,6 +130,7 @@ nav:
       - Hardware overview: inventory/index.md
       - Fleet inventory: inventory/2026-11-03-fleet-inventory.md
       - Minis, RAM and M.2 slots: inventory/2026-11-05-minis-and-slots.md
+      - ASUS NUC 13 Pro (joining): inventory/2026-11-11-asus-nuc13.md
       - Manage hosts with Ansible: domains/hosts/physical-hosts-ansible.md
       - Bare-metal Talos workers: domains/hosts/bare-metal-talos.md
       - Omni contract validation: domains/scheduling/omni-contract-validation.md
