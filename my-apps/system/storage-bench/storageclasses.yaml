@@ -1,4 +1,4 @@
-# Scratch classes for paths 4 and 5. Only storage-bench PVCs use them.
+# Scratch classes for paths 2, 4 and 5. Only storage-bench PVCs use them.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -32,4 +32,22 @@ parameters:
   staleReplicaTimeout: "30"
   fsType: "ext4"
   diskSelector: "flash"
+  dataLocality: "disabled"
+---
+# Path 2: one copy on the GPU ssd-flash disk; only that disk has both tags.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: storage-bench-ssd-flash
+provisioner: driver.longhorn.io
+allowVolumeExpansion: false
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  diskSelector: "flash,clone-ok"
   dataLocality: "disabled"
