@@ -145,7 +145,7 @@ Keep the Omni server and local `omnictl` on the **same** release. Mismatched ver
 The HP SFF hosts the control plane and one worker; the Threadripper hosts the
 100 GiB GPU VM; the shed HP hosts one worker. Three bare-metal minis
 (`mini-pc-dell-ultra-worker`, `hp-elite-gen12`, `hp-elite-gen13`) run Talos without
-Proxmox. A fourth, `asus-nuc13`, is joining and is not in Omni yet; see [bare-metal Talos workers](docs/domains/hosts/bare-metal-talos.md). Machine
+Proxmox. A fourth, `asus-nuc-gen13`, is joining and is not in Omni yet; see [bare-metal Talos workers](docs/domains/hosts/bare-metal-talos.md). Machine
 classes define allocations for newly provisioned VMs, which can differ from
 existing VM settings. See the [fleet inventory](docs/inventory/2026-11-03-fleet-inventory.md)
 for measured capacity.
@@ -511,7 +511,7 @@ HP micro, which sits in the shed behind a Wi-Fi media bridge.
 | Dell Pro Micro QCM1250 (bare metal) | DHCP | Core Ultra 5 245T 14c · 32 GB | CPU worker `mini-pc-dell-ultra-worker`, iGPU + NPU, SATA Longhorn disk |
 | HP Elite Mini 800 G9 (bare metal) | DHCP | i5-12500T 12t · 16 GB | CPU worker `hp-elite-gen12`, Zigbee (Home Assistant), compute-only |
 | HP Elite Mini 600 G9 (bare metal) | DHCP | i5-13500T 20t · 16 GB | CPU worker `hp-elite-gen13`, NVMe Longhorn disk |
-| ASUS NUC 13 Pro NUC13ANH (bare metal, joining) | DHCP | i5-13420H 12t · 16 GB | Planned CPU worker `asus-nuc13`, compute-only. Not in Omni yet |
+| ASUS NUC 13 Pro NUC13ANH (bare metal, joining) | DHCP | i5-13420H 12t · 16 GB | Planned CPU worker `asus-nuc-gen13`, compute-only. Not in Omni yet |
 | TrueNAS DL360 (VM `talosnas1`) | DHCP | 8 vCPU · 64 GiB | CPU worker `truenas-worker-01`, SATA Longhorn disk with power-loss protection |
 
 ```

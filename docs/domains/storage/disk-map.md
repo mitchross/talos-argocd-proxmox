@@ -93,7 +93,7 @@ with `install.diskSelector` on `disk.serial`. `hp-elite-gen13` and
 | `mini-pc-dell-ultra-worker` (Dell Pro Micro) | KIOXIA BG7 256 GB NVMe (serial `3GTCT3A8Z438`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `mini-pc-dell-ultra-worker` | APPLE SSD SM0256 256 GB SATA (no serial; matched by model) | consumer SATA | `/var/mnt/longhorn-dell-ultra-ssd` | `dell-ultra-ssd` (`wired-storage`) | ordinary volumes |
 | `hp-elite-gen12` (HP Elite Mini 800 G9) | Samsung MZVL2256 256 GB NVMe (serial `S63XNA0TC92107`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
-| `asus-nuc13` (ASUS NUC 13 Pro) | Kingston OM8TAP4512K1-A00, 512 GB M.2 2280 NVMe (477 GiB). Serial unknown until Talos boots. **Pending PXE** | — | system + `/var` (planned) | — | Compute-only. No Longhorn disk |
+| `asus-nuc-gen13` (ASUS NUC 13 Pro) | Kingston OM8TAP4512K1-A00, 512 GB M.2 2280 NVMe (477 GiB). Serial unknown until Talos boots. **Pending PXE** | — | system + `/var` (planned) | — | Compute-only. No Longhorn disk |
 | `hp-elite-gen13` (HP Elite Mini 600 G9) | WD SN530 256 GB NVMe (serial `22245M458316`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `hp-elite-gen13` | Intel 660p 512 GB NVMe (serial `BTNH9154019K512A`) | consumer **QLC**, past its rated writes | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes. **Replace this drive first.** |
 
