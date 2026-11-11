@@ -47,6 +47,7 @@ A starter kit for deploying self-hosted Sidero Omni with the Proxmox infrastruct
 6. **Preview Provisioning** - `omnictl cluster template sync -f omni/cluster-template/cluster-template-prod-v2.yaml --dry-run`
 7. **Provision Cluster** - `omnictl cluster template sync -f omni/cluster-template/cluster-template-prod-v2.yaml`
 8. **Watch Provisioning** - `omnictl cluster template status -f omni/cluster-template/cluster-template-prod-v2.yaml --wait 30m`
+9. **Label Machines** - `omnictl apply -f omni/machine-labels/machine-labels.yaml`
 
 Run steps 4-8 from the repository root. Template sync creates the control
 plane and worker MachineSets. Do not create MachineSets separately.
@@ -65,6 +66,7 @@ plane and worker MachineSets. Do not create MachineSets separately.
 │   └── config.yaml.example
 ├── pi-services/               # Other Pi services, incl. booter (PXE for bare-metal workers)
 ├── machine-classes/           # VM specs (HP SFF control plane/worker, HP micro worker, Threadripper GPU worker)
+├── machine-labels/            # Omni UI labels per machine (host, kind)
 ├── cluster-template/          # Cluster template + machine config patches
 └── docs/                      # Additional documentation
     ├── ARCHITECTURE.md

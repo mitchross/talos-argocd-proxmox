@@ -2,8 +2,6 @@
 ---
 kind: Cluster
 name: talos-prod-cluster-v2
-labels:
-  cluster-id: "2"
 kubernetes:
   version: v1.37.2
 talos:

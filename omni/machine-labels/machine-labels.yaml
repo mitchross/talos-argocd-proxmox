@@ -1,0 +1,110 @@
+# omnictl apply -f omni/machine-labels/machine-labels.yaml
+# UI labels only. Proxmox VMs get a new UUID when the provider replaces them: update the id, then apply again.
+---
+# control-plane
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: ce56971b-9cee-4c50-bf08-09cae9c37724
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: hp-sff
+    kind: vm
+spec: {}
+---
+# gpu-worker
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: d102a1c1-2b4e-4d63-a26b-2c8ea183927e
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: threadripper
+    kind: vm
+spec: {}
+---
+# hp-sff-worker
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: 68d19724-2a7e-497b-9e5f-a38297ad0e19
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: hp-sff
+    kind: vm
+spec: {}
+---
+# hp-micro-worker
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: 62245fe4-dc5b-4c75-8e72-91023c573243
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: hp-micro
+    kind: vm
+spec: {}
+---
+# truenas-worker-01
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: 3b35bad1-0de6-443e-b7e0-d3debcf0375d
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: truenas
+    kind: vm
+spec: {}
+---
+# hp-elite-gen12
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: 8e57d492-b3b0-41c5-86a6-47c7c5516434
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: hp-elite-gen12
+    kind: bare-metal
+spec: {}
+---
+# hp-elite-gen13
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: 00e0d31e-1f61-4281-80e0-713248293ae8
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: hp-elite-gen13
+    kind: bare-metal
+spec: {}
+---
+# mini-pc-dell-ultra-worker
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: 4c4c4544-004a-4210-8037-b9c04f314b34
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: dell-ultra
+    kind: bare-metal
+spec: {}
+---
+# asus-nuc-gen13
+metadata:
+  namespace: default
+  type: MachineLabels.omni.sidero.dev
+  id: e18a034e-f8b4-f5e3-960d-48210b7c0dda
+  annotations:
+    omni.sidero.dev/platform-tag-labels-initialized: ""
+  labels:
+    host: asus-nuc-gen13
+    kind: bare-metal
+spec: {}
