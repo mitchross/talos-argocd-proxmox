@@ -48,6 +48,7 @@ configMapGenerator:
       - cron-strata-v31-watch.py=cron/strata-v31-watch.py
       - cron-argo-rid-watch.py=cron/argo-rid-watch.py
       - cron-radar-kanban-unlock.py=cron/radar-kanban-unlock.py
+      - cron-qwen-lab-doctor.py=cron/qwen-lab-doctor.py
   - name: hermes-skills
     files:
       - SKILL.md=skills/homelab-ops/SKILL.md
