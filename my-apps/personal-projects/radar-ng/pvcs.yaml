@@ -18,23 +18,6 @@ spec:
       # Inodes bind first: ~2.0M used at peak; ext4 gives 64Gi about 4.2M.
       storage: 64Gi
 ---
-# Retired, mounted by nothing (#3664). Delete only after the owner approves in that issue.
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: tiles
-  namespace: radar-ng
-  labels:
-    backup-exempt: "true"
-  annotations:
-    storage.vanillax.dev/backup-exempt-reason: "PNG/MVT tiles generated from grids/; rebuildable by re-running tile generation"
-spec:
-  accessModes: [ReadWriteOnce]
-  storageClassName: longhorn-flash
-  resources:
-    requests:
-      storage: 100Gi
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -104,21 +87,3 @@ spec:
     requests:
       # 18 GiB file; a re-extract holds the old file and the .tmp at once.
       storage: 40Gi
----
-# Retired, mounted by nothing (#3664). Delete only after the owner approves in that issue.
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pmtiles-rwx
-  namespace: radar-ng
-  labels:
-    backup-exempt: "true"
-  annotations:
-    storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; the basemap pod's fetch-basemap init container rebuilds it from a build.protomaps.com daily build"
-spec:
-  # longhorn-flash, not HDD-NFS: pmtiles random reads thrash on HDD. RWX lets basemap roll across nodes.
-  accessModes: [ReadWriteMany]
-  storageClassName: longhorn-flash
-  resources:
-    requests:
-      storage: 50Gi
