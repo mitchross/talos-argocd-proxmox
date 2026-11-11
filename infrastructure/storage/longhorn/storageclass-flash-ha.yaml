@@ -1,0 +1,23 @@
+# Two copies on two `flash` disks (GPU worker + truenas-worker-01) for new databases; see docs/domains/storage/storage-tiers.md.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-flash-ha
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    # Parameters are immutable: to change them, delete the live StorageClass once; ArgoCD re-creates it.
+    argocd.argoproj.io/sync-options: Replace=true
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
+parameters:
+  numberOfReplicas: "2"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  dataEngine: "v1"
+  diskSelector: "flash"
+  # No copy follows the pod, so a pod on a node without a `flash` disk never asks for an impossible local copy.
+  dataLocality: "disabled"
