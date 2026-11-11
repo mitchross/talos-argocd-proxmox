@@ -144,15 +144,31 @@ If machines are not appearing in Proxmox:
 ### A drain is stuck on a Longhorn volume
 
 Longhorn's `node-drain-policy` is `block-for-eviction-if-contains-last-replica`.
-Before a node can drain, Longhorn moves each single-replica volume to another disk
-that matches the volume's disk tags. The GPU node's `ssd-flash` disk is the only
-disk with the `flash` and `clone-ok` tags, and its `gpu-bulk` disk is the only one
-with the `gpu-bulk` tag. Volumes with those tags have no other disk, so the drain
-waits forever.
+Before a node can drain, Longhorn copies each single-replica volume on it to another
+disk with the volume's tags. A drain only gets stuck when no other disk has those tags.
 
-**Symptom.** The upgrade stops on the GPU node. `omnictl get clustermachinestatus <id> -o yaml`
+**What no longer blocks (2026-11-11, #3663).**
+- The `flash` tag has two disks: `ssd-flash` on the GPU node and `truenas-ssd` on
+  `truenas-worker-01`.
+- The five database volumes have two copies, one on each disk: product-bench
+  `postgres-data`, and PostHog `postgres-data`, `redis7-data`,
+  `redpanda-data-kafka-0` and `clickhouse-data-clickhouse-0`. A drain of either node
+  leaves the other copy running and copies nothing.
+- Single-copy `flash` volumes (the radar-ng ones until #3664) should copy to
+  `truenas-ssd` by themselves. The drain waits for the copy but needs no tag patch.
+  No real drain has tested this yet. On 2026-11-10 about 150 GiB took 45 minutes,
+  about 48 MB/s in total.
+
+**What still blocks.** A single-copy volume whose tags match one disk only:
+- `gpu-bulk`: only the GPU node's `gpu-bulk` disk. No volume uses it today.
+- `flash` + `clone-ok` together: only `ssd-flash`. Used only by the bench class
+  `storage-bench-ssd-flash`; delete its scratch PVCs before a drain.
+
+`clone-ok` alone does not block: kopiur's backup clones can move to `hp-sff-ssd2`.
+
+**Symptom.** The upgrade stops on the node. `omnictl get clustermachinestatus <id> -o yaml`
 shows `lastconfigerror: ... cordon/drain before reboot failed ... evicting pods/"instance-manager-..."`.
-Replicas on the node show `evictionRequested: true`, and the new replicas never get a node:
+The new replicas never get a node:
 
 ```bash
 kubectl -n longhorn-system get replicas.longhorn.io -o json \
@@ -160,44 +176,35 @@ kubectl -n longhorn-system get replicas.longhorn.io -o json \
 # each volume's Scheduled condition says "tags not fulfilled"
 ```
 
-**Fix.** Give the stuck tags a temporary second disk on a wired node, then remove them.
+**Fix.** Give the stuck tag a temporary second disk on a wired node:
 
-1. Add the tags to `hp-sff-ssd`. It is wired and has the most free space:
+1. Add the tag to `hp-sff-ssd`:
    ```bash
    kubectl -n longhorn-system patch nodes.longhorn.io talos-prod-cluster-v2-hp-sff-workers-h76ncc --type=json \
-     -p='[{"op":"add","path":"/spec/disks/hp-sff-ssd/tags/-","value":"flash"},
-          {"op":"add","path":"/spec/disks/hp-sff-ssd/tags/-","value":"gpu-bulk"}]'
+     -p='[{"op":"add","path":"/spec/disks/hp-sff-ssd/tags/-","value":"<tag>"}]'
    ```
-2. Wait until no replica on the GPU node has `evictionRequested: true`. Longhorn also
-   attaches detached volumes to move them. On 2026-11-10 about 150 GiB moved in
-   45 minutes, about 48 MB/s in total and 26-51 MB/s per volume.
-   Omni retries the drain by itself. Do not scale the workloads to 0: Longhorn must
-   move a detached single-copy volume too, so the wait stays the same. Watch the copy:
+2. Wait until no replica on the node has `evictionRequested: true`. Omni retries the
+   drain by itself. Scaling the workloads to 0 does not help: Longhorn moves detached
+   single-copy volumes too. Watch the copy:
    ```bash
    kubectl -n longhorn-system get engines.longhorn.io -o json \
      | jq -r '.items[] | select(.status.rebuildStatus | length > 0)
          | "\(.spec.volumeName) \(.status.rebuildStatus | map(.progress) | join(","))%"'
    ```
-3. When the GPU node is `Ready` and uncordoned, restore the original tags:
+3. When the node is `Ready` and uncordoned, restore the original tags:
    ```bash
    kubectl -n longhorn-system patch nodes.longhorn.io talos-prod-cluster-v2-hp-sff-workers-h76ncc --type=merge \
      -p='{"spec":{"disks":{"hp-sff-ssd":{"tags":["hp-sff-ssd"]}}}}'
    ```
 
-Restoring the tags does not move a copy back. A `longhorn-flash` volume returns to
-`ssd-flash` only when its pod runs on the GPU node, because best-effort data locality
-copies to the pod's node. A pod on another node gets a local copy that fails with
-"tags not fulfilled", and the data stays on `hp-sff-ssd`. On 2026-11-10 that happened
-to all four PostHog volumes. List the volumes still outside `ssd-flash`:
+Restoring the tags does not move a copy back. List tagged volumes left on `hp-sff-ssd`:
 
 ```bash
 kubectl -n longhorn-system get replicas.longhorn.io -o json | jq -r '.items[]
-  | select(.spec.nodeID != "" and (.spec.diskPath | test("ssd-flash") | not))
-  | .spec.volumeName' | sort -u > /tmp/off-flash
-kubectl -n longhorn-system get volumes.longhorn.io -o json | jq -r --rawfile off /tmp/off-flash '.items[]
-  | select((.spec.diskSelector // []) | index("flash")) | select(.metadata.name as $v | $off | contains($v))
+  | select(.spec.diskPath | test("hp-sff-ssd$")) | .spec.volumeName' | sort -u > /tmp/on-sff
+kubectl -n longhorn-system get volumes.longhorn.io -o json | jq -r --rawfile on /tmp/on-sff '.items[]
+  | select((.spec.diskSelector // []) | length > 0) | select(.metadata.name as $v | $on | contains($v))
   | .status.kubernetesStatus | "\(.namespace)/\(.pvcName)"'
 ```
 
-Do not leave the tags in place. `hp-sff-ssd` is a consumer drive, and the
-`flash` class holds the heavy writers.
+Do not leave the tag in place. `hp-sff-ssd` is a consumer drive.
