@@ -29,7 +29,7 @@ spec:
         node.vanillax.dev/class: hp-elite-worker
       containers:
       - name: machine-learning
-        image: ghcr.io/immich-app/immich-machine-learning:v3.3.6-openvino@sha256:035c30de002da9d4d4ae3872107bb9d8e195ead1c1f9fd470a2b0149ed37aec1
+        image: ghcr.io/immich-app/immich-machine-learning:v3.4.0-openvino@sha256:4744421230e2cd9b34621dd6a03cd7c10b228d4c3756242c0b25b23b258a66b1
         ports:
         - name: http
           containerPort: 3003
