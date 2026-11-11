@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Completes blocked radar-ng Kanban cards once the PR named in their block reason is merged, then dispatches.
+import time
 import json, re, subprocess
 
 H = "/opt/hermes/bin/hermes"
@@ -10,8 +11,9 @@ for c in json.loads(run(H, "kanban", "list", "--status", "running", "--json").st
     if not c["title"].startswith("radar-ng"):
         continue
     d = json.loads(run(H, "kanban", "show", c["id"], "--json").stdout)
-    last = d["events"][-1] if d["events"] else {}
-    if last.get("kind") == "worker_result" and not (d["runs"] and d["runs"][-1].get("pid")):
+    last = next((e for e in reversed(d["events"]) if e.get("kind") != "commented"), {})
+    idle = time.time() - (last.get("created_at") or time.time())
+    if not (d["runs"] and d["runs"][-1].get("pid")) and (last.get("kind") == "worker_result" or idle > 1800):
         run(H, "kanban", "reclaim", c["id"], "--reason", "worker exited but card stayed running (pod restart)")
         out.append(f"{c['id']} {c['title']}: dead worker reclaimed")
 cards = []
