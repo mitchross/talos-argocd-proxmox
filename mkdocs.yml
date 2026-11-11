@@ -104,6 +104,7 @@ nav:
   - Storage:
       - Storage architecture: storage-architecture.md
       - Disk map — which disk holds what: domains/storage/disk-map.md
+      - NAS flash pool layout and buy list: domains/storage/nas-flash-pool.md
       - Pick a StorageClass: domains/storage/storage-tiers.md
       - Move a PVC to another StorageClass: domains/storage/pvc-storageclass-migration.md
       - Disk writes and SSD wear: domains/storage/disk-writes.md
