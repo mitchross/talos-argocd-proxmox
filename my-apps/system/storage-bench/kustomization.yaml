@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: storage-bench
+
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - storageclasses.yaml
+
+configMapGenerator:
+  - name: storage-bench-fio
+    files:
+      - scripts/run-bench.sh
+      - fio/a-commit.fio
+      - fio/b-randread.fio
+      - fio/c-bulkwrite.fio
+      - fio/d-bulkread.fio
+      - fio/e-smallfiles.fio

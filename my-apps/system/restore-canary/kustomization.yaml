@@ -6,6 +6,7 @@ resources:
   - pvc.yaml
   - deployment.yaml
   - kopiur/restore-canary-data.yaml
+  - rbac.yaml
 
 namespace: restore-canary
 

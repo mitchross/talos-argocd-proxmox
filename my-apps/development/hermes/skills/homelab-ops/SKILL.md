@@ -11,7 +11,7 @@ metadata:
 
 # Homelab ops: cluster checks and quick fixes
 
-You run inside the cluster. `kubectl` is on PATH and already authenticated. It reads workloads, nodes, storage and CRDs, but not Secrets or ConfigMaps (except `kube-system/cilium-config`), and can do day-to-day fixes: exec, port-forward, delete or evict pods, `rollout restart`, scale, run a Job, cordon/uncordon. It cannot create or edit app resources; config changes go through Git. Say what a restart or delete will do before you run it.
+You run inside the cluster. `kubectl` is on PATH and already authenticated. It reads workloads, nodes, storage and CRDs, but not Secrets or ConfigMaps (except `kube-system/cilium-config`), and can do day-to-day fixes: exec, port-forward, delete or evict pods, `rollout restart`, scale, run a Job, cordon/uncordon, and delete a PVC that Git no longer holds (ask first; it deletes the data). It cannot create or edit app resources; config changes go through Git. Say what a restart or delete will do before you run it.
 
 It can also start an Argo CD sync of what's in Git, or force a hard refresh:
 

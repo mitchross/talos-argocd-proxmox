@@ -1,0 +1,11 @@
+[global]
+filename=/data/fio.dat
+size=8g
+ioengine=libaio
+direct=1
+[c-bulkwrite]
+rw=write
+bs=1m
+iodepth=8
+end_fsync=1
+runtime=170
