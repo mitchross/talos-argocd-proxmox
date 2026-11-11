@@ -114,6 +114,27 @@ PVC, so a rollout never attaches the volume on two nodes at once. Longhorn can a
 RWX through share-manager pods, but the classes here do not declare it. Keep NAS RWX for
 shared files unless a separate migration is justified.
 
+### Measured numbers
+
+Median of three fio runs per path, November 11 ([full page and method](../../inventory/2026-11-11-storage-bench.md)).
+"Commits/s" is 4k writes with `fsync` after each, the database case.
+
+| Class or path | Pod on | Commits/s (p99) | Random read IOPS | Write / read MB/s | Small files/s |
+|---|---|---:|---:|---:|---:|
+| `emptyDir` (node disk) | GPU worker | 2,126 (1.0 ms) | 64,668 | 1,971 / 598 | 776 |
+| `longhorn-flash`, local copy | GPU worker | 346 (6.5 ms) | 10,003 | 169 / 610 | 221 |
+| `longhorn-flash`, remote copy | gen12 (1 GbE) | 319 (6.7 ms) | 15,860 | 110 / 111 | 233 |
+| `flash`, two copies | GPU worker | 186 (8.7 ms) | 9,567 | 155 / 544 | 143 |
+| `longhorn`, two copies | hp-sff | 192 (16.3 ms) | 6,069 | 104 / 226 | 171 |
+| `truenas-ssd` (S3700), pod on the NAS VM | `truenas-worker-01` | 863 (3.9 ms) | 13,685 | 205 / 624 | 351 |
+| `truenas-ssd` (S3700), pod remote | GPU worker | 185 (7.7 ms) | 10,564 | 170 / 482 | 159 |
+| `truenas-nfs` (BigTank HDD) | GPU worker | 103 (59 ms) | 38,540 | 67 / 561 | over 180 s |
+| `nfs-comfyui-10g` (ai-pool) | GPU worker | 270 (41 ms) | 30,846 | 316 / 816 | 164 |
+
+Read the table this way: a second synchronous copy about halves the commit rate, and NFS on
+BigTank is too slow for databases and small files. Read IOPS on NFS come partly from the
+NAS RAM cache.
+
 ## Do not export NAS flash over NVMe/TCP
 
 Do not recreate a NAS flash pool exported to the cluster over NVMe/TCP. A test used three
