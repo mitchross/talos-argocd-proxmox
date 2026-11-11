@@ -28,6 +28,7 @@ They are not in the sidebar. Read them only for the detail named here.
 
 | Snapshot | Still useful for |
 | --- | --- |
+| [Storage benchmark, 11 November 2026](2026-11-11-storage-bench.md) | Commit, IOPS and MB/s for every storage class, and restore checks. |
 | [Fleet inventory, 27 October 2026](2026-10-27-fleet-inventory.md) | Longhorn disks and requests per node. |
 | [Full inventory, 15 October 2026](2026-10-15-full-inventory.md) | VM disk paths, Proxmox storage, SMART status per drive, and NAS pools. |
 | [etcd on the Intel S3610, 11 October 2026](2026-10-11-etcd-on-s3610.md) | etcd disk latency on an enterprise SSD. |
