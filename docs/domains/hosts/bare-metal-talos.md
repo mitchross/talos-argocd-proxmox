@@ -17,6 +17,7 @@ Three bare-metal nodes use this procedure. One TrueNAS VM uses the same PXE path
 | `hp-elite-gen12` | None (compute-only) | Holds the Zigbee stick. Home Assistant runs here |
 | `hp-elite-gen13` | `hp-elite-nvme` | Keeps the class label `hp-elite-worker` |
 | `truenas-worker-01` | `truenas-ssd` | VM `talosnas1` on the TrueNAS DL360 |
+| `asus-nuc-gen13` | None (compute-only) | ASUS NUC 13 Pro. See [the 11 November note](../../inventory/2026-11-11-asus-nuc13.md) |
 
 The hardware in each machine is in the [fleet inventory](../../inventory/2026-11-03-fleet-inventory.md).
 Disk serials and roles are in the [disk map](../storage/disk-map.md).
