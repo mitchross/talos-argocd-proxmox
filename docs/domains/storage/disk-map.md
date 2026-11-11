@@ -108,6 +108,7 @@ Proxmox hosts reach the NAS at 2.5 GbE. The bare-metal mini PCs and the shed rea
 The NAS also has a mirrored boot pool (T-FORCE 512 GB and HPE 480 GB).
 A Samsung 850 EVO 500 GB was visible as `sdk`, outside the imported pools,
 on October 15. It is retired, because it failed load tests.
+[NAS flash pool](nas-flash-pool.md) plans the free bays, a `vm-ssd` mirror and a 960 GB `flash` mirror.
 
 ARC, the ZFS RAM cache, caches reads across all pools. The October 15 sample held
 83.3 GiB. The cache size varies with workload and uptime. File creation and `fsync` still
@@ -214,6 +215,7 @@ ssh root@<host> 'pvesm status; lvs; qm config <vmid> | grep ^scsi'
 
 ## Related
 
+- [NAS flash pool](nas-flash-pool.md) is the plan and buy list for new NAS SSDs.
 - [Pick a StorageClass](storage-tiers.md) describes each class.
 - [Disk writes](disk-writes.md) lists the rules that limit SSD wear.
 - [Storage architecture](../../storage-architecture.md) covers placement, copy counts and the backup summary.
