@@ -55,7 +55,7 @@ spec:
               mountPath: /persist
       containers:
         - name: intercept
-          image: ghcr.io/smittix/intercept:2.33.81@sha256:699619a89f52303f7ae8d42308d3685dfdc703a59db6395a33353b7df91d7a18
+          image: ghcr.io/smittix/intercept:2.33.84@sha256:a600b07004e75e340feb317d5b625ea04b964a8369fca42e371aab65fbbe4b13
           imagePullPolicy: IfNotPresent
           securityContext:
             # Upstream requires privileged access for libusb-based SDR tools.
