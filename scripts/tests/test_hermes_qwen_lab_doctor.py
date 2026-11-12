@@ -42,3 +42,8 @@ def test_helpers_think_less_and_workers_have_no_subagents():
     assert 'delegation' in profiles['qwen-worker']['config']['agent']['disabled_toolsets']
     base_off = yaml.safe_load((APP / 'qwen-lab/base.yaml').read_text())['agent']['disabled_toolsets']
     assert set(base_off) <= set(profiles['qwen-worker']['config']['agent']['disabled_toolsets'])
+
+
+def test_lab_reads_each_image_in_its_own_call():
+    vision = yaml.safe_load((APP / 'qwen-lab/base.yaml').read_text())['auxiliary']['vision']
+    assert (vision['provider'], vision['model']) == ('homelab-vllm', 'qwen3.8-27b')

@@ -59,9 +59,10 @@ delegation:
   max_concurrent_children: 2
   max_spawn_depth: 1
 
-# Every helper task pinned to local Qwen at low effort. vision stays unset on purpose: pinning it
-# forces text-only image handling; unset it uses the main (local) model.
+# Every helper task pinned to local Qwen at low effort. vision is pinned on purpose: each image is
+# read in its own call. vLLM takes one image per request, so a second screenshot in a chat fails with HTTP 400.
 auxiliary:
+  vision: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 300}
   compression: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: low, timeout: 300}
   approval: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: none, timeout: 120}
   mcp: {provider: homelab-vllm, model: qwen3.8-27b, reasoning_effort: none, timeout: 120}

@@ -370,6 +370,7 @@ The whole team shares the GPUs, about 68 output tokens a second in total. A smal
 | Helpers think at `medium` | Thinking was three quarters of all output at `xhigh` |
 | Workers have no subagents | Stop in the desktop app does not reach a running subagent |
 | Best-of-3 only after a failure | Three tries cost three times the GPU time |
+| Each image is read in its own call | vLLM takes one image per request; a second screenshot in one chat fails with HTTP 400 |
 
 Don't restart the Hermes pod to stop one chat: it kills every running card. The doctor restarts them within 5 minutes, but each bot starts its card over.
 
