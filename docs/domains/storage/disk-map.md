@@ -100,12 +100,12 @@ with `install.diskSelector` on `disk.serial`. `hp-elite-gen13` and
 
 ## TrueNAS VM worker (`truenas-worker-01`)
 
-The VM `talosnas1` runs on the NAS. Both of its disks are volumes on the `vm-ssd` pool.
+The VM `talosnas1` runs on the NAS. Both of its disks are volumes on the `vm-ssd` pool, a mirror of two consumer SATA SSDs.
 
 | Physical drive | Class | TrueNAS volume | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
-| Samsung 850 EVO 500 GB (consumer, no PLP) | consumer | `vm-ssd/talosnas1-system` 60 GiB | `vda` | system + `/var` | `talos-ephemeral` (scheduling **off**) | Talos system, images, logs, `emptyDir` |
-| same drive | consumer | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (tags `truenas-ssd`, `flash`; `wired-storage`) | a `flash` disk: copies of `longhorn-flash-ha` and two-copy `flash` volumes |
+| `vm-ssd` mirror: Samsung 850 EVO 500 GB + P3-512 (both consumer, no PLP) | consumer | `vm-ssd/talosnas1-system` 60 GiB | `vda` | system + `/var` | `talos-ephemeral` (scheduling **off**) | Talos system, images, logs, `emptyDir` |
+| same mirror | consumer | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (tags `truenas-ssd`, `flash`; `wired-storage`) | a `flash` disk: copies of `longhorn-flash-ha` and two-copy `flash` volumes |
 
 ## TrueNAS `.133`
 
@@ -118,12 +118,9 @@ Proxmox hosts reach the NAS at 2.5 GbE. The bare-metal mini PCs and the shed rea
 | **BigTank** | 4× HGST 10 TB HDD as two mirrors | survives one disk per mirror | bulk and read-mostly files: media, immich library, project-nomad downloads, the kopiur repo (RustFS) | databases, anything that creates or `fsync`s many small files |
 | **ai-pool** | 3 consumer SATA SSDs, striped | **none**. One dead disk loses the pool | model files that can be re-downloaded | anything you can't re-create |
 | **Backup10T** | 1× Seagate 10 TB HDD | none | replicated copies of BigTank datasets | primary data |
-
-| **vm-ssd** | 1× Samsung 850 EVO 500 GB SATA SSD (consumer, no PLP) | none | the disks of the worker VM `truenas-worker-01` | anything else |
+| **vm-ssd** | Samsung 850 EVO 500 GB + P3-512 SATA SSDs (consumer, no PLP) as a mirror | survives one disk. Sync writes run at the P3's speed, about 2.6 ms | the disks of the worker VM `truenas-worker-01` | anything else |
 
 The NAS also has a mirrored boot pool (T-FORCE 512 GB and HPE 480 GB).
-A Samsung 850 EVO 500 GB was visible as `sdk`, outside the imported pools,
-on October 15. It is retired, because it failed load tests.
 [NAS flash pool](nas-flash-pool.md) plans the free bays, a `vm-ssd` mirror and a 960 GB `flash` mirror.
 
 ARC, the ZFS RAM cache, caches reads across all pools. The October 15 sample held

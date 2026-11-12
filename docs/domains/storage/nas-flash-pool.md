@@ -23,9 +23,8 @@ Bay numbers here are **unverified**. They assume an 8-bay cage.
 | Bay | Today | Target |
 |---|---|---|
 | 1, 2 | boot-pool mirror | unchanged |
-| 3 | S3700 (`vm-ssd`) | unchanged, half of a mirror |
-| 4 (free, if 8 bays) | empty | buy 1: 400 GB PLP, mirrors `vm-ssd` |
-| 5 (unverified) | retired 850 EVO (in no pool) | buy 2, disk A: 960 GB PLP |
+| unknown | 850 EVO + P3-512 (`vm-ssd` mirror) | replace with 400 GB PLP drives |
+| free bay (unverified) | empty | buy 2, disk A: 960 GB PLP |
 | 6-8 | `ai-pool` stripe | unchanged. Bay 6 or a free SAS2308 lane (phys 1, 2, 3) takes buy 2, disk B. |
 
 The new pool `flash` is one 2-way mirror of 960 GB, about 860 GiB usable. Keep it under 80% full. It holds a zvol for a Longhorn disk `truenas-flash` on `truenas-worker-01`, tag `flash`. That disk holds the second copy of the radar-ng `flash` volumes (about 150 GiB booked) and the database copies. Use mirrors, not RAIDZ: they write small blocks faster and grow one pair at a time.
