@@ -44,7 +44,7 @@ Every Longhorn disk tag that a StorageClass selects must sit on at least two dis
 different nodes. With only one disk, Longhorn has nowhere to move a copy, so a drain of
 that node waits until someone adds the tag by hand.
 
-Today `flash` sits on `ssd-flash` (GPU worker) and `truenas-ssd` (`truenas-worker-01`), and
+Today `flash` sits on `ssd-flash` (GPU worker), `truenas-ssd` (`truenas-worker-01`) and `asus-nuc-ssd` (`asus-nuc-gen13`), and
 `clone-ok` sits on `ssd-flash` and `hp-sff-ssd2`. Per-disk tags such as `gpu-bulk` or
 `truenas-ssd` name one disk on purpose. Only the scratch `storage-bench` classes select them.
 
@@ -93,7 +93,8 @@ with `install.diskSelector` on `disk.serial`. `hp-elite-gen13` and
 | `mini-pc-dell-ultra-worker` (Dell Pro Micro) | KIOXIA BG7 256 GB NVMe (serial `3GTCT3A8Z438`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `mini-pc-dell-ultra-worker` | APPLE SSD SM0256 256 GB SATA (no serial; matched by model) | consumer SATA | `/var/mnt/longhorn-dell-ultra-ssd` | `dell-ultra-ssd` (`wired-storage`) | ordinary volumes |
 | `hp-elite-gen12` (HP Elite Mini 800 G9) | Samsung MZVL2256 256 GB NVMe (serial `S63XNA0TC92107`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
-| `asus-nuc-gen13` (ASUS NUC 13 Pro) | Kingston OM8TAP4512K1-A00, 512 GB M.2 2280 NVMe (477 GiB), serial `50026B73848B87DD` | — | system + `/var` | — | Compute-only. No Longhorn disk |
+| `asus-nuc-gen13` (ASUS NUC 13 Pro) | Kingston OM8TAP4512K1-A00, 512 GB M.2 2280 NVMe (477 GiB), serial `50026B73848B87DD` | — | system + `/var` | — | Talos only |
+| same | Intel DC S3700 400 GB SATA (**enterprise, PLP**), serial `BTTV32010018400HGN`, 2.5" bottom-cover bay | — | `/var/mnt/longhorn-asus-nuc-ssd` | `asus-nuc-ssd` (tags `flash`, `asus-nuc-ssd`; `wired-storage`) | a `flash` disk: copies of `longhorn-flash-ha` and two-copy `flash` volumes |
 | `hp-elite-gen13` (HP Elite Mini 600 G9) | WD SN530 256 GB NVMe (serial `22245M458316`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
 | `hp-elite-gen13` | Intel 660p 512 GB NVMe (serial `BTNH9154019K512A`) | consumer **QLC**, past its rated writes | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes. **Replace this drive first.** |
 
@@ -103,8 +104,8 @@ The VM `talosnas1` runs on the NAS. Both of its disks are volumes on the `vm-ssd
 
 | Physical drive | Class | TrueNAS volume | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
-| Intel DC S3700 400 GB (serial `BTTV32010018400HGN`) | **enterprise, PLP** | `vm-ssd/talosnas1-system` 60 GiB | `vda` | system + `/var` | `talos-ephemeral` (scheduling **off**) | Talos system, images, logs, `emptyDir` |
-| same drive | **enterprise, PLP** | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (tags `truenas-ssd`, `flash`; `wired-storage`) | the second `flash` disk: second copies of `longhorn-flash-ha` and two-copy `flash` volumes |
+| Samsung 850 EVO 500 GB (consumer, no PLP) | consumer | `vm-ssd/talosnas1-system` 60 GiB | `vda` | system + `/var` | `talos-ephemeral` (scheduling **off**) | Talos system, images, logs, `emptyDir` |
+| same drive | consumer | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (tags `truenas-ssd`, `flash`; `wired-storage`) | a `flash` disk: copies of `longhorn-flash-ha` and two-copy `flash` volumes |
 
 ## TrueNAS `.133`
 
@@ -118,7 +119,7 @@ Proxmox hosts reach the NAS at 2.5 GbE. The bare-metal mini PCs and the shed rea
 | **ai-pool** | 3 consumer SATA SSDs, striped | **none**. One dead disk loses the pool | model files that can be re-downloaded | anything you can't re-create |
 | **Backup10T** | 1× Seagate 10 TB HDD | none | replicated copies of BigTank datasets | primary data |
 
-| **vm-ssd** | 1× Intel DC S3700 400 GB SATA SSD (**enterprise, PLP**) | none | the disks of the worker VM `truenas-worker-01` | anything else |
+| **vm-ssd** | 1× Samsung 850 EVO 500 GB SATA SSD (consumer, no PLP) | none | the disks of the worker VM `truenas-worker-01` | anything else |
 
 The NAS also has a mirrored boot pool (T-FORCE 512 GB and HPE 480 GB).
 A Samsung 850 EVO 500 GB was visible as `sdk`, outside the imported pools,

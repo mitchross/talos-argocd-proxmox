@@ -665,7 +665,8 @@ patches:
     auto: "off"
     hostname: hp-elite-gen12
 ---
-# Bare metal (PXE via booter on the Pi): ASUS NUC 13 Pro NUC13ANH, one NVMe, compute-only.
+# Bare metal (PXE via booter on the Pi): ASUS NUC 13 Pro NUC13ANH. NVMe = Talos; Intel S3700 SATA = Longhorn `flash`.
+# Boot order must be NVMe first: a network boot runs booter's image without these extensions.
 kind: Workers
 name: asus-nuc-gen13-workers
 machines:
@@ -685,7 +686,6 @@ patches:
     kind: WatchdogTimerConfig
     device: /dev/watchdog0
     timeout: 2m0s
-# No Longhorn disk label: createDefaultDiskLabeledNodes keeps this node compute-only.
 - name: asus-nuc-gen13-worker
   inline:
     apiVersion: v1alpha1
@@ -710,6 +710,28 @@ patches:
       kubeReserved:
         cpu: 250m
         memory: 512Mi
+# Longhorn reads default-disks-config only when its node first registers; add disks to a live node in its nodes.longhorn.io spec.
+- name: asus-nuc-gen13-longhorn-disks
+  inline:
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    labels:
+      node.longhorn.io/create-default-disk: config
+    annotations:
+      node.longhorn.io/default-node-tags: '["wired-storage"]'
+      node.longhorn.io/default-disks-config: >-
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"asus-nuc-ssd","path":"/var/mnt/longhorn-asus-nuc-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["flash","asus-nuc-ssd"]}]
+# Talos reports no serial for this SATA S3700; its model is unique in the NUC.
+- name: asus-nuc-gen13-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-asus-nuc-ssd
+    provisioning:
+      diskSelector:
+        match: '!system_disk && disk.model == "INTEL SSDSC2BA40"'
+      minSize: 350GB
+      grow: true
 ---
 kind: Machine
 name: e18a034e-f8b4-f5e3-960d-48210b7c0dda
