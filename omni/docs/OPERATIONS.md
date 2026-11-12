@@ -173,8 +173,7 @@ disk with the volume's tags. A drain only gets stuck when no other disk has thos
 
 **What still blocks.** A single-copy volume whose tags match one disk only:
 - `gpu-bulk`: only the GPU node's `gpu-bulk` disk. No volume uses it today.
-- `flash` + `clone-ok` together: only `ssd-flash`. Used only by the bench class
-  `storage-bench-ssd-flash`; delete its scratch PVCs before a drain.
+- `flash` + `clone-ok` together: only `ssd-flash`. No class asks for both today.
 
 `clone-ok` alone does not block: kopiur's backup clones can move to `hp-sff-ssd2`.
 

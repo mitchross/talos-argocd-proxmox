@@ -5,7 +5,6 @@ namespace: storage-bench
 resources:
   - namespace.yaml
   - rbac.yaml
-  - storageclasses.yaml
 
 configMapGenerator:
   - name: storage-bench-fio
