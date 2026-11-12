@@ -23,15 +23,6 @@ patches:
     kind: ResolverConfig
     nameservers:
     - address: 192.168.10.1
-# Disabling these offloads prevents the observed cross-node VXLAN TCP checksum failures.
-- name: vxlan-inner-checksum
-  inline:
-    apiVersion: v1alpha1
-    kind: EthernetConfig
-    name: eth0
-    features:
-      tx-checksum-ip-generic: false
-      tx-udp_tnl-csum-segmentation: false
 - file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:
@@ -192,6 +183,16 @@ patches:
     taints:
       node-role.kubernetes.io/control-plane:
         $patch: delete
+# Disabling these offloads prevents the observed cross-node VXLAN TCP checksum failures on virtio.
+# Per VM set, not cluster-wide: bare-metal NICs have no eth0, so Talos logged an error every minute.
+- name: control-plane-vxlan-inner-checksum
+  inline:
+    apiVersion: v1alpha1
+    kind: EthernetConfig
+    name: eth0
+    features:
+      tx-checksum-ip-generic: false
+      tx-udp_tnl-csum-segmentation: false
 ---
 kind: Workers
 name: hp-micro-workers
@@ -251,6 +252,15 @@ patches:
         match: "!system_disk && disk.size >= 700u * GB"
       minSize: 700GB
       grow: true
+# Virtio checksum patch; see the control-plane copy.
+- name: hp-micro-vxlan-inner-checksum
+  inline:
+    apiVersion: v1alpha1
+    kind: EthernetConfig
+    name: eth0
+    features:
+      tx-checksum-ip-generic: false
+      tx-udp_tnl-csum-segmentation: false
 ---
 kind: Workers
 name: hp-sff-workers
@@ -319,6 +329,15 @@ patches:
         match: "!system_disk && disk.size >= 900u * GB"
       minSize: 900GB
       grow: true
+# Virtio checksum patch; see the control-plane copy.
+- name: hp-sff-vxlan-inner-checksum
+  inline:
+    apiVersion: v1alpha1
+    kind: EthernetConfig
+    name: eth0
+    features:
+      tx-checksum-ip-generic: false
+      tx-udp_tnl-csum-segmentation: false
 ---
 # Bare metal (PXE via booter on the Pi): HP Elite Mini 600 G9, pinned by UUID.
 kind: Workers
@@ -495,6 +514,15 @@ patches:
     machine:
       kubelet:
         $patch: delete
+# Virtio checksum patch; see the control-plane copy.
+- name: gpu-vxlan-inner-checksum
+  inline:
+    apiVersion: v1alpha1
+    kind: EthernetConfig
+    name: eth0
+    features:
+      tx-checksum-ip-generic: false
+      tx-udp_tnl-csum-segmentation: false
 ---
 # Bare metal (PXE via booter on the Pi): pinned by UUID, no provider or MachineClass.
 kind: Workers
@@ -730,7 +758,7 @@ patches:
       kubeReserved:
         cpu: 250m
         memory: 512Mi
-# The cluster-wide vxlan-inner-checksum patch names eth0; this VM's virtio NIC is ens3.
+# Virtio checksum patch for this VM's NIC, ens3; see the control-plane copy.
 - name: truenas-worker-vxlan-inner-checksum
   inline:
     apiVersion: v1alpha1
