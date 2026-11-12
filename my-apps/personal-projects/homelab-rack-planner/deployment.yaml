@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: web
-          image: registry.vanillax.me/homelab-rack-planner:v0.1.15
+          image: registry.vanillax.me/homelab-rack-planner:v0.1.19
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
