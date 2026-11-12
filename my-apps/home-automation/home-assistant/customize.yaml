@@ -118,82 +118,82 @@ switch.truenas:
   friendly_name: TrueNAS (DL360) (read-only)
   hidden: true
 
-# ---------- HP SFF + Optiplex (hp_sff_*) ----------
+# ---------- HP SFF (hp_sff_*) ----------
 sensor.hp_sff_current_consumption:
-  friendly_name: HP SFF + Optiplex Power
+  friendly_name: HP SFF Power
 sensor.hp_sff_voltage:
-  friendly_name: HP SFF + Optiplex Voltage
+  friendly_name: HP SFF Voltage
 sensor.hp_sff_current:
-  friendly_name: HP SFF + Optiplex Current
+  friendly_name: HP SFF Current
 sensor.hp_sff_energy:
-  friendly_name: HP SFF + Optiplex Energy
+  friendly_name: HP SFF Energy
 sensor.hp_sff_cost:
-  friendly_name: HP SFF + Optiplex Cost
+  friendly_name: HP SFF Cost
 sensor.hp_sff_cost_rate:
-  friendly_name: HP SFF + Optiplex Cost Rate
+  friendly_name: HP SFF Cost Rate
 sensor.hp_sff_power_share:
-  friendly_name: HP SFF + Optiplex Power Share
+  friendly_name: HP SFF Power Share
 sensor.hp_sff_cost_last_month:
-  friendly_name: HP SFF + Optiplex Cost Last Month
+  friendly_name: HP SFF Cost Last Month
 sensor.hp_sff_energy_last_month:
-  friendly_name: HP SFF + Optiplex Energy Last Month
+  friendly_name: HP SFF Energy Last Month
 sensor.hp_sff_energy_daily:
-  friendly_name: HP SFF + Optiplex Energy Daily
+  friendly_name: HP SFF Energy Daily
 sensor.hp_sff_energy_weekly:
-  friendly_name: HP SFF + Optiplex Energy Weekly
+  friendly_name: HP SFF Energy Weekly
 sensor.hp_sff_energy_monthly:
-  friendly_name: HP SFF + Optiplex Energy Monthly
+  friendly_name: HP SFF Energy Monthly
 sensor.hp_sff_energy_yearly:
-  friendly_name: HP SFF + Optiplex Energy Yearly
+  friendly_name: HP SFF Energy Yearly
 sensor.hp_sff_cost_daily:
-  friendly_name: HP SFF + Optiplex Cost Daily
+  friendly_name: HP SFF Cost Daily
 sensor.hp_sff_cost_weekly:
-  friendly_name: HP SFF + Optiplex Cost Weekly
+  friendly_name: HP SFF Cost Weekly
 sensor.hp_sff_cost_monthly:
-  friendly_name: HP SFF + Optiplex Cost Monthly
+  friendly_name: HP SFF Cost Monthly
 sensor.hp_sff_cost_yearly:
-  friendly_name: HP SFF + Optiplex Cost Yearly
+  friendly_name: HP SFF Cost Yearly
 switch.hp_sff:
-  friendly_name: HP SFF + Optiplex (read-only)
+  friendly_name: HP SFF (read-only)
   hidden: true
 
-# ---------- HP Elite Mini G9 (hp_elite_*) ----------
+# ---------- All Mini PCs (hp_elite_*) ----------
 sensor.hp_elite_current_consumption:
-  friendly_name: HP Elite Mini G9 Power
+  friendly_name: All Mini PCs Power
 sensor.hp_elite_voltage:
-  friendly_name: HP Elite Mini G9 Voltage
+  friendly_name: All Mini PCs Voltage
 sensor.hp_elite_current:
-  friendly_name: HP Elite Mini G9 Current
+  friendly_name: All Mini PCs Current
 sensor.hp_elite_energy:
-  friendly_name: HP Elite Mini G9 Energy
+  friendly_name: All Mini PCs Energy
 sensor.hp_elite_cost:
-  friendly_name: HP Elite Mini G9 Cost
+  friendly_name: All Mini PCs Cost
 sensor.hp_elite_cost_rate:
-  friendly_name: HP Elite Mini G9 Cost Rate
+  friendly_name: All Mini PCs Cost Rate
 sensor.hp_elite_power_share:
-  friendly_name: HP Elite Mini G9 Power Share
+  friendly_name: All Mini PCs Power Share
 sensor.hp_elite_cost_last_month:
-  friendly_name: HP Elite Mini G9 Cost Last Month
+  friendly_name: All Mini PCs Cost Last Month
 sensor.hp_elite_energy_last_month:
-  friendly_name: HP Elite Mini G9 Energy Last Month
+  friendly_name: All Mini PCs Energy Last Month
 sensor.hp_elite_energy_daily:
-  friendly_name: HP Elite Mini G9 Energy Daily
+  friendly_name: All Mini PCs Energy Daily
 sensor.hp_elite_energy_weekly:
-  friendly_name: HP Elite Mini G9 Energy Weekly
+  friendly_name: All Mini PCs Energy Weekly
 sensor.hp_elite_energy_monthly:
-  friendly_name: HP Elite Mini G9 Energy Monthly
+  friendly_name: All Mini PCs Energy Monthly
 sensor.hp_elite_energy_yearly:
-  friendly_name: HP Elite Mini G9 Energy Yearly
+  friendly_name: All Mini PCs Energy Yearly
 sensor.hp_elite_cost_daily:
-  friendly_name: HP Elite Mini G9 Cost Daily
+  friendly_name: All Mini PCs Cost Daily
 sensor.hp_elite_cost_weekly:
-  friendly_name: HP Elite Mini G9 Cost Weekly
+  friendly_name: All Mini PCs Cost Weekly
 sensor.hp_elite_cost_monthly:
-  friendly_name: HP Elite Mini G9 Cost Monthly
+  friendly_name: All Mini PCs Cost Monthly
 sensor.hp_elite_cost_yearly:
-  friendly_name: HP Elite Mini G9 Cost Yearly
+  friendly_name: All Mini PCs Cost Yearly
 switch.hp_elite:
-  friendly_name: HP Elite Mini G9 (read-only)
+  friendly_name: All Mini PCs (read-only)
   hidden: true
 
 # ---------- Gaming PC (gaming_pc_*) ----------

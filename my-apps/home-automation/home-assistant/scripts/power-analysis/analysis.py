@@ -13,8 +13,8 @@ DEVICES = {
     'threadripper': 'Threadripper + 2×3090',
     'truenas': 'TrueNAS DL360',
     'nas_psu': 'NAS drive PSU',
-    'hp_sff': 'HP SFF + Optiplex',
-    'hp_elite': 'HP Elite Mini',
+    'hp_sff': 'HP SFF',
+    'hp_elite': 'All Mini PCs',
     'gaming_pc': 'Gaming PC',
     'macbook': 'MacBook + monitor',
 }
