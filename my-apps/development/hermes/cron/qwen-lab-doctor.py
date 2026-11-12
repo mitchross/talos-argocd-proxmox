@@ -31,7 +31,7 @@ def dead_cards(rows, host, now):
     out = []
     for r in rows:
         lock_host = (r["claim_lock"] or "").rsplit(":", 1)[0]
-        beat = max(r["last_heartbeat_at"] or 0, r["worker_started_at"] or 0, r["started_at"] or 0)
+        beat = max(r["last_heartbeat_at"] or 0, r["started_at"] or 0)  # worker_started_at is an id string, not a time
         if lock_host and lock_host != host:
             out.append((r["id"], "worker was on a pod that is gone"))
         elif now - beat < GRACE:
