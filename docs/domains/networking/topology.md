@@ -133,7 +133,9 @@ kubectl exec -n kube-system <cilium-pod> -- cilium-health status --probe
 not. The cause is a virtio checksum offload bug. It is not MTU, Cilium state, or the
 host's NIC.
 
-Keep both offload guards in the cluster-level Talos `EthernetConfig`:
+Keep both offload guards in the Talos `EthernetConfig` of every VM machine set. Bare-metal
+nodes do not need them, and they have no `eth0`. A VM whose NIC has another name, such as
+`ens3` on the TrueNAS worker, uses that name:
 
 ```yaml
 apiVersion: v1alpha1
