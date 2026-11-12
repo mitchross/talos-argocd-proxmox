@@ -492,8 +492,8 @@ views:
               <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.threadripper_cost_daily', 2, '$') }}</td></tr>
               <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.nas_psu_cost_daily', 2, '$') }}</td></tr>
               <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.truenas_cost_daily', 2, '$') }}</td></tr>
-              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.hp_sff_cost_daily', 2, '$') }}</td></tr>
-              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.hp_elite_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>HP SFF</td><td>{{ num(states('sensor.hp_sff_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.hp_sff_cost_daily', 2, '$') }}</td></tr>
+              <tr><td>All Mini PCs</td><td>{{ num(states('sensor.hp_elite_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.hp_elite_cost_daily', 2, '$') }}</td></tr>
               <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.gaming_pc_cost_daily', 2, '$') }}</td></tr>
               <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_cost_daily'), 2, '$') }}</td><td>{{ yesterday('sensor.macbook_cost_daily', 2, '$') }}</td></tr>
               </table>
@@ -519,8 +519,8 @@ views:
               <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.threadripper_energy_daily', 3) }}</td></tr>
               <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.nas_psu_energy_daily', 3) }}</td></tr>
               <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.truenas_energy_daily', 3) }}</td></tr>
-              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.hp_sff_energy_daily', 3) }}</td></tr>
-              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.hp_elite_energy_daily', 3) }}</td></tr>
+              <tr><td>HP SFF</td><td>{{ num(states('sensor.hp_sff_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.hp_sff_energy_daily', 3) }}</td></tr>
+              <tr><td>All Mini PCs</td><td>{{ num(states('sensor.hp_elite_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.hp_elite_energy_daily', 3) }}</td></tr>
               <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.gaming_pc_energy_daily', 3) }}</td></tr>
               <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_energy_daily'), 3) }}</td><td>{{ yesterday('sensor.macbook_energy_daily', 3) }}</td></tr>
               </table>
@@ -568,10 +568,10 @@ views:
                 name: TrueNAS
                 color: '#26a69a'
               - entity: sensor.hp_sff_cost_daily
-                name: HP SFF + Optiplex
+                name: HP SFF
                 color: '#ef5350'
               - entity: sensor.hp_elite_cost_daily
-                name: HP Elite Mini
+                name: All Mini PCs
                 color: '#8d6e63'
               - entity: sensor.gaming_pc_cost_daily
                 name: Gaming PC
@@ -596,8 +596,8 @@ views:
               <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.threadripper_cost_daily') else '—' }}</td></tr>
               <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.nas_psu_cost_daily') else '—' }}</td></tr>
               <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.truenas_cost_daily') else '—' }}</td></tr>
-              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.hp_sff_cost_daily') else '—' }}</td></tr>
-              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.hp_elite_cost_daily') else '—' }}</td></tr>
+              <tr><td>HP SFF</td><td>{{ num(states('sensor.hp_sff_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.hp_sff_cost_daily') else '—' }}</td></tr>
+              <tr><td>All Mini PCs</td><td>{{ num(states('sensor.hp_elite_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.hp_elite_cost_daily') else '—' }}</td></tr>
               <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.gaming_pc_cost_daily') else '—' }}</td></tr>
               <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_cost_daily') | float(0) / total * 100, 1, '', '%') if total > 0 and has_value('sensor.macbook_cost_daily') else '—' }}</td></tr>
               </table>
@@ -858,8 +858,8 @@ views:
               <tr><td>Threadripper</td><td>{{ num(states('sensor.threadripper_current_consumption'), 0) }}</td><td>{{ num(states('sensor.threadripper_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.threadripper_cost_rate') else '—' }}</td></tr>
               <tr><td>NAS drive PSU</td><td>{{ num(states('sensor.nas_psu_current_consumption'), 0) }}</td><td>{{ num(states('sensor.nas_psu_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.nas_psu_cost_rate') else '—' }}</td></tr>
               <tr><td>TrueNAS</td><td>{{ num(states('sensor.truenas_current_consumption'), 0) }}</td><td>{{ num(states('sensor.truenas_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.truenas_cost_rate') else '—' }}</td></tr>
-              <tr><td>HP SFF + Optiplex</td><td>{{ num(states('sensor.hp_sff_current_consumption'), 0) }}</td><td>{{ num(states('sensor.hp_sff_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.hp_sff_cost_rate') else '—' }}</td></tr>
-              <tr><td>HP Elite Mini</td><td>{{ num(states('sensor.hp_elite_current_consumption'), 0) }}</td><td>{{ num(states('sensor.hp_elite_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.hp_elite_cost_rate') else '—' }}</td></tr>
+              <tr><td>HP SFF</td><td>{{ num(states('sensor.hp_sff_current_consumption'), 0) }}</td><td>{{ num(states('sensor.hp_sff_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.hp_sff_cost_rate') else '—' }}</td></tr>
+              <tr><td>All Mini PCs</td><td>{{ num(states('sensor.hp_elite_current_consumption'), 0) }}</td><td>{{ num(states('sensor.hp_elite_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.hp_elite_cost_rate') else '—' }}</td></tr>
               <tr><td>Gaming PC</td><td>{{ num(states('sensor.gaming_pc_current_consumption'), 0) }}</td><td>{{ num(states('sensor.gaming_pc_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.gaming_pc_cost_rate') else '—' }}</td></tr>
               <tr><td>MacBook + monitor</td><td>{{ num(states('sensor.macbook_current_consumption'), 0) }}</td><td>{{ num(states('sensor.macbook_cost_rate') | float(0) * 720, 2, '$') if has_value('sensor.macbook_cost_rate') else '—' }}</td></tr>
               </table>
@@ -1056,7 +1056,7 @@ views:
               rows: 3
           - type: gauge
             entity: sensor.hp_sff_current_consumption
-            name: HP SFF + Optiplex
+            name: HP SFF
             min: 0
             max: 200
             grid_options:
@@ -1088,7 +1088,7 @@ views:
               rows: 3
           - type: gauge
             entity: sensor.hp_elite_current_consumption
-            name: HP Elite Mini
+            name: All Mini PCs
             min: 0
             max: 80
             grid_options:
@@ -1120,10 +1120,10 @@ views:
                 name: TrueNAS
                 color: '#26a69a'
               - entity: sensor.hp_sff_current_consumption
-                name: HP SFF + Optiplex
+                name: HP SFF
                 color: '#ef5350'
               - entity: sensor.hp_elite_current_consumption
-                name: HP Elite Mini
+                name: All Mini PCs
                 color: '#8d6e63'
               - entity: sensor.gaming_pc_current_consumption
                 name: Gaming PC
@@ -1149,7 +1149,7 @@ views:
                 name: Gaming PC
                 color: '#ab47bc'
               - entity: sensor.hp_sff_current_consumption
-                name: HP SFF + Optiplex
+                name: HP SFF
                 color: '#ef5350'
               - entity: sensor.truenas_current_consumption
                 name: TrueNAS
@@ -1161,7 +1161,7 @@ views:
                 name: NAS Drive PSU
                 color: '#ffa726'
               - entity: sensor.hp_elite_current_consumption
-                name: HP Elite Mini
+                name: All Mini PCs
                 color: '#8d6e63'
               - entity: sensor.shed_lab_current_consumption
                 name: Shed (solar)
@@ -1241,7 +1241,7 @@ views:
                 name: Gaming PC
                 icon: mdi:gamepad-variant
               - entity: sensor.hp_sff_cost_daily
-                name: HP SFF + Optiplex
+                name: HP SFF
                 icon: mdi:desktop-tower
               - entity: sensor.truenas_cost_daily
                 name: TrueNAS
@@ -1253,7 +1253,7 @@ views:
                 name: NAS Drive PSU
                 icon: mdi:harddisk
               - entity: sensor.hp_elite_cost_daily
-                name: HP Elite Mini
+                name: All Mini PCs
                 icon: mdi:desktop-classic
             grid_options:
               columns: full
@@ -1272,7 +1272,7 @@ views:
                 name: Gaming PC
                 icon: mdi:gamepad-variant
               - entity: sensor.hp_sff_cost_monthly
-                name: HP SFF + Optiplex
+                name: HP SFF
                 icon: mdi:desktop-tower
               - entity: sensor.truenas_cost_monthly
                 name: TrueNAS
@@ -1284,7 +1284,7 @@ views:
                 name: NAS Drive PSU
                 icon: mdi:harddisk
               - entity: sensor.hp_elite_cost_monthly
-                name: HP Elite Mini
+                name: All Mini PCs
                 icon: mdi:desktop-classic
             grid_options:
               columns: full
@@ -1303,7 +1303,7 @@ views:
                 name: Gaming PC
                 icon: mdi:gamepad-variant
               - entity: sensor.hp_sff_cost_last_month
-                name: HP SFF + Optiplex
+                name: HP SFF
                 icon: mdi:desktop-tower
               - entity: sensor.truenas_cost_last_month
                 name: TrueNAS
@@ -1315,7 +1315,7 @@ views:
                 name: NAS Drive PSU
                 icon: mdi:harddisk
               - entity: sensor.hp_elite_cost_last_month
-                name: HP Elite Mini
+                name: All Mini PCs
                 icon: mdi:desktop-classic
             grid_options:
               columns: full
@@ -1334,7 +1334,7 @@ views:
                 name: Gaming PC
                 icon: mdi:gamepad-variant
               - entity: sensor.hp_sff_power_share
-                name: HP SFF + Optiplex
+                name: HP SFF
                 icon: mdi:desktop-tower
               - entity: sensor.truenas_power_share
                 name: TrueNAS
@@ -1346,7 +1346,7 @@ views:
                 name: NAS Drive PSU
                 icon: mdi:harddisk
               - entity: sensor.hp_elite_power_share
-                name: HP Elite Mini
+                name: All Mini PCs
                 icon: mdi:desktop-classic
             grid_options:
               columns: full
@@ -1358,7 +1358,7 @@ views:
           - type: markdown
             content: |
               Dials use fixed, device-specific watt scales; compare the numbers, not the needle positions.
-              **HP SFF + Optiplex** share one plug. **Shed Lab** is solar-fed and excluded from grid cost and shares.
+              **All Mini PCs** is one plug for the four mini PCs (Elite 600 G9, Elite 800 G9, Dell Pro Micro, NUC 13), so it can't be split per mini. **Shed Lab** is solar-fed and excluded from grid cost and shares.
 
   # ───────────────────────── House: what Consumers Energy says ─────────────────────────
             grid_options:

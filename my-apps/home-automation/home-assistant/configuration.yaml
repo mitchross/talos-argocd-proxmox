@@ -660,7 +660,7 @@ utility_meter:
     name: "TrueNAS Energy Yearly"
     source: sensor.truenas_energy
     cycle: yearly
-  # HP SFF + Optiplex
+  # HP SFF
   hp_sff_energy_daily:
     name: "HP SFF Energy Daily"
     source: sensor.hp_sff_energy
@@ -677,7 +677,7 @@ utility_meter:
     name: "HP SFF Energy Yearly"
     source: sensor.hp_sff_energy
     cycle: yearly
-  # HP Elite Mini G9
+  # All Mini PCs (plug renamed from HP Elite; hp_elite_* prefix kept for history)
   hp_elite_energy_daily:
     name: "HP Elite Energy Daily"
     source: sensor.hp_elite_energy
@@ -849,7 +849,7 @@ utility_meter:
     name: "TrueNAS Cost Yearly"
     source: sensor.truenas_cost
     cycle: yearly
-  # HP SFF + Optiplex
+  # HP SFF
   hp_sff_cost_daily:
     name: "HP SFF Cost Daily"
     source: sensor.hp_sff_cost
@@ -866,7 +866,7 @@ utility_meter:
     name: "HP SFF Cost Yearly"
     source: sensor.hp_sff_cost
     cycle: yearly
-  # HP Elite Mini G9
+  # All Mini PCs (plug renamed from HP Elite; hp_elite_* prefix kept for history)
   hp_elite_cost_daily:
     name: "HP Elite Cost Daily"
     source: sensor.hp_elite_cost

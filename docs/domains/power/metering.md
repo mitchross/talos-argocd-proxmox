@@ -15,8 +15,8 @@ result to Grafana.
 | Threadripper Host | `threadripper_*` | homelab | Threadripper 2950X/X399 host (`192.168.10.14`): the GPU worker VM with 2× RTX 3090 |
 | NAS Drive PSU | `nas_psu_*` | homelab | The drive-shelf PSU for the NAS |
 | TrueNAS (DL360) | `truenas_*` | homelab | The TrueNAS/DL360 host itself (`192.168.10.133`) |
-| HP SFF + Optiplex | `hp_sff_*` | homelab | HP 8500 SFF (`.21`). The plug name still says Optiplex, but that host is retired |
-| HP Elite Mini G9 | `hp_elite_*` | homelab | HP Elite Mini 600 G9, the bare-metal worker `hp-elite-gen13` |
+| HP SFF | `hp_sff_*` | homelab | HP 8500 SFF (`.21`) only |
+| All Mini PCs | `hp_elite_*` | homelab | All four office minis: Elite 600 G9 (`hp-elite-gen13`), Elite 800 G9 (`hp-elite-gen12`), Dell Pro Micro (`mini-pc-dell-ultra-worker`), ASUS NUC 13 (`asus-nuc-gen13`). About 93 W together. The prefix kept its old name so history carries on |
 | Gaming PC | `gaming_pc_*` | office | 7800X3D workstation. **Not a cluster node.** The two AI RTX 3090s are on Threadripper |
 | MacBook + Monitor | `macbook_*` | office | Office desk |
 | Shed Lab (solar) | `shed_lab_*` | none | HP micro in the shed (`.20`), solar-fed |
@@ -62,8 +62,9 @@ If Left At This Draw* multiply the current instant to a full year. They answer "
 does it cost to leave this on?" Use *Cost This Month* or *Cost Last Month* for a bill
 estimate.
 
-**The HP SFF plug cannot be attributed.** It feeds two hosts. Split the outlet before
-you decide which of the two to retire.
+**The All Mini PCs plug cannot be split per mini.** It feeds four hosts. Since
+2026-11-11 the HP SFF plug feeds only the SFF. History before that date mixes
+some minis into the SFF plug.
 
 ## How cost is computed
 
