@@ -25,11 +25,12 @@ spec:
     spec:
       priorityClassName: app-critical
       affinity:
-        # longhorn-flash (tiles/grids/state) sets diskSelector "flash"; only this node carries that disk.
+        # Prefer the GPU worker (a local copy); the second copy lets it move during a drain.
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
                   - key: gpu-worker
                     operator: In
                     values: ["true"]
