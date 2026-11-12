@@ -81,13 +81,9 @@ sessions:
   auto_archive: true
   auto_archive_days: 7
 
-# The lab never changes the cluster or merges anything; deny globs block even in yolo mode.
+# The lab runs without approval prompts: a waiting prompt stalls the whole board. Deny globs still block, even with mode off.
 approvals:
-  mode: smart
-  smart_policy: >-
-    APPROVE without asking: reading files, running tests and builds, git commands on a local feature
-    branch or worktree. Always ESCALATE: kubectl, talosctl, omnictl, helm, any git push, gh pr merge,
-    claude or codex, and any curl or request to a cloud AI API.
+  mode: "off"
   deny:
     - "kubectl *"
     - "talosctl *"
@@ -96,6 +92,7 @@ approvals:
     - "git push*"
     - "claude *"
     - "codex *"
+    - "helm *"
 
 plugins:
   enabled: []
