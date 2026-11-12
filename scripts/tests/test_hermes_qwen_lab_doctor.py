@@ -53,3 +53,9 @@ def test_seed_rewrites_cron_scripts_from_git_on_every_start():
     seed = (APP / 'scripts/seed.sh').read_text()
     loop = seed.split('for src in /etc/hermes-scripts/cron-*.py; do')[1].split('done')[0]
     assert 'install -o 10000' in loop and '[ -e' not in loop
+
+
+def test_lab_never_waits_on_an_approval_prompt_but_keeps_its_deny_list():
+    approvals = yaml.safe_load((APP / 'qwen-lab/base.yaml').read_text())['approvals']
+    assert approvals['mode'] == 'off'
+    assert {'kubectl *', 'talosctl *', 'omnictl *', 'helm *', 'git push*', 'gh pr merge*', 'claude *', 'codex *'} <= set(approvals['deny'])
