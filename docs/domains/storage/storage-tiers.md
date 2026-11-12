@@ -135,6 +135,17 @@ Read the table this way: a second synchronous copy about halves the commit rate,
 BigTank is too slow for databases and small files. Read IOPS on NFS come partly from the
 NAS RAM cache.
 
+Copying a Longhorn volume to a new disk (path 12), 10 GiB of data, one volume at a time:
+
+| Copy | New copy on | Time | MB/s |
+|---|---|---:|---:|
+| `longhorn`, add a third copy | `truenas-ssd` | 69 s | 162 |
+| `flash`, rebuild a lost copy | `truenas-ssd` | 66 s | 169 |
+
+So one volume copies at about 160-170 MB/s, roughly 1 minute per 10 GiB. A drain that
+moves many volumes at once ran at 26-51 MB/s per volume. A kopiur restore of a small
+database takes 26-37 s, mostly mover start-up.
+
 ## Do not export NAS flash over NVMe/TCP
 
 Do not recreate a NAS flash pool exported to the cluster over NVMe/TCP. A test used three

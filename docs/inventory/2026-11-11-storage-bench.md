@@ -63,10 +63,20 @@ other nodes. It measures two remote copies from a 2.5 GbE node.
 
 ## Copy and restore
 
-**Copy speed (path 12).** Pending. Two scratch volumes hold 10 GiB of random data each.
-Mitch runs the two commands on #3665: one adds a third `longhorn` copy, one rebuilds the
-`truenas-ssd` copy of a `flash` volume over 10 GbE. A watcher records the time until the
-volume is healthy. This section gets the numbers in a follow-up commit.
+**Copy speed (path 12).** Two scratch volumes held 10 GiB of random data each (11.2 GB on
+disk), attached by an idle pod, as in a drain. A watcher timed each copy from the new
+replica's creation until the volume was `healthy` again, polling every 2 s. Run on
+2026-11-12 around 00:03Z.
+
+| Test | Volume | Copies before | New copy on | Time | MB/s |
+|---|---|---|---|---:|---:|
+| 12a: `longhorn`, 2 → 3 copies | `p12a-longhorn` | `hp-sff-ssd2`, `gpu-bulk` | `truenas-ssd` | 69 s | 162 |
+| 12b: `flash`, rebuild a deleted copy | `p12b-flash` | `ssd-flash` (one left) | `truenas-ssd` | 66 s | 169 |
+
+Both copies landed on `truenas-ssd`. In 12a Longhorn picked that disk itself, so the
+consumer-disk target from the plan was not measured. Longhorn does not record which copy
+it read from. One idle volume copies at about 160-170 MB/s, three to six times the 26-51 MB/s
+per volume of the 2026-11-10 drain, where many volumes copied at once.
 
 **Restore (path 13, speed part).** The latest kopiur snapshot of
 `paperless-ngx/paperless-postgres-data` restored into a new PVC on three classes. Each copy
