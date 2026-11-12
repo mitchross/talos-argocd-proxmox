@@ -12,7 +12,7 @@ spec.loader.exec_module(doctor)
 
 def _card(card, lock, pid, beat):
     return {'id': card, 'claim_lock': lock, 'worker_pid': pid, 'last_heartbeat_at': beat,
-            'worker_started_at': beat, 'started_at': beat}
+            'worker_started_at': '3066defb-8d55:4492960|4751281', 'started_at': beat}
 
 
 def test_dead_cards_finds_old_pod_missing_process_and_stale_heartbeat(monkeypatch):
