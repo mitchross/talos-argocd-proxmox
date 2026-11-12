@@ -37,11 +37,11 @@ if ! grep -qs '"homelab-digest"' "$HERMES_HOME/cron/jobs.json"; then
     "Load the homelab-ops skill, run all six checks, and write the digest in the skill's format." \
     --skill homelab-ops --name homelab-digest
 fi
-# Git-owned cron jobs: restore a missing script, create a missing job. A job deleted in the dashboard returns unless Git drops it too.
+# Git-owned cron jobs: rewrite each script from Git, create a missing job. A job deleted in the dashboard returns unless Git drops it too.
 mkdir -p "$HERMES_HOME/scripts"; chown 10000:10000 "$HERMES_HOME/scripts"
 for src in /etc/hermes-scripts/cron-*.py; do
   dst="$HERMES_HOME/scripts/${src##*/cron-}"
-  [ -e "$dst" ] || install -o 10000 -g 10000 -m 0644 "$src" "$dst"
+  install -o 10000 -g 10000 -m 0644 "$src" "$dst"
 done
 while IFS='|' read -r name schedule script prompt; do
   case "$name" in '' | '#'*) continue ;; esac
