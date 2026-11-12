@@ -141,6 +141,23 @@ If machines are not appearing in Proxmox:
   of about 575 MB to the node's EFI partition (2.1 GB on the GPU worker). If hand-saved
   boot images fill it, the upgrade fails with `no space left on device`. Lock the
   machine to stop Omni's retries, delete the extra images, then unlock it.
+- **After a Kubernetes or API server upgrade, check the gateway certificates.**
+  If cilium-operator restarts while the API server is down, it can log
+  `Required GatewayAPI resources are not found` and leave its Gateway API controller
+  off. `cilium-secrets` then stays empty. Agents that were already running keep the
+  certificate in memory, so nothing breaks at first. Any agent that starts later gets
+  no certificate. HTTPS to the gateway (192.168.10.52) from that node fails with
+  `connection reset by peer`, and kubelet there cannot pull from `registry.vanillax.me`.
+  On 2026-11-11 this stayed hidden for 18 hours. Check after every upgrade:
+  ```bash
+  kubectl -n cilium-secrets get secret        # needs at least one Secret
+  kubectl -n kube-system logs -l io.cilium/app=operator --tail=-1 \
+    | grep 'Required GatewayAPI resources are not found'   # needs no output
+  ```
+  If either check fails, restart the operator. The Secret comes back within seconds:
+  ```bash
+  kubectl -n kube-system rollout restart deployment/cilium-operator
+  ```
 - **Treat kernel arguments as risky.** Cluster templates cannot set
   `kernelArgs` on machine sets that use a machine class, and Omni has an open
   reboot-loop bug with kernel arguments
@@ -220,3 +237,33 @@ kubectl -n longhorn-system get volumes.longhorn.io -o json | jq -r --rawfile on 
 ```
 
 Do not leave the tag in place. `hp-sff-ssd` is a consumer drive.
+
+### A pod fails with `exec format error` on one node
+
+**Symptom.** A container crashes with `exec /<binary>: exec format error` on one node,
+while the same image digest runs on the others. On 2026-11-11, `csi-nfs-node` and
+`csi-smb-node` failed this way on the new node `asus-nuc-gen13`.
+
+**Cause.** The image files on that node are empty, not built for the wrong CPU. The node
+rebooted uncleanly while it pulled images, and containerd kept files of 0 bytes. On the
+NUC, `/nfsplugin`, `/smbplugin` and 237 other executables (openssl, perl, python) were
+0 bytes. The hardware was clean.
+
+**Check file sizes first.** From a debug pod on the node, count empty executables in the
+snapshots and compare with a healthy node:
+```bash
+kubectl debug node/<node> --profile=sysadmin -it --image=docker.io/library/alpine:3.22 -- \
+  sh -c 'find /host/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots \
+    -type f -perm -u+x -size 0 | wc -l'
+```
+Delete the debug pod afterwards.
+
+**Fix.** Removing and re-pulling the image does not help. The pull takes a second and
+reuses the damaged snapshots. Wipe the node's `EPHEMERAL` partition, which holds
+containerd's data, and let the node pull everything again. It drains the node first:
+```bash
+talosctl -n <node> reset --system-labels-to-wipe EPHEMERAL --reboot --graceful=true
+```
+Get the owner's go before you run it. Single-copy Longhorn volumes on that node move
+first, as in a normal drain. `/var/lib/longhorn` lives on `EPHEMERAL` too, so confirm
+its `talos-ephemeral` disk has `allowScheduling: false` and holds no replica.
