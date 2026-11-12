@@ -6,6 +6,8 @@ metadata:
   name: longhorn-flash
   annotations:
     storageclass.kubernetes.io/is-default-class: "false"
+    # Parameters are immutable: to change them, delete the live StorageClass once; ArgoCD re-creates it.
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -13,11 +15,12 @@ volumeBindingMode: Immediate
 mountOptions:
   - context=system_u:object_r:ephemeral_t:s0
 parameters:
-  numberOfReplicas: "1"
+  # Two copies on two `flash` disks, so a node drain copies nothing (#3663, #3664).
+  numberOfReplicas: "2"
   staleReplicaTimeout: "30"
   fsType: "ext4"
   # Pins volumes to Longhorn disks tagged `flash` — see the
   # node.longhorn.io/default-disks-config annotation in the Omni cluster template.
   diskSelector: "flash"
-  # NEVER strict-local with >1 schedulable worker: the scheduler can't see diskSelector and mismatches deadlock attach forever.
-  dataLocality: "best-effort"
+  # No copy follows the pod. NEVER strict-local: the scheduler can't see diskSelector and attach deadlocks.
+  dataLocality: "disabled"

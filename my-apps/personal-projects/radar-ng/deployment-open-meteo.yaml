@@ -20,15 +20,15 @@ spec:
         app: open-meteo
     spec:
       terminationGracePeriodSeconds: 40
-      # Pinned to one node, so it must win a spot there: on 2026-11-07 Strata
-      # (priority 1000) evicted it and it could not come back.
+      # Must win a spot on its preferred node: on 2026-11-07 Strata (priority 1000) evicted it.
       priorityClassName: app-critical
-      # openmeteo-data is longhorn-flash, whose only disk is on this node.
       affinity:
+        # Prefer the GPU worker (a local copy); the second copy lets it move during a drain.
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
                   - key: gpu-worker
                     operator: In
                     values: ["true"]
