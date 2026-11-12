@@ -47,3 +47,9 @@ def test_helpers_think_less_and_workers_have_no_subagents():
 def test_lab_reads_each_image_in_its_own_call():
     vision = yaml.safe_load((APP / 'qwen-lab/base.yaml').read_text())['auxiliary']['vision']
     assert (vision['provider'], vision['model']) == ('homelab-vllm', 'qwen3.8-27b')
+
+
+def test_seed_rewrites_cron_scripts_from_git_on_every_start():
+    seed = (APP / 'scripts/seed.sh').read_text()
+    loop = seed.split('for src in /etc/hermes-scripts/cron-*.py; do')[1].split('done')[0]
+    assert 'install -o 10000' in loop and '[ -e' not in loop
