@@ -40,7 +40,7 @@ Users expect routing to be fully automatic and to stop them running out of Claud
 - The parent agent picks a route for each subagent from the descriptions. `default:` is only the fallback for tasks that get no route. Don't call it "the default model", because that sounds like a lock.
 - The main chat model never gets routed. A task that isn't split into subagents runs entirely on the main model.
 - Routing alone doesn't save a plan's limit when the main model and the default route are on the same plan (Opus + Sonnet both use Claude). Fallback providers are what keep work going at the limit. Recommend fallback first, then cheaper aux models.
-- Mitch keeps `balanced` (Sonnet) as the default route and wants Codex as the fallback, not as the default.
+- Mitch keeps `opus` (Opus 5.5 medium) as the default route, scales each task up (`deep`) or down (`balanced`, `fast`, `local`), and wants Codex as the second opinion and fallback, not the default.
 
 ## Pitfalls
 - Route schema changes apply to new sessions only. The running chat keeps its old `delegate_task` schema.
