@@ -157,7 +157,7 @@ spec:
           lifecycle:
             postStart:
               exec:
-                command: ["python3", "/opt/repo-scripts/set-carto-key.py"]
+                command: ["python3", "/opt/repo-scripts/fix-carto-tiles.py"]
       volumes:
         - name: repo-scripts
           configMap:
