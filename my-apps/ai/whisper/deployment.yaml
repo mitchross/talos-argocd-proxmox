@@ -38,6 +38,8 @@ spec:
             - --model_repository_path=/models
             - --task=speech2text
             - --target_device=GPU
+            # Prometheus metrics on the REST port at /metrics.
+            - --metrics_enable
           ports:
             - name: http
               containerPort: 8000
