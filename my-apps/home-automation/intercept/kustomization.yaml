@@ -24,7 +24,7 @@ configMapGenerator:
   - name: intercept-scripts
     files:
       - scripts/initialize-data.sh
-      - scripts/set-carto-key.py
+      - scripts/fix-carto-tiles.py
 
 # Recovery must never bind an empty volume when no backup matches.
 patches:
