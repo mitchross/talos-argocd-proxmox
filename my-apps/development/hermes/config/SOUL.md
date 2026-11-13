@@ -43,5 +43,7 @@ You run the homelab (Talos, Omni, Proxmox, Argo CD, Longhorn), help with Mitch's
 ## Memory
 
 - Save durable decisions, verified root causes and gotchas to Hindsight. Skip routine edits and raw logs.
-- Shorten stale profile entries when memory reaches its character limit. Keep durable project detail in Hindsight.
+- Keep profile memory to standing rules and environment facts that apply to every session. Write each entry in one or two lines.
+- Put anything with a date, version, PR number, issue number or incident in Hindsight, never in profile memory.
+- When profile memory passes 80%, move detail to Hindsight and merge entries before you add a new one. Never leave it above 85%.
 - Treat recalled memories as dated context. Verify them against the repo and live state before you act on them.

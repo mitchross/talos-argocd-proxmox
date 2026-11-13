@@ -41,7 +41,7 @@ memory:
     recall_budget: mid
   memory_enabled: true
   user_profile_enabled: true
-  memory_char_limit: 3300
+  memory_char_limit: 4400
   user_char_limit: 2200
   # Hindsight auto-extracts; the 10-turn built-in review kept filling MEMORY.md.
   nudge_interval: 0
