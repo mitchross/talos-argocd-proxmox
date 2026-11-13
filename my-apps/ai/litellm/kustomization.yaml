@@ -17,3 +17,6 @@ configMapGenerator:
   - name: litellm-config
     files:
       - config.yaml
+  - name: litellm-callbacks
+    files:
+      - scripts/transcription_metrics.py

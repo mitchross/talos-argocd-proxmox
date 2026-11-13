@@ -479,7 +479,7 @@
     {
       "id": 8,
       "type": "row",
-      "title": "Transcription requests (LiteLLM model `whisper`)",
+      "title": "Speed",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -491,6 +491,330 @@
     },
     {
       "id": 9,
+      "type": "stat",
+      "title": "Speed (x real time)",
+      "description": "Audio length divided by time taken. 6x = an hour of audio in 10 minutes. From the LiteLLM transcription_metrics callback.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(transcription_audio_seconds_total[$__range])) / sum(increase(transcription_processing_seconds_total[$__range])) > 0",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix:x",
+          "noValue": "No transcriptions",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 3
+              }
+            ]
+          },
+          "mappings": [],
+          "decimals": 1
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Words per second",
+      "description": "Transcript words produced per second of processing. The closest thing to tokens/sec for speech to text.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(transcription_words_total[$__range])) / sum(increase(transcription_processing_seconds_total[$__range])) > 0",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "No transcriptions",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "decimals": 1
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Audio transcribed",
+      "description": "Total audio length transcribed in the selected range.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(transcription_audio_seconds_total[$__range]))",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Words transcribed",
+      "description": "Total transcript words in the selected range.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "round(sum(increase(transcription_words_total[$__range])))",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Speed over time",
+      "description": "Per-window speed. Gaps mean no transcription finished in that window.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(transcription_audio_seconds_total[$__rate_interval])) / sum(increase(transcription_processing_seconds_total[$__rate_interval])) > 0",
+          "legendFormat": "x real time",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(increase(transcription_words_total[$__rate_interval])) / sum(increase(transcription_processing_seconds_total[$__rate_interval])) > 0",
+          "legendFormat": "words/s",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 14,
+      "type": "row",
+      "title": "Transcription requests (LiteLLM model `whisper`)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "panels": []
+    },
+    {
+      "id": 15,
       "type": "timeseries",
       "title": "Requests by status",
       "description": "Calls to LiteLLM model whisper, by HTTP status.",
@@ -502,7 +826,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 18
       },
       "targets": [
         {
@@ -546,7 +870,7 @@
       }
     },
     {
-      "id": 10,
+      "id": 16,
       "type": "timeseries",
       "title": "Time per transcription",
       "description": "End-to-end time LiteLLM spent per transcription call (upload + Whisper). Long audio takes minutes; about 6x faster than real time.",
@@ -558,7 +882,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 18
       },
       "targets": [
         {
@@ -611,7 +935,7 @@
       }
     },
     {
-      "id": 11,
+      "id": 17,
       "type": "row",
       "title": "Whisper engine (OpenVINO Model Server on the gen12 iGPU)",
       "collapsed": false,
@@ -619,12 +943,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 26
       },
       "panels": []
     },
     {
-      "id": 12,
+      "id": 18,
       "type": "timeseries",
       "title": "Audio files in progress",
       "description": "OVMS speech2text graphs running. One per audio file.",
@@ -634,9 +958,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 12,
         "x": 0,
-        "y": 15
+        "y": 27
       },
       "targets": [
         {
@@ -680,84 +1004,19 @@
       }
     },
     {
-      "id": 13,
-      "type": "timeseries",
-      "title": "Graph processing time",
-      "description": "Time an audio file spent inside the Whisper graph, from OVMS itself.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 15
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(ovms_graph_processing_time_us_sum{namespace=\"whisper\",name=\"whisper-large-v3-turbo\"}[$__rate_interval])) / sum(rate(ovms_graph_processing_time_us_count{namespace=\"whisper\",name=\"whisper-large-v3-turbo\"}[$__rate_interval])) / 1e6 > 0",
-          "legendFormat": "average",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.95, sum by (le)(rate(ovms_graph_processing_time_us_bucket{namespace=\"whisper\",name=\"whisper-large-v3-turbo\"}[$__rate_interval]))) / 1e6 > 0",
-          "legendFormat": "p95",
-          "refId": "B"
-        }
-      ],
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 14,
+      "id": 19,
       "type": "timeseries",
       "title": "Engine results",
-      "description": "Requests OVMS accepted, answered, rejected or failed inside the graph.",
+      "description": "Requests OVMS accepted, rejected or failed inside the graph. OVMS records no timing for the audio endpoint; see Speed.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 15
+        "w": 12,
+        "x": 12,
+        "y": 27
       },
       "targets": [
         {
@@ -774,18 +1033,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(ovms_responses{namespace=\"whisper\",name=\"whisper-large-v3-turbo\"}[$__interval]))",
-          "legendFormat": "responses",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
           "expr": "sum(increase(ovms_requests_rejected{namespace=\"whisper\",name=\"whisper-large-v3-turbo\"}[$__interval]))",
           "legendFormat": "rejected",
-          "refId": "C"
+          "refId": "B"
         },
         {
           "datasource": {
@@ -794,7 +1044,7 @@
           },
           "expr": "sum(increase(ovms_graph_error{namespace=\"whisper\",name=\"whisper-large-v3-turbo\"}[$__interval]))",
           "legendFormat": "graph errors",
-          "refId": "D"
+          "refId": "C"
         }
       ],
       "options": {
@@ -828,7 +1078,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 20,
       "type": "row",
       "title": "Resources",
       "collapsed": false,
@@ -836,12 +1086,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 35
       },
       "panels": []
     },
     {
-      "id": 16,
+      "id": 21,
       "type": "timeseries",
       "title": "CPU",
       "description": "CPU cores used. Whisper decodes audio on CPU and runs the model on the iGPU.",
@@ -853,7 +1103,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 24
+        "y": 36
       },
       "targets": [
         {
@@ -906,7 +1156,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 22,
       "type": "timeseries",
       "title": "Memory",
       "description": "Working set vs the pod limit, and free memory on hp-elite-gen12. Whisper went Pending once when gen12 ran out.",
@@ -918,7 +1168,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 24
+        "y": 36
       },
       "targets": [
         {
@@ -989,7 +1239,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 23,
       "type": "timeseries",
       "title": "MeTube download speed",
       "description": "Network in for MeTube (YouTube downloads) and Whisper (audio sent for transcription).",
@@ -1001,7 +1251,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 24
+        "y": 36
       },
       "targets": [
         {

@@ -54,6 +54,10 @@ spec:
             - name: config
               mountPath: /app/config.yaml
               subPath: config.yaml
+            - name: callbacks
+              mountPath: /app/transcription_metrics.py
+              subPath: transcription_metrics.py
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /health/liveliness
@@ -76,3 +80,6 @@ spec:
         - name: config
           configMap:
             name: litellm-config
+        - name: callbacks
+          configMap:
+            name: litellm-callbacks

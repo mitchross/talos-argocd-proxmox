@@ -142,7 +142,8 @@ model_list:
       output_cost_per_second: 0
 
 litellm_settings:
-  callbacks: ["prometheus", "langfuse_otel"]
+  # transcription_metrics: audio seconds and words per transcription (scripts/transcription_metrics.py).
+  callbacks: ["prometheus", "langfuse_otel", "transcription_metrics.proxy_handler_instance"]
   # Cover long-context requests beyond the built-in 600-second histogram ceiling.
   prometheus_latency_buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60, 120, 300, 420, 600, 900, 1200, 1800]
   require_auth_for_metrics_endpoint: true
