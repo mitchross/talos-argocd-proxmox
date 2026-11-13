@@ -28,3 +28,6 @@ configMapGenerator:
   - name: vllm-inference-dashboard
     files:
       - vllm-inference.json
+  - name: speech-to-text-dashboard
+    files:
+      - speech-to-text.json

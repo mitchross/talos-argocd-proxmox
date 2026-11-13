@@ -19,7 +19,7 @@ JSON file into a ConfigMap and stamps two things on it:
 |-----------|----------------|------------------|
 | `start-here/` | Start Here | Cockpit (Grafana home page), Homelab now (what is broken right now), Why Is This App Slow, Capacity |
 | `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear, Node drains & storage moves (+ kopiur from its chart) |
-| `ai/` | AI | GPU, local LLM engines (overview, vLLM, Strata), AI gateway (LiteLLM), Pi auto-routing, Hermes AI split |
+| `ai/` | AI | GPU, local LLM engines (overview, vLLM, Strata), AI gateway (LiteLLM), Pi auto-routing, Hermes AI split, Speech to text (Whisper + MeTube) |
 | `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate, Public Edge (Cloudflare tunnel, Anubis, redlib, per-site hits) |
 | `logs/` | Logs | Logs Explorer, node crash logs |
 | `home-energy/` | Home & Energy | Power & cost, solar, gaming PC, cooling, AirCube |
