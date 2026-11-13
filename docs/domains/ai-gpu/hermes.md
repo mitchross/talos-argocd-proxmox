@@ -76,8 +76,8 @@ The brain only navigates and coordinates. Other models do the delegated work:
 
 | Work | Model | Set in |
 |---|---|---|
-| Subagents (`delegate_task`) | Route `opus` (Opus 5.5, medium) by default. Hermes scales each task up to `deep` (Opus high) or down to `balanced` (Sonnet), `fast` (DeepSeek) or `local` (Qwen), and `codex` for a second opinion. It states each pick in one line before it starts | `config/config.yaml`, `delegation`; `config/SOUL.md` |
-| Code changes | Claude Code on Opus 5.5 at high effort by default, Sonnet 5.5 for spelled-out fixes. Codex `gpt-6.1-sol` is the second opinion and the backup when Claude is rate-limited. Inside a run, Claude Code picks each of its own subagents' models and prints the pick | `skills/homelab-ops/SKILL.md`, `config/agent-rules.md` |
+| Subagents (`delegate_task`) | Route `opus` (Opus 5.5, medium) by default. `plan` (Fable 5.2) writes plans. `codex` takes exploratory work and second opinions. Hermes scales the rest up to `deep` (Opus high) or down to `balanced` (Sonnet), `fast` (DeepSeek) or `local` (Qwen). It states each pick in one line before it starts | `config/config.yaml`, `delegation`; `config/SOUL.md` |
+| Code changes | A Fable 5.2 planning pass for multi-step changes, then Claude Code on Opus 5.5 at high effort. Sonnet 5.5 for spelled-out fixes. Codex `gpt-6.1-sol` for exploratory spikes, second opinions and backup when Claude is rate-limited. Inside a run, Claude Code picks each of its own subagents' models and prints the pick | `skills/homelab-ops/SKILL.md`, `config/agent-rules.md` |
 | Small helper calls, such as chat titles | `deepseek-flash` through LiteLLM | `config/config.yaml`, `auxiliary` |
 
 Kanban workers run the profile's main model (Opus) unless the card names another one.

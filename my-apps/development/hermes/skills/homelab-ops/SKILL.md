@@ -94,7 +94,7 @@ You cannot change the cluster. Claude Code (`claude`) and Codex (`codex`) are in
 
 Only start a coding agent when the user asks for a fix, or when the digest prompt says so. Steps:
 
-1. Pick the agent. Claude Code on Opus 5.5 is the default. Use Codex for a second opinion, when the user asks for it, or when Claude is rate-limited. Say the pick in one line before you start.
+1. Pick the agent. Claude Code on Opus 5.5 is the default. For a multi-step change, run a Fable 5.2 planning pass first (`claude -p --model claude-fable-5-2 --effort high --permission-mode plan`) and give its plan to the Opus run. Use Codex for exploratory spikes, a second opinion, when the user asks, or when Claude is rate-limited. Say the pick in one line before you start.
 2. Refresh the checkout: `git -C /opt/data/workspace/talos-argocd-proxmox fetch --prune origin` then `git -C /opt/data/workspace/talos-argocd-proxmox checkout -B hermes/<short-name> origin/main`.
 3. Start the agent in the background with the terminal tool (`workdir=/opt/data/workspace/talos-argocd-proxmox`, `background=true`). The prompt must contain: the evidence you collected, the Git directory that owns the app, and these rules: read the repo `CLAUDE.md` first, stay on the current branch, commit, push the branch, open a pull request with `gh pr create`, never push to `main`, never merge.
 
@@ -103,7 +103,7 @@ claude -p "<prompt>" --model claude-opus-5-5 --effort high --dangerously-skip-pe
 claude -p "<prompt>" --model claude-sonnet-5-5 --effort high --dangerously-skip-permissions --max-turns 60 --output-format json
 codex exec -m gpt-6.1-sol -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "<prompt>"
 ```
-   Pick the model by the task. Opus 5.5 high for most work and every investigation. Scale down to Sonnet 5.5 for spelled-out fixes. Codex (GPT-6.1-sol, high effort) as second opinion or backup. When unsure, use Opus. Never drop `--model` or `--effort`. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
+   Pick the model by the task. Fable 5.2 plans. Opus 5.5 high builds most work and every focused investigation. Scale down to Sonnet 5.5 for spelled-out fixes. Codex (GPT-6.1-sol, high effort) explores, reviews or backs up. When unsure, use Opus. Never drop `--model` or `--effort`. Claude's JSON output ends with a `modelUsage` object; the keys are the models that ran. Codex prints `model:` and `reasoning effort:` lines at the top of its output.
    Agents here also inherit the Omni Operator key and `ssh pi`. Tell them not to use Omni, Talos or the Pi; never pass the bypass flags anywhere else.
 4. Poll the background process with `process_manage` until it exits. Report the pull request link, a two-line summary, and one line `Agent: <claude|codex>, model: <name>, effort: <level>` copied from the agent's own output. If the model is not the one you chose, say so. Do not merge; the user merges.
 5. If the agent stops with a question, relay it to the user instead of answering on their behalf.
