@@ -356,6 +356,8 @@ Your normal Hermes, the `default` profile, does not change.
 | `qwen-researcher` | Searches with SearXNG and cites sources, or says NOT FOUND. |
 | `qwen-designer` | UI work, checked with browser screenshots. |
 
+For a beginner walkthrough, see [Run the local bot team](hermes-local-bot-team.md).
+
 To use it, open the desktop app and pick `qwen-lab` in the profile list or the Bots tab.
 Switch back to `default` for normal work. Lab cards go on the Kanban board `qwen-lab`.
 

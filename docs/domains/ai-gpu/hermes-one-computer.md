@@ -265,3 +265,5 @@ Those parts exist only because Hermes runs in a cluster. You do not need them to
 ## Next step
 
 Read [How I use Hermes](hermes-how-i-work.md) for the skills, flows and habits to copy, and what not to copy.
+
+To run a team of local bots on a cluster's vLLM, read [Run the local bot team](hermes-local-bot-team.md).
