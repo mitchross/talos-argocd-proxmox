@@ -20,3 +20,12 @@
 - `defaultSettings` in `infrastructure/storage/longhorn/values.yaml` do reach live `settings.longhorn.io`; confirm by comparing another setting's live value.
 - Keep `allowRecurringJobWhileVolumeDetached: "false"`: with `true`, a `filesystem-trim` job attaches detached volumes without a mounted filesystem and the whole job fails with `Action [trimFilesystem] not available`.
 - Diagnose a failing recurring job: pull its pod logs from Loki (`k8s_pod_name=~"<job>-.*"`), extract the failing `pvc-…` names, compare with `volumes.longhorn.io` `.status.state`. Prove a fix by running it once: `kubectl -n longhorn-system create job <name>-verify --from=cronjob/<job>`.
+
+## Longhorn disk tags
+
+- Never leave a disk tag on only one disk. A class whose `diskSelector` matches one disk pins every volume to one node, and that node's reboot waits on copies. Rule and current tags: `docs/domains/storage/disk-map.md`.
+- Record every disk tag in the Omni template's `default-disks-config` too. Longhorn reads it only when a node first registers, so a rebuilt node loses a tag that was only patched live.
+- Adding a tag to a second disk changes where new volumes of every class with that selector land. Check each class that selects the tag before the patch, not after.
+- A `diskSelector` with several tags needs all of them on one disk. Use a combined selector (e.g. `flash,clone-ok`) to pin a benchmark volume to one disk; never repoint a shared class for it.
+- Raise copies on an existing volume per volume (`numberOfReplicas`, `dataLocality: disabled`). Delete the old replica only after the volume is `healthy` with the new copy running, one volume at a time.
+- Use one writer for live Longhorn changes. When another agent runs replica moves, hold benchmarks or copies that use the same disks until it reports done.
