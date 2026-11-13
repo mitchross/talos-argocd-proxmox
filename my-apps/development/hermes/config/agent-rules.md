@@ -12,6 +12,12 @@ The repo's own `AGENTS.md` and `CLAUDE.md` add to these rules. When they conflic
 - Change config only through Git. Day-to-day fixes (restart, scale, Argo sync) are fine.
 - Never install a tool onto the `/opt/data` volume. Add it to the `hermes-dev` Dockerfile in `homelab-images` through a pull request.
 
+## Subagents
+
+- Subagents default to the session model (Opus). Pass `model` on each spawn to scale: `claude-fable-5-2` for planning, `opus` for hard work, `sonnet` for spelled-out edits, `haiku` for search and bulk reading.
+- Before each spawn, print one line: `Subagent: <task> → <model>, because <reason>.`
+- Never set `CLAUDE_CODE_SUBAGENT_MODEL`. Set to `inherit`, it drops the per-spawn `model` (anthropics/claude-code#68392).
+
 ## Code: the smallest complete change
 
 Full rules: `/opt/data/skills/software-development/ponytail/SKILL.md`.

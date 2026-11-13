@@ -94,7 +94,7 @@ delegation:
   backend: model_map
   backends:
     model_map:
-      default: codex
+      default: opus
       options:
         - name: local
           description: "Free and private Qwen3.8-27B on vLLM across both 3090s; never leaves the house. Bulk reading, summaries, private data."
@@ -105,21 +105,37 @@ delegation:
           provider: litellm
           model: deepseek-flash
         - name: balanced
-          description: "Claude Sonnet. Writing and judgment calls where Claude's style matters, or when Codex is rate-limited."
+          description: "Claude Sonnet. Scale down to it for spelled-out edits, bulk rewrites and simple research."
           provider: anthropic
           model: claude-sonnet-5-5
           fallback_providers:
             - provider: openai-codex
               model: gpt-6.1-sol
         - name: codex
-          description: "Default workhorse: GPT-6.1 Sol on the ChatGPT plan. Coding, research, repo reading, normal edits. Use when unsure."
+          description: "GPT-6.1 Sol on the ChatGPT plan. Exploratory work (open-ended research, codebase surveys, spikes), second opinions, and backup when Claude is rate-limited."
           provider: openai-codex
           model: gpt-6.1-sol
           fallback_providers:
             - provider: anthropic
               model: claude-sonnet-5-5
+        - name: plan
+          description: "Claude Fable 5.2 at high effort. Planning only: specs, task breakdowns, architecture. Not for doing the work."
+          provider: anthropic
+          model: claude-fable-5-2
+          reasoning_effort: high
+          fallback_providers:
+            - provider: anthropic
+              model: claude-opus-5-5
+        - name: opus
+          description: "Default: Claude Opus 5.5 at medium effort. Coding, fixes, reviews, writing, focused research. Use it as much as possible; use when unsure."
+          provider: anthropic
+          model: claude-opus-5-5
+          reasoning_effort: medium
+          fallback_providers:
+            - provider: openai-codex
+              model: gpt-6.1-sol
         - name: deep
-          description: "Slow and careful (Claude Opus, high reasoning). Hard debugging, design, root causes."
+          description: "Scale up: Claude Opus 5.5 at high effort. Hard debugging, design, root causes."
           provider: anthropic
           model: claude-opus-5-5
           reasoning_effort: high
