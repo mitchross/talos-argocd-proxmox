@@ -30,7 +30,8 @@ class AIObservabilityTests(unittest.TestCase):
     def test_langfuse_uses_v4_otel_and_shared_project_credentials(self):
         app = 'my-apps/ai/litellm/'
         config = read(app + 'config.yaml')['litellm_settings']
-        self.assertEqual(config['callbacks'], ['prometheus', 'langfuse_otel'])
+        self.assertEqual(config['callbacks'], [
+            'prometheus', 'langfuse_otel', 'transcription_metrics.proxy_handler_instance'])
         self.assertNotIn('success_callback', config)
         self.assertNotIn('failure_callback', config)
         env = environment(read(app + 'deployment.yaml'))
@@ -71,10 +72,19 @@ class AIObservabilityTests(unittest.TestCase):
         rendered = subprocess.check_output(['kustomize', 'build', str(ROOT / 'my-apps/ai/litellm')], text=True)
         docs = list(yaml.safe_load_all(rendered))
         deployment = next(d for d in docs if d['kind'] == 'Deployment')
-        config = next(d for d in docs if d['kind'] == 'ConfigMap')
-        volume = deployment['spec']['template']['spec']['volumes'][0]['configMap']['name']
-        self.assertEqual(volume, config['metadata']['name'])
+        pod = deployment['spec']['template']['spec']
+        volumes = {v['name']: v['configMap']['name'] for v in pod['volumes'] if 'configMap' in v}
+        configmaps = {d['metadata']['name'] for d in docs if d['kind'] == 'ConfigMap'}
+        volume = volumes['config']
+        self.assertIn(volume, configmaps)
         self.assertRegex(volume, r'^litellm-config-[a-z0-9]+$')
+        callbacks = volumes['callbacks']
+        self.assertIn(callbacks, configmaps)
+        self.assertRegex(callbacks, r'^litellm-callbacks-[a-z0-9]+$')
+        mounts = {m['name']: m for m in pod['containers'][0]['volumeMounts']}
+        self.assertEqual(mounts['config']['mountPath'], '/app/config.yaml')
+        self.assertEqual(mounts['callbacks']['mountPath'], '/app/transcription_metrics.py')
+        self.assertEqual(mounts['callbacks']['subPath'], 'transcription_metrics.py')
         service = next(d for d in docs if d['kind'] == 'Service')
         monitor = next(d for d in docs if d['kind'] == 'ServiceMonitor')
         for key, value in monitor['spec']['selector']['matchLabels'].items():
