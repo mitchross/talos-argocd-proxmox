@@ -54,7 +54,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: tile-server
-          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.42@sha256:755a96e63bcbfbf9ca64fd1450c4e113977b4f60c07562d0e30218dac79ae709
+          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.43@sha256:c993909123eb4d98351b3912d039ab353c23deebf080de0e7679e6a6e5fc028e
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
