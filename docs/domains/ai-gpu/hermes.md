@@ -216,7 +216,7 @@ Paths without a prefix are under `my-apps/development/hermes/`.
 | Sidecars | `deployment.yaml`, `scripts/gc-worktrees.sh`, `scripts/usage-exporter.py` | `worktree-gc` deletes idle build output. `usage-exporter` serves model usage totals on `:9464/metrics` |
 | Rust toolchains | `scripts/seed.sh` | `RUSTUP_HOME=/opt/data/tools/rustup` on the volume. The image's toolchain is linked as default `hermes-image`. A repo's `rust-toolchain.toml` version installs once on first use (`RUSTUP_AUTO_INSTALL=1`) |
 | Settings | `config/config.yaml` becomes a ConfigMap, and `scripts/seed.sh` copies it to `/opt/data/config.yaml` on every start | Model, providers, memory, dashboard URL, plugins, timezone |
-| Plugins | `scripts/seed.sh` | Installs `hindsight`, `homeassistant` and `advanced-delegation` into the volume on first start |
+| Plugins | `scripts/seed.sh` | Installs `hindsight`, `homeassistant` and `advanced-delegation` into the volume on first start, plus `conduit_push` (Conduit iOS app) at a pinned commit |
 | Coding agents | `scripts/seed.sh`, `skills/homelab-ops/SKILL.md` | The seed clones the talos repo into `/opt/data/workspace`, writes the Hindsight hook configs, and installs the Claude Code and Codex hooks. The skill runs `claude -p` or `codex exec` in the background |
 | Brain | `claude-opus-5-5`, medium reasoning effort, through the Claude Code token (`config.yaml`) | Qwen (`providers.litellm`, local, no cost) and GitHub Copilot (`gh` login) stay selectable per session |
 | Coding agents' models | `ANTHROPIC_MODEL=claude-opus-5-5` + `--effort high`; `.codex/config.toml` `gpt-6.1-sol` + `high` | The skill passes the model and the effort on every run and reports both on every hand-off. See [Pick the brain](#pick-the-brain) |

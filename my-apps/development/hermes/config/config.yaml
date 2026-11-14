@@ -203,6 +203,8 @@ plugins:
     # platforms.homeassistant.extra.watch_domains (or watch_entities/watch_all) is set.
     - homeassistant
     - advanced-delegation
+    # Companion for the Hermes Conduit iOS app; installed by scripts/seed.sh.
+    - conduit_push
   disabled: []
 
 # Match the image's config schema so each start does not repeat migration.
