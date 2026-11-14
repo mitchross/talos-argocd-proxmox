@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: act-runner
+  name: gitea-runner
   namespace: gitea-actions
   labels:
     app: act-runner
@@ -44,7 +44,7 @@ spec:
                 secretKeyRef:
                   name: act-runner-token
                   key: token
-            # act-runner-0 / act-runner-1: one Gitea runner identity per pod.
+            # gitea-runner-0 / gitea-runner-1: one Gitea runner identity per pod.
             - name: GITEA_RUNNER_NAME
               valueFrom:
                 fieldRef:
@@ -127,7 +127,7 @@ spec:
         - name: config
           configMap:
             name: act-runner-config
-  # Per-runner layer cache, not emptyDir: keeps the 3 GB catthehacker image + base layers warm across restarts.
+  # Per-runner layer cache, not emptyDir. Immutable: to resize, rename the StatefulSet so new PVCs are made.
   volumeClaimTemplates:
     - metadata:
         name: docker-storage
@@ -140,4 +140,4 @@ spec:
         storageClassName: longhorn
         resources:
           requests:
-            storage: 10Gi
+            storage: 100Gi
