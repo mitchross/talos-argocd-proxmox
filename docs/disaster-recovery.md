@@ -411,16 +411,16 @@ kubectl create secret generic act-runner-token \
   -n gitea-actions \
   --from-literal=token="$TOKEN" \
   --dry-run=client -o yaml | kubectl apply -f -
-kubectl rollout restart -n gitea-actions statefulset/act-runner
-kubectl logs -n gitea-actions act-runner-0 -c runner --tail=50
-kubectl logs -n gitea-actions act-runner-1 -c runner --tail=50
+kubectl rollout restart -n gitea-actions statefulset/gitea-runner
+kubectl logs -n gitea-actions gitea-runner-0 -c runner --tail=50
+kubectl logs -n gitea-actions gitea-runner-1 -c runner --tail=50
 ```
 
-Expected result: each of the two runners (`act-runner-0`, `act-runner-1`) logs
+Expected result: each of the two runners (`gitea-runner-0`, `gitea-runner-1`) logs
 this line:
 
 ```text
-runner: act-runner-0 ... declare successfully
+runner: gitea-runner-0 ... declare successfully
 ```
 
 ### 3. If a pod does not schedule
