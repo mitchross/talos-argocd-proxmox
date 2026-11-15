@@ -23,7 +23,7 @@ spec:
     spec:
       initContainers:
         - name: fetch-mmdb
-          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:62bfcce4304bafe582674271a3b79041f99d8474c0585c08b0908aa91d676674
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:847c2502998ed3f6af74df13cc8255b111d3b445f1319f6e68930f8669b7b1c5
           command:
             - sh
             - -c
@@ -33,7 +33,7 @@ spec:
               mountPath: /shared
       containers:
         - name: ingestion-general
-          image: ghcr.io/posthog/posthog-node:master@sha256:c1f320deaf917e2d15d82487a0b48ecbaa3a44a985aa8a68082ccd48af15ee2a
+          image: ghcr.io/posthog/posthog-node:master@sha256:127ea27fe3ba673e2625e8dea8262ac97e6c8f6dd760bcc31c7feb64e1593f87
           command:
             - node
             - nodejs/dist/index.js
