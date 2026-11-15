@@ -42,7 +42,7 @@ spec:
         - name: postgres
           # Pin MAJOR.MINOR; majors need a manual dump/restore (gated in renovate.json5).
           # Held at 17 until Temporal declares PG18 support — a wedged schema hook deadlocks the whole app sync.
-          image: postgres:17.11
+          image: postgres:17.12
           securityContext:
             runAsUser: 999
             runAsGroup: 999
