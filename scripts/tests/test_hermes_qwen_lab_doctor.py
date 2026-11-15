@@ -58,4 +58,18 @@ def test_seed_rewrites_cron_scripts_from_git_on_every_start():
 def test_lab_never_waits_on_an_approval_prompt_but_keeps_its_deny_list():
     approvals = yaml.safe_load((APP / 'qwen-lab/base.yaml').read_text())['approvals']
     assert approvals['mode'] == 'off'
-    assert {'kubectl *', 'talosctl *', 'omnictl *', 'helm *', 'git push*', 'gh pr merge*', 'claude *', 'codex *'} <= set(approvals['deny'])
+    assert {'kubectl *', 'talosctl *', 'omnictl *', 'helm *', 'gh pr merge*', 'claude *', 'codex *'} <= set(approvals['deny'])
+    assert 'git push*' not in approvals['deny']
+
+
+def test_lab_pushes_feature_branches_but_never_main_force_or_delete():
+    import fnmatch
+    deny = [p.lower() for p in yaml.safe_load((APP / 'qwen-lab/base.yaml').read_text())['approvals']['deny']]
+    blocked = lambda cmd: any(fnmatch.fnmatchcase(cmd.lower(), p) for p in deny)
+    for ok in ('git push -u gitea license-sweep', 'git push -u origin feat/x', 'git -c credential.helper= push gitea fix-1'):
+        assert not blocked(ok), ok
+    for bad in ('git push origin main', 'git push gitea HEAD:master', 'git -C /x push origin main',
+                'git push --force origin feat/x', 'git push -f origin feat/x', 'git push origin +feat/x',
+                'git push --force-with-lease', 'git push origin --delete feat/x', 'git push -d origin feat/x',
+                'git push --mirror', 'git push --all'):
+        assert blocked(bad), bad
