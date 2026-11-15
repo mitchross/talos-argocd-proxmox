@@ -62,7 +62,7 @@ Invoke `kubectl`, `gh` and `git` through the `terminal` tool. Read repo files wi
 - A missing delegation plugin fails closed: with `backend: model_map` set, `delegate_task` refuses every subagent.
 - `onMissingSnapshot: Fail` breaks the first deploy of a new app. Keep `Continue` only for PVCs that have never had a Snapshot, and flip them once the first one succeeds.
 - A component patch with `op: add /spec/policy` overrides the per-stub value. To exempt a PVC, use a second patch with a label selector, not an edit to the stub.
-- The kopiur tag is `0.10.16` with no `v`. Inferences from reading its source (e.g. the missing uniqueId pin on a recreated CR) are hypotheses until a drill proves them.
+- Kopiur tags have no `v` (e.g. `0.11.0`); read the pin from `infrastructure/backup/kopiur-operator/kustomization.yaml`. Inferences from reading its source (e.g. the missing uniqueId pin on a recreated CR) are hypotheses until a drill proves them.
 - Subagents can export `HERMES_HOME` into the shared terminal. Check `echo $HERMES_HOME` before trusting Hermes CLI output.
 - `du` over `/opt/data` takes more than 180 s. Use `df -h /opt/data` instead.
 
