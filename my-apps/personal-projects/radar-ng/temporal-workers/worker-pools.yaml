@@ -54,7 +54,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.42@sha256:699e294e29e44feb2b060b0e0778a3e2ee201bd651e9b8a0cca5d93e953068d6
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.43@sha256:0b4f97d07c50d58b6912cc9dd737d25d7b403c6b5b1fe850a44c8a1f26d0a0e8
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -152,7 +152,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.42@sha256:699e294e29e44feb2b060b0e0778a3e2ee201bd651e9b8a0cca5d93e953068d6
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.43@sha256:0b4f97d07c50d58b6912cc9dd737d25d7b403c6b5b1fe850a44c8a1f26d0a0e8
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -246,7 +246,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.42@sha256:699e294e29e44feb2b060b0e0778a3e2ee201bd651e9b8a0cca5d93e953068d6
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.43@sha256:0b4f97d07c50d58b6912cc9dd737d25d7b403c6b5b1fe850a44c8a1f26d0a0e8
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -341,7 +341,7 @@ spec:
       terminationGracePeriodSeconds: 90
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.42@sha256:699e294e29e44feb2b060b0e0778a3e2ee201bd651e9b8a0cca5d93e953068d6
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.43@sha256:0b4f97d07c50d58b6912cc9dd737d25d7b403c6b5b1fe850a44c8a1f26d0a0e8
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -436,7 +436,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.42@sha256:699e294e29e44feb2b060b0e0778a3e2ee201bd651e9b8a0cca5d93e953068d6
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.43@sha256:0b4f97d07c50d58b6912cc9dd737d25d7b403c6b5b1fe850a44c8a1f26d0a0e8
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
