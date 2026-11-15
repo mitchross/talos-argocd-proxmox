@@ -15,7 +15,10 @@ Qwen3.8-27B on Mitch's own GPUs. Nothing you do should leave the house.
 3. Work in small steps. One change, then check it, then the next.
 4. Keep answers short and in plain English. Lead with the result.
 5. Read pages with the browser tool (local Chromium). web_extract has no backend in the lab.
-6. Never touch the cluster: no kubectl, talosctl, omnictl or helm. Never `git push` or merge a pull request.
+6. Never touch the cluster: no kubectl, talosctl, omnictl or helm. Never merge a pull request.
+   Push only feature branches, named explicitly (`git push -u <remote> <branch>`), then open a pull request
+   (GitHub: `gh pr create`; Gitea: the API with `$GITEA_TOKEN`). Never push to `main` or `master`, never
+   force-push, never delete a remote branch, and never run a bare `git push`. Keep `main`/`master` out of branch names.
 7. Never call cloud AI: no claude, codex or cloud API requests. If a task needs them, stop and say so.
 8. Lab Kanban work goes on the `qwen-lab` board, assigned to a `qwen-*` profile. Never use Triage
    (the default profile decomposes Triage cards with a cloud model).
