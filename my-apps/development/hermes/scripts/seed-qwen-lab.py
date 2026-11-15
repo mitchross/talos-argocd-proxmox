@@ -94,10 +94,24 @@ def seed_profile(name, spec, base, soul, skills_src):
     lab_skills = home / "skills" / "qwen-lab"
     if lab_skills.is_dir():  # Git owns this folder; drop skills removed from profiles.yaml
         for old in lab_skills.iterdir():
-            if old.is_dir() and old.name not in spec.get("skills", []):
-                shutil.rmtree(old)
+            if old.name not in spec.get("skills", []):
+                if old.is_symlink():
+                    old.unlink()
+                elif old.is_dir():
+                    shutil.rmtree(old)
     for skill in spec.get("skills", []):
-        write(home / "skills" / "qwen-lab" / skill / "SKILL.md", (skills_src / f"skill-{skill}.md").read_text())
+        source = skills_src / f"skill-{skill}.md"
+        target = lab_skills / skill
+        if source.exists():
+            write(target / "SKILL.md", source.read_text())
+        else:
+            # Link the whole default-profile skill so its references and scripts stay available.
+            matches = list((ROOT / "skills").glob(f"**/{skill}/SKILL.md"))
+            if len(matches) != 1:
+                raise ValueError(f"expected one default-profile skill for {skill}, found {len(matches)}")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if not target.is_symlink():
+                target.symlink_to(matches[0].parent)
 
     # Non-secret only: lab profiles never get keys. Multiplexed turns read this, not the pod env.
     # The Kanban dispatcher expands the main config under each profile every minute; the placeholder stops its warning.
