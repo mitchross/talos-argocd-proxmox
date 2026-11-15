@@ -409,6 +409,12 @@ chart version equals the app version. Check that the chart still ships the same
 - Put the `privileged-movers` namespace annotation only on a namespace whose
   mover has extra rights (uid 0, `runAsNonRoot: false`, added capabilities, or
   `privilegedMode`). Do not copy it to other namespaces.
+- Never run `kopia policy set` by hand. kopiur rewrites each source's kopia
+  policy from the `SnapshotPolicy` before every run, so a manual setting is
+  gone on the next backup. Put extra flags in `kopiaArgs.policySet`.
+- Set `upload.forceHashPercent: 100` on any MariaDB or MySQL PVC. Those engines
+  rewrite files in place without changing the mtime, and kopia would back the
+  files up stale. Upstream has confirmed it for MariaDB only (kopiur#708).
 
 ### How failures behave
 
@@ -416,7 +422,10 @@ chart version equals the app version. Check that the chart still ships the same
   The next cron run creates a new `Snapshot`, and Kopia reuses the data that the
   failed run already uploaded.
 - kopiur keeps at most `failedJobsHistoryLimit` failed `Snapshot` objects per
-  `SnapshotSchedule`. The default is 10.
+  `SnapshotSchedule`. The default is 10. Failed manual `Snapshot`s are capped
+  at 10 per `SnapshotPolicy`. A failed run that still wrote a kopia snapshot is
+  never pruned. Set `deletionPolicy: Retain` before you delete one by hand, or
+  you delete that backup too.
 - kopiur retries a short CSI snapshot error. If staging does not finish within
   `spec.staging.timeout` (default 10m), the run fails with reason `StagingTimedOut`.
 - In a namespace with the `privileged-movers` annotation, kopiur can miss the
