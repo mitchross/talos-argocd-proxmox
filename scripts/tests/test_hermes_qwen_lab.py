@@ -52,11 +52,20 @@ def test_team_is_complete_and_skills_exist():
     skill_files = {p.stem for p in (LAB / 'skills').glob('*.md')}
     for name, spec in profiles.items():
         assert {'title', 'color', 'description', 'role', 'skills'} <= set(spec), name
-        assert set(spec['skills']) <= skill_files, name
+        shared = {'ponytail-review', 'research', 'grounded-citations'}
+        assert set(spec['skills']) <= skill_files | shared, name
     for stem in skill_files:
         front = yaml.safe_load((LAB / 'skills' / f'{stem}.md').read_text().split('---')[1])
         assert front['name'] == stem
         assert len(front['description']) <= 80
+
+
+def test_role_skills_are_limited_to_reviewer_and_researcher():
+    profiles = _profiles()
+    assert profiles['qwen-reviewer']['skills'] == ['qwen-reviewer-checklist', 'ponytail-review']
+    assert profiles['qwen-researcher']['skills'] == ['research', 'grounded-citations']
+    assert profiles['qwen-worker']['skills'] == profiles['qwen-designer']['skills'] == []
+    assert profiles['qwen-lab']['skills'] == ['qwen-ticket-template', 'qwen-best-of-n']
 
 
 def test_configmap_ships_every_lab_file():
@@ -81,6 +90,12 @@ def test_seed_never_writes_the_default_profile(tmp_path):
     for p in (LAB / 'skills').glob('*.md'):
         (src / f'skill-{p.name}').write_text(p.read_text())
     root = tmp_path / 'root'
+    shared = {'software-development/ponytail-review', 'software-development/research', 'research/grounded-citations'}
+    for relative in shared:
+        skill = root / 'skills' / relative
+        (skill / 'references').mkdir(parents=True)
+        (skill / 'SKILL.md').write_text(relative)
+        (skill / 'references/keep.md').write_text('supporting file')
     fake = tmp_path / 'hermes'
     # Stand-in CLI: "profile create" makes the dir; every other call is a no-op.
     fake.write_text('#!/bin/sh\nif [ "$1" = profile ] && [ "$2" = create ]; then mkdir -p "$HERMES_HOME/profiles/$3"; fi\n')
@@ -90,7 +105,7 @@ def test_seed_never_writes_the_default_profile(tmp_path):
     out = subprocess.run([sys.executable, str(APP / 'scripts/seed-qwen-lab.py')], env=env, capture_output=True, text=True)
     assert out.returncode == 0, out.stdout + out.stderr
     top = {p.name for p in root.iterdir()}
-    assert top == {'profiles'}, top
+    assert top == {'profiles', 'skills'}, top
     assert {p.name for p in (root / 'profiles').iterdir()} == TEAM
     soul = (root / 'profiles/qwen-reviewer/SOUL.md').read_text()
     assert '{role}' not in soul and 'fresh eyes' in soul
@@ -106,6 +121,21 @@ def test_seed_never_writes_the_default_profile(tmp_path):
     again = subprocess.run([sys.executable, str(APP / 'scripts/seed-qwen-lab.py')], env=env, capture_output=True, text=True)
     assert again.returncode == 0, again.stdout + again.stderr
     assert not stale.exists() and mine.exists()
+    for profile, skills in {'qwen-reviewer': ['ponytail-review'],
+                            'qwen-researcher': ['research', 'grounded-citations']}.items():
+        for name in skills:
+            link = root / 'profiles' / profile / 'skills/qwen-lab' / name
+            assert link.is_symlink()
+            assert (link / 'SKILL.md').read_text().endswith('/' + name)
+            assert (link / 'references/keep.md').read_text() == 'supporting file'
+    specs = yaml.safe_load((src / 'profiles.yaml').read_text())
+    specs['qwen-reviewer']['skills'].remove('ponytail-review')
+    (src / 'profiles.yaml').write_text(yaml.safe_dump(specs))
+    pruned = subprocess.run([sys.executable, str(APP / 'scripts/seed-qwen-lab.py')], env=env, capture_output=True, text=True)
+    assert pruned.returncode == 0, pruned.stdout + pruned.stderr
+    assert not (root / 'profiles/qwen-reviewer/skills/qwen-lab/ponytail-review').is_symlink()
+    for relative in shared:
+        assert (root / 'skills' / relative / 'SKILL.md').read_text() == relative
     meta = yaml.safe_load((root / 'profiles/qwen-lab/profile.yaml').read_text())
     assert meta['ui_meta']['hermes-bots']['sectionName'] == 'Qwen Lab'
     lab_env = (root / 'profiles/qwen-researcher/.env').read_text()
