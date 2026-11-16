@@ -11,7 +11,16 @@ bots:
     user_agent_regex: >-
       ExaSearchBot|crawler\.exa\.ai
     action: DENY
-  - import: (data)/bots/_deny-pathological.yaml
+  # _deny-pathological minus cloudflare-kitesurf: that rule adds +15 for any Cf-Ray header,
+  # which is every visitor behind our tunnel, pushing browsers into the difficulty-6 tier.
+  - import: (data)/bots/cloudflare-workers.yaml
+  - import: (data)/bots/headless-browsers.yaml
+  - import: (data)/bots/us-ai-scraper.yaml
+  - import: (data)/bots/custom-async-http-client.yaml
+  - import: (data)/bots/lyrenth.yaml
+  - import: (data)/bots/spec-violations.yaml
+  - import: (data)/crawlers/alibaba-cloud.yaml
+  - import: (data)/crawlers/huawei-cloud.yaml
   - import: (data)/bots/aggressive-brazilian-scrapers.yaml
   - import: (data)/meta/ai-block-aggressive.yaml
   - import: (data)/crawlers/_allow-good.yaml
