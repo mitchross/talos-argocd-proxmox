@@ -143,6 +143,31 @@ delegation:
             - provider: openai-codex
               model: gpt-6.1-sol
 
+# /moa: Codex advises once per turn, Opus on the Claude plan acts. Off until picked (active_preset empty).
+# An explicit presets map replaces the built-in default, whose aggregator bills OpenRouter (no login here).
+moa:
+  default_preset: default
+  active_preset: ""
+  presets:
+    default:
+      enabled: true
+      reference_models:
+        - provider: openai-codex
+          model: gpt-6.1-sol
+      aggregator:
+        provider: anthropic
+        model: claude-opus-5-5
+        reasoning_effort: medium
+    # DeepSeek (OpenRouter, through LiteLLM) advises; local Qwen acts and never falls back to cloud.
+    qwen:
+      enabled: true
+      reference_models:
+        - provider: litellm
+          model: deepseek-flash
+      aggregator:
+        provider: litellm
+        model: qwen3.8-27b-local
+
 # Small internal helper calls run on DeepSeek Flash (via LiteLLM) instead of Opus.
 # Compression and the approval classifier stay on the main model on purpose.
 # background_review (the post-turn memory/skill review fork) runs on Codex: it was ~$75/week of Opus.
