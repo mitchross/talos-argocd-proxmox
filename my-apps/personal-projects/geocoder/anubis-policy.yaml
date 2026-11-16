@@ -20,7 +20,7 @@ bots:
   - import: (data)/meta/ai-block-aggressive.yaml
   - import: (data)/crawlers/_allow-good.yaml
   - import: (data)/common/keep-internet-working.yaml
-  # Weight 20 = the difficulty-4 proof-of-work tier (redlib's tuning); humans pay it once per device per 7 days.
+  # Weight 20 = the difficulty-3 proof-of-work tier (redlib's tuning); humans pay it once per device per 7 days.
   - name: generic-browser
     user_agent_regex: >-
       Mozilla|Opera
@@ -77,7 +77,7 @@ thresholds:
     action: CHALLENGE
     challenge:
       algorithm: fast
-      difficulty: 4
+      difficulty: 3
   - name: extreme-suspicion
     expression: weight >= 30
     action: CHALLENGE
