@@ -29,7 +29,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: redlib
-        image: registry.vanillax.me/redlib/redlib:2.3.13@sha256:3a8610f4b2fb980f7ea401f56bcab8f258e1cdab97b72fd5c002fa56bad4f158
+        image: registry.vanillax.me/redlib/redlib:2.3.14@sha256:cc423f9c68e4c494530cc129def0c9be197008cdb7c6a709ff57cabdc227aad1
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
