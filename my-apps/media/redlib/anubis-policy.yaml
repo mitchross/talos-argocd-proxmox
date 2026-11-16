@@ -18,7 +18,7 @@ bots:
   - import: (data)/common/keep-internet-working.yaml
   # Weight 20 = the difficulty-3 proof-of-work tier. On 2026-10-04 a rotating-IP
   # scraper (~4,000 IPs per 8 min, Chrome UA) solved the difficulty-2 tier ~2/s
-  # and crawled Reddit through redlib's token. 3 is ~16x the work of 2 (4 was too slow for phones);
+  # and crawled Reddit through redlib's token. 3 is ~16x the work of 2 (4 felt too slow);
   # humans pay it once per device per 7 days.
   - name: generic-browser
     user_agent_regex: >-
