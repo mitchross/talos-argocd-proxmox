@@ -108,6 +108,7 @@ spec:
         - path: { type: PathPrefix, value: /api }
         - path: { type: PathPrefix, value: /tiles }
         - path: { type: PathPrefix, value: /basemap }
+        - path: { type: PathPrefix, value: /replays }
       backendRefs:
         - { group: "", kind: Service, name: tile-server, port: 8080, weight: 1 }
     - matches:
