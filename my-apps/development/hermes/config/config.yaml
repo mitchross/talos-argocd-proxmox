@@ -211,10 +211,11 @@ approvals:
   smart_policy: >-
     APPROVE without asking: git add, commit and push to a feature branch; gh pr create, view and comment;
     gh issue create, view and comment; launching claude -p or codex exec coding hand-offs that disallow
-    gh pr merge and pushes to main or master.
+    gh pr merge and pushes to main or master; git merge of one feature branch into another feature or
+    integration branch, and the push of that branch.
     Always ESCALATE: any push to main or master (including git push while the current branch is main or
-    master), force pushes, gh pr merge, any other command that merges a pull request (gh api, or a local
-    git merge pushed to the pull request's base branch), and deleting remote branches.
+    master), force pushes, any merge into main or master by any command (gh pr merge, gh api, or a pushed
+    local git merge), and deleting remote branches.
   deny:
     - "git push origin main*"
     - "git push origin master*"

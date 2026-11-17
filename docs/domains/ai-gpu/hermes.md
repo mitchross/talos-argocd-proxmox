@@ -134,8 +134,9 @@ The daily digest is under Cron in the dashboard. Click the Trigger button to run
 
 To ask for a fix, write something like "open a PR that fixes the wyze-bridge secret".
 Hermes starts Codex or Claude Code in its pod with the evidence, waits, and reports the pull request link.
-You merge, and Argo CD deploys. Hermes never merges, into any branch.
-A plan, skill, Kanban card, memory or earlier conversation never authorizes a merge or a production change.
+You merge, and Argo CD deploys. Hermes never merges into `main` or `master` without your explicit yes.
+Hermes may merge a feature branch into another feature or integration branch without asking.
+A plan, skill, Kanban card, memory or earlier conversation never authorizes a merge into `main` or `master`, or a production change.
 
 ```mermaid
 sequenceDiagram
