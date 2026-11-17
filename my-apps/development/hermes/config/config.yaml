@@ -34,6 +34,8 @@ browser:
 
 memory:
   provider: hindsight
+  # Current-turn recall must finish before Hermes builds the model request.
+  external_prefetch_timeout: 125
   hindsight:
     mode: local_external
     api_url: http://hindsight-service.hindsight.svc.cluster.local:8888

@@ -36,6 +36,17 @@ env:
   KUBERNETES_VERSION: 1.37.0
 
 jobs:
+  hermes-recall:
+    name: Hermes automatic recall regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python3 -m pip install pytest==9.2.0 hindsight-client==0.10.3 PyYAML==6.0.3
+      - run: python3 scripts/test-hermes-recall.py
+
   posthog-injector-proxy:
     name: PostHog injector proxy regression tests
     runs-on: ubuntu-latest
