@@ -400,7 +400,8 @@ Hindsight uses `/health/live` for liveness and `/health/ready` for readiness.
 A database outage removes traffic without restarting memory work.
 Native inference uses two threads per pool, with one embedding call and one reranking call at a time.
 The [Hindsight Deployment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/knowledge/hindsight/deployment.yaml) caps recalls and background tasks separately.
-Hermes waits up to 120 seconds for saved memories before its background prefetch continues.
+The asynchronous recall path can wait 120 seconds for saved memories before its background prefetch continues.
+The default profile uses synchronous recall, described below, without this retain-drain wait.
 These limits reduce contention. They do not guarantee that every save is visible at once.
 
 ### Automatic project recall
@@ -417,8 +418,14 @@ The existing `mid` budget, three fact types, 4096-token result budget, and serve
 Hermes fences returned memory as external context in the current model request.
 Explicit `hindsight_recall` remains available for narrower queries.
 
-Current-turn recall adds server latency before the first answer.
-CPU reranking can take tens of seconds.
+**Known limitation: recall latency.**
+Each non-trivial message waits for recall before the model answers.
+Three measured recalls took 33 to 44 seconds; CPU reranking used 42.2 seconds of one 43.7-second recall.
+Expect 30 to 45 seconds before the first token. Three samples do not establish p50 or p95.
+The 125-second deadline is a correctness bound, not a performance fix.
+It stops Hermes from discarding a slow result; it does not make recall faster.
+Reranker latency remains open work.
+
 An empty result or provider failure supplies no memory context; it does not prove the project has no history.
 Historical PR facts still require a current GitHub check before reporting open or merged state.
 
