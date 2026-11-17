@@ -420,11 +420,17 @@ Explicit `hindsight_recall` remains available for narrower queries.
 
 **Known limitation: recall latency.**
 Each non-trivial message waits for recall before the model answers.
-Three measured recalls took 33 to 44 seconds; CPU reranking used 42.2 seconds of one 43.7-second recall.
-Expect 30 to 45 seconds before the first token. Three samples do not establish p50 or p95.
+Over 30 hours on 2026-11-16, 57 completed recalls had a p50 of 34.8 seconds and a p95 of 90.6 seconds.
+The CPU cross-encoder scores 300 candidates per recall and uses more than 90% of that time.
 The 125-second deadline is a correctness bound, not a performance fix.
 It stops Hermes from discarding a slow result; it does not make recall faster.
-Reranker latency remains open work.
+
+Hindsight sets `HINDSIGHT_API_RERANKER_LOCAL_BUCKET_BATCHING=true`.
+It sorts candidates by length before batching, so scores and results stay identical.
+A replay of five real 300-candidate recalls ran 49% faster on average (31% to 60%), measured off-cluster.
+Keep the 300-candidate limit (`HINDSIGHT_API_RERANKER_MAX_CANDIDATES`).
+A limit of 100 dropped 2 to 4 of the top 10 results in four of the five replayed queries.
+To roll back bucket batching, revert the variable; the Hindsight pod restarts, and no data changes.
 
 An empty result or provider failure supplies no memory context; it does not prove the project has no history.
 Historical PR facts still require a current GitHub check before reporting open or merged state.
