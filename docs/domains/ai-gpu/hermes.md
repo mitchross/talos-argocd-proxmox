@@ -400,8 +400,59 @@ Hindsight uses `/health/live` for liveness and `/health/ready` for readiness.
 A database outage removes traffic without restarting memory work.
 Native inference uses two threads per pool, with one embedding call and one reranking call at a time.
 The [Hindsight Deployment](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/knowledge/hindsight/deployment.yaml) caps recalls and background tasks separately.
-Hermes waits up to 120 seconds for saved memories before its background prefetch continues.
+The asynchronous recall path can wait 120 seconds for saved memories before its background prefetch continues.
+The default profile uses synchronous recall, described below, without this retain-drain wait.
 These limits reduce contention. They do not guarantee that every save is visible at once.
+
+### Automatic project recall
+
+The default profile recalls Hindsight against the current message before the model answers, including in fresh Desktop remote chats.
+`config/hindsight-hermes.json` sets `recall_sync: true` and a 120-second API deadline.
+`memory.external_prefetch_timeout: 125` lets that request finish before Hermes stops waiting.
+This setting requires the image's guarded timeout bridge for [upstream issue #104405](https://github.com/NousResearch/hermes-agent/issues/104405).
+
+Hermes skips greetings, acknowledgments, and bare slash commands.
+For other messages, it removes skill scaffolding and redacts secrets before sending the query.
+The plugin uses at most the first 800 characters.
+The existing `mid` budget, three fact types, 4096-token result budget, and server ranking remain unchanged.
+Hermes fences returned memory as external context in the current model request.
+Explicit `hindsight_recall` remains available for narrower queries.
+
+**Known limitation: recall latency.**
+Each non-trivial message waits for recall before the model answers.
+Three measured recalls took 33 to 44 seconds; CPU reranking used 42.2 seconds of one 43.7-second recall.
+Expect 30 to 45 seconds before the first token. Three samples do not establish p50 or p95.
+The 125-second deadline is a correctness bound, not a performance fix.
+It stops Hermes from discarding a slow result; it does not make recall faster.
+Reranker latency remains open work.
+
+An empty result or provider failure supplies no memory context; it does not prove the project has no history.
+Historical PR facts still require a current GitHub check before reporting open or merged state.
+
+Run the isolated fake-client regression from the repository root:
+
+```sh
+python3 scripts/test-hermes-recall.py
+```
+
+Install the dependencies pinned in the `hermes-recall` CI job first.
+The runner fetches the deployed plugin revision and runs its existing provider tests with the local regression.
+It makes no requests to the production memory bank.
+The image smoke test separately checks Hermes initialization, its timeout, and model-request context injection.
+
+After review and deployment, start a fresh remote chat and ask about Radar NG without requesting a memory tool.
+Expect recalled context before the first model answer and the Hindsight recall indicator.
+Check that the answer uses the correct project and verifies current PR state separately.
+Revert the config and image digest together if recall fails or latency is unacceptable.
+
+### Broader Hermes goals
+
+Keep one hosted Hermes agent with central chats, session history, skills, and the existing Hindsight bank.
+Desktop remains in remote mode.
+The seven Advanced Delegation routes select worker models; they do not trigger project recall.
+Keep the pod terminal as the default execution environment.
+Selected Mac and CachyOS execution through SSH remains a separate goal, subject to verified access and execution boundaries.
+Automatic recall does not require another memory store, a local thinking agent, or an orchestration framework.
 
 ### Recover a blocked Kanban task
 
