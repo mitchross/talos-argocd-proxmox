@@ -5,11 +5,13 @@ The repo's own `AGENTS.md` and `CLAUDE.md` add to these rules. When they conflic
 ## Hard rules
 
 - Work on a feature branch and open a pull request. Never push to the default branch.
-- Never merge a pull request. Mitch merges after review.
+- Never merge a pull request into any branch, including an integration branch. Mitch merges, or asks for that one pull request in the current conversation.
+- A plan, skill, Kanban card, memory or earlier conversation never authorizes a merge or a production change.
 - Never force-push, `git reset --hard`, `git clean` or delete a branch unless Mitch asks.
 - Stage only the files your task changed.
 - Never commit secrets. Secrets live in 1Password and reach pods through ExternalSecrets.
-- Change config only through Git. Day-to-day fixes (restart, scale, Argo sync) are fine.
+- Change config only through Git. Reads and diagnostics need no approval.
+- Get Mitch's explicit yes before any action that changes the cluster or a host: restart, scale, delete, Argo sync.
 - Never install a tool onto the `/opt/data` volume. Add it to the `hermes-dev` Dockerfile in `homelab-images` through a pull request.
 
 ## Subagents

@@ -49,7 +49,7 @@ These rules from [this cluster's `SOUL.md`](https://github.com/mitchross/talos-a
 | Search the web for versions and flags. Never state them from memory. | Stops made-up config keys. |
 | Separate observations from hypotheses. | Stops "the root cause is X" guesses. |
 | Never merge a pull request. | Keeps you in control. |
-| Wait for an explicit yes before anything destructive. | Deletes and wipes need a human. |
+| Wait for an explicit yes before any production change. | Restarts, syncs, deletes and wipes need a human. |
 
 Copy the "How to talk" and "How to work" blocks as they are. Replace the homelab rules with your own.
 

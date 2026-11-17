@@ -24,7 +24,8 @@ One pod in the `hermes` namespace runs a gateway for cron jobs and chat platform
 Hermes remembers across sessions through Hindsight, the memory service in this cluster, and loads skills on demand.
 
 Hermes is the coordinator.
-It reads the cluster and does day-to-day fixes such as restart, exec and cordon.
+It reads the cluster without asking.
+It does day-to-day fixes such as restart, scale and cordon only after your explicit yes.
 For a code or config change, it runs Claude Code or Codex inside its own pod to open a pull request.
 You merge the pull request, and Argo CD deploys it.
 
@@ -133,7 +134,8 @@ The daily digest is under Cron in the dashboard. Click the Trigger button to run
 
 To ask for a fix, write something like "open a PR that fixes the wyze-bridge secret".
 Hermes starts Codex or Claude Code in its pod with the evidence, waits, and reports the pull request link.
-You merge, and Argo CD deploys. Hermes never merges.
+You merge, and Argo CD deploys. Hermes never merges, into any branch.
+A plan, skill, Kanban card, memory or earlier conversation never authorizes a merge or a production change.
 
 ```mermaid
 sequenceDiagram
