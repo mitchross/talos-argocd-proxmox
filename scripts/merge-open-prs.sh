@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# Squash-merge every open PR that GitHub reports as ready. Usage: merge-open-prs.sh [--dry-run]
+# Squash-merge every open PR that GitHub reports as ready. Usage: merge-open-prs.sh [--dry-run] [--force]
+# --force skips the CI state filter and attempts every open PR; conflicted PRs still fail.
 set -euo pipefail
 
 dry_run=false
-case "${1:-}" in
-  "") ;;
-  --dry-run) dry_run=true ;;
-  *) echo "Usage: $0 [--dry-run]" >&2; exit 2 ;;
-esac
+force=false
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) dry_run=true ;;
+    --force) force=true ;;
+    *) echo "Usage: $0 [--dry-run] [--force]" >&2; exit 2 ;;
+  esac
+done
 
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 prs=$(gh pr list --repo "$repo" --state open --limit 200 \
@@ -21,24 +25,29 @@ fi
 
 merged=0 skipped=0 failed=0
 while IFS=$'\t' read -r number state title; do
-  # GitHub accepts a merge when only non-required checks fail, so read the state first.
-  # The state is from the start of the run: a conflict from an earlier merge fails at the merge below.
+  # The state is read at run start: non-required checks never block, a real conflict fails below.
+  # --force attempts every PR and annotates the bypassed state; --dry-run never merges.
   case "$state" in
-    CLEAN | HAS_HOOKS) ;;
+    CLEAN | HAS_HOOKS) note="" ;;
     *)
-      echo "SKIP   #$number [$state] $title"
-      skipped=$((skipped + 1))
-      continue
+      if "$force"; then
+        # Bypass a non-clean state; the merge below still fails on a real conflict.
+        note=" [$state]"
+      else
+        echo "SKIP   #$number [$state] $title"
+        skipped=$((skipped + 1))
+        continue
+      fi
       ;;
   esac
 
   if "$dry_run"; then
-    echo "WOULD  #$number $title"
+    echo "WOULD  #$number$note $title"
   elif output=$(gh pr merge "$number" --repo "$repo" --squash --delete-branch 2>&1 </dev/null); then
-    echo "MERGED #$number $title"
+    echo "MERGED #$number$note $title"
     merged=$((merged + 1))
   else
-    echo "FAILED #$number $title: $output"
+    echo "FAILED #$number$note $title: $output"
     failed=$((failed + 1))
   fi
 done <<<"$prs"
