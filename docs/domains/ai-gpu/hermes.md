@@ -9,6 +9,7 @@ Related pages:
 - [Pi and Hermes](pi-agent-local-dev.md) helps you choose between the two agents.
 - [Run Hermes on another cluster](hermes-other-clusters.md) and [Run Hermes on your PC](hermes-one-computer.md) are install guides that need nothing from this repo.
 - [How I use Hermes](hermes-how-i-work.md) describes the daily workflow.
+- [One map for all your repos](home-repo.md) shows how Hermes and the desktop agents find the other repos.
 - The [Hermes CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/CLAUDE.md) says which repo owns which change.
 
 !!! tip "Do this first"
