@@ -4,8 +4,13 @@ on:
     paths:
       - .claude/**
       - .codex/**
+      - AGENTS.md
+      - '**/AGENTS.md'
+      - '**/CLAUDE.md'
+      - .agents/**
       - scripts/agent-git-guard.py
       - scripts/tests/test_agent_git_guard.py
+      - scripts/tests/test_home_repo_optional.py
       - .github/workflows/agent-safety-tests.yml
   push:
     branches: [main]
@@ -26,4 +31,5 @@ jobs:
         with:
           python-version: '3.13'
       - run: python3 -m unittest discover -s scripts/tests -p test_agent_git_guard.py -v
+      - run: python3 -m unittest discover -s scripts/tests -p test_home_repo_optional.py -v
       - run: shellcheck .claude/hooks/git-branch-guard.sh .codex/hooks/git-branch-guard.sh

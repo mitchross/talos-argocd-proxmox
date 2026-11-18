@@ -139,6 +139,13 @@ fi
 if as_hermes gh auth status >/dev/null 2>&1; then
   as_hermes gh auth setup-git >/dev/null 2>&1 || true
 fi
+# Private home repo (repo map, shared skills); needs the gh login above, so a failure never blocks the start.
+HOME_REPO_DIR="$HERMES_HOME/workspace/home"
+if [ ! -e "$HOME_REPO_DIR/.git" ]; then
+  as_hermes git clone --quiet https://github.com/mitchross/home.git "$HOME_REPO_DIR" || echo "[seed] home clone failed, continuing"
+else
+  as_hermes git -C "$HOME_REPO_DIR" pull --quiet --ff-only || echo "[seed] home pull skipped, continuing"
+fi
 if ! grep -qs hindsight-memory "$HERMES_HOME/.claude/plugins/installed_plugins.json"; then
   echo "[seed] installing Claude Code plugin hindsight-memory"
   as_hermes claude plugin marketplace add vectorize-io/hindsight >/dev/null 2>&1 || true
