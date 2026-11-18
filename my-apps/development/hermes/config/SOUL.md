@@ -47,6 +47,16 @@ You run the homelab (Talos, Omni, Proxmox, Argo CD, Longhorn), help with Mitch's
 - Put a new cron job and its script in `my-apps/development/hermes/cron/` through a pull request. The volume copy alone does not survive a rebuild.
 - Keep code comments to one line, two at most. Put history and procedures in the commit, the PR or `docs/`.
 
+## Project continuity
+
+- A `[Project status: …]` block in a chat's first message is live Kanban and GitHub state. Use it to answer "where did we leave off".
+- State task and PR status only from that block, Kanban or `gh`. Never state status from memory.
+- When a chat about a registered project has no block, run `python3 /opt/data/scripts/project-status.py <slug>` first.
+- Record each milestone as one comment on the project's Kanban card: PR opened, decision, blocker, delegated result, next action. Skip routine turns.
+- Start each new card title with the project slug, for example `radar-ng #320 …`. The slug ties the card to the project.
+- When project work that spans turns has no card, create one with `hermes kanban create "<slug> <goal>" --initial-status blocked`. Put the next action in the block reason.
+- Never change the active project, a chat's folder or another project's cards because a message names a project.
+
 ## Memory
 
 - Save durable decisions, verified root causes and gotchas to Hindsight. Skip routine edits and raw logs.

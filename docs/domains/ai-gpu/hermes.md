@@ -246,6 +246,7 @@ Paths without a prefix are under `my-apps/development/hermes/`.
 | Placement skill | `skills/hermes-change-placement/SKILL.md` | Tells Hermes which repo owns a change to itself: image, talos Git, 1Password or the volume. Copied to the volume on every start |
 | Daily digest | `scripts/seed.sh` | Cron job `homelab-digest` at 08:00 (America/Detroit), skill `homelab-ops`. Output goes under `cron/output/` until a chat platform exists |
 | Watch jobs | `cron/jobs.txt`, `cron/*.py`, `scripts/seed.sh` | Four script-only cron jobs. The seed restores a missing script and creates a missing job. It never overwrites a live copy |
+| Project continuity | `scripts/projects.txt`, `scripts/project-status.py`, `config.yaml` `hooks` | The seed registers each listed project. The hook adds live Kanban and PR status to a chat's first turn. See [Project continuity](#project-continuity) |
 | Drift report | `scripts/report-drift.sh` | Runs at the end of the seed. Lists volume content that Git and the image do not install, in `/opt/data/logs/seed-drift.log` |
 
 ### Where a change goes
@@ -454,6 +455,105 @@ After review and deployment, start a fresh remote chat and ask about Radar NG wi
 Expect recalled context before the first model answer and the Hindsight recall indicator.
 Check that the answer uses the correct project and verifies current PR state separately.
 Revert the config and image digest together if recall fails or latency is unacceptable.
+
+### Project continuity
+
+Ask "Where did we leave off with Radar NG?" in a fresh chat on any device.
+Hermes answers from live Kanban and GitHub state, not from memory.
+
+Each store has one job:
+
+| Question | Source | Why |
+|---|---|---|
+| Which project is this chat about? | Hermes project registry (`projects.db`) | Maps a chat's folder or a project name to one project |
+| What is running, blocked, done or next? | Kanban cards, comments and run summaries | Workers and Hermes write them; they survive restarts |
+| Which PRs are open? | `gh pr list`, at the time of the question | GitHub is the only current source |
+| Why was a decision made? | Hindsight recall | History and decisions, never status |
+
+```mermaid
+flowchart TD
+    A[First message of a new chat] --> B{Kanban worker,<br/>subagent or cron run?}
+    B -- yes --> Z[No status block]
+    B -- no --> C{Chat folder inside<br/>a project folder?}
+    C -- yes --> E[Read that project]
+    C -- no --> D{Message names exactly<br/>one registered project?}
+    D -- no --> Z
+    D -- yes --> E
+    E --> F[Kanban: open cards, block reasons,<br/>last notes, last five done cards]
+    E --> G[GitHub: open PRs]
+    F --> H[Status block added to the user message]
+    G --> H
+    H --> I[Hermes answers; Hindsight adds decisions]
+    I --> J[Milestone: one comment on the card]
+    J --> F
+```
+
+The hook is `scripts/project-status.py`, set under `hooks.pre_llm_call` in `config/config.yaml`.
+It runs on the first turn of a chat only, so routine turns cost nothing.
+It opens every database read-only and writes nothing.
+
+**How a chat gets its project.**
+A remote Desktop chat has no folder, so Hermes cannot detect the project from a path.
+The hook therefore uses two rules, in order:
+
+1. The chat's stored folder is inside a registered project folder. Pick a project in Desktop or let Hermes call `desktop_project` to set it.
+2. The first message names exactly one registered project, by name or slug.
+
+A message that names two projects gets no block.
+A project name in a later message changes nothing.
+The hook never sets the active project or a chat's folder.
+
+**Which cards belong to a project.**
+Radar NG cards live on the shared `default` board.
+A card belongs to a project when its title starts with the slug (`radar-ng …`) or its `project_id` links to it.
+The seed does not bind the `default` board to a project, because a bound board gives every new card that project.
+
+**How progress gets recorded.**
+Kanban workers already store a summary for each run.
+`config/SOUL.md` tells Hermes to add one card comment per milestone: PR opened, decision, blocker, delegated result, next action.
+Routine turns write nothing.
+
+**Add a project.**
+Add one line to `scripts/projects.txt`: `slug|name|folder in the pod|GitHub repo|plan file`.
+The seed registers a missing slug at the next pod start and leaves an existing project unchanged.
+
+**Check the status by hand.**
+
+```sh
+python3 /opt/data/scripts/project-status.py radar-ng
+```
+
+Expect a block that starts with `[Project status: Radar NG (radar-ng). Read live from Kanban and GitHub at …]`.
+
+**Acceptance test.** Run it after the PR is merged and the pod is Ready.
+
+1. Open a fresh remote Desktop chat. Ask "Where did we leave off with Radar NG?".
+   Expect the open cards and PRs in the first answer, with no tool call for them.
+2. Compare the answer with `hermes kanban list` and `gh pr list -R mitchross/radar-ng`. Card ids, states and PR numbers must match.
+3. Open a fresh chat. Ask about a Longhorn alert. Expect no project block and no Radar NG cards.
+4. In a Radar NG chat, ask Hermes to investigate one bounded question with a subagent and record the result.
+   Expect one new comment on the card with the result and the next action.
+5. Open another fresh chat and repeat step 1. Expect the comment from step 4 as that card's last note.
+6. After the next pod restart, repeat step 1. Expect the same cards.
+
+The unit tests cover steps 1, 3 and 6 without the cluster:
+
+```sh
+python3 -m unittest discover -s scripts/tests -p test_hermes_project_status.py -v
+```
+
+**Limits.**
+
+- Step 4 depends on the model following the `SOUL.md` rule. Nothing forces the comment.
+- The block is a first-turn snapshot. In a long chat, Hermes must run the script again before it states status.
+- Hindsight recall is not filtered by project. The block tells Hermes to take status from Kanban and GitHub only.
+- A subagent whose first message names a project can receive the block; the hook skips only sessions that record a parent.
+- The hook reads Hermes databases directly. After a Hermes update, run the script by hand; an empty result means the schema changed.
+
+**Roll back.**
+Revert the PR. The pod restarts and the hook stops.
+The `radar-ng` project record stays in `projects.db`; remove it with `hermes project archive radar-ng` if you want it gone.
+No Kanban card, session or memory changes.
 
 ### Broader Hermes goals
 

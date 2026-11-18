@@ -43,6 +43,8 @@ configMapGenerator:
       - external-skills.txt=scripts/external-skills.txt
       - seed-qwen-lab.py=scripts/seed-qwen-lab.py
       - report-drift.sh=scripts/report-drift.sh
+      - project-status.py=scripts/project-status.py
+      - projects.txt=scripts/projects.txt
       - cron-jobs.txt=cron/jobs.txt
       - cron-upstream-watch.py=cron/upstream-watch.py
       - cron-strata-v31-watch.py=cron/strata-v31-watch.py

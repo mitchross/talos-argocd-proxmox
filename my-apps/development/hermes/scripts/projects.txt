@@ -1,0 +1,2 @@
+# Git-owned projects: slug|name|primary folder in the pod|GitHub repo|plan file. The seed registers a missing slug only.
+radar-ng|Radar NG|/opt/data/workspace/radar-ng|mitchross/radar-ng|/opt/data/workspace/reports/radar-ng-finish-plan.md
