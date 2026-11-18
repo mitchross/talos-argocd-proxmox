@@ -293,6 +293,7 @@ skills:
     - /opt/data/workspace/deal-scout
     - /opt/data/workspace/news-reader
     - /opt/data/workspace/mobichan-ng
+    - /opt/data/workspace/home
   # Installed but never loaded (session data 19 Oct - 5 Nov 2026). Off so the
   # skill list sent on every turn stays short. Remove a name to turn it back on.
   disabled:
