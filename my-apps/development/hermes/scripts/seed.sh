@@ -56,6 +56,15 @@ while IFS='|' read -r name schedule script prompt; do
   as_hermes /opt/hermes/bin/hermes cron create "$schedule" "$prompt" --name "$name" --script "$script" --no-agent --deliver local </dev/null \
     || echo "[seed] cron create failed: $name"
 done < /etc/hermes-scripts/cron-jobs.txt
+# Git-owned projects: copy the status hook and list, register a missing slug. Never binds a board or sets the active project.
+install -o 10000 -g 10000 -m 0644 /etc/hermes-scripts/project-status.py /etc/hermes-scripts/projects.txt "$HERMES_HOME/scripts/"
+while IFS='|' read -r slug name path _repo _plan; do
+  case "$slug" in '' | '#'*) continue ;; esac
+  as_hermes /opt/hermes/bin/hermes project show "$slug" >/dev/null 2>&1 </dev/null && continue
+  echo "[seed] registering project $slug"
+  as_hermes /opt/hermes/bin/hermes project create "$name" --slug "$slug" --primary "$path" </dev/null \
+    || echo "[seed] project create failed: $slug"
+done < /etc/hermes-scripts/projects.txt
 # A profile-scoped config load reads ${env:...} from .env, not the pod env; without this the Cloudflare MCP sends the literal placeholder.
 if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
   touch "$HERMES_HOME/.env"

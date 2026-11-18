@@ -86,6 +86,9 @@ jobs:
       - name: Test Hermes Kanban startup recovery
         run: python3 -m unittest discover -s scripts/tests -p test_hermes_kanban_reconcile.py -v
 
+      - name: Test Hermes project status hook
+        run: python3 -m unittest discover -s scripts/tests -p test_hermes_project_status.py -v
+
       - name: Test scoped Longhorn PV mount-option migration
         run: python3 -m unittest discover -s scripts/tests -p test_longhorn_mount_options.py -v
 

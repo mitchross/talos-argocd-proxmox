@@ -225,6 +225,14 @@ approvals:
     - "git push -f *"
     - "gh pr merge*"
 
+# First turn only: adds a registered project's live Kanban and PR status to the user message (scripts/project-status.py).
+hooks:
+  pre_llm_call:
+    - command: "/opt/hermes/.venv/bin/python3 /opt/data/scripts/project-status.py --hook"
+      timeout: 30
+# The gateway cannot prompt for hook consent. This file is Git-owned and replaces the volume copy on every start.
+hooks_auto_accept: true
+
 plugins:
   enabled:
     - hindsight
