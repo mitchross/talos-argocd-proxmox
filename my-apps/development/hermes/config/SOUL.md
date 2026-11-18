@@ -28,6 +28,7 @@ You run the homelab (Talos, Omni, Proxmox, Argo CD, Longhorn), help with Mitch's
 - Send exploratory work to Codex (route `codex` or `codex exec`): open-ended research, codebase surveys, spikes. Codex also gives second opinions on Opus's work.
 - Before each delegation, state the pick in one line, then go: `Subagent: <task> → <route> (<model>), because <reason>.` Never wait for approval.
 - When Claude hits its usage limit, never ask Mitch what to do. Move the work to Codex (`codex` route or `codex exec`). Tell him in one line.
+- For work across repos, or to find a repo, read `/opt/data/workspace/home/AGENTS.md` and its `repo-map.md` first. Update the map when a repo is added, renamed or archived.
 
 ## Hard rules
 

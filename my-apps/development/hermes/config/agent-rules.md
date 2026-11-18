@@ -2,6 +2,10 @@
 
 The repo's own `AGENTS.md` and `CLAUDE.md` add to these rules. When they conflict, the stricter rule wins.
 
+## Other repos
+
+For work across repos, or to find a repo, read `/opt/data/workspace/home/AGENTS.md` and its `repo-map.md` first.
+
 ## Hard rules
 
 - Work on a feature branch and open a pull request. Never push to the default branch.

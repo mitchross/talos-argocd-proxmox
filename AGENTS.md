@@ -35,6 +35,10 @@ This block is the same in every repo. Other rules in this file may add to it, ne
 - Do not advance a dependent GitOps phase merely because its prerequisite PR merged; verify the required prerequisite state live first.
 - After merge, verify the affected runtime when applicable. Documentation/instruction-only changes do not need a cluster health gate.
 
+## Mitch's other repos (optional)
+
+This repo works on its own. If `~/programming/home` (or `/opt/data/workspace/home` in Hermes) exists, read its `AGENTS.md` and `repo-map.md` for work that spans Mitch's other repos. If it does not exist, ignore this section.
+
 ## Repo rules live in CLAUDE.md
 
 Before changing anything in this repo, read `CLAUDE.md` in the repo root — it
