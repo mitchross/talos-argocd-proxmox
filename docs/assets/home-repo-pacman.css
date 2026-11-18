@@ -1,0 +1,14 @@
+/* Pac-Man walk on the home-repo page; colors follow the Material theme. */
+.pacman-demo { margin: 1.2em 0; }
+.pacman-demo:empty { display: none; }
+.pacman-demo svg { width: 100%; height: auto; display: block; }
+.pm-step { color: var(--md-default-fg-color--light); font-size: .7rem; letter-spacing: .04em; text-transform: uppercase; }
+.pm-cap { min-height: 3.2em; margin: .3em 0 .6em; }
+.pm-cap b { color: var(--md-accent-fg-color); }
+.pm-box { fill: var(--md-default-bg-color); stroke: var(--md-default-fg-color--lighter); stroke-width: 2; transition: stroke .3s; }
+.pm-box.pm-on { stroke: var(--md-accent-fg-color); stroke-width: 3; }
+.pm-lbl { fill: var(--md-default-fg-color); font-size: 17px; font-weight: 600; text-anchor: middle; }
+.pm-sub { fill: var(--md-default-fg-color--light); font-size: 12px; text-anchor: middle; }
+.pm-pel { fill: var(--md-default-fg-color--light); }
+.pm-pac { fill: #f5c518; }
+.md-typeset .pm-btn { margin-top: .4em; cursor: pointer; }

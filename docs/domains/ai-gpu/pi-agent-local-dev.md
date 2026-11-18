@@ -2,7 +2,8 @@
 
 This page helps you choose between the two AI agents in this homelab, then sets up Pi on a workstation.
 Use Pi when you sit at your keyboard. Use Hermes when the work must run without you.
-If the stack is unfamiliar, read the [Local AI starter kit](index.md) first.
+Pi runs on your PC. Hermes runs in the cluster. Both can use the cloud models and the local GPU models.
+If the model side is unfamiliar, read the [Local AI starter kit](index.md) first.
 
 !!! tip "Do this first"
     1. Pick the agent from the table below.

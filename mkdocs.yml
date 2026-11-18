@@ -81,12 +81,14 @@ extra_css:
   - assets/nav-tweaks.css
   - assets/diagram-docs.css
   - assets/motion.css
+  - assets/home-repo-pacman.css
 
 extra_javascript:
   - assets/kopiur-playground.js
   # Adds body.motion-on, which is what arms the reveal rules in motion.css.
   # Without it every page renders fully static — never blank.
   - assets/motion.js
+  - assets/home-repo-pacman.js
 
 nav:
   - Start here:
@@ -149,10 +151,12 @@ nav:
           - Context and speed on 3090s: domains/ai-gpu/3090-llm-optimization.md
           - Swap which app owns the GPUs: domains/ai-gpu/gpu-scale-swap.md
       - Measure it — Grafana and Langfuse: domains/ai-gpu/ai-observability.md
-      - Agents:
-          - Pi and Hermes — which to use: domains/ai-gpu/pi-agent-local-dev.md
-          - Hermes in the cluster: domains/ai-gpu/hermes.md
-          - Hermes on another cluster: domains/ai-gpu/hermes-other-clusters.md
-          - Hermes on your PC: domains/ai-gpu/hermes-one-computer.md
-          - Run the local bot team: domains/ai-gpu/hermes-local-bot-team.md
-          - How I use Hermes (what to copy): domains/ai-gpu/hermes-how-i-work.md
+  - AI agents:
+      - Pick an agent — Pi or Hermes: domains/ai-gpu/pi-agent-local-dev.md
+      - Hermes in this cluster: domains/ai-gpu/hermes.md
+      - How I use Hermes (what to copy): domains/ai-gpu/hermes-how-i-work.md
+      - One map for all your repos: domains/ai-gpu/home-repo.md
+      - Hand a job to the local bot team: domains/ai-gpu/hermes-local-bot-team.md
+      - Install Hermes yourself:
+          - On your PC: domains/ai-gpu/hermes-one-computer.md
+          - On your own cluster: domains/ai-gpu/hermes-other-clusters.md
