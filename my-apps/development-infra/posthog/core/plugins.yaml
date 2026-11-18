@@ -22,7 +22,7 @@ spec:
     spec:
       initContainers:
         - name: fetch-mmdb
-          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:694cd293628e7ebc83df0900d061829f72991436dc3e6a8730cdd02e46834785
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:52fadc10e79f9b13a2aa04751ace61bd04072ace99e94fea77d32ddf226afdd0
           command:
             - sh
             - -c
@@ -32,7 +32,7 @@ spec:
               mountPath: /shared
       containers:
         - name: plugins
-          image: ghcr.io/posthog/posthog-node:master@sha256:457d819f3489088a8b0a1ec9175e3335a15cac83223536bdf9be2554bc265061
+          image: ghcr.io/posthog/posthog-node:master@sha256:4b6f7f7dffccbb07de5caa11f1493aa717334db7daab02f9d98cdec7b13e4513
           command:
             - node
             - nodejs/dist/index.js
