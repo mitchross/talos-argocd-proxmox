@@ -158,7 +158,7 @@ Copy this pattern. Put a script with no model behind a cron job when the job nee
 The cluster's [`config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/hermes/config/config.yaml) enforces the first and fourth lessons:
 
 - `skills.disabled` turns off the 111 skills that were never loaded. They stay on disk. Delete a name from the list to turn that skill back on.
-- The `delegation` settings send untagged subagent tasks to the `codex` route.
+- The `delegation` settings send untagged subagent tasks to the `opus` route. The `plan` route (Fable 5.2) plans, and `codex` takes exploratory work.
 - `compression.threshold_tokens` compacts long Opus chats at 200k tokens.
 
 The skill trim saves about 2% of input tokens, because the skill list is cached on most calls.
