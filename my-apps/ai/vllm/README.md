@@ -5,8 +5,8 @@ vLLM owns both cards; [Strata](../strata/README.md) is parked. The image comes f
 wait for publication, then merge this GitOps change. The custom image digest pin
 follows publication; the upstream base is already pinned by digest.
 
-The [club-3090 dual-fast recipe](https://github.com/noonghunna/club-3090/blob/def9711c8e6dc8bb3e6d1ecaad795b3bbb4bb665/models/qwen3.8-27b/vllm/compose/dual/autoround-int4/mtp.yml)
-is pinned to `def9711c8e6dc8bb3e6d1ecaad795b3bbb4bb665`. W4A8, Mamba block-drop and
+The [club-3090 dual-fast recipe](https://github.com/noonghunna/club-3090/blob/6ec58a0fe4854d10a69a4cba0df077784ed67b55/models/qwen3.8-27b/vllm/compose/dual/autoround-int4/mtp.yml)
+is pinned to `6ec58a0fe4854d10a69a4cba0df077784ed67b55`. Humming W4A8, Mamba block-drop and
 FlashInfer decode-pin fixes are baked into the image, never applied at boot.
 Thinking-budget patches B/D and the club-3090 reasoning-effort template are baked in
 ([homelab-images PR 49](https://github.com/mitchross/homelab-images/pull/49)). The existing
@@ -34,14 +34,14 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 |---|---|
 | Model | `Frozenlock/Qwen3.8-27B-int4-AutoRound`, W4A8 int8 activations |
 | Revision | `b4c61732c4f2d8af323d75ba5702b5c7f3361539` |
-| Runtime | vLLM 0.32.0, patched `ghcr.io/mitchross/vllm-qwen38-dualfast` |
+| Runtime | patched `ghcr.io/mitchross/vllm-qwen38-dualfast`; version in `deployment.yaml` |
 | GPUs | 2 × RTX 3090, tensor parallel 2, multiprocessing executor |
 | Interconnect | no custom all-reduce; NCCL P2P disabled; shared host transport |
 | Context ceiling | 262,144 tokens, native model limit, no RoPE extrapolation |
 | Concurrency | up to 16 sequences sharing one KV pool; the pool, not the slot count, bounds what runs |
 | Attention | FlashInfer explicitly selected for Ampere FP8 KV |
 | KV / recurrent state | `fp8_e4m3` / bfloat16 |
-| GPU utilization budget | 0.90 per GPU |
+| GPU utilization budget | 0.90 per GPU; extensible KV cache off to keep the v0.33 pool size |
 | Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
 | Vision | native encoder; one image per request, video disabled |
 | Reasoning | on, `xhigh` default (16,384-token cap); low=4,096, high/xhigh/max=16,384 |
@@ -50,8 +50,10 @@ Confirm the running arguments and repeat acceptance after merge and Argo reconci
 | Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
 
 The active [AutoRound checkpoint](https://huggingface.co/Frozenlock/Qwen3.8-27B-int4-AutoRound)
-is 19.02 GB decimal including tokenizer and vision artifacts. Marlin uses INT4
-weights with INT8 activations on Ampere. The official FP8 files and their original
+is 19.02 GB decimal including tokenizer and vision artifacts. Since vLLM v0.34,
+`--quantization humming` with `VLLM_HUMMING_INPUT_QUANT_CONFIG={"dtype":"int8"}` runs INT4
+weights with INT8 activations on Ampere. The boot log must print
+`[humming-w4a8] effective activations a_dtype=int8`. Never set `VLLM_MARLIN_INPUT_DTYPE`; v0.34 refuses to start. The official FP8 files and their original
 manifest stay intact for rollback; staging never prunes other checkpoints.
 
 The config selects FlashInfer explicitly, because vLLM 0.28.0's Triton backend rejects FP8

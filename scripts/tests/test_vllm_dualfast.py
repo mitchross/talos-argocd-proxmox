@@ -29,15 +29,17 @@ def test_dualfast_render_uses_pinned_int4_manifest_and_preserves_fp8():
     assert all(len(f['sha256']) == 64 for f in manifest['files'])
     assert deployment['spec']['replicas'] == 1
     assert server['resources']['limits']['nvidia.com/gpu'] == '2'
-    assert args[args.index('--quantization') + 1] == 'auto_round'
+    assert args[args.index('--quantization') + 1] == 'humming'
     assert args[args.index('--max-model-len') + 1] == '262144'
     assert args[args.index('--gpu-memory-utilization') + 1] == '0.90'
     assert args[args.index('--max-num-seqs') + 1] == '16'
     assert args[args.index('--mamba-ssm-cache-dtype') + 1] == 'bfloat16'
+    assert '--no-enable-extensible-kv-cache' in args
+    assert '--mamba-cache-mode' not in args
     assert '--speculative-config' not in args
     assert '--language-model-only' not in args
     assert not any('rope' in arg.lower() or 'yarn' in arg.lower() for arg in args)
-    assert server['image'].startswith('ghcr.io/mitchross/vllm-qwen38-dualfast:0.32.0-dualfast.2@sha256:')
+    assert server['image'].startswith('ghcr.io/mitchross/vllm-qwen38-dualfast:0.34.0-dualfast.1@sha256:')
     assert args[args.index('--chat-template') + 1] == '/etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja'
     assert json.loads(args[args.index('--default-chat-template-kwargs') + 1]) == {
         'enable_thinking': True, 'reasoning_effort': 'xhigh', 'preserve_thinking': True}
@@ -49,7 +51,8 @@ def test_dualfast_render_uses_pinned_int4_manifest_and_preserves_fp8():
     assert env['CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET'] == '16384'
     rc = json.loads(args[args.index('--reasoning-config') + 1])
     assert rc['reasoning_end_str'].rstrip().endswith('</think>') and 'solution' in rc['reasoning_end_str']
-    assert env['VLLM_MARLIN_INPUT_DTYPE'] == 'int8'
+    assert 'VLLM_MARLIN_INPUT_DTYPE' not in env
+    assert json.loads(env['VLLM_HUMMING_INPUT_QUANT_CONFIG']) == {'dtype': 'int8'}
     assert env['VLLM_USE_FLASHINFER_SAMPLER'] == '0'
     assert env['NCCL_P2P_DISABLE'] == '1'
     assert env['NCCL_CUMEM_ENABLE'] == '0'
