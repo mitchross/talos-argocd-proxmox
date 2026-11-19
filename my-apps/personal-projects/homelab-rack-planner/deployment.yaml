@@ -35,13 +35,13 @@ spec:
               name: http
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: http
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: http
             periodSeconds: 30
             timeoutSeconds: 3
@@ -57,11 +57,4 @@ spec:
               memory: 16Mi
             limits:
               memory: 64Mi
-          volumeMounts:
-            # nginx-unprivileged keeps its pid file and temp dirs in /tmp.
-            - name: tmp
-              mountPath: /tmp
-      volumes:
-        - name: tmp
-          emptyDir:
-            sizeLimit: 32Mi
+
