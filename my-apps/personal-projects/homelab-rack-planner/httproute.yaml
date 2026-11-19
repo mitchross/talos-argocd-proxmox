@@ -1,4 +1,4 @@
-# LAN only: internal gateway, no Cloudflare.
+# LAN route: the app's nginx gives deal-scout's operator view only when this header says so.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -17,6 +17,54 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Homelab-Mode
+                value: operator
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: homelab-rack-planner
+          port: 8080
+          weight: 1
+---
+# Public through Cloudflare: static site, so GET/HEAD only, and deal-scout's public view.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: homelab-rack-planner-public
+  namespace: homelab-rack-planner
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - homelab.vanillax.me
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+          method: GET
+        - path:
+            type: PathPrefix
+            value: /
+          method: HEAD
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Homelab-Mode
+                value: public
       backendRefs:
         - group: ""
           kind: Service
