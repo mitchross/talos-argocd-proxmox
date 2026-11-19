@@ -65,8 +65,9 @@ spec:
             - /models/Qwen3.8-27B-int4-AutoRound-b4c61732c4f2
             - --served-model-name
             - qwen3.8-27b
+            # v0.34 dropped Marlin W4A8; humming runs the AutoRound INT4 weights with int8 activations.
             - --quantization
-            - auto_round
+            - humming
             - --dtype
             - bfloat16
             - --tensor-parallel-size
@@ -77,6 +78,8 @@ spec:
             - --disable-custom-all-reduce
             - --gpu-memory-utilization
             - "0.90"
+            # v0.34's extensible KV cache adds a 1 GiB margin and shrinks the pool; keep v0.33 sizing.
+            - --no-enable-extensible-kv-cache
             # Beyond native 262K needs YaRN; planned A/B only, never enabled here.
             - --max-model-len
             - "262144"
@@ -109,9 +112,6 @@ spec:
             - --mamba-ssm-cache-dtype
             - bfloat16
             - --enable-prefix-caching
-            # Already the default with prefix caching on; explicit so a vLLM upgrade can't shift it.
-            - --mamba-cache-mode
-            - align
             - --prefix-match-unit
             - "16"
             - --enable-chunked-prefill
@@ -137,8 +137,9 @@ spec:
               value: '{"high":16384,"low":4096,"max":16384,"medium":16384,"minimal":4096,"xhigh":16384}'
             - name: CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET
               value: "16384"
-            - name: VLLM_MARLIN_INPUT_DTYPE
-              value: int8
+            # No allow_fallback: on sm_86 it silently reverts to 16-bit activations.
+            - name: VLLM_HUMMING_INPUT_QUANT_CONFIG
+              value: '{"dtype":"int8"}'
             - name: VLLM_USE_FLASHINFER_SAMPLER
               value: "0"
             - name: NVIDIA_DRIVER_CAPABILITIES
