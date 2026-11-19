@@ -30,10 +30,10 @@ configMapGenerator:
       - DATASET_URL=https://download.versatiles.org/osm.20260608.versatiles
       - DATASET_SHA256_URL=https://download.versatiles.org/osm.20260608.versatiles.sha256
       - TARGET_FILE=osm.versatiles
-  # Editing a style (re-run styles/generate.mjs) or the nginx config rolls the map-styles Deployment via the hash suffix.
-  - name: map-styles-nginx
+  # Editing a style (re-run styles/generate.mjs) or sws.toml rolls the map-styles Deployment via the hash suffix.
+  - name: map-styles-sws
     files:
-      - default.conf=nginx-styles.conf
+      - sws.toml
   - name: map-styles-files
     files:
       - styles/light.json
