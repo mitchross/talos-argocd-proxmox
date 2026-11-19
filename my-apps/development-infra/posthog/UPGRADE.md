@@ -6,7 +6,10 @@ digests, check all six:
 
 1. **ClickHouse config drift.** Diff upstream
    [`docker/clickhouse/config.d/default.xml`](https://github.com/PostHog/posthog/blob/master/docker/clickhouse/config.d/default.xml)
-   against `config/clickhouse/config.d/default.xml`. New `named_collections`,
+   against `config/clickhouse/config.d/default.xml`, and
+   [`docker/clickhouse/users.xml`](https://github.com/PostHog/posthog/blob/master/docker/clickhouse/users.xml)
+   against `config/clickhouse/users.xml` (profile settings such as
+   `compatibility`). New `named_collections`,
    `remote_servers` clusters, or `CLICKHOUSE_SATELLITE_CLUSTERS` entries.
    Mirror them locally or `migrate_clickhouse` fails.
 2. **New sharded tables.** Grep new upstream `posthog/clickhouse/migrations/`
