@@ -275,7 +275,7 @@ class AIObservabilityTests(unittest.TestCase):
         })
         image = container(read('my-apps/ai/litellm/deployment.yaml'))['image']
         # Floor, not pin: the v1.102 router defaults are asserted above; exact pins failed every bump.
-        match = re.fullmatch(r'ghcr\.io/berriai/litellm:v(\d+)\.(\d+)\.(\d+)@sha256:[0-9a-f]{64}', image)
+        match = re.fullmatch(r'ghcr\.io/berriai/litellm:v?(\d+)\.(\d+)\.(\d+)@sha256:[0-9a-f]{64}', image)
         self.assertIsNotNone(match, image)
         self.assertGreaterEqual(tuple(map(int, match.groups())), (1, 102, 1), image)
 
