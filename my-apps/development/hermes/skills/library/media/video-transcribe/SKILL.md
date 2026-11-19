@@ -7,13 +7,13 @@ description: Use when asked to transcribe a video link or file.
 
 Mitch wants transcription only on demand in a Hermes chat. Never set up watchers, cron jobs or background auto-transcription for it.
 
-Flow: MeTube downloads the link (yt-dlp lives there, not in Hermes) -> Hermes pulls the audio file over HTTP -> ffmpeg -> LiteLLM model `whisper` (OpenVINO on the gen12 iGPU) -> Hermes writes the transcript and summarizes.
+Flow: MeTube downloads the link (yt-dlp lives there, not in Hermes) -> Hermes pulls the audio file over HTTP -> ffmpeg -> Whisper (OpenVINO Model Server on the gen12 iGPU), called directly -> Hermes writes the transcript and summarizes.
 
 | Piece | Address (in-cluster) |
 |---|---|
 | MeTube API | `http://metube.metube.svc.cluster.local:8081` (LAN UI `https://metube.vanillax.me`) |
 | Downloaded files | `$M/download/<filename>` (also on the NAS at `\\192.168.10.133\k8s\media-inbox\metube`) |
-| Whisper | LiteLLM model `whisper`, `http://litellm-service.litellm.svc.cluster.local:4000/v1`, key `$LITELLM_API_KEY` |
+| Whisper | `http://whisper.whisper.svc.cluster.local:8000/v3`, model `whisper-large-v3-turbo`, no key |
 
 Apps: `my-apps/media/metube`, `my-apps/ai/whisper` in talos-argocd-proxmox. If one isn't running (`kubectl get pods -n metube`, `-n whisper`), say so, then use the captions fallback below.
 
@@ -38,8 +38,8 @@ W=/opt/data/cache/scratch/yt-<video-id>; mkdir -p $W; curl -sf -o "$W/in.mp3" "$
 ffmpeg -nostdin -loglevel error -i "<input>" -vn -ac 1 -ar 16000 -c:a libmp3lame -b:a 48k \
   -f segment -segment_time 600 -reset_timestamps 1 "$W/chunk%04d.mp3"
 for c in "$W"/chunk*.mp3; do
-  curl -s http://litellm-service.litellm.svc.cluster.local:4000/v1/audio/transcriptions \
-    -H "Authorization: Bearer $LITELLM_API_KEY" -F model=whisper -F file=@"$c" \
+  curl -s http://whisper.whisper.svc.cluster.local:8000/v3/audio/transcriptions \
+    -F model=whisper-large-v3-turbo -F file=@"$c" \
     -F response_format=verbose_json -F 'timestamp_granularities[]=segment' > "$c.json"
 done
 ```
@@ -70,6 +70,7 @@ Chunk N's segment times start at N×600 s; build `[hh:mm:ss] text` lines in Pyth
 
 - YouTube `HTTP 429` / "Sign in to confirm you're not a bot" in MeTube's `msg` means the home IP is rate-limited (TubeSync shares it and was paused for this). PO tokens alone don't fix it; it needs cookies.txt or a wait. Say so; other sites work. Mitch's VPN shares the home exit IP; once he turned the VPN off, the block cleared right away (2026-11-01). Ask him to try that first.
 - OVMS (the Whisper server) accepts only mp3 and wav. Always convert with ffmpeg first.
-- `curl -s` to LiteLLM succeeds even when Whisper is down, and the chunk JSON then holds `{"error":...}`. Grep the chunk files for `"error"` before you build the transcript, because otherwise you get timestamps with empty text. A Pending whisper pod (FailedScheduling, Insufficient memory) causes this.
+- Call Whisper directly, not through LiteLLM. Hermes strips `LITELLM_API_KEY` from the terminal and refuses to pass provider keys through, so LiteLLM returns 401.
+- `curl -s` can succeed even when Whisper is down, and the chunk JSON then holds `{"error":...}`. Grep the chunk files for `"error"` before you build the transcript, because otherwise you get timestamps with empty text. A Pending whisper pod (FailedScheduling, Insufficient memory) causes this.
 - Leave files on the NAS alone; they are Mitch's.
 - Open WebUI voice still uses its own CPU Whisper (browser webm mic input).
