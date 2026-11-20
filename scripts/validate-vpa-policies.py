@@ -12,7 +12,7 @@ from typing import Any
 import yaml
 
 
-class ManifestLoader(yaml.SafeLoader):
+class ManifestLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):
     """Safe loader with Helm's bare `=` scalar accepted."""
 
 

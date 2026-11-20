@@ -98,12 +98,14 @@ def main():
 
     # kube-prometheus-stack CRDs contain a bare `=` enum value that PyYAML maps to its value-tag
     # and fails to construct; treat it as a literal scalar so the rendered stream parses.
-    yaml.SafeLoader.add_constructor(
+    # libyaml parses the aggregate render about ten times faster than the pure-Python loader.
+    manifest_loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+    manifest_loader.add_constructor(
         "tag:yaml.org,2002:value", lambda loader, node: loader.construct_scalar(node)
     )
 
     with open(sys.argv[1]) as fh:
-        docs = [d for d in yaml.safe_load_all(fh) if isinstance(d, dict) and d.get("kind")]
+        docs = [d for d in yaml.load_all(fh, Loader=manifest_loader) if isinstance(d, dict) and d.get("kind")]
 
     pvcs, namespaces, policies, restores = {}, {}, [], []
     for d in docs:
