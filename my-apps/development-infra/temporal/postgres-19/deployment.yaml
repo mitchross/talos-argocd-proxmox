@@ -1,4 +1,3 @@
-# Postgres 19 migration target; Temporal still uses temporal-postgres until the cutover.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

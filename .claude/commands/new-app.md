@@ -41,6 +41,6 @@ Create a new application at `$ARGUMENTS` following the project's GitOps patterns
    - Minimal: the "Minimal Application" template in `my-apps/CLAUDE.md`
    - GPU: `my-apps/ai/comfyui/`
    - Storage + secrets: `my-apps/media/immich/`
-   - Database: `my-apps/development/gitea/postgres/` (plain Postgres + kopiur)
+   - Database: `my-apps/development/gitea/postgres-19/` (plain Postgres + kopiur)
 
 ArgoCD will auto-discover the app from the directory structure. No manual Application resource needed.

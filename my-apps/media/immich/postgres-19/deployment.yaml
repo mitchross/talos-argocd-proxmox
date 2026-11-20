@@ -1,4 +1,3 @@
-# Postgres 19 migration target; Immich still uses immich-postgres until the cutover.
 # Plain Postgres + kopiur hourly tier (gitea/postgres pattern); runbook: docs/domains/cnpg/run-postgres-plain-english.md
 apiVersion: apps/v1
 kind: Deployment

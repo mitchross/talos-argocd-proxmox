@@ -68,10 +68,10 @@ Gitea is the reference database. Copy it.
 
 | Piece | File (reference) | What it is |
 |---|---|---|
-| The database | `my-apps/development/gitea/postgres/deployment.yaml` | Plain `postgres:18.x` Deployment, `Recreate` strategy, runs as uid 999 |
-| The address apps use | `my-apps/development/gitea/postgres/service.yaml` | `gitea-postgres.gitea.svc.cluster.local:5432` |
-| The disk | `my-apps/development/gitea/postgres/pvc.yaml` | Longhorn PVC whose `dataSourceRef` points at the kopiur `Restore` |
-| The backup stub | `my-apps/development/gitea/kopiur/gitea-postgres-data.yaml` | `SnapshotPolicy` (daily) + `SnapshotSchedule` + `Restore` |
+| The database | `my-apps/development/gitea/postgres-19/deployment.yaml` | Plain `postgres:19.x` Deployment, `Recreate` strategy, runs as uid 999 |
+| The address apps use | `my-apps/development/gitea/postgres-19/service.yaml` | `gitea-postgres-19.gitea.svc.cluster.local:5432` |
+| The disk | `my-apps/development/gitea/postgres-19/pvc.yaml` | Longhorn PVC whose `dataSourceRef` points at the kopiur `Restore` |
+| The backup stub | `my-apps/development/gitea/kopiur/gitea-postgres-19-data.yaml` | `SnapshotPolicy` (daily) + `SnapshotSchedule` + `Restore` |
 | The password | 1Password, through an ExternalSecret, into `gitea-db-secret` | Never in Git. See [the password rule](#gotcha-4-the-password-lives-in-two-places) |
 
 This pattern restores a whole volume to its newest backup. It has no
@@ -119,13 +119,13 @@ flowchart TB
 
 ### The pattern
 
-The reference is `my-apps/development/gitea/postgres/`. A database is four
+The reference is `my-apps/development/gitea/postgres-19/`. A database is four
 pieces in the directory of the app that owns it. Use `/project:new-database <app>`
 to create them. Do not write the four files from memory.
 
 | Piece | Key points |
 |---|---|
-| `postgres/deployment.yaml` | `postgres:<MAJOR.MINOR>` pinned; `Recreate`; uid/gid/fsGroup **999**; `PGDATA` subdir; `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` env declare the database on first (empty-volume) boot, with no admin tool; `--data-checksums`; `pg_isready` startup/readiness/liveness probes; 60s termination grace |
+| `postgres/deployment.yaml` | `postgres:<MAJOR.MINOR>` pinned; `Recreate`; uid/gid/fsGroup **999**; volume mounted at `/var/lib/postgresql`; `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` env declare the database on first (empty-volume) boot, with no admin tool; `--data-checksums`; `pg_isready` startup/readiness/liveness probes; 60s termination grace |
 | `postgres/service.yaml` | named port `postgres`/5432 |
 | `postgres/pvc.yaml` | `longhorn`, a `dataSourceRef` pointing at the kopiur `Restore`, and the two masking annotations |
 | `kopiur/<app>-postgres-data.yaml` | stub with mover `999:999`, **daily** retention tier (`keepDaily: 7, keepWeekly: 8`), distinct cron minute |
@@ -151,11 +151,11 @@ broken. The examples use gitea. Replace the namespace and the app name.
 
 ```bash
 # 1. Pod running and ready?
-kubectl -n gitea get pod -l app=gitea-postgres
+kubectl -n gitea get pod -l app=gitea-postgres-19
 # EXPECT: 2/2 Running (postgres + metrics exporter), restarts not climbing
 
 # 2. Disk bound and not full?
-kubectl -n gitea get pvc gitea-postgres-data
+kubectl -n gitea get pvc gitea-postgres-19-data
 # EXPECT: Bound
 
 # 3. Backups actually happening? (THE most important check)
@@ -165,7 +165,7 @@ kubectl -n gitea get snapshot
 # older than that, fix the backup first. See the kopiur architecture doc.
 
 # 4. Talk to the database directly (troubleshooting only, changes nothing):
-kubectl -n gitea exec -it deploy/gitea-postgres -c postgres -- \
+kubectl -n gitea exec -it deploy/gitea-postgres-19 -c postgres -- \
   psql -U gitea -d gitea -c 'select version();'
 ```
 
@@ -212,14 +212,23 @@ works with one major version only. If you merge a major update, the pod
 crash-loops on its old data directory. Renovate therefore holds major updates
 until you approve them by hand.
 
-To do a major update on purpose, follow this order:
+To do a major update on purpose, run the new version next to the old one:
 
-1. Dump the database with the image of the old major version.
-2. Wipe and re-initialize the data directory.
-3. Restore the dump.
+1. Stage a second Deployment, Service, PVC and kopiur stub for the new major. No app connects to it.
+2. Rehearse: from the new pod, pipe `pg_dump` of the old server into `pg_restore --single-transaction --exit-on-error` on a scratch database. Compare row counts.
+3. Stop writes on the old server, then run the same copy into the empty target database.
+4. Compare row counts, sequence values and index counts again.
+5. Switch the app's database host, or the Service selector, in a second PR.
+6. Remove the old Deployment and PVC in a third PR.
 
-The comment block at the top of the gitea postgres `deployment.yaml` has the
-exact order.
+Three rules for step 3 and step 4:
+
+- Do not scale the app down. Argo CD self-heal reverts it. Run
+  `ALTER DATABASE <db> SET default_transaction_read_only = on` on the old server and end its sessions.
+- Some clients ignore that setting. Temporal opens every transaction as `READ WRITE`. For such a
+  client, end the sessions and rename the old database; rename it back to roll back.
+- A dump does not carry database-level settings. Read `pg_db_role_setting` on the old server and
+  run the same `ALTER DATABASE ... SET` on the new one.
 
 ### Gotcha 4: the password lives in two places
 
@@ -319,7 +328,7 @@ You do not pause Argo CD for this. Self-heal does the work. The restore canary
 drill uses the same steps.
 
 ```bash
-NS=gitea; APP=gitea-postgres; PVC=gitea-postgres-data
+NS=gitea; APP=gitea-postgres-19; PVC=gitea-postgres-19-data
 
 # 1. Do not scale the app to 0. Self-heal puts it back. The app shows errors
 #    while its database is gone (expected), and anything it writes in the
@@ -376,7 +385,7 @@ in the [disaster recovery runbook](../../disaster-recovery.md).
 
 A plain Postgres Deployment can carry a small `postgres-exporter` sidecar. It
 publishes database internals to Prometheus and Grafana. The reference is
-`my-apps/development/gitea/postgres/`. Copy three pieces for another database:
+`my-apps/development/gitea/postgres-19/`. Copy three pieces for another database:
 the sidecar in the Deployment, the `metrics` port on the Service, and
 `servicemonitor.yaml`.
 

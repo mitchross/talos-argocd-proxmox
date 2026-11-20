@@ -262,24 +262,10 @@
       enabled: false,
     },
     {
-      description: 'plain-Postgres images (all apps): MAJOR bumps require dependency-dashboard approval — PG data dirs are not major-version compatible; manual dump/restore needed (2026-07-17 incident PR #1621; repeated 2026-08-14 on temporal, PR #1979)',
-      matchPackageNames: ['postgres', 'docker.io/library/postgres', 'postgis/postgis', 'docker.io/postgis/postgis', 'ghcr.io/immich-app/postgres'],
-      matchFileNames: ['**/postgres/deployment.yaml', 'my-apps/ai/langfuse/postgres.yaml', 'omni/pi-services/proxcenter/docker-compose.override.yml'],
-      matchUpdateTypes: ['major'],
-      dependencyDashboardApproval: true,
-      automerge: false,
-    },
-    {
-      description: 'Postgres 19 targets: the data requires a migration before the next major',
+      description: 'Postgres images: never propose the next major. A data directory works with one major only; a major needs a planned dump and restore (docs/domains/cnpg/run-postgres-plain-english.md).',
       matchPackageNames: ['postgres', 'docker.io/library/postgres'],
-      matchFileNames: ['**/postgres-19/deployment.yaml', 'my-apps/ai/langfuse/postgres-19.yaml'],
+      matchFileNames: ['**/postgres-19/**', 'my-apps/ai/langfuse/postgres-19.yaml', 'my-apps/development-infra/posthog/data-layer/postgres-19.yaml', 'omni/pi-services/proxcenter/docker-compose.override.yml'],
       allowedVersions: '<20',
-    },
-    {
-      description: 'temporal Postgres: hold at 17.x — Temporal upstream has not declared PG18 support; lifting the hold means a deliberate dump/restore migration (runbook 2026-07-18)',
-      matchPackageNames: ['postgres'],
-      matchFileNames: ['my-apps/development-infra/temporal/postgres/deployment.yaml'],
-      allowedVersions: '<18',
     },
     {
       description: 'temporal-worker-controller: chart and IMAGE share the same OCI repo (docker.io/temporalio/temporal-worker-controller). Image tags look like v1.5.x; chart tags look like 0.24.x. Constrain to chart-style (no `v` prefix, two-part minor) so Renovate cannot bump us onto an image tag (it did exactly that in #1224, breaking CI repo-wide for ~9 days because `helm pull` rejects a plain image OCI artifact with "manifest does not contain minimum number of descriptors").',

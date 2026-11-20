@@ -6,10 +6,7 @@ namespace: geocoder
 resources:
   - namespace.yaml
   - externalsecret.yaml
-  - postgres/pvc.yaml
   - postgres/service.yaml
-  - postgres/deployment.yaml
-  - postgres/vpa.yaml
   - postgres-19/pvc.yaml
   - postgres-19/service.yaml
   - postgres-19/deployment.yaml

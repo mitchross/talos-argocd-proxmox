@@ -63,7 +63,7 @@ See `docs/domains/argocd/argocd.md` for the dependency boundary:
 **Backend-down safety** (kopiur, replacing the retired `wait-for-rustfs` MAP): a backup against an unreachable repo errors — the Snapshot Job fails and retries, nothing garbage is written. A **restore against an unreachable repo leaves the PVC `Pending`**: kopiur raises the backend error *before* the `onMissingSnapshot` decision, so an outage can never bind an empty volume. This preserves the exact guarantee the MAP gave VolSync, with no admission policy. (Source-verified: `crates/controller/src/restore/mod.rs` `resolve_snapshot`; a brand-new PVC with a *reachable* repo but no snapshot still binds empty and backs up forward — `onMissingSnapshot: Continue` = deploy-or-restore.)
 
 **Databases** are plain Postgres Deployments inside the owning app's directory
-(reference: `my-apps/development/gitea/postgres/`), backed up by kopiur on the
+(reference: `my-apps/development/gitea/postgres-19/`), backed up by kopiur on the
 daily tier (6h for data you can't re-create) with restore-before-bind — no operator or manual sync gates.
 CNPG is retired (see Agent guardrails); the Database AppSet row above covers `infrastructure/database/*/*`.
 
@@ -161,8 +161,8 @@ Project procedures live in `.claude/commands/` (also listed as skills); Codex us
 | **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
 | **RustFS lifecycle policy** | `infrastructure/backup/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/secrets/1passwordconnect/` |
-| **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/run-postgres-plain-english.md`) |
-| **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development-infra/temporal/postgres/` |
+| **Plain Postgres + kopiur (new-DB default)** | `my-apps/development/gitea/postgres-19/` (pinned image, env-declared DB, daily kopiur tier; runbook `docs/domains/cnpg/run-postgres-plain-english.md`) |
+| **Two-database Postgres (initdb script + schema-hook sync waves)** | `my-apps/development-infra/temporal/postgres-19/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |

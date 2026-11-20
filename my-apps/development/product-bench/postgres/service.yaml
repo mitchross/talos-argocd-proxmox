@@ -5,7 +5,7 @@ metadata:
   labels:
     app: postgres
 spec:
-  # Points at the Postgres 19 pod (postgres-19/); the postgres Deployment is the rollback copy.
+  # Points at the Postgres 19 pod (postgres-19/); the Service keeps the old host name.
   selector:
     app: postgres-19
   ports:

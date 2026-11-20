@@ -11,7 +11,6 @@ helmCharts:
 resources:
 - namespace.yaml
 - externalsecret.yaml
-- postgres.yaml
 - postgres-19.yaml
 - clickhouse.yaml
 - redis.yaml
@@ -20,7 +19,6 @@ resources:
 - servicemonitor.yaml
 - bucket-init-job.yaml
 - vpa.yaml
-- kopiur/langfuse-postgres-data.yaml
 - kopiur/langfuse-postgres-19-data.yaml
 - kopiur/langfuse-clickhouse-data.yaml
 components:

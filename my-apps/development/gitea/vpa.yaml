@@ -24,31 +24,6 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: gitea-postgres
-  namespace: gitea
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: gitea-postgres
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      # Fixed-size metrics sidecar — not VPA-managed.
-      - containerName: postgres-exporter
-        mode: "Off"
-      - containerName: postgres
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
   name: gitea-valkey-primary
   namespace: gitea
 spec:

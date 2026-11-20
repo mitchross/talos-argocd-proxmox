@@ -6,7 +6,7 @@ metadata:
   labels:
     app: immich-postgres
 spec:
-  # Points at the Postgres 19 pod (postgres-19/); the immich-postgres Deployment is the rollback copy.
+  # Points at the Postgres 19 pod (postgres-19/); the Service keeps the old host name.
   selector:
     app: immich-postgres-19
   ports:
