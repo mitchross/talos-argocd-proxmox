@@ -314,8 +314,10 @@ grafana:
       type: loki
       uid: loki
       access: proxy
-      url: http://loki-gateway.loki-stack.svc.cluster.local
+      url: http://loki-read.loki-stack.svc.cluster.local:3100
       jsonData:
+        # The ruler API lives on loki-backend, not loki-read, and Loki has no rules.
+        manageAlerts: false
         httpHeaderName1: X-Scope-OrgID
         timeout: 60
         maxLines: 1000

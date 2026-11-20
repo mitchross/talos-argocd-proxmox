@@ -129,7 +129,7 @@ spec:
 
       # Loki - logs via OTLP HTTP
       otlphttp/loki:
-        endpoint: http://loki-gateway.loki-stack.svc.cluster.local/otlp
+        endpoint: http://loki-write.loki-stack.svc.cluster.local:3100/otlp
         headers:
           X-Scope-OrgID: "1"
         tls:

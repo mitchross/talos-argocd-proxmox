@@ -1,3 +1,4 @@
+# Same path split as the Loki chart's nginx gateway; Exact and longer prefixes win, other paths 404.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -12,13 +13,93 @@ spec:
   hostnames:
     - loki.vanillax.me
   rules:
+    # Distributor and ingester
     - matches:
         - path:
+            type: Exact
+            value: /api/prom/push
+        - path:
+            type: Exact
+            value: /loki/api/v1/push
+        - path:
+            type: Exact
+            value: /otlp/v1/logs
+        - path:
+            type: Exact
+            value: /distributor/ring
+        - path:
+            type: Exact
+            value: /flush
+        - path:
             type: PathPrefix
-            value: /
+            value: /ingester
+        - path:
+            type: Exact
+            value: /ring
+        - path:
+            type: Exact
+            value: /memberlist
+        - path:
+            type: Exact
+            value: /config
       backendRefs:
         - group: ""
           kind: Service
-          name: loki-gateway
-          port: 80
+          name: loki-write
+          port: 3100
+          weight: 1
+    # Ruler, compactor, index gateway, query scheduler
+    - matches:
+        - path:
+            type: Exact
+            value: /ruler/ring
+        - path:
+            type: PathPrefix
+            value: /api/prom/rules
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/rules
+        - path:
+            type: Exact
+            value: /prometheus/api/v1/alerts
+        - path:
+            type: Exact
+            value: /prometheus/api/v1/rules
+        - path:
+            type: Exact
+            value: /compactor/ring
+        - path:
+            type: Exact
+            value: /loki/api/v1/delete
+        - path:
+            type: Exact
+            value: /loki/api/v1/cache/generation_numbers
+        - path:
+            type: Exact
+            value: /indexgateway/ring
+        - path:
+            type: Exact
+            value: /scheduler/ring
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: loki-backend
+          port: 3100
+          weight: 1
+    # Query frontend and querier, including WebSocket tail
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1
+        - path:
+            type: PathPrefix
+            value: /api/prom
+        - path:
+            type: PathPrefix
+            value: /ui
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: loki-read
+          port: 3100
           weight: 1

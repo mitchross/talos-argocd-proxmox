@@ -60,6 +60,11 @@ loki:
     compaction_interval: 10m
     delete_request_store: s3
 deploymentMode: SimpleScalable
+# The canary pushes and queries on one address, so it uses the path-split HTTPRoute.
+lokiCanary:
+  lokiurl: loki.vanillax.me:443
+  extraArgs:
+    - -tls=true
 monitoring:
   serviceMonitor:
     enabled: true
