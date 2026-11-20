@@ -1,0 +1,72 @@
+# `radar level2-publish`: builds ready viewports and collects expired objects; leases work in Postgres.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: level2-publisher
+  namespace: radar-ng
+  labels:
+    app: level2-publisher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: level2-publisher
+  template:
+    metadata:
+      labels:
+        app: level2-publisher
+        # Scraped on the level2 port by the radar-ng-workers PodMonitor.
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: DoesNotExist
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: publisher
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.52@sha256:146c925b769f356ab68d7f13e2b18ba3c9f5fd38df0aad5d95c32d2f97fe41d1
+          imagePullPolicy: IfNotPresent
+          args: [level2-publish]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 9466
+              name: level2
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: radar-ng-level2
+            - secretRef:
+                name: radar-ng-level2
+          env:
+            - name: TMPDIR
+              value: /tmp
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

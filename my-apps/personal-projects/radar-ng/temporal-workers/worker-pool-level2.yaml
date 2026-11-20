@@ -1,0 +1,110 @@
+# Level II pool (queue radar-ng-level2): emptyDir only, off the GPU node, no priorityClassName so MRMS preempts it.
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: radar-ng-worker-level2
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker-level2
+    radar-ng.vanillax.dev/worker: "true"
+spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal
+    temporalNamespace: radar-ng
+  rollout:
+    strategy: AllAtOnce
+    gate:
+      workflowType: RadarDeploymentSmokeWorkflow
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: radar-ng-worker-level2
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      enableServiceLinks: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: DoesNotExist
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      # Lets an in-flight poll finish on rollout; TEMPORAL_GRACEFUL_SHUTDOWN_S stays 5 s under it.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: worker
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.52@sha256:146c925b769f356ab68d7f13e2b18ba3c9f5fd38df0aad5d95c32d2f97fe41d1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 9464
+              name: metrics
+              protocol: TCP
+            - containerPort: 9466
+              name: level2
+              protocol: TCP
+          # Literal values, not envFrom, so every config change creates a new worker version.
+          env:
+            - { name: WORKER_ROLE, value: level2 }
+            - { name: TEMPORAL_GRACEFUL_SHUTDOWN_S, value: "55" }
+            - { name: SKIP_SCHEDULE_SEED, value: "1" }
+            # One tick plus up to eight polls; the pool allows two decodes at once.
+            - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "9" }
+            - { name: LEVEL2_NUMERIC_ENABLED, value: "true" }
+            - { name: LEVEL2_ENABLED_STATIONS, value: "KGRR,KDTX,KTLX,KFFC,KATX" }
+            - { name: LEVEL2_OBJECT_PREFIX, value: level2/pool }
+            - { name: LEVEL2_PG_SCHEMA, value: level2_numeric }
+            - { name: LEVEL2_S3_ENDPOINT, value: "http://192.168.10.133:30292" }
+            - { name: LEVEL2_S3_BUCKET, value: radar-ng-level2 }
+            - { name: LEVEL2_TEST_FEED_DELAY_S, value: "0" }
+            - name: LEVEL2_PG_URL
+              valueFrom:
+                secretKeyRef: { name: radar-ng-level2, key: LEVEL2_PG_URL }
+            - name: LEVEL2_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef: { name: radar-ng-level2, key: LEVEL2_S3_ACCESS_KEY }
+            - name: LEVEL2_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef: { name: radar-ng-level2, key: LEVEL2_S3_SECRET_KEY }
+            - { name: TMPDIR, value: /scratch }
+          livenessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/worker-alive -mmin -3)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: [sh, -c, "test $(find /tmp/temporal-healthy -mmin -3)"]
+            periodSeconds: 30
+            failureThreshold: 2
+          volumeMounts:
+            - { name: scratch, mountPath: /scratch }
+            - { name: tmp, mountPath: /tmp }
+          resources:
+            requests: { cpu: 500m, memory: 3Gi, ephemeral-storage: 1Gi }
+            limits: { cpu: "6", memory: 6Gi, ephemeral-storage: 4Gi }
+      volumes:
+        - name: scratch
+          emptyDir: { sizeLimit: 4Gi }
+        - name: tmp
+          emptyDir: { sizeLimit: 64Mi }

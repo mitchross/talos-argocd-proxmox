@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# Uniform fields come from ../../common/kopiur-backup; the mover securityContext is per-PVC and stays here.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: level2-postgres-data
+  namespace: radar-ng
+spec:
+  sources:
+    - pvc:
+        name: level2-postgres-data
+  identity:
+    username: level2-postgres-data
+    hostname: radar-ng
+  hooks:
+    beforeSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app: level2-postgres
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
+          timeout: 2m
+  retention:
+    keepDaily: 7
+    keepWeekly: 8
+  mover:
+    securityContext:
+      runAsUser: 999 # postgres uid:gid in the official image
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+        - 999
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: level2-postgres-data-daily
+  namespace: radar-ng
+spec:
+  policyRef:
+    name: level2-postgres-data
+  schedule:
+    cron: "51 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: level2-postgres-data-restore
+  namespace: radar-ng
+spec:
+  source:
+    fromPolicy:
+      name: level2-postgres-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+        - 999
