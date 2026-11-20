@@ -38,7 +38,7 @@ spec:
               drop: ["ALL"]
       containers:
         - name: api
-          image: registry.vanillax.me/geocoder/geocoder:v0.1.7@sha256:5e676b2b2324d3f4e26bc5665506f2749108908a54ce8aedc48ffa9e3de0e5df
+          image: registry.vanillax.me/geocoder/geocoder:v0.1.8@sha256:a0815f511e97899edaa65207d41c517e5b7591a1e428a86b8a2d8175c6d9e663
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
