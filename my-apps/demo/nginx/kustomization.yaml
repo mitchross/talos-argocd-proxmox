@@ -12,6 +12,12 @@ resources:
 
 namespace: nginx-example
 
+# Hash suffix rolls the Deployment when sws.toml changes.
+configMapGenerator:
+  - name: sws-config
+    files:
+      - sws.toml
+
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
 components:
   - ../../common/kopiur-backup
