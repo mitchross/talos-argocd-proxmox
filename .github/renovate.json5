@@ -270,9 +270,9 @@
       automerge: false,
     },
     {
-      description: 'Gitea Postgres 19 data requires a migration before the next major',
+      description: 'Postgres 19 targets: the data requires a migration before the next major',
       matchPackageNames: ['postgres', 'docker.io/library/postgres'],
-      matchFileNames: ['my-apps/development/gitea/postgres-19/deployment.yaml'],
+      matchFileNames: ['**/postgres-19/deployment.yaml', 'my-apps/ai/langfuse/postgres-19.yaml'],
       allowedVersions: '<20',
     },
     {
