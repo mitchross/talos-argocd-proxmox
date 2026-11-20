@@ -1,7 +1,5 @@
-# The web radar (radar.vanillax.me): static files from ghcr.io/mitchross/radar-ng-web
-# on unprivileged nginx. The HTTPRoute sends /api, /tiles and /basemap to the
-# tile-server, so the page and its data share an origin (the API has no CORS,
-# and Cloudflare hotlink protection 403s tiles requested from other sites).
+# The old web radar pods (nginx). Nothing routes here now: `radar api` serves the page.
+# Kept for one step so the route change has a fallback; a follow-up PR deletes this file.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -82,36 +80,3 @@ spec:
   ports:
     - { port: 8080, targetPort: 8080, name: http }
   type: ClusterIP
----
-# Public via gateway-external (Cloudflare tunnel + external-dns).
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: radar-ng-web
-  namespace: radar-ng
-  labels:
-    external-dns: "true"
-  annotations:
-    external-dns.alpha.kubernetes.io/target: vanillax.me
-spec:
-  parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-external
-      namespace: gateway
-      sectionName: https
-  hostnames:
-    - "radar.vanillax.me"
-  rules:
-    # Data paths go to the tile-server on the same host.
-    - matches:
-        - path: { type: PathPrefix, value: /api }
-        - path: { type: PathPrefix, value: /tiles }
-        - path: { type: PathPrefix, value: /basemap }
-        - path: { type: PathPrefix, value: /replays }
-      backendRefs:
-        - { group: "", kind: Service, name: tile-server, port: 8080, weight: 1 }
-    - matches:
-        - path: { type: PathPrefix, value: / }
-      backendRefs:
-        - { group: "", kind: Service, name: radar-ng-web, port: 8080, weight: 1 }
