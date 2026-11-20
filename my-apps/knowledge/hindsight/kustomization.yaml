@@ -6,8 +6,6 @@ resources:
   - litellm-externalsecret.yaml
   - namespace.yaml
   - externalsecret.yaml
-  - pvc.yaml
-  - db-deployment.yaml
   - db-19-pvc.yaml
   - db-19-deployment.yaml
   - deployment.yaml
@@ -15,7 +13,6 @@ resources:
   - httproute.yaml
   - httproute-ui.yaml
   - vpa.yaml
-  - kopiur/hindsight-db.yaml
   - kopiur/hindsight-db-19.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
