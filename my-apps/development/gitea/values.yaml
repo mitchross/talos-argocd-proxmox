@@ -39,7 +39,7 @@ gitea:
       DISABLE_REGISTRATION: true
     database:
       DB_TYPE: postgres
-      HOST: gitea-postgres.gitea.svc.cluster.local:5432
+      HOST: gitea-postgres-19.gitea.svc.cluster.local:5432
       NAME: gitea
       USER: gitea
       SCHEMA: public
