@@ -29,7 +29,7 @@ spec:
         - name: postgres
           # Major upgrades require a dump/restore; the data directory is not
           # compatible across PostgreSQL major versions.
-          image: docker.io/library/postgres:18.7
+          image: docker.io/library/postgres:19.0
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 999
