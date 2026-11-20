@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: personhog-replica
-          image: ghcr.io/posthog/posthog/personhog-replica:master@sha256:ce5c7429c73608a9d8538fbba7c4500ea50d30e7e9d77943ae6f93b9b59532a2
+          image: ghcr.io/posthog/posthog/personhog-replica:master@sha256:2374c5bad11e6bdba02c7ef267df01270d2517c7fd8ebd269636eb51f4b24cd3
           env:
             - name: GRPC_ADDRESS
               value: "0.0.0.0:50051"
@@ -106,7 +106,7 @@ spec:
     spec:
       containers:
         - name: personhog-router
-          image: ghcr.io/posthog/posthog/personhog-router:master@sha256:f2a8d850f0a045889671eec297e0aa0df3657ecfa5fe89cb33cf4a8ad1f8b87d
+          image: ghcr.io/posthog/posthog/personhog-router:master@sha256:b2b8b8b59d0152af16bff91b47c80a13404dcfed583eaeabbe90a5c315938271
           env:
             - name: GRPC_ADDRESS
               value: "0.0.0.0:50052"
