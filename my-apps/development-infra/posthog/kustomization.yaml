@@ -8,8 +8,10 @@ resources:
   - httproute.yaml
   - vpa.yaml
   - kopiur/postgres-data.yaml
+  - kopiur/postgres-19-data.yaml
   # Data layer (all in posthog namespace)
   - data-layer/postgres.yaml
+  - data-layer/postgres-19.yaml
   - data-layer/redis.yaml
   - data-layer/kafka.yaml
   - config

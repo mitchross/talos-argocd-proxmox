@@ -12,6 +12,10 @@ resources:
   - postgres/service.yaml
   - postgres/pvc.yaml
   - kopiur/postgres-data.yaml
+  - postgres-19/deployment.yaml
+  - postgres-19/service.yaml
+  - postgres-19/pvc.yaml
+  - kopiur/postgres-19-data.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml

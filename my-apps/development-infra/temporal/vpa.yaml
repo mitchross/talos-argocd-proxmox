@@ -156,3 +156,29 @@ spec:
         maxAllowed:
           cpu: "1"
           memory: 1Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: temporal-postgres-19
+  namespace: temporal
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: temporal-postgres-19
+  updatePolicy:
+    # Recommend only: a Recreate of the single-replica DB takes every Temporal shard down; size it by hand from the recommendation.
+    updateMode: "Off"
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # Fixed-size metrics sidecar — not VPA-managed.
+      - containerName: postgres-exporter
+        mode: "Off"
+      - containerName: postgres
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
