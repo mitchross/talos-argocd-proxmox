@@ -36,7 +36,7 @@ toolsets:
   grafana/loki:
     enabled: true
     config:
-      api_url: http://loki-gateway.loki-stack.svc.cluster.local
+      api_url: http://loki-read.loki-stack.svc.cluster.local:3100
       additional_headers:
         X-Scope-OrgID: "1"
   grafana/tempo:

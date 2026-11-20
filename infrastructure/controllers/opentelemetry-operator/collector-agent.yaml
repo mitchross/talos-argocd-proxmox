@@ -138,7 +138,7 @@ spec:
     exporters:
       # Persist system logs before batching; pod logs retain their existing gateway pipeline.
       otlphttp/node_logs:
-        endpoint: http://loki-gateway.loki-stack.svc.cluster.local/otlp
+        endpoint: http://loki-write.loki-stack.svc.cluster.local:3100/otlp
         headers:
           X-Scope-OrgID: "1"
         retry_on_failure:
