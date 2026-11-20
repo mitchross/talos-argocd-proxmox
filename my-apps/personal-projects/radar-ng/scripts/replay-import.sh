@@ -23,8 +23,9 @@ report() {
   fi
 }
 
-# Re-runs (Argo re-sync, pod retry) must not redo work: `replay import` refuses an existing
-# revision, and a fresh warnings fetch could differ from the published one.
+# The importer writes .staging-<rev>/ and renames it to <rev>/ only when every frame is done.
+# So <rev>/ means finished (re-import refuses it); .staging-<rev>/ resumes with the same command.
+# A published case is skipped whole: a fresh warnings fetch could differ from the published one.
 run_case() {
   case_id="$1"; shift
   if test -d "$TILES/replays/$case_id/$PUB"; then
@@ -35,6 +36,10 @@ run_case() {
   if test -d "$TILES/replays/$case_id/$REV"; then
     echo "== $case_id: $REV already imported, skipping import"
   else
+    if test -d "$TILES/replays/$case_id/.staging-$REV"; then
+      echo "== $case_id: resuming unfinished .staging-$REV"
+      report "$case_id" ".staging-$REV"
+    fi
     echo "== $case_id: import $(busybox date -u +%FT%TZ)"
     retry radar replay import --case "$case_id" --revision "$REV" --verify-crop "$@"
   fi

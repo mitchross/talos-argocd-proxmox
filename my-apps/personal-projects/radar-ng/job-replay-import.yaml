@@ -1,21 +1,21 @@
 # One-time replay import + publish (radar-ng #285); a follow-up PR removes this Job. Rollback: replay-publish.md.
+# Plain Job, not a hook: Argo ends the sync once the last hook-free wave applies, so the 30 min sync timeout cannot kill it.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: radar-ng-replay-import
+  # New name: the hook run was killed mid-import and Job specs are immutable.
+  name: radar-ng-replay-import-2
   namespace: radar-ng
   labels:
     app: radar-ng-replay-import
   annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    # Must stay this app's last wave with no hooks at or after it, or Argo waits on the Job again.
     argocd.argoproj.io/sync-wave: "1"
 spec:
   # The script resumes and skips finished cases, so one pod retry is safe.
   backoffLimit: 1
   activeDeadlineSeconds: 21600
-  # Three days to copy the logs into replay-acceptance.md.
-  ttlSecondsAfterFinished: 259200
+  # No ttlSecondsAfterFinished: self-heal would recreate a TTL-deleted Job and rerun it.
   template:
     metadata:
       labels:
