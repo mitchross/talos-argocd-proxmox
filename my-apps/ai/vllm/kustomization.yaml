@@ -14,13 +14,12 @@ resources:
   - cache-sync-job.yaml
   - deployment.yaml
   - service.yaml
-  - single-gpu-test.yaml
   - httproute.yaml
   - servicemonitor.yaml
 
 replicas:
   - name: vllm-server
-    count: 0  # temporary: single-GPU prefill test holds a card
+    count: 1
 
 configMapGenerator:
   - name: vllm-scripts
