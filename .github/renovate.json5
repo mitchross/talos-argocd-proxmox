@@ -270,6 +270,12 @@
       automerge: false,
     },
     {
+      description: 'Gitea Postgres 19 data requires a migration before the next major',
+      matchPackageNames: ['postgres', 'docker.io/library/postgres'],
+      matchFileNames: ['my-apps/development/gitea/postgres-19/deployment.yaml'],
+      allowedVersions: '<20',
+    },
+    {
       description: 'temporal Postgres: hold at 17.x — Temporal upstream has not declared PG18 support; lifting the hold means a deliberate dump/restore migration (runbook 2026-07-18)',
       matchPackageNames: ['postgres'],
       matchFileNames: ['my-apps/development-infra/temporal/postgres/deployment.yaml'],
