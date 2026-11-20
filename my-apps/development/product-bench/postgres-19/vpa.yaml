@@ -1,0 +1,23 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: postgres-19
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: postgres-19
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        # Floor = shared_buffers 1GB; idle usage would size the request below what Postgres maps.
+        minAllowed:
+          memory: 1Gi
+        maxAllowed:
+          cpu: "4"
+          memory: 4Gi
