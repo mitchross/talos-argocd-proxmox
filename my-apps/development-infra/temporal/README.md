@@ -139,8 +139,8 @@ server:
       defaultStore: default
       visibilityStore: visibility
       datastores:
-        default:    {sql: {databaseName: temporal,            connectAddr: temporal-postgres.temporal.svc.cluster.local:5432, ...}}
-        visibility: {sql: {databaseName: temporal_visibility, connectAddr: temporal-postgres.temporal.svc.cluster.local:5432, ...}}
+        default:    {sql: {databaseName: temporal,            connectAddr: temporal-postgres-19.temporal.svc.cluster.local:5432, ...}}
+        visibility: {sql: {databaseName: temporal_visibility, connectAddr: temporal-postgres-19.temporal.svc.cluster.local:5432, ...}}
 ```
 
 `postgres/deployment.yaml` serves two databases: workflow history and

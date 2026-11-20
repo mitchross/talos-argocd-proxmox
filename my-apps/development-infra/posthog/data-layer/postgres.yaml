@@ -137,9 +137,10 @@ spec:
   - name: metrics
     port: 9187
     targetPort: metrics
+  # Points at the Postgres 19 pod (postgres-19.yaml); the db Deployment above is the rollback copy.
   selector:
     app.kubernetes.io/name: posthog
-    app.kubernetes.io/component: db
+    app.kubernetes.io/component: db-19
 ---
 ---
 apiVersion: v1
