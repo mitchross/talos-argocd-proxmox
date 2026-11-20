@@ -29,7 +29,7 @@ spec:
       containers:
         - name: postgres
           # Pin MAJOR.MINOR — a major upgrade needs a manual dump/restore (majors gated in renovate.json5).
-          image: postgres:19.0
+          image: postgres:18.7
           securityContext:
             runAsUser: 999
             runAsGroup: 999
