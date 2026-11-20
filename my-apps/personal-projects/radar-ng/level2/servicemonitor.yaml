@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: level2-api
+  namespace: radar-ng
+  labels:
+    app: level2-api
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: level2-api
+  namespaceSelector:
+    matchNames:
+      - radar-ng
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /api/metrics
+      scrapeTimeout: 10s

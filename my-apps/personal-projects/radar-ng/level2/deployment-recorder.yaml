@@ -1,0 +1,64 @@
+# `radar level2-shadow record`: holds pilot demand through the shadow host and writes one row per lowest sweep.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: level2-shadow-recorder
+  namespace: radar-ng
+  labels:
+    app: level2-shadow-recorder
+spec:
+  # Exactly one replica: a second doubles the demand and the rows.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: level2-shadow-recorder
+  template:
+    metadata:
+      labels:
+        app: level2-shadow-recorder
+        # Scraped on the level2 port by the radar-ng-workers PodMonitor.
+        radar-ng.vanillax.dev/worker: "true"
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: DoesNotExist
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: recorder
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.50@sha256:45cf7e93e1899578c10fc2d8e7acc50ee45f0662bac4315f6edde08a72ae6418
+          imagePullPolicy: IfNotPresent
+          args: [level2-shadow, record]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 9466
+              name: level2
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: radar-ng-level2
+            - secretRef:
+                name: radar-ng-level2
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

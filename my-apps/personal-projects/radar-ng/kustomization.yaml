@@ -21,10 +21,26 @@ resources:
   - temporal-workers/temporal-connection.yaml
   - temporal-workers/worker-pools.yaml
   - temporal-workers/podmonitor.yaml
+  # Level II shadow pilot (radar-ng#293): own pool, API, publisher, recorder and Postgres; public hosts untouched.
+  - temporal-workers/worker-pool-level2.yaml
+  - level2/externalsecret.yaml
+  - level2/deployment-api.yaml
+  - level2/deployment-publisher.yaml
+  - level2/deployment-recorder.yaml
+  - level2/httproute-shadow.yaml
+  - level2/servicemonitor.yaml
+  - level2/vpa.yaml
+  - level2/postgres/deployment.yaml
+  - level2/postgres/service.yaml
+  - level2/postgres/pvc.yaml
+  - level2/kopiur/level2-postgres-data.yaml
 
 namespace: radar-ng
 
 configMapGenerator:
+  - name: radar-ng-level2
+    envs:
+      - level2/level2.env
   - name: radar-ng-scripts
     files:
       - scripts/fetch-basemap.sh
@@ -38,3 +54,7 @@ patches:
     target:
       group: temporal.io
       kind: WorkerDeployment
+
+# Uniform kopiur backup fields for the per-PVC stub in level2/kopiur/.
+components:
+  - ../../common/kopiur-backup

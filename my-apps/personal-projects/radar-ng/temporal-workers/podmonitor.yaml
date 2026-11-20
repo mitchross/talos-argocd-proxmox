@@ -15,3 +15,6 @@ spec:
   podMetricsEndpoints:
     - port: metrics
       interval: 30s
+    # Level II metrics; only the level2 pool, publisher and recorder expose this port.
+    - port: level2
+      interval: 30s

@@ -1,0 +1,90 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-level2-api
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: level2-api
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 1Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-level2-publisher
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: level2-publisher
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-level2-shadow-recorder
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: level2-shadow-recorder
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 500m
+          memory: 256Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-level2-postgres
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: level2-postgres
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # Fixed-size metrics sidecar — not VPA-managed.
+      - containerName: postgres-exporter
+        mode: "Off"
+      - containerName: postgres
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 1Gi
