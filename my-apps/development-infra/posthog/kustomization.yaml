@@ -7,7 +7,6 @@ resources:
   - externalsecret.yaml
   - httproute.yaml
   - vpa.yaml
-  - kopiur/postgres-data.yaml
   - kopiur/postgres-19-data.yaml
   # Data layer (all in posthog namespace)
   - data-layer/postgres.yaml

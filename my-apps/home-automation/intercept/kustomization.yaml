@@ -8,10 +8,6 @@ resources:
   - carto-secret.yaml
   - pvc.yaml
   - kopiur/intercept-data.yaml
-  - postgres/deployment.yaml
-  - postgres/service.yaml
-  - postgres/pvc.yaml
-  - kopiur/postgres-data.yaml
   - postgres-19/deployment.yaml
   - postgres-19/service.yaml
   - postgres-19/pvc.yaml
@@ -29,14 +25,3 @@ configMapGenerator:
     files:
       - scripts/initialize-data.sh
       - scripts/fix-carto-tiles.py
-
-# Recovery must never bind an empty volume when no backup matches.
-patches:
-  - target:
-      group: kopiur.home-operations.com
-      kind: Restore
-      name: intercept-postgres-data-restore
-    patch: |-
-      - op: replace
-        path: /spec/policy/onMissingSnapshot
-        value: Fail

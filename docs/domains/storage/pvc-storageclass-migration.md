@@ -195,5 +195,5 @@ Replace the names, the pod label and the `psql` user for another PVC.
 - [How kopiur backup and restore work](kopiur-backup-architecture.md) and
   [disaster recovery](../../disaster-recovery.md) explain restore-before-bind and how a
   `Restore` chooses its backup.
-- The worked example manifests are `my-apps/development-infra/temporal/postgres/pvc.yaml`
+- The worked example manifests are `my-apps/development-infra/temporal/postgres-19/pvc.yaml`
   and `my-apps/development-infra/temporal/kopiur/temporal-postgres-data.yaml`.

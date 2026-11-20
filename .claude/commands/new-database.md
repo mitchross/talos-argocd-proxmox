@@ -5,12 +5,12 @@ Create a new database for `$ARGUMENTS`.
 New databases are **ordinary Postgres Deployments inside the owning app's
 directory**, backed up by kopiur like every other PVC. Zero-touch DR
 (restore-before-bind), no operator, no overlay dance. Reference
-implementation: `my-apps/development/gitea/postgres/`. Full pattern +
+implementation: `my-apps/development/gitea/postgres-19/`. Full pattern +
 rationale: `docs/domains/cnpg/run-postgres-plain-english.md`.
 
 ### Steps
 
-1. Copy `my-apps/development/gitea/postgres/` (deployment/service/pvc) into
+1. Copy `my-apps/development/gitea/postgres-19/` (deployment/service/pvc) into
    `my-apps/<category>/<app>/postgres/` and rename `gitea` → `<app>`
    throughout.
    Keep its pod hardening: `seccompProfile: RuntimeDefault`,
@@ -58,7 +58,7 @@ explicitly rather than resurrecting the old manifests.
 
 ## Reference
 
-- **Plain Postgres reference:** `my-apps/development/gitea/postgres/`
+- **Plain Postgres reference:** `my-apps/development/gitea/postgres-19/`
 - **Pattern doc:** [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
 - **Operator guide (plain English):** [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
-- Two-database example (initdb script + schema-hook sync waves): `my-apps/development-infra/temporal/postgres/`
+- Two-database example (initdb script + schema-hook sync waves): `my-apps/development-infra/temporal/postgres-19/`
