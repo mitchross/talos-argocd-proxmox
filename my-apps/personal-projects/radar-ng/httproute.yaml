@@ -1,4 +1,4 @@
-# Public HTTPRoutes via gateway-external (Cloudflare tunnel + external-dns).
+# Public HTTPRoute via gateway-external (Cloudflare tunnel + external-dns).
 # Publishes https://radar-ng-api.vanillax.me → tile-server Service :8080.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -18,38 +18,6 @@ spec:
       sectionName: https
   hostnames:
     - "radar-ng-api.vanillax.me"
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - group: ""
-          kind: Service
-          name: tile-server
-          port: 8080
-          weight: 1
----
-# The web radar (radar.vanillax.me). The tile-server serves the page itself (WEB_ROOT in its image),
-# so the page and its data share an origin: the API has no CORS, and Cloudflare hotlink protection 403s tiles from other sites.
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: radar-ng-web
-  namespace: radar-ng
-  labels:
-    external-dns: "true"
-  annotations:
-    external-dns.alpha.kubernetes.io/target: vanillax.me
-spec:
-  parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-external
-      namespace: gateway
-      sectionName: https
-  hostnames:
-    - "radar.vanillax.me"
   rules:
     - matches:
         - path:
