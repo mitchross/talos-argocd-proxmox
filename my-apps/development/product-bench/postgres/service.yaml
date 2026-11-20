@@ -5,8 +5,9 @@ metadata:
   labels:
     app: postgres
 spec:
+  # Points at the Postgres 19 pod (postgres-19/); the postgres Deployment is the rollback copy.
   selector:
-    app: postgres
+    app: postgres-19
   ports:
     - name: postgres
       port: 5432
