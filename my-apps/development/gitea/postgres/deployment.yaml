@@ -88,7 +88,7 @@ spec:
               mountPath: /var/lib/postgresql/data
         # Scraped via the Service's `metrics` port + servicemonitor.yaml.
         - name: postgres-exporter
-          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.21.1
           securityContext:
             # Image default uid (nobody); shares the pod, connects over
             # localhost so no pg_hba/network exposure changes.
