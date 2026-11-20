@@ -31,7 +31,7 @@ spec:
               app.kubernetes.io/name: posthog-injector
       containers:
         - name: nginx
-          image: nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
+          image: nginx/nginx-unprivileged:1.31-alpine@sha256:60214a103e6f38e953ff957f34b1f2e97a9db801ab2df3821da955d0fe6cadd6
           ports:
             - containerPort: 8080
               name: http
