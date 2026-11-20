@@ -68,7 +68,7 @@ def validate(objects):
 
 
 def load(paths):
-    return [o for path in paths for o in yaml.load_all(path.read_text(), Loader=yaml.BaseLoader)
+    return [o for path in paths for o in yaml.load_all(path.read_text(), Loader=getattr(yaml, "CBaseLoader", yaml.BaseLoader))
             if isinstance(o, dict) and "kind" in o and "metadata" in o]
 
 
