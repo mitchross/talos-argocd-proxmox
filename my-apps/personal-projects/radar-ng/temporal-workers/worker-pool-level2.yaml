@@ -48,7 +48,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.50@sha256:45cf7e93e1899578c10fc2d8e7acc50ee45f0662bac4315f6edde08a72ae6418
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.52@sha256:146c925b769f356ab68d7f13e2b18ba3c9f5fd38df0aad5d95c32d2f97fe41d1
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -70,7 +70,7 @@ spec:
             # One tick plus up to eight polls; the pool allows two decodes at once.
             - { name: TEMPORAL_MAX_CONCURRENT_ACTIVITIES, value: "9" }
             - { name: LEVEL2_NUMERIC_ENABLED, value: "true" }
-            - { name: LEVEL2_ENABLED_STATIONS, value: "KGRR,KDTX,KOUN,KFFC,KATX" }
+            - { name: LEVEL2_ENABLED_STATIONS, value: "KGRR,KDTX,KTLX,KFFC,KATX" }
             - { name: LEVEL2_OBJECT_PREFIX, value: level2/pool }
             - { name: LEVEL2_PG_SCHEMA, value: level2_numeric }
             - { name: LEVEL2_S3_ENDPOINT, value: "http://192.168.10.133:30292" }
