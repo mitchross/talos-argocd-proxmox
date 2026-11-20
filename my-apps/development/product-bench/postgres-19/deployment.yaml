@@ -1,0 +1,88 @@
+# Postgres 19 migration target for the benchmark catalog; the apps still use the postgres Service until the cutover.
+# Config is the bake-off's tuned file with memory and workers lowered for a shared node.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-19
+  labels:
+    app: postgres-19
+spec:
+  strategy:
+    type: Recreate # RWO PVC
+  replicas: 1 # always on (sleep/scaledobjects.yaml)
+  selector:
+    matchLabels:
+      app: postgres-19
+  template:
+    metadata:
+      labels:
+        app: postgres-19
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false # Services here would inject *_PORT/POSTGRES_* env over the app's own
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        gpu-worker: "true" # the Threadripper: memory headroom and the longhorn-flash disks
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: registry.vanillax.me/product-api/postgres:19-78637e3@sha256:f53427b7d0ea9eefdf21b184f9adc53bb2ed04ade83b52b6f4e26e3916009460
+          args: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB", "-c", "max_connections=300", "-c", "max_worker_processes=8", "-c", "max_parallel_workers=8", "-c", "max_parallel_maintenance_workers=4", "-c", "maintenance_work_mem=1GB"]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: catalog
+            - name: POSTGRES_USER
+              value: catalog
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: product-bench-db
+                  key: password
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "catalog", "-d", "catalog"]
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "catalog", "-d", "catalog"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "catalog", "-d", "catalog"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+            - name: dshm # parallel queries need more than the 64 MB default
+              mountPath: /dev/shm
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-19-data
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi

@@ -10,6 +10,10 @@ resources:
   - postgres/service.yaml
   - postgres/deployment.yaml
   - postgres/vpa.yaml
+  - postgres-19/pvc.yaml
+  - postgres-19/service.yaml
+  - postgres-19/deployment.yaml
+  - postgres-19/vpa.yaml
   - api.yaml
   - ingest.yaml
   - anubis-deployment.yaml

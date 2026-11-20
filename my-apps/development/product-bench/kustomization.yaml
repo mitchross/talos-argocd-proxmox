@@ -31,6 +31,10 @@ resources:
   - postgres/pvc.yaml
   - postgres/service.yaml
   - postgres/vpa.yaml
+  - postgres-19/deployment.yaml
+  - postgres-19/pvc.yaml
+  - postgres-19/service.yaml
+  - postgres-19/vpa.yaml
   - sleep/scaledobjects.yaml
   - tei/deployment.yaml
   - tei/service.yaml
