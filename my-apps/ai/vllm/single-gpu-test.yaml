@@ -6,6 +6,8 @@ metadata:
   namespace: vllm
   labels:
     app: vllm-single-test
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"  # after vllm-server (wave 1) scales to 0 and frees a GPU
 spec:
   replicas: 1
   strategy:
