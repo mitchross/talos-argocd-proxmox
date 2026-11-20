@@ -87,7 +87,7 @@ spec:
           mountPath: /var/lib/postgresql/data
       # Keep query text disabled: queryid suffices and SQL/values would become high-cardinality labels.
       - name: postgres-exporter
-        image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+        image: quay.io/prometheuscommunity/postgres-exporter:v0.21.1@sha256:a88794758ad461c75f3825b51cde4bde730bdff04b3b24d00efe14217e41f615
         imagePullPolicy: IfNotPresent
         # Non-default collectors (long_running_transactions, stat_statements) crashloop the exporter (exit 2, silent) — re-add one at a time.
         env:
