@@ -1,0 +1,123 @@
+# Plain Postgres, no operator: kopiur daily snapshots + restore-before-bind; a restored crash-consistent
+# snapshot WAL-recovers on boot. Runbook: docs/domains/cnpg/run-postgres-plain-english.md
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-postgres-19
+  namespace: gitea
+  labels:
+    app: gitea-postgres-19
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea-postgres-19
+  template:
+    metadata:
+      labels:
+        app: gitea-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before the kubelet SIGKILLs.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:19.0
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # Only honoured on first boot of an EMPTY volume; on a restored volume the restored data wins.
+            - name: POSTGRES_DB
+              value: "gitea"
+            - name: POSTGRES_USER
+              value: "gitea"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gitea-db-secret
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          # Covers WAL replay after a restore so liveness can't restart Postgres mid-recovery.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
+        # Scraped via the Service's `metrics` port + servicemonitor.yaml.
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.21.1
+          securityContext:
+            # Image default uid (nobody); shares the pod, connects over
+            # localhost so no pg_hba/network exposure changes.
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/gitea?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              value: "gitea"
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: gitea-db-secret
+                  key: password
+          ports:
+            - containerPort: 9187
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: gitea-postgres-19-data
