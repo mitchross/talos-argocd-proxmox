@@ -45,7 +45,8 @@ In Grafana, confirm that `talos-system` and `host-journal` streams advance for
 every expected node. Host Collector metrics listen on the host LAN IP at `:8889`.
 `physical-logs` must be up. Existing stock `TargetDown` alerts cover hosts
 whose collectors are not installed. The log receiver is loopback-only.
-The existing Loki LAN endpoint `192.168.10.48` is not a public route.
+The Loki LAN endpoint `192.168.10.48` is the `loki-write-lan` Service in
+`monitoring/logs/loki-stack/`. It is not a public route.
 
 ## What survives an outage
 

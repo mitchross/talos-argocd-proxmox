@@ -1,0 +1,20 @@
+# LAN OTLP endpoint for hosts outside the cluster (host-monitoring/files/node-logs.yaml posts to http://192.168.10.48/otlp).
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki-write-lan
+  namespace: loki-stack
+  annotations:
+    # Pin the LB IP: unpinned services race pinned ones for specific IPs on rebuild.
+    lbipam.cilium.io/ips: "192.168.10.48"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/component: write
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http-metrics
