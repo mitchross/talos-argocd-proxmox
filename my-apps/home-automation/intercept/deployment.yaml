@@ -77,7 +77,7 @@ spec:
             - name: INTERCEPT_ADSB_HISTORY_ENABLED
               value: "true"
             - name: INTERCEPT_ADSB_DB_HOST
-              value: intercept-postgres
+              value: intercept-postgres-19
             - name: INTERCEPT_ADSB_DB_PORT
               value: "5432"
             - name: INTERCEPT_ADSB_DB_NAME
