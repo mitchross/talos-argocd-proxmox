@@ -112,6 +112,9 @@ gateway:
   # Single node: the RollingUpdate surge pod can't co-schedule under the gateway's required podAntiAffinity — rollout wedges Pending.
   deploymentStrategy:
     type: Recreate
+  # Exact tag: the chart's floating 1.31-alpine with IfNotPresent left the pod on an unpatched cached build.
+  image:
+    tag: 1.31.9-alpine
   service:
     type: LoadBalancer
     # Pin the LB IP: unpinned services race pinned ones for specific IPs on rebuild.
