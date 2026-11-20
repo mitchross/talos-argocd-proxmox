@@ -31,7 +31,7 @@ spec:
         - name: postgres
           # Majors are dashboard-gated in .github/renovate.json5: a major bump on an old PGDATA crashloops.
           # To go up a major: dump with the OLD major's image, wipe/reinit PGDATA, then restore.
-          image: postgres:19.0
+          image: postgres:18.7
           securityContext:
             runAsUser: 999
             runAsGroup: 999
