@@ -1,5 +1,5 @@
-# Separate nginx for the pre-generated MapLibre style JSONs — the versatiles pod is readOnlyRootFilesystem off a read-only PVC.
-# Styles + nginx config come from configMapGenerators in kustomization.yaml (hash suffix = rollout trigger).
+# static-web-server for the pre-generated MapLibre style JSONs — the versatiles pod is readOnlyRootFilesystem off a read-only PVC.
+# Styles, index.html and sws.toml come from configMapGenerators in kustomization.yaml (hash suffix = rollout trigger).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,29 +24,31 @@ spec:
           effect: NoSchedule
       securityContext:
         runAsNonRoot: true
-        runAsUser: 101   # nginx-unprivileged's built-in non-root nginx user
-        runAsGroup: 101
+        runAsUser: 65532   # the scratch image sets no USER, so it would run as root
+        runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: nginx
-          image: nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
+        - name: sws
+          image: joseluisq/static-web-server:2.44.3@sha256:ccf2d666ffe5f8ef2ec96bc40f07757605998c04b78f7d8fdb98a584dd4f5717
           imagePullPolicy: IfNotPresent
+          args: ["--config-file", "/etc/sws/sws.toml"]
           ports:
             - containerPort: 8080
               name: http
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: http
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: http
             periodSeconds: 30
           resources:
@@ -57,23 +59,27 @@ spec:
               memory: 64Mi
           volumeMounts:
             - name: conf
-              mountPath: /etc/nginx/conf.d/default.conf
-              subPath: default.conf
+              mountPath: /etc/sws
               readOnly: true
-            - name: styles
-              mountPath: /usr/share/nginx/html/styles
-              readOnly: true
-            - name: index
-              mountPath: /usr/share/nginx/html/index.html
-              subPath: index.html
+            - name: site
+              mountPath: /srv/site
               readOnly: true
       volumes:
         - name: conf
           configMap:
-            name: map-styles-nginx
-        - name: styles
-          configMap:
-            name: map-styles-files
-        - name: index
-          configMap:
-            name: map-styles-index
+            name: map-styles-sws
+        # index.html at /, style JSONs under /styles/; a new style needs an item here too.
+        - name: site
+          projected:
+            sources:
+              - configMap:
+                  name: map-styles-index
+              - configMap:
+                  name: map-styles-files
+                  items:
+                    - key: light.json
+                      path: styles/light.json
+                    - key: dark.json
+                      path: styles/dark.json
+                    - key: satellite.json
+                      path: styles/satellite.json

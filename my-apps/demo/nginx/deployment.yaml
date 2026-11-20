@@ -22,12 +22,41 @@ spec:
           labelSelector:
             matchLabels:
               app: nginx
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532   # the scratch image sets no USER, so it would run as root
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-        - name: nginx
-          image: nginx:1.31-alpine
+        # Serves the image's built-in welcome page (/public); name and labels stay "nginx" because the selector is immutable.
+        - name: sws
+          image: joseluisq/static-web-server:2.44.3@sha256:ccf2d666ffe5f8ef2ec96bc40f07757605998c04b78f7d8fdb98a584dd4f5717
           imagePullPolicy: IfNotPresent
+          args: ["--config-file", "/etc/sws/sws.toml"]
           ports:
             - name: http
-              containerPort: 80
-            - name: https
-              containerPort: 443
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/sws
+              readOnly: true
+      volumes:
+        - name: conf
+          configMap:
+            name: sws-config

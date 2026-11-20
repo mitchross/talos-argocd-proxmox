@@ -1,0 +1,22 @@
+# static-web-server config for map-styles: index.html at / and the style JSONs under /styles/.
+[general]
+host = "0.0.0.0"
+port = 8080
+root = "/srv/site"
+log-level = "warn"
+health = true
+directory-listing = false
+compression = false
+# Off so the built-in per-extension defaults don't compete with the headers below.
+cache-control-headers = false
+# ConfigMap volume files are symlinks into ..data; hidden ..data paths stay blocked.
+disable-symlinks = false
+ignore-hidden-files = true
+
+[[advanced.headers]]
+source = "/index.html"
+headers = { Cache-Control = "public, max-age=60" }
+
+[[advanced.headers]]
+source = "/styles/*.json"
+headers = { Access-Control-Allow-Origin = "*", Cache-Control = "public, max-age=300" }
