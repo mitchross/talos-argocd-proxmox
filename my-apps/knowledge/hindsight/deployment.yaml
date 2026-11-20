@@ -45,7 +45,7 @@ spec:
                   name: hindsight-secrets
                   key: POSTGRES_PASSWORD
             - name: HINDSIGHT_API_DATABASE_URL
-              value: "postgresql://hindsight:$(POSTGRES_PASSWORD)@hindsight-db:5432/hindsight"
+              value: "postgresql://hindsight:$(POSTGRES_PASSWORD)@hindsight-db-19:5432/hindsight"
             - name: HINDSIGHT_API_VECTOR_EXTENSION
               value: "pgvector"
             # Fact extraction runs on cloud DeepSeek via LiteLLM/OpenRouter so memory saves keep working when the GPU node is down.
