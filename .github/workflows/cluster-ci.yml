@@ -307,8 +307,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          # Node 20 silently resolves an old Renovate that rejects `managerFilePatterns`; Renovate >=41 needs Node 22+.
-          node-version: '22'
+          # Older Node makes npx silently resolve an old Renovate; current Renovate needs Node 24+.
+          node-version: '24'
 
       - name: Validate Renovate config
         run: |

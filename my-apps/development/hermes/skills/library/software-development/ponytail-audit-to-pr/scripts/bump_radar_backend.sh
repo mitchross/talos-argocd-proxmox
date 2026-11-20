@@ -46,7 +46,7 @@ Bumps the radar-ng backend images to $NEW (radar-ng ${SHA:0:7}, PR mitchross/rad
 | open-meteo-worker | serve + sync sidecar |
 | tile-server | 1 |
 
-Checks: each \`tag@digest\` comes from the release run's \`published\` annotations and matches the registry. \`kubectl kustomize\` renders every backend ref on $NEW. Web is unchanged.
+Checks: each \`tag@digest\` comes from the release run's \`published\` annotations and matches the registry. \`kubectl kustomize\` renders every backend ref on $NEW.
 
 Rollback: revert this PR. The worker pools smoke-test each new version before traffic moves.
 EOF

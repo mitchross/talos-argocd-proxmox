@@ -29,3 +29,34 @@ spec:
           name: tile-server
           port: 8080
           weight: 1
+---
+# The web radar. `radar api` serves the page and its data, so the whole host goes to the tile-server.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radar-ng-web
+  namespace: radar-ng
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "radar.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: tile-server
+          port: 8080
+          weight: 1
