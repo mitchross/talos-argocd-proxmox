@@ -197,7 +197,7 @@ A toleration permits placement. It does not pin the app to that node.
 |---|---|
 | `excalidraw`, `it-tools`, `vert` | Small browser frontends; Vert's conversion backend stays wired |
 | `homepage-public`, `echo-server` | Small web services with no persistent data |
-| `radar-ng-web`, `map-styles` | Static frontend and style files; map data and workers stay wired |
+| `map-styles` | Static style files; map data and workers stay wired |
 | `redlib`, Redlib's `anubis` | Small optional web services with no persistent data |
 | `mcp-grafana` | Read-only Grafana tool service with no persistent data |
 | `pairdrop` | Web interface and signaling; this deployment disables WebSocket file-transfer fallback |
