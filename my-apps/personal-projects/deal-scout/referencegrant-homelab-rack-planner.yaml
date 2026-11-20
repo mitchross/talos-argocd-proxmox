@@ -1,0 +1,15 @@
+# Lets homelab-rack-planner's HTTPRoutes send /ds/api/listings straight to this Service.
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: homelab-rack-planner
+  namespace: deal-scout
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: homelab-rack-planner
+  to:
+    - group: ""
+      kind: Service
+      name: deal-scout

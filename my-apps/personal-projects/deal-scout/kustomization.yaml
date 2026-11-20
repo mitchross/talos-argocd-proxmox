@@ -9,6 +9,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - referencegrant-homelab-rack-planner.yaml
   - temporal-workers/temporal-connection.yaml
   - temporal-workers/ebay-externalsecret.yaml
   - temporal-workers/temporal-worker-deployment.yaml

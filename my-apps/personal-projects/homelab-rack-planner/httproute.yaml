@@ -1,4 +1,4 @@
-# LAN only: internal gateway, no Cloudflare.
+# LAN route: full site, and part search gets deal-scout's operator view.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -13,10 +13,110 @@ spec:
   hostnames:
     - homelab.vanillax.me
   rules:
+    # Part search; the ReferenceGrant in deal-scout allows this cross-namespace backend.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ds/api/listings
+          method: GET
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /api/listings
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Deal-Scout-Mode
+                value: operator
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: deal-scout
+          namespace: deal-scout
+          port: 8000
+          weight: 1
     - matches:
         - path:
             type: PathPrefix
             value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: homelab-rack-planner
+          port: 8080
+          weight: 1
+---
+# Public through Cloudflare: GET/HEAD only, deal-scout's public view, and no /private/.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: homelab-rack-planner-public
+  namespace: homelab-rack-planner
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - homelab.vanillax.me
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ds/api/listings
+          method: GET
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /api/listings
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Deal-Scout-Mode
+                value: public
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: deal-scout
+          namespace: deal-scout
+          port: 8000
+          weight: 1
+    # Real Wi-Fi names live under /private/; rewrite to a path that doesn't exist so the page keeps placeholders.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /private
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /not-found
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: homelab-rack-planner
+          port: 8080
+          weight: 1
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+          method: GET
+        - path:
+            type: PathPrefix
+            value: /
+          method: HEAD
       backendRefs:
         - group: ""
           kind: Service
