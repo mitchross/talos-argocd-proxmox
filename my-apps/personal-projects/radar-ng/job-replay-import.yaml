@@ -1,0 +1,81 @@
+# One-time replay import + publish (radar-ng #285); a follow-up PR removes this Job. Rollback: replay-publish.md.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: radar-ng-replay-import
+  namespace: radar-ng
+  labels:
+    app: radar-ng-replay-import
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  # The script resumes and skips finished cases, so one pod retry is safe.
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  # Three days to copy the logs into replay-acceptance.md.
+  ttlSecondsAfterFinished: 259200
+  template:
+    metadata:
+      labels:
+        app: radar-ng-replay-import
+    spec:
+      restartPolicy: Never
+      affinity:
+        # tiles-v2 is RWO: only the tile-server's node can mount it.
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: tile-server
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: replay-import
+          # Same image as tile-server; the plan pins the renderer, so keep both refs equal.
+          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.50@sha256:ec272ec31d95179033f93ae7cff4ed677139f67e780c544fe5a4956896ab3836
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "/scripts/replay-import.sh"]
+          env:
+            - name: TILE_DIR
+              value: /data/tiles
+            - name: WORK_DIR
+              value: /work
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: "1"
+              memory: 3Gi
+            limits:
+              # Shares the node with the live MRMS workers for ~1-2 h.
+              cpu: "2"
+              memory: 3Gi
+          volumeMounts:
+            - name: tiles
+              mountPath: /data/tiles
+            - name: work
+              mountPath: /work
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: tiles
+          persistentVolumeClaim:
+            claimName: tiles-v2
+        - name: work
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: scripts
+          configMap:
+            name: radar-ng-replay-scripts
