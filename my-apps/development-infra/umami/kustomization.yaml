@@ -1,5 +1,4 @@
-# Umami analytics (PostHog replacement): a private dashboard plus a public
-# ingest-only route for the tracker script and /api/send.
+# Umami analytics: private dashboard, public ingest-only route, sites registered by a PostSync Job.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: umami
@@ -11,6 +10,7 @@ resources:
 - service.yaml
 - httproute.yaml
 - httproute-ingest.yaml
+- websites-job.yaml
 - vpa.yaml
 - postgres/deployment.yaml
 - postgres/service.yaml
@@ -21,3 +21,8 @@ resources:
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.
 components:
 - ../../common/kopiur-backup
+
+configMapGenerator:
+- name: umami-websites-sql
+  files:
+  - scripts/websites.sql

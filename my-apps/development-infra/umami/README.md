@@ -4,16 +4,33 @@ Self-hosted product analytics replacing PostHog. Umami 3.5.0 on plain
 PostgreSQL (no Redis, ClickHouse or Kafka). Replays, heatmaps, browser errors
 and MCP all run on the Postgres path, but every one of them starts **off**.
 
-This phase deploys a private instance only:
-
 | Reaches | Where |
 |---|---|
 | Dashboard, login, settings, API | `https://umami.vanillax.me` — internal gateway (LAN) only |
 | Collection (`/script.js`, `/api/send`) | `https://ingest-umami.vanillax.me` — public, those two paths only |
 
-The public host bypasses the PostHog injector in the cloudflared config, so no snippet
-is ever added to a collector response, and the Gateway answers every path except
-`/script.js` and `/api/send` with 404. Recorder paths are not exposed.
+The public host bypasses the injector in the cloudflared config, and the Gateway
+answers every path except `/script.js` and `/api/send` with 404. Recorder paths are not exposed.
+
+The in-cluster injector (`infrastructure/networking/posthog-injector`) adds the
+tracker tag to every public HTML page, the same way PostHog was added. Each host
+maps to a fixed website ID; unknown `*.vanillax.me` hosts go to "Other vanillax.me".
+Radar is skipped: it loads Umami itself (radar-ng PR #368) with website ID
+`0fc02131-8623-4e19-87ee-25adb67064ee`.
+
+## Add or change a site
+
+1. Add a row with a new UUID to `scripts/websites.sql`.
+2. Add the same host and UUID to the `$umami_site` map in the injector's `default.conf`.
+3. Run the injector tests: `python3 -m unittest discover -s infrastructure/networking/posthog-injector/tests -v`.
+
+The PostSync Job `umami-websites` inserts missing rows on every sync. It never
+changes or deletes existing rows, so renames in the UI stay.
+
+## Exclude your own visits
+
+Run `localStorage.setItem('umami.disabled', '1')` once in the browser console on each site.
+Browsers that send Do Not Track are skipped too.
 
 ## Before the pod can start
 
@@ -35,17 +52,16 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
 
 ## First-time setup
 
-1. Wait for `umami-postgres` to be Ready and `umami` to pass `/_readyz`
+1. Wait for `umami-postgres` to be Ready and `umami` to pass `/api/heartbeat`
    (the app pod runs `prisma migrate deploy` on start).
 2. Open `https://umami.vanillax.me`, log in as `admin` / `umami`.
-3. Set a real password immediately (3.5.0 forces this), then enable 2FA in
-   Settings → Security.
-4. Add a website for radar (`radar.vanillax.me`) and record the website UUID.
-   Leave replays and heatmaps **off**.
+3. Set a real password immediately, then enable 2FA in Settings → Security.
+4. Leave replays and heatmaps **off**.
 
 ## Next phases (separate PRs)
 
 - **Radar** — dual PostHog + Umami event dispatch (radar-ng PR #368), one recorder at a time.
+  Set `UMAMI_WEBSITE_ID` to the radar row in `scripts/websites.sql`.
 - **Visitor IPs** — `CLIENT_IP_HEADER`/`TRUSTED_PROXIES` are deliberately unset. Set them
   from a real request captured through Cloudflare → cloudflared → Gateway first; a guess
   writes wrong IPs silently.

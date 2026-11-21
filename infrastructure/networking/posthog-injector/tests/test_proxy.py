@@ -17,7 +17,7 @@ import uuid
 
 
 APP = Path(__file__).resolve().parents[1]
-MARKER = b"injected in-cluster"
+MARKER = b"Umami (injected in-cluster)"
 HTML = b"<html><head><title>origin</title></head><body>hello</body></html>"
 ORIGIN = r'''
 import gzip
@@ -59,6 +59,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("ETag", '"origin"')
+        self.send_header("Content-Security-Policy", "default-src 'self'")
         self.send_header("Last-Modified", "Tue, 29 Sep 2026 12:00:00 GMT")
         self.send_header("X-Origin-Host", self.headers.get("Host", ""))
         self.send_header("X-Origin-SNI", getattr(self.connection, "sni", ""))
@@ -166,7 +167,9 @@ class ProxyTest(unittest.TestCase):
         body = r.read()
         self.assertEqual(r.status, 200)
         self.assertEqual(body.count(MARKER), 1)
-        self.assertIn(b"</script></head>", body)
+        self.assertIn(b'data-website-id="0d25cd9d-b47e-4ec1-b688-4199890f8d49"', body)
+        self.assertIn(b"--></head>", body)
+        self.assertEqual(r.getheader("Content-Security-Policy"), "default-src 'self'")
         self.assertEqual(r.getheader("X-Origin-Host"), "deals.vanillax.me")
         self.assertEqual(r.getheader("X-Origin-SNI"), "deals.vanillax.me")
         self.assertEqual(r.getheader("X-Origin-URI"), "/page?foo=bar")
@@ -178,8 +181,8 @@ class ProxyTest(unittest.TestCase):
         self.assertIsNone(r.getheader("Last-Modified"))
 
     def test_excluded_hosts_preserve_compression_and_validators(self):
-        for name in ("redlib", "libreddit", "ingest-posthog", "posthog", "otel",
-                     "radar", "radar-ng-api", "argocd-webhook"):
+        for name in ("libreddit", "ingest-umami", "umami", "ingest-posthog", "posthog", "otel",
+                     "radar", "radar-ng-api", "radar-l2-shadow", "argocd-webhook"):
             with self.subTest(host=name):
                 r = self.request(host=name + ".vanillax.me", headers={"Accept-Encoding": "gzip"})
                 body = r.read()
@@ -204,6 +207,20 @@ class ProxyTest(unittest.TestCase):
         r = self.request(method="HEAD")
         self.assertEqual(r.read(), b"")
         self.assertEqual(r.getheader("Content-Length"), str(len(HTML)))
+
+    def test_site_ids_and_redlib_csp(self):
+        for host, site in [("redlib.vanillax.me", b"d33a4be6-a593-4fe0-8795-b9214ce263c5"),
+                           ("search.vanillax.me", b"f0c551a0-826d-41e6-90fa-d769bbb153e9"),
+                           ("unknown.vanillax.me", b"5c437932-a77e-4246-b52f-2899204818c1")]:
+            with self.subTest(host=host):
+                r = self.request(host=host)
+                self.assertIn(b'data-website-id="' + site + b'"', r.read())
+                csp = r.getheader("Content-Security-Policy")
+                if host.startswith("redlib"):
+                    self.assertIn("script-src 'self' blob: https://ingest-umami.vanillax.me", csp)
+                    self.assertIn("connect-src 'self' https://ingest-umami.vanillax.me", csp)
+                else:
+                    self.assertEqual(csp, "default-src 'self'")
 
     def test_apex_and_split_head(self):
         for path, host in [("/", "vanillax.me"), ("/upper", "deals.vanillax.me"),

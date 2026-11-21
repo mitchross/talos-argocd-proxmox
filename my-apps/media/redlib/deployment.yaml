@@ -34,8 +34,6 @@ spec:
         envFrom:
         - configMapRef:
             name: redlib-env
-        - secretRef:
-            name: redlib-secrets
         ports:
         - name: http
           containerPort: 8080
