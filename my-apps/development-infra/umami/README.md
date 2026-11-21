@@ -1,16 +1,17 @@
 # Umami analytics
 
 Self-hosted web analytics. Umami 3.5.0 on plain
-PostgreSQL (no Redis, ClickHouse or Kafka). Replays, heatmaps, browser errors
-and MCP all run on the Postgres path, but every one of them starts **off**.
+PostgreSQL (no Redis, ClickHouse or Kafka). Session replay is **on** for every site;
+heatmaps, browser errors and MCP stay off.
 
 | Reaches | Where |
 |---|---|
 | Dashboard, login, settings, API | `https://umami.vanillax.me` — internal gateway (LAN) only |
-| Collection (`/script.js`, `/api/send`) | `https://ingest-umami.vanillax.me` — public, those two paths only |
+| Collection and replay | `https://ingest-umami.vanillax.me` — public, exact paths only |
 
 The public host bypasses the injector in the cloudflared config, and the Gateway
-answers every path except `/script.js` and `/api/send` with 404. Recorder paths are not exposed.
+answers every path except these with 404: `/script.js`, `/api/send`, `/recorder.js`,
+`/api/record`, and `/api/websites/<id>/recorder` for each ID in `scripts/websites.sql`.
 
 The in-cluster injector (`infrastructure/networking/posthog-injector`) adds the
 tracker tag to every public HTML page. Each host
@@ -22,7 +23,8 @@ Radar is skipped: it loads Umami itself (radar-ng PR #368) with website ID
 
 1. Add a row with a new UUID to `scripts/websites.sql`.
 2. Add the same host and UUID to the `$umami_site` map in the injector's `default.conf`.
-3. Run the injector tests: `python3 -m unittest discover -s infrastructure/networking/posthog-injector/tests -v`.
+3. Add `/api/websites/<uuid>/recorder` (GET and OPTIONS) to `httproute-ingest.yaml`, or replay stays off for that site.
+4. Run the injector tests: `python3 -m unittest discover -s infrastructure/networking/posthog-injector/tests -v`.
 
 The PostSync Job `umami-websites` inserts missing rows on every sync. It never
 changes or deletes existing rows, so renames in the UI stay.
@@ -56,7 +58,7 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
    (the app pod runs `prisma migrate deploy` on start).
 2. Open `https://umami.vanillax.me`, log in as `admin` / `umami`.
 3. Set a real password immediately, then enable 2FA in Settings → Security.
-4. Leave replays and heatmaps **off**.
+4. Leave heatmaps **off**. Replay settings come from `scripts/websites.sql`.
 
 ## Next phases (separate PRs)
 
@@ -65,13 +67,11 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
 - **Visitor IPs** — `CLIENT_IP_HEADER`/`TRUSTED_PROXIES` are deliberately unset. Set them
   from a real request captured through Cloudflare → cloudflared → Gateway first; a guess
   writes wrong IPs silently.
-- **Recorder** — `/recorder.js`, `/api/record` and `/api/websites/<uuid>/recorder` are added
-  to the public route only after consent and revocation tests pass.
 
 ## Known limits (source-verified against the 3.5.0 tag)
 
-- No automatic replay purge on self-hosted Postgres. Retention is the
-  operator's job; do not assume 30 days.
+- No automatic replay purge on self-hosted Postgres. The CronJob
+  `umami-replay-retention` deletes replays older than 30 days, except replays saved in the UI.
 - The recorder does not honour `localStorage['umami.disabled']` mid-session, so
   opt-out during a session needs a reload that does not load the scripts.
 - `/api/send` accepts payload IP/UA overrides, so public collection data is not
@@ -81,5 +81,5 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
 ## Storage and backup
 
 Postgres data is 10Gi on `longhorn` (two copies), backed up daily by kopiur with
-restore-before-bind. Replay payloads would grow this quickly, which is why
-replays stay off until measured.
+restore-before-bind. Replays are the largest table (`session_replay`). Check the volume
+with `kubectl -n umami exec deploy/umami-postgres -- df -h /var/lib/postgresql/data`.

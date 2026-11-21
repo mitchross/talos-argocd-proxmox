@@ -2,8 +2,10 @@
 -- (infrastructure/networking/posthog-injector/default.conf) hard-codes them.
 -- ON CONFLICT DO NOTHING: renames or deletes made in the UI are kept.
 \set ON_ERROR_STOP on
-INSERT INTO website (website_id, name, domain, user_id, created_by, created_at)
-SELECT v.id::uuid, v.name, v.domain, u.user_id, u.user_id, now()
+-- Session replay for every site: all sessions, inputs masked, 30-minute cap per recording.
+\set replay '{"replayEnabled": true, "sampleRate": 1, "maskLevel": "moderate", "maxDuration": 1800000}'
+INSERT INTO website (website_id, name, domain, user_id, created_by, created_at, recorder_enabled, replay_config)
+SELECT v.id::uuid, v.name, v.domain, u.user_id, u.user_id, now(), true, :'replay'::jsonb
 FROM (VALUES
   ('c87c8c44-69f3-4647-bb5c-12c810aa7aef', 'Apps',            'apps.vanillax.me'),
   ('05113581-12df-4529-a771-240073ea3bd9', 'Product bench',   'bench.vanillax.me'),
@@ -25,3 +27,7 @@ FROM (VALUES
 ) AS v(id, name, domain)
 CROSS JOIN (SELECT user_id FROM "user" WHERE username = 'admin' AND deleted_at IS NULL) u
 ON CONFLICT (website_id) DO NOTHING;
+
+-- Turn replay on for rows that never had recorder settings; a choice made in the UI is kept.
+UPDATE website SET recorder_enabled = true, replay_config = :'replay'::jsonb
+WHERE recorder_enabled = false AND replay_config IS NULL;
