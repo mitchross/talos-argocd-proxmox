@@ -1,0 +1,23 @@
+# Recommend only: a Recreate of the single-replica database takes the dashboard
+# down and risks a mid-write restart. Size it by hand from the recommendation.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: umami-postgres
+  namespace: umami
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: umami-postgres
+  updatePolicy:
+    updateMode: "Off"
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: postgres
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi

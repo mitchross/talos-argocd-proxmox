@@ -1,0 +1,103 @@
+# Umami 3.5.0, PostgreSQL only (no Redis/ClickHouse/Kafka). Replays, heatmaps,
+# error tracking and MCP all work on the Postgres path; none are enabled here yet.
+# Dashboard is private (internal gateway only). Public ingest is a later PR.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami
+  namespace: umami
+  labels:
+    app: umami
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  # Old pod stops before the new one starts: startup runs `prisma migrate deploy`,
+  # and two overlapping migrations on one database is how these rollouts break.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: umami
+  template:
+    metadata:
+      labels:
+        app: umami
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: umami
+          # Tag has no `v` prefix upstream. Renovate tracks the tag; a digest bump is a normal PR.
+          image: ghcr.io/umami-software/umami:3.5.0@sha256:b64f40400d77bcadd39cf5c62a1e368c99524ca442024f96e1133355a19a5dbc
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1001 # `nextjs` in the official image
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: umami-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://umami:$(POSTGRES_PASSWORD)@umami-postgres:5432/umami"
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: umami-secrets
+                  key: APP_SECRET
+            - name: TWO_FACTOR_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: umami-secrets
+                  key: TWO_FACTOR_ENCRYPTION_KEY
+            - name: TZ
+              value: UTC
+            - name: DISABLE_TELEMETRY
+              value: "1"
+            - name: DISABLE_UPDATES
+              value: "1"
+            # CLIENT_IP_HEADER / TRUSTED_PROXIES are set in the public-ingest PR, after
+            # tracing the real Cloudflare -> gateway hop. Guessing them now would make
+            # visitor IPs wrong rather than unset.
+          # Migrations run before the server starts, so start slow.
+          startupProbe:
+            httpGet:
+              path: /api/heartbeat
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/heartbeat
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/heartbeat
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
