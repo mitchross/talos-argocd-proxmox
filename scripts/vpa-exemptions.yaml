@@ -19,26 +19,6 @@ coverageExemptions:
     reason: "Scale-swap GPU workload is intentionally kept at replicas=0."
   - apiVersion: apps/v1
     kind: Deployment
-    namespace: posthog
-    name: cyclotron-janitor
-    reason: "PostHog component is intentionally scaled to zero."
-  - apiVersion: apps/v1
-    kind: Deployment
-    namespace: posthog
-    name: cymbal
-    reason: "PostHog component is intentionally scaled to zero."
-  - apiVersion: apps/v1
-    kind: Deployment
-    namespace: posthog
-    name: livestream
-    reason: "PostHog component is intentionally scaled to zero."
-  - apiVersion: apps/v1
-    kind: Deployment
-    namespace: posthog
-    name: toolbox
-    reason: "PostHog component is intentionally scaled to zero."
-  - apiVersion: apps/v1
-    kind: Deployment
     namespace: radar-ng
     namePattern: "^radar-ng-worker-"
     reason: "Temporal Worker Controller versions the Deployment name."

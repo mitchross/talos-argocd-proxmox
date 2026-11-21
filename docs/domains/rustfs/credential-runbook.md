@@ -77,7 +77,6 @@ These ExternalSecrets in Git read `rustfs-workload-access-key` and
 | --- | --- |
 | `loki-stack/loki-s3-credentials` | `loki-s3-credentials` |
 | `monitoring/tempo-s3-credentials` | `tempo-s3-credentials` |
-| `posthog/posthog-secrets` | `posthog-secrets` |
 | `langfuse/langfuse-secrets` | `langfuse-secrets` |
 | `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
 | `kopiur/kopiur-rustfs` (ClusterExternalSecret to every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
@@ -135,7 +134,6 @@ ESO copies the new values into the cluster Secrets. Force the copy now.
 TS="$(date +%s)"
 kubectl annotate externalsecret -n loki-stack loki-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n monitoring tempo-s3-credentials force-sync="$TS" --overwrite
-kubectl annotate externalsecret -n posthog posthog-secrets force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n langfuse langfuse-secrets force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n rustfs-lifecycle rustfs-admin-credentials force-sync="$TS" --overwrite
 
@@ -154,11 +152,6 @@ A running pod keeps the old environment variables. Restart these workloads.
 kubectl rollout restart statefulset/loki-backend statefulset/loki-write -n loki-stack
 kubectl rollout restart deploy/loki-read -n loki-stack
 kubectl rollout restart statefulset/tempo -n monitoring
-kubectl rollout restart deploy/db deploy/feature-flags deploy/plugins deploy/web deploy/worker \
-                       deploy/ingestion-general deploy/ingestion-sessionreplay \
-                       deploy/recording-api deploy/replay-capture \
-                       deploy/temporal-django-worker deploy/property-defs-rs \
-                       -n posthog
 kubectl rollout restart deploy/langfuse-web deploy/langfuse-worker -n langfuse
 ```
 

@@ -59,7 +59,7 @@ a replaced node gets only the tags written there.
 | Physical drive | Class | Proxmox storage | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
 | PNY CS900 1 TB (`sda`) | consumer SATA | host root + `tr-sda-vmstore` (thick LVM) | `scsi4` 800 GiB | `/var/mnt/longhorn-gpu-bulk` | `gpu-bulk` (tag `gpu-bulk`) | ordinary app volumes for GPU-node pods (photon, project-nomad, small databases) |
-| 2× HPE MK000480GWCEV 480 GB (`sdb`+`sdc`, mdadm mirror) | **enterprise, PLP** | `ssd-ent` (thick LVM) | `scsi3` 440 GiB | `/var/mnt/longhorn-ssd-flash` | `ssd-flash` (tags `flash`, `clone-ok`) | heavy writers (`longhorn-flash` class: PostHog, radar-ng, product-bench) and **every kopiur backup clone** |
+| 2× HPE MK000480GWCEV 480 GB (`sdb`+`sdc`, mdadm mirror) | **enterprise, PLP** | `ssd-ent` (thick LVM) | `scsi3` 440 GiB | `/var/mnt/longhorn-ssd-flash` | `ssd-flash` (tags `flash`, `clone-ok`) | heavy writers (`longhorn-flash` class: radar-ng, product-bench) and **every kopiur backup clone** |
 | EDILOCA EN605 512 GB (`nvme0`) | consumer NVMe | `nvme0-vmstore` (thin) | `scsi0` 16 GiB + `scsi1` 434 GiB | Talos boot + `EPHEMERAL` (`/var`) | `talos-ephemeral` (scheduling **off**) | container images, logs, `emptyDir` |
 | EDILOCA EN605 512 GB (`nvme1`) | consumer NVMe | `nvme1-vmstore` (thin) | `scsi2` 450 GiB | `/var/mnt/ai-model-cache` | — | vLLM model cache (`ai-model-cache-local` PV) |
 

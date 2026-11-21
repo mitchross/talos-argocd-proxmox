@@ -20,7 +20,7 @@ JSON file into a ConfigMap and stamps two things on it:
 | `start-here/` | Start Here | Cockpit (Grafana home page), Homelab now (what is broken right now), Why Is This App Slow, Capacity |
 | `cluster/` | Cluster | etcd, Argo CD, Longhorn, VPA, hardware report, Storage & SSD wear, Node drains & storage moves (+ kopiur from its chart) |
 | `ai/` | AI | GPU, local LLM engines (overview, vLLM, Strata), AI gateway (LiteLLM), Pi auto-routing, Hermes AI split, Speech to text (Whisper + MeTube) |
-| `apps/` | Apps | PostHog, radar-ng, radar-ng mobile, Frigate, Public Edge (Cloudflare tunnel, Anubis, redlib, per-site hits) |
+| `apps/` | Apps | radar-ng, radar-ng mobile, Frigate, Public Edge (Cloudflare tunnel, Anubis, redlib, per-site hits) |
 | `logs/` | Logs | Logs Explorer, node crash logs |
 | `home-energy/` | Home & Energy | Power & cost, solar, gaming PC, cooling, AirCube |
 
@@ -108,8 +108,6 @@ JSON can't hold comments, so the traps a future editor will hit are listed here.
   set as 0 first so `increase()` counts that call. Surface `local` is the Hermes
   CLI/terminal session source, not the local model. Codex
   (subscription) and local Qwen cost $0.
-- **PostHog:** the `django_http_responses_*` per-view series only appear after
-  real UI/API traffic, so they're empty when PostHog is idle.
 - **radar-ng:** don't `clamp_min(denominator, 1)` on low-traffic ratios; it
   pushes them toward 0.
 - **radar-ng mobile:** Tempo has no metrics-generator, so TraceQL `rate()` and

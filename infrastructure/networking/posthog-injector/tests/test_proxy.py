@@ -181,7 +181,7 @@ class ProxyTest(unittest.TestCase):
         self.assertIsNone(r.getheader("Last-Modified"))
 
     def test_excluded_hosts_preserve_compression_and_validators(self):
-        for name in ("libreddit", "ingest-umami", "umami", "ingest-posthog", "posthog", "otel",
+        for name in ("libreddit", "ingest-umami", "umami", "otel",
                      "radar", "radar-ng-api", "radar-l2-shadow", "argocd-webhook"):
             with self.subTest(host=name):
                 r = self.request(host=name + ".vanillax.me", headers={"Accept-Encoding": "gzip"})

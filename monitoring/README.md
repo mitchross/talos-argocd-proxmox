@@ -140,23 +140,8 @@ incident there. Do not begin by browsing dashboard folders.
    and the workload's Loki errors on the same time range.
 
 The investigator has two selectors: Namespace and Workload. It derives the pod
-selector. The START HERE instructions link to specialist dashboards for PostHog,
+selector. The START HERE instructions link to specialist dashboards for
 Longhorn, Argo CD, Capacity, VPA, GPU, and logs.
-
-For PostHog, open **WHY IS POSTHOG SLOW?**. It keeps all of the following on one page:
-
-- Django web/API latency, 5xx rate, and the exact slow/failing view.
-- PostgreSQL connections, cache hit, deadlocks, long transactions, locks,
-  temporary data, and slow `pg_stat_statements` query IDs.
-- Redpanda consumer lag by PostHog consumer group, active consumers, and
-  unavailable partitions.
-- ClickHouse queries, merges, failures, memory, MergeTree parts, CPU, and
-  restarts.
-- PostHog pod CPU/memory and correlated Loki error messages.
-
-PostgreSQL uses a pinned `postgres_exporter` sidecar; Redpanda and ClickHouse
-use their built-in Prometheus endpoints. Query text is not placed in metric
-labels.
 
 The kube-prometheus-stack stock dashboard bundle is disabled. It duplicated the
 same signals across menus and hid the incident workflow.

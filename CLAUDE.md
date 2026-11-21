@@ -137,7 +137,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Add backup CRs to system namespace PVCs (kube-system, argocd, longhorn-system, kopiur-system)
 - Manually create or delete kopiur `SnapshotPolicy`/`SnapshotSchedule`/`Restore` (or `ReplicationSource`/`ReplicationDestination` — those CRDs are gone) out of band. Manage backups through the per-PVC stub + the `kopiur-backup` component in git.
 - Make observability a core dependency or install Prometheus Operator CRDs early just to satisfy bootstrap apps. `kube-prometheus-stack` is the sole owner of `monitoring.coreos.com` CRDs.
-- Back up Redis or PostHog's ClickHouse/Kafka PVCs — backup-exempt disposable data. PostHog's **Postgres** is kopiur-backed (identity layer: API keys, users, dashboards, flag definitions — survives cluster rebuild).
+- Back up Redis PVCs — backup-exempt disposable data.
 - Auto-merge major Helm chart version bumps for critical infrastructure (kube-prometheus-stack, longhorn, cilium) — **a kube-prometheus-stack v82→v83 auto-merge caused a full cluster outage on 2026-04-08 via Kyverno webhook deadlock**. Pin Renovate to minor/patch only for these charts.
 
 ## Custom Commands
@@ -166,7 +166,7 @@ Project procedures live in `.claude/commands/` (also listed as skills); Codex us
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
-| **Jobs with ArgoCD hooks** | `my-apps/development-infra/posthog/core/jobs.yaml` |
+| **Jobs with ArgoCD hooks** | `my-apps/development-infra/umami/websites-job.yaml` |
 | **Helm Job Kustomize patch** | `my-apps/development-infra/temporal/kustomization.yaml` |
 
 ## Additional Documentation
@@ -188,7 +188,7 @@ of duplicating procedures.
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
 > - **Do NOT add pvc-plumber/VolSync labels, `ReplicationSource`/`ReplicationDestination`, the `wait-for-rustfs` MAP, or `/audit` calls** — that whole stack was retired 2026-06-27. Backups are kopiur (per-PVC stub + `kopiur-backup` component); see `docs/domains/storage/kopiur-backup-architecture.md`.
-> - **Do NOT resurrect CNPG** — retired 2026-08-13 (operator, Barman plugin, recovery script, manual sync gates all deleted; old Barman buckets aging out via lifecycle policy). All Postgres is plain + kopiur. Redis and PostHog's ClickHouse/Kafka stay backup-exempt; PostHog's Postgres uses the standard kopiur component (do not exempt it again — it carries the API keys).
+> - **Do NOT resurrect CNPG** — retired 2026-08-13 (operator, Barman plugin, recovery script, manual sync gates all deleted; old Barman buckets aging out via lifecycle policy). All Postgres is plain + kopiur. Redis stays backup-exempt.
 > - **Do NOT make observability foundational** — core apps bootstrap without Prometheus; do not resurrect an early Prometheus Operator CRD app.
 > - **Do NOT set Longhorn `dataLocality: best-effort` on general StorageClasses** — every pod move then copies the whole volume (a reboot re-copied 77 of 123 replicas). Disk-write rules: `docs/domains/storage/disk-writes.md`.
 > - **Do NOT re-add Coroot, Trivy Operator or Keep** — removed as duplicate telemetry / disk churn; the Prometheus + Loki + Tempo + Grafana stack is the one observability stack.

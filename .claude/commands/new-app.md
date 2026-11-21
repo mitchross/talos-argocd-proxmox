@@ -18,7 +18,7 @@ Create a new application at `$ARGUMENTS` following the project's GitOps patterns
    - `my-apps/utility/` - Small browser tools and dashboards
    - `my-apps/storage-utility/` - File sharing and transfer
    - `my-apps/development/` - Dev tools (git, CI, Renovate)
-   - `my-apps/development-infra/` - Services other apps run on (Temporal, PostHog, map tiles)
+   - `my-apps/development-infra/` - Services other apps run on (Temporal, Umami, map tiles)
    - `my-apps/personal-projects/` - Apps built from your own images
    - `my-apps/demo/` - Toys and learning experiments
    - `my-apps/system/` - Cluster-side helpers (restore canary, Headlamp)
