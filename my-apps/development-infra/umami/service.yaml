@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: umami
+  namespace: umami
+  labels:
+    app: umami
+spec:
+  selector:
+    app: umami
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
