@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nvidia-gpu-exporter
+  labels:
+    # hostPID (to see vLLM and other pods' GPU processes) needs the privileged level.
+    pod-security.kubernetes.io/enforce: privileged

@@ -27,6 +27,10 @@ A DaemonSet in the `prometheus-stack` namespace. It runs on GPU nodes only and l
 Dashboard UID `gpu-overview`, in the Grafana folder AI. It shows per-card utilization, VRAM, temperature, power against the 200 W cap, clocks,
 PCIe link retries, and which pod holds each card.
 
+### 5. nvidia_gpu_exporter trial (`monitoring/metrics/nvidia-gpu-exporter/`)
+
+A lighter exporter running next to DCGM. It adds VRAM per process (`nvidia_smi_compute_app_used_memory_bytes`) and XID error counters. Its dashboards are "Nvidia GPU Metrics" and "Nvidia GPU Overview" in the AI folder. If it proves itself, remove `dcgm-exporter.yaml` and move the alerts to `nvidia_smi_*` metrics.
+
 ## Key metrics
 
 | Metric | Description |

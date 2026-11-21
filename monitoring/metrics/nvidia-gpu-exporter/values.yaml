@@ -1,0 +1,36 @@
+# Trial beside dcgm-exporter (prometheus-stack). Metric names differ (nvidia_smi_* vs DCGM_FI_*), so both can run.
+image:
+  tag: "2.0.0@sha256:bd7ca0426cbfd4a5e5b33625b873541c5da58c52569f9e141db8e76c7d3e9256"
+
+runtimeClassName: nvidia
+
+# Per-process VRAM (which vLLM pod holds which card) needs the host PID namespace.
+computeApps:
+  enabled: true
+hostPID: true
+
+extraArgs:
+  - --collect.compute-apps-identity
+  - --collect.interval=15s
+
+nodeSelector:
+  nvidia.com/gpu.present: "true"
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 48Mi
+  limits:
+    memory: 256Mi
+
+serviceMonitor:
+  enabled: true
+
+# Alerts stay in gpu-alerts.yaml during the trial.
+prometheusRule:
+  enabled: false
+
+grafanaDashboard:
+  enabled: true
+  annotations:
+    grafana_folder: "AI"
