@@ -10,9 +10,6 @@ configMapGenerator:
   - name: frigate-monitoring-dashboard
     files:
       - frigate-monitoring.json
-  - name: posthog-performance-dashboard
-    files:
-      - posthog-performance.json
   - name: radar-ng-mobile-dashboard
     files:
       - radar-ng-mobile.json

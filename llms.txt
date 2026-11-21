@@ -45,15 +45,3 @@ instructions. Check the owning manifests and canonical runbook before acting.
   Use it instead of this cluster's GitOps directory. The image is built in
   [mitchross/homelab-images](https://github.com/mitchross/homelab-images/tree/main/images/hermes-dev).
 
-## Self-hosted PostHog
-
-- [docs/posthog-self-host-k8s.md](docs/posthog-self-host-k8s.md) — deployment,
-  boot order, upgrades, and recovery.
-- [my-apps/development-infra/posthog/CLAUDE.md](my-apps/development-infra/posthog/CLAUDE.md)
-  — agent-facing file map and invariants.
-- [my-apps/development-infra/posthog/UPGRADE.md](my-apps/development-infra/posthog/UPGRADE.md)
-  — checks before changing PostHog images.
-
-PostHog's Postgres stores its identity and configuration and is kopiur-backed.
-ClickHouse, Kafka, and Redis are intentionally disposable; do not apply their
-backup exemption to Postgres.

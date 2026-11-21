@@ -134,8 +134,6 @@ are gone.
 Do not back up:
 
 - Redis PVCs — backup-exempt, disposable.
-- PostHog ClickHouse/Kafka/Redis PVCs — backup-exempt, disposable. Postgres is
-  kopiur-backed because it holds identity and configuration; do not exempt it.
 - System-namespace PVCs.
 - PVCs without a supported CSI snapshot or Direct copy path; NFS Direct is supported.
 

@@ -96,7 +96,6 @@ The page has five parts. Use them in this order:
   - Longhorn volumes               - Git repo
   - every Kubernetes object        - Kopia repo (RustFS S3)
   - exempt data:                   - 1Password vault
-      PostHog CH/Kafka/Redis,
       Redis, scratch
                                    - Omni/Talos machine config
 
@@ -292,10 +291,6 @@ The backup pieces arrive in this order:
 - Earlier rebuilds of about 24 PVCs took about an hour. The app count, the data
   size, the placement, and the storage load have changed since. Use the number
   as a reference, not as a recovery-time promise.
-- PostHog adds almost nothing. Only `postgres-data` restores (about 165 MB,
-  seconds to copy). Its ClickHouse, Kafka, and Redis volumes start empty by
-  design. The PostHog cost is the migrate Job that recreates the ClickHouse
-  schema, which takes minutes.
 - A few movers can report "volume is currently attached to a different node"
   while Jobs recreate their pods. Longhorn clears these attach conflicts. The
   last ones finish when the load drops.
@@ -447,9 +442,7 @@ Record all four checks with evidence from the live cluster.
 2. **Exemption hygiene.** Every backup-exempt PVC is bound and still carries the
    annotation `storage.vanillax.dev/backup-exempt-reason`. Count the exempt PVCs
    as well as the PVCs with a backup, or a missing exempt PVC stays unnoticed.
-   The expected exempt set is PostHog's ClickHouse, Kafka, and Redis, and the
-   standalone Redis. PostHog's `postgres-data` has a backup, because it holds
-   the API keys and dashboards.
+   The expected exempt set includes the standalone Redis.
 3. **Application recovery.** A `Bound` PVC is necessary but not enough. Make
    these checks:
     - Postgres accepts authenticated connections.

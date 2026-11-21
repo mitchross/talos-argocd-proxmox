@@ -87,10 +87,10 @@
         icon: temporal.png
         href: https://temporal.vanillax.me
         description: Workflow Orchestration
-    - PostHog:
-        icon: posthog.png
-        href: https://posthog.vanillax.me
-        description: Product Analytics
+    - Umami:
+        icon: umami.png
+        href: https://umami.vanillax.me
+        description: Web Analytics
     - Echo Server:
         icon: mdi-server-outline
         href: https://echo.vanillax.me

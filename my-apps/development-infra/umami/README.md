@@ -1,6 +1,6 @@
 # Umami analytics
 
-Self-hosted product analytics replacing PostHog. Umami 3.5.0 on plain
+Self-hosted web analytics. Umami 3.5.0 on plain
 PostgreSQL (no Redis, ClickHouse or Kafka). Replays, heatmaps, browser errors
 and MCP all run on the Postgres path, but every one of them starts **off**.
 
@@ -13,7 +13,7 @@ The public host bypasses the injector in the cloudflared config, and the Gateway
 answers every path except `/script.js` and `/api/send` with 404. Recorder paths are not exposed.
 
 The in-cluster injector (`infrastructure/networking/posthog-injector`) adds the
-tracker tag to every public HTML page, the same way PostHog was added. Each host
+tracker tag to every public HTML page. Each host
 maps to a fixed website ID; unknown `*.vanillax.me` hosts go to "Other vanillax.me".
 Radar is skipped: it loads Umami itself (radar-ng PR #368) with website ID
 `0fc02131-8623-4e19-87ee-25adb67064ee`.
@@ -60,15 +60,13 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
 
 ## Next phases (separate PRs)
 
-- **Radar** — dual PostHog + Umami event dispatch (radar-ng PR #368), one recorder at a time.
+- **Radar** — native Umami events (radar-ng PR #368); drop its PostHog side, PostHog is removed.
   Set `UMAMI_WEBSITE_ID` to the radar row in `scripts/websites.sql`.
 - **Visitor IPs** — `CLIENT_IP_HEADER`/`TRUSTED_PROXIES` are deliberately unset. Set them
   from a real request captured through Cloudflare → cloudflared → Gateway first; a guess
   writes wrong IPs silently.
 - **Recorder** — `/recorder.js`, `/api/record` and `/api/websites/<uuid>/recorder` are added
   to the public route only after consent and revocation tests pass.
-- **Retirement** — two-week comparison, then PostHog history exported and
-  verified before anything is scaled down or deleted.
 
 ## Known limits (source-verified against the 3.5.0 tag)
 

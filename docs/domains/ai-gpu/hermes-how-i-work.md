@@ -25,7 +25,7 @@ Most installed skills were never used.
 
 Almost every task follows the same loop:
 
-1. Say what you want in one short line. Typos are fine. "fix posthog?" works.
+1. Say what you want in one short line. Typos are fine. "fix umami?" works.
 2. Hermes reads files, Git history, live state and docs before it asks anything.
 3. Hermes opens a pull request with a short body. It never merges.
 4. You review and merge. Then you type "merged".

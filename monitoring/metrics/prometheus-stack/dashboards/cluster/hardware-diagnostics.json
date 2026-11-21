@@ -32,12 +32,6 @@
       "url": "/d/vpa-recommendations",
       "type": "link",
       "targetBlank": false
-    },
-    {
-      "title": "PostHog performance",
-      "url": "/d/posthog-performance",
-      "type": "link",
-      "targetBlank": false
     }
   ],
   "templating": {

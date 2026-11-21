@@ -10,22 +10,12 @@ ingress:
     service: hello_world
   # Ingest/API/proxy hosts go straight to the Gateway; everything else passes through the
   # in-cluster Umami injector (infrastructure/networking/posthog-injector) on its way there.
-  - hostname: ingest-posthog.vanillax.me
-    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
-    originRequest:
-      noTLSVerify: true
-      originServerName: ingest-posthog.vanillax.me
   # Umami's public collector: script + /api/send only, straight to the Gateway.
   - hostname: ingest-umami.vanillax.me
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
       originServerName: ingest-umami.vanillax.me
-  - hostname: posthog.vanillax.me
-    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
-    originRequest:
-      noTLSVerify: true
-      originServerName: posthog.vanillax.me
   - hostname: libreddit.vanillax.me
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:

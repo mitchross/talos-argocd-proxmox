@@ -2,12 +2,12 @@
   "id": null,
   "uid": "public-edge",
   "title": "Public Edge: Cloudflare, Anubis, redlib",
-  "description": "Cloudflare tunnel, gateway, Anubis and redlib health, PostHog ingest, and their logs. Edge-only data (WAF, countries) lives in the Cloudflare dashboard - see links.",
+  "description": "Cloudflare tunnel, gateway, Anubis and redlib health, Umami ingest, and their logs. Edge-only data (WAF, countries) lives in the Cloudflare dashboard - see links.",
   "tags": [
     "cloudflare",
     "anubis",
     "redlib",
-    "posthog",
+    "umami",
     "edge"
   ],
   "timezone": "browser",
@@ -36,15 +36,10 @@
       "url": "https://dash.cloudflare.com/?to=/:account/vanillax.me/security/analytics"
     },
     {
-      "title": "PostHog",
+      "title": "Umami",
       "type": "link",
       "targetBlank": true,
-      "url": "https://posthog.vanillax.me"
-    },
-    {
-      "title": "PostHog performance",
-      "type": "link",
-      "url": "/d/posthog-performance"
+      "url": "https://umami.vanillax.me"
     }
   ],
   "panels": [
@@ -709,7 +704,7 @@
     {
       "id": 14,
       "type": "timeseries",
-      "title": "p95 upstream latency (redlib, PostHog)",
+      "title": "p95 upstream latency (redlib, Umami)",
       "description": "redlib_anubis includes Anubis plus redlib's own Reddit fetch.",
       "datasource": {
         "type": "prometheus",
@@ -723,7 +718,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le, service) (label_replace(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=~\"gateway/cilium-gateway-gateway-external/(redlib|posthog)_.*\"}[$__rate_interval]), \"service\", \"$1\", \"envoy_cluster_name\", \"gateway/cilium-gateway-gateway-external/(.*)\")))",
+          "expr": "histogram_quantile(0.95, sum by (le, service) (label_replace(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=~\"gateway/cilium-gateway-gateway-external/(redlib|umami)_.*\"}[$__rate_interval]), \"service\", \"$1\", \"envoy_cluster_name\", \"gateway/cilium-gateway-gateway-external/(.*)\")))",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -771,7 +766,7 @@
       "id": 16,
       "type": "table",
       "title": "Hits per public site (time range)",
-      "description": "Requests each public backend served through gateway-external (pages + assets + API). Visits/visitors live in PostHog.",
+      "description": "Requests each public backend served through gateway-external (pages + assets + API). Visits/visitors live in Umami.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -853,7 +848,7 @@
     {
       "id": 17,
       "type": "timeseries",
-      "title": "Hits per site over time (excluding redlib + PostHog ingest)",
+      "title": "Hits per site over time (excluding redlib + Umami ingest)",
       "description": "Requests per hour for the smaller sites, so redlib's volume does not flatten them.",
       "datasource": {
         "type": "prometheus",
@@ -867,7 +862,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (service) (label_replace(rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name=~\"gateway/cilium-gateway-gateway-external/.*\",envoy_cluster_name!~\"gateway/cilium-gateway-gateway-external/(redlib|posthog)_.*\"}[$__rate_interval]), \"service\", \"$1\", \"envoy_cluster_name\", \"gateway/cilium-gateway-gateway-external/(.*)\")) * 3600",
+          "expr": "sum by (service) (label_replace(rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name=~\"gateway/cilium-gateway-gateway-external/.*\",envoy_cluster_name!~\"gateway/cilium-gateway-gateway-external/(redlib|umami)_.*\"}[$__rate_interval]), \"service\", \"$1\", \"envoy_cluster_name\", \"gateway/cilium-gateway-gateway-external/(.*)\")) * 3600",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -1306,7 +1301,7 @@
     {
       "id": 27,
       "type": "row",
-      "title": "PostHog ingest",
+      "title": "Umami ingest",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -1319,8 +1314,8 @@
     {
       "id": 28,
       "type": "timeseries",
-      "title": "ingest-posthog requests by status class",
-      "description": "Public PostHog capture traffic through the gateway (ingest-sanitizer, hypercache, web).",
+      "title": "ingest-umami requests by status class",
+      "description": "Public Umami collection traffic through the gateway (/script.js and /api/send).",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1333,7 +1328,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (envoy_response_code_class) (rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name=~\"gateway/cilium-gateway-gateway-external/posthog_.*\"}[$__rate_interval]))",
+          "expr": "sum by (envoy_response_code_class) (rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name=~\"gateway/cilium-gateway-gateway-external/umami_.*\"}[$__rate_interval]))",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -1371,7 +1366,7 @@
     {
       "id": 29,
       "type": "text",
-      "title": "Why PostHog shows far fewer visitors than Cloudflare",
+      "title": "Why Umami shows far fewer visitors than Cloudflare",
       "gridPos": {
         "x": 14,
         "y": 53,
@@ -1380,7 +1375,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Cloudflare counts every request and every distinct IP, bots included.\n\nPostHog only sees a redlib visitor who:\n1. passes the Cloudflare challenge **and** the Anubis proof-of-work,\n2. runs JavaScript (scrapers don't),\n3. is in the event sample (`POSTHOG_SAMPLE_RATE` in `my-apps/media/redlib/redlib-env.env`; 1 = everyone).\n\nThe Anubis panels above show how much traffic is filtered before redlib."
+        "content": "Cloudflare counts every request and every distinct IP, bots included.\n\nUmami only sees a visitor who:\n1. passes the Cloudflare challenge (and, on redlib, the Anubis proof-of-work),\n2. runs JavaScript (scrapers don't),\n3. does not send Do Not Track and has not set `umami.disabled` in localStorage.\n\nThe Anubis panels above show how much traffic is filtered before redlib."
       }
     },
     {

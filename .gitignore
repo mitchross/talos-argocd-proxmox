@@ -103,7 +103,7 @@ omni/configs/*.yaml
 
 # Misc
 config.xml
-!my-apps/development-infra/posthog/config/clickhouse/config.xml
+!my-apps/development-infra/_archive/posthog/config/clickhouse/config.xml
 *.pid
 /dist
 /.astro

@@ -92,7 +92,7 @@ three replaces the other two.
 
 Keep the Threadripper flash storage (`ssd-ent`) on thick LVM. Thin LVM serializes `fsync`,
 which makes `longhorn-flash` a downgrade. Change this only after an
-end-to-end measurement that shows an equal result. `longhorn-flash` carries PostHog,
+end-to-end measurement that shows an equal result. `longhorn-flash` carries
 radar-ng and product-bench. Its local mirror protects against one failed drive, not
 against a failed host.
 

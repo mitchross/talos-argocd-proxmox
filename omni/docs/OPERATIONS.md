@@ -179,10 +179,8 @@ disk with the volume's tags. A drain only gets stuck when no other disk has thos
 **What no longer blocks (2026-11-11, #3663).**
 - The `flash` tag has two disks: `ssd-flash` on the GPU node and `truenas-ssd` on
   `truenas-worker-01`.
-- The five database volumes have two copies, one on each disk: product-bench
-  `postgres-data`, and PostHog `postgres-data`, `redis7-data`,
-  `redpanda-data-kafka-0` and `clickhouse-data-clickhouse-0`. A drain of either node
-  leaves the other copy running and copies nothing.
+- Database volumes such as product-bench `postgres-data` have two copies, one on
+  each disk. A drain of either node leaves the other copy running and copies nothing.
 - Single-copy `flash` volumes (the radar-ng ones until #3664) should copy to
   `truenas-ssd` by themselves. The drain waits for the copy but needs no tag patch.
   No real drain has tested this yet. On 2026-11-10 about 150 GiB took 45 minutes,

@@ -142,7 +142,6 @@ nav:
       - Descheduler — why pods move: domains/scheduling/descheduler.md
       - Temporal worker versioning: domains/temporal/worker-versioning-guide.md
       - Temporal safe deployments (runbook): domains/temporal/safe-deployments.md
-      - Self-host PostHog: posthog-self-host-k8s.md
       - radar-ng observability cookbook: domains/observability/radar-ng.md
   - Local AI:
       - Starter kit — start here: domains/ai-gpu/index.md

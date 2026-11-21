@@ -48,10 +48,6 @@ It shares wave 4 with the VPA controller, so on a cold bootstrap the VPA CRDs ca
 Infrastructure applications at wave 4 keep their policies in this central folder.
 Move one out only when it gains an owner that is explicitly ordered after the CRDs.
 
-Some PostHog policies are also in this folder, in `posthog-policies.yaml`.
-They stay there while the PostHog Application's migration hook blocks its sync.
-Move them to the PostHog app folder after that Application syncs cleanly.
-
 ### Move a policy between Applications
 
 The identity of a policy is its namespace and name. Keep both unchanged when you move a policy.

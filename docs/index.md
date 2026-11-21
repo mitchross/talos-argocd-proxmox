@@ -54,7 +54,7 @@ The sidebar has eight sections. Read them top to bottom the first time.
 | Backups and recovery | kopiur backups, Postgres, and the cluster rebuild runbook |
 | Networking | The network layout, Cilium policies, and split DNS |
 | Hardware and hosts | The machines, how Ansible configures them, and power metering |
-| Running apps | Pod sizing and placement, Temporal workers, PostHog, and observability |
+| Running apps | Pod sizing and placement, Temporal workers, and observability |
 | Local AI | Models, GPUs, measurement, and the Pi and Hermes agents |
 
 ## The stack

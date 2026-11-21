@@ -115,9 +115,8 @@ the loss of one node does not stop it.
 
 Two kinds of volume keep one copy:
 
-- **`longhorn-flash` volumes.** The class uses one disk on one host. Its users (PostHog,
-  radar-ng, product-bench) stop when the Threadripper stops. PostHog also needs the memory
-  of that host.
+- **`longhorn-flash` volumes.** The class uses one disk on one host. Its users (radar-ng,
+  product-bench) stop when the Threadripper stops.
 - **Volumes created before the classes made two copies.** The replica count is stored on
   the live Longhorn Volume, not read again from the class. Caches and data that an app can
   re-create stay at one copy on purpose.
@@ -293,7 +292,7 @@ metadata:
 
 Back up user content, databases and config that is hard to re-create. Exempt caches,
 message brokers, data that syncs from an external source and disposable analytics. Redis
-and PostHog's ClickHouse and Kafka are backup-exempt here. PostHog's Postgres is backed up.
+is backup-exempt here.
 
 ### Restore drill (prove it)
 
