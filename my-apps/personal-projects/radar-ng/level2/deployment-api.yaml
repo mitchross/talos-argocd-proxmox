@@ -1,0 +1,112 @@
+# Stateless `radar api` for Level II only (emptyDir, no PVC); reached only via the shadow route and the Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: level2-api
+  namespace: radar-ng
+  labels:
+    app: level2-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: level2-api
+  template:
+    metadata:
+      labels:
+        app: level2-api
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu-worker
+                    operator: DoesNotExist
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.52@sha256:b1e222efd9befe5c15b9b56fb52f6db7438320f33cdbca10c23ad8f3f991ab86
+          imagePullPolicy: IfNotPresent
+          args: [api]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: radar-ng-level2
+            - secretRef:
+                name: radar-ng-level2
+          env:
+            - name: LISTEN_ADDR
+              value: "0.0.0.0:8080"
+            # MRMS paths point at empty dirs and 404; only the Level II routes serve data.
+            - name: TILE_DIR
+              value: /data/tiles
+            - name: GRID_DIR
+              value: /data/grids
+            - name: STATE_DIR
+              value: /data/state
+            - name: DISABLE_WORKFLOW_ROUTES
+              value: "1"
+            - name: TMPDIR
+              value: /tmp
+          livenessProbe:
+            httpGet:
+              path: /api/livez
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: level2-api
+  namespace: radar-ng
+  labels:
+    app: level2-api
+spec:
+  type: ClusterIP
+  selector:
+    app: level2-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

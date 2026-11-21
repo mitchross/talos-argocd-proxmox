@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geocoder-postgres-19
+  labels:
+    app: geocoder-postgres-19
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geocoder-postgres-19
+  template:
+    metadata:
+      labels:
+        app: geocoder-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the postgis image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          # Built in the geocoder repo (deploy/postgres): postgis/postgis has no Postgres 19 tag yet.
+          image: registry.vanillax.me/geocoder/postgis:19-3.7-6410368@sha256:e5676cf3ee816b9382918b281ae42f4939fc5db0435bfa55fe75d16191edb82b
+          # wal_level=minimal: the loader creates and fills address_load in one transaction, so COPY and index
+          # builds skip WAL. Safe here: no replicas, no PITR, and the PVC is backup-exempt.
+          args: ["postgres", "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB", "-c", "maintenance_work_mem=1GB", "-c", "max_wal_size=8GB", "-c", "wal_level=minimal", "-c", "max_wal_senders=0", "-c", "max_parallel_maintenance_workers=4"]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: geocoder
+            - name: POSTGRES_USER
+              value: geocoder
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: geocoder
+                  key: db_password
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "geocoder", "-d", "geocoder"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "geocoder", "-d", "geocoder"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "geocoder", "-d", "geocoder"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+            - name: dshm # index builds use parallel workers; 64 MB default /dev/shm is too small
+              mountPath: /dev/shm
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: geocoder-postgres-19-data
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi

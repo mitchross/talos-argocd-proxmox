@@ -50,6 +50,12 @@ ingress:
     originRequest:
       noTLSVerify: true
       originServerName: radar.vanillax.me
+  # radar-ng Level II shadow API (radar-ng#293); JSON and tiles only, so skip the injector.
+  - hostname: radar-l2-shadow.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: radar-l2-shadow.vanillax.me
   # Wildcard is intentional: only ExternalDNS-published hostnames reach the tunnel, internal
   # services have no Cloudflare DNS, and HTTPRoutes enforce hostnames.
   - hostname: "*.vanillax.me"

@@ -18,11 +18,12 @@ resources:
   - deployment-machine-learning.yaml
   - deployment-valkey.yaml
   - services.yaml
-  - postgres/pvc.yaml
   - postgres/service.yaml
-  - postgres/deployment.yaml
+  - postgres-19/pvc.yaml
+  - postgres-19/service.yaml
+  - postgres-19/deployment.yaml
   - kopiur/library.yaml
-  - kopiur/immich-postgres-data.yaml
+  - kopiur/immich-postgres-19-data.yaml
 
 configMapGenerator:
   - name: immich-scripts

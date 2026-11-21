@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse-postgres-19
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: langfuse-postgres-19
+  template:
+    metadata:
+      labels:
+        app: langfuse-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: postgres
+        image: postgres:19.0@sha256:bb6e70add742cd868fb62cb3b2f67d1dd2bdd2b65a521e778420748753687c60
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 999
+          runAsGroup: 999
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - name: postgres
+          containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: langfuse
+        - name: POSTGRES_USER
+          value: langfuse
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-secrets
+              key: postgres-password
+        - name: POSTGRES_INITDB_ARGS
+          value: --data-checksums
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+        startupProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - langfuse
+            - -d
+            - langfuse
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 90
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - langfuse
+            - -d
+            - langfuse
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - langfuse
+            - -d
+            - langfuse
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: langfuse-postgres-19-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: langfuse-postgres-19-data
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: langfuse-postgres-19-data-restore
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: langfuse-postgres-19
+  namespace: langfuse
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  selector:
+    app: langfuse-postgres-19
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres

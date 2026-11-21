@@ -1,0 +1,95 @@
+# Plain Postgres + kopiur hourly tier (gitea/postgres pattern); runbook: docs/domains/cnpg/run-postgres-plain-english.md
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-postgres-19
+  namespace: immich
+  labels:
+    app: immich-postgres-19
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-postgres-19
+  template:
+    metadata:
+      labels:
+        app: immich-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          # Built in homelab-images: upstream ghcr.io/immich-app/postgres has no Postgres 19 tag (issue #3924).
+          image: ghcr.io/mitchross/immich-postgres:sha-0bcadcf7a1d31bb3982fb9dec3bedbb1f6c80bcb-44771347706-1@sha256:ecf4a48961b7c644ab38bebc26c96e5d3fea2cbf1fb1d570b3a3ef7579b753e7
+          # Keep shared_preload_libraries: without it CREATE EXTENSION vchord fails. The rest is Immich's SSD tuning.
+          args: ["postgres", "-c", "shared_preload_libraries=vchord.so", "-c", "shared_buffers=512MB", "-c", "max_wal_size=5GB", "-c", "effective_io_concurrency=200", "-c", "random_page_cost=1.2", "-c", "wal_compression=on", "-c", "work_mem=16MB"]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # First boot on an EMPTY volume creates DB + user; on a restored volume these are ignored.
+            # Same secret immich-server reads, so role and client credential cannot drift apart.
+            - name: POSTGRES_DB
+              value: "immich"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          # Probes expand $POSTGRES_USER — the username is secret-sourced; a literal would silently break.
+          startupProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: immich-postgres-19-data

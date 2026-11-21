@@ -80,10 +80,11 @@ def convert(schema: dict) -> dict:
 
 def iter_crds(stream):
     # Prometheus Operator's bare '=' enum value uses PyYAML's value tag.
-    yaml.SafeLoader.add_constructor(
+    manifest_loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+    manifest_loader.add_constructor(
         "tag:yaml.org,2002:value", lambda loader, node: loader.construct_scalar(node)
     )
-    for doc in yaml.safe_load_all(stream):
+    for doc in yaml.load_all(stream, Loader=manifest_loader):
         if isinstance(doc, dict) and doc.get("kind") == "CustomResourceDefinition":
             yield doc
 

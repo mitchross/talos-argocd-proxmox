@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-19
+  labels:
+    app: postgres-19
+spec:
+  selector:
+    app: postgres-19
+  ports:
+    - name: postgres-19
+      port: 5432
+      targetPort: 5432

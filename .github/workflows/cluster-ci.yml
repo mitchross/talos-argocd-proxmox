@@ -155,11 +155,16 @@ jobs:
             exit 1
           fi
 
+          # Render four directories at a time into one file each, then join them in sorted order.
+          work="$(mktemp -d)"
+          printf '%s\n' "${dirs[@]}" | xargs -P 4 -I{} sh -c '
+            echo "Rendering $1"
+            kustomize build "$1" --enable-helm > "$2/$(printf %s "$1" | tr / _).yaml" || { echo "ERROR: render failed: $1" >&2; exit 255; }
+          ' _ {} "${work}"
+
           : > /tmp/all-manifests.yaml
           for dir in "${dirs[@]}"; do
-            echo "Rendering ${dir}"
-            rendered="$(mktemp)"
-            kustomize build "${dir}" --enable-helm > "${rendered}"
+            rendered="${work}/$(printf %s "${dir}" | tr / _).yaml"
 
             # Components intentionally build to an empty stream when rendered
             # alone. Every other kustomization is an app, base, or overlay and
@@ -175,7 +180,6 @@ jobs:
             fi
 
             cat "${rendered}" >> /tmp/all-manifests.yaml
-            rm -f "${rendered}"
             echo "---" >> /tmp/all-manifests.yaml
           done
 

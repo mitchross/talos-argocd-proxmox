@@ -17,7 +17,7 @@ spec:
         node.vanillax.dev/pool: general
       containers:
         - name: tika
-          image: apache/tika:latest@sha256:b99f19c4fd76237dafe7d22f719b9bddfa9a449da687c597a41e2f6d9a595418
+          image: apache/tika:latest@sha256:0f0fbd7f053a2a9941b816ce6d6974493f5527f40c4d3491f9c2cecec30e612c
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

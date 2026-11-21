@@ -8,11 +8,11 @@ resources:
 - externalsecret.yaml
 - kopiur/gitea-shared-storage.yaml
 # In-app Postgres (plain postgres + kopiur); runbook: docs/domains/cnpg/run-postgres-plain-english.md
-- postgres/deployment.yaml
-- postgres/service.yaml
-- postgres/pvc.yaml
-- postgres/servicemonitor.yaml
-- kopiur/gitea-postgres-data.yaml
+- postgres-19/deployment.yaml
+- postgres-19/service.yaml
+- postgres-19/pvc.yaml
+- postgres-19/servicemonitor.yaml
+- kopiur/gitea-postgres-19-data.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.
 components:

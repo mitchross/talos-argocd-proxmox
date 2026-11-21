@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hindsight-db-19
+  namespace: hindsight
+  labels:
+    app: hindsight-db-19
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate # RWO PVC — old pod must release the volume first
+  selector:
+    matchLabels:
+      app: hindsight-db-19
+  template:
+    metadata:
+      labels:
+        app: hindsight-db-19
+    spec:
+      nodeSelector:
+        node.vanillax.dev/pool: general
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:0.8.7-pg19-trixie@sha256:ace863afa68a13560603dc7366fad0adb4f5ddd0a21c8f06418195f32e03fa08
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              value: hindsight
+            - name: POSTGRES_USER
+              value: hindsight
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hindsight-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_INITDB_ARGS
+              value: --data-checksums
+          ports:
+            - containerPort: 5432
+              name: postgres
+          # Covers WAL replay after a restore so liveness can't restart Postgres mid-recovery.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "hindsight"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "hindsight"]
+            periodSeconds: 10
+            timeoutSeconds: 10
+          # Busy is not dead: a consolidation backlog makes pg_isready slow, and a kill mid-write forces crash recovery.
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "hindsight"]
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            # 1Gi filled during a large consolidation run (1.2M links), probes stalled and the pod looped.
+            limits:
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hindsight-db-19-pvc
+        # The container default is 64Mi; creating a bank asks Postgres for a 64 MB segment and fails.
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hindsight-db-19
+  namespace: hindsight
+  labels:
+    app: hindsight-db-19
+spec:
+  selector:
+    app: hindsight-db-19
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

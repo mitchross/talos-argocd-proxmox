@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-postgres-19
+  namespace: paperless-ngx
+  labels:
+    app: paperless-postgres-19
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-postgres-19
+  template:
+    metadata:
+      labels:
+        app: paperless-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before the kubelet SIGKILLs.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:19.0@sha256:bb6e70add742cd868fb62cb3b2f67d1dd2bdd2b65a521e778420748753687c60
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # Only consumed on first boot of an EMPTY volume (initdb); a restored volume ignores these.
+            - name: POSTGRES_DB
+              value: "paperless"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBUSER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBPASS
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          # Probes expand $POSTGRES_USER because the username lives in the secret.
+          # Generous startup probe: WAL replay after a restore takes far longer than a fresh start.
+          startupProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
+        # Metrics sidecar — same pattern as gitea-postgres (reference:
+        # docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.21.1
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/paperless?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBUSER
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-app-secret
+                  key: PAPERLESS_DBPASS
+          ports:
+            - containerPort: 9187
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: paperless-postgres-19-data

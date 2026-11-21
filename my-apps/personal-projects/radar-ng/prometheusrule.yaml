@@ -172,6 +172,59 @@ spec:
               MRMS every minute, nowcast every 2-3 minutes, alerts every 5, HRRR and
               lightning hourly, air quality hourly: one of them has produced no
               completed run inside its window. Check Temporal namespace radar-ng.
+    - name: radar-ng.level2
+      rules:
+        - alert: RadarNgLevel2NoPollers
+          expr: absent(temporal_worker_task_slots_available{namespace="radar-ng", task_queue="radar-ng-level2"}) == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: the radar-ng-level2 task queue has no worker reporting slots
+            description: The Level II shadow pool is not polling; the shadow host falls back to MRMS. Public radar is unaffected.
+        - alert: RadarNgLevel2FeedStale
+          expr: max(radar_level2_feed_age_seconds) > 600
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: NOAA Level II feed is more than 10 minutes behind for a demanded station
+            description: The newest chunk of a demanded station is over 10 minutes old; clients fall back to MRMS.
+        - alert: RadarNgLevel2SweepStale
+          expr: max(radar_level2_sweep_age_seconds) > 900
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Level II low sweep is more than 15 minutes old
+            description: Chunks arrive but no new complete low sweep is published; check radar_level2_fallback_total by reason.
+        - alert: RadarNgLevel2FallbackRateHigh
+          expr: |
+            sum(rate(radar_level2_poll_total{status="fallback"}[15m]))
+              / clamp_min(sum(rate(radar_level2_poll_total[15m])), 0.001) > 0.5
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Over half of Level II polls fall back
+            description: Compare radar_level2_fallback_total by reason, then NOAA and RustFS health.
+        - alert: RadarNgLevel2PoolBacklog
+          expr: |
+            histogram_quantile(0.95, sum by (le) (rate(radar_level2_permit_wait_seconds_bucket[10m]))) > 30
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Level II decode permits are queueing for over 30 seconds
+            description: Two decode permits are the pool limit; check radar_level2_decodes_running and decode timings.
+        - alert: RadarNgLevel2CacheNearCap
+          expr: max(radar_level2_object_bytes) > 0.8 * 16106127360
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Level II objects are above 80 percent of the 15 GiB RustFS bucket quota
+            description: Check radar_level2_evict_total{result="failed"} and RustFS; at the hard quota new sweeps fail to write.
     - name: radar-ng.capacity
       rules:
         - alert: RadarNgVolumeAlmostFull

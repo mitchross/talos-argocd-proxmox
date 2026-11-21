@@ -89,7 +89,7 @@ langfuse:
       create: false
 postgresql:
   deploy: false
-  host: langfuse-postgres
+  host: langfuse-postgres-19
   auth:
     username: langfuse
     database: langfuse

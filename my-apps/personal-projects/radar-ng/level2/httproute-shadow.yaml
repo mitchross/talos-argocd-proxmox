@@ -1,0 +1,33 @@
+# Hidden shadow host for radar-ng#293: only the Level II paths, to level2-api; everything else 404s at the gateway.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: level2-shadow
+  namespace: radar-ng
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "radar-l2-shadow.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/level2/
+        - path:
+            type: PathPrefix
+            value: /level2/tiles/
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: level2-api
+          port: 8080
+          weight: 1

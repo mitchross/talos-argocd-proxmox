@@ -14,7 +14,7 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 1Gi
+      storage: 2Gi
   # kopiur restore-before-bind: binds Pending until the Restore populator hydrates it; no-op while Bound.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com

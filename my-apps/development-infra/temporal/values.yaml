@@ -35,7 +35,7 @@ server:
             pluginName: postgres12
             driverName: postgres12
             databaseName: temporal
-            connectAddr: "temporal-postgres.temporal.svc.cluster.local:5432"
+            connectAddr: "temporal-postgres-19.temporal.svc.cluster.local:5432"
             # Temporal 1.28+ refuses to boot without this and the chart doesn't set it (ConnectProtocol: zero value crashloop).
             connectProtocol: "tcp"
             user: temporal
@@ -48,7 +48,7 @@ server:
             pluginName: postgres12
             driverName: postgres12
             databaseName: temporal_visibility
-            connectAddr: "temporal-postgres.temporal.svc.cluster.local:5432"
+            connectAddr: "temporal-postgres-19.temporal.svc.cluster.local:5432"
             connectProtocol: "tcp"
             user: temporal
             existingSecret: temporal-db-secret

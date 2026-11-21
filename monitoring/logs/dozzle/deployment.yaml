@@ -27,7 +27,7 @@ spec:
       containers:
         - name: dozzle
           # renovate: datasource=docker depName=amir20/dozzle
-          image: docker.io/amir20/dozzle:v11.4.3@sha256:244f218c876d6ed766277e71a537f34bfb2c01829e1927737e3673a8327deeb8
+          image: docker.io/amir20/dozzle:v11.5.0@sha256:74600d62dd73a72a5d36fbd0c98af649203df921d74310b7ed383ef63392358e
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

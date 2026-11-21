@@ -43,7 +43,7 @@ class TemporalDeploymentTests(unittest.TestCase):
     def test_all_candidate_images_follow_release_policy_and_are_gated(self):
         workers = [obj for path in (RADAR, NEWS, ROOT / "my-apps/personal-projects/deal-scout")
                    for obj in render(path) if obj["kind"] == "WorkerDeployment"]
-        self.assertEqual(len(workers), 7)
+        self.assertEqual(len(workers), 8)
         for worker in workers:
             with self.subTest(worker=worker["metadata"]["name"]):
                 for container in worker["spec"]["template"]["spec"]["containers"]:
@@ -58,8 +58,10 @@ class TemporalDeploymentTests(unittest.TestCase):
     def test_radar_config_changes_versioned_templates_and_keeps_legacy_config(self):
         original = render(RADAR)
         with tempfile.TemporaryDirectory() as directory:
-            app = Path(directory) / "radar"
+            app = Path(directory) / "personal-projects/radar"
             shutil.copytree(RADAR, app)
+            # The app pulls in ../../common/kopiur-backup.
+            shutil.copytree(ROOT / "my-apps/common", Path(directory) / "common")
             path = app / "temporal-workers/release-env-patch.yaml"
             patch = yaml.safe_load(path.read_text())
             next(p for p in patch if p["value"]["name"] == "BACKLOG_PER_CYCLE")["value"]["value"] = "2"
@@ -67,7 +69,7 @@ class TemporalDeploymentTests(unittest.TestCase):
             updated = render(app)
         old_workers = {o["metadata"]["name"]: o for o in original if o["kind"] == "WorkerDeployment"}
         new_workers = {o["metadata"]["name"]: o for o in updated if o["kind"] == "WorkerDeployment"}
-        self.assertEqual(len(old_workers), 5)
+        self.assertEqual(len(old_workers), 6)
         for name, old in old_workers.items():
             container = old["spec"]["template"]["spec"]["containers"][0]
             self.assertNotIn("envFrom", container)

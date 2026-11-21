@@ -22,13 +22,13 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: hindsight-db
+  name: hindsight-db-19
   namespace: hindsight
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: hindsight-db
+    name: hindsight-db-19
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
     minReplicas: 1

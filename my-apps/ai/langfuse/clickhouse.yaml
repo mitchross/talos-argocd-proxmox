@@ -27,7 +27,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
       - name: clickhouse
-        image: clickhouse/clickhouse-server:26.10.5.57@sha256:4c60eed5d046f5cc4cf4633c400093e9f3d09f842e34e1625b6e4c25ecc0ab2f
+        image: clickhouse/clickhouse-server:26.10.8.34@sha256:cb030c0616aa80d8daf03033ba68d6297a1c86735b142a8e82b96f4cf119ec98
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 101

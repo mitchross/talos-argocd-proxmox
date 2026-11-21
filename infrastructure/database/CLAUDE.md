@@ -5,9 +5,9 @@ Postgres Deployment inside the owning app's directory, backed up by kopiur:
 
 - Pattern + operator guide:
   [`docs/domains/cnpg/run-postgres-plain-english.md`](../../docs/domains/cnpg/run-postgres-plain-english.md)
-- Reference implementation: `my-apps/development/gitea/postgres/`
+- Reference implementation: `my-apps/development/gitea/postgres-19/`
 - Two-database example (initdb script + schema-hook sync waves):
-  `my-apps/development-infra/temporal/postgres/`
+  `my-apps/development-infra/temporal/postgres-19/`
 - Create one with `/project:new-database <app>`
 
 CNPG (CloudNativePG) was **fully retired 2026-08-13** — operator, Barman

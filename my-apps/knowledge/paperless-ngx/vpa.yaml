@@ -1,29 +1,3 @@
-# VPA policy is owned with this application so Argo prunes it with the target.
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: paperless-postgres
-  namespace: paperless-ngx
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: paperless-postgres
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      # Fixed-size metrics sidecar — not VPA-managed.
-      - containerName: postgres-exporter
-        mode: "Off"
-      - containerName: postgres
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 2Gi
----
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -89,3 +63,28 @@ spec:
         maxAllowed:
           cpu: "1"
           memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: paperless-postgres-19
+  namespace: paperless-ngx
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: paperless-postgres-19
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # Fixed-size metrics sidecar — not VPA-managed.
+      - containerName: postgres-exporter
+        mode: "Off"
+      - containerName: postgres
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 1Gi

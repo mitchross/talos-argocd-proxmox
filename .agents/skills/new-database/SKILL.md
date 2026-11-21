@@ -7,4 +7,4 @@ description: Create a database for an app in this talos-argocd-proxmox repo usin
 
 The procedure lives in `.claude/commands/new-database.md` (shared with Claude Code).
 Read it and follow it exactly, treating `$ARGUMENTS` as the app name the user gave.
-Reference implementation: `my-apps/development/gitea/postgres/`.
+Reference implementation: `my-apps/development/gitea/postgres-19/`.

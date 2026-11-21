@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal-postgres-19
+  namespace: temporal
+  labels:
+    app: temporal-postgres-19
+  annotations:
+    # Schema Jobs are wave -1 Sync hooks and waves block: Postgres must be healthy at wave -2 or the hook waits forever.
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temporal-postgres-19
+  template:
+    metadata:
+      labels:
+        app: temporal-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
+      terminationGracePeriodSeconds: 60
+      # Replicas live on wired-storage nodes; keep the engine there too so a wifi/house node never fronts the DB.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node.vanillax.dev/link
+                    operator: In
+                    values: ["wired"]
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:19.0@sha256:bb6e70add742cd868fb62cb3b2f67d1dd2bdd2b65a521e778420748753687c60
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          # Logs statements over 1 s and lock waits over deadlock_timeout (1 s) to trace history write stalls.
+          args: ["-c", "log_min_duration_statement=1000", "-c", "log_lock_waits=on"]
+          env:
+            # Only used on first boot of an EMPTY volume; a restored volume skips init and its data wins.
+            - name: POSTGRES_DB
+              value: "temporal"
+            - name: POSTGRES_USER
+              value: "temporal"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: temporal-db-secret # ExternalSecret from 1Password (../externalsecret.yaml)
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          # Suppresses liveness restarts while a restored DB replays WAL.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "temporal", "-d", "temporal"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+        # Metrics sidecar — same pattern as gitea-postgres (reference:
+        # docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.21.1
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/temporal?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              value: "temporal"
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: temporal-db-secret
+                  key: password
+          ports:
+            - containerPort: 9187
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: temporal-postgres-19-data
+        - name: initdb
+          configMap:
+            name: temporal-postgres-init

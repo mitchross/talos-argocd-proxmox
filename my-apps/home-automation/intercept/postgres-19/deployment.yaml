@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intercept-postgres-19
+  namespace: intercept
+  labels:
+    app.kubernetes.io/name: intercept-postgres-19
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: intercept-postgres-19
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: intercept-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres:19.0@sha256:bb6e70add742cd868fb62cb3b2f67d1dd2bdd2b65a521e778420748753687c60
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: POSTGRES_DB
+              value: intercept_adsb
+            - name: POSTGRES_USER
+              value: intercept
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: intercept-postgres-secret
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: --data-checksums
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "intercept", "-d", "intercept_adsb"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "intercept", "-d", "intercept_adsb"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "intercept", "-d", "intercept_adsb"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: intercept-postgres-19-data

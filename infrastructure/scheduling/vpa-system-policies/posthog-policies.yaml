@@ -24,31 +24,6 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: posthog-db
-  namespace: posthog
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: db
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      # Fixed-size sidecar: VPA shrinking its CPU restart-looped the exporter and dropped the pod from the db Service.
-      - containerName: postgres-exporter
-        mode: "Off"
-      - containerName: db
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
   name: posthog-kafka
   namespace: posthog
 spec:
@@ -353,3 +328,28 @@ spec:
         maxAllowed:
           cpu: "1"
           memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-db-19
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: db-19
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # Fixed-size sidecar: VPA shrinking its CPU restart-looped the exporter and dropped the pod from the db Service.
+      - containerName: postgres-exporter
+        mode: "Off"
+      - containerName: db
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi

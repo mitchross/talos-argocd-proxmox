@@ -26,13 +26,13 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: intercept-postgres
+  name: intercept-postgres-19
   namespace: intercept
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: intercept-postgres
+    name: intercept-postgres-19
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
