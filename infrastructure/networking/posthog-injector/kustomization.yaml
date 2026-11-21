@@ -14,3 +14,4 @@ configMapGenerator:
   - name: posthog-injector-nginx
     files:
       - default.conf
+      - umami-sites.map

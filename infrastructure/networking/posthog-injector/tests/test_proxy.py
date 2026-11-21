@@ -18,6 +18,9 @@ import uuid
 
 APP = Path(__file__).resolve().parents[1]
 MARKER = b"injected in-cluster"
+UMAMI = b"Umami consent loader"
+PH_SNIPPET = re.search(r"map \$host \$ph_snippet \{\n    default '(.*?)';\n\}",
+                       (APP / "default.conf").read_text(), re.S).group(1).encode()
 HTML = b"<html><head><title>origin</title></head><body>hello</body></html>"
 ORIGIN = r'''
 import gzip
@@ -105,6 +108,11 @@ class ProxyTest(unittest.TestCase):
         cls.addClassCleanup(cls.tmp.cleanup)
         fixture = Path(cls.tmp.name)
         (fixture / "origin.py").write_text(ORIGIN)
+        # Generated per run so no website UUID lives in the repo; radar proves the host gate wins.
+        cls.website = str(uuid.uuid4())
+        (fixture / "umami-sites.map").write_text((APP / "umami-sites.map").read_text()
+                                                 + f"umami-test.vanillax.me {cls.website};\n"
+                                                 + f"radar.vanillax.me {uuid.uuid4()};\n")
         subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
                         "-keyout", str(fixture / "key.pem"), "-out", str(fixture / "cert.pem"),
                         "-days", "1", "-subj", "/CN=origin"],
@@ -123,7 +131,8 @@ class ProxyTest(unittest.TestCase):
                "--read-only", "--user", "101:101", "--cap-drop", "ALL",
                "--security-opt", "no-new-privileges", "--tmpfs", "/tmp:uid=101,gid=101",
                "-p", "127.0.0.1::8080", "-p", "127.0.0.1::8081",
-               "-v", f"{APP / 'default.conf'}:/etc/nginx/conf.d/default.conf:ro", image)
+               "-v", f"{APP / 'default.conf'}:/etc/nginx/conf.d/default.conf:ro",
+               "-v", f"{fixture / 'umami-sites.map'}:/etc/nginx/umami-sites.map:ro", image)
         cls.addClassCleanup(docker, "rm", "-f", cls.nginx)
         cls.port = int(docker("port", cls.nginx, "8080/tcp").rsplit(":", 1)[1])
         cls.health = int(docker("port", cls.nginx, "8081/tcp").rsplit(":", 1)[1])
@@ -179,7 +188,7 @@ class ProxyTest(unittest.TestCase):
 
     def test_excluded_hosts_preserve_compression_and_validators(self):
         for name in ("redlib", "libreddit", "ingest-posthog", "posthog", "otel",
-                     "radar", "radar-ng-api", "argocd-webhook"):
+                     "radar", "radar-ng-api", "argocd-webhook", "ingest-umami", "umami"):
             with self.subTest(host=name):
                 r = self.request(host=name + ".vanillax.me", headers={"Accept-Encoding": "gzip"})
                 body = r.read()
@@ -210,6 +219,23 @@ class ProxyTest(unittest.TestCase):
                            ("/split", "deals.vanillax.me")]:
             with self.subTest(path=path, host=host):
                 self.assertEqual(self.request(path, host=host).read().count(MARKER), 1)
+
+    def test_hosts_without_umami_get_the_posthog_snippet_byte_for_byte(self):
+        body = self.request("/", host="deals.vanillax.me").read()
+        self.assertEqual(body, HTML.replace(b"</head>", PH_SNIPPET + b"</head>"))
+        self.assertNotIn(b"umami", body.lower())
+
+    def test_umami_host_gets_one_loader_after_posthog(self):
+        body = self.request("/", host="umami-test.vanillax.me").read()
+        self.assertEqual(body.count(MARKER), 1)
+        self.assertEqual(body.count(UMAMI), 1)
+        self.assertEqual(body.count(b"</head>"), 1)
+        self.assertEqual(body.count(self.website.encode()), 1)
+        self.assertLess(body.index(MARKER), body.index(UMAMI))
+        self.assertNotIn(b"recorder", body)
+        for path, method in [("/asset.js", "GET"), ("/", "POST"), ("/error", "GET"), ("/json", "GET")]:
+            with self.subTest(path=path, method=method):
+                self.assertEqual(self.request(path, host="umami-test.vanillax.me", method=method).read(), HTML)
 
     def test_health_does_not_shadow_application(self):
         self.assertIn(MARKER, self.request("/healthz").read())
