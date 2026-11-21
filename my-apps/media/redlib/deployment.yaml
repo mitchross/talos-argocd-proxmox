@@ -29,7 +29,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: redlib
-        image: registry.vanillax.me/redlib/redlib:2.3.15@sha256:1b52c2d95116ec45953da272118ac789dd65dac3e2b3c428dafae9026f42d7fc
+        image: registry.vanillax.me/redlib/redlib:2.3.16@sha256:cce0185cf70f4576c90dd44aab9923ce0317e88082d3720f6c72103d3ff7fafc
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
@@ -58,7 +58,7 @@ spec:
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /settings
+            path: /readyz
             port: http
           initialDelaySeconds: 5
           periodSeconds: 10
