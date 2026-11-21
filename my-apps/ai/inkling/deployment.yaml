@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inkling-server
+  namespace: inkling
+  labels:
+    app: inkling-server
+spec:
+  # Both RTX 3090s (layer split). Parked while vLLM owns them; kustomization.yaml holds the count.
+  replicas: 0
+  strategy:
+    type: Recreate            # whole-card GPU workload on an RWO local volume
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: inkling-server
+  template:
+    metadata:
+      labels:
+        app: inkling-server
+    spec:
+      enableServiceLinks: false
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      # No fsGroup: the local volume also holds vLLM's and Strata's files, and fsGroup would chown all of it.
+      initContainers:
+        # Argo self-heal can apply the Deployment before its Sync hook has finished the download.
+        - name: wait-for-model
+          image: python:3.15-alpine@sha256:0f9552bb28711333da16915ec146f5e6bb44a7fdac9ced15dc17c2e0206346dd
+          command:
+            - python3
+            - /opt/repo-scripts/model_cache.py
+            - wait
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 128Mi }
+          volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+            - name: models
+              mountPath: /models
+              subPath: inkling
+              readOnly: true
+      containers:
+        - name: llama-server
+          # Mainline llama.cpp at a tag that contains ggml-org/llama.cpp#32704; older builds give gibberish on this GGUF.
+          image: ghcr.io/mitchross/llama-cpp:b12611-sm86
+          imagePullPolicy: IfNotPresent
+          command:
+            - llama-server
+          args:
+            - -m
+            - /models/Inkling-2-Mini-GGUF-ae9327c5fbc7/Inkling-2-Mini-UD-Q8_K_XL.gguf
+            - --alias
+            - inkling-2-mini
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8080"
+            - -ngl
+            - "99"
+            - --split-mode
+            - layer
+            # Explicit -c and -ngl; fit off so llama.cpp never shrinks them silently. A misfit fails loudly at load.
+            - --fit
+            - "off"
+            - -fa
+            - "on"
+            # Model trained to 1,048,576; README covers raising this.
+            - -c
+            - "262144"
+            # The relative-position bias is a fp32 table sized heads x ctx x ubatch; 128 keeps it ~6 GB at 256K.
+            - -ub
+            - "128"
+            # f16 KV is lossless; q8_0 halves it (README).
+            - -ctk
+            - f16
+            - -ctv
+            - f16
+            - --parallel
+            - "1"
+            - --jinja
+            - --metrics
+            # Thinking Machines / Unsloth recommendation (also the GGUF's general.sampling.* defaults).
+            - --temp
+            - "1.0"
+            - --top-p
+            - "1.0"
+            - --top-k
+            - "0"
+            - --min-p
+            - "0.0"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          # /health answers 503 while the model loads and 200 once it serves.
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 180
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            # All layers on the GPUs; host RAM holds the prompt cache (--cache-ram, 8 GiB default) and mmap pages.
+            requests:
+              nvidia.com/gpu: "2"
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              nvidia.com/gpu: "2"
+              memory: 32Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+              subPath: inkling
+              readOnly: true
+      volumes:
+        - name: repo-scripts
+          configMap:
+            name: inkling-scripts
+            defaultMode: 0555
+        - name: models
+          persistentVolumeClaim:
+            claimName: ai-model-cache-inkling

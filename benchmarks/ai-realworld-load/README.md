@@ -102,6 +102,28 @@ preemption. At 1.20x concurrency this is the most likely source of a severe
 user-visible stall with no request technically failing. That is why
 `report.py` prints per-event forensics, including KV% immediately before.
 
+## Long-context prompts (Qwen vs Inkling)
+
+`workloads/long-context-prompts.json` holds five prefill tests (about 32K,
+64K, 128K, 200K and 250K tokens, 64 output tokens each) with a hidden code to
+recall. Run it straight against each engine, one at a time, with nothing else
+using the cards:
+
+```bash
+cd benchmarks/ai-realworld-load
+python3 tools/compare_models.py --base-url http://vllm-service.vllm.svc:8080/v1 --api-key none \
+  --models qwen3.8-27b --prompts workloads/long-context-prompts.json --repeats 2 --timeout 3600
+python3 tools/compare_models.py --base-url http://inkling-service.inkling.svc:8080/v1 --api-key none \
+  --models inkling-2-mini --prompts workloads/long-context-prompts.json --repeats 2 --timeout 3600
+```
+
+The text is the same for every model and is scaled so Qwen's tokenizer lands
+near each label; Inkling's tokenizer counts differently, so read
+`prompt_tokens` per row. A prompt larger than the server's context comes back
+as an error row, which is the context limit, not a crash. 250K is the top step
+Qwen's 262,144 window shares; going past it needs a larger Inkling `-c`. The
+Inkling server is described in [`my-apps/ai/inkling/README.md`](../../my-apps/ai/inkling/README.md).
+
 ## What gets measured, and how honestly
 
 | Number | Source | Tag |

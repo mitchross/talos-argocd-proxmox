@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: inkling
+
+# List EVERY file here: unlisted YAML is never deployed.
+resources:
+  - namespace.yaml
+  - pvc-model-cache.yaml
+  - download-model-job.yaml
+  - deployment.yaml
+  - service.yaml
+  - servicemonitor.yaml
+  - vpa.yaml
+
+# Parked: vLLM owns both cards. The swap commit sets this to 1 and vLLM to 0 (docs/domains/ai-gpu/gpu-scale-swap.md).
+replicas:
+  - name: inkling-server
+    count: 0
+
+configMapGenerator:
+  - name: inkling-scripts
+    files:
+      - scripts/model_cache.py
+      - model-manifest.json
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"

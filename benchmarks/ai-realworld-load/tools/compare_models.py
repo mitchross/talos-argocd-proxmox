@@ -30,16 +30,34 @@ from openai_probe import NEEDLE, stream_chat, synthetic_prompt  # noqa: E402
 HERE = Path(__file__).resolve().parent
 DEFAULT_PROMPTS = HERE.parent / "workloads" / "compare-prompts.json"
 DEFAULT_MODELS = "qwen3.8-27b,qwen3.8-flash-next"
-# Qwen's published samplers (my-apps/ai/vllm/README.md); the same values go to every model.
+# Qwen's published samplers (my-apps/ai/vllm/README.md); every model without its own profile gets these.
 SAMPLERS = {
     "off": {"temperature": 0.7, "top_p": 0.8, "top_k": 20, "min_p": 0.0,
             "presence_penalty": 1.5, "repetition_penalty": 1.0},
     "on": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "min_p": 0.0,
            "presence_penalty": 0.0, "repetition_penalty": 1.05},
 }
+# Thinking Machines / Unsloth recommendation for Inkling: temperature 1.0, no truncation, thinking on or off.
+INKLING_SAMPLER = {"temperature": 1.0, "top_p": 1.0, "top_k": 0, "min_p": 0.0}
+
+
+def profile(model):
+    return "inkling" if "inkling" in model.lower() else "qwen"
+
+
+def build_inkling_body(model, text, max_tokens, thinking, seed):
+    # The Inkling template reads only reasoning_effort ("none" -> "Thinking effort level: 0"; unset -> 0.9).
+    # Send it in chat_template_kwargs: llama-server drops a top-level reasoning_effort "none" from the template.
+    extra = {"chat_template_kwargs": {"reasoning_effort": "none" if thinking == "off" else thinking},
+             **{k: INKLING_SAMPLER[k] for k in ("top_k", "min_p")}}
+    return {"model": model, "messages": [{"role": "user", "content": text}], "max_tokens": max_tokens,
+            "stream": True, "stream_options": {"include_usage": True}, "seed": seed,
+            **INKLING_SAMPLER, **extra, "extra_body": extra}
 
 
 def build_body(model, text, max_tokens, thinking, seed):
+    if profile(model) == "inkling":
+        return build_inkling_body(model, text, max_tokens, thinking, seed)
     if thinking == "off":
         kwargs = {"enable_thinking": False, "preserve_thinking": False}
         sampler = SAMPLERS["off"]
@@ -202,7 +220,7 @@ def main():
     meta = {"run_id": run_id, "base_url": args.base_url, "models": models, "thinking": args.thinking,
             "repeats": args.repeats, "seed": args.seed, "started": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()),
             "prompts_file": Path(args.prompts).name, "prompt_ids": [p["id"] for p in prompts], "needle": NEEDLE,
-            "prompts_sha256": prompts_digest(prompts)}
+            "prompts_sha256": prompts_digest(prompts), "profiles": {m: profile(m) for m in models}}
     base_rows, base_labels, meta["baselines"] = load_baselines(args.baseline, prompts, meta)
     if not meta["baselines"]:
         del meta["baselines"]
