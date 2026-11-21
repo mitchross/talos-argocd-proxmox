@@ -11,6 +11,7 @@ resources:
 - httproute.yaml
 - httproute-ingest.yaml
 - websites-job.yaml
+- replay-retention-cronjob.yaml
 - vpa.yaml
 - postgres/deployment.yaml
 - postgres/service.yaml
@@ -26,3 +27,6 @@ configMapGenerator:
 - name: umami-websites-sql
   files:
   - scripts/websites.sql
+- name: umami-replay-retention-sql
+  files:
+  - scripts/replay-retention.sql
