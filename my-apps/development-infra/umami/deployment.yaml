@@ -1,6 +1,6 @@
 # Umami 3.5.0, PostgreSQL only (no Redis/ClickHouse/Kafka). Replays, heatmaps,
 # error tracking and MCP all work on the Postgres path; none are enabled here yet.
-# Dashboard is private (internal gateway only). Public ingest is a later PR.
+# Dashboard is private (internal gateway only); httproute-ingest.yaml publishes collection only.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -70,9 +70,7 @@ spec:
               value: "1"
             - name: DISABLE_UPDATES
               value: "1"
-            # CLIENT_IP_HEADER / TRUSTED_PROXIES are set in the public-ingest PR, after
-            # tracing the real Cloudflare -> gateway hop. Guessing them now would make
-            # visitor IPs wrong rather than unset.
+            # No CLIENT_IP_HEADER: Umami reads cf-connecting-ip before x-real-ip/x-forwarded-for by default.
           # Migrations run before the server starts, so start slow.
           startupProbe:
             httpGet:

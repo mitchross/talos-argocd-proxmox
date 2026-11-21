@@ -48,7 +48,7 @@ jobs:
       - run: python3 scripts/test-hermes-recall.py
 
   posthog-injector-proxy:
-    name: PostHog injector proxy regression tests
+    name: Umami injector proxy regression tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
