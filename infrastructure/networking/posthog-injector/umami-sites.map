@@ -1,0 +1,5 @@
+# Host -> Umami website UUID. A host absent here gets no Umami loader (the default).
+# One line per host, the exact lowercase hostname and the UUID shown in Umami's
+# Settings > Websites, e.g.:
+#   deals.vanillax.me <website-uuid-from-umami>;
+# tests/test_umami_sites.py rejects malformed UUIDs, duplicates and never-inject hosts.
