@@ -5,6 +5,7 @@ resources:
   - vpa.yaml
   - ns.yaml
   - loki-http-route.yaml
+  - write-lan-service.yaml
   - externalsecret.yaml
   - write-pvc.yaml
   - backend-pvc.yaml

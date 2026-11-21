@@ -70,30 +70,6 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: loki-gateway
-  namespace: loki-stack
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: loki-gateway
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: nginx
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
-      - containerName: exporter
-        mode: Off
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
   name: loki-chunks-cache
   namespace: loki-stack
 spec:
