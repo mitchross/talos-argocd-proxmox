@@ -168,6 +168,7 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(r.status, 200)
         self.assertEqual(body.count(MARKER), 1)
         self.assertIn(b'data-website-id="0d25cd9d-b47e-4ec1-b688-4199890f8d49"', body)
+        self.assertIn(b'/recorder.js" data-website-id="0d25cd9d-b47e-4ec1-b688-4199890f8d49"', body)
         self.assertIn(b"--></head>", body)
         self.assertEqual(r.getheader("Content-Security-Policy"), "default-src 'self'")
         self.assertEqual(r.getheader("X-Origin-Host"), "deals.vanillax.me")
