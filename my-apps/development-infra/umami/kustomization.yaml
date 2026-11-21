@@ -1,6 +1,5 @@
-# Umami analytics (PostHog replacement, phase 1: private instance only).
-# No public collection route yet: website UUIDs are created through the private
-# UI first, then a public ingest-only route is added in a follow-up PR.
+# Umami analytics (PostHog replacement): a private dashboard plus a public
+# ingest-only route for the tracker script and /api/send.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: umami
@@ -11,6 +10,7 @@ resources:
 - deployment.yaml
 - service.yaml
 - httproute.yaml
+- httproute-ingest.yaml
 - vpa.yaml
 - postgres/deployment.yaml
 - postgres/service.yaml

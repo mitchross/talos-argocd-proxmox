@@ -9,7 +9,11 @@ This phase deploys a private instance only:
 | Reaches | Where |
 |---|---|
 | Dashboard, login, settings, API | `https://umami.vanillax.me` — internal gateway (LAN) only |
-| Collection (`/script.js`, `/api/send`) | not routed publicly yet; added after websites exist |
+| Collection (`/script.js`, `/api/send`) | `https://ingest-umami.vanillax.me` — public, those two paths only |
+
+The public host bypasses the PostHog injector in the cloudflared config, so no snippet
+is ever added to a collector response, and the Gateway answers every path except
+`/script.js` and `/api/send` with 404. Recorder paths are not exposed.
 
 ## Before the pod can start
 
@@ -41,11 +45,12 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
 
 ## Next phases (separate PRs)
 
-- **Public ingest route** — `ingest-umami.vanillax.me` with exact paths only:
-  `/script.js` GET/HEAD, `/api/send` POST/OPTIONS. Recorder paths
-  (`/recorder.js`, `/api/record`, `/api/websites/<uuid>/recorder`) are added only
-  when replays are approved. Never expose `/api/*` more broadly.
-- **Radar** — dual PostHog + Umami event dispatch, one recorder at a time.
+- **Radar** — dual PostHog + Umami event dispatch (radar-ng PR #368), one recorder at a time.
+- **Visitor IPs** — `CLIENT_IP_HEADER`/`TRUSTED_PROXIES` are deliberately unset. Set them
+  from a real request captured through Cloudflare → cloudflared → Gateway first; a guess
+  writes wrong IPs silently.
+- **Recorder** — `/recorder.js`, `/api/record` and `/api/websites/<uuid>/recorder` are added
+  to the public route only after consent and revocation tests pass.
 - **Retirement** — two-week comparison, then PostHog history exported and
   verified before anything is scaled down or deleted.
 
