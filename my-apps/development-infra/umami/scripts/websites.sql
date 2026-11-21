@@ -3,9 +3,11 @@
 -- ON CONFLICT DO NOTHING: renames or deletes made in the UI are kept.
 \set ON_ERROR_STOP on
 -- Session replay for every site: all sessions, inputs masked, 30-minute cap per recording.
+-- Radar masks all text (place names), matching its no-location analytics promise.
 \set replay '{"replayEnabled": true, "sampleRate": 1, "maskLevel": "moderate", "maxDuration": 1800000}'
 INSERT INTO website (website_id, name, domain, user_id, created_by, created_at, recorder_enabled, replay_config)
-SELECT v.id::uuid, v.name, v.domain, u.user_id, u.user_id, now(), true, :'replay'::jsonb
+SELECT v.id::uuid, v.name, v.domain, u.user_id, u.user_id, now(), true,
+  CASE WHEN v.id = '0fc02131-8623-4e19-87ee-25adb67064ee' THEN jsonb_set(:'replay'::jsonb, '{maskLevel}', '"strict"') ELSE :'replay'::jsonb END
 FROM (VALUES
   ('c87c8c44-69f3-4647-bb5c-12c810aa7aef', 'Apps',            'apps.vanillax.me'),
   ('05113581-12df-4529-a771-240073ea3bd9', 'Product bench',   'bench.vanillax.me'),
@@ -29,5 +31,6 @@ CROSS JOIN (SELECT user_id FROM "user" WHERE username = 'admin' AND deleted_at I
 ON CONFLICT (website_id) DO NOTHING;
 
 -- Turn replay on for rows that never had recorder settings; a choice made in the UI is kept.
-UPDATE website SET recorder_enabled = true, replay_config = :'replay'::jsonb
+UPDATE website SET recorder_enabled = true, replay_config =
+  CASE WHEN website_id = '0fc02131-8623-4e19-87ee-25adb67064ee' THEN jsonb_set(:'replay'::jsonb, '{maskLevel}', '"strict"') ELSE :'replay'::jsonb END
 WHERE recorder_enabled = false AND replay_config IS NULL;
