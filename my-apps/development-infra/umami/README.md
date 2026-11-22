@@ -58,13 +58,8 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
 3. Set a real password immediately, then enable 2FA in Settings → Security.
 4. Leave heatmaps **off**. Replay settings come from `websites.yaml`.
 
-## Next phases (separate PRs)
-
-- **Radar** — native Umami events (radar-ng PR #368); drop its PostHog side, PostHog is removed.
-  Set `UMAMI_WEBSITE_ID` to the radar row in `scripts/websites.sql`.
-- **Visitor IPs** — `CLIENT_IP_HEADER`/`TRUSTED_PROXIES` are deliberately unset. Set them
-  from a real request captured through Cloudflare → cloudflared → Gateway first; a guess
-  writes wrong IPs silently.
+Visitor IPs: Umami reads `cf-connecting-ip` before `x-real-ip` and `x-forwarded-for`,
+so `CLIENT_IP_HEADER` stays unset.
 
 ## Known limits (source-verified against the 3.5.0 tag)
 
