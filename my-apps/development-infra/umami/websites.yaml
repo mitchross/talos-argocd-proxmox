@@ -1,0 +1,36 @@
+# Read by our Umami fork at startup (WEBSITES_CONFIG). Umami finds each website by the page
+# hostname, so most sites need no entry: the first visit to any *.vanillax.me host creates one.
+mode: create  # existing websites keep what the UI set; nothing is ever deleted
+
+defaults:
+  owner: admin
+  replay: {enabled: true, sampleRate: 1, maskLevel: moderate, maxDuration: 1800000}
+
+auto:
+  domains: [vanillax.me]
+  max: 100
+
+# Entries only for a nicer name or settings that differ from the defaults.
+websites:
+  - {domain: apps.vanillax.me, name: Apps}
+  - {domain: bench.vanillax.me, name: Product bench}
+  - {domain: deals.vanillax.me, name: Deal scout}
+  - {domain: excalidraw.vanillax.me, name: Excalidraw}
+  - {domain: geocode.vanillax.me, name: Geocoder}
+  - {domain: homelab.vanillax.me, name: Homelab rack}
+  - {domain: it-tools.vanillax.me, name: IT tools}
+  - {domain: karakeep.vanillax.me, name: Karakeep}
+  - {domain: kiwix.vanillax.me, name: Kiwix}
+  - {domain: maps.vanillax.me, name: Maps}
+  - {domain: news.vanillax.me, name: News}
+  - {domain: redlib.vanillax.me, name: Redlib}
+  - {domain: search.vanillax.me, name: Search}
+  - {domain: vert.vanillax.me, name: Vert}
+  - {domain: worldmonitor.vanillax.me, name: World monitor}
+  - {domain: vanillax.me, name: vanillax.me}
+  # Radar loads Umami from its own code with this fixed ID (radar-ng UMAMI_WEBSITE_ID).
+  # Strict masking hides all page text, so place names stay out of replays.
+  - id: 0fc02131-8623-4e19-87ee-25adb67064ee
+    domain: radar.vanillax.me
+    name: Radar
+    replay: {enabled: true, sampleRate: 1, maskLevel: strict, maxDuration: 1800000}

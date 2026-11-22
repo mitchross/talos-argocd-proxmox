@@ -166,7 +166,7 @@ Project procedures live in `.claude/commands/` (also listed as skills); Codex us
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
-| **Jobs with ArgoCD hooks** | `my-apps/development-infra/umami/websites-job.yaml` |
+| **Jobs with ArgoCD hooks** | `my-apps/ai/langfuse/bucket-init-job.yaml` |
 | **Helm Job Kustomize patch** | `my-apps/development-infra/temporal/kustomization.yaml` |
 
 ## Additional Documentation

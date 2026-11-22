@@ -1,33 +1,31 @@
 # Umami analytics
 
-Self-hosted web analytics. Umami 3.5.0 on plain
-PostgreSQL (no Redis, ClickHouse or Kafka). Session replay is **on** for every site;
-heatmaps, browser errors and MCP stay off.
+Self-hosted web analytics: our Umami fork (v3.5.0 plus replay previews, page URLs and
+hostname-based websites; [mitchross/umami](https://github.com/mitchross/umami), branch `homelab`)
+on plain PostgreSQL. Session replay is **on** for every site; heatmaps, browser errors and MCP stay off.
 
 | Reaches | Where |
 |---|---|
 | Dashboard, login, settings, API | `https://umami.vanillax.me` — internal gateway (LAN) only |
 | Collection and replay | `https://ingest-umami.vanillax.me` — public, exact paths only |
 
-The public host bypasses the injector in the cloudflared config, and the Gateway
-answers every path except these with 404: `/script.js`, `/api/send`, `/recorder.js`,
-`/api/record`, and `/api/websites/<id>/recorder` for each ID in `scripts/websites.sql`.
+The Gateway answers every path on the public host with 404, except `/script.js`, `/api/send`,
+`/recorder.js`, `/api/record`, `/api/websites/auto/recorder` and radar's recorder path.
 
-The in-cluster injector (`infrastructure/networking/posthog-injector`) adds the
-tracker tag to every public HTML page. Each host
-maps to a fixed website ID; unknown `*.vanillax.me` hosts go to "Other vanillax.me".
-Radar is skipped: it loads Umami itself (radar-ng PR #368) with website ID
-`0fc02131-8623-4e19-87ee-25adb67064ee`.
+## How a site gets tracked
 
-## Add or change a site
+The injector adds the same tag to every public page: `data-website-id="auto"`. Umami finds the
+website whose domain matches the page hostname. If none exists and the host is under
+`auto.domains` in `websites.yaml`, Umami creates it with the `defaults` on the first visit.
 
-1. Add a row with a new UUID to `scripts/websites.sql`.
-2. Add the same host and UUID to the `$umami_site` map in the injector's `default.conf`.
-3. Add `/api/websites/<uuid>/recorder` (GET and OPTIONS) to `httproute-ingest.yaml`, or replay stays off for that site.
-4. Run the injector tests: `python3 -m unittest discover -s infrastructure/networking/posthog-injector/tests -v`.
+- **New site:** nothing to do. Add a `websites.yaml` entry only for a nicer name or other settings.
+- **Fresh install:** the same file rebuilds every website; IDs come from the domain (UUIDv5).
+- **Never tracked:** hosts with `0` in the injector map (`$ph_host` in `default.conf`).
+- **Radar** loads Umami from its own code with a fixed ID, listed in `websites.yaml`.
 
-The PostSync Job `umami-websites` inserts missing rows on every sync. It never
-changes or deletes existing rows, so renames in the UI stay.
+Umami reads `websites.yaml` (`WEBSITES_CONFIG`) at startup. `mode: create` creates missing
+websites and leaves existing ones as the UI set them; nothing is ever deleted. A change to the
+file rolls the pod, because the ConfigMap name carries a content hash.
 
 ## Exclude your own visits
 
@@ -58,7 +56,7 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
    (the app pod runs `prisma migrate deploy` on start).
 2. Open `https://umami.vanillax.me`, log in as `admin` / `umami`.
 3. Set a real password immediately, then enable 2FA in Settings → Security.
-4. Leave heatmaps **off**. Replay settings come from `scripts/websites.sql`.
+4. Leave heatmaps **off**. Replay settings come from `websites.yaml`.
 
 ## Next phases (separate PRs)
 
