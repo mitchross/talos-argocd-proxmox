@@ -14,13 +14,13 @@ The Gateway answers every path on the public host with 404, except `/script.js`,
 
 ## How a site gets tracked
 
-The injector adds the same tag to every public page: `data-website-id="auto"`. Umami finds the
+The analytics injector adds the same tag to every public page: `data-website-id="auto"`. Umami finds the
 website whose domain matches the page hostname. If none exists and the host is under
 `auto.domains` in `websites.yaml`, Umami creates it with the `defaults` on the first visit.
 
 - **New site:** nothing to do. Add a `websites.yaml` entry only for a nicer name or other settings.
 - **Fresh install:** the same file rebuilds every website; IDs come from the domain (UUIDv5).
-- **Never tracked:** hosts with `0` in the injector map (`$ph_host` in `default.conf`).
+- **Never tracked:** hosts with `0` in the `$umami_host` map in `infrastructure/networking/analytics-injector/default.conf`.
 - **Radar** loads Umami from its own code with a fixed ID, listed in `websites.yaml`.
 
 Umami reads `websites.yaml` (`WEBSITES_CONFIG`) at startup. `mode: create` creates missing
