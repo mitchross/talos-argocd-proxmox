@@ -34,7 +34,7 @@ spec:
       containers:
         - name: umami
           # Our fork (github.com/mitchross/umami, branch homelab): replay previews, page URLs, websites by hostname.
-          image: ghcr.io/mitchross/umami:3.5.0-homelab.6e26c89@sha256:6483bf7aaa3fad6383c31cab4f9a61febae99ed37008e4abaefb429eeb5f32df
+          image: ghcr.io/mitchross/umami:3.5.0-homelab.1@sha256:1f902c8bad3b26c775d853de7cc0ff3e2c34bd45f52c06f78b8d1dad4633a777
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 1001 # `nextjs` in the official image

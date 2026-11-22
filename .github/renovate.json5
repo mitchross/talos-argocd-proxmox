@@ -245,6 +245,12 @@
       automerge: false,
     },
     {
+      description: 'Umami fork (mitchross/umami): tags are <upstream x.y.z>-homelab.<n>; review each bump, startup runs migrations.',
+      matchPackageNames: ['ghcr.io/mitchross/umami'],
+      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>homelab)\\.(?<build>\\d+)$',
+      automerge: false,
+    },
+    {
       description: 'Strata is built in homelab-images; tags are <strata x.y.z.n>[.<image revision>]-<sha7>-sm86. Review each bump: a new Strata may rerun model setup on start.',
       matchPackageNames: ['ghcr.io/mitchross/strata'],
       versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)(?:\\.(?<revision>\\d+))?-[0-9a-f]{7}-(?<compatibility>sm\\d+)$',
