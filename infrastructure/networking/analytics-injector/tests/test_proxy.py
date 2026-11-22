@@ -1,4 +1,4 @@
-"""Run with python3 -m unittest discover -s infrastructure/networking/posthog-injector/tests -v.
+"""Run with python3 -m unittest discover -s infrastructure/networking/analytics-injector/tests -v.
 
 Requires Docker, openssl, and the python:3.13-alpine fixture image.
 Exercises the deployed nginx config against a TLS origin with the pod's restrictions.
@@ -101,7 +101,7 @@ def docker(*args):
 class ProxyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.prefix = "posthog-test-" + uuid.uuid4().hex[:10]
+        cls.prefix = "analytics-injector-test-" + uuid.uuid4().hex[:10]
         cls.tmp = tempfile.TemporaryDirectory(prefix=cls.prefix)
         cls.addClassCleanup(cls.tmp.cleanup)
         fixture = Path(cls.tmp.name)
@@ -167,8 +167,8 @@ class ProxyTest(unittest.TestCase):
         body = r.read()
         self.assertEqual(r.status, 200)
         self.assertEqual(body.count(MARKER), 1)
-        self.assertIn(b'data-website-id="0d25cd9d-b47e-4ec1-b688-4199890f8d49"', body)
-        self.assertIn(b'/recorder.js" data-website-id="0d25cd9d-b47e-4ec1-b688-4199890f8d49"', body)
+        self.assertIn(b'/script.js" data-website-id="auto"', body)
+        self.assertIn(b'/recorder.js" data-website-id="auto"', body)
         self.assertIn(b"--></head>", body)
         self.assertEqual(r.getheader("Content-Security-Policy"), "default-src 'self'")
         self.assertEqual(r.getheader("X-Origin-Host"), "deals.vanillax.me")
@@ -209,13 +209,11 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(r.read(), b"")
         self.assertEqual(r.getheader("Content-Length"), str(len(HTML)))
 
-    def test_site_ids_and_redlib_csp(self):
-        for host, site in [("redlib.vanillax.me", b"d33a4be6-a593-4fe0-8795-b9214ce263c5"),
-                           ("search.vanillax.me", b"f0c551a0-826d-41e6-90fa-d769bbb153e9"),
-                           ("unknown.vanillax.me", b"5c437932-a77e-4246-b52f-2899204818c1")]:
+    def test_every_site_gets_the_same_tag_and_redlib_csp(self):
+        for host in ("redlib.vanillax.me", "search.vanillax.me", "brand-new.vanillax.me"):
             with self.subTest(host=host):
                 r = self.request(host=host)
-                self.assertIn(b'data-website-id="' + site + b'"', r.read())
+                self.assertIn(b'data-website-id="auto"', r.read())
                 csp = r.getheader("Content-Security-Policy")
                 if host.startswith("redlib"):
                     self.assertIn("script-src 'self' blob: https://ingest-umami.vanillax.me", csp)

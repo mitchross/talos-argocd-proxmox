@@ -9,7 +9,7 @@ ingress:
   - hostname: hello.vanillax.me
     service: hello_world
   # Ingest/API/proxy hosts go straight to the Gateway; everything else passes through the
-  # in-cluster Umami injector (infrastructure/networking/posthog-injector) on its way there.
+  # in-cluster Umami injector (infrastructure/networking/analytics-injector) on its way there.
   # Umami's public collector: script + /api/send only, straight to the Gateway.
   - hostname: ingest-umami.vanillax.me
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
@@ -50,7 +50,7 @@ ingress:
   # Wildcard is intentional: only ExternalDNS-published hostnames reach the tunnel, internal
   # services have no Cloudflare DNS, and HTTPRoutes enforce hostnames.
   - hostname: "*.vanillax.me"
-    service: http://posthog-injector.posthog-injector.svc.cluster.local:8080
+    service: http://analytics-injector.analytics-injector.svc.cluster.local:8080
   - hostname: vanillax.me
-    service: http://posthog-injector.posthog-injector.svc.cluster.local:8080
+    service: http://analytics-injector.analytics-injector.svc.cluster.local:8080
   - service: http_status:404

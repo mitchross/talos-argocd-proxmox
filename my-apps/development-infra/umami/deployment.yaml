@@ -33,8 +33,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: umami
-          # Tag has no `v` prefix upstream. Renovate tracks the tag; a digest bump is a normal PR.
-          image: ghcr.io/umami-software/umami:3.5.0@sha256:b64f40400d77bcadd39cf5c62a1e368c99524ca442024f96e1133355a19a5dbc
+          # Our fork (github.com/mitchross/umami, branch homelab): replay previews, page URLs, websites by hostname.
+          image: ghcr.io/mitchross/umami:3.5.0-homelab.1@sha256:1f902c8bad3b26c775d853de7cc0ff3e2c34bd45f52c06f78b8d1dad4633a777
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 1001 # `nextjs` in the official image
@@ -71,6 +71,9 @@ spec:
             - name: DISABLE_UPDATES
               value: "1"
             # No CLIENT_IP_HEADER: Umami reads cf-connecting-ip before x-real-ip/x-forwarded-for by default.
+            # Fork feature: create the websites in this file at startup (scripts/provision-websites.js).
+            - name: WEBSITES_CONFIG
+              value: /config/websites.yaml
           # Migrations run before the server starts, so start slow.
           startupProbe:
             httpGet:
@@ -99,3 +102,11 @@ spec:
               memory: 256Mi
             limits:
               memory: 1Gi
+          volumeMounts:
+            - name: websites
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: websites
+          configMap:
+            name: umami-websites

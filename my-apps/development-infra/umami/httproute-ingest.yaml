@@ -1,0 +1,102 @@
+# PUBLIC ingest only: tracker, event endpoint and session-replay recorder paths, nothing else.
+# The Gateway answers every other path with 404, so the dashboard and API stay internal.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: umami-ingest-external
+  namespace: umami
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "vanillax.me"
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "ingest-umami.vanillax.me"
+  rules:
+    # The tracker itself. Browsers GET it from the page's own origin allowlist.
+    - matches:
+        - path:
+            type: Exact
+            value: /script.js
+          method: GET
+        - path:
+            type: Exact
+            value: /script.js
+          method: HEAD
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: umami
+          port: 3000
+          weight: 1
+    # Event collection, cross-origin from every instrumented site. OPTIONS is the CORS preflight.
+    - matches:
+        - path:
+            type: Exact
+            value: /api/send
+          method: POST
+        - path:
+            type: Exact
+            value: /api/send
+          method: OPTIONS
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: umami
+          port: 3000
+          weight: 1
+    # Session replay: recorder script and chunk upload.
+    - matches:
+        - path:
+            type: Exact
+            value: /recorder.js
+          method: GET
+        - path:
+            type: Exact
+            value: /recorder.js
+          method: HEAD
+        - path:
+            type: Exact
+            value: /api/record
+          method: POST
+        - path:
+            type: Exact
+            value: /api/record
+          method: OPTIONS
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: umami
+          port: 3000
+          weight: 1
+    # Recorder settings: `auto` (Umami finds the website by hostname) and radar, whose own code
+    # uses its fixed website ID. Exact paths only; never a prefix over /api/websites.
+    - matches:
+        - path:
+            type: Exact
+            value: /api/websites/auto/recorder
+          method: GET
+        - path:
+            type: Exact
+            value: /api/websites/auto/recorder
+          method: OPTIONS
+        - path:
+            type: Exact
+            value: /api/websites/0fc02131-8623-4e19-87ee-25adb67064ee/recorder
+          method: GET
+        - path:
+            type: Exact
+            value: /api/websites/0fc02131-8623-4e19-87ee-25adb67064ee/recorder
+          method: OPTIONS
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: umami
+          port: 3000
+          weight: 1

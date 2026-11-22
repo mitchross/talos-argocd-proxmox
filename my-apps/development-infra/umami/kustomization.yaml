@@ -1,4 +1,4 @@
-# Umami analytics: private dashboard, public ingest-only route, sites registered by a PostSync Job.
+# Umami analytics: private dashboard, public ingest-only route, websites created from websites.yaml at startup.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: umami
@@ -10,7 +10,6 @@ resources:
 - service.yaml
 - httproute.yaml
 - httproute-ingest.yaml
-- websites-job.yaml
 - replay-retention-cronjob.yaml
 - vpa.yaml
 - postgres/deployment.yaml
@@ -24,9 +23,9 @@ components:
 - ../../common/kopiur-backup
 
 configMapGenerator:
-- name: umami-websites-sql
+- name: umami-websites
   files:
-  - scripts/websites.sql
+  - websites.yaml
 - name: umami-replay-retention-sql
   files:
   - scripts/replay-retention.sql

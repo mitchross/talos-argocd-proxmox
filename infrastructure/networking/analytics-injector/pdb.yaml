@@ -1,11 +1,11 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: posthog-injector
-  namespace: posthog-injector
+  name: analytics-injector
+  namespace: analytics-injector
 spec:
   maxUnavailable: 1
   unhealthyPodEvictionPolicy: AlwaysAllow
   selector:
     matchLabels:
-      app.kubernetes.io/name: posthog-injector
+      app.kubernetes.io/name: analytics-injector

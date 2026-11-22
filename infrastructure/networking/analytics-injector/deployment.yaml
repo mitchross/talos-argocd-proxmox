@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: posthog-injector
-  namespace: posthog-injector
+  name: analytics-injector
+  namespace: analytics-injector
   labels:
-    app.kubernetes.io/name: posthog-injector
+    app.kubernetes.io/name: analytics-injector
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: posthog-injector
+      app.kubernetes.io/name: analytics-injector
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: posthog-injector
+        app.kubernetes.io/name: analytics-injector
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -28,7 +28,7 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              app.kubernetes.io/name: posthog-injector
+              app.kubernetes.io/name: analytics-injector
       containers:
         - name: nginx
           image: nginx/nginx-unprivileged:1.31-alpine@sha256:60214a103e6f38e953ff957f34b1f2e97a9db801ab2df3821da955d0fe6cadd6
@@ -68,6 +68,6 @@ spec:
       volumes:
         - name: conf
           configMap:
-            name: posthog-injector-nginx
+            name: analytics-injector-nginx
         - name: tmp
           emptyDir: {}
