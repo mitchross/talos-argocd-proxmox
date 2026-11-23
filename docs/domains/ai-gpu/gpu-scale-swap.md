@@ -29,7 +29,6 @@ Two mechanisms enforce the rule:
 |---|---:|---:|---|
 | vLLM (Qwen3.8-27B INT4/W4A8) | 2 | `1` | `my-apps/ai/vllm/kustomization.yaml` |
 | Strata (Qwen3.8-Flash-Next, parked) | 2 | `0` | `my-apps/ai/strata/kustomization.yaml` |
-| Inkling 2 Mini on llama.cpp (parked, benchmark) | 2 | `0` | `my-apps/ai/inkling/kustomization.yaml` |
 | NInfer-3090 (archived, not deployed) | 1 | n/a | `my-apps/ai/_archive/ninfer/deployment.yaml` |
 | ComfyUI | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
 | SwarmUI | 1 | `0` | `my-apps/ai/swarmui/deployment.yaml` |
@@ -40,8 +39,8 @@ cards for each active workload and add the results. The total must not exceed
 two.
 
 A `replicas` entry in an app's `kustomization.yaml` overrides the value in its
-`deployment.yaml`. vLLM, Strata and Inkling have that entry, so edit the
-kustomization for those.
+`deployment.yaml`. vLLM and Strata have that entry, so edit the kustomization
+for those two.
 
 ## Before you start
 
