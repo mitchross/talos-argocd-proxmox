@@ -36,7 +36,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: publisher
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.53@sha256:5a1a9936bfe94af1cc78ea908f5af2a34e322c828820f2d821dcf025936205f9
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.59@sha256:086f9fefcae77a28a378393e1e50a46076cfea05ce654a43b517fe4305f3d825
           imagePullPolicy: IfNotPresent
           args: [level2-publish]
           securityContext:
