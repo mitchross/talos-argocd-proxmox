@@ -52,7 +52,7 @@ class Handler(BaseHTTPRequestHandler):
             body = HTML.replace(b"</head>", b"</HEAD>")
         if status in (204, 304):
             body = b""
-        compressed = "gzip" in self.headers.get("Accept-Encoding", "")
+        compressed = "gzip" in self.headers.get("Accept-Encoding", "") and self.path != "/stream"
         if self.path == "/anubis":
             self.send_header_later = ["session=abc; Path=/",
                                       "techaro.lol-anubis-cookie-verification=chall-1; Path=/"]
@@ -60,11 +60,14 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header_later = ["techaro.lol-anubis-cookie-verification=; Path=/; Max-Age=0"]
         else:
             self.send_header_later = []
+        compressed = compressed and bool(body)
         if compressed:
             body = gzip.compress(body)
         self.send_response(status)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
+        if compressed:
+            self.send_header("Content-Encoding", "gzip")
         self.send_header("ETag", '"origin"')
         self.send_header("Content-Security-Policy", "default-src 'self'")
         self.send_header("Last-Modified", "Tue, 29 Sep 2026 12:00:00 GMT")
@@ -83,7 +86,7 @@ class Handler(BaseHTTPRequestHandler):
                 time.sleep(1.5)
                 self.wfile.write(body[13:])
             elif self.path == "/split":
-                split = body.index(b"</head>") + 3
+                split = len(body) // 2 if compressed else body.index(b"</head>") + 3
                 self.wfile.write(body[:split])
                 self.wfile.flush()
                 time.sleep(0.1)
@@ -166,7 +169,8 @@ class ProxyTest(unittest.TestCase):
     def request(self, path="/", host="deals.vanillax.me", method="GET", headers=None, port=None):
         conn = http.client.HTTPConnection("127.0.0.1", port or self.port, timeout=5)
         self.addCleanup(conn.close)
-        conn.request(method, path, headers={"Host": host, **(headers or {})})
+        base = {"Host": host, "User-Agent": "Mozilla/5.0", "Accept": "text/html,*/*;q=0.8"}
+        conn.request(method, path, headers={**base, **(headers or {})})
         return conn.getresponse()
 
     def test_html_injection_and_tls_forwarding(self):
@@ -183,7 +187,8 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(r.getheader("X-Origin-Host"), "deals.vanillax.me")
         self.assertEqual(r.getheader("X-Origin-SNI"), "deals.vanillax.me")
         self.assertEqual(r.getheader("X-Origin-URI"), "/page?foo=bar")
-        self.assertEqual(r.getheader("X-Origin-Accept-Encoding"), "")
+        self.assertEqual(r.getheader("X-Origin-Accept-Encoding"), "gzip")
+        self.assertIsNone(r.getheader("Content-Encoding"))
         for name in ("Authorization", "CF-Connecting-IP", "X-Forwarded-For"):
             self.assertEqual(r.getheader("X-Origin-" + name), headers[name])
         self.assertIsNone(r.getheader("Content-Length"))
@@ -209,7 +214,8 @@ class ProxyTest(unittest.TestCase):
                 r = self.request(path, method=method)
                 self.assertEqual(r.status, status)
                 self.assertEqual(r.read(), HTML)
-                self.assertEqual(r.getheader("ETag"), '"origin"')
+                # Pages are fetched gzipped and unzipped here, which weakens the validator.
+                self.assertIn(r.getheader("ETag"), ('"origin"', 'W/"origin"'))
         for path, status in [("/empty", 204), ("/not-modified", 304)]:
             r = self.request(path)
             self.assertEqual(r.status, status)
@@ -229,6 +235,37 @@ class ProxyTest(unittest.TestCase):
                     self.assertIn("connect-src 'self' https://ingest-umami.vanillax.me", csp)
                 else:
                     self.assertEqual(csp, "default-src 'self'")
+
+    def test_pages_are_fetched_gzipped_for_any_client(self):
+        # Anubis challenges requests without gzip; the proxy unzips before tagging.
+        for accept in ("", "br", "gzip, deflate, br, zstd"):
+            with self.subTest(accept=accept):
+                r = self.request(headers={"Accept-Encoding": accept, "User-Agent": "Mozilla/5.0"})
+                body = r.read()
+                self.assertEqual(r.getheader("X-Origin-Accept-Encoding"), "gzip")
+                self.assertIsNone(r.getheader("Content-Encoding"))
+                self.assertEqual(body.count(MARKER), 1)
+
+    def test_request_without_user_agent_passes_through_intact(self):
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        self.addCleanup(conn.close)
+        conn.putrequest("GET", "/", skip_host=True, skip_accept_encoding=True)
+        conn.putheader("Host", "deals.vanillax.me")
+        conn.putheader("Accept-Encoding", "gzip")
+        conn.putheader("Accept", "text/html")
+        conn.endheaders()
+        r = conn.getresponse()
+        # gzip_disable matches user agents, so a UA-less client keeps the zipped, untagged page.
+        self.assertEqual(gzip.decompress(r.read()), HTML)
+
+    def test_non_page_requests_pass_through_untouched(self):
+        for accept in ("*/*", "application/json", "text/event-stream"):
+            with self.subTest(accept=accept):
+                r = self.request(headers={"Accept": accept, "Accept-Encoding": "gzip"})
+                body = r.read()
+                self.assertEqual(gzip.decompress(body), HTML)
+                self.assertEqual(r.getheader("ETag"), '"origin"')
+                self.assertEqual(r.getheader("X-Origin-Accept-Encoding"), "gzip")
 
     def test_anubis_challenge_page_is_not_tagged(self):
         r = self.request("/anubis", host="redlib.vanillax.me")
