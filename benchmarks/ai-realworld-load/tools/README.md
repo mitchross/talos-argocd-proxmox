@@ -15,12 +15,7 @@ The prompts are in `../workloads/compare-prompts.json`:
 | `reverse-engineering` | explain a short x86-64 routine and write its inverse |
 
 Every request gets a unique first line, so neither engine can answer from
-its prefix cache. Every model gets the same `--thinking` setting and, by
-default, Qwen's sampler. A model name containing `inkling` gets its own
-profile instead: temperature 1.0, top-p 1.0, top-k 0, min-p 0, and thinking
-sent as `chat_template_kwargs.reasoning_effort` (`none` for `--thinking off`),
-the one control the Inkling chat template reads. Qwen requests are unchanged.
-`results.json` records each model's profile under `meta.profiles`.
+its prefix cache. Both models get the same sampler and thinking setting.
 
 ## Run it
 
