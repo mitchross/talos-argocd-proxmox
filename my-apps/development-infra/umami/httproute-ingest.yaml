@@ -29,6 +29,13 @@ spec:
             type: Exact
             value: /script.js
           method: HEAD
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              # Sites that send COEP require-corp (it-tools) block cross-origin scripts without it.
+              - name: Cross-Origin-Resource-Policy
+                value: cross-origin
       backendRefs:
         - group: ""
           kind: Service
@@ -69,6 +76,13 @@ spec:
             type: Exact
             value: /api/record
           method: OPTIONS
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              # Sites that send COEP require-corp (it-tools) block cross-origin scripts without it.
+              - name: Cross-Origin-Resource-Policy
+                value: cross-origin
       backendRefs:
         - group: ""
           kind: Service
