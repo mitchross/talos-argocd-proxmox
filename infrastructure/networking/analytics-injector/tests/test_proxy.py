@@ -53,6 +53,13 @@ class Handler(BaseHTTPRequestHandler):
         if status in (204, 304):
             body = b""
         compressed = "gzip" in self.headers.get("Accept-Encoding", "")
+        if self.path == "/anubis":
+            self.send_header_later = ["session=abc; Path=/",
+                                      "techaro.lol-anubis-cookie-verification=chall-1; Path=/"]
+        elif self.path == "/anubis-cleared":
+            self.send_header_later = ["techaro.lol-anubis-cookie-verification=; Path=/; Max-Age=0"]
+        else:
+            self.send_header_later = []
         if compressed:
             body = gzip.compress(body)
         self.send_response(status)
@@ -64,6 +71,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Origin-Host", self.headers.get("Host", ""))
         self.send_header("X-Origin-SNI", getattr(self.connection, "sni", ""))
         self.send_header("X-Origin-URI", self.path)
+        for cookie in self.send_header_later:
+            self.send_header("Set-Cookie", cookie)
         for name in ("Authorization", "CF-Connecting-IP", "X-Forwarded-For", "Accept-Encoding"):
             self.send_header("X-Origin-" + name, self.headers.get(name, ""))
         self.end_headers()
@@ -220,6 +229,12 @@ class ProxyTest(unittest.TestCase):
                     self.assertIn("connect-src 'self' https://ingest-umami.vanillax.me", csp)
                 else:
                     self.assertEqual(csp, "default-src 'self'")
+
+    def test_anubis_challenge_page_is_not_tagged(self):
+        r = self.request("/anubis", host="redlib.vanillax.me")
+        self.assertNotIn(MARKER, r.read())
+        r = self.request("/anubis-cleared", host="redlib.vanillax.me")
+        self.assertIn(MARKER, r.read())
 
     def test_apex_and_split_head(self):
         for path, host in [("/", "vanillax.me"), ("/upper", "deals.vanillax.me"),
