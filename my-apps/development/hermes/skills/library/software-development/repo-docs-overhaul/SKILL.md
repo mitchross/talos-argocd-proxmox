@@ -140,7 +140,7 @@ which is how the owner really runs things).
   Figures already in the old docs count as unmeasured too: carrying one forward is how a download
   size ends up an order of magnitude wrong. Mark them for the test-bed run to replace.
 - **No absolute privacy/feature claims** ("no tracking") when the owner's deployment turns the
-  feature on; state the gate ("off unless `VITE_POSTHOG_KEY` is set").
+  feature on; state the gate ("off unless `VITE_UMAMI_HOST` is set").
 - Before documenting how to host a component, read its real serving config (e.g. `nginx.conf`) and
   the owner's production routing (the GitOps repo, read-only); routing requirements like same-host
   path splits are easy to miss and break forks.

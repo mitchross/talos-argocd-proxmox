@@ -20,7 +20,7 @@ The scheduler packs pods by **requests**, not by real use. A node can show 50% m
 4. Compare against free requested memory on the other nodes. Small mini PCs often have only 5–10 GiB of free requests, so they become the next limit. A RAM upgrade for the minis is the spend-to-save candidate here.
 5. Plan in order, cheapest first:
    1. Right-size over-requests.
-   2. Move unpinned heavy apps (analytics stacks such as PostHog are typical).
+   2. Move unpinned heavy apps (large analytics or database stacks are typical).
    3. Resize the VM. That's the user's Proxmox/Omni step.
    All cluster changes go through Git PRs.
 
