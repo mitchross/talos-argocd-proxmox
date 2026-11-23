@@ -26,6 +26,7 @@ spec:
       # metadata commits collapse fsync, which is the one thing etcd needs.
       storage_selector: name == "hp-sff-cp-vmstore"
       network_bridge: vmbr0
+      network_firewall: false
       disk_ssd: true
       disk_discard: true
       disk_iothread: true

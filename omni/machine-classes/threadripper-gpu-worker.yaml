@@ -23,6 +23,7 @@ spec:
       disk_size: 16
       storage_selector: name == "nvme0-vmstore"
       network_bridge: vmbr0
+      network_firewall: false
       disk_ssd: true
       disk_discard: true
       disk_iothread: true
