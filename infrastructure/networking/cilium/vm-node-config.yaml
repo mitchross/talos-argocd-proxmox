@@ -1,0 +1,13 @@
+# Cilium XDP on virtio_net turns off guest TSO/checksum offload, capping VM throughput.
+# Applies at agent start: a new VM keeps XDP until its cilium pod restarts after NFD labels it.
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: vm-no-xdp
+  namespace: kube-system
+spec:
+  nodeSelector:
+    matchLabels:
+      feature.node.kubernetes.io/cpu-model.hypervisor: kvm
+  defaults:
+    bpf-lb-acceleration: disabled

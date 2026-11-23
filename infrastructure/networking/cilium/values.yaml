@@ -86,8 +86,8 @@ l2announcements:
   leaseRenewDeadline: "5s"
   leaseRetryPeriod: "2s"
 
-# XDP is REQUIRED for Talos L2 announcements (cilium/cilium#36829) but unsupported under VXLAN —
-# best-effort silently falls back to tc. Verify LB IPs still answer ARP after any routing change.
+# Kept for L2 ARP replies on Talos (cilium/cilium discussion #36829); vm-node-config.yaml turns it off
+# on VMs. Verify LB IPs still answer ARP after any change here.
 loadBalancer:
   acceleration: best-effort
 
