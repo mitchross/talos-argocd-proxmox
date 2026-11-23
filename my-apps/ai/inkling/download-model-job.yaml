@@ -1,0 +1,52 @@
+# CPU-only; runs on the GPU node because the cache is node-local. Skips when the verified marker matches.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: inkling-download-model
+  namespace: inkling
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 4
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      nodeSelector:
+        gpu-worker: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: download
+          image: python:3.15-alpine@sha256:0f9552bb28711333da16915ec146f5e6bb44a7fdac9ced15dc17c2e0206346dd
+          command:
+            - python3
+            - /opt/repo-scripts/model_cache.py
+            - download
+          resources:
+            requests:
+              cpu: 250m
+              memory: 64Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - name: repo-scripts
+              mountPath: /opt/repo-scripts
+              readOnly: true
+            - name: models
+              mountPath: /models
+              subPath: inkling
+      volumes:
+        - name: repo-scripts
+          configMap:
+            name: inkling-scripts
+            defaultMode: 0555
+        - name: models
+          persistentVolumeClaim:
+            claimName: ai-model-cache-inkling
