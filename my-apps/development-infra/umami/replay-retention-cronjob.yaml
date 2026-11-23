@@ -29,7 +29,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: psql
-              image: postgres:18.7@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
+              image: postgres:19.0@sha256:766ddae4967301b9802b341bb596905f11dd5c558149690a7a4d80c2f61bbcf9
               command: ["psql", "-h", "umami-postgres", "-U", "umami", "-d", "umami", "-f", "/scripts/replay-retention.sql"]
               env:
                 - name: PGPASSWORD
