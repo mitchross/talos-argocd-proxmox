@@ -1,0 +1,87 @@
+# Plain Postgres, no operator: kopiur daily snapshots + restore-before-bind.
+# Exit-on-error migrations need a quiet, single-writer database, so this stays one replica.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami-postgres-19
+  namespace: umami
+  labels:
+    app: umami-postgres-19
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: umami-postgres-19
+  template:
+    metadata:
+      labels:
+        app: umami-postgres-19
+    spec:
+      automountServiceAccountToken: false
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before SIGKILL.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:19.0@sha256:bb6e70add742cd868fb62cb3b2f67d1dd2bdd2b65a521e778420748753687c60
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # Only honoured on first boot of an EMPTY volume; restored data wins otherwise.
+            - name: POSTGRES_DB
+              value: umami
+            - name: POSTGRES_USER
+              value: umami
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: umami-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          # Covers WAL replay after a restore so liveness can't restart Postgres mid-recovery.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "umami", "-d", "umami"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "umami", "-d", "umami"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "umami", "-d", "umami"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: umami-postgres-19-data
