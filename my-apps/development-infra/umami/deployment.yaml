@@ -53,7 +53,7 @@ spec:
                   name: umami-secrets
                   key: POSTGRES_PASSWORD
             - name: DATABASE_URL
-              value: "postgresql://umami:$(POSTGRES_PASSWORD)@umami-postgres:5432/umami"
+              value: "postgresql://umami:$(POSTGRES_PASSWORD)@umami-postgres-19:5432/umami"
             - name: APP_SECRET
               valueFrom:
                 secretKeyRef:
