@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: postgres
-        image: postgres:19.0@sha256:bb6e70add742cd868fb62cb3b2f67d1dd2bdd2b65a521e778420748753687c60
+        image: postgres:19.0@sha256:908d19593a1444b2d4e85783f718b16e0d40f1baf7518420475df9e5f5ac67a2
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 999
