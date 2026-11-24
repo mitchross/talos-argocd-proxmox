@@ -68,7 +68,7 @@ spec:
             periodSeconds: 10
             failureThreshold: 5
         - name: csi-provisioner
-          image: registry.k8s.io/sig-storage/csi-provisioner:v6.4.0
+          image: registry.k8s.io/sig-storage/csi-provisioner:v6.4.1
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -84,7 +84,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: csi-attacher
-          image: registry.k8s.io/sig-storage/csi-attacher:v4.13.0
+          image: registry.k8s.io/sig-storage/csi-attacher:v4.13.1
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -97,7 +97,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: csi-snapshotter
-          image: registry.k8s.io/sig-storage/csi-snapshotter:v8.7.0
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v8.7.1
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -110,7 +110,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: csi-resizer
-          image: registry.k8s.io/sig-storage/csi-resizer:v2.3.0
+          image: registry.k8s.io/sig-storage/csi-resizer:v2.3.1
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -123,7 +123,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: liveness-probe
-          image: registry.k8s.io/sig-storage/livenessprobe:v2.20.0
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.20.1
           args:
             - "--csi-address=/csi/csi.sock"
             - "--health-port=9808"
@@ -207,7 +207,7 @@ spec:
             periodSeconds: 10
             failureThreshold: 5
         - name: csi-node-driver-registrar
-          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.18.0
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.18.1
           args:
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
@@ -223,7 +223,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: liveness-probe
-          image: registry.k8s.io/sig-storage/livenessprobe:v2.20.0
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.20.1
           args:
             - "--csi-address=/csi/csi.sock"
             - "--health-port=9808"
