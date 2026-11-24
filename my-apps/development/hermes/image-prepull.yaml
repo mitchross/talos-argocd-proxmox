@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: pull
-          image: ghcr.io/mitchross/hermes-dev:main@sha256:691ab182eb063429a4d5eaac32a563e8478df1ec5f480c4218e045c8f12b3eb2
+          image: ghcr.io/mitchross/hermes-dev:main@sha256:007d248f8fb40ca0b7a55615d3bfa3e544e592a055de069bba49caeea9386a05
           command: ["/bin/true"]
           securityContext:
             allowPrivilegeEscalation: false
