@@ -15,8 +15,12 @@ resources:
 - postgres/deployment.yaml
 - postgres/service.yaml
 - postgres/pvc.yaml
+- postgres-19/deployment.yaml
+- postgres-19/service.yaml
+- postgres-19/pvc.yaml
 - vpa-postgres.yaml
 - kopiur/umami-postgres-data.yaml
+- kopiur/umami-postgres-19-data.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.
 components:
