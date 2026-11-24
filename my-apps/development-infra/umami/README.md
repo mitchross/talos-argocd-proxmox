@@ -52,7 +52,7 @@ immediately after `kubectl -n external-secrets rollout restart deploy/external-s
 
 ## First-time setup
 
-1. Wait for `umami-postgres` to be Ready and `umami` to pass `/api/heartbeat`
+1. Wait for `umami-postgres-19` to be Ready and `umami` to pass `/api/heartbeat`
    (the app pod runs `prisma migrate deploy` on start).
 2. Open `https://umami.vanillax.me`, log in as `admin` / `umami`.
 3. Set a real password immediately, then enable 2FA in Settings → Security.
@@ -73,6 +73,6 @@ so `CLIENT_IP_HEADER` stays unset.
 
 ## Storage and backup
 
-Postgres data is 10Gi on `longhorn` (two copies), backed up daily by kopiur with
+Postgres data is 4Gi on `longhorn` (two copies), backed up daily by kopiur with
 restore-before-bind. Replays are the largest table (`session_replay`). Check the volume
-with `kubectl -n umami exec deploy/umami-postgres -- df -h /var/lib/postgresql/data`.
+with `kubectl -n umami exec deploy/umami-postgres-19 -- df -h /var/lib/postgresql`.
