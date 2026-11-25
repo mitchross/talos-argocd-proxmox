@@ -1,0 +1,26 @@
+# Only the two components that run 2 copies; the AIS relay and Redis stay at 1 with no PDB.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worldmonitor
+  namespace: worldmonitor
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worldmonitor
+      app.kubernetes.io/component: app
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worldmonitor-redis-rest
+  namespace: worldmonitor
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worldmonitor
+      app.kubernetes.io/component: redis-rest
