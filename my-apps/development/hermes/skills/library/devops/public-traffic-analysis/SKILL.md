@@ -21,7 +21,7 @@ Splits traffic to a public `*.vanillax.me` app (redlib, searxng, geocoder) into 
 
 ## Prerequisites
 - In-cluster Prometheus `http://kube-prometheus-stack-prometheus.prometheus-stack.svc:9090` and Loki `http://loki-read.loki-stack.svc:3100` (header `X-Scope-OrgID: 1`).
-- `kubectl exec` into `umami/deploy/umami-postgres` with a read-only transaction (allowed for diagnosis).
+- `kubectl exec` into `umami/deploy/umami-postgres-19` with a read-only transaction (allowed for diagnosis).
 - Cloudflare MCP tools `mcp__cloudflare__search` / `mcp__cloudflare__execute`. These come from `config.yaml` `mcp_servers.cloudflare`, with header `Authorization: "Bearer ${env:CLOUDFLARE_API_TOKEN}"`. The token is 1Password `cloudflared-proxmox/api-token`, delivered by `hermes-secrets`. The token needs:
   - **Account Settings Read** (with the account included), or the MCP server answers 401 "Account token must resolve to exactly one Cloudflare account";
   - Zone Read, Analytics Read and DNS Read;
@@ -37,7 +37,7 @@ Run the Prometheus, Loki and Umami queries through the `terminal` tool. Do the c
 - Anubis: `sum by (rule,action)(increase(anubis_policy_results{namespace="<ns>"}[7d]))`, `anubis_challenges_issued`, `anubis_challenges_validated`, `anubis_proxied_requests_total`
 - Loki stream: `{k8s_namespace_name="<ns>",k8s_container_name="anubis"}`; msgs `explicit deny`, `new challenge issued`, `challenge accepted`
 - LogQL json for hyphen keys: `| json msg="msg", ua="user_agent", ip="[\"x-real-ip\"]", rule="check_result.name"`
-- Umami (read-only): `kubectl -n umami exec -i deploy/umami-postgres -- env PGOPTIONS='-c default_transaction_read_only=on' psql -U umami -d umami -At -F $'\t'`. Tables: `website` (one row per site, matched by `domain`), `website_event` (`event_type` 1 = pageview, 2 = custom event; `hostname`, `url_path`, `referrer_domain`, `visit_id`, `created_at`), `session` (`browser`, `os`, `device`, `screen`, `language`, `country`, `city`).
+- Umami (read-only): `kubectl -n umami exec -i deploy/umami-postgres-19 -- env PGOPTIONS='-c default_transaction_read_only=on' psql -U umami -d umami -At -F $'\t'`. Tables: `website` (one row per site, matched by `domain`), `website_event` (`event_type` 1 = pageview, 2 = custom event; `hostname`, `url_path`, `referrer_domain`, `visit_id`, `created_at`), `session` (`browser`, `os`, `device`, `screen`, `language`, `country`, `city`).
 - Cloudflare GraphQL: `httpRequests1dGroups` (daily requests/threats/uniques), `httpRequestsAdaptiveGroups` by `clientRequestHTTPHost` (per-host, 24 h)
 - Cloudflare WAF rules: `GET /zones/<zone>/rulesets/phases/http_request_firewall_custom/entrypoint`
 - Tunnels: `GET /accounts/${accountId}/cfd_tunnel?is_deleted=false`
