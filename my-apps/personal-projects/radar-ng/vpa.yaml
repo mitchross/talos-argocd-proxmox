@@ -14,12 +14,13 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      # maxAllowed matches the container limits in deployment-tile-server.yaml.
+      - containerName: tile-server
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "3"
-          memory: 4Gi
+          memory: 2Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -36,6 +37,7 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
+      # maxAllowed matches the basemap container limits; VPA does not resize the fetch-basemap init container.
       - containerName: basemap
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
