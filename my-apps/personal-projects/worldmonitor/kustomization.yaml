@@ -17,4 +17,5 @@ resources:
   - deployment-relay.yaml
   - deployment-redis.yaml
   - deployment-redis-rest.yaml
+  - pdb.yaml
   - services.yaml
