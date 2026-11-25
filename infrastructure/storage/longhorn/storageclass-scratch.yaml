@@ -6,8 +6,8 @@ metadata:
   name: longhorn-scratch
   annotations:
     storageclass.kubernetes.io/is-default-class: "false"
-    # Parameters are immutable: to change them, delete the live StorageClass once; ArgoCD re-creates it.
-    argocd.argoproj.io/sync-options: Replace=true
+    # Parameters are immutable, so Argo deletes and re-creates the class; PVs never reference it after binding.
+    argocd.argoproj.io/sync-options: Replace=true,Force=true
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -20,7 +20,8 @@ parameters:
   staleReplicaTimeout: "30"
   fsType: "ext4"
   dataEngine: "v1"
-  # No diskSelector: Longhorn tags only include disks, so a worn disk is kept out by disabling its scheduling.
+  # clone-ok = ssd-flash + hp-sff-ssd2: two disks on two nodes, and it keeps the worn 660p out.
+  diskSelector: "clone-ok"
   dataLocality: "disabled"
   disableRevisionCounter: "true"
   unmapMarkSnapChainRemoved: "ignored"

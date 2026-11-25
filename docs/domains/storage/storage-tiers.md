@@ -16,7 +16,7 @@ drive holds the data. The [disk map](disk-map.md) does.
 | `longhorn-flash` | Two replicas selected by disk tag `flash`, no data locality. Three disks carry the tag: the Threadripper's 440 GiB `ssd-flash` (two mirrored HPE SATA SSDs with PLP, thick LVM), the 229 GiB `truenas-ssd` and the NUC's `asus-nuc-ssd` (both one Intel S3700 with PLP) | Selected write-heavy state and noisy local I/O. Same settings as `longhorn-flash-ha` since #3664: a reboot of one node needs no copy. |
 | `longhorn-flash-ha` | Two replicas selected by disk tag `flash`, one on each `flash` disk, no data locality | New databases that need enterprise flash. A reboot of either node needs no copy. `truenas-ssd` sits on one drive and is small: check its free space before you add a volume. |
 | `longhorn-wired-ha` | Two replicas with hard node/zone/disk separation on Longhorn nodes tagged `wired-storage` | Selected state that needs a surviving live copy. Requires healthy replicas, a working control plane, eligible compute and the rest of the application's dependencies. |
-| `longhorn-scratch` | One V1 replica on any schedulable disk of a `wired-storage` node, no data locality, `WaitForFirstConsumer` | Caches that rebuild themselves, mounted only as a generic ephemeral volume. The volume is created with the pod and deleted with it. See [Scratch caches](#scratch-caches). |
+| `longhorn-scratch` | One V1 replica on a `clone-ok` disk of a `wired-storage` node, no data locality, `WaitForFirstConsumer` | Caches that rebuild themselves, mounted only as a generic ephemeral volume. The volume is created with the pod and deleted with it. See [Scratch caches](#scratch-caches). |
 | `truenas-nfs` | TrueNAS BigTank, HDD mirrors behind a large RAM cache, RWX; each PVC is its own dataset with `sync=standard` | Bulk, read-mostly data where NAS downtime is accepted: the immich library, project-nomad downloads. Measured from a pod: fast repeated reads, but only about 50 file creates and 110 `fsync` writes per second, so never databases, Docker/overlay storage or search indexes. |
 | Static NFS / SMB classes | The specific NAS share named in each PV | Media, model files and shared data. Inspect the backing dataset: BigTank and the unmirrored AI SSD pool have different failure behavior. |
 
@@ -76,8 +76,10 @@ node that is up. The cost is an empty cache after every pod restart, so the firs
 pull after a restart is slow. A pod whose cache node fails while the pod keeps running
 gets I/O errors on that volume until the pod restarts.
 
-The class has no disk selector. Longhorn disk tags can only include disks, not exclude
-one. To keep scratch volumes off a worn disk, disable scheduling on that disk.
+The class selects disks tagged `clone-ok`: the Threadripper flash disk and `hp-sff-ssd2`.
+Longhorn tags can only include disks, not exclude one, and this tag already sits on two
+disks on two nodes while leaving out the worn Intel 660p (`hp-elite-nvme`). The kopiur
+staging clones share these disks, so count both when you plan capacity.
 
 ## Which nodes hold Longhorn data
 
