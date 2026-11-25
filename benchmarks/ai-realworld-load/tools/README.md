@@ -46,6 +46,9 @@ wrong model. Compare Strata with the FP8 TP=2 vLLM runs saved before the test
 | `2026-11-03-qwen3.8-27b-fp8-tp2/` | 1 |
 | `2026-11-03-qwen3.8-27b-fp8-tp2-r3/` | 3 (medians) |
 
+The model vLLM serves today (int4 AutoRound on vLLM 0.34.0) has its own run,
+`2026-11-25-qwen3.8-27b-int4-tp2-r3/`. Its `README.md` lists the settings.
+
 ```bash
 cd benchmarks/ai-realworld-load
 python3 tools/compare_models.py --models qwen3.8-flash-next --repeats 3 \
