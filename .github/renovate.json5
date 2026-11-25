@@ -323,6 +323,17 @@
       datasourceTemplate: 'docker',
     },
     {
+      description: 'ARC scale-set values (my-apps/development/arc-runners/*-values.yaml) are not helm-values files by name; track their image: lines.',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^my-apps/development/arc-runners/[^/]+-values\\.yaml$/',
+      ],
+      matchStrings: [
+        'image:\\s*(?<depName>[^\\s:@]+):(?<currentValue>[^\\s@]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?',
+      ],
+      datasourceTemplate: 'docker',
+    },
+    {
       description: 'Kubernetes image volumes (volumes[].image.reference); the kubernetes manager only reads image: lines, so these would drift from the matching container image.',
       customType: 'regex',
       managerFilePatterns: [

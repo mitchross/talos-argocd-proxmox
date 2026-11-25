@@ -31,7 +31,9 @@ jobs:
     runs-on: arc-deal-scout
 ```
 
-The runner image is the bare upstream one: add `sudo apt-get install -y build-essential` (or a setup action) if a job needs a C toolchain.
+`arc-deal-scout` runs `ghcr.io/mitchross/arc-runner-rust` (from mitchross/homelab-images): Rust, clippy, rustfmt, protoc, cmake and sccache are already installed.
+Its pods stay off `truenas-worker-01` and the control plane, and request ephemeral storage so the scheduler picks a node with disk room.
+The other scale sets use the bare upstream image: add `sudo apt-get install -y build-essential` (or a setup action) if a job needs a C toolchain.
 
 ## Add another private repo
 
