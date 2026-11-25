@@ -1,4 +1,4 @@
-# Web UI + JSON API (FastAPI). Anubis fronts it; see anubis-policy.yaml.
+# Web UI + JSON API (Rust binary since v0.2.0). Anubis fronts it; see anubis-policy.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,7 +53,7 @@ spec:
               drop: ["ALL"]
       containers:
         - name: api
-          image: registry.vanillax.me/geocoder/geocoder:v0.1.8@sha256:a0815f511e97899edaa65207d41c517e5b7591a1e428a86b8a2d8175c6d9e663
+          image: registry.vanillax.me/geocoder/geocoder:v0.2.0@sha256:2c35a695a96b76a1ba2d23106928a38f5752192e4e3f8007085397afaf4f98e2
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -75,7 +75,7 @@ spec:
                 secretKeyRef:
                   name: geocoder
                   key: api_keys
-            # Buckets are per uvicorn process (2 pods x 2 workers); 30 keeps one client's total near 120 requests/min.
+            # Buckets are per pod; v0.2.0 gives each pod 2x this (the old 2 uvicorn workers), so 2 pods x 60 = ~120/min per client.
             - name: RATE_LIMIT_PER_MIN
               value: "30"
             # Batch addresses per UTC day shared by everyone using the UI's rotating demo key; 0 turns it off.
