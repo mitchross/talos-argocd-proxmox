@@ -14,8 +14,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      # Analytics rows are small; replays stay off until they are measured.
-      storage: 4Gi
+      # Session replays live here, not in object storage; 30-day retention sets the size.
+      storage: 50Gi
   storageClassName: longhorn
   # kopiur restore-before-bind: binds Pending until the Restore populator hydrates it; no-op while Bound.
   dataSourceRef:
