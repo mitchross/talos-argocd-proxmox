@@ -1,9 +1,13 @@
 # Gitea Actions runner recovery
 
-Two runners (`gitea-runner-0`, `gitea-runner-1`) run as a StatefulSet. Each has its
-own Docker-in-Docker sidecar and a 100 Gi `docker-storage` layer cache, so two
+Two runners (`gitea-ci-runner-0`, `gitea-ci-runner-1`) run as a StatefulSet. Each has its
+own Docker-in-Docker sidecar and a 50 Gi `docker-storage` layer cache, so two
 jobs build in parallel. Each runner keeps `capacity: 1`: two jobs on one dind
 serialize on its content-store lock and multiply peak RAM.
+
+The layer cache is a generic ephemeral volume on the one-copy `longhorn-scratch` class.
+Kubernetes makes it with each runner pod and deletes it with the pod, so the first job
+after a pod restart pulls its images again.
 
 `act-runner` needs a Gitea runner registration token in the Kubernetes Secret
 `gitea-actions/act-runner-token`. The token is secret material, so Git only
@@ -44,10 +48,10 @@ the manual Secret patch below during rebuilds.
 ```bash
 kubectl get externalsecret -n gitea-actions act-runner-token
 kubectl get secret -n gitea-actions act-runner-token
-kubectl rollout status -n gitea-actions statefulset/gitea-runner
+kubectl rollout status -n gitea-actions statefulset/gitea-ci-runner
 ```
 
-If `act-runner-token` is missing and `gitea-runner` is stuck in
+If `act-runner-token` is missing and `gitea-ci-runner` is stuck in
 `CreateContainerConfigError`, the 1Password item/field is missing or stale.
 
 ## Registry refill after a nuke
