@@ -113,13 +113,15 @@ different `wired-storage` nodes. Replica anti-affinity is hard, so Longhorn neve
 replicas on one node. A volume created or restored from either class gets two copies, and
 the loss of one node does not stop it.
 
-Two kinds of volume keep one copy:
+Three kinds of volume keep one copy:
 
 - **`longhorn-flash` volumes.** The class uses one disk on one host. Its users (radar-ng,
   product-bench) stop when the Threadripper stops.
 - **Volumes created before the classes made two copies.** The replica count is stored on
   the live Longhorn Volume, not read again from the class. Caches and data that an app can
   re-create stay at one copy on purpose.
+- **`longhorn-scratch` volumes.** Caches mounted as generic ephemeral volumes. Each pod
+  gets a new, empty volume, so a lost copy costs only a cache.
 
 Two copies survive one failed node. They do not survive a house power cut, because every
 wired node loses power at once. Recover damaged data from the kopiur backup.

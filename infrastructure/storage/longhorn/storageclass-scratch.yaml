@@ -1,0 +1,26 @@
+# One-copy class for caches that rebuild themselves. Use it only as a generic ephemeral volume, so a
+# dead replica node costs a cache, never a stuck pod; see docs/domains/storage/storage-tiers.md.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-scratch
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    # Parameters are immutable: to change them, delete the live StorageClass once; ArgoCD re-creates it.
+    argocd.argoproj.io/sync-options: Replace=true
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
+parameters:
+  numberOfReplicas: "1"
+  nodeSelector: "wired-storage"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  dataEngine: "v1"
+  # No diskSelector: Longhorn tags only include disks, so a worn disk is kept out by disabling its scheduling.
+  dataLocality: "disabled"
+  disableRevisionCounter: "true"
+  unmapMarkSnapChainRemoved: "ignored"
