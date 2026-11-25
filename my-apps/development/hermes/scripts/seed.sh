@@ -93,7 +93,7 @@ printf '%s\n' 'export PATH=/opt/agents/bin:/opt/rust/cargo/bin:/usr/local/go/bin
   'export RUSTUP_HOME=/opt/data/tools/rustup RUSTUP_AUTO_INSTALL=1 CARGO_HOME=/opt/data/.cargo' \
   'export CARGO_BUILD_BUILD_DIR=/opt/scratch/cargo-build/{workspace-path-hash} XDG_CACHE_HOME=/opt/scratch/cache' \
   'export BUN_INSTALL_CACHE_DIR=/opt/scratch/bun npm_config_cache=/opt/scratch/npm YARN_CACHE_FOLDER=/opt/scratch/yarn' > "$TERM_HOME/.profile"
-# Rebuildable caches and Rust intermediates live on hermes-scratch, which has no snapshots or backups.
+# Rebuildable caches and Rust intermediates live on the scratch ephemeral volume: no snapshots or backups, empty on each start.
 install -d -o 10000 -g 10000 /opt/scratch /opt/scratch/cargo-build /opt/scratch/cache /opt/scratch/bun /opt/scratch/npm /opt/scratch/yarn
 # The image's Rust is read-only; a volume RUSTUP_HOME defaults to it via a link and installs repo-pinned toolchains once.
 mkdir -p "$HERMES_HOME/tools/rustup"; chown 10000:10000 "$HERMES_HOME/tools" "$HERMES_HOME/tools/rustup"
