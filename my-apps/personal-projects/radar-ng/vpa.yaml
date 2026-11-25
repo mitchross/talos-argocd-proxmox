@@ -36,12 +36,12 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: basemap
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "2"
-          memory: 4Gi
+          cpu: 500m
+          memory: 512Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler

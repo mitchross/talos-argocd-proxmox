@@ -7,11 +7,11 @@ metadata:
   labels:
     app: basemap
 spec:
-  replicas: 1
+  replicas: 2
   # An empty PVC means a ~35-min CONUS extract before the pod starts; don't flag that as a failed rollout.
   progressDeadlineSeconds: 3600
   strategy:
-    # Surge first: the old pod serves while the new init container re-extracts (atomic tmp+mv).
+    # Surge first: the old pods serve while a new init container re-extracts (atomic tmp+mv under a flock).
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
@@ -24,6 +24,16 @@ spec:
       labels:
         app: basemap
     spec:
+      # Same spread as my-apps/demo/nginx: one copy per host zone, tainted nodes left out of the count.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys: [pod-template-hash]
+          labelSelector:
+            matchLabels:
+              app: basemap
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
