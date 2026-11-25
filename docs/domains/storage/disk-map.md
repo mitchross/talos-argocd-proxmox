@@ -45,7 +45,7 @@ different nodes. With only one disk, Longhorn has nowhere to move a copy, so a d
 that node waits until someone adds the tag by hand.
 
 Today `flash` sits on `ssd-flash` (GPU worker), `truenas-ssd` (`truenas-worker-01`) and `asus-nuc-ssd` (`asus-nuc-gen13`), and
-`clone-ok` sits on `ssd-flash` and `hp-sff-ssd2`. Per-disk tags such as `gpu-bulk` or
+`clone-ok` sits on `ssd-flash` and `hp-sff-ssd2`; `longhorn-kopiur-staging-local` and `longhorn-scratch` select it. Per-disk tags such as `gpu-bulk` or
 `truenas-ssd` name one disk on purpose. Only the scratch `storage-bench` classes select them.
 
 When you add a tag to a live disk, also add it to that node's `default-disks-config` in the
