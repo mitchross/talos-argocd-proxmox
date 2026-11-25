@@ -13,8 +13,20 @@ TMP="${OUT}.tmp"
 MARKER="${OUT}.marker"
 
 KEY="bbox=${BBOX} refresh=${REFRESH}"
-if [ -s "$OUT" ] && [ -f "$MARKER" ] && [ "$(head -n1 "$MARKER")" = "$KEY" ]; then
+done_already() {
+  [ -s "$OUT" ] && [ -f "$MARKER" ] && [ "$(head -n1 "$MARKER")" = "$KEY" ]
+}
+if done_already; then
   echo "marker matches (${KEY}); extract already done"
+  exit 0
+fi
+
+# Two basemap pods share this RWX volume: one extracts, the other waits and then finds the marker.
+exec 9>"${OUT}.lock"
+echo "waiting for extract lock"
+flock 9
+if done_already; then
+  echo "marker matches (${KEY}) after waiting; another pod did the extract"
   exit 0
 fi
 
