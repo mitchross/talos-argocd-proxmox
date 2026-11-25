@@ -96,7 +96,7 @@ with `install.diskSelector` on `disk.serial`. `hp-elite-gen13` and
 | `asus-nuc-gen13` (ASUS NUC 13 Pro) | Kingston OM8TAP4512K1-A00, 512 GB M.2 2280 NVMe (477 GiB), serial `50026B73848B87DD` | — | system + `/var` | — | Talos only |
 | same | Intel DC S3700 400 GB SATA (**enterprise, PLP**), serial `BTTV32010018400HGN`, 2.5" bottom-cover bay | — | `/var/mnt/longhorn-asus-nuc-ssd` | `asus-nuc-ssd` (tags `flash`, `asus-nuc-ssd`; `wired-storage`) | a `flash` disk: copies of `longhorn-flash-ha` and two-copy `flash` volumes |
 | `hp-elite-gen13` (HP Elite Mini 600 G9) | WD SN530 256 GB NVMe (serial `22245M458316`) | consumer NVMe | system + `/var` | — | Talos system, images, logs, `emptyDir` |
-| `hp-elite-gen13` | Intel 660p 512 GB NVMe (serial `BTNH9154019K512A`) | consumer **QLC**, past its rated writes | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (`wired-storage`) | ordinary volumes. **Replace this drive first.** |
+| `hp-elite-gen13` | Intel 660p 512 GB NVMe (serial `BTNH9154019K512A`) | consumer **QLC**, past its rated writes | `/var/mnt/longhorn-hp-elite-nvme` | `hp-elite-nvme` (scheduling **off**, no tags; node tag `wired-storage`) | nothing new: the worn drive is retired from scheduling. The disk entry stays so Longhorn keeps the path. **Replace this drive first.** |
 
 ## TrueNAS VM worker (`truenas-worker-01`)
 
