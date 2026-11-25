@@ -19,6 +19,23 @@ spec:
   hostnames:
     - "radar-ng-api.vanillax.me"
   rules:
+    # Prometheus scrapes /api/metrics via the Service, never the Gateway; the public gets the API's own 404.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/metrics
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /api/blocked
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: tile-server
+          port: 8080
+          weight: 1
     - matches:
         - path:
             type: PathPrefix
@@ -50,6 +67,23 @@ spec:
   hostnames:
     - "radar.vanillax.me"
   rules:
+    # Same /api/metrics block as radar-ng-api above.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/metrics
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /api/blocked
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: tile-server
+          port: 8080
+          weight: 1
     - matches:
         - path:
             type: PathPrefix
