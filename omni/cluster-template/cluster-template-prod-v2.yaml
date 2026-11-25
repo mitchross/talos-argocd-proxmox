@@ -387,7 +387,7 @@ patches:
     annotations:
       node.longhorn.io/default-node-tags: '["wired-storage"]'
       node.longhorn.io/default-disks-config: >-
-        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-elite-nvme","path":"/var/mnt/longhorn-hp-elite-nvme","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["hp-elite-nvme"]}]
+        [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"hp-elite-nvme","path":"/var/mnt/longhorn-hp-elite-nvme","allowScheduling":false,"diskType":"filesystem","storageReserved":0,"tags":[]}]
 - name: hp-elite-kubelet
   inline:
     apiVersion: v1alpha1

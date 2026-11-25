@@ -96,7 +96,8 @@ space. The full layout for each host is in the [disk map](domains/storage/disk-m
 | `hp-sff-ssd2` (hp-sff, tags `hp-sff-ssd2`, `clone-ok`) | 920 GiB guest disk on a consumer PNY 1 TB | ordinary replicas and backup clones; Longhorn picks either `clone-ok` disk for each clone |
 | `gpu-bulk` (GPU node, tag `gpu-bulk`) | 800 GiB guest disk on the Threadripper's consumer PNY boot SSD | ordinary GPU-node volumes, so they don't take `clone-ok` space from backup clones |
 | `talos-ephemeral` on the GPU node | budget NVMe that also carries `/var` | nothing new (`allowScheduling: false`) |
-| `hp-elite-nvme`, `hp-sff-ssd`, `dell-ultra-ssd` (`wired-storage` nodes; the GPU node carries the tag too) | consumer SATA/QLC | ordinary replicas |
+| `hp-sff-ssd`, `dell-ultra-ssd` (`wired-storage` nodes; the GPU node carries the tag too) | consumer SATA | ordinary replicas |
+| `hp-elite-nvme` (hp-elite-gen13, worn Intel 660p QLC) | consumer QLC | nothing new (`allowScheduling: false`, no tags) |
 | hp-sff control-plane disk | Intel DC S3610, enterprise SATA with power-loss protection | **etcd only**. Keeps Longhorn traffic off the single control plane's disk |
 | `hp-micro-ssd` (shed) | budget SATA behind Wi-Fi | nothing (`allowScheduling: false`). Never holds replicas or second copies |
 

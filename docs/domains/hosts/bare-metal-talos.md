@@ -15,7 +15,7 @@ Three bare-metal nodes use this procedure. One TrueNAS VM uses the same PXE path
 |---|---|---|
 | `mini-pc-dell-ultra-worker` | `dell-ultra-ssd` | Has an iGPU and an NPU. Runs Frigate (NPU detection, iGPU decode) |
 | `hp-elite-gen12` | None (compute-only) | Holds the Zigbee stick. Home Assistant runs here |
-| `hp-elite-gen13` | `hp-elite-nvme` | Keeps the class label `hp-elite-worker` |
+| `hp-elite-gen13` | `hp-elite-nvme` (scheduling off: worn 660p) | Keeps the class label `hp-elite-worker` |
 | `truenas-worker-01` | `truenas-ssd` | VM `talosnas1` on the TrueNAS DL360 |
 | `asus-nuc-gen13` | `asus-nuc-ssd` (Intel S3700, `flash`) | ASUS NUC 13 Pro. See [the 11 November note](../../inventory/2026-11-11-asus-nuc13.md) |
 
