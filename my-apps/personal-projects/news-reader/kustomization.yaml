@@ -8,6 +8,7 @@ resources:
   - vpa.yaml
   - namespace.yaml
   - deployment.yaml
+  - pdb.yaml
   - service.yaml
   - httproute.yaml
   - temporal-workers/temporal-connection.yaml

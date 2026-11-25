@@ -14,9 +14,9 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: news-reader
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "1"
-          memory: 2Gi
+          memory: 384Mi
