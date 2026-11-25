@@ -16,9 +16,14 @@ Answer from the app's docs or source, not from its name:
   for constant small-file churn.
 - **Existing files already on the NAS?** → a static NFS/SMB PV
   (`infrastructure/storage/csi-driver-nfs/storage-class.yaml`).
-- **A cache that rebuilds itself?** → `longhorn`, small, `backup-exempt` with the
-  fully-qualified `storage.vanillax.dev/backup-exempt-reason` annotation.
-- **Docker/overlay storage or an embedded search engine?** → `longhorn`. They
+- **A cache that rebuilds itself?** → `longhorn-scratch` as a generic ephemeral
+  volume (`spec.volumes[].ephemeral.volumeClaimTemplate`), not a standalone PVC. It
+  keeps one copy and is made fresh with each pod, so the cache starts empty after
+  every pod restart. Label the template `backup-exempt` with the fully-qualified
+  `storage.vanillax.dev/backup-exempt-reason` annotation. A cache that must survive
+  restarts goes on `longhorn`, small, with the same backup-exempt labels.
+- **Docker/overlay storage or an embedded search engine?** → a Longhorn class
+  (`longhorn-scratch` when it is only a cache, like a DinD layer cache). They
   don't work reliably on NFS.
 
 ## 2. Size it
