@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: gitea-runner
+  name: gitea-ci-runner
   namespace: gitea-actions
   labels:
     app: act-runner
@@ -44,7 +44,7 @@ spec:
                 secretKeyRef:
                   name: act-runner-token
                   key: token
-            # gitea-runner-0 / gitea-runner-1: one Gitea runner identity per pod.
+            # gitea-ci-runner-0 / gitea-ci-runner-1: one Gitea runner identity per pod.
             - name: GITEA_RUNNER_NAME
               valueFrom:
                 fieldRef:
@@ -127,17 +127,18 @@ spec:
         - name: config
           configMap:
             name: act-runner-config
-  # Per-runner layer cache, not emptyDir. Immutable: to resize, rename the StatefulSet so new PVCs are made.
-  volumeClaimTemplates:
-    - metadata:
-        name: docker-storage
-        labels:
-          backup-exempt: "true"
-        annotations:
-          storage.vanillax.dev/backup-exempt-reason: "Docker layer cache for the act-runner DinD sidecar; rebuilds from registries on next CI run"
-      spec:
-        accessModes: [ReadWriteOnce]
-        storageClassName: longhorn
-        resources:
-          requests:
-            storage: 100Gi
+        # One-copy layer cache made with each pod, so a dead replica node never strands a runner; starts empty on restart.
+        - name: docker-storage
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  backup-exempt: "true"
+                annotations:
+                  storage.vanillax.dev/backup-exempt-reason: "Docker layer cache for the act-runner DinD sidecar; recreated empty with each pod, rebuilds from registries"
+              spec:
+                accessModes: [ReadWriteOnce]
+                storageClassName: longhorn-scratch
+                resources:
+                  requests:
+                    storage: 50Gi
