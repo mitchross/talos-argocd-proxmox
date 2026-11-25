@@ -14,9 +14,9 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: web
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: 200m
-          memory: 128Mi
+          memory: 64Mi

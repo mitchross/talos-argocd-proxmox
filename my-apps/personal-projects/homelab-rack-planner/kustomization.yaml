@@ -4,6 +4,7 @@ namespace: homelab-rack-planner
 resources:
   - namespace.yaml
   - deployment.yaml
+  - pdb.yaml
   - service.yaml
   - httproute.yaml
   - vpa.yaml
