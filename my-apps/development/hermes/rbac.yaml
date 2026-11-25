@@ -29,16 +29,15 @@ roleRef:
   name: hermes-viewer
   apiGroup: rbac.authorization.k8s.io
 ---
-# Day-to-day fixes: exec, restart or delete pods, roll out, run a Job, cordon a node, delete a PVC.
-# Deliberate: cluster-wide Job create, workload patch and exec make this account cluster-admin in effect.
+# Day-to-day fixes: restart or delete pods, roll out, cordon a node, delete a PVC, Longhorn replicas, Argo sync.
+# Cluster-wide pods/exec, pods/attach, pods/portforward and batch/jobs are intentionally excluded so
+# Hermes (and its MCP servers/skills) cannot exec into or spawn Jobs in secret-bearing system
+# namespaces such as external-secrets, kube-system, or argocd.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: hermes-operator
 rules:
-  - apiGroups: [""]
-    resources: [pods/exec, pods/portforward, pods/attach]
-    verbs: [create, get]
   - apiGroups: [""]
     resources: [pods]
     verbs: [delete]
@@ -54,9 +53,6 @@ rules:
   - apiGroups: [apps]
     resources: [deployments/scale, statefulsets/scale]
     verbs: [patch, update]
-  - apiGroups: [batch]
-    resources: [jobs]
-    verbs: [create, delete]
   # Delete PVCs that Git no longer holds (retired or scratch). Argo recreates an empty one if Git still has it.
   - apiGroups: [""]
     resources: [persistentvolumeclaims]
@@ -83,4 +79,31 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: hermes-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+# Opt-in debug role for exec/port-forward/Jobs. Never bind cluster-wide; add a RoleBinding only in
+# specific non-privileged app namespaces where interactive debugging or one-off Jobs are needed.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hermes-debug
+rules:
+  - apiGroups: [""]
+    resources: [pods/exec, pods/portforward, pods/attach]
+    verbs: [create, get]
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [create, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-debug
+subjects:
+  - kind: ServiceAccount
+    name: hermes
+    namespace: hermes
+roleRef:
+  kind: ClusterRole
+  name: hermes-debug
   apiGroup: rbac.authorization.k8s.io
