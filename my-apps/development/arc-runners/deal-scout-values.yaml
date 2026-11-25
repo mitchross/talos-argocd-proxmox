@@ -21,7 +21,7 @@ template:
                 - { key: node-role.kubernetes.io/control-plane, operator: DoesNotExist }
     initContainers:
       - name: init-dind-externals
-        image: ghcr.io/mitchross/arc-runner-rust:main@sha256:d95e0d7ff56daa613ddbf725fb951878632ee60bbdd6015aa578d1e7fd03cb25
+        image: ghcr.io/mitchross/arc-runner-rust:main@sha256:7d67fa4ecf165e3bddcad71b3c64ac4f610993fe97dc535909886870edaeb0da
         command: [cp, -r, /home/runner/externals/., /home/runner/tmpDir/]
         volumeMounts:
           - { name: dind-externals, mountPath: /home/runner/tmpDir }
@@ -55,7 +55,7 @@ template:
           - { name: docker-data, mountPath: /var/lib/docker }
     containers:
       - name: runner
-        image: ghcr.io/mitchross/arc-runner-rust:main@sha256:d95e0d7ff56daa613ddbf725fb951878632ee60bbdd6015aa578d1e7fd03cb25
+        image: ghcr.io/mitchross/arc-runner-rust:main@sha256:7d67fa4ecf165e3bddcad71b3c64ac4f610993fe97dc535909886870edaeb0da
         command: [/home/runner/run.sh]
         env:
           - name: DOCKER_HOST
