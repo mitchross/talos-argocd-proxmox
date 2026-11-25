@@ -59,7 +59,7 @@ Layout: `gateway-external` (192.168.10.49) serves public names via cloudflared; 
 
 ## C. Public site traffic: bots vs real visitors
 
-Four layers: Cloudflare edge → gateway-external (Envoy) → Anubis → app, with Umami analytics. Use Prometheus, Loki, Umami Postgres (`kubectl exec` into `umami/deploy/umami-postgres`, read-only transaction) and the Cloudflare MCP tools.
+Four layers: Cloudflare edge → gateway-external (Envoy) → Anubis → app, with Umami analytics. Use Prometheus, Loki, Umami Postgres (`kubectl exec` into `umami/deploy/umami-postgres-19`, read-only transaction) and the Cloudflare MCP tools.
 
 - Umami counts only visitors that run JavaScript and send no Do Not Track; it stores no IP addresses.
 - A passed challenge (Cloudflare managed or Anubis PoW) doesn't prove a human; headless fleets pass both. Don't trust ASN names either: residential-proxy ranges sit under consumer ISPs.
