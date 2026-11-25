@@ -8,11 +8,20 @@ controllerServiceAccount:
   name: arc-gha-rs-controller
 
 # Runner + dind sidecar, written out (containerMode: dind would leave dind unpinned and without resources).
+# The runner image (mitchross/homelab-images images/arc-runner-rust) carries Rust, protoc, cmake and sccache.
 template:
   spec:
+    # Off the control plane, and off truenas-worker-01 so builds do not compete with the NAS on that box.
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - { key: kubernetes.io/hostname, operator: NotIn, values: [truenas-worker-01] }
+                - { key: node-role.kubernetes.io/control-plane, operator: DoesNotExist }
     initContainers:
       - name: init-dind-externals
-        image: ghcr.io/actions/actions-runner:2.338.2
+        image: ghcr.io/mitchross/arc-runner-rust:main@sha256:7d67fa4ecf165e3bddcad71b3c64ac4f610993fe97dc535909886870edaeb0da
         command: [cp, -r, /home/runner/externals/., /home/runner/tmpDir/]
         volumeMounts:
           - { name: dind-externals, mountPath: /home/runner/tmpDir }
@@ -30,10 +39,12 @@ template:
             command: [docker, info]
           periodSeconds: 5
           failureThreshold: 24
+        # ephemeral-storage requests tell the scheduler about the emptyDirs; their sizeLimits stay the hard caps.
         resources:
           requests:
             cpu: 500m
             memory: 1Gi
+            ephemeral-storage: 15Gi
           limits:
             cpu: "4"
             memory: 8Gi
@@ -44,7 +55,7 @@ template:
           - { name: docker-data, mountPath: /var/lib/docker }
     containers:
       - name: runner
-        image: ghcr.io/actions/actions-runner:2.338.2
+        image: ghcr.io/mitchross/arc-runner-rust:main@sha256:7d67fa4ecf165e3bddcad71b3c64ac4f610993fe97dc535909886870edaeb0da
         command: [/home/runner/run.sh]
         env:
           - name: DOCKER_HOST
@@ -55,6 +66,7 @@ template:
           requests:
             cpu: 500m
             memory: 1Gi
+            ephemeral-storage: 10Gi
           limits:
             cpu: "4"
             memory: 8Gi
