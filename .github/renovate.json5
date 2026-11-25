@@ -192,7 +192,7 @@
     },
     {
       description: 'Postgres images: never propose the next major. A data directory works with one major only; a major needs a planned dump and restore (docs/domains/cnpg/run-postgres-plain-english.md).',
-      matchPackageNames: ['postgres', 'docker.io/library/postgres'],
+      matchPackageNames: ['postgres', 'docker.io/library/postgres', 'postgis/postgis', 'docker.io/postgis/postgis'],
       matchFileNames: ['**/postgres-19/**', 'my-apps/ai/langfuse/postgres-19.yaml', 'omni/pi-services/proxcenter/docker-compose.override.yml'],
       allowedVersions: '<20',
     },

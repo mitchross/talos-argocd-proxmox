@@ -26,8 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: postgres
-          # Built in the geocoder repo (deploy/postgres): postgis/postgis has no Postgres 19 tag yet.
-          image: registry.vanillax.me/geocoder/postgis:19-3.7-6410368@sha256:e5676cf3ee816b9382918b281ae42f4939fc5db0435bfa55fe75d16191edb82b
+          image: postgis/postgis:19-3.7@sha256:fb3b0686833282d392a6af200c6c5234ed2d671ef372fa245106ec39b5c95945
           # wal_level=minimal: the loader creates and fills address_load in one transaction, so COPY and index
           # builds skip WAL. Safe here: no replicas, no PITR, and the PVC is backup-exempt.
           args: ["postgres", "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB", "-c", "maintenance_work_mem=1GB", "-c", "max_wal_size=8GB", "-c", "wal_level=minimal", "-c", "max_wal_senders=0", "-c", "max_parallel_maintenance_workers=4"]
