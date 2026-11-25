@@ -9,14 +9,27 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: redlib
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         app.kubernetes.io/name: redlib
     spec:
+      # Same spread as my-apps/demo/nginx; the Wi-Fi toleration makes the shed one more eligible zone.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys: [pod-template-hash]
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: redlib
       tolerations:
         - key: node.vanillax.dev/link
           operator: Equal

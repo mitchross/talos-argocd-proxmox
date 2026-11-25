@@ -6,10 +6,13 @@ metadata:
   labels:
     app: homelab-rack-planner
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: homelab-rack-planner
@@ -18,6 +21,16 @@ spec:
       labels:
         app: homelab-rack-planner
     spec:
+      # Same spread as my-apps/demo/nginx: one copy per host zone, tainted nodes left out of the count.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys: [pod-template-hash]
+          labelSelector:
+            matchLabels:
+              app: homelab-rack-planner
       enableServiceLinks: false
       automountServiceAccountToken: false
       securityContext:

@@ -21,7 +21,8 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "1"
-          memory: 2Gi
+          # Never above the runner's 1Gi memory limit in statefulset.yaml.
+          memory: 1Gi
       - containerName: dind
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly

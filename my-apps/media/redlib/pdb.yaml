@@ -1,0 +1,12 @@
+# Redlib only; Anubis stays at 1 because its memory challenge store is per pod.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redlib
+  namespace: redlib
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redlib

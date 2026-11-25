@@ -136,7 +136,7 @@ about 110 `fsync` writes per second. A local Longhorn volume did about 490 and 4
 | A database that needs enterprise flash | `longhorn-flash-ha` | two copies on the two `flash` disks; a reboot of either node needs no copy |
 | A heavy writer (ClickHouse, Kafka, tile renderers) | `longhorn-flash` | only the enterprise drive can take that write volume |
 | Bulk, read-mostly files (media, downloads, archives, photo libraries) | `truenas-nfs` | lots of space, no SSD wear, served from the NAS RAM cache |
-| A cache that rebuilds itself | `longhorn`, sized to what it really uses | small and local; never back it up |
+| A cache that rebuilds itself | `longhorn-scratch`, as a generic ephemeral volume | one copy, made fresh with each pod; never back it up ([scratch caches](storage-tiers.md#scratch-caches)) |
 | Anything that runs Docker/overlay storage or an embedded search engine | `longhorn` | overlay filesystems and search-index locking don't work well on NFS |
 
 Size each PVC to what the app uses plus headroom. Do not make it large "to be safe".

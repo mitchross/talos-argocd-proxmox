@@ -16,6 +16,7 @@ drive holds the data. The [disk map](disk-map.md) does.
 | `longhorn-flash` | Two replicas selected by disk tag `flash`, no data locality. Three disks carry the tag: the Threadripper's 440 GiB `ssd-flash` (two mirrored HPE SATA SSDs with PLP, thick LVM), the 229 GiB `truenas-ssd` and the NUC's `asus-nuc-ssd` (both one Intel S3700 with PLP) | Selected write-heavy state and noisy local I/O. Same settings as `longhorn-flash-ha` since #3664: a reboot of one node needs no copy. |
 | `longhorn-flash-ha` | Two replicas selected by disk tag `flash`, one on each `flash` disk, no data locality | New databases that need enterprise flash. A reboot of either node needs no copy. `truenas-ssd` sits on one drive and is small: check its free space before you add a volume. |
 | `longhorn-wired-ha` | Two replicas with hard node/zone/disk separation on Longhorn nodes tagged `wired-storage` | Selected state that needs a surviving live copy. Requires healthy replicas, a working control plane, eligible compute and the rest of the application's dependencies. |
+| `longhorn-scratch` | One V1 replica on any schedulable disk of a `wired-storage` node, no data locality, `WaitForFirstConsumer` | Caches that rebuild themselves, mounted only as a generic ephemeral volume. The volume is created with the pod and deleted with it. See [Scratch caches](#scratch-caches). |
 | `truenas-nfs` | TrueNAS BigTank, HDD mirrors behind a large RAM cache, RWX; each PVC is its own dataset with `sync=standard` | Bulk, read-mostly data where NAS downtime is accepted: the immich library, project-nomad downloads. Measured from a pod: fast repeated reads, but only about 50 file creates and 110 `fsync` writes per second, so never databases, Docker/overlay storage or search indexes. |
 | Static NFS / SMB classes | The specific NAS share named in each PV | Media, model files and shared data. Inspect the backing dataset: BigTank and the unmirrored AI SSD pool have different failure behavior. |
 
@@ -41,6 +42,42 @@ clone, so one dead host does not block backups. A volume whose only copy is on t
 host still cannot be backed up. The class uses `WaitForFirstConsumer` binding, and it
 depends on the Longhorn overprovisioning allowance. Count the staging clones when you plan
 capacity.
+
+## Scratch caches
+
+`longhorn-scratch` keeps one copy of a volume, so a cache costs half the SSD writes and
+space of the two-copy default. Use it for data an app rebuilds by itself: build
+intermediates, package caches and Docker layer caches. Never use it for state.
+
+Mount it only as a generic ephemeral volume. Kubernetes then creates the PVC with the pod
+and deletes it with the pod:
+
+```yaml
+volumes:
+  - name: cache
+    ephemeral:
+      volumeClaimTemplate:
+        metadata:
+          labels:
+            backup-exempt: "true"
+          annotations:
+            storage.vanillax.dev/backup-exempt-reason: "<what rebuilds it>"
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName: longhorn-scratch
+          resources:
+            requests:
+              storage: 50Gi
+```
+
+A standalone PVC on this class would stop its pod whenever the node with its one copy is
+down. An ephemeral volume avoids that: the replacement pod gets a new, empty volume on a
+node that is up. The cost is an empty cache after every pod restart, so the first build or
+pull after a restart is slow. A pod whose cache node fails while the pod keeps running
+gets I/O errors on that volume until the pod restarts.
+
+The class has no disk selector. Longhorn disk tags can only include disks, not exclude
+one. To keep scratch volumes off a worn disk, disable scheduling on that disk.
 
 ## Which nodes hold Longhorn data
 

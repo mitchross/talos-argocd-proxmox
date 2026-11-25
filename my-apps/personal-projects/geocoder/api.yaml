@@ -6,7 +6,12 @@ metadata:
   labels:
     app: geocoder-api
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: geocoder-api
@@ -15,6 +20,16 @@ spec:
       labels:
         app: geocoder-api
     spec:
+      # Same spread as my-apps/demo/nginx: one copy per host zone, tainted nodes left out of the count.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys: [pod-template-hash]
+          labelSelector:
+            matchLabels:
+              app: geocoder-api
       enableServiceLinks: false
       automountServiceAccountToken: false
       securityContext:
@@ -60,9 +75,9 @@ spec:
                 secretKeyRef:
                   name: geocoder
                   key: api_keys
-            # Limit is per uvicorn worker (2), so one client gets about 120 requests/min.
+            # Buckets are per uvicorn process (2 pods x 2 workers); 30 keeps one client's total near 120 requests/min.
             - name: RATE_LIMIT_PER_MIN
-              value: "60"
+              value: "30"
             # Batch addresses per UTC day shared by everyone using the UI's rotating demo key; 0 turns it off.
             - name: DEMO_KEY_ADDRESSES
               value: "500"
@@ -105,6 +120,17 @@ spec:
       port: 8000
       targetPort: http
 ---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: geocoder-api
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app: geocoder-api
+---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -119,7 +145,7 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: api
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
