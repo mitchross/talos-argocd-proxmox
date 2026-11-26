@@ -43,6 +43,12 @@ Argo CD completes sync without waiting for downloads. The existing library remai
 The Deployment uses `Recreate`, so applying its configuration causes a short restart.
 A full download is not required for the existing Wikipedia archive to become ready.
 
+## Bots and memory
+
+Anubis sits in front of Kiwix on the public route, with the same policy as redlib. Browsers solve a one-time check; Meta and AI crawlers are denied.
+In-cluster clients such as `mcpo-kiwix` call `kiwix:8080` directly and skip Anubis.
+The Kiwix memory limit is 8Gi because page cache counts against it. At 2Gi a crawler kept the ZIM index evicted, and the NAS re-read it at about 75 MB/s around the clock.
+
 ## Verification
 
 List download Jobs with `kubectl -n kiwix get jobs --sort-by=.metadata.creationTimestamp`.

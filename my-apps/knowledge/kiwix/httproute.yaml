@@ -24,6 +24,7 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: kiwix
-          port: 8080
+          # Anubis fronts Kiwix (bots used to crawl it nonstop); kiwix:8080 is its TARGET.
+          name: anubis
+          port: 8923
           weight: 1

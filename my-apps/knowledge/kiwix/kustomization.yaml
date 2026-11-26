@@ -9,6 +9,11 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - anubis-policy-externalsecret.yaml
+  - anubis-deployment.yaml
+  - anubis-service.yaml
+  - anubis-vpa.yaml
+  - anubis-podmonitor.yaml
 
 namespace: kiwix
 
@@ -18,3 +23,26 @@ configMapGenerator:
       - collections.tsv
       - scripts/download-library.sh
       - scripts/index-library.sh
+  # ESO renders this template into the anubis-policy Secret; the hash suffix rolls Anubis.
+  - name: anubis-policy-template
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-1"
+    files:
+      - botPolicy.yaml=anubis-policy.yaml
+
+configurations:
+  - kustomizeconfig.yaml
+replacements:
+  - source:
+      kind: ConfigMap
+      name: anubis-policy-template
+      fieldPath: metadata.name
+    targets:
+      - select:
+          kind: Deployment
+          name: anubis
+        fieldPaths:
+          - spec.template.metadata.annotations.anubis-policy-revision
+        options:
+          create: true
