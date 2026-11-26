@@ -2,5 +2,5 @@
 upstream-watch|0 9 * * *|upstream-watch.py|Script-only upstream watch for Hermes and Hindsight releases and watched fixes.
 strata-v31-watch|every 360m|strata-v31-watch.py|Script-only watch for Unsloth Dynamic V3.1 support in upstream Strata. Remove once V3.1 is supported and benchmarked.
 argo-rid-watch|0 9 * * *|argo-rid-watch.py|Argo RespectIgnoreDifferences fix watch (script-only).
-qwen-lab-doctor|every 5m|qwen-lab-doctor.py|Script-only: reclaim dead qwen-lab cards, start ready ones; once each, report blocks (commented on the card), bad parents, main moves outside a reviewed lead merge, stray worktrees/branches and stray chats; default board read-only.
+qwen-lab-doctor|every 5m|qwen-lab-doctor.py|Script-only: reclaim dead qwen-lab and default-board cards, start ready qwen-lab cards; report default-board blocks at most once a day per card, and qwen-lab blocks, bad parents, unreviewed main moves, stray worktrees/branches and stray chats.
 radar-ng kanban unlock on merge|every 15m|radar-kanban-unlock.py|Complete blocked radar-ng Kanban cards whose PR merged, then dispatch.

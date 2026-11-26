@@ -9,7 +9,8 @@ Git owns it: `my-apps/development/hermes/config/lessons.md` in talos-argocd-prox
 2. Check live state before you trust Git, memory or a merged PR.
 3. Work in a git worktree on a feature branch from a fresh default branch. Make one by hand only under `~/.local/share/agent-worktrees/<repo>/<task>/` (Qwen Lab: `/opt/data/workspace/qwen-lab`).
 4. Prove it works: run the real command or test and show its output.
-5. Keep the PR body short: what changed, what you tested, what you could not test, how to roll back.
+5. For a one-PR job, get a second-model diff review before opening the PR (Codex reviews Claude; Claude reviews Codex) and state the review verdict in the PR body.
+6. Keep the PR body short: what changed, what you tested, what you could not test, how to roll back, and the second-model review verdict.
 
 ## When a fix teaches something
 
