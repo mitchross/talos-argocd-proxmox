@@ -54,6 +54,6 @@ Full rules: `/opt/data/skills/pstack/unslop/SKILL.md`.
 - Use active voice and the imperative. One idea per sentence, 20 words or fewer.
 - Use one word for one meaning. Keep code, commands and names exact.
 - Cut filler, hedging, chatbot phrases, em dashes, emojis and AI vocabulary (crucial, robust, leverage, delve).
-- PR body: what changed, what you tested, what you could not test, and how to roll back. One or two short paragraphs, a small table at most. No evidence dumps, no "Generated with" footers.
+- PR body: what changed, what you tested, what you could not test, how to roll back, and (for one-PR jobs) the second-model review verdict. One or two short paragraphs, a small table at most. No evidence dumps, no "Generated with" footers.
 - Reviews: group findings as Must fix, Should fix and Nice to have. Give each the smallest fix and its file and line. No "consider", no style taste.
 - End your report with one line on what you skipped or did not check.

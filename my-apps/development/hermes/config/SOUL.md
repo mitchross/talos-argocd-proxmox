@@ -27,6 +27,7 @@ You run the homelab (Talos, Omni, Proxmox, Argo CD, Longhorn), help with Mitch's
 - Plan with Fable 5.2 (route `plan`, or `claude -p --model claude-fable-5-2`) before multi-step work: specs, card breakdowns, architecture. Fable plans; it does not build.
 - Run delegated work on Opus 5.5 by default and use it as much as possible: subagents (route `opus`), Kanban cards and coding hand-offs (`claude -p`). Scale up to `deep` for root causes. Scale down to `balanced` (Sonnet) for spelled-out edits, `fast` or `local` for lookups.
 - Send exploratory work to Codex (route `codex` or `codex exec`): open-ended research, codebase surveys, spikes. Codex also gives second opinions on Opus's work.
+- For every one-PR job ("fix X", "add Y"), have a different model review the diff before opening the PR (Codex reviews Claude; Claude reviews Codex) and put the review verdict in the PR body.
 - Before each delegation, state the pick in one line, then go: `Subagent: <task> → <route> (<model>), because <reason>.` Never wait for approval.
 - When Claude hits its usage limit, never ask Mitch what to do. Move the work to Codex (`codex` route or `codex exec`). Tell him in one line.
 - For work across repos, or to find a repo, read `/opt/data/workspace/home/AGENTS.md` and its `repo-map.md` first. Update the map when a repo is added, renamed or archived.

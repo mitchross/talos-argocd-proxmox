@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Puts the qwen-lab Kanban board back in line and watches the default board read-only. --dry-run changes nothing.
+# Puts the qwen-lab and default Kanban boards back in line: reclaims dead cards and reports blocks. --dry-run changes nothing.
 import json, os, socket, sqlite3, subprocess, sys, time
 from pathlib import Path
 
@@ -14,6 +14,7 @@ SLOTS = 4  # two 3090s: more than 4 busy bots slows every card
 GRACE = 120  # seconds a fresh claim is left alone
 STALE = 900  # seconds without a heartbeat before a live-looking worker counts as dead
 KEEP = 7 * 86400  # a finding gone this long pings again if it comes back
+DAILY = 86400  # default-board blocked cards re-ping at most once a day while still blocked
 SLACK = 120  # seconds of clock slack when matching a move of main to a card run
 HELPERS = ("qwen-worker", "qwen-reviewer", "qwen-researcher", "qwen-designer")
 LEAD, REVIEWER, SPEC = "qwen-lab", "qwen-reviewer", "docs/SPEC.md"
@@ -187,11 +188,20 @@ def check_board(conn, now, lab):
 
 
 def fresh(findings, state, now):
-    """Findings not reported yet; remembers the current ones and forgets those gone for KEEP."""
+    """Findings due to report; default-board blocks re-ping at most once a day, others remember for KEEP."""
     seen = state.setdefault("seen", {})
-    new = [(k, line) for k, line in findings if k not in seen]
-    seen.update({k: now for k, _ in findings})
-    for k in [k for k, t in seen.items() if now - t > KEEP]:
+    present = {k for k, _ in findings}
+    new = []
+    for k, line in findings:
+        if k.startswith("default:block:"):
+            if k not in seen or now - seen[k] >= DAILY:
+                new.append((k, line))
+                seen[k] = now
+        else:
+            if k not in seen:
+                new.append((k, line))
+            seen[k] = now
+    for k in [k for k, t in seen.items() if (k.startswith("default:block:") and k not in present) or now - t > KEEP]:
         del seen[k]
     return new
 
@@ -200,11 +210,7 @@ def checks(db, label, now, lab):
     """A board's findings with keys and lines tagged by board; a failing check is itself a finding."""
     try:
         with ro(db) as conn:
-            rows = conn.execute("select * from tasks where status = 'running'").fetchall()
             found = check_board(conn, now, lab)
-        if not lab:  # the default board's own dispatcher reclaims; only report
-            found += [(f"dead:{c}", f"running card {c} looks dead ({why}); not reclaimed")
-                      for c, why in dead_cards(rows, socket.gethostname(), now)]
     except (sqlite3.Error, OSError, subprocess.SubprocessError) as exc:
         found = [("check-failed", f"checks failed: {exc}")]
     prefix = "" if lab else f"{label} board: "
@@ -214,6 +220,7 @@ def checks(db, label, now, lab):
 def main(dry=False):
     now = time.time()
     run = lambda *a: subprocess.run([H, "kanban", "--board", "qwen-lab", *a], capture_output=True, text=True, timeout=120)
+    run_default = lambda *a: subprocess.run([H, "kanban", *a], capture_output=True, text=True, timeout=120)
     try:
         state = json.loads(STATE.read_text())
     except (OSError, ValueError):
@@ -236,6 +243,11 @@ def main(dry=False):
         except sqlite3.Error as exc:
             found.append(("chat-check", f"stray-chat check failed: {exc}"))
     if DEFAULT_DB.exists():
+        with ro(DEFAULT_DB) as conn:
+            running = conn.execute("select * from tasks where status = 'running'").fetchall()
+        for card, why in dead_cards(running, socket.gethostname(), now):
+            rc = "dry-run" if dry else run_default("reclaim", card, "--reason", f"lab doctor: {why}").returncode
+            acts.append(f"default board: reclaimed {card}: {why} ({rc})")
         found += checks(DEFAULT_DB, "default", now, lab=False)
     if dry:
         new = {k for k, _ in fresh(found, json.loads(json.dumps(state)), now)}
