@@ -54,7 +54,7 @@ spec:
           containers:
             - name: kubectl
               # Distroless (no shell), so the command stays a plain argv; keep the tag within one minor of the cluster.
-              image: registry.k8s.io/kubectl:v1.37.2@sha256:fe049faa65ae483ac200009a949a68fa4c9985daea12c9cb1195c9c7965301fc
+              image: registry.k8s.io/kubectl:v1.37.3@sha256:82f06779a0dcd86225ffdb96c005418b9716093a39907a5ecf686d7a22e6b788
               command:
                 - kubectl
                 - -n
