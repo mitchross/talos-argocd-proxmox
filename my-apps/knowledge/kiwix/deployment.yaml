@@ -50,7 +50,8 @@ spec:
               cpu: 100m
               memory: 256Mi
             limits:
-              memory: 2Gi
+              # Page cache counts here; at 2Gi the ZIM index was evicted and re-read from the NAS nonstop.
+              memory: 8Gi
           livenessProbe:
             httpGet:
               path: /
