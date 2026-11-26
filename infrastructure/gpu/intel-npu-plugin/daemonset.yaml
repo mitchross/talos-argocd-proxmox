@@ -22,7 +22,7 @@ spec:
       - operator: Exists
       containers:
       - name: intel-npu-plugin
-        image: intel/intel-npu-plugin:0.37.1@sha256:cdcf6f4c662c0d1ee4e3fc841a56e1a097706c880f8f98fd3ff51d7a8f02b547
+        image: intel/intel-npu-plugin:0.37.2@sha256:573435b6e44b22bd1f2a7493ad89ae910d9096d3f5cdedb4f242b71372ba1729
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
