@@ -29,7 +29,7 @@ PCIe link retries, and which pod holds each card.
 
 ### 5. nvidia_gpu_exporter trial (`monitoring/metrics/nvidia-gpu-exporter/`)
 
-A lighter exporter running next to DCGM. It adds VRAM per process (`nvidia_smi_compute_app_used_memory_bytes`) and XID error counters. Its dashboards are "Nvidia GPU Metrics" and "Nvidia GPU Overview" in the AI folder. If it proves itself, remove `dcgm-exporter.yaml` and move the alerts to `nvidia_smi_*` metrics.
+A lighter exporter running next to DCGM. It adds VRAM per process (`nvidia_smi_compute_app_used_memory_bytes`) and XID error counters. Its upstream Grafana dashboards are disabled in favor of `GPU Overview`. If it proves itself, remove `dcgm-exporter.yaml` and move `gpu-overview.json` and the alerts to `nvidia_smi_*` metrics.
 
 ## Key metrics
 

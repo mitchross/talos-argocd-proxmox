@@ -27,7 +27,7 @@ STRATA_NATIVE = {
     "strata:totals_decode_seconds_total", "strata:last_hit_rate", "strata:last_decode_tok_s", "strata:gpu_util",
     "strata:gpu_mem_used_bytes", "strata:gpu_mem_total_bytes", "strata:gpu_temp_celsius", "strata:gpu_power_watts",
     "strata:cpu", "strata:ram_used_bytes", "strata:ram_total_bytes"}
-ENGINE_UIDS = {"vllm-inference": "vllm", "strata-inference": "strata"}
+ENGINE_UIDS = {"vllm-inference": "vllm"}
 METRIC = re.compile(r"\b((?:vllm|strata):[a-z0-9_]+)")
 SELECTOR = re.compile(r"([A-Za-z_:][A-Za-z0-9_:]*)\{([^}]*)\}")
 AGG = re.compile(r"\b(sum|max|min|avg|count)\s*(?:by\s*\(([^)]*)\))?\s*\(")
@@ -107,20 +107,6 @@ class EngineIsolation(unittest.TestCase):
                 if "litellm_" not in expr and spans_both:
                     self.assertTrue(re.search(r"by \([^)]*namespace", expr), name + panel["title"])
 
-    def test_strata_board_uses_only_metrics_strata_exports(self):
-        for panel, t in targets(boards()["strata-inference.json"]):
-            for name in METRIC.findall(t["expr"]):
-                self.assertIn(base(name), STRATA_VLLM | STRATA_NATIVE, f"{panel['title']}: {name}")
-
-    def test_overview_pins_engine_only_metrics(self):
-        """A metric only one engine exports must be pinned to that engine in the overview."""
-        for panel, t in targets(boards()["llm-engines.json"]):
-            for name, labels in SELECTOR.findall(t["expr"]):
-                if name.startswith("strata:"):
-                    self.assertIn('namespace="strata"', labels, panel["title"])
-                elif name.startswith("vllm:") and base(name) not in STRATA_VLLM:
-                    self.assertIn('namespace="vllm"', labels, f"{panel['title']}: {name}")
-
     def test_model_variable_is_engine_scoped(self):
         for uid, ns in ENGINE_UIDS.items():
             (var,) = boards()[uid + ".json"]["templating"]["list"]
@@ -138,9 +124,7 @@ class HealthSemantics(unittest.TestCase):
 
     def test_status_tiles_on_every_board(self):
         found = sorted((n, p["title"]) for n, p in self.status_panels())
-        self.assertEqual(found, [("llm-engines.json", "Strata engine"), ("llm-engines.json", "vLLM engine"),
-                                 ("strata-inference.json", "Strata engine"),
-                                 ("vllm-inference.json", "vLLM engine")])
+        self.assertEqual(found, [("vllm-inference.json", "vLLM engine")])
 
     def test_parked_is_neutral_and_checked_before_down(self):
         for name, panel in self.status_panels():
@@ -231,9 +215,6 @@ class UnitsAndMeaning(unittest.TestCase):
 
     def test_unsupported_metrics_say_so(self):
         b = boards()
-        strata = {p["title"]: p for p in b["strata-inference.json"]["panels"]}
-        self.assertNotIn("queue_time", json.dumps(b["strata-inference.json"]))
-        self.assertIn("Not exported", strata["Batch slots by state"]["fieldConfig"]["defaults"]["noValue"])
         vllm = {p["title"]: p for p in b["vllm-inference.json"]["panels"]}
         self.assertIn("MTP is off", vllm["Speculative decoding (MTP) acceptance"]["fieldConfig"]["defaults"]["noValue"])
 
@@ -246,17 +227,6 @@ class UnitsAndMeaning(unittest.TestCase):
                         "renameByName", {}).get(f"Value #{t['refId']}", "")
                     label = (panel["title"] + " " + t["legendFormat"] + " " + header).lower()
                     self.assertTrue("per-stream" in label or "1 ÷ mean" in label, panel["title"])
-
-    def test_strata_cache_panels_name_three_different_caches(self):
-        strata = {p["title"]: p for p in boards()["strata-inference.json"]["panels"]}
-        self.assertIn("not GPU KV memory", strata["Context used by the running request"]["description"])
-        self.assertIn("last request", strata["Expert cache hit, last request"]["title"])
-        self.assertIn("whole GPU node", strata["Node CPU and RAM (whole host)"]["description"])
-
-    def test_overview_states_comparison_and_gateway_caveats(self):
-        intro = boards()["llm-engines.json"]["panels"][0]["options"]["content"]
-        self.assertIn("not a benchmark", intro)
-        self.assertIn("never reaches these engines", intro)
 
 
 class Navigation(unittest.TestCase):
@@ -274,10 +244,10 @@ class Navigation(unittest.TestCase):
             for uid in re.findall(r'"/d/([a-z0-9-]+)', path.read_text()):
                 self.assertIn(uid, uids, f"{path.name} links /d/{uid}")
 
-    def test_neighbouring_ai_boards_reach_the_overview(self):
+    def test_neighbouring_ai_boards_reach_vllm_inference(self):
         for name in ("gpu-overview.json", "ai-gateway-analytics.json", "hermes-ai-split.json"):
             links = {l["url"] for l in json.loads((AI / name).read_text())["links"]}
-            self.assertIn("/d/llm-engines", links, name)
+            self.assertIn("/d/vllm-inference", links, name)
 
 
 if __name__ == "__main__":

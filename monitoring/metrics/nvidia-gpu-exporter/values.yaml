@@ -30,7 +30,6 @@ serviceMonitor:
 prometheusRule:
   enabled: false
 
+# Upstream dashboards disabled in favor of our custom GPU Overview board.
 grafanaDashboard:
-  enabled: true
-  annotations:
-    grafana_folder: "AI"
+  enabled: false

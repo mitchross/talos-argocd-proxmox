@@ -54,7 +54,7 @@ The rest of this page sets up Pi on a workstation.
 4. Add the [launcher aliases](#the-four-launchers) to `~/.zshrc`, then run `source ~/.zshrc`.
 5. Run `pi-withflash` in a repo and ask "what does this repo do?".
 
-It worked when Pi answers and Grafana `/d/pi-routing` counts one request.
+It worked when Pi answers and the Pi Auto-Routing row on Grafana `/d/ai-gateway-analytics` counts one request.
 
 ## Credentials
 
@@ -126,7 +126,7 @@ Routing changes are server-side, so they need no Pi reinstall.
 
 Pi always displays `pi-auto`, so Pi does not tell you. Use the dashboards:
 
-1. Grafana `/d/pi-routing` shows the ratio, the escalation count and the spend.
+1. Grafana `/d/ai-gateway-analytics` (Pi Auto-Routing row) shows the ratio, the escalation count and the spend.
 2. Langfuse `langfuse.vanillax.me` shows each trace. Filter tag `pi`, then read `providedModelName`.
 
 [AI gateway and analytics](ai-observability.md) explains how to read both.

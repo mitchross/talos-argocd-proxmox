@@ -27,31 +27,9 @@
   },
   "links": [
     {
-      "title": "Local LLM Engines",
-      "type": "link",
-      "url": "/d/llm-engines",
-      "icon": "dashboard",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": false,
-      "asDropdown": false,
-      "tags": []
-    },
-    {
       "title": "vLLM Inference",
       "type": "link",
       "url": "/d/vllm-inference",
-      "icon": "dashboard",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": false,
-      "asDropdown": false,
-      "tags": []
-    },
-    {
-      "title": "Strata Inference",
-      "type": "link",
-      "url": "/d/strata-inference",
       "icon": "dashboard",
       "targetBlank": false,
       "keepTime": true,
