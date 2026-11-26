@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: recorder
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.63@sha256:40f8672d3c17a705de8bc7ad659918348822e2e8c12bf3e8373346b1cfa17f70
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.65@sha256:2b7160fef90ace63fb2fba520148d876100f4523e63645569533c232b621171e
           imagePullPolicy: IfNotPresent
           args: [level2-shadow, record]
           securityContext:
