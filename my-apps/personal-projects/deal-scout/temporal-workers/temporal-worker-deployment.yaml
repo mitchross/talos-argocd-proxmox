@@ -37,7 +37,7 @@ spec:
         - name: worker
           # Source: deal-scout repo crates/worker/ (Rust). No personal browser profile is
           # present; eBay authentication is application-only OAuth.
-          image: ghcr.io/mitchross/deal-scout-worker:v0.35.49@sha256:f8897ed79824592c3f12a0640443d1d90bf58c2e376ec4809d03b79368c29e86
+          image: ghcr.io/mitchross/deal-scout-worker:v0.35.50@sha256:9cf296d9474865af71bdf6f7b2200170a283f18a290831f783e298eb4cbf7ee6
           imagePullPolicy: IfNotPresent
           env:
             - name: DEAL_SCOUT_API
