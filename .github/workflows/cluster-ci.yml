@@ -46,6 +46,7 @@ jobs:
           python-version: '3.13'
       - run: python3 -m pip install pytest==9.2.0 hindsight-client==0.10.3 PyYAML==6.0.3
       - run: python3 scripts/test-hermes-recall.py
+      - run: python3 -m pytest -q scripts/tests/test_hermes_qwen_lab_doctor.py
 
   analytics-injector-proxy:
     name: Umami injector proxy regression tests
