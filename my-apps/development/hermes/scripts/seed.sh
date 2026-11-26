@@ -11,6 +11,8 @@ as_hermes() { s6-setuidgid hermes env HOME="$HOME" "$@"; }
 mkdir -p "$HERMES_HOME/workspace" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight" "$HERMES_HOME/hindsight"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/config.yaml "$HERMES_HOME/config.yaml"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/SOUL.md "$HERMES_HOME/SOUL.md"
+# Shared start checklist and lessons; Hermes, Claude Code, Codex and the Qwen Lab read this one path.
+install -o 10000 -g 10000 -m 0644 /etc/hermes-config/lessons.md "$HERMES_HOME/lessons.md"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-skills/SKILL.md "$HERMES_HOME/skills/devops/homelab-ops/SKILL.md"
 install -D -o 10000 -g 10000 -m 0644 /etc/hermes-skills/hermes-change-placement.md "$HERMES_HOME/skills/devops/hermes-change-placement/SKILL.md"
 chown 10000:10000 "$HERMES_HOME/skills/devops/hermes-change-placement"
