@@ -37,7 +37,7 @@ for plugin in hindsight homeassistant advanced-delegation; do
 done
 # Conduit iOS app companion (push, live voice, Watch); not in the catalog, so pin the commit and reinstall when the pin moves.
 CONDUIT_REF=28e6b1eb133d48e2c450281ff87dfbf3a7c5c547
-if [ "$(git -C "$HERMES_HOME/plugins/conduit_push" rev-parse HEAD 2>/dev/null)" != "$CONDUIT_REF" ]; then
+if [ "$(as_hermes git -C "$HERMES_HOME/plugins/conduit_push" rev-parse HEAD 2>/dev/null)" != "$CONDUIT_REF" ]; then
   echo "[seed] installing plugin conduit_push@$CONDUIT_REF"
   as_hermes /opt/hermes/bin/hermes plugins install kaishi00/hermes-conduit-notifier --ref "$CONDUIT_REF" --force --enable --yes-deps || echo "[seed] plugin install failed: conduit_push"
 fi
