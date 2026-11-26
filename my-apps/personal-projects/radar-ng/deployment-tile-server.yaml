@@ -24,16 +24,8 @@ spec:
         config-rev: "2026-09-02-alerts-queue"
     spec:
       priorityClassName: app-critical
-      affinity:
-        # Prefer the GPU worker (a local copy); the second copy lets it move during a drain.
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: gpu-worker
-                    operator: In
-                    values: ["true"]
+      # No gpu-worker preference: after a drain moves workers off the GPU node, preferring gpu-worker
+      # pulls tile-server back onto it on restart and triggers Multi-Attach (#384 / #389).
       # ScheduleAnyway so the pod still schedules when only one node matches.
       topologySpreadConstraints:
         - maxSkew: 1
@@ -54,7 +46,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: tile-server
-          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.62@sha256:2ca95b97b5330c445c423e8bb69ece8d1849ebcea33b430c8fee402531246a4f
+          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.63@sha256:0bd90ac52f69f0816587d6f6b51cad1926a3f83ea0c82c5a90dfea0fab155b3f
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
