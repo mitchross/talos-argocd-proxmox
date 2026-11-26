@@ -49,6 +49,11 @@ rules. Before editing a file, read each applicable `CLAUDE.md` along its
 path from the repo root to the file, in parent-to-child order. Load these
 files yourself; do not wait for the user to mention or attach them.
 
+## Shared lessons
+
+At start, read `my-apps/development/hermes/config/lessons.md` (in the Hermes pod: `/opt/data/lessons.md`).
+It holds the start checklist and lessons all agents share. When a fix teaches a lesson, add it there or to the owning skill in the same PR.
+
 ## Terms
 
 `docs/glossary.md` gives restore, snapshot, repository, sync, and policy one

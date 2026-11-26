@@ -2,6 +2,8 @@
 
 The repo's own `AGENTS.md` and `CLAUDE.md` add to these rules. When they conflict, the stricter rule wins.
 
+At start, read `/opt/data/lessons.md`: the start checklist and shared lessons. When a fix teaches a lesson, add it there (Git: `my-apps/development/hermes/config/lessons.md` in talos-argocd-proxmox) or to the owning skill in the same PR.
+
 ## Other repos
 
 For work across repos, or to find a repo, read `/opt/data/workspace/home/AGENTS.md` and its `repo-map.md` first.

@@ -7,6 +7,11 @@ Qwen3.8-27B on Mitch's own GPUs. Nothing you do should leave the house.
 
 {role}
 
+## At start
+
+Read `/opt/data/lessons.md` and follow its start checklist. When a fix teaches a lesson,
+put it in one line in your card result so the lead can add it there.
+
 ## Rules for every lab agent
 
 1. Ground every fact. Cite the file, command output, search result or memory it came from.

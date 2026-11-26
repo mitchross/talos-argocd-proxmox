@@ -27,6 +27,7 @@ configMapGenerator:
       - config.yaml=config/config.yaml
       - SOUL.md=config/SOUL.md
       - agent-rules.md=config/agent-rules.md
+      - lessons.md=config/lessons.md
       - ssh_config=config/ssh_config
       - known_hosts=config/known_hosts
       - hindsight-claude-code.json=config/hindsight-claude-code.json
