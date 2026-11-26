@@ -58,28 +58,6 @@
   },
   "links": [
     {
-      "title": "Local LLM Engines",
-      "type": "link",
-      "url": "/d/llm-engines",
-      "icon": "dashboard",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": false,
-      "asDropdown": false,
-      "tags": []
-    },
-    {
-      "title": "Strata Inference",
-      "type": "link",
-      "url": "/d/strata-inference",
-      "icon": "dashboard",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": false,
-      "asDropdown": false,
-      "tags": []
-    },
-    {
       "title": "GPU Overview",
       "type": "link",
       "url": "/d/gpu-overview",
@@ -108,7 +86,7 @@
       "title": "",
       "options": {
         "mode": "markdown",
-        "content": "**vLLM only.** Every query here is pinned to `namespace=\"vllm\"`. Strata exports the same `vllm:` metric names from its own namespace and has its own board, so nothing here mixes engines. When the engine tile says **Parked**, vLLM is at 0 replicas on purpose and empty panels are expected: widen the time range to see earlier runs. Model, flags and staging: `my-apps/ai/vllm/README.md`. Engines side by side: **Local LLM Engines**.",
+        "content": "**vLLM only.** Every query here is pinned to `namespace=\"vllm\"`, so nothing here mixes engines. When the engine tile says **Parked**, vLLM is at 0 replicas on purpose and empty panels are expected: widen the time range to see earlier runs. Model, flags and staging: `my-apps/ai/vllm/README.md`.",
         "code": {
           "language": "plaintext",
           "showLineNumbers": false,

@@ -111,7 +111,7 @@ Track your progress:
 - [ ] 4. That message shows in Grafana and Langfuse
 - [ ] 5. One easy and one hard request go to different models
 - [ ] 6. Pi answers, and Hermes's Status page shows the gateway running
-- [ ] 7. You check `/d/pi-routing` once a week
+- [ ] 7. You check `/d/ai-gateway-analytics` (Pi Auto-Routing row) once a week
 
 ### 1. Run the model
 
@@ -162,7 +162,7 @@ Grafana dashboards. Do this before step 5, so the first paid request is visible.
 | Question | Tool |
 |---|---|
 | How many requests? How fast? Any errors? | Grafana `/d/ai-gateway-analytics` |
-| Is the model server busy? | Grafana `/d/llm-engines` |
+| Is the model server busy? | Grafana `/d/vllm-inference` |
 | Are the cards hot or at full power? | Grafana `/d/gpu-overview` |
 | What did one request say, and why did it go where it did? | Langfuse |
 
@@ -178,7 +178,7 @@ Only clients that ask for `pi-auto` can reach the cloud. Every other client
 stays local. For how it decides, see [model catalog § The router](model-catalog.md#the-router).
 
 The step is done when the [two-request check](ai-observability.md#check-that-pi-auto-uses-both-models)
-shows one local and one cloud answer, and Grafana `/d/pi-routing` shows the split.
+shows one local and one cloud answer, and the Pi Auto-Routing row on Grafana `/d/ai-gateway-analytics` shows the split.
 
 !!! warning "Cloud prompts leave the lab"
     One conversation can move between local and cloud message by message.
@@ -206,7 +206,7 @@ Setup guides: [Pi](pi-agent-local-dev.md#pi-in-five-minutes), [Hermes in the clu
 
 | Task | Where |
 |---|---|
-| Check the local/paid split and spend weekly | Grafana `/d/pi-routing` |
+| Check the local/paid split and spend weekly | Grafana `/d/ai-gateway-analytics` (Pi Auto-Routing row) |
 | Find why a request went to the cloud | Langfuse, `routing_decision.cause` |
 | Change models, router tiers or limits | PR to `litellm/config.yaml` |
 | Tune context and speed | [Context and speed on RTX 3090s](3090-llm-optimization.md) |

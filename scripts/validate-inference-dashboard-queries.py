@@ -71,9 +71,9 @@ def leaks(engine, res):
         if engine in gen.ENGINES:
             if ns and ns != engine:
                 bad.append(s["labels"])
-            other = [k for k in gen.ENGINES if k != engine][0]
-            if model and models[other].search(model):
-                bad.append(s["labels"])
+            for other in gen.ENGINES:
+                if other != engine and model and models[other].search(model):
+                    bad.append(s["labels"])
         elif engine == "both" and s["labels"] and not ns:
             bad.append(s["labels"])
     return bad

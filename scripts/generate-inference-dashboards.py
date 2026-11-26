@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the local LLM inference dashboards (vLLM, Strata, engine overview).
+"""Generate the local LLM inference dashboard (vLLM).
 
-vLLM and Strata export the same `vllm:*` metric names, so every selector here pins
-`namespace` and every aggregation keeps `namespace`/`model_name`. Edit this script, then run it;
-never hand-edit the generated JSON. `--check` fails when the committed JSON is stale and
-`--promtool-tests DIR` writes promtool fixtures for the engine-status expressions.
+Every selector here pins `namespace="vllm"` and keeps `model_name`, so any other engine
+exporting `vllm:*` metric names in another namespace can never mix in. Edit this script,
+then run it; never hand-edit the generated JSON. `--check` fails when the committed JSON
+is stale and `--promtool-tests DIR` writes promtool fixtures for the engine-status expression.
 """
 import argparse
 import json
@@ -19,21 +19,13 @@ DS = {"type": "prometheus", "uid": "prometheus"}
 ENGINES = {
     "vllm": {"name": "vLLM", "deployment": "vllm-server", "job": "vllm-service",
              "container": "vllm-server", "uid": "vllm-inference", "model_regex": r"^qwen3\.8-27b"},
-    "strata": {"name": "Strata", "deployment": "strata-server", "job": "strata-service",
-               "container": "strata", "uid": "strata-inference", "model_regex": r"^qwen3\.8-flash-next"},
 }
-OVERVIEW_UID = "llm-engines"
-BOTH = 'namespace=~"vllm|strata"'
-BY = "namespace, model_name"
 
 # Engine status codes shared by the status expression, its value mappings and the promtool fixtures.
 STATUS_PARKED, STATUS_DOWN, STATUS_SERVING, STATUS_WAIT, STATUS_ABSENT = 0, 1, 2, 3, 4
-STRATA_ACTIVITY = {"idle": 1, "reading": 2, "generating": 3, "unloaded": 4}
 
 LINKS = [
-    ("Local LLM Engines", f"/d/{OVERVIEW_UID}"),
     ("vLLM Inference", "/d/vllm-inference"),
-    ("Strata Inference", "/d/strata-inference"),
     ("GPU Overview", "/d/gpu-overview"),
     ("AI Gateway and Analytics", "/d/ai-gateway-analytics"),
 ]
@@ -329,11 +321,9 @@ def vllm_board():
     gen = f"vllm:generation_tokens_total{s()}"
     computed, cached = s('source="local_compute"'), s('source="local_cache_hit"')
     intro = text(
-        "**vLLM only.** Every query here is pinned to `namespace=\"vllm\"`. Strata exports the same `vllm:` "
-        "metric names from its own namespace and has its own board, so nothing here mixes engines. "
+        "**vLLM only.** Every query here is pinned to `namespace=\"vllm\"`, so nothing here mixes engines. "
         "When the engine tile says **Parked**, vLLM is at 0 replicas on purpose and empty panels are expected: "
-        "widen the time range to see earlier runs. Model, flags and staging: `my-apps/ai/vllm/README.md`. "
-        "Engines side by side: **Local LLM Engines**.")
+        "widen the time range to see earlier runs. Model, flags and staging: `my-apps/ai/vllm/README.md`.")
     panels = [
         (intro, 24, 3),
         row("Now"),
@@ -774,8 +764,7 @@ def overview_board():
 
 # --------------------------------------------------------------------------- output
 
-BOARDS = {"vllm-inference.json": vllm_board, "strata-inference.json": strata_board,
-          "llm-engines.json": overview_board}
+BOARDS = {"vllm-inference.json": vllm_board}
 
 
 def strip(obj):

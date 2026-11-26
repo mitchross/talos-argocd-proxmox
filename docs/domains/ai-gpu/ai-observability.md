@@ -7,7 +7,7 @@ when a dashboard looks wrong.
 New to the stack? Read [Local AI starter kit](index.md) first.
 
 !!! tip "Which tool do I open?"
-    - To see how many requests ran, how fast, and at what cost, open Grafana. For the local and paid split, use `/d/pi-routing`.
+    - To see how many requests ran, how fast, and at what cost, open Grafana `/d/ai-gateway-analytics` (expand the **Pi Auto-Routing** row for the local vs paid split).
     - To see why one request went where it did, open `langfuse.vanillax.me` and filter on the tag `pi`.
     - To check that telemetry works at all, run [Verify a deployment](#verify-a-deployment). It takes about 15 minutes.
 
@@ -30,11 +30,8 @@ flowchart LR
 
 | Tool | Answers |
 |---|---|
-| Grafana `/d/pi-routing`, Pi Auto-Routing | local vs paid ratio, classifier health, spend |
-| Grafana `/d/ai-gateway-analytics`, AI Gateway and Analytics | all gateway requests, tokens, latency, failures, Langfuse health |
-| Grafana `/d/llm-engines`, Local LLM Engines | vLLM and Strata side by side: state, speed, latency, history per engine |
-| Grafana `/d/vllm-inference`, vLLM Inference | vLLM queue depth, decode/prefill speed, latency, KV cache use |
-| Grafana `/d/strata-inference`, Strata Inference | Strata live state, decode/prefill speed, latency, expert/prompt caches, MTP. Strata is parked at 0 replicas |
+| Grafana `/d/ai-gateway-analytics`, AI Gateway and Analytics | all gateway requests, tokens, latency, failures, fallbacks, Langfuse health, plus the collapsible Pi Auto-Routing (local vs paid, classifier health, spend) row |
+| Grafana `/d/vllm-inference`, vLLM Inference | vLLM state, queue depth, decode/prefill speed, latency, KV cache use |
 | Grafana `/d/gpu-overview`, GPU Overview | GPU power, memory, temperature, utilisation |
 | Langfuse | one trace per request: input, output, tokens, session, routing reason |
 
@@ -173,7 +170,7 @@ done
 
 Expect `openai/qwen3.8-27b` first and `openrouter/~deepseek/deepseek-flash-latest`
 second. The hard request costs a fraction of a cent. Both then show on
-`/d/pi-routing`.
+`/d/ai-gateway-analytics` under the **Pi Auto-Routing** row.
 
 ## Check the adapter before a LiteLLM bump
 
@@ -194,7 +191,7 @@ version, before that version reaches the cluster.
 | Requests work, no traces | adapter or key mismatch | run the adapter check above |
 | Empty charts, project missing | signed into the wrong project | open **Homelab AI** |
 | Traces stop after a version bump | v4 data-model or SDK drift | re-run the adapter check, then step 4 of the verify list |
-| `/d/pi-routing` shows 0% local | query filters on `pi-auto` only | match `pi-auto\|qwen3.8-27b-auto` |
+| Pi Auto-Routing row shows 0% local | query filters on `pi-auto` only | match `pi-auto\|qwen3.8-27b-auto` |
 | TTFT panel empty | no streaming traffic | send a streamed request |
 
 Availability and restart panels never prove ingestion. Only step 4 of
