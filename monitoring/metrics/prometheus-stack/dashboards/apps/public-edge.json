@@ -896,7 +896,7 @@
     {
       "id": 18,
       "type": "row",
-      "title": "Anubis (redlib bot filter)",
+      "title": "Anubis (bot filter: redlib, searxng, geocoder, kiwix)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -923,7 +923,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (action) (rate(anubis_policy_results[$__rate_interval]))",
+          "expr": "sum by (namespace, action) (rate(anubis_policy_results[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{action}}",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -975,7 +976,7 @@
       },
       "targets": [
         {
-          "expr": "topk(12, sum by (action, rule) (increase(anubis_policy_results[$__range])))",
+          "expr": "topk(12, sum by (namespace, action, rule) (increase(anubis_policy_results[$__range])))",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
