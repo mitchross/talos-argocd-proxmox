@@ -44,9 +44,9 @@ Every Longhorn disk tag that a StorageClass selects must sit on at least two dis
 different nodes. With only one disk, Longhorn has nowhere to move a copy, so a drain of
 that node waits until someone adds the tag by hand.
 
-Today `flash` sits on `ssd-flash` (GPU worker), `truenas-ssd` (`truenas-worker-01`) and `asus-nuc-ssd` (`asus-nuc-gen13`), and
-`clone-ok` sits on `ssd-flash` and `hp-sff-ssd2`; `longhorn-kopiur-staging-local` and `longhorn-scratch` select it. Per-disk tags such as `gpu-bulk` or
-`truenas-ssd` name one disk on purpose. Only the scratch `storage-bench` classes select them.
+Today `flash` sits on `ssd-flash` (GPU worker) and `asus-nuc-ssd` (`asus-nuc-gen13`), and
+`clone-ok` sits on `ssd-flash` and `hp-sff-ssd2`; `longhorn-kopiur-staging-local` and `longhorn-scratch` select it. Per-disk tags such as `gpu-bulk`
+name one disk on purpose. Only the scratch `storage-bench` classes select them.
 
 When you add a tag to a live disk, also add it to that node's `default-disks-config` in the
 Omni cluster template. Longhorn reads the annotation only when a node first registers, so
@@ -105,7 +105,7 @@ The VM `talosnas1` runs on the NAS. Both of its disks are volumes on the `vm-ssd
 | Physical drive | Class | TrueNAS volume | VM disk | Talos mount | Longhorn disk | Holds |
 |---|---|---|---|---|---|---|
 | `vm-ssd` mirror: Samsung 850 EVO 500 GB + P3-512 (both consumer, no PLP) | consumer | `vm-ssd/talosnas1-system` 60 GiB | `vda` | system + `/var` | `talos-ephemeral` (scheduling **off**) | Talos system, images, logs, `emptyDir` |
-| same mirror | consumer | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (tags `truenas-ssd`, `flash`; `wired-storage`) | a `flash` disk: copies of `longhorn-flash-ha` and two-copy `flash` volumes |
+| same mirror | consumer | `vm-ssd/talosnas1-longhorn` 230 GiB | `vdb` | `/var/mnt/longhorn-truenas-ssd` | `truenas-ssd` (scheduling **off**, no tags; node tag `wired-storage`) | nothing new: consumer mirror behind a VM saturated under DB rebuilds (#3935). The disk entry stays so Longhorn keeps the path. |
 
 ## TrueNAS `.133`
 
