@@ -7,6 +7,8 @@ REPO_URL=https://github.com/mitchross/talos-argocd-proxmox.git
 REPO_DIR="$HERMES_HOME/workspace/talos-argocd-proxmox"
 export HERMES_HOME HOME PATH="/command:${PATH}"
 as_hermes() { s6-setuidgid hermes env HOME="$HOME" "$@"; }
+# Step markers; `kubectl logs -c seed --timestamps` shows how long each step took.
+step() { echo "[seed] step: $*"; }
 
 mkdir -p "$HERMES_HOME/workspace" "$HERMES_HOME/skills/devops/homelab-ops" "$HERMES_HOME/.local/bin" "$HERMES_HOME/.hindsight" "$HERMES_HOME/hindsight"
 install -o 10000 -g 10000 -m 0644 /etc/hermes-config/config.yaml "$HERMES_HOME/config.yaml"
@@ -98,12 +100,14 @@ printf '%s\n' 'export PATH=/opt/agents/bin:/opt/rust/cargo/bin:/usr/local/go/bin
 # Rebuildable caches and Rust intermediates live on the scratch ephemeral volume: no snapshots or backups, empty on each start.
 install -d -o 10000 -g 10000 /opt/scratch /opt/scratch/cargo-build /opt/scratch/cache /opt/scratch/bun /opt/scratch/npm /opt/scratch/yarn
 # The image's Rust is read-only; a volume RUSTUP_HOME defaults to it via a link and installs repo-pinned toolchains once.
+step rustup link
 mkdir -p "$HERMES_HOME/tools/rustup"; chown 10000:10000 "$HERMES_HOME/tools" "$HERMES_HOME/tools/rustup"
 for tc in /opt/rust/rustup/toolchains/*-x86_64-unknown-linux-gnu; do
   as_hermes env RUSTUP_HOME="$HERMES_HOME/tools/rustup" /opt/rust/cargo/bin/rustup toolchain link hermes-image "$tc" >/dev/null \
     && as_hermes env RUSTUP_HOME="$HERMES_HOME/tools/rustup" /opt/rust/cargo/bin/rustup default hermes-image >/dev/null \
     || echo "[seed] rustup link failed, continuing"
 done
+step craft-anything
 # Craft Anything MCP binary, pinned by release and sha256; bump with the craft-anything library skill.
 CA_VER=0.5.0 CA_SHA=d18c54ef05e5c7ef50f8c4959fee8983c0a4a1f141edc488d11f7029973c885b
 CA_DIR="$HERMES_HOME/tools/craft-anything-$CA_VER"
@@ -118,6 +122,7 @@ if [ ! -x "$CA_DIR/bin/craft-anything-cli" ]; then
   fi
   rm -f "$ca_tgz"
 fi
+step ssh and talosconfig
 # SSH targets and pinned host keys come from Git; the private key stays on the volume and is never regenerated.
 mkdir -p "$TERM_HOME/.talos"
 install -m 0600 /etc/hermes-config/ssh_config "$HERMES_HOME/.ssh/config"
@@ -132,10 +137,12 @@ if [ -n "${OMNI_SERVICE_ACCOUNT_KEY:-}" ] && command -v omnictl >/dev/null 2>&1;
 fi
 # Drop only the localhost stub old omnictl runs left as root; rmdir keeps anything else.
 rm -f "$HERMES_HOME/.talos/omni/config"; rmdir "$HERMES_HOME/.talos/omni" "$HERMES_HOME/.talos" 2>/dev/null || true
+step chown agent state
 # Only what this script writes as root; a recursive chown of $TERM_HOME walked ~900k worktree and cache files.
 chown 10000:10000 "$TERM_HOME" "$TERM_HOME/.profile"
 chown -R 10000:10000 "$TERM_HOME/.config" "$TERM_HOME/.talos" "$HERMES_HOME/.ssh" "$HERMES_HOME/.config" "$HERMES_HOME/.codex" "$HERMES_HOME/.claude" "$HERMES_HOME/.claude.json" "$HERMES_HOME/.gitconfig"
 
+step git config and repo fetch
 # Coding agents: repo checkout, git identity, shared-memory hooks. gh and codex logins are done once by hand (docs).
 as_hermes git config --global user.name "Hermes Agent"
 as_hermes git config --global user.email "mitchross@users.noreply.github.com"
@@ -150,6 +157,7 @@ fi
 if as_hermes gh auth status >/dev/null 2>&1; then
   as_hermes gh auth setup-git >/dev/null 2>&1 || true
 fi
+step home repo
 # Private home repo (repo map, shared skills); needs the gh login above, so a failure never blocks the start.
 HOME_REPO_DIR="$HERMES_HOME/workspace/home"
 if [ ! -e "$HOME_REPO_DIR/.git" ]; then
@@ -157,11 +165,13 @@ if [ ! -e "$HOME_REPO_DIR/.git" ]; then
 else
   as_hermes git -C "$HOME_REPO_DIR" pull --quiet --ff-only || echo "[seed] home pull skipped, continuing"
 fi
+step claude hindsight plugin
 if ! grep -qs hindsight-memory "$HERMES_HOME/.claude/plugins/installed_plugins.json"; then
   echo "[seed] installing Claude Code plugin hindsight-memory"
   as_hermes claude plugin marketplace add vectorize-io/hindsight >/dev/null 2>&1 || true
   as_hermes claude plugin install hindsight-memory || echo "[seed] claude plugin install failed, continuing"
 fi
+step codex config and hooks
 # Codex defaults for every run in this pod; the hooks installer appends its own [features] block below.
 if ! grep -qs '^model_reasoning_effort' "$HERMES_HOME/.codex/config.toml"; then
   mkdir -p "$HERMES_HOME/.codex"
@@ -174,14 +184,18 @@ if [ ! -f "$HERMES_HOME/.codex/hooks.json" ]; then
   # --mode local only writes hooks; cloud mode would overwrite .hindsight/codex.json.
   as_hermes sh -c 'curl -fsSL https://hindsight.vectorize.io/get-codex | bash -s -- --mode local' || echo "[seed] codex hooks install failed, continuing"
 fi
+step skills
 # Git inventory, missing-only library restore, last-good fallback and informational drift.
 as_hermes /opt/hermes/.venv/bin/python /etc/hermes-scripts/seed-skills.py "$REPO_DIR" \
   || echo "[seed] skills: seed failed; keeping installed skills"
+step kanban
 as_hermes /opt/hermes/.venv/bin/python /etc/hermes-scripts/reconcile-kanban.py \
   || echo "[seed] Kanban reconciliation failed; inspect task diagnostics"
+step qwen-lab
 # Qwen Lab profiles (qwen-lab, qwen-worker, ...) and their Kanban board; never writes the default profile.
 as_hermes /opt/hermes/.venv/bin/python /etc/hermes-scripts/seed-qwen-lab.py \
   || echo "[seed] qwen-lab seed failed; default profile unaffected"
+step drift report
 # Hermes reads this file to see what a rebuild from Git would lose.
 /bin/sh /etc/hermes-scripts/report-drift.sh | tee "$HERMES_HOME/logs/seed-drift.log" || true
 echo "[seed] done"
