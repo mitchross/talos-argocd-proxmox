@@ -21,15 +21,16 @@ replicas:
   - name: vllm-server
     count: 1
 
-# Model picker: no component = INT4 AutoRound (default). Uncomment one line to switch; same served name.
+# Model picker: exactly ONE line active. Clients always see the served name qwen3.8-27b.
 components:
-  # - models/abliterated-fp8   # Huihui Qwen3.8-27B abliterated, FP8
+  - models/frozenlock-qwen3.8-27b-int4-autoround      # ON  — INT4 W4A8 (default)
+  # - models/qwen-qwen3.8-27b-fp8                    # OFF — official FP8
+  # - models/huihui-qwen3.8-27b-abliterated-fp8      # OFF — abliterated FP8
 
 configMapGenerator:
   - name: vllm-scripts
     files:
       - scripts/model_cache.py
-      - model-manifest.json=model-manifest-int4.json
     options:
       annotations:
         argocd.argoproj.io/sync-wave: "-2"

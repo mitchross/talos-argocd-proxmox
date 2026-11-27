@@ -61,13 +61,13 @@ spec:
           image: ghcr.io/mitchross/vllm-qwen38-dualfast:0.34.0-dualfast.1@sha256:b5714110412a507c3475c2bdb3f0e8be4f073b8c411974c649ac50573e2586fd
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
+          # Model path and quantization come from the active component in models/ (see kustomization.yaml).
           args:
-            - /models/Qwen3.8-27B-int4-AutoRound-b4c61732c4f2
+            - /models/SET-BY-MODEL-COMPONENT
             - --served-model-name
             - qwen3.8-27b
-            # v0.34 dropped Marlin W4A8; humming runs the AutoRound INT4 weights with int8 activations.
             - --quantization
-            - humming
+            - SET-BY-MODEL-COMPONENT
             - --dtype
             - bfloat16
             - --tensor-parallel-size
@@ -137,9 +137,6 @@ spec:
               value: '{"high":16384,"low":4096,"max":16384,"medium":16384,"minimal":4096,"xhigh":16384}'
             - name: CLUB3090_DEFAULT_THINKING_TOKEN_BUDGET
               value: "16384"
-            # No allow_fallback: on sm_86 it silently reverts to 16-bit activations.
-            - name: VLLM_HUMMING_INPUT_QUANT_CONFIG
-              value: '{"dtype":"int8"}'
             - name: VLLM_USE_FLASHINFER_SAMPLER
               value: "0"
             - name: NVIDIA_DRIVER_CAPABILITIES

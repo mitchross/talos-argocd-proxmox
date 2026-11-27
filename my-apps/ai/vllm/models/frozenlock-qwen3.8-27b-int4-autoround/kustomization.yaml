@@ -1,0 +1,32 @@
+# Frozenlock/Qwen3.8-27B-int4-AutoRound: INT4 weights, int8 activations via humming (W4A8).
+# `test` ops require the base placeholders, so a second enabled model fails the build.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+patches:
+  - path: manifest-patch.yaml
+    target:
+      kind: ConfigMap
+      name: vllm-scripts
+  - target:
+      kind: Deployment
+      name: vllm-server
+    patch: |
+      - op: test
+        path: /spec/template/spec/containers/0/args/0
+        value: /models/SET-BY-MODEL-COMPONENT
+      - op: replace
+        path: /spec/template/spec/containers/0/args/0
+        value: /models/Qwen3.8-27B-int4-AutoRound-b4c61732c4f2
+      - op: test
+        path: /spec/template/spec/containers/0/args/4
+        value: SET-BY-MODEL-COMPONENT
+      - op: replace
+        path: /spec/template/spec/containers/0/args/4
+        value: humming
+      # No allow_fallback: on sm_86 it silently reverts to 16-bit activations.
+      - op: add
+        path: /spec/template/spec/containers/0/env/2
+        value:
+          name: VLLM_HUMMING_INPUT_QUANT_CONFIG
+          value: '{"dtype":"int8"}'

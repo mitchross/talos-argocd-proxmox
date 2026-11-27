@@ -210,8 +210,8 @@ to appear in telemetry.
 
 ## Storage
 
-A manifest in Git, `my-apps/ai/vllm/model-manifest-int4.json`, pins the
-revision, size and SHA-256 of all 17 checkpoint artifacts. A download hook
+A manifest in Git, the active model component's `manifest-patch.yaml` under `my-apps/ai/vllm/models/`, pins the
+revision, size and SHA-256 of every checkpoint artifact. A download hook
 writes the TrueNAS archive. A cache-sync hook verifies the archive and copies
 it to local NVMe.
 

@@ -1,4 +1,4 @@
-# Replaces the pinned manifest the download, cache-sync and wait steps read.
+# Pinned checkpoint the download, cache-sync and wait steps read.
 apiVersion: v1
 kind: ConfigMap
 metadata:

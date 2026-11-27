@@ -84,20 +84,23 @@ See the [model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for gatew
 
 ## Switch models
 
-The base serves INT4 AutoRound. Each folder in `models/` is a Kustomize component that swaps the checkpoint in place.
-Each component carries its own pinned manifest and the patch for the arguments that differ.
+Each folder in `models/` is a Kustomize component for one checkpoint, named after its Hugging Face repo.
+The base Deployment holds `SET-BY-MODEL-COMPONENT` placeholders. Exactly one component fills them in:
+it sets the pinned manifest (`manifest-patch.yaml`), the model path and the quantization.
+Enabling two components fails the build.
 
-| Component | Checkpoint | Changes |
-|---|---|---|
-| none (default) | `Frozenlock/Qwen3.8-27B-int4-AutoRound` | — |
-| `models/abliterated-fp8` | [`munekazu/Huihui-Qwen3.8-27B-abliterated-FP8`](https://huggingface.co/munekazu/Huihui-Qwen3.8-27B-abliterated-FP8) | `--quantization fp8`, no humming env |
+| Component | Checkpoint | Quantization | Status |
+|---|---|---|---|
+| `models/frozenlock-qwen3.8-27b-int4-autoround` | [`Frozenlock/Qwen3.8-27B-int4-AutoRound`](https://huggingface.co/Frozenlock/Qwen3.8-27B-int4-AutoRound) | `humming` (W4A8) + humming env | default |
+| `models/qwen-qwen3.8-27b-fp8` | [`Qwen/Qwen3.8-27B-FP8`](https://huggingface.co/Qwen/Qwen3.8-27B-FP8) | `fp8` | rollback |
+| `models/huihui-qwen3.8-27b-abliterated-fp8` | [`munekazu/Huihui-Qwen3.8-27B-abliterated-FP8`](https://huggingface.co/munekazu/Huihui-Qwen3.8-27B-abliterated-FP8) | `fp8` | not yet booted on this image |
 
-1. Uncomment one line under `components:` in `kustomization.yaml`.
+1. Under `components:` in `kustomization.yaml`, comment out the active line and uncomment the new one.
 2. Open a PR and merge it.
 
 ArgoCD then runs the download and cache-sync Jobs for the new manifest. It restarts `vllm-server` after both Jobs finish.
 The served name stays `qwen3.8-27b`, so clients need no change.
-To switch back, comment the line out again. The FP8 abliterated build has had no boot or acceptance test on this image yet.
+To add a model, copy a folder, regenerate `manifest-patch.yaml` from the pinned revision, and add a commented line.
 
 ## Explicit reasoning and sampling
 
@@ -264,10 +267,9 @@ changing runtime flags.
 
 ## Reproducible staging
 
-`model-manifest-int4.json` pins 17 checkpoint/tokenizer/vision artifacts by
-revision, exact byte count and SHA-256 (19,016,926,426 bytes). Kustomize exposes it
-as `model-manifest.json` to the unchanged download/sync/wait mechanism.
-The original FP8 `model-manifest.json` remains available for rollback.
+The active model component's `manifest-patch.yaml` pins every checkpoint/tokenizer/vision artifact by
+revision, exact byte count and SHA-256. The INT4 default has 17 artifacts (19,016,926,426 bytes). It reaches the
+download/sync/wait mechanism as `model-manifest.json` in the `vllm-scripts` ConfigMap.
 
 1. Wave -3 creates the namespace. Wave -2 creates the scripts ConfigMap and
    dedicated NFS writer PV/PVC. The existing archive reader PVC is unchanged.
@@ -358,6 +360,6 @@ reconciles the server and WebUI policy. It cannot update workstation settings.
 Do not change model weights, sampler or KV precision to roll back effort.
 
 Revert this GitOps PR to restore Strata, its routes and the parked FP8 vLLM config.
-No checkpoint files are deleted. A later FP8-only comparison can switch the
-ConfigMap manifest mapping back to `model-manifest.json` and restore FP8 args.
+No checkpoint files are deleted. A later FP8-only comparison can enable the
+`models/qwen-qwen3.8-27b-fp8` component (see [Switch models](#switch-models)).
 CPU image smoke is not GPU, vision, long-context or concurrent-load acceptance.
