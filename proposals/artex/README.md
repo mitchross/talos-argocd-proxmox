@@ -18,6 +18,7 @@ flowchart LR
 1. **Network baseline live.** The `feat/artex-network-isolation` change is merged and synced:
    `kubectl get ccnp artex-namespace-baseline` exists and
    `kubectl get ccnp default-deny-lan-egress -o jsonpath='{.spec.endpointSelector}'` shows the `NotIn [artex]` expression.
+   Both must hold before any artex pod exists: an artex pod with the exclusion but no baseline has no policy and allows all traffic.
 2. **Image published.** The homelab-images `build-artex.yml` run on `main` has published `ghcr.io/mitchross/artex:0.7.0`.
    Set `image:` in `deployment.yaml` to `ghcr.io/mitchross/artex:0.7.0@sha256:<digest from the run summary>`.
    Make the GHCR package public, or the pull fails.
@@ -67,5 +68,5 @@ Keep the keys and the database restored as a pair: an old `secret.key` cannot re
 ## Known limits
 
 - Postgres 16, not the repo's usual 19: it is the only major ARTEX v0.7.0 tests on. Renovate is held below 17.
-- The singletons use `RollingUpdate` with `maxSurge: 0`, which releases the RWO volume first, rather than `Recreate`.
+- Both Deployments use `Recreate`, the root `CLAUDE.md` rule for RWO PVCs, so every rollout has a short outage.
 - Untested in the cluster: the capability set, the `ingress`-entity-only allow and the mover egress. The image test covers the capability set under Docker. Check the rest with Hubble after the first sync.

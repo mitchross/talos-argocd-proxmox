@@ -10,12 +10,9 @@ metadata:
     app: artex-postgres-16
 spec:
   replicas: 1
-  # RWO PVC: the old pod stops before the new one starts.
+  # RWO PVC: root CLAUDE.md requires Recreate.
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
+    type: Recreate
   selector:
     matchLabels:
       app: artex-postgres-16

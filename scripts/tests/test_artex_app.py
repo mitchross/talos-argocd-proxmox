@@ -48,11 +48,12 @@ class ArtexManifestTest(unittest.TestCase):
         self.assertTrue(all("persistentVolumeClaim" in v for v in volumes.values()))
         self.assertEqual(sorted(m["mountPath"] for m in container["volumeMounts"]), ["/app/data", "/app/keys"])
 
-    def test_rwo_singletons_never_surge(self):
+    def test_rwo_singletons_recreate(self):
+        # Root CLAUDE.md: Deployments with RWO PVCs use Recreate, never RollingUpdate.
         for dep in self.of_kind("Deployment"):
             with self.subTest(dep["metadata"]["name"]):
                 self.assertEqual(dep["spec"]["replicas"], 1)
-                self.assertEqual(dep["spec"]["strategy"]["rollingUpdate"]["maxSurge"], 0)
+                self.assertEqual(dep["spec"]["strategy"], {"type": "Recreate"})
 
     def test_only_the_ui_is_routed_internally(self):
         ports = [p["port"] for s in self.of_kind("Service") for p in s["spec"]["ports"]]

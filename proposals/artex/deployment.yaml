@@ -9,12 +9,9 @@ metadata:
     app.kubernetes.io/name: artex
 spec:
   replicas: 1
-  # RWO PVCs: the old pod stops before the new one starts, so the volumes never need two nodes.
+  # RWO PVCs: root CLAUDE.md requires Recreate.
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: artex
