@@ -1,0 +1,104 @@
+# ARTEX: root server, agent processes dropped to 10001:10001. Network: artex-namespace-baseline (cilium)
+# plus network-policy.yaml here. Image: homelab-images images/artex.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: artex
+  namespace: artex
+  labels:
+    app.kubernetes.io/name: artex
+spec:
+  replicas: 1
+  # RWO PVCs: the old pod stops before the new one starts, so the volumes never need two nodes.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: artex
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: artex
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      # SIGTERM goes to start.sh, which forwards it; ARTEX drains HTTP and running tasks.
+      terminationGracePeriodSeconds: 60
+      # No fsGroup: ARTEX sets owners itself (root keys, 10001 executor home, root:10001 run dirs).
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: artex
+          # Digest pending: set it from the homelab-images build-artex main run summary.
+          image: ghcr.io/mitchross/artex:0.7.0
+          imagePullPolicy: IfNotPresent
+          # Image ENTRYPOINT is /app/start.sh. Proxy on loopback only; explicit exec ids make a failed drop fatal.
+          args: ["-addr", ":8787", "-proxy", "127.0.0.1:8788", "-exec-uid", "10001", "-exec-gid", "10001"]
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+              # CHOWN/FOWNER/FSETID/DAC_OVERRIDE: own and chmod the executor's dirs (setgid kept);
+              # SETUID/SETGID: the drop to 10001; KILL: stop agent processes owned by 10001.
+              add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "FSETID", "KILL", "SETGID", "SETUID"]
+          ports:
+            - name: http
+              containerPort: 8787
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: artex-config
+          env:
+            - name: ARTEX_PG_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: artex-db
+                  key: ARTEX_PG_DSN
+          # /api/health does not touch Postgres; /api/ready returns 503 until Postgres answers.
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: keys
+              mountPath: /app/keys
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: artex-data
+        - name: keys
+          persistentVolumeClaim:
+            claimName: artex-keys

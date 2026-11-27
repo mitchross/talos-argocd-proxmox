@@ -270,6 +270,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s scripts/tests -p test_monitoring_contract.py -v
           python3 -m unittest discover -s scripts/tests -p test_ai_observability.py -v
+          python3 -m unittest discover -s scripts/tests -p test_artex_app.py -v
           python3 -m unittest discover -s my-apps/ai/presenton/scripts -p 'test_*.py' -v
           python3 -m unittest discover -s my-apps/ai/comfyui/scripts -p 'test_*.py' -v
           python3 -m unittest discover -s my-apps/personal-projects/news-reader/tests -v

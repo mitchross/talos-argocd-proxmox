@@ -16,7 +16,9 @@ BACKEND = re.compile(r'https?://(?:vllm-service(?:\.vllm(?:\.svc(?:\.cluster\.lo
                      r'(?:vllm|llama)\.vanillax\.me)(?=[:/\s\"\x27]|$)')
 SUFFIXES = {'.yaml', '.yml', '.json', '.env'}
 # Qwen Lab is direct on purpose: LiteLLM's qwen alias can fall back to cloud, and the lab must not (#3604).
-ALLOWED = {'my-apps/ai/litellm/config.yaml', 'my-apps/development/hermes/qwen-lab/base.yaml'}
+# ARTEX is direct for the same reason: its agent must never reach a paid model.
+ALLOWED = {'my-apps/ai/litellm/config.yaml', 'my-apps/development/hermes/qwen-lab/base.yaml',
+           'my-apps/development/artex/artex.env'}
 BACKEND_DIRS = ('my-apps/ai/vllm/', 'my-apps/ai/strata/')
 
 

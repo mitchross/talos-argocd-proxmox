@@ -1,0 +1,136 @@
+# Plain Postgres, no operator: kopiur daily snapshots + restore-before-bind; a restored crash-consistent
+# snapshot WAL-recovers on boot. Runbook: docs/domains/cnpg/run-postgres-plain-english.md
+# Major 16: the one ARTEX v0.7.0 tests on (upstream CI and docker-compose use postgres:16-alpine).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: artex-postgres-16
+  namespace: artex
+  labels:
+    app: artex-postgres-16
+spec:
+  replicas: 1
+  # RWO PVC: the old pod stops before the new one starts.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: artex-postgres-16
+  template:
+    metadata:
+      labels:
+        app: artex-postgres-16
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      # SIGINT = Postgres fast shutdown; 60s covers a busy checkpoint before the kubelet SIGKILLs.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:16.16@sha256:ce81150802644ddfac1db4da9e63be6f2a3818aa6ee98a7a28838aeea65dc37a
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # Only honoured on first boot of an EMPTY volume; on a restored volume the restored data wins.
+            - name: POSTGRES_DB
+              value: "artex"
+            - name: POSTGRES_USER
+              value: "artex"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: artex-db
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+            # A subdirectory, so the volume's lost+found is not in the data directory.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # Covers WAL replay after a restore so liveness can't restart Postgres mid-recovery.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "artex", "-d", "artex"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "artex", "-d", "artex"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "artex", "-d", "artex"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            # At the image's VOLUME path, so the runtime never mounts an anonymous volume over the data.
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: artex-postgres-16-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: artex-postgres-16
+  namespace: artex
+  labels:
+    app: artex-postgres-16
+spec:
+  selector:
+    app: artex-postgres-16
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: artex-postgres-16-data
+  namespace: artex
+  annotations:
+    # immutable dataSourceRef on a Bound PVC: mask the SSA dry-run diff;
+    # the AppSet ignoreDifferences handles the live compare.
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+  labels:
+    app: artex-postgres-16
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn
+  # kopiur restore-before-bind: binds Pending until the Restore populator hydrates it; no-op while Bound.
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: artex-postgres-16-data-restore

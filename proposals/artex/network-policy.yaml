@@ -1,0 +1,84 @@
+# Adds each flow ARTEX needs to artex-namespace-baseline (infrastructure/networking/cilium/policies),
+# which already denies everything else and allows DNS. No rule here reaches a scan target: add those
+# only with separate approval, one target at a time.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: artex-app
+  namespace: artex
+spec:
+  description: "ARTEX: UI from the gateway envoy; egress to its Postgres and local vLLM only"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: artex
+  ingress:
+    # Every Gateway's envoy carries this identity; the HTTPRoute attaches only to the internal Gateway.
+    # Kubelet probes need no rule (allow-localhost defaults to always on Kubernetes).
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "8787"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: artex-postgres-16
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # Service vllm-service:8080 forwards to the pod's port 8000; policy sees the pod port.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: vllm
+            app: vllm-server
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: artex-postgres
+  namespace: artex
+spec:
+  description: "ARTEX Postgres: only the ARTEX server connects"
+  endpointSelector:
+    matchLabels:
+      app: artex-postgres-16
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: artex
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+---
+# kopiur movers: the RustFS S3 repository (ClusterRepository cluster-kopia) and the API server for status.
+# The CHECKPOINT hook runs through the API server's exec, not the pod network.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: artex-kopiur-movers
+  namespace: artex
+spec:
+  description: "kopiur movers in artex: RustFS S3 and the API server only"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/managed-by: kopiur
+  egress:
+    - toCIDR:
+        - 192.168.10.133/32
+      toPorts:
+        - ports:
+            - port: "30292"
+              protocol: TCP
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP

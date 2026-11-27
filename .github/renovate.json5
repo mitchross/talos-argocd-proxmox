@@ -197,6 +197,12 @@
       allowedVersions: '<20',
     },
     {
+      description: 'ARTEX Postgres stays on 16, the major ARTEX tests on. Same rule as above: a major needs a planned dump and restore.',
+      matchPackageNames: ['postgres', 'docker.io/library/postgres'],
+      matchFileNames: ['**/artex/postgres-16/**'],
+      allowedVersions: '<17',
+    },
+    {
       description: 'temporal-worker-controller: chart and IMAGE share the same OCI repo (docker.io/temporalio/temporal-worker-controller). Image tags look like v1.5.x; chart tags look like 0.24.x. Constrain to chart-style (no `v` prefix, two-part minor) so Renovate cannot bump us onto an image tag (it did exactly that in #1224, breaking CI repo-wide for ~9 days because `helm pull` rejects a plain image OCI artifact with "manifest does not contain minimum number of descriptors").',
       matchPackageNames: [
         'docker.io/temporalio/temporal-worker-controller',
