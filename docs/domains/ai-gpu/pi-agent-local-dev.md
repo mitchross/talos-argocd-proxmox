@@ -252,7 +252,7 @@ The aliases must expand to the provider/model pairs above, including `--thinking
 Check the outgoing request kwargs, not the answer length.
 Direct Qwen sends `enable_thinking=true`, `reasoning_effort=xhigh` and `preserve_thinking=true` by default.
 Repeat the check with explicit medium, low and off.
-The [vLLM acceptance matrix](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#reasoning-acceptance-checks)
+The [vLLM acceptance matrix](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/vllm/README.md#check-it-works)
 covers tools, images and multi-turn history.
 A run that exhausts its output budget is inconclusive.
 The server caps thinking at 16K, which leaves the rest of the 48K for the answer.

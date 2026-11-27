@@ -1,149 +1,59 @@
-# vLLM: Qwen3.8-27B INT4/W4A8 on two RTX 3090s
+# vLLM: Qwen3.8-27B on two RTX 3090s
 
-vLLM owns both cards; [Strata](../strata/README.md) is parked. The image comes from
-[homelab-images PR 48](https://github.com/mitchross/homelab-images/pull/48): merge it,
-wait for publication, then merge this GitOps change. The custom image digest pin
-follows publication; the upstream base is already pinned by digest.
-
-The [club-3090 dual-fast recipe](https://github.com/noonghunna/club-3090/blob/6ec58a0fe4854d10a69a4cba0df077784ed67b55/models/qwen3.8-27b/vllm/compose/dual/autoround-int4/mtp.yml)
-is pinned to `6ec58a0fe4854d10a69a4cba0df077784ed67b55`. Humming W4A8, Mamba block-drop and
-FlashInfer decode-pin fixes are baked into the image, never applied at boot.
-Thinking-budget patches B/D and the club-3090 reasoning-effort template are baked in
-([homelab-images PR 49](https://github.com/mitchross/homelab-images/pull/49)). The existing
-repetition penalty stays **1.05**, rather than the recipe's 1.0; other sampler values are unchanged.
-
-Startup on 2026-11-08 reported **612,192 KV tokens (2.3 × 262K, two full-length
-sessions)** at 0.90 with 16 slots. Measured: 56/185/326/512 aggregate tok/s at
-1/4/8/16 concurrent requests, thinking off. Keep 0.90
-unless startup reports fewer than 262,144 KV tokens: raise to 0.92 through Git,
-never reduce context to fit. Verify actual pool size, vision and long-context
-quality after rollout. Beyond native 262K needs YaRN; planned A/B only.
-
-[Concurrency study #1092](https://github.com/noonghunna/club-3090/discussions/1092)
-reported spec-off 1K/512-token throughput on v0.27.1: C1 68, C8 211, C16 254,
-C32 308 aggregate tok/s. These are upstream reference numbers, not local results;
-the saved FP8 TP2 baseline is about 40 tok/s single-stream.
-
-**Git-declared backend and operating policy.** The
-[2026-09-06 capacity and client audit](../../../docs/domains/ai-gpu/3090-llm-optimization.md)
-records measurements of the earlier v0.28.0 deployment, with medium sent
-explicitly. It does not benchmark the current tunables or the xhigh server default below. `deployment.yaml` pins the running version.
-Confirm the running arguments and repeat acceptance after merge and Argo reconciliation.
-
-| Setting | Value |
-|---|---|
-| Model | `Frozenlock/Qwen3.8-27B-int4-AutoRound`, W4A8 int8 activations |
-| Revision | `b4c61732c4f2d8af323d75ba5702b5c7f3361539` |
-| Runtime | patched `ghcr.io/mitchross/vllm-qwen38-dualfast`; version in `deployment.yaml` |
-| GPUs | 2 × RTX 3090, tensor parallel 2, multiprocessing executor |
-| Interconnect | no custom all-reduce; NCCL P2P disabled; shared host transport |
-| Context ceiling | 262,144 tokens, native model limit, no RoPE extrapolation |
-| Concurrency | up to 16 sequences sharing one KV pool; the pool, not the slot count, bounds what runs |
-| Attention | FlashInfer explicitly selected for Ampere FP8 KV |
-| KV / recurrent state | `fp8_e4m3` / bfloat16 |
-| GPU utilization budget | 0.90 per GPU; extensible KV cache off to keep the v0.33 pool size |
-| Prefill | 8,192-token aggregate budget; at most 4,096 prefill tokens per request per step |
-| Vision | native encoder; one image per request, video disabled |
-| Reasoning | on, `xhigh` default (16,384-token cap); low=4,096, high/xhigh/max=16,384 |
-| Speculation | **off**; no MTP or external drafter |
-| Power | existing 200 W per card |
-| Host resources | 8 GiB request, 64 GiB limit; VPA recommendation-only |
-
-The active [AutoRound checkpoint](https://huggingface.co/Frozenlock/Qwen3.8-27B-int4-AutoRound)
-is 19.02 GB decimal including tokenizer and vision artifacts. Since vLLM v0.34,
-`--quantization humming` with `VLLM_HUMMING_INPUT_QUANT_CONFIG={"dtype":"int8"}` runs INT4
-weights with INT8 activations on Ampere. The boot log must print
-`[humming-w4a8] effective activations a_dtype=int8`. Never set `VLLM_MARLIN_INPUT_DTYPE`; v0.34 refuses to start. The official FP8 files and their original
-manifest stay intact for rollback; staging never prunes other checkpoints.
-
-The config selects FlashInfer explicitly, because vLLM 0.28.0's Triton backend rejects FP8
-KV on SM86. The official checkpoint has no calibrated K/V scales,
-so the stock FP8 path uses unit scales. Acceptance therefore includes answer-quality and long-context
-checks, not just throughput checks. This runtime does not add the unsupported legacy
-`--calculate-kv-scales` flag.
-[vLLM FlashInfer support](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/v1/attention/backends/flashinfer.py),
-[Triton architecture guard](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/v1/attention/backends/triton_attn.py),
-[KV scale handling](https://github.com/vllm-project/vllm/blob/v0.28.0/vllm/model_executor/layers/quantization/kv_cache.py).
-
-Speculation stays disabled until the GDN/Mamba long-session
-fault fixes are validated (vLLM #50021, #53912, #55533, #62304). The image includes
-supporting patches for a planned MTP n=4 A/B, but no `--speculative-config` is passed.
-Revisit MTP only with a long-session regression test.
-[Upstream fault/fix discussion](https://github.com/vllm-project/vllm/pull/50021)
-
-## Endpoints and client compatibility
-
-- model ID: `qwen3.8-27b`
-- direct: `http://vllm-service.vllm.svc.cluster.local:8080/v1`
-- LAN: `https://llama.vanillax.me/v1` and `https://vllm.vanillax.me/v1`
-
-Applications call authenticated LiteLLM, not these diagnostic endpoints directly.
-The vLLM HTTPRoute owns both LAN hostnames and targets its selector
-Service. `llama.vanillax.me` stays for older bookmarks and client configs.
-See the [model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for gateway wiring.
+vLLM runs one Qwen3.8-27B model on both 3090s. Every app reaches it as `qwen3.8-27b`.
 
 ## Switch models
 
-Each folder in `models/` is a Kustomize component for one checkpoint, named after its Hugging Face repo.
-The base Deployment holds `SET-BY-MODEL-COMPONENT` placeholders. Exactly one component fills them in:
-it sets the pinned manifest (`manifest-patch.yaml`), the model path and the quantization.
-Enabling two components fails the build.
+1. Open `kustomization.yaml`.
+2. Under `components:`, comment out the `ON` line and uncomment the model you want.
+3. Open a PR and merge it.
 
-| Component | Checkpoint | Quantization | Status |
-|---|---|---|---|
-| `models/frozenlock-qwen3.8-27b-int4-autoround` | [`Frozenlock/Qwen3.8-27B-int4-AutoRound`](https://huggingface.co/Frozenlock/Qwen3.8-27B-int4-AutoRound) | `humming` (W4A8) + humming env | default |
-| `models/qwen-qwen3.8-27b-fp8` | [`Qwen/Qwen3.8-27B-FP8`](https://huggingface.co/Qwen/Qwen3.8-27B-FP8) | `fp8` | rollback |
-| `models/huihui-qwen3.8-27b-abliterated-fp8` | [`munekazu/Huihui-Qwen3.8-27B-abliterated-FP8`](https://huggingface.co/munekazu/Huihui-Qwen3.8-27B-abliterated-FP8) | `fp8` | not yet booted on this image |
+ArgoCD then downloads and verifies the new model, copies it to the GPU node, and restarts vLLM.
+Apps need no change. Two active lines fail the build on purpose.
 
-1. Under `components:` in `kustomization.yaml`, comment out the active line and uncomment the new one.
-2. Open a PR and merge it.
+| Folder in `models/` | Model | Notes |
+|---|---|---|
+| `frozenlock-qwen3.8-27b-int4-autoround` | [INT4 AutoRound](https://huggingface.co/Frozenlock/Qwen3.8-27B-int4-AutoRound) | Default. 19 GB. Fastest. |
+| `qwen-qwen3.8-27b-fp8` | [Official FP8](https://huggingface.co/Qwen/Qwen3.8-27B-FP8) | Rollback. 29 GB. |
+| `huihui-qwen3.8-27b-abliterated-fp8` | [Abliterated FP8](https://huggingface.co/munekazu/Huihui-Qwen3.8-27B-abliterated-FP8) | Uncensored. 31 GB. Not booted on this image yet. |
 
-ArgoCD then runs the download and cache-sync Jobs for the new manifest. It restarts `vllm-server` after both Jobs finish.
-The served name stays `qwen3.8-27b`, so clients need no change.
-To add a model, copy a folder, regenerate `manifest-patch.yaml` from the pinned revision, and add a commented line.
+To add a model, copy a folder. Then pin the new repo revision and file checksums in its `manifest-patch.yaml`.
 
-## Explicit reasoning and sampling
+## How to reach it
 
-The server supplies `enable_thinking=true`, `reasoning_effort=xhigh`, and
-`preserve_thinking=true` through the baked club-3090 Qwen3.8 chat template.
-The Qwen reasoning parser emits reasoning separately from answer content.
-`qwen3_coder` parses tool calls, and automatic tool choice stays enabled.
+- Apps: LiteLLM at `http://litellm-service.litellm.svc.cluster.local:4000/v1`. Telemetry needs this path.
+- Diagnostics only: `http://vllm-service.vllm.svc.cluster.local:8080/v1`, `https://vllm.vanillax.me/v1` or `https://llama.vanillax.me/v1`.
 
-| Desired behavior | `chat_template_kwargs` |
+Gateway wiring: [model catalog](../../../docs/domains/ai-gpu/model-catalog.md).
+
+## Settings that bite
+
+| Setting | Value | Why |
+|---|---|---|
+| GPU memory | `0.90` | At startup, the log must show at least 262,144 KV tokens. Otherwise, raise it to `0.92` in Git. Never cut context. |
+| Context | 262,144 tokens | This is the native limit. Going past it needs YaRN; do not enable it. |
+| Slots | 16 | The KV pool, not the slot count, limits real load. |
+| Attention | FlashInfer | Triton rejects FP8 KV cache on 3090s. |
+| Speculation / MTP | off | Long sessions crash it (vLLM #50021). Turn it on only after a long-session test passes. |
+| INT4 activations | `VLLM_HUMMING_INPUT_QUANT_CONFIG={"dtype":"int8"}` | The boot log must show `[humming-w4a8] effective activations a_dtype=int8`. |
+| `VLLM_MARLIN_INPUT_DTYPE` | never set | vLLM v0.34 refuses to start with it. |
+| Power | 200 W per card | Do not raise it. |
+
+The image is `ghcr.io/mitchross/vllm-qwen38-dualfast`, built in homelab-images.
+Its fixes and the reasoning template are baked in, and nothing patches at boot.
+
+## Thinking
+
+The server thinks by default at `xhigh` effort, with a 16,384-token cap. The cap stops Qwen from overthinking.
+
+| Client sends in `chat_template_kwargs` | Result |
 |---|---|
-| No thinking | `{"enable_thinking":false,"preserve_thinking":false}` |
-| Brief thinking | `{"enable_thinking":true,"reasoning_effort":"low"}` |
-| Faster, still thinking | `{"enable_thinking":true,"reasoning_effort":"medium"}` |
-| Server default | `{"enable_thinking":true,"reasoning_effort":"xhigh"}` |
+| nothing | thinking, `xhigh` |
+| `{"enable_thinking":true,"reasoning_effort":"low"}` | short thinking (4,096 cap) |
+| `{"enable_thinking":true,"reasoning_effort":"medium"}` | thinking (16,384 cap) |
+| `{"enable_thinking":false,"preserve_thinking":false}` | no thinking. Also send the off sampler below. |
 
-The baked template at `/etc/club3090/qwen38-reasoning-effort-template/chat_template.jinja`
-maps `high`/`max` to `xhigh` and `minimal` to `low`. Requests without an effort
-use `xhigh`; explicit client choices win.
-
-Build-time patches B/D use the static `effort_budget.py shell-env` output in the
-Deployment: low/minimal=4,096, medium=16,384, high/xhigh/max=16,384 thinking tokens,
-with a 16,384 fallback for endpoints without the chat hook. Explicit request budgets
-win. Upstream's sampled top-k-off and trace-replay safety exceptions remain.
-`--reasoning-parser qwen3` enables budget tracking on v0.32.0. `--reasoning-config`
-sets `reasoning_end_str` to a short hand-off ("I have to give the solution based on
-the reasoning directly now.") so a capped think ends in an answer. With a bare
-`</think>`, xhigh kept reasoning inside the reply until it ran out of tokens.
-The template provenance also records tool-key sorting and in-place later system messages.
-
-Qwen3.8-27B overthinks (unpatched upstream; see HF discussions 76 and 178), so the
-cap does the work. A 2026-11-08 A/B at xhigh (22 coding, math, RAG and tool tasks,
-two samples each) scored a 16K cap 40/44 and a 32K cap 39/44, with 16K about 21%
-faster, so the cap is 16K. Ask for more per request with `thinking_token_budget`.
-Turns `pi-auto` sends to local Qwen get the xhigh default; its classifier explicitly
-disables thinking. DeepSeek high/max and cloud-failover boundaries are unchanged.
-
-Preservation stays on for coding agents. Keep returned reasoning with the
-assistant messages to retain continuity and allow reuse of unchanged prefixes.
-For stateless or simple chats, clients may explicitly send `preserve_thinking=false`
-to reduce retained history. That option trims older reasoning. It is not a
-hard reasoning-token budget or a substitute for `enable_thinking=false`.
-
-| Parameter | Thinking (server default) | Non-thinking (per request) |
+| Sampler | Thinking | Off |
 |---|---:|---:|
 | `temperature` | 1.0 | 0.7 |
 | `top_p` | 0.95 | 0.8 |
@@ -152,214 +62,32 @@ hard reasoning-token budget or a substitute for `enable_thinking=false`.
 | `presence_penalty` | 0.0 | 1.5 |
 | `repetition_penalty` | 1.05 | 1.0 |
 
-Changing the thinking flag alone does not switch vLLM's sampler. Direct
-clients must send all six non-thinking values when opting out. Open WebUI's
-Qwen filter applies these mode-specific values to both forwarding forms. Pi's
-thinking toggle controls template kwargs, and the repo-owned sampler
-extension selects the matching values for direct Qwen requests. See the
-[Pi guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md).
-[Official Qwen controls and sampling](https://huggingface.co/Qwen/Qwen3.8-27B-FP8#api-usage)
+The thinking switch alone does not change the sampler, so send all six "off" values.
+When you change `repetition_penalty`, change the server, Open WebUI and Pi together.
+The Pi setup lives in the [Pi guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md).
 
-The checkpoint revision stays pinned. The September 6 source audit found
-`017b9c7af6b5689d5dd426a76e0bc077eb5ca20a` (2026-08-14). That historical check
-says nothing about future upstream releases. Changing the reasoning default
-does not replace weights, and it does not cure thinking loops.
-[Official FP8 history](https://huggingface.co/Qwen/Qwen3.8-27B-FP8/commits/main)
+## How the model reaches the GPU
 
-## Tuning policy and evidence limits
+1. A download Job saves the pinned files to the NAS (`192.168.10.133:/mnt/ai-pool/vllm`). It checks each file's size and SHA-256.
+2. A cache-sync Job copies them to the GPU node's NVMe. It then writes `.verified-manifest`.
+3. vLLM waits for that marker, then loads the model from local disk, offline.
 
-`--max-num-batched-tokens 8192` is the aggregate scheduling budget;
-`--long-prefill-token-threshold 4096` caps the prefill chunk of each request.
-That cap is active with 16 sequence slots, so a single long prompt
-does not receive 8,192-token chunks. Alignment, available tokens, vision and
-other scheduler constraints can reduce chunks further. This is an intentional
-8192/4096 profile. It is not four times fewer steps and not a measured speedup.
-[Versioned scheduler](https://github.com/vllm-project/vllm/blob/v0.29.0/vllm/v1/core/sched/scheduler.py).
+Later syncs skip the re-check while the marker matches. To force a full re-check, delete `.verified-manifest` and sync.
+Nothing is ever pruned, so old models stay on the NAS and NVMe.
 
-`align` and `prefix-match-unit=16` pin cache behavior. The latter is
-matching granularity, not a recurrent-state checkpoint every 16 tokens.
-Keep `expandable_segments:True` without a split-size override. Allocator
-fragmentation tuning needs measurements, not a copied reference setting.
-[PyTorch allocator guidance](https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf).
-
-Thinking `repetition_penalty=1.05` is a **local mitigation candidate**. It is not the
-official Qwen default of 1.0 or an established fix. The author of
-[Qwen3.8 issue 216](https://github.com/QwenLM/Qwen3.8/issues/216) corrected earlier
-claims. Low and medium are not universally immune, and the reported narrow penalty
-band and extraction scores do not establish coding, tool, or vision quality.
-The suspected EOS-inside-thinking mechanism is not a confirmed root cause.
-Validate all supported modes. The xhigh default does not change sampling.
-The server value is a fallback, not an enforced floor, and explicit client values
-win. WebUI and the Pi extension use 1.05 for every thinking effort and 1.0 for
-off. When changing that policy, update server, clients, tests and docs together.
-
-## Reasoning acceptance checks
-
-Before live tests, inspect the **running** Deployment args and request payloads.
-A short answer alone cannot prove which effort reached the model. The running
-`--default-chat-template-kwargs` must contain thinking=true, effort=xhigh and
-preservation=true. Check the baked template path, budget env, stock parser and unchanged thinking sampler.
-
-```bash
-kubectl -n vllm get deploy vllm-server -o json | jq '.spec.template.spec.containers[0].args'
-uv run --with pyyaml python -m unittest discover -s scripts/tests -p test_qwen_reasoning.py -v
-kubectl -n vllm port-forward svc/vllm-service 18000:8080
-```
-
-In another terminal, omit template kwargs to test the fallback.
-Repeat with each row's kwargs and record the complete response, including
-reasoning, content, tools and usage. This diagnostic bypasses LiteLLM, so also
-verify client requests through the authenticated gateway after rollout.
-
-```bash
-curl -fsS http://127.0.0.1:18000/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"What is 37*43? Verify the calculation."}],"max_tokens":32768}'
-```
-
-| Case | Request / expected result |
-|---|---|
-| Default | Omit kwargs; running defaults resolve to enabled/xhigh/preserved; answer 1591 with separate reasoning. |
-| Explicit low | `{"enable_thinking":true,"reasoning_effort":"low"}`; payload remains low, coherent answer. |
-| Explicit medium | `{"enable_thinking":true,"reasoning_effort":"medium"}`; payload remains medium, coherent answer. |
-| Explicit xhigh | `{"enable_thinking":true,"reasoning_effort":"xhigh"}`; explicit extended effort (16,384 thinking-token budget), coherent answer. |
-| Off | `{"enable_thinking":false,"preserve_thinking":false}` plus the non-thinking sampler; empty/absent reasoning fields and no think tags in content. |
-| Tool under xhigh | Supply a `lookup` function with an integer `id` argument and ask to look up id 7; expect a valid `tool_calls` entry with parseable JSON `{"id":7}`. Do not execute external actions. |
-| Image under xhigh | Send one known local image as an `image_url` data URI plus a factual question; check visible facts against the actual image. HTTP 200 alone is insufficient. |
-| Multi-turn xhigh | Append the full assistant tool-call message, including reasoning, a matching `tool_call_id` result and a follow-up question; expect coherent use of the result, intact roles and separately parsed reasoning/content/tools. |
-
-For off, use the complete request policy, not just the thinking switch:
-
-```json
-{
-  "chat_template_kwargs": {"enable_thinking": false, "preserve_thinking": false},
-  "temperature": 0.7, "top_p": 0.8, "top_k": 20, "min_p": 0.0,
-  "presence_penalty": 1.5, "repetition_penalty": 1.0
-}
-```
-
-Repeat through Open WebUI and Pi. The rollout updates the WebUI function ID
-`qwen_non_thinking_default` in place. Verify that its PostSync
-function-loader job succeeds and the stored filter contains the xhigh default.
-Generic `high` maps to xhigh in WebUI. Saved explicit medium, low, and off settings
-stay honored, so test a fresh conversation as well as an existing one.
-
-The companion
-[dotfiles PR](https://github.com/mitchross/dotfiles/pull/10) manages Pi's startup preference and local-only alias. After both PRs merge,
-pull the updated dotfiles source and follow the scoped apply steps in the
-[Pi guide](../../../docs/domains/ai-gpu/pi-agent-local-dev.md#reasoning-defaults).
-Start a fresh session or explicitly select xhigh in a resumed one. This rollout does not change the sampler
-extension, and reinstalling it alone does not change
-Pi's selected effort. `pi-auto` still delegates effort to the selected backend.
-
-In both clients, inspect the outgoing sampler as well as kwargs. Expect 1.05 for all
-thinking modes and 1.0 for off, including through LiteLLM. A successful request
-alone does not show which settings reached vLLM.
-
-Offline tests check policy resolution and preservation of tool, image, and history
-payloads, not model quality. Actual tool, vision, and multi-turn generation must pass
-after merge. The 32K Pi output allowance includes reasoning and final content,
-and xhigh does not raise it. Treat `finish_reason=length` as inconclusive, not a
-successful quality check. A completed empty final answer without tool calls is
-a failure. Empty content with a valid tool call is normal. Stop on
-loops, malformed tool output or lost history, and inspect payloads before
-changing runtime flags.
-
-## Reproducible staging
-
-The active model component's `manifest-patch.yaml` pins every checkpoint/tokenizer/vision artifact by
-revision, exact byte count and SHA-256. The INT4 default has 17 artifacts (19,016,926,426 bytes). It reaches the
-download/sync/wait mechanism as `model-manifest.json` in the `vllm-scripts` ConfigMap.
-
-1. Wave -3 creates the namespace. Wave -2 creates the scripts ConfigMap and
-   dedicated NFS writer PV/PVC. The existing archive reader PVC is unchanged.
-2. Wave -1 `vllm-download-qwen38-int4` downloads into a revision-named directory
-   on `192.168.10.133:/mnt/ai-pool/vllm`. Interrupted downloads keep `.part`
-   files. Each completed file is hash and size verified before an atomic rename.
-3. Wave 0 `vllm-cache-sync` verifies the archive, copies to local NVMe and
-   verifies the destination. Only then does it publish `.verified-manifest`.
-   Later syncs skip the full re-hash when `.verified-manifest` matches the
-   current manifest and every file size matches, so a routine sync takes seconds.
-   A manifest change or a size mismatch re-verifies everything. To force a full
-   check, delete `.verified-manifest` and sync.
-4. Wave 1 Deployment waits for the matching manifest marker and complete file
-   inventory. Serving is offline from the local cache.
-
-Warm syncs trust the verified marker and byte sizes; ZFS checksums protect the archive.
-A manifest change invalidates old readiness. Failed copies never
-publish readiness, and incomplete artifacts never replace verified files.
-The wait container uses a small pinned Python image and does not need CUDA.
-
-Prerequisites: the NFS export permits the download Job to write and has at
-least 20 GB additional free; local NVMe has at least that much free as well. The earlier
-approximately 123 GiB local free-space check is historical. Re-check storage
-and export permissions before restaging. No private model token is required.
-Existing FP8, AutoRound, GGUF and compile-cache files stay, and nothing is pruned.
-
-## Verification after the user merges
-
-ArgoCD applies the changed arguments through the existing `Recreate` deployment.
-Strata stops and the INT4 model downloads and loads; default/auto LiteLLM routes
-overflow to paid DeepSeek meanwhile. `qwen3.8-27b-local` replaces the removed
-Flash-Next picker route without adding cloud fallback for private Hermes work.
-Hermes restarts to seed its updated picker and local worker model; finish running
-agent jobs before merging. Route caps are per deployment/pod, not a shared global
-16-request admission budget across aliases; vLLM itself schedules at most 16 sequences.
-
-From the workstation:
+## Check it works
 
 ```bash
 kubectl -n vllm get jobs,pods
-kubectl -n vllm logs job/vllm-download-qwen38-int4
-kubectl -n vllm logs job/vllm-cache-sync
-kubectl -n vllm logs deploy/vllm-server --tail=200
-kubectl -n vllm exec deploy/vllm-server -- nvidia-smi
+kubectl -n vllm logs deploy/vllm-server --tail=200   # look for the KV token count and the humming line
 kubectl -n vllm port-forward svc/vllm-service 18000:8080
-```
-
-In a second terminal:
-
-```bash
-curl -fsS http://127.0.0.1:18000/health
 curl -fsS http://127.0.0.1:18000/v1/models
-curl -fsS http://127.0.0.1:18000/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"What is 19 + 23?"}],"max_tokens":64,"temperature":0.7,"top_p":0.8,"top_k":20,"min_p":0.0,"presence_penalty":1.5,"repetition_penalty":1.0,"chat_template_kwargs":{"enable_thinking":false,"preserve_thinking":false}}'
+curl -fsS http://127.0.0.1:18000/v1/chat/completions -H 'Content-Type: application/json' \
+  -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"What is 19 + 23?"}],"max_tokens":64,"chat_template_kwargs":{"enable_thinking":false,"preserve_thinking":false}}'
 ```
 
-Expected: both staging hooks complete, vLLM Ready, two GPUs visible to vLLM,
-health OK, the expected model ID and answer 42. Also verify both LAN hostnames,
-one image, a tool call, and every reasoning mode.
+Expect `42`. Then try one image, one tool call and each thinking mode.
+Stop if you see a hash failure, too few KV tokens, OOM or Xid errors, or broken tool or image output.
+Do not turn on MTP to fix a failing setup.
 
-**Read the allocated KV capacity from startup logs.** 262K is the configured
-server ceiling. It does not mean two full 262K requests fit concurrently, and
-it does not mean near-ceiling vision is verified. Run the existing
-`benchmarks/ai-realworld-load/` harness after smoke checks; record TTFT,
-prefill/decode, cache preemptions, GPU peaks, and a sustained multi-turn soak.
-Test a context ladder before claiming 262K usability. Prefix caching makes
-warm prompts cheaper, so genuine prefill tests need unique prefixes.
-Compare the prior 2,048-token budget against the 8,192 aggregate / 4,096
-per-request profile using the same prompts, output budgets and sampler. Test
-one fresh long prompt, two fresh prompts, and a long prefill arriving during
-decode. Record time to first token, inter-token latency, preemptions, available
-KV capacity and peak memory. Do not reuse the September 6 pool measurements
-as proof of capacity after changing prefill workspace. Prefix-hit counters
-alone do not show correctness or a latency improvement.
-
-Stop on a staging or hash failure, an insufficient KV pool, OOM or Xid errors, broken tool or
-vision output, or repeated preemptions. Do not enable MTP to rescue a failing
-baseline. Preparation checks cover manifests, file integrity behavior and
-routing configuration. They do not show new runtime performance.
-
-## Rollback
-
-For an immediate per-request opt-down, select medium, low or off.
-To restore the default permanently, revert the paired GitOps and dotfiles PRs,
-apply the restored Pi settings and zshrc, and start a fresh session. ArgoCD
-reconciles the server and WebUI policy. It cannot update workstation settings.
-Do not change model weights, sampler or KV precision to roll back effort.
-
-Revert this GitOps PR to restore Strata, its routes and the parked FP8 vLLM config.
-No checkpoint files are deleted. A later FP8-only comparison can enable the
-`models/qwen-qwen3.8-27b-fp8` component (see [Switch models](#switch-models)).
-CPU image smoke is not GPU, vision, long-context or concurrent-load acceptance.
+Capacity history: [3090 LLM optimization](../../../docs/domains/ai-gpu/3090-llm-optimization.md).
