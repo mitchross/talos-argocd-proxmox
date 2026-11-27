@@ -1,0 +1,26 @@
+# munekazu/Huihui-Qwen3.8-27B-abliterated-FP8: Huihui's abliterated Qwen3.8-27B in the official FP8 layout.
+# `test` ops require the base placeholders, so a second enabled model fails the build.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+patches:
+  - path: manifest-patch.yaml
+    target:
+      kind: ConfigMap
+      name: vllm-scripts
+  - target:
+      kind: Deployment
+      name: vllm-server
+    patch: |
+      - op: test
+        path: /spec/template/spec/containers/0/args/0
+        value: /models/SET-BY-MODEL-COMPONENT
+      - op: replace
+        path: /spec/template/spec/containers/0/args/0
+        value: /models/Huihui-Qwen3.8-27B-abliterated-FP8-badcb1961b64
+      - op: test
+        path: /spec/template/spec/containers/0/args/4
+        value: SET-BY-MODEL-COMPONENT
+      - op: replace
+        path: /spec/template/spec/containers/0/args/4
+        value: fp8

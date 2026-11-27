@@ -13,7 +13,7 @@ Check what the pod can do before handing a command to the user: `kubectl auth ca
 `talosctl list/read` on `/var/lib/kubelet/pods/<podUID>/volumes/...` reads a pod's emptyDir or mounted files from the node side when exec is not allowed.
 
 ## vLLM image and checkpoint changes
-Retain rollback manifests and map `model-manifest.json=<new-manifest>.json` in the ConfigMap generator so download/sync/wait consumers share the new pin without pruning old weights. Bake community site-packages patches into a digest-pinned homelab-images base; CPU import/patch smoke is separate from post-merge GPU, vision and KV-capacity acceptance.
+Add each vLLM checkpoint as a component folder in `my-apps/ai/vllm/models/` and switch the one active `components:` line, so download/sync/wait consumers share the new pin without pruning old weights. Bake community site-packages patches into a digest-pinned homelab-images base; CPU import/patch smoke is separate from post-merge GPU, vision and KV-capacity acceptance.
 
 ## Commands handed to the user
 - Before asking the user to create any credential, grep the repo's ExternalSecrets (`git grep -n -A3 remoteRef origin/main -- '*secret*.yaml'`) for an existing one that fits and reuse it. Say plainly what that token's scope allows. The user refuses to make a new token when one exists.

@@ -61,7 +61,7 @@ applies the deployment's six mode-specific sampling values and overrides
 stale per-chat sampler values. Thinking repetition penalty 1.05 is a local
 mitigation candidate, not the official default. This rollout does not change it.
 The filter leaves other models and messages/tools/images/history untouched. See
-[the canonical policy and acceptance matrix](../vllm/README.md#reasoning-acceptance-checks)
+[the canonical policy and acceptance matrix](../vllm/README.md#thinking)
 for exact samplers and runtime tests.
 
 The stored function ID `qwen_non_thinking_default` is deliberately retained:
