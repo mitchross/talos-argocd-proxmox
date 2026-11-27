@@ -251,6 +251,9 @@ jobs:
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
           python3 ./scripts/validate-kopiur-coverage.py /tmp/all-manifests.yaml
 
+      - name: Test the artex namespace network boundary
+        run: python3 -m unittest discover -s scripts/tests -p test_artex_network_isolation.py -v
+
       - name: Validate explicit CRD list defaults
         # ArgoCD must not ignore paths inside CRD lists (argo-cd#26588), so HTTPRoute refs and SnapshotPolicy sources spell out their defaults.
         run: |
