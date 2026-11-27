@@ -28,6 +28,7 @@ Two mechanisms enforce the rule:
 | App | Cards | `replicas` in Git | File |
 |---|---:|---:|---|
 | vLLM (Qwen3.8-27B INT4/W4A8) | 2 | `1` | `my-apps/ai/vllm/kustomization.yaml` |
+| vLLM abliterated (Qwen3.8-27B FP8, parked) | 2 | `0` | `my-apps/ai/vllm/kustomization.yaml` (`vllm-server-abliterated`) |
 | Strata (Qwen3.8-Flash-Next, parked) | 2 | `0` | `my-apps/ai/strata/kustomization.yaml` |
 | NInfer-3090 (archived, not deployed) | 1 | n/a | `my-apps/ai/_archive/ninfer/deployment.yaml` |
 | ComfyUI | 1 | `0` | `my-apps/ai/comfyui/deployment.yaml` |
@@ -59,6 +60,8 @@ flowchart LR
 ```
 
 1. Edit the outgoing and incoming replica counts in one commit.
+   For `vllm-server-abliterated`, first confirm that `vllm-download-abliterated-fp8` and `vllm-cache-sync-abliterated-fp8` succeeded.
+   Otherwise the pod waits forever for its checkpoint.
 2. Open a PR. The operator decides when to merge.
 3. After the merge, wait for the outgoing pod to release the card. The incoming
    pod stays `Pending` until then. Do not change anything to clear `Pending`.
@@ -74,6 +77,12 @@ flowchart LR
 
     Expect the incoming pod `Running` and two cards at the 200 W cap. When vLLM
     is the incoming app, expect the endpoint to answer with the model list.
+    The LAN hostnames reach only `vllm-server`. For `vllm-server-abliterated`, check the Service instead:
+
+    ```bash
+    kubectl -n vllm run curl-check --rm -i --restart=Never --image=curlimages/curl -- \
+      curl -fsS http://vllm-abliterated-service:8080/v1/models
+    ```
 
 ## Roll back
 

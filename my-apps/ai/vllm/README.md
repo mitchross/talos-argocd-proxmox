@@ -82,6 +82,29 @@ The vLLM HTTPRoute owns both LAN hostnames and targets its selector
 Service. `llama.vanillax.me` stays for older bookmarks and client configs.
 See the [model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for gateway wiring.
 
+## Abliterated FP8 (parked)
+
+`vllm-server-abliterated` serves
+[`munekazu/Huihui-Qwen3.8-27B-abliterated-FP8`](https://huggingface.co/munekazu/Huihui-Qwen3.8-27B-abliterated-FP8)
+as model `qwen3.8-27b-abliterated`. Its layout matches the official FP8 checkpoint.
+It uses the same image and flags as the main server, with these differences:
+`--quantization fp8`, no humming environment variable, utilization 0.92 and 8 slots.
+
+It needs both cards, so it stays at `replicas: 0`. To switch to it:
+
+1. In `kustomization.yaml`, set `vllm-server` to `0` and `vllm-server-abliterated` to `1` in one commit.
+2. Open a PR. After the merge, ArgoCD stops the main pod and starts the abliterated pod.
+3. Select `qwen3.8-27b-abliterated` in Open WebUI.
+
+To switch back, revert the two counts. While the abliterated pod runs, `qwen3.8-27b`
+falls back to paid DeepSeek. `qwen3.8-27b-local` returns errors.
+The abliterated route has no cloud fallback.
+
+Its download and cache-sync Jobs are `PostSync` hooks. They run after every healthy sync, even while the pod is parked.
+A failed staging Job marks the sync failed, but it does not block the main server.
+Swap only after both Jobs have succeeded once. They stage the checkpoint on the GPU node, so a swap only restarts pods.
+PostSync hooks wait for a healthy app. A swapped-in pod with no staged checkpoint waits forever, so revert the swap first.
+
 ## Explicit reasoning and sampling
 
 The server supplies `enable_thinking=true`, `reasoning_effort=xhigh`, and

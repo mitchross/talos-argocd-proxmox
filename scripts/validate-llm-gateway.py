@@ -10,7 +10,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BACKEND = re.compile(r'https?://(?:vllm-service(?:\.vllm(?:\.svc(?:\.cluster\.local)?)?)?|'
+BACKEND = re.compile(r'https?://(?:vllm(?:-abliterated)?-service(?:\.vllm(?:\.svc(?:\.cluster\.local)?)?)?|'
                      r'llama-cpp-service(?:\.llama-cpp(?:\.svc(?:\.cluster\.local)?)?)?|'
                      r'strata-service(?:\.strata(?:\.svc(?:\.cluster\.local)?)?)?|'
                      r'(?:vllm|llama)\.vanillax\.me)(?=[:/\s\"\x27]|$)')

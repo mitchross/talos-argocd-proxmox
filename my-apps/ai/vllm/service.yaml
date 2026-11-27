@@ -14,3 +14,20 @@ spec:
       protocol: TCP
       port: 8080
       targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-abliterated-service
+  namespace: vllm
+  labels:
+    app: vllm-server-abliterated
+spec:
+  type: ClusterIP
+  selector:
+    app: vllm-server-abliterated
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: http
