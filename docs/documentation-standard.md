@@ -129,6 +129,9 @@ Every diagram must do these things:
   `<title>` and `<desc>` elements.
 - Include an accessible Mermaid title and description, or SVG alt text. Put prose
   nearby that states the invariant or trade-off the reader must remember.
+- Give Mermaid `classDef` a translucent fill such as `fill:#7bc39733` and no
+  `color:`. Material sets label text from the light or dark theme, so a solid
+  pale fill hides the text in dark mode.
 - Leave out credentials, private identifiers, version numbers that change often,
   and details that the owning manifests cannot prove.
 

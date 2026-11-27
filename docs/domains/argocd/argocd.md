@@ -41,10 +41,10 @@ flowchart LR
 
   BOOT entry@--> W01
 
-  classDef action fill:#fde8e8,stroke:#dc8c8c,color:#17212b
-  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
-  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
-  classDef waiting fill:#f3f6f8,stroke:#9aa8b3,color:#17212b
+  classDef action fill:#dc8c8c33,stroke:#dc8c8c
+  classDef desired fill:#7bc39733,stroke:#7bc397
+  classDef controller fill:#70bcc433,stroke:#70bcc4
+  classDef waiting fill:#9aa8b333,stroke:#9aa8b3
   class W6 action
   class BOOT desired
   class W23 controller

@@ -54,10 +54,10 @@ flowchart TB
 
   PRIVATE ~~~ PUBLIC
 
-  classDef source fill:#fde8e8,stroke:#dc8c8c,color:#17212b
-  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
-  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
-  classDef healthy fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef source fill:#dc8c8c33,stroke:#dc8c8c
+  classDef controller fill:#70bcc433,stroke:#70bcc4
+  classDef external fill:#d8ad5533,stroke:#d8ad55
+  classDef healthy fill:#7bc39733,stroke:#7bc397
   class LAN,WEB source
   class TECH,INT,IROUTE,EXT controller
   class CF,TUNNEL external

@@ -42,10 +42,10 @@ flowchart LR
   SNAP backup@-- "Kopia mover" --> KOPIA
   KOPIA hydrate@-- "restore" --> MOVER
 
-  classDef workload fill:#fde8e8,stroke:#dc8c8c,color:#17212b
-  classDef runtime fill:#dff4f6,stroke:#70bcc4,color:#17212b
-  classDef restore fill:#e1f3e8,stroke:#7bc397,color:#17212b
-  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  classDef workload fill:#dc8c8c33,stroke:#dc8c8c
+  classDef runtime fill:#70bcc433,stroke:#70bcc4
+  classDef restore fill:#7bc39733,stroke:#7bc397
+  classDef external fill:#d8ad5533,stroke:#d8ad55
   class APP workload
   class PVC,SNAP runtime
   class REPLACE,MOVER,BOUND restore
