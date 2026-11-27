@@ -108,11 +108,6 @@ spec:
             # App telemetry relay (/api/telemetry/v1/*) to the in-cluster collector; inert on images without the relay.
             - name: OTLP_UPSTREAM
               value: http://otel-gateway-collector.opentelemetry.svc:4318
-            - name: TELEMETRY_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: radar-ng-telemetry
-                  key: TELEMETRY_TOKEN
           # /api/livez, never /api/health (degrades on stale NOAA data). ~60 s of failures before restart:
           # a busy API is not a dead one, and a restart also takes the tiles down.
           livenessProbe:
