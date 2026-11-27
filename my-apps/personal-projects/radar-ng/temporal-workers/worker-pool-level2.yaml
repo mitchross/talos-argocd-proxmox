@@ -48,7 +48,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.65@sha256:2b7160fef90ace63fb2fba520148d876100f4523e63645569533c232b621171e
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v2.0.70@sha256:154b5c690d9d23e8806dcd756dcdbddd8794113a545d39600b710139526082cc
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
