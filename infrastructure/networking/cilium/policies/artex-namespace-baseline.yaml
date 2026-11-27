@@ -1,9 +1,5 @@
-# ARTEX runs agent commands that a prompt can steer, so its namespace starts closed.
-# default-deny-lan-egress (block-lan-access.yaml) excludes this namespace; this policy puts every
-# endpoint in it into default deny both ways and allows only DNS to kube-dns. The app's own
-# CiliumNetworkPolicies add each flow it needs. Allow policies add together, so nothing else
-# may select these endpoints with a broad allow.
-# Kubelet probes still reach the pods: Cilium's allow-localhost default is "always" on Kubernetes.
+# ARTEX runs agent commands a prompt can steer: default deny both ways, DNS only; the app adds each flow.
+# Must be live before any artex pod exists: docs/domains/networking/policy.md#the-artex-namespace.
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:

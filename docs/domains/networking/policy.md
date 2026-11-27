@@ -92,8 +92,18 @@ steer, so the shared policy's broad allows must not apply to it.
   tell them apart; the HTTPRoute's parent Gateway decides which one serves the app.
 
 `scripts/tests/test_artex_network_isolation.py` checks that each endpoint falls under
-exactly one of the two policies. Merge the policies before any artex workload exists,
-then check them as described below.
+exactly one of the two policies.
+
+**Order matters.** The two policies are separate objects, and Cilium applies each one
+as soon as it syncs. An artex pod that the shared policy no longer selects, while
+`artex-namespace-baseline` is missing, has no policy at all and so allows all traffic.
+
+- Merge and sync both policies before any artex workload exists. Confirm
+  `kubectl get ccnp artex-namespace-baseline` returns it before you deploy the app.
+- Never delete or rename `artex-namespace-baseline` while artex pods run. To roll back,
+  remove the artex app first, then revert the two policies together.
+
+Then check them as described below.
 
 ## Verify a change
 

@@ -4,9 +4,8 @@ metadata:
   name: default-deny-lan-egress
 spec:
   description: "Block pods from accessing LAN - allow internet, cluster, and whitelisted storage"
-  # Every endpoint except the artex namespace, which starts from its own deny-all baseline
-  # (artex-namespace-baseline.yaml). NotIn also matches endpoints without a namespace label,
-  # such as the gateway envoy (reserved:ingress), so they keep this policy.
+  # All endpoints but the artex namespace (artex-namespace-baseline.yaml). NotIn also matches
+  # endpoints without a namespace label, such as the gateway envoy, so they keep this policy.
   endpointSelector:
     matchExpressions:
       - key: k8s:io.kubernetes.pod.namespace
