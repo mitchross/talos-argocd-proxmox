@@ -19,6 +19,7 @@ spec:
         - group: ""
           kind: Service
           name: frigate-http
-          port: 5000
+          # 8971 enforces Frigate login; 5000 skips auth and must never be routed.
+          port: 8971
           weight: 1
 

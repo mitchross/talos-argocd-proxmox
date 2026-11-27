@@ -13,6 +13,9 @@ spec:
     - name: http
       port: 5000
       targetPort: 5000
+    - name: http-auth
+      port: 8971
+      targetPort: 8971
   type: ClusterIP
 
 ---

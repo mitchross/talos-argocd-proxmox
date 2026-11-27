@@ -7,6 +7,9 @@ mqtt:
   password: "{FRIGATE_MQTT_PASSWORD}"
 database:
   path: /config/frigate.db
+# Gateway terminates TLS; 8971 stays the authenticated port, 5000 is internal-only (probes, metrics).
+tls:
+  enabled: false
 ui:
   timezone: America/New_York
 timestamp_style:
