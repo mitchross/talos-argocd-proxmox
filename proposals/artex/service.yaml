@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: artex
+  namespace: artex
+  labels:
+    app.kubernetes.io/name: artex
+spec:
+  selector:
+    app.kubernetes.io/name: artex
+  # Only the UI and API. The recording proxy (8788) listens on loopback and has no Service port.
+  ports:
+    - name: http
+      port: 8787
+      targetPort: http
+      protocol: TCP
+---
+# Internal gateway only: no external-dns label, so only the technitium (LAN) DNS publishes it.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: artex
+  namespace: artex
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - artex.vanillax.me
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: artex
+          port: 8787
+          weight: 1

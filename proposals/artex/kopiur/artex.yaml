@@ -1,0 +1,96 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# Uniform fields come from the kopiur-backup component; the mover securityContext is per-PVC and stays here.
+# /app/data mixes root and uid 10001 files (0700 executor home, root:10001 run dirs), so the mover runs as
+# uid 0; the namespace's privileged-movers annotation lets kopiur add the read/restore capabilities.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: artex-data
+  namespace: artex
+spec:
+  sources:
+    - pvc:
+        name: artex-data
+  identity:
+    username: artex-data
+    hostname: artex
+  retention:
+    keepDaily: 7
+    keepWeekly: 8
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: artex-data-daily
+  namespace: artex
+spec:
+  policyRef:
+    name: artex-data
+  schedule:
+    cron: "16 4 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: artex-data-restore
+  namespace: artex
+spec:
+  source:
+    fromPolicy:
+      name: artex-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+---
+# Root-owned 0600 jwt.key and secret.key: uid 0 mover.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: artex-keys
+  namespace: artex
+spec:
+  sources:
+    - pvc:
+        name: artex-keys
+  identity:
+    username: artex-keys
+    hostname: artex
+  retention:
+    keepDaily: 7
+    keepWeekly: 8
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: artex-keys-daily
+  namespace: artex
+spec:
+  policyRef:
+    name: artex-keys
+  schedule:
+    cron: "20 4 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: artex-keys-restore
+  namespace: artex
+spec:
+  source:
+    fromPolicy:
+      name: artex-keys
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: artex
+  labels:
+    # ClusterExternalSecret cred fanout and ClusterRepository tenancy (allowedNamespaces selector).
+    kopiur.home-operations.com/repo: cluster-kopia
+    # The ARTEX server needs CHOWN, DAC_OVERRIDE, FOWNER, FSETID, KILL, SETGID and SETUID; baseline allows them.
+    pod-security.kubernetes.io/enforce: baseline
+  annotations:
+    # /app/data mixes root and uid 10001 files with 0700/0600 modes, so movers run as uid 0.
+    kopiur.home-operations.com/privileged-movers: "true"

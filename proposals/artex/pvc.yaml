@@ -1,0 +1,46 @@
+# kopiur restore-before-bind: each PVC binds Pending until its Restore hydrates it; a first install binds empty.
+# dataSourceRef is immutable on a Bound PVC: mask the SSA dry-run diff; the AppSet ignoreDifferences handles live compare.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: artex-data
+  namespace: artex
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+  labels:
+    app.kubernetes.io/name: artex
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: artex-data-restore
+---
+# jwt.key and secret.key. secret.key encrypts the secrets ARTEX stores in Postgres: lose it and they are gone.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: artex-keys
+  namespace: artex
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+  labels:
+    app.kubernetes.io/name: artex
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: artex-keys-restore
