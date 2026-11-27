@@ -14,8 +14,9 @@ The policy is the `CiliumClusterwideNetworkPolicy` named `default-deny-lan-egres
 
 ## What the shared policy allows
 
-`endpointSelector: {}` selects every endpoint that Cilium manages, which means every
-pod on the pod network. This policy is not a host firewall. Host-network pods and
+The selector matches every endpoint that Cilium manages except the opted-in `artex`
+namespace (see below), which means nearly every pod on the pod network. This policy is
+not a host firewall. Host-network pods and
 host-firewall behavior need a separate assessment.
 
 | Direction | Allowed by the shared policy |
@@ -69,10 +70,40 @@ required DNS, API, gateway, backup, or storage traffic. See
 [Kubernetes policy semantics](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
 and [Cilium deny policies](https://docs.cilium.io/en/stable/security/policy/language/#deny-policies).
 
-Per-namespace isolation is proposed work. The manifests do not provide it. The
-proposal is an opt-in boundary: exclude the opted-in endpoints from the shared allow,
-then declare their actual ingress and egress dependencies. Start with a canary.
-Observe both allowed and rejected flows before you change real apps.
+Per-namespace isolation is opt-in. An opted-in namespace is excluded from the shared
+allow, then declares its actual ingress and egress dependencies.
+
+### The artex namespace
+
+`artex` is the first opted-in namespace. ARTEX runs agent commands that a prompt can
+steer, so the shared policy's broad allows must not apply to it.
+
+- `default-deny-lan-egress` selects `k8s:io.kubernetes.pod.namespace NotIn [artex]`.
+  `NotIn` also matches endpoints that have no namespace label, such as the gateway
+  envoy (`reserved:ingress`), so every other endpoint keeps the shared policy.
+- `artex-namespace-baseline`
+  ([`artex-namespace-baseline.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/networking/cilium/policies/artex-namespace-baseline.yaml))
+  selects only that namespace. It sets default deny for ingress and egress and allows
+  only DNS to kube-dns.
+- The app adds its own CiliumNetworkPolicies for each flow. Kubelet probes are
+  allowed without a rule, because Cilium's `allow-localhost` default is `always` on
+  Kubernetes.
+- The `ingress` entity is every gateway envoy, internal and external. Policy cannot
+  tell them apart; the HTTPRoute's parent Gateway decides which one serves the app.
+
+`scripts/tests/test_artex_network_isolation.py` checks that each endpoint falls under
+exactly one of the two policies.
+
+**Order matters.** The two policies are separate objects, and Cilium applies each one
+as soon as it syncs. An artex pod that the shared policy no longer selects, while
+`artex-namespace-baseline` is missing, has no policy at all and so allows all traffic.
+
+- Merge and sync both policies before any artex workload exists. Confirm
+  `kubectl get ccnp artex-namespace-baseline` returns it before you deploy the app.
+- Never delete or rename `artex-namespace-baseline` while artex pods run. To roll back,
+  remove the artex app first, then revert the two policies together.
+
+Then check them as described below.
 
 ## Verify a change
 
