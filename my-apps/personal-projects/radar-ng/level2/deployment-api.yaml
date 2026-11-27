@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.65@sha256:009d702dd314f41c0f6ca5a77efb88abd23a9304d0041b50456020aeed7c9471
+          image: ghcr.io/mitchross/radar-ng-tile-server:v2.0.71@sha256:22c37e7a5a33357e7cdef90865554892b6d3d824b38876a5c45f1945bc0557ea
           imagePullPolicy: IfNotPresent
           args: [api]
           securityContext:
