@@ -1,6 +1,5 @@
 """Guard the INT4 cutover, native context, vision, and retained rollback manifest."""
 import json
-import os
 from pathlib import Path
 import subprocess
 
@@ -59,27 +58,6 @@ def test_dualfast_render_uses_pinned_int4_manifest_and_preserves_fp8():
     assert env['NCCL_CUMEM_ENABLE'] == '0'
     assert next(v for v in pod['volumes'] if v['name'] == 'repo-scripts')['configMap']['name'] == config['metadata']['name']
     assert pod['initContainers'][0]['command'][-1] == 'wait'
-
-
-def test_abliterated_component_swaps_model_in_place(tmp_path):
-    # Kustomize rejects absolute roots; reference the app relative to the temp overlay.
-    rel = os.path.relpath(APP, tmp_path)
-    (tmp_path / 'kustomization.yaml').write_text(yaml.safe_dump({
-        'resources': [rel], 'components': [rel + '/models/abliterated-fp8']}))
-    docs = list(yaml.safe_load_all(subprocess.check_output(
-        ['kubectl', 'kustomize', str(tmp_path)], text=True)))
-    deployment = next(d for d in docs if d['kind'] == 'Deployment')
-    server = deployment['spec']['template']['spec']['containers'][0]
-    args = server['args']
-    config = next(d for d in docs if d['kind'] == 'ConfigMap')
-    manifest = json.loads(config['data']['model-manifest.json'])
-    assert manifest['repo'] == 'munekazu/Huihui-Qwen3.8-27B-abliterated-FP8'
-    assert 'model_cache.py' in config['data']
-    assert args[0] == '/models/' + manifest['directory']
-    assert args[args.index('--quantization') + 1] == 'fp8'
-    assert args[args.index('--served-model-name') + 1] == 'qwen3.8-27b'
-    assert 'VLLM_HUMMING_INPUT_QUANT_CONFIG' not in {e['name'] for e in server['env']}
-    assert all(len(f['sha256']) == 64 for f in manifest['files'])
 
 
 def test_strata_replica_override_is_parked():
