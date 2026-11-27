@@ -103,10 +103,10 @@ flowchart TB
   NEED yes@-- "YES" --> REVIEW
   NEED no@-- "NO" --> DEPLOY
 
-  classDef decision fill:#344250,stroke:#17212b,color:#ffffff
-  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
-  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
-  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef decision fill:#9aa8b366,stroke:#9aa8b3,stroke-width:2px
+  classDef external fill:#d8ad5533,stroke:#d8ad55
+  classDef desired fill:#7bc39733,stroke:#7bc397
+  classDef controller fill:#70bcc433,stroke:#70bcc4
   class NEED decision
   class REVIEW external
   class DEPLOY,PVC,KOPIUR desired

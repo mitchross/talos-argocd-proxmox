@@ -49,9 +49,9 @@ flowchart LR
   ESO fanoutB@--> NSB
   ESO fanoutN@--> NSN
 
-  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
-  classDef secret fill:#fde8e8,stroke:#dc8c8c,color:#17212b
-  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef desired fill:#7bc39733,stroke:#7bc397
+  classDef secret fill:#dc8c8c33,stroke:#dc8c8c
+  classDef controller fill:#70bcc433,stroke:#70bcc4
   class GIT desired
   class VAULT secret
   class ESO controller
