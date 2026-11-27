@@ -1,5 +1,6 @@
 """Guard the INT4 cutover, native context, vision, and retained rollback manifest."""
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -27,7 +28,7 @@ def test_dualfast_render_uses_pinned_int4_manifest_and_preserves_fp8():
             'processor_config.json', 'model.safetensors.index.json'} <= files
     assert sum(f['size'] for f in manifest['files']) == 19_016_926_426
     assert all(len(f['sha256']) == 64 for f in manifest['files'])
-    assert deployment['spec']['replicas'] in (0, 1)
+    assert deployment['spec']['replicas'] == 1
     assert server['resources']['limits']['nvidia.com/gpu'] == '2'
     assert args[args.index('--quantization') + 1] == 'humming'
     assert args[args.index('--max-model-len') + 1] == '262144'
@@ -60,30 +61,25 @@ def test_dualfast_render_uses_pinned_int4_manifest_and_preserves_fp8():
     assert pod['initContainers'][0]['command'][-1] == 'wait'
 
 
-def test_abliterated_fp8_is_parked_and_isolated_from_main_pod():
+def test_abliterated_component_swaps_model_in_place(tmp_path):
+    # Kustomize rejects absolute roots; reference the app relative to the temp overlay.
+    rel = os.path.relpath(APP, tmp_path)
+    (tmp_path / 'kustomization.yaml').write_text(yaml.safe_dump({
+        'resources': [rel], 'components': [rel + '/models/abliterated-fp8']}))
     docs = list(yaml.safe_load_all(subprocess.check_output(
-        ['kubectl', 'kustomize', str(APP)], text=True)))
-    by_name = {(d['kind'], d['metadata']['name']): d for d in docs}
-    main = by_name[('Deployment', 'vllm-server')]['spec']
-    alt = by_name[('Deployment', 'vllm-server-abliterated')]['spec']
-    # Exactly one server holds both cards; either side may be swapped in.
-    assert sorted([main['replicas'], alt['replicas']]) == [0, 1]
-    pod = alt['template']['spec']
-    server = pod['containers'][0]
+        ['kubectl', 'kustomize', str(tmp_path)], text=True)))
+    deployment = next(d for d in docs if d['kind'] == 'Deployment')
+    server = deployment['spec']['template']['spec']['containers'][0]
     args = server['args']
-    scripts = next(v for v in pod['volumes'] if v['name'] == 'repo-scripts')['configMap']['name']
-    assert scripts.startswith('vllm-abliterated-scripts-')
-    main_scripts = next(v for v in main['template']['spec']['volumes'] if v['name'] == 'repo-scripts')
-    assert main_scripts['configMap']['name'].startswith('vllm-scripts-')
-    manifest = json.loads(by_name[('ConfigMap', scripts)]['data']['model-manifest-abliterated-fp8.json'])
+    config = next(d for d in docs if d['kind'] == 'ConfigMap')
+    manifest = json.loads(config['data']['model-manifest.json'])
     assert manifest['repo'] == 'munekazu/Huihui-Qwen3.8-27B-abliterated-FP8'
+    assert 'model_cache.py' in config['data']
     assert args[0] == '/models/' + manifest['directory']
-    assert all(len(f['sha256']) == 64 for f in manifest['files'])
-    assert pod['initContainers'][0]['command'][-1] == '/opt/repo-scripts/model-manifest-abliterated-fp8.json'
     assert args[args.index('--quantization') + 1] == 'fp8'
-    assert args[args.index('--served-model-name') + 1] == 'qwen3.8-27b-abliterated'
+    assert args[args.index('--served-model-name') + 1] == 'qwen3.8-27b'
     assert 'VLLM_HUMMING_INPUT_QUANT_CONFIG' not in {e['name'] for e in server['env']}
-    assert by_name[('Service', 'vllm-abliterated-service')]['spec']['selector'] == {'app': 'vllm-server-abliterated'}
+    assert all(len(f['sha256']) == 64 for f in manifest['files'])
 
 
 def test_strata_replica_override_is_parked():

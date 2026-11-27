@@ -13,32 +13,23 @@ resources:
   - download-model-job.yaml
   - cache-sync-job.yaml
   - deployment.yaml
-  - abliterated-jobs.yaml
-  - deployment-abliterated.yaml
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
 
-# Scale-swap: exactly one of these holds both GPUs at a time.
 replicas:
   - name: vllm-server
     count: 1
-  - name: vllm-server-abliterated
-    count: 0
+
+# Model picker: no component = INT4 AutoRound (default). Uncomment one line to switch; same served name.
+components:
+  # - models/abliterated-fp8   # Huihui Qwen3.8-27B abliterated, FP8
 
 configMapGenerator:
   - name: vllm-scripts
     files:
       - scripts/model_cache.py
       - model-manifest.json=model-manifest-int4.json
-    options:
-      annotations:
-        argocd.argoproj.io/sync-wave: "-2"
-  # Separate ConfigMap so abliterated changes never roll the main vllm-server pod.
-  - name: vllm-abliterated-scripts
-    files:
-      - scripts/model_cache.py
-      - model-manifest-abliterated-fp8.json
     options:
       annotations:
         argocd.argoproj.io/sync-wave: "-2"

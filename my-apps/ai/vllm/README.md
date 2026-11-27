@@ -82,28 +82,22 @@ The vLLM HTTPRoute owns both LAN hostnames and targets its selector
 Service. `llama.vanillax.me` stays for older bookmarks and client configs.
 See the [model catalog](../../../docs/domains/ai-gpu/model-catalog.md) for gateway wiring.
 
-## Abliterated FP8 (parked)
+## Switch models
 
-`vllm-server-abliterated` serves
-[`munekazu/Huihui-Qwen3.8-27B-abliterated-FP8`](https://huggingface.co/munekazu/Huihui-Qwen3.8-27B-abliterated-FP8)
-as model `qwen3.8-27b-abliterated`. Its layout matches the official FP8 checkpoint.
-It uses the same image and flags as the main server, with these differences:
-`--quantization fp8`, no humming environment variable, utilization 0.92 and 8 slots.
+The base serves INT4 AutoRound. Each folder in `models/` is a Kustomize component that swaps the checkpoint in place.
+Each component carries its own pinned manifest and the patch for the arguments that differ.
 
-It needs both cards, so it stays at `replicas: 0`. To switch to it:
+| Component | Checkpoint | Changes |
+|---|---|---|
+| none (default) | `Frozenlock/Qwen3.8-27B-int4-AutoRound` | — |
+| `models/abliterated-fp8` | [`munekazu/Huihui-Qwen3.8-27B-abliterated-FP8`](https://huggingface.co/munekazu/Huihui-Qwen3.8-27B-abliterated-FP8) | `--quantization fp8`, no humming env |
 
-1. In `kustomization.yaml`, set `vllm-server` to `0` and `vllm-server-abliterated` to `1` in one commit.
-2. Open a PR. After the merge, ArgoCD stops the main pod and starts the abliterated pod.
-3. Select `qwen3.8-27b-abliterated` in Open WebUI.
+1. Uncomment one line under `components:` in `kustomization.yaml`.
+2. Open a PR and merge it.
 
-To switch back, revert the two counts. While the abliterated pod runs, `qwen3.8-27b`
-falls back to paid DeepSeek. `qwen3.8-27b-local` returns errors.
-The abliterated route has no cloud fallback.
-
-Its download and cache-sync Jobs are `PostSync` hooks. They run after every healthy sync, even while the pod is parked.
-A failed staging Job marks the sync failed, but it does not block the main server.
-Swap only after both Jobs have succeeded once. They stage the checkpoint on the GPU node, so a swap only restarts pods.
-PostSync hooks wait for a healthy app. A swapped-in pod with no staged checkpoint waits forever, so revert the swap first.
+ArgoCD then runs the download and cache-sync Jobs for the new manifest. It restarts `vllm-server` after both Jobs finish.
+The served name stays `qwen3.8-27b`, so clients need no change.
+To switch back, comment the line out again. The FP8 abliterated build has had no boot or acceptance test on this image yet.
 
 ## Explicit reasoning and sampling
 

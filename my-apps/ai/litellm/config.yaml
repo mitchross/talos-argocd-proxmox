@@ -28,19 +28,6 @@ model_list:
       output_cost_per_token: 0
       max_input_tokens: 262144
       supports_vision: true
-  # Abliterated FP8 vLLM; answers only while scale-swapped in. No cloud fallback.
-  - model_name: qwen3.8-27b-abliterated
-    litellm_params:
-      model: openai/qwen3.8-27b-abliterated
-      api_base: http://vllm-abliterated-service.vllm.svc.cluster.local:8080/v1
-      api_key: "vllm-no-key-required"
-      timeout: 1800
-      max_parallel_requests: 8
-    model_info:
-      input_cost_per_token: 0
-      output_cost_per_token: 0
-      max_input_tokens: 262144
-      supports_vision: true
   # Pi uses the same vLLM backend; -auto overflow and classifier failure resolve to DeepSeek.
   - model_name: qwen3.8-27b-auto
     litellm_params:
