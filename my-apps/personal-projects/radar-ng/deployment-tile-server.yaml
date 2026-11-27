@@ -21,7 +21,7 @@ spec:
         app: tile-server
       annotations:
         # Bump to force a ReplicaSet roll when only env changes — a stale field-manager can mask env diffs under SSA.
-        config-rev: "2026-09-02-alerts-queue"
+        config-rev: "2026-11-27-telemetry-relay"
     spec:
       priorityClassName: app-critical
       # No gpu-worker preference: after a drain moves workers off the GPU node, preferring gpu-worker
@@ -105,6 +105,14 @@ spec:
               value: radar-ng
             - name: TEMPORAL_ALERTS_TASK_QUEUE
               value: radar-ng-alerts
+            # App telemetry relay (/api/telemetry/v1/*) to the in-cluster collector; inert on images without the relay.
+            - name: OTLP_UPSTREAM
+              value: http://otel-gateway-collector.opentelemetry.svc:4318
+            - name: TELEMETRY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: radar-ng-telemetry
+                  key: TELEMETRY_TOKEN
           # /api/livez, never /api/health (degrades on stale NOAA data). ~60 s of failures before restart:
           # a busy API is not a dead one, and a restart also takes the tiles down.
           livenessProbe:

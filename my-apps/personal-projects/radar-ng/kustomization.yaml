@@ -9,6 +9,7 @@ resources:
   - httproute.yaml
   - deployment-tile-server.yaml
   - externalsecret-llm.yaml
+  - externalsecret-telemetry.yaml
   - pdb-tile-server.yaml
   - pdb-basemap.yaml
   - deployment-basemap.yaml
