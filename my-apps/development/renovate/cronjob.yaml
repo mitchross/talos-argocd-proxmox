@@ -34,7 +34,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: renovate
-              image: ghcr.io/renovatebot/renovate:45.1.0
+              image: ghcr.io/renovatebot/renovate:45.3.3
               imagePullPolicy: IfNotPresent
               env:
                 - name: LOG_LEVEL
