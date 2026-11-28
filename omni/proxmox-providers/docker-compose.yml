@@ -12,7 +12,7 @@ services:
 
   threadripper:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0@sha256:ff59aec4a164aa4a26296a346e0a8819964e7f946cf86ba4e84f2afec21e5cbd
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.4.0@sha256:9d12ce1671f6208978e94d6fb98b41518a07923a296aaec2bd31645eb33cd02a
     container_name: omni-infra-provider-proxmox-threadripper
     volumes:
       - ./threadripper.config.yaml:/config.yaml:ro
@@ -27,7 +27,7 @@ services:
 
   hp-micro:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0@sha256:ff59aec4a164aa4a26296a346e0a8819964e7f946cf86ba4e84f2afec21e5cbd
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.4.0@sha256:9d12ce1671f6208978e94d6fb98b41518a07923a296aaec2bd31645eb33cd02a
     container_name: omni-infra-provider-proxmox-hp-micro
     volumes:
       - ./hp-micro.config.yaml:/config.yaml:ro
@@ -41,7 +41,7 @@ services:
 
   hp-sff:
     <<: *provider
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.3.0@sha256:ff59aec4a164aa4a26296a346e0a8819964e7f946cf86ba4e84f2afec21e5cbd
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:v0.4.0@sha256:9d12ce1671f6208978e94d6fb98b41518a07923a296aaec2bd31645eb33cd02a
     container_name: omni-infra-provider-proxmox-hp-sff
     volumes:
       - ./hp-sff.config.yaml:/config.yaml:ro
