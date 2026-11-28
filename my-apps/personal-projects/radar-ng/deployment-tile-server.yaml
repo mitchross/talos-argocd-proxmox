@@ -21,7 +21,7 @@ spec:
         app: tile-server
       annotations:
         # Bump to force a ReplicaSet roll when only env changes — a stale field-manager can mask env diffs under SSA.
-        config-rev: "2026-11-27-telemetry-relay"
+        config-rev: "2026-11-28-rfc389-shadow"
     spec:
       priorityClassName: app-critical
       # No gpu-worker preference: after a drain moves workers off the GPU node, preferring gpu-worker
@@ -113,6 +113,37 @@ spec:
                 secretKeyRef:
                   name: radar-ng-telemetry
                   key: TELEMETRY_TOKEN
+            # RFC #389 shadow dual-write mode: mirror state -> Postgres (`radar` schema) and
+            # grids/tiles -> RustFS (`core/` prefix) while reads remain on disk (`*_READ_*=0`).
+            - name: RADAR_STATE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: radar-ng-level2
+                  key: LEVEL2_PG_URL
+            - name: RADAR_STATE_SCHEMA
+              value: radar
+            - name: RADAR_STATE_READ_PG
+              value: "0"
+            - name: RADAR_S3_ENDPOINT
+              value: http://192.168.10.133:30292
+            - name: RADAR_S3_BUCKET
+              value: radar-ng-level2
+            - name: RADAR_S3_PREFIX
+              value: core
+            - name: RADAR_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: radar-ng-level2
+                  key: LEVEL2_S3_ACCESS_KEY
+            - name: RADAR_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: radar-ng-level2
+                  key: LEVEL2_S3_SECRET_KEY
+            - name: RADAR_GRIDS_READ_S3
+              value: "0"
+            - name: RADAR_TILES_READ_S3
+              value: "0"
           # /api/livez, never /api/health (degrades on stale NOAA data). ~60 s of failures before restart:
           # a busy API is not a dead one, and a restart also takes the tiles down.
           livenessProbe:

@@ -131,3 +131,64 @@
   value:
     name: MRMS_SEVERE_ENABLED
     value: '1'
+# RFC #389 shadow dual-write mode: mirror state -> Postgres (`radar` schema) and
+# grids/tiles -> RustFS (`core/` prefix) while reads remain on disk (`*_READ_*=0`).
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_STATE_DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: radar-ng-level2
+        key: LEVEL2_PG_URL
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_STATE_SCHEMA
+    value: radar
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_STATE_READ_PG
+    value: '0'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_S3_ENDPOINT
+    value: http://192.168.10.133:30292
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_S3_BUCKET
+    value: radar-ng-level2
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_S3_PREFIX
+    value: core
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_S3_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: radar-ng-level2
+        key: LEVEL2_S3_ACCESS_KEY
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_S3_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: radar-ng-level2
+        key: LEVEL2_S3_SECRET_KEY
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_GRIDS_READ_S3
+    value: '0'
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: RADAR_TILES_READ_S3
+    value: '0'
